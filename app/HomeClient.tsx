@@ -16,7 +16,7 @@ import {
 
 const OFFICIAL_LINKS = [
   { label: '공식 사이트', sub: 'limbuscompany.com',           href: 'https://limbuscompany.com',                       icon: Globe,       color: '#4898b0' },
-  { label: 'YouTube',    sub: '공식 채널',                    href: 'https://www.youtube.com/@projectmoon_official',   icon: Youtube, color: '#c83030' },
+  { label: 'YouTube',    sub: '공식 채널',                    href: 'https://www.youtube.com/@ProjectMoonOfficial',   icon: Youtube, color: '#c83030' },
   { label: 'Twitter / X',sub: '@LimbusCompany_B',            href: 'https://x.com/LimbusCompany_B',                  icon: XIcon,       color: '#3870b0' },
 ]
 
