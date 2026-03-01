@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 
+export const dynamic = 'force-dynamic'
+
 // PATCH — 운용법 수정 (완장/관리자)
 export async function PATCH(
   request: Request,
