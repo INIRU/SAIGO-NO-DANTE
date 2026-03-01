@@ -51,7 +51,50 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
+  const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
   const sinColor = getIdentitySinColor(identity)
+
+  // 동기화 단계 필터링
+  const hasUptieData = useMemo(() =>
+    skills.some(s => (s.uptie_level ?? 3) === 4) || passives.some(p => (p.uptie_level ?? 3) === 4),
+    [skills, passives]
+  )
+  const filteredSkills = useMemo(() => {
+    const filtered = skills.filter(s => (s.uptie_level ?? 3) === uptieLevel)
+    // 4동기화 데이터가 없으면 3동기화로 폴백
+    const result = filtered.length > 0 ? filtered : skills.filter(s => (s.uptie_level ?? 3) === 3)
+    // 정렬: S1 → S2 → S3 → 수비(order=4) 순, 같은 슬롯 변형은 DB 순서 유지
+    // skill_order >= 5 는 S3 변형(구 데이터)
+    return result.sort((a, b) => {
+      const base = (s: typeof a) => {
+        const bo = s.skill_order >= 5 ? 3 : s.skill_order
+        return bo === 4 ? 99 : bo
+      }
+      return base(a) - base(b)
+    })
+  }, [skills, uptieLevel])
+  const filteredPassives = useMemo(() => {
+    const filtered = passives.filter(p => (p.uptie_level ?? 3) === uptieLevel)
+    return filtered.length > 0 ? filtered : passives.filter(p => (p.uptie_level ?? 3) === 3)
+  }, [passives, uptieLevel])
+
+  // 변형 스킬 맵: 같은 슬롯에 여러 스킬이 있는 경우 감지
+  // skill_order >= 5 는 S3 변형(구 데이터), 같은 skill_order 중복은 변형 스킬
+  const variantMap = useMemo(() => {
+    const groups = new Map<number, string[]>()
+    for (const s of filteredSkills) {
+      const base = s.skill_order >= 5 ? 3 : s.skill_order
+      if (!groups.has(base)) groups.set(base, [])
+      groups.get(base)!.push(s.id)
+    }
+    const map: Record<string, { baseOrder: number; idx: number; total: number }> = {}
+    for (const [base, ids] of groups) {
+      ids.forEach((id, i) => {
+        map[id] = { baseOrder: base, idx: i + 1, total: ids.length }
+      })
+    }
+    return map
+  }, [filteredSkills])
 
   // 운영법 상태
   const [guides, setGuides] = useState<GuideData[]>(initialGuides ?? [])
@@ -65,17 +108,16 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
   const [guideSaving, setGuideSaving] = useState(false)
   const guideTextareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 토큰 룩업 (NoteRenderer용) — 같은 skill_order 변형 지원 (S3-2 등)
-  const skillImgIdxMap = useMemo(() => computeSkillImageIndices(skills), [skills])
+  // 토큰 룩업 (NoteRenderer용) — variantMap으로 변형 스킬 키 생성
+  const skillImgIdxMap = useMemo(() => computeSkillImageIndices(filteredSkills), [filteredSkills])
   const skillTokenLookup = useMemo(() => {
     const map: Record<string, NoteSkillEntry> = {}
-    const orderCount: Record<number, number> = {}
-    for (const sk of skills) {
-      const subIdx = orderCount[sk.skill_order] || 0
-      orderCount[sk.skill_order] = subIdx + 1
-      const key = subIdx === 0
-        ? `${sinner.name_kr}:${sk.skill_order}`
-        : `${sinner.name_kr}:${sk.skill_order}:${subIdx}`
+    for (const sk of filteredSkills) {
+      const v = variantMap[sk.id]
+      const base = v?.baseOrder ?? (sk.skill_order >= 5 ? 3 : sk.skill_order)
+      const key = v && v.total > 1
+        ? `${sinner.name_kr}:${base}:${v.idx}`
+        : `${sinner.name_kr}:${base}`
       map[key] = {
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
         skill_order: sk.skill_order, description: sk.description,
@@ -84,7 +126,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
       }
     }
     return map
-  }, [skills, sinner.name_kr, identity, skillImgIdxMap])
+  }, [filteredSkills, sinner.name_kr, identity, skillImgIdxMap, variantMap])
 
   const egoTokenLookup = useMemo(() => {
     const map: Record<string, NoteEgoEntry> = {}
@@ -113,16 +155,20 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
   const acPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
-    // 스킬 (같은 skill_order 변형 지원: S3-2 등)
-    const acOrderCount: Record<number, number> = {}
-    for (const sk of skills) {
-      const subIdx = acOrderCount[sk.skill_order] || 0
-      acOrderCount[sk.skill_order] = subIdx + 1
+    // 스킬 — variantMap으로 변형 스킬 라벨/토큰 생성
+    for (const sk of filteredSkills) {
       const sc = SIN_COLORS[sk.sin_affinity] || sinColor
-      const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
-      const token = subIdx === 0
-        ? `[s:${sinner.name_kr}:${sk.skill_order}]`
-        : `[s:${sinner.name_kr}:${sk.skill_order}:${subIdx}]`
+      const v = variantMap[sk.id]
+      const base = v?.baseOrder ?? (sk.skill_order >= 5 ? 3 : sk.skill_order)
+      const isDefense = base === 4
+      const orderLabel = isDefense
+        ? (v && v.total > 1
+          ? `${SKILL_TYPE_LABELS[sk.skill_type] || sk.skill_type}-${v.idx}`
+          : SKILL_TYPE_LABELS[sk.skill_type] || sk.skill_type)
+        : (v && v.total > 1 ? `S${base}-${v.idx}` : `S${base}`)
+      const token = v && v.total > 1
+        ? `[s:${sinner.name_kr}:${base}:${v.idx}]`
+        : `[s:${sinner.name_kr}:${base}]`
       pool.push({
         label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
@@ -153,7 +199,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     // 키워드
     pool.push(...buildKeywordPool())
     return pool
-  }, [skills, sinnerIdentities, sinnerEgos, sinner.name_kr, identity, sinColor])
+  }, [filteredSkills, sinnerIdentities, sinnerEgos, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap])
 
   const ac = useNoteAutocomplete({
     text: guideContent,
@@ -247,14 +293,9 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     setInfoKey(infoUrl)
   }
 
-  // S3 변형 스킬 감지: 같은 skill_order가 여러 개면 번호 매기기
-  const orderCounts: Record<number, number> = {}
-  for (const s of skills) orderCounts[s.skill_order] = (orderCounts[s.skill_order] || 0) + 1
-  const orderIndex: Record<number, number> = {}
-
   // 스킬 이름 → 죄악 속성 색상 맵 (스킬 설명에서 다른 스킬 이름 강조용)
   const skillNameColors: Record<string, string> = {}
-  for (const s of skills) {
+  for (const s of filteredSkills) {
     skillNameColors[s.name] = SIN_COLORS[s.sin_affinity] || sinColor
   }
 
@@ -500,6 +541,39 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   >
                     {identity.affiliation}
                   </span>
+                </div>
+              )}
+
+              {/* 패닉 유형 & 정신력 */}
+              {(identity.panic_type || identity.sanity_increase || identity.sanity_decrease) && (
+                <div className="mt-6 pt-5 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  {identity.panic_type && (
+                    <div className="flex items-center gap-2">
+                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>패닉 유형</span>
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded"
+                        style={{
+                          background: identity.panic_type === '공격' ? 'rgba(200,48,48,0.15)' : 'rgba(72,152,176,0.15)',
+                          color: identity.panic_type === '공격' ? '#c83030' : '#4898b0',
+                          border: `1px solid ${identity.panic_type === '공격' ? 'rgba(200,48,48,0.3)' : 'rgba(72,152,176,0.3)'}`,
+                        }}
+                      >
+                        {identity.panic_type}
+                      </span>
+                    </div>
+                  )}
+                  {identity.sanity_increase && (
+                    <div className="flex items-start gap-2">
+                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px', marginTop: '2px' }}>정신력 +</span>
+                      <span style={{ color: '#6bbbff', fontSize: '11px', lineHeight: 1.5 }}>{identity.sanity_increase}</span>
+                    </div>
+                  )}
+                  {identity.sanity_decrease && (
+                    <div className="flex items-start gap-2">
+                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px', marginTop: '2px' }}>정신력 -</span>
+                      <span style={{ color: '#ff6b6b', fontSize: '11px', lineHeight: 1.5 }}>{identity.sanity_decrease}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -838,55 +912,87 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
             {/* 스킬/패시브 탭 + 컨텐츠 */}
             <div>
-              {/* 탭 바 */}
-              <div
-                className="flex rounded-t-lg overflow-hidden"
-                style={{
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid var(--border)',
-                  borderBottom: 'none',
-                  padding: '3px 3px 0 3px',
-                }}
-              >
-                {[
-                  { key: 'skills' as const, label: '스킬', count: skills.length },
-                  { key: 'passives' as const, label: '패시브', count: passives.length },
-                ].map(tab => {
-                  const isActive = activeTab === tab.key
-                  return (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className="flex-1 relative px-5 py-2.5 font-semibold rounded-t-md transition-all"
-                      style={{
-                        background: isActive ? `${sinColor}18` : 'transparent',
-                        color: isActive ? '#e8dcc8' : '#555',
-                        fontSize: '13px',
-                        borderTop: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                        borderLeft: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                        borderRight: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                        borderBottom: 'none',
-                        boxShadow: isActive ? `0 0 8px ${sinColor}15` : 'none',
-                      }}
-                    >
-                      <span>{tab.label}</span>
-                      <span
-                        className="font-mono"
+              {/* 탭 바 + 동기화 토글 */}
+              <div className="flex items-end gap-2">
+                <div
+                  className="flex flex-1 rounded-t-lg overflow-hidden"
+                  style={{
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid var(--border)',
+                    borderBottom: 'none',
+                    padding: '3px 3px 0 3px',
+                  }}
+                >
+                  {[
+                    { key: 'skills' as const, label: '스킬', count: filteredSkills.length },
+                    { key: 'passives' as const, label: '패시브', count: filteredPassives.length },
+                  ].map(tab => {
+                    const isActive = activeTab === tab.key
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className="flex-1 relative px-5 py-2.5 font-semibold rounded-t-md transition-all"
                         style={{
-                          color: isActive ? sinColor : '#444',
-                          fontSize: '12px',
-                          marginLeft: '10px',
+                          background: isActive ? `${sinColor}18` : 'transparent',
+                          color: isActive ? '#e8dcc8' : '#555',
+                          fontSize: '13px',
+                          borderTop: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
+                          borderLeft: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
+                          borderRight: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
+                          borderBottom: 'none',
+                          boxShadow: isActive ? `0 0 8px ${sinColor}15` : 'none',
                         }}
                       >
-                        {tab.count}
-                      </span>
-                    </button>
-                  )
-                })}
+                        <span>{tab.label}</span>
+                        <span
+                          className="font-mono"
+                          style={{
+                            color: isActive ? sinColor : '#444',
+                            fontSize: '12px',
+                            marginLeft: '10px',
+                          }}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* 3/4동기화 토글 */}
+                {hasUptieData && (
+                  <div
+                    className="flex rounded-t-lg overflow-hidden mb-0"
+                    style={{
+                      border: '1px solid var(--border)',
+                      borderBottom: 'none',
+                      background: 'rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    {([3, 4] as const).map(level => {
+                      const isActive = uptieLevel === level
+                      return (
+                        <button
+                          key={level}
+                          onClick={() => setUptieLevel(level)}
+                          className="px-3 py-2 text-xs font-semibold transition-all"
+                          style={{
+                            background: isActive ? `${sinColor}25` : 'transparent',
+                            color: isActive ? sinColor : '#555',
+                            borderRight: level === 3 ? `1px solid var(--border)` : 'none',
+                          }}
+                        >
+                          {level === 3 ? '3동기화' : '4동기화'}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* 스킬 탭 */}
-              {activeTab === 'skills' && (skills.length > 0 ? (
+              {activeTab === 'skills' && (filteredSkills.length > 0 ? (
                 <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
                 <h2
                   className="font-serif font-bold mb-4"
@@ -897,14 +1003,16 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
                 <div className="space-y-4">
                   {(() => {
-                    return skills.map(skill => {
+                    return filteredSkills.map(skill => {
                     const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
                     const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
                     const skillIconUrl = getSkillIconUrl(identity, imgIdx)
-                    const skillIconFallback = imgIdx >= 5 ? getSkillIconUrl(identity, 3) : undefined
+                    const v = variantMap[skill.id]
+                    const baseOrder = v?.baseOrder ?? (skill.skill_order >= 5 ? 3 : skill.skill_order)
+                    const skillIconFallback = imgIdx >= 5 ? getSkillIconUrl(identity, baseOrder) : undefined
                     const offCorr = skill.offense_level != null ? skill.offense_level - 60 : null
                     const offCorrStr = offCorr === null ? '' : offCorr === 0 ? '' : offCorr > 0 ? `(+${offCorr})` : `(${offCorr})`
-                    const isAttackSkill = skill.skill_order <= 3 || skill.skill_order >= 5
+                    const isAttackSkill = baseOrder !== 4
 
                     // 파괴 불가 코인 감지: [코인 N] 파괴 불가 코인
                     const unbreakableCoins = new Set<number>()
@@ -913,13 +1021,13 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                       for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]))
                     }
 
-                    // S3-1, S3-2 등 변형 스킬 라벨
-                    orderIndex[skill.skill_order] = (orderIndex[skill.skill_order] || 0) + 1
-                    const hasVariant = orderCounts[skill.skill_order] > 1
-                    const variantIdx = orderIndex[skill.skill_order]
-                    const skillLabel = skill.skill_order <= 3
-                      ? `S${skill.skill_order}${hasVariant ? `-${variantIdx}` : ''}`
-                      : SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type
+                    // 변형 스킬 라벨: S1-1/S1-2, S3-1/S3-2 등
+                    const isDefense = baseOrder === 4
+                    const skillLabel = isDefense
+                      ? (v && v.total > 1
+                        ? `${SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}-${v.idx}`
+                        : SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
+                      : (v && v.total > 1 ? `S${baseOrder}-${v.idx}` : `S${baseOrder}`)
 
                     return (
                       <div
@@ -1096,9 +1204,9 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               ))}
 
               {/* 패시브 탭 */}
-              {activeTab === 'passives' && (passives.length > 0 ? (() => {
-              const battlePassives = passives.filter(p => p.passive_type === 'battle')
-              const supportPassives = passives.filter(p => p.passive_type === 'support')
+              {activeTab === 'passives' && (filteredPassives.length > 0 ? (() => {
+              const battlePassives = filteredPassives.filter(p => p.passive_type === 'battle')
+              const supportPassives = filteredPassives.filter(p => p.passive_type === 'support')
 
               const renderPassive = (p: Passive) => {
                 // sin_affinity가 한국어 → SinType 변환, 복수면 첫 번째만 아이콘용

@@ -31,6 +31,9 @@ export type Identity = {
   acquisition?: string
   game_id?: string | null
   folder_name?: string | null
+  panic_type?: string
+  sanity_increase?: string
+  sanity_decrease?: string
 }
 
 export type Skill = {
@@ -47,6 +50,8 @@ export type Skill = {
   atk_weight?: number
   offense_level?: number
   quantity?: number
+  uptie_level?: number
+  variant_order?: number
 }
 
 export type Passive = {
@@ -59,6 +64,7 @@ export type Passive = {
   active_cond: string | null
   description: string
   passive_order: number
+  uptie_level?: number
 }
 
 export type EGOSkill = {
@@ -443,17 +449,17 @@ export function getSkillIconUrl(identity: Identity, imageIndex: number): string 
 }
 
 /** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산.
- *  S1→01, S2→02, S3→03, 수비→04, S3-2→05, S3-3→06 ... */
+ *  S1→01, S2→02, S3→03, 수비→04, 변형→05, 06 ...
+ *  skill_order >= 5 는 S3 변형(구 데이터), 같은 skill_order 중복은 변형 스킬 */
 export function computeSkillImageIndices(skills: { id: string; skill_order: number }[]): Record<string, number> {
   const seenOrder = new Set<number>()
   const result: Record<string, number> = {}
   const variants: { id: string }[] = []
   for (const s of skills) {
-    if (s.skill_order === 4) {
-      result[s.id] = 4
-    } else if (!seenOrder.has(s.skill_order)) {
-      seenOrder.add(s.skill_order)
-      result[s.id] = s.skill_order
+    const base = s.skill_order >= 5 ? 3 : s.skill_order
+    if (!seenOrder.has(base)) {
+      seenOrder.add(base)
+      result[s.id] = base
     } else {
       variants.push(s)
     }
@@ -536,6 +542,7 @@ export async function getAllSkills(): Promise<Skill[]> {
     .from('skills')
     .select('*')
     .order('skill_order')
+    .order('variant_order')
     .order('id')
   if (error) return []
   return data ?? []
@@ -548,6 +555,8 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
     .select('*')
     .eq('identity_id', identityId)
     .order('skill_order')
+    .order('uptie_level')
+    .order('variant_order')
     .order('id')
   if (error) return []
   return data ?? []
@@ -570,6 +579,7 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
     .select('*')
     .eq('identity_id', identityId)
     .order('passive_order')
+    .order('uptie_level')
   if (error) return []
   return data ?? []
 }
