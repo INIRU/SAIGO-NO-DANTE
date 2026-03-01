@@ -1,0 +1,310 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
+import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS } from '@/lib/data/sinners'
+import IdentityCard from '@/components/sinners/IdentityCard'
+
+interface Props {
+  sinner: Sinner
+  identities: Identity[]
+  egos: EGO[]
+}
+
+type Tab = 'identities' | 'ego'
+
+export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [tab, setTab] = useState<Tab>('identities')
+  const [gacksung, setGacksung] = useState(false)
+  const [rarityFilter, setRarityFilter] = useState<string | null>(null)
+
+  // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
+  useEffect(() => {
+    const readHash = () => setTab(window.location.hash === '#ego' ? 'ego' : 'identities')
+    readHash()
+    window.addEventListener('hashchange', readHash)
+    return () => window.removeEventListener('hashchange', readHash)
+  }, [])
+
+  const changeTab = (t: Tab) => {
+    router.push(`${pathname}#${t}`, { scroll: false })
+    setTab(t)
+  }
+
+  const filteredIdentities = rarityFilter
+    ? identities.filter(i => i.rarity === rarityFilter)
+    : identities
+
+  return (
+    <div className="min-h-screen pt-24 pb-16">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* 브레드크럼 */}
+        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+          <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
+            수감자 목록
+          </Link>
+          <span>›</span>
+          <span style={{ color: 'var(--gold)' }}>{sinner.name_kr}</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* 좌측: 캐릭터 정보 (sticky) */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="card p-6">
+              {/* 프로필 이미지 */}
+              <div
+                className="relative w-full rounded-lg mb-6 overflow-hidden"
+                style={{ aspectRatio: '3/4', background: 'var(--bg-elevated)' }}
+              >
+                {getSinnerProfileUrl(sinner.id) ? (
+                  <Image
+                    src={getSinnerProfileUrl(sinner.id)}
+                    alt={sinner.name_kr}
+                    fill
+                    unoptimized
+                    className="object-cover object-top"
+                    style={{ objectPosition: '50% 15%' }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span
+                      className="font-serif text-8xl font-bold"
+                      style={{ color: 'rgba(200,164,90,0.2)' }}
+                    >
+                      {sinner.name[0]}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 이름 + 로고 */}
+              <div className="flex items-center gap-3 mb-1">
+                <Image
+                  src={getSinnerLogoUrl(sinner.id)}
+                  alt=""
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{
+                    filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
+                    opacity: 0.9,
+                  }}
+                />
+                <div>
+                  <h1
+                    className="font-serif text-3xl font-bold"
+                    style={{ color: 'var(--gold)' }}
+                  >
+                    {sinner.name}
+                  </h1>
+                  <p className="text-sm" style={{ color: '#666688' }}>
+                    {sinner.name_kr} · #{String(sinner.order_num).padStart(2, '0')}
+                  </p>
+                </div>
+              </div>
+
+              {/* 설명 */}
+              <p
+                className="text-sm leading-relaxed mb-4"
+                style={{ color: '#9e9e9e' }}
+              >
+                {sinner.description}
+              </p>
+
+              {/* 문학 출처 */}
+              <div
+                className="text-xs italic px-3 py-2 rounded"
+                style={{
+                  background: 'rgba(200,164,90,0.08)',
+                  borderLeft: '2px solid var(--gold)',
+                  color: 'rgba(200,164,90,0.7)',
+                }}
+              >
+                {sinner.literary_source}
+              </div>
+            </div>
+          </div>
+
+          {/* 우측: 탭 콘텐츠 */}
+          <div className="lg:col-span-2">
+            {/* 탭 */}
+            <div
+              className="flex gap-0 mb-4 rounded overflow-hidden"
+              style={{ border: '1px solid var(--border)' }}
+            >
+              {(['identities', 'ego'] as Tab[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => changeTab(t)}
+                  className="flex-1 py-3 text-sm font-medium transition-all duration-200"
+                  style={{
+                    background: tab === t ? 'var(--gold)' : 'transparent',
+                    color: tab === t ? 'var(--bg-deep)' : '#666688',
+                  }}
+                >
+                  {t === 'identities' ? '인격' : 'EGO'}
+                </button>
+              ))}
+            </div>
+
+            {/* 인격 탭 */}
+            {tab === 'identities' && (
+              <div>
+                {/* 필터 바 */}
+                <div className="flex items-center justify-between mb-3">
+                  {/* 등급 필터 */}
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { value: null, label: '전체', icon: null },
+                      { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
+                      { value: '2성', label: '2성', icon: `${STORAGE_BASE}/icons/Rarity/2star.webp` },
+                      { value: '3성', label: '3성', icon: `${STORAGE_BASE}/icons/Rarity/3star.webp` },
+                    ].map(({ value, label, icon }) => {
+                      const isActive = rarityFilter === value
+                      const borderColor = value === '3성' ? '#c8900a' : value === '2성' ? '#5588bb' : value === '1성' ? '#556677' : 'var(--border)'
+                      return (
+                        <button
+                          key={label}
+                          onClick={() => setRarityFilter(value)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all duration-200"
+                          style={{
+                            background: isActive ? `${borderColor}20` : 'transparent',
+                            border: `1px solid ${isActive ? borderColor : 'var(--border)'}`,
+                            color: isActive ? (value === null ? 'var(--gold)' : borderColor) : '#555',
+                            opacity: isActive ? 1 : 0.6,
+                          }}
+                        >
+                          {icon ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={icon}
+                              alt={label}
+                              style={{
+                                height: '14px',
+                                width: 'auto',
+                                filter: isActive ? 'none' : 'grayscale(0.8) brightness(0.6)',
+                              }}
+                            />
+                          ) : (
+                            label
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* 일반/각성 토글 */}
+                  <button
+                    onClick={() => setGacksung(!gacksung)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
+                    style={{
+                      background: gacksung ? 'rgba(255,107,107,0.15)' : 'rgba(200,164,90,0.1)',
+                      border: `1px solid ${gacksung ? 'rgba(255,107,107,0.4)' : 'var(--border)'}`,
+                      color: gacksung ? '#ff6b6b' : '#888',
+                    }}
+                  >
+                    <span
+                      className="inline-block w-2 h-2 rounded-full transition-colors"
+                      style={{ background: gacksung ? '#ff6b6b' : '#555' }}
+                    />
+                    {gacksung ? '3동기화' : '일반'}
+                  </button>
+                </div>
+
+                {filteredIdentities.length === 0 ? (
+                  <div
+                    className="text-center py-16"
+                    style={{ color: '#555566' }}
+                  >
+                    {rarityFilter ? `${rarityFilter} 인격이 없습니다.` : '등록된 인격이 없습니다.'}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
+                    {filteredIdentities.map(identity => (
+                      <IdentityCard
+                        key={identity.id}
+                        identity={identity}
+                        gacksung={gacksung}
+                        compact
+                        onClick={() =>
+                          router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* EGO 탭 */}
+            {tab === 'ego' && (
+              <div>
+                {egos.length === 0 ? (
+                  <div className="card p-8 text-center" style={{ color: '#555566' }}>
+                    <p className="font-serif text-lg italic">등록된 EGO가 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6">
+                    {egos.map(ego => {
+                      const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
+                      const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
+
+                      return (
+                        <button
+                          key={ego.id}
+                          onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
+                          className="group flex flex-col items-center gap-2"
+                          style={{ cursor: 'pointer', transition: 'transform 200ms ease' }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                        >
+                          {/* 원형 CG - 메인 포커스 */}
+                          <div style={{
+                            position: 'relative',
+                            width: '110px', height: '110px',
+                            borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                            border: `2px solid ${sinColor}`,
+                            boxShadow: `0 0 18px ${sinColor}60, 0 0 36px ${sinColor}25`,
+                            background: '#0d0a06',
+                          }}>
+                            {ego.image_url ? (
+                              <Image src={ego.image_url} alt="" fill unoptimized
+                                className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '14px' }}>{ego.grade?.[0]}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 등급 + 이름 */}
+                          <div className="flex items-center justify-center gap-1.5">
+                            {ego.grade !== 'ALEPH' ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
+                                style={{ height: '13px', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
+                            ) : (
+                              <span style={{ fontFamily: 'monospace', fontSize: '8px', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
+                            )}
+                            <p className="font-serif font-bold text-center leading-snug"
+                              style={{ color: '#c8a450', fontSize: '13px', lineHeight: '1.35' }}>
+                              {ego.name_kr || ego.name}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,85 @@
+/* ── IdentityCard ──────────────────────────────────────── */
+
+.card {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  max-width: 155px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card.selected {
+  box-shadow:
+    inset 0 0 20px rgba(200, 48, 32, 0.3),
+    inset 0 0 40px rgba(200, 48, 32, 0.1);
+}
+
+/* 포트레이트 영역 — overflow 없음 (프레임이 삐져나와야 함) */
+.portrait {
+  position: relative;
+  background: #120e08;
+  border-radius: 4px;
+}
+
+/* 일러스트 클리핑 — portrait 안에서만 overflow: hidden */
+.portraitInner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* 하단 그라디언트 */
+.gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* 인격명 */
+.name {
+  position: absolute;
+  text-align: right;
+  bottom: 9%;
+  left: 22%;
+  right: 8%;
+  z-index: 12;
+  font-weight: 800;
+  line-height: 1.25;
+  font-size: 15px;
+  color: #f0d060;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.7);
+  word-break: keep-all;
+}
+
+/* 등급 아이콘 */
+.rarityIcon {
+  position: absolute;
+  top: 4%;
+  left: 8%;
+  z-index: 11;
+}
+
+/* 등급 프레임 오버레이 — overflow 없는 portrait 위에서 삐져나옴 */
+.frame {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  max-width: none;
+  object-fit: fill;
+}
