@@ -25,29 +25,31 @@ export default async function IdentityPage({
     getEGOs(sinner.id),
   ])
 
-  // 운용법 조회
-  let guide: { id: string; content: string; author_name: string | null; updated_at: string } | null = null
+  // 운영법 조회 (여러 개)
+  let guides: { id: string; title: string; content: string; author_name: string | null; updated_at: string }[] = []
   try {
     const admin = createAdminClient()
     const { data } = await admin
       .schema('limbus')
       .from('identity_guides')
-      .select('id, content, updated_at, author_id')
+      .select('id, title, content, updated_at, author_id')
       .eq('identity_id', identity.id)
-      .maybeSingle()
-    if (data) {
-      const { data: profile } = await admin
+      .order('created_at', { ascending: true })
+    if (data && data.length > 0) {
+      const authorIds = [...new Set(data.map(g => g.author_id))]
+      const { data: profiles } = await admin
         .schema('limbus')
         .from('profiles')
-        .select('username')
-        .eq('id', data.author_id)
-        .single()
-      guide = {
-        id: data.id,
-        content: data.content,
-        author_name: profile?.username ?? null,
-        updated_at: data.updated_at,
-      }
+        .select('id, username')
+        .in('id', authorIds)
+      const profileMap = new Map(profiles?.map(p => [p.id, p.username]) ?? [])
+      guides = data.map(g => ({
+        id: g.id,
+        title: g.title,
+        content: g.content,
+        author_name: profileMap.get(g.author_id) ?? null,
+        updated_at: g.updated_at,
+      }))
     }
   } catch { /* guide fetch failed, continue without it */ }
 
@@ -57,7 +59,7 @@ export default async function IdentityPage({
       identity={identity}
       skills={skills}
       passives={passives}
-      guide={guide}
+      guides={guides}
       sinnerIdentities={sinnerIdentities}
       sinnerEgos={sinnerEgos}
       canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}

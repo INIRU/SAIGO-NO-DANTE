@@ -7,7 +7,7 @@ import { writeAuditLog } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
-// PATCH — 운용법 수정 (완장/관리자)
+// PATCH — 운영법 수정 (완장/관리자)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -18,9 +18,9 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const { content } = await request.json()
-  if (typeof content !== 'string') {
-    return NextResponse.json({ error: 'content required' }, { status: 400 })
+  const { title, content } = await request.json()
+  if (typeof content !== 'string' || typeof title !== 'string') {
+    return NextResponse.json({ error: 'title and content required' }, { status: 400 })
   }
 
   const admin = createAdminClient()
@@ -42,7 +42,7 @@ export async function PATCH(
   const { error } = await admin
     .schema('limbus')
     .from('identity_guides')
-    .update({ content, author_id: userId })
+    .update({ title, content, author_id: userId })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -67,7 +67,7 @@ export async function PATCH(
   return NextResponse.json({ ok: true })
 }
 
-// DELETE — 운용법 삭제 (관리자만)
+// DELETE — 운영법 삭제 (관리자만)
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
