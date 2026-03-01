@@ -252,8 +252,8 @@ function Skeleton() {
   return (
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
       <div style={{ height: '360px', background: 'linear-gradient(to bottom, #080604, #0d0b08)' }} />
-      <div className="max-w-5xl mx-auto px-6 pt-6 flex gap-5">
-        <div style={{ width: 252, flexShrink: 0 }}>
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6 flex gap-5">
+        <div className="hidden lg:block" style={{ width: 252, flexShrink: 0 }}>
           <div className="rounded-lg h-36 mb-3" style={{ background: '#120e09' }} />
           <div className="rounded-lg h-48" style={{ background: '#120e09', opacity: 0.6 }} />
         </div>
@@ -859,7 +859,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* 타이틀 오버레이 */}
           <div className="absolute bottom-0 left-0 right-0">
-            <div className="max-w-5xl mx-auto px-6 pb-7">
+            <div className="max-w-5xl mx-auto px-4 md:px-6 pb-7">
               <Link
                 href="/decks"
                 className="inline-flex items-center gap-1.5 mb-3 transition-opacity hover:opacity-70"
@@ -897,11 +897,133 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* ── 콘텐츠 ── */}
-      <div className="max-w-5xl mx-auto px-6 pb-24 pt-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pb-24 pt-6">
+
+          {/* ── 모바일 액션바 (lg 미만에서만 표시) ── */}
+          <div className="flex lg:hidden flex-wrap items-center gap-2.5 mb-5 rounded-lg px-4 py-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+            {/* 추천 */}
+            <button
+              onClick={handleVote}
+              disabled={voting || authStatus !== 'authenticated'}
+              className="inline-flex items-center gap-2 transition-all duration-200"
+              style={{ opacity: voting ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
+              title={authStatus !== 'authenticated' ? '로그인 후 추천 가능' : voted ? '추천 취소' : '추천'}
+            >
+              <div
+                className="flex items-center justify-center rounded-full transition-all duration-300"
+                style={{
+                  width: 32, height: 32,
+                  background: voted ? 'rgba(200,48,64,0.14)' : 'rgba(44,28,12,0.5)',
+                  border: `1px solid ${voted ? 'rgba(200,48,64,0.45)' : 'rgba(58,40,18,0.7)'}`,
+                  boxShadow: voted ? '0 0 12px rgba(200,48,64,0.18)' : 'none',
+                }}
+              >
+                <Heart
+                  size={14}
+                  fill={voted ? 'currentColor' : 'none'}
+                  style={{ color: voted ? '#e05060' : '#3a3050' }}
+                />
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#444455' }}>
+                {voteCount}
+              </span>
+            </button>
+
+            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
+
+            {/* 수정 */}
+            {deck.is_owner && (
+              <Link
+                href={`/decks/${id}/edit`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 hover:brightness-125"
+                style={{
+                  background: 'rgba(200,144,10,0.1)',
+                  border: '1px solid rgba(200,144,10,0.3)',
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                }}
+              >
+                <Pencil size={10} />
+                EDIT
+              </Link>
+            )}
+
+            {/* 편성코드 */}
+            {deck.deck_code && (
+              <button
+                onClick={handleCopyCode}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150"
+                style={{
+                  background: copied ? 'rgba(88,136,40,0.12)' : 'rgba(44,28,12,0.3)',
+                  border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'rgba(58,40,18,0.5)'}`,
+                  color: copied ? '#88a830' : '#484858',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                }}
+              >
+                {copied ? <Check size={10} /> : <Copy size={10} />}
+                {copied ? 'COPIED!' : 'COPY CODE'}
+              </button>
+            )}
+
+            {/* 죄악 자원 + 공격 유형 */}
+            {filledSlots.length > 0 && (
+              <>
+                <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex items-center gap-2 flex-wrap">
+                  {SIN_ORDER.map(sin => {
+                    const count = sinAffinityTotals[sin] ?? 0
+                    if (count === 0) return null
+                    return (
+                      <div key={sin} className="flex items-center gap-0.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={sinIconUrl(sin)} alt="" style={{ width: 14, height: 14 }} />
+                        <span style={{ color: SIN_COLORS[sin], fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
+                      </div>
+                    )
+                  })}
+                  <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.04)' }} />
+                  {(['slash', 'pierce', 'blunt'] as const).map(type => {
+                    const count = atkTypeTotals[type]
+                    if (count === 0) return null
+                    return (
+                      <div key={type} className="flex items-center gap-0.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ATK_ICON_URL[type]} alt="" style={{ width: 13, height: 13 }} />
+                        <span style={{ color: '#999', fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* 태그 */}
+            {deck.tags.length > 0 && (
+              <>
+                <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex flex-wrap gap-1">
+                  {deck.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(200,144,10,0.07)', color: 'var(--gold-dim)', border: '1px solid rgba(200,144,10,0.16)', fontFamily: 'var(--font-body)' }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
         <div className="flex gap-5 items-start">
 
-          {/* ── 사이드바 ── */}
-          <aside style={{ width: 252, flexShrink: 0 }}>
+          {/* ── 데스크탑 사이드바 (lg 이상에서만 표시) ── */}
+          <aside className="hidden lg:block" style={{ width: 252, flexShrink: 0 }}>
             <div className="flex flex-col gap-3" style={{ position: 'sticky', top: 88 }}>
 
               {/* 추천 */}
@@ -1070,7 +1192,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             ) : (
               <>
                 {/* 수감자 탭 그리드 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 mb-4">
                   {sinnerIds.map(sid => {
                     const firstSlot = slotsBySinner[sid]?.[0] ?? null
                     const id_ = firstSlot?.identities ?? null
