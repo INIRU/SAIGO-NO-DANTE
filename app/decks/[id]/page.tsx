@@ -215,19 +215,27 @@ function buildNoteLookups(slots: IdentitySlot[], egos: EgoSlot[]) {
     const id_ = slot.identities
     if (!id_) continue
     const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
-    for (const sk of id_.skills) {
+
+    // 스킬: computeSkillImageIndices로 올바른 이미지 인덱스 + 변형 스킬 지원
+    const sortedSkills = [...id_.skills].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
+    const imgIdx = computeSkillImageIndices(sortedSkills)
+    const orderCount: Record<number, number> = {}
+    for (const sk of sortedSkills) {
+      const subIdx = orderCount[sk.skill_order] || 0
+      orderCount[sk.skill_order] = subIdx + 1
+      const key = subIdx === 0
+        ? `${sName}:${sk.skill_order}`
+        : `${sName}:${sk.skill_order}:${subIdx}`
       const iconUrl = id_.game_id
-        ? `${STORAGE_BASE}/icons/skills/${id_.game_id}${String(sk.skill_order).padStart(2, '0')}.webp`
+        ? `${STORAGE_BASE}/icons/skills/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
         : undefined
-      // 토큰 형식: [s:수감자이름:스킬순서]
-      skillLookup[`${sName}:${sk.skill_order}`] = {
+      skillLookup[key] = {
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity,
         skill_order: sk.skill_order, description: sk.description,
         iconUrl, identityName: id_.name_kr, sinnerName: sName,
       }
     }
     for (const pa of id_.passives) {
-      // 토큰 형식: [p:패시브이름]
       passiveLookup[pa.name] = {
         name: pa.name, sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
@@ -239,7 +247,6 @@ function buildNoteLookups(slots: IdentitySlot[], egos: EgoSlot[]) {
     if (!es.ego) continue
     const sName = SINNER_NAMES[es.ego.sinner_id] ?? es.ego.sinner_id
     const name = es.ego.name_kr ?? sName
-    // 토큰 형식: [e:수감자이름:에고이름]
     egoLookup[`${sName}:${name}`] = {
       name, grade: es.ego.grade, sin_affinity: es.ego.sin_affinity,
       image_url: es.ego.image_url, sinnerName: sName,
@@ -664,6 +671,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               identities: Array.isArray(slot.identities)
                 ? (slot.identities[0] as IdentityDetail | undefined) ?? null
                 : slot.identities as unknown as IdentityDetail | null,
+            })),
+            deck_egos: (data.deck_egos ?? []).map((es: EgoSlot & { ego: unknown }) => ({
+              ...es,
+              ego: Array.isArray(es.ego)
+                ? (es.ego[0] as EgoSlot['ego'] | undefined) ?? null
+                : es.ego as EgoSlot['ego'],
             })),
           }
           setDeck(fixed)
