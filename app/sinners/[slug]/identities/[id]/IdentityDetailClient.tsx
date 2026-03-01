@@ -718,7 +718,9 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     variants.forEach((s, i) => skillImgIdx.set(s, 5 + i))
                     return skills.map(skill => {
                     const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
-                    const skillIconUrl = getSkillIconUrl(identity, skillImgIdx.get(skill) ?? skill.skill_order)
+                    const imgIdx = skillImgIdx.get(skill) ?? skill.skill_order
+                    const skillIconUrl = getSkillIconUrl(identity, imgIdx)
+                    const skillIconFallback = imgIdx >= 5 ? getSkillIconUrl(identity, 3) : undefined
                     const offCorr = skill.offense_level != null ? skill.offense_level - 60 : null
                     const offCorrStr = offCorr === null ? '' : offCorr === 0 ? '' : offCorr > 0 ? `(+${offCorr})` : `(${offCorr})`
                     const isAttackSkill = skill.skill_order <= 3 || skill.skill_order >= 5
@@ -759,6 +761,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                 unoptimized
                                 className="rounded"
                                 style={{ border: `1px solid ${skillSinColor}40` }}
+                                onError={skillIconFallback ? (e) => { (e.target as HTMLImageElement).src = skillIconFallback } : undefined}
                               />
                             )}
                             <span

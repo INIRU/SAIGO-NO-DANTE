@@ -549,6 +549,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
                     {egoList.map(ego => {
                       const isOwned = owned.has(ego.id)
+                      const sinType = normalizeSin(ego.sin_affinity)
+                      const egoSinColor = sinType ? SIN_COLORS[sinType] : 'var(--gold-dim)'
                       return (
                         <button
                           key={ego.id}
@@ -556,7 +558,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                           className="relative rounded overflow-hidden transition-all duration-200"
                           style={{
                             aspectRatio: '1',
-                            border: `2px solid ${isOwned ? (GRADE_COLORS[grade] ?? 'var(--gold-dim)') : 'rgba(58,42,21,0.3)'}`,
+                            border: `2px solid ${isOwned ? egoSinColor : 'rgba(58,42,21,0.3)'}`,
                             cursor: 'pointer',
                             background: '#0a0806',
                           }}
@@ -581,7 +583,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                             <div style={{
                               position: 'absolute', top: 2, right: 2,
                               width: 14, height: 14, borderRadius: '50%',
-                              background: GRADE_COLORS[grade] ?? 'var(--gold)',
+                              background: egoSinColor,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                               <Check size={8} style={{ color: '#0d0b08' }} />

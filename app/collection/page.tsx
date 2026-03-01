@@ -86,13 +86,15 @@ function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: 
   )
 }
 
-function EgoCard({ ego, isOwned, grade }: { ego: EGOInfo; isOwned: boolean; grade: string }) {
+function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
+  const sinType = normalizeSin(ego.sin_affinity)
+  const egoSinColor = sinType ? SIN_COLORS[sinType] : 'var(--gold-dim)'
   return (
     <div
       className="relative rounded overflow-hidden"
       style={{
         aspectRatio: '1',
-        border: `2px solid ${isOwned ? (GRADE_COLORS[grade] ?? 'var(--gold-dim)') : 'rgba(58,42,21,0.3)'}`,
+        border: `2px solid ${isOwned ? egoSinColor : 'rgba(58,42,21,0.3)'}`,
         background: '#0a0806',
       }}
     >
@@ -113,7 +115,7 @@ function EgoCard({ ego, isOwned, grade }: { ego: EGOInfo; isOwned: boolean; grad
         <div style={{
           position: 'absolute', top: 2, right: 2,
           width: 14, height: 14, borderRadius: '50%',
-          background: GRADE_COLORS[grade] ?? 'var(--gold)',
+          background: egoSinColor,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Check size={8} style={{ color: '#0d0b08' }} />
@@ -220,7 +222,7 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
             : 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2'
           }>
             {list.map(ego => (
-              <EgoCard key={ego.id} ego={ego} isOwned={owned.has(ego.id)} grade={grade} />
+              <EgoCard key={ego.id} ego={ego} isOwned={owned.has(ego.id)} />
             ))}
           </div>
         </div>

@@ -460,7 +460,9 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
             const maxPower = skill.base_power + skill.coins * skill.coin_power
             const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
             const skillLabel = skill.skill_order <= 3 ? `S${skill.skill_order}` : (SKILL_TYPE_KR[skill.skill_type] ?? skill.skill_type)
-            const iconUrl = skillIconUrl(skillImageIdx.get(skill) ?? idx + 1)
+            const imgIdx = skillImageIdx.get(skill) ?? idx + 1
+            const iconUrl = skillIconUrl(imgIdx)
+            const iconFallback = imgIdx >= 5 ? skillIconUrl(3) : undefined
             return (
               <div key={idx} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
                 {/* 헤더 */}
@@ -468,7 +470,7 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
                   <div className="flex items-center gap-2 min-w-0">
                     {iconUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={24} height={24} style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} />
+                      <img src={iconUrl} alt="" width={24} height={24} style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} onError={iconFallback ? (e) => { (e.target as HTMLImageElement).src = iconFallback } : undefined} />
                     )}
                     <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${sc}20`, color: sc, border: `1px solid ${sc}40` }}>
                       {skillLabel}
