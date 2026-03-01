@@ -16,6 +16,7 @@ import {
   getSinnerLogoUrl,
   getIdentityInfoUrl,
   getSkillIconUrl,
+  computeSkillImageIndices,
   STORAGE_BASE,
   SIN_COLORS,
   SinType,
@@ -809,12 +810,20 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     for (const identity of Object.values(deckSlots)) {
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      for (const sk of skillsByIdentityId[identity.id] ?? []) {
-        const iconUrl = getSkillIconUrl(identity, sk.skill_order)
-        map[`${sinnerName}:${sk.skill_order}`] = {
+      const idSkills = skillsByIdentityId[identity.id] ?? []
+      const imgIdx = computeSkillImageIndices(idSkills)
+      const orderCount: Record<number, number> = {}
+      for (const sk of idSkills) {
+        const subIdx = orderCount[sk.skill_order] || 0
+        orderCount[sk.skill_order] = subIdx + 1
+        const key = subIdx === 0
+          ? `${sinnerName}:${sk.skill_order}`
+          : `${sinnerName}:${sk.skill_order}:${subIdx}`
+        map[key] = {
           name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
           skill_order: sk.skill_order, description: sk.description,
-          iconUrl, identityName: identity.name_kr, sinnerName,
+          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
+          identityName: identity.name_kr, sinnerName,
         }
       }
     }
@@ -860,12 +869,21 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     for (const identity of Object.values(deckSlots)) {
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      for (const sk of skillsByIdentityId[identity.id] ?? []) {
+      const idSkills = skillsByIdentityId[identity.id] ?? []
+      const imgIdx = computeSkillImageIndices(idSkills)
+      const acOrderCount: Record<number, number> = {}
+      for (const sk of idSkills) {
+        const subIdx = acOrderCount[sk.skill_order] || 0
+        acOrderCount[sk.skill_order] = subIdx + 1
         const sc = SIN_COLORS[sk.sin_affinity] || '#888'
+        const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
+        const token = subIdx === 0
+          ? `[s:${sinnerName}:${sk.skill_order}]`
+          : `[s:${sinnerName}:${sk.skill_order}:${subIdx}]`
         pool.push({
-          label: sk.name, type: 'skill', typeLabel: '스킬', color: sc,
-          iconUrl: getSkillIconUrl(identity, sk.skill_order),
-          token: `[s:${sinnerName}:${sk.skill_order}]`,
+          label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
+          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
+          token,
         })
       }
     }
@@ -1375,11 +1393,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 const identity = deckSlots[sinner.id]
                 if (!identity) return null
                 const idSkills = skillsByIdentityId[identity.id] ?? []
-                const idSkillImgIdx = (() => {
-                  const seen = new Set<number>(); const map = new Map<typeof idSkills[0], number>(); const vars: typeof idSkills[0][] = []
-                  for (const s of idSkills) { if (s.skill_order === 4) { map.set(s, 4) } else if (!seen.has(s.skill_order)) { seen.add(s.skill_order); map.set(s, s.skill_order) } else { vars.push(s) } }
-                  vars.forEach((s, i) => map.set(s, 5 + i)); return map
-                })()
+                const idSkillImgIdx = computeSkillImageIndices(idSkills)
                 return (
                   <div
                     key={sinner.id}
@@ -1410,7 +1424,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     <div className="flex items-center gap-2 flex-1">
                       {idSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, idx, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === idx).map((sk) => {
                         const label = String(sk.skill_order)
-                        const iconUrl = getSkillIconUrl(identity, idSkillImgIdx.get(sk) ?? sk.skill_order)
+                        const iconUrl = getSkillIconUrl(identity, idSkillImgIdx[sk.id] ?? sk.skill_order)
                         const atkIcon = ATK_TYPE_ICON_MAP[sk.skill_type]
                         return (
                           <div key={sk.id} className="flex flex-col items-center gap-0.5" style={{ minWidth: '30px' }}>
@@ -1564,17 +1578,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                         const idSkills = skillsByIdentityId[identity.id] ?? []
                         if (idSkills.length === 0) return null
                         const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-                        const noteSkillImgIdx = (() => {
-                          const seen = new Set<number>(); const map = new Map<typeof idSkills[0], number>(); const vars: typeof idSkills[0][] = []
-                          for (const s of idSkills) { if (s.skill_order === 4) { map.set(s, 4) } else if (!seen.has(s.skill_order)) { seen.add(s.skill_order); map.set(s, s.skill_order) } else { vars.push(s) } }
-                          vars.forEach((s, i) => map.set(s, 5 + i)); return map
-                        })()
+                        const noteSkillImgIdx = computeSkillImageIndices(idSkills)
                         return (
                           <div key={identity.id} className="flex items-center gap-1.5">
                             <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} unoptimized style={{ opacity: 0.3, flexShrink: 0 }} />
                             <div className="flex items-center gap-1">
                               {idSkills.map(sk => {
-                                const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx.get(sk) ?? sk.skill_order)
+                                const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx[sk.id] ?? sk.skill_order)
                                 return (
                                   <button
                                     key={sk.id}

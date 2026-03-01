@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   const [identityResult, skillsResult, passivesResult] = await Promise.all([
     supabase.schema('limbus').from('identities').select('*').eq('id', id).single(),
-    supabase.schema('limbus').from('skills').select('*').eq('identity_id', id).order('skill_order'),
+    supabase.schema('limbus').from('skills').select('*').eq('identity_id', id).order('skill_order').order('id'),
     supabase.schema('limbus').from('passives').select('*').eq('identity_id', id).order('passive_order'),
   ])
 

@@ -4,12 +4,13 @@ import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Heart, Copy, Check, Pencil } from 'lucide-react'
-import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP } from '@/lib/data/sinners'
+import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices } from '@/lib/data/sinners'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry } from '@/components/decks/NoteChips'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type SkillDetail = {
+  id: string
   name: string
   skill_type: string
   sin_affinity: string
@@ -282,23 +283,7 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
   const sortedPassives = [...(id_.passives ?? [])].sort((a, b) => a.passive_order - b.passive_order)
 
   // 스킬 이미지 인덱스 계산: base(S1/S2/S3/DefSkill) 먼저, 변형(S3-2 등) 마지막
-  const skillImageIdx = (() => {
-    const seenOrder = new Set<number>()
-    const map = new Map<SkillDetail, number>()
-    const variants: SkillDetail[] = []
-    for (const s of sortedSkills) {
-      if (s.skill_order === 4) {
-        map.set(s, 4)
-      } else if (!seenOrder.has(s.skill_order)) {
-        seenOrder.add(s.skill_order)
-        map.set(s, s.skill_order)
-      } else {
-        variants.push(s)
-      }
-    }
-    variants.forEach((s, i) => map.set(s, 5 + i))
-    return map
-  })()
+  const skillImageIdx = computeSkillImageIndices(sortedSkills)
 
   // S1 기준 인격 주요 색상
   const s1 = sortedSkills.find(s => s.skill_order === 1) ?? sortedSkills[0]
@@ -460,7 +445,7 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
             const maxPower = skill.base_power + skill.coins * skill.coin_power
             const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
             const skillLabel = skill.skill_order <= 3 ? `S${skill.skill_order}` : (SKILL_TYPE_KR[skill.skill_type] ?? skill.skill_type)
-            const imgIdx = skillImageIdx.get(skill) ?? idx + 1
+            const imgIdx = skillImageIdx[skill.id] ?? idx + 1
             const iconUrl = skillIconUrl(imgIdx)
             const iconFallback = imgIdx >= 5 ? skillIconUrl(3) : undefined
             return (

@@ -21,6 +21,7 @@ import {
   getSinnerLogoUrl,
   getIdentitySinColor,
   getSkillIconUrl,
+  computeSkillImageIndices,
   getSinIconUrl,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip, formatSkillDesc } from '@/components/sinners/KeywordTooltip'
@@ -64,20 +65,26 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
   const [guideSaving, setGuideSaving] = useState(false)
   const guideTextareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 토큰 룩업 (NoteRenderer용)
+  // 토큰 룩업 (NoteRenderer용) — 같은 skill_order 변형 지원 (S3-2 등)
+  const skillImgIdxMap = useMemo(() => computeSkillImageIndices(skills), [skills])
   const skillTokenLookup = useMemo(() => {
     const map: Record<string, NoteSkillEntry> = {}
+    const orderCount: Record<number, number> = {}
     for (const sk of skills) {
-      const key = `${sinner.name_kr}:${sk.skill_order}`
+      const subIdx = orderCount[sk.skill_order] || 0
+      orderCount[sk.skill_order] = subIdx + 1
+      const key = subIdx === 0
+        ? `${sinner.name_kr}:${sk.skill_order}`
+        : `${sinner.name_kr}:${sk.skill_order}:${subIdx}`
       map[key] = {
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
         skill_order: sk.skill_order, description: sk.description,
-        iconUrl: getSkillIconUrl(identity, sk.skill_order),
+        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
         identityName: identity.name_kr, sinnerName: sinner.name_kr,
       }
     }
     return map
-  }, [skills, sinner.name_kr, identity])
+  }, [skills, sinner.name_kr, identity, skillImgIdxMap])
 
   const egoTokenLookup = useMemo(() => {
     const map: Record<string, NoteEgoEntry> = {}
@@ -106,13 +113,20 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
   const acPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
-    // 스킬
+    // 스킬 (같은 skill_order 변형 지원: S3-2 등)
+    const acOrderCount: Record<number, number> = {}
     for (const sk of skills) {
+      const subIdx = acOrderCount[sk.skill_order] || 0
+      acOrderCount[sk.skill_order] = subIdx + 1
       const sc = SIN_COLORS[sk.sin_affinity] || sinColor
+      const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
+      const token = subIdx === 0
+        ? `[s:${sinner.name_kr}:${sk.skill_order}]`
+        : `[s:${sinner.name_kr}:${sk.skill_order}:${subIdx}]`
       pool.push({
-        label: sk.name, type: 'skill', typeLabel: '스킬', color: sc,
-        iconUrl: getSkillIconUrl(identity, sk.skill_order),
-        token: `[s:${sinner.name_kr}:${sk.skill_order}]`,
+        label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
+        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
+        token,
       })
     }
     // 인격
@@ -268,7 +282,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
             className="max-w-full max-h-[90vh] object-contain"
             style={{ opacity: 0 }}
             onLoad={(ev) => { (ev.target as HTMLImageElement).style.opacity = '1' }}
-            onError={(e) => {
+            onError={() => {
               if (gacksung && !gacksungArtFailed) {
                 setGacksungArtFailed(true)
               } else {
@@ -883,24 +897,9 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
                 <div className="space-y-4">
                   {(() => {
-                    // 스킬 이미지 인덱스: base(S1/S2/S3/DefSkill) 먼저, 변형(S3-2 등) 마지막
-                    const seenOrder = new Set<number>()
-                    const skillImgIdx = new Map<(typeof skills)[number], number>()
-                    const variants: (typeof skills)[number][] = []
-                    for (const s of skills) {
-                      if (s.skill_order === 4) {
-                        skillImgIdx.set(s, 4)
-                      } else if (!seenOrder.has(s.skill_order)) {
-                        seenOrder.add(s.skill_order)
-                        skillImgIdx.set(s, s.skill_order)
-                      } else {
-                        variants.push(s)
-                      }
-                    }
-                    variants.forEach((s, i) => skillImgIdx.set(s, 5 + i))
                     return skills.map(skill => {
                     const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
-                    const imgIdx = skillImgIdx.get(skill) ?? skill.skill_order
+                    const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
                     const skillIconUrl = getSkillIconUrl(identity, imgIdx)
                     const skillIconFallback = imgIdx >= 5 ? getSkillIconUrl(identity, 3) : undefined
                     const offCorr = skill.offense_level != null ? skill.offense_level - 60 : null

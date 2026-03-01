@@ -437,9 +437,29 @@ export function getIdentityInfoUrl(identity: Identity, gacksung = false): string
   return getIdentityImageUrl(identity.sinner_id, identity.folder_name, file)
 }
 
-export function getSkillIconUrl(identity: Identity, skillOrder: number): string {
+export function getSkillIconUrl(identity: Identity, imageIndex: number): string {
   if (!identity.game_id) return ''
-  return `${STORAGE_BASE}/icons/skills/${identity.game_id}${String(skillOrder).padStart(2, '0')}.webp`
+  return `${STORAGE_BASE}/icons/skills/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
+}
+
+/** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산.
+ *  S1→01, S2→02, S3→03, 수비→04, S3-2→05, S3-3→06 ... */
+export function computeSkillImageIndices(skills: { id: string; skill_order: number }[]): Record<string, number> {
+  const seenOrder = new Set<number>()
+  const result: Record<string, number> = {}
+  const variants: { id: string }[] = []
+  for (const s of skills) {
+    if (s.skill_order === 4) {
+      result[s.id] = 4
+    } else if (!seenOrder.has(s.skill_order)) {
+      seenOrder.add(s.skill_order)
+      result[s.id] = s.skill_order
+    } else {
+      variants.push(s)
+    }
+  }
+  variants.forEach((s, i) => { result[s.id] = 5 + i })
+  return result
 }
 
 export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {
@@ -516,6 +536,7 @@ export async function getAllSkills(): Promise<Skill[]> {
     .from('skills')
     .select('*')
     .order('skill_order')
+    .order('id')
   if (error) return []
   return data ?? []
 }
@@ -527,6 +548,7 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
     .select('*')
     .eq('identity_id', identityId)
     .order('skill_order')
+    .order('id')
   if (error) return []
   return data ?? []
 }

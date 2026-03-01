@@ -57,12 +57,13 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
+  const sc = sinColorOf(entry.sin_affinity)
   return (
     <span
       ref={ref}
       onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
       onMouseLeave={() => setRect(null)}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -70,7 +71,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {atkIcon && <img src={atkIcon} alt="" style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10 }} />}
       </span>
-      <span style={{ color: '#888899', fontSize: '10px' }}>{entry.sinnerName}</span>
+      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -82,7 +83,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
           zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
           borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
         }}>
-          <div style={{ color: '#c8a450', fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ color: sc, fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.identityName} · 스킬 {entry.skill_order}
           </div>
           {atkIcon && (
@@ -94,7 +95,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
           )}
           {entry.description && (
             <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
-              {formatSkillDesc(entry.description, '#c8a450')}
+              {formatSkillDesc(entry.description, sc)}
             </div>
           )}
         </span>
