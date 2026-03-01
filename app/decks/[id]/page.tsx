@@ -74,6 +74,14 @@ type EgoSlot = {
   } | null
 }
 
+type SinnerEgo = {
+  sinner_id: string
+  name_kr: string | null
+  grade: string
+  sin_affinity: string | null
+  image_url: string | null
+}
+
 type DeckDetail = {
   id: string
   title: string
@@ -87,6 +95,7 @@ type DeckDetail = {
   profiles: { username: string } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
+  all_sinner_egos?: SinnerEgo[]
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
@@ -206,7 +215,7 @@ const SINNER_NAMES: Record<string, string> = {
   'sinclair': '싱클레어', 'outis': '오티스', 'gregor': '그레고르',
 }
 
-function buildNoteLookups(slots: IdentitySlot[], egos: EgoSlot[]) {
+function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
   const skillLookup: Record<string, NoteSkillEntry> = {}
   const passiveLookup: Record<string, NotePassiveEntry> = {}
   const egoLookup: Record<string, NoteEgoEntry> = {}
@@ -243,13 +252,13 @@ function buildNoteLookups(slots: IdentitySlot[], egos: EgoSlot[]) {
       }
     }
   }
-  for (const es of egos) {
-    if (!es.ego) continue
-    const sName = SINNER_NAMES[es.ego.sinner_id] ?? es.ego.sinner_id
-    const name = es.ego.name_kr ?? sName
+  // 에고: 덱 내 수감자의 전체 에고 사용 (에디터 미리보기와 동일)
+  for (const ego of allEgos) {
+    const sName = SINNER_NAMES[ego.sinner_id] ?? ego.sinner_id
+    const name = ego.name_kr ?? sName
     egoLookup[`${sName}:${name}`] = {
-      name, grade: es.ego.grade, sin_affinity: es.ego.sin_affinity,
-      image_url: es.ego.image_url, sinnerName: sName,
+      name, grade: ego.grade, sin_affinity: ego.sin_affinity,
+      image_url: ego.image_url, sinnerName: sName,
     }
   }
   return { skillLookup, passiveLookup, egoLookup }
@@ -1275,7 +1284,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                         {deck.description && (
                           <NoteRenderer
                             text={deck.description}
-                            {...buildNoteLookups(sorted, deck.deck_egos ?? [])}
+                            {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [])}
                           />
                         )}
 

@@ -134,7 +134,7 @@ export async function GET(
       ? supabase.schema('limbus').from('identities').select('sinner_id, game_id').in('sinner_id', sinnerIds)
       : Promise.resolve({ data: [] }),
     allSinnerIds.length > 0
-      ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr').in('sinner_id', allSinnerIds).order('grade').order('name_kr')
+      ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url').in('sinner_id', allSinnerIds).order('grade').order('name_kr')
       : Promise.resolve({ data: [] }),
   ])
 
@@ -190,7 +190,14 @@ export async function GET(
   // 조회수 증가 (atomic increment, fire-and-forget)
   supabase.schema('limbus').rpc('increment_view', { deck_id: id }).then(() => {})
 
-  return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner })
+  // 노트 렌더링용: 덱 내 수감자의 전체 에고 목록
+  const allSinnerEgos = (egoRes.data ?? []).map(e => ({
+    sinner_id: e.sinner_id, name_kr: e.name_kr, grade: e.grade,
+    sin_affinity: (e as Record<string, unknown>).sin_affinity as string | null,
+    image_url: (e as Record<string, unknown>).image_url as string | null,
+  }))
+
+  return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner, all_sinner_egos: allSinnerEgos })
 }
 
 // ── DELETE ──────────────────────────────────────────────────────────────────
