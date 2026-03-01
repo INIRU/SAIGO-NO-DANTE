@@ -13,14 +13,24 @@ export type Announcement = {
 async function getPinnedAnnouncement(): Promise<Announcement | null> {
   try {
     const supabase = createAdminClient()
-    const { data } = await supabase
+    // 핀 고정된 공지 우선
+    const { data: pinned } = await supabase
       .schema('limbus')
       .from('announcements')
       .select('id, title, content, pinned, created_at')
       .eq('pinned', true)
       .order('created_at', { ascending: false })
       .limit(1)
-    return data?.[0] ?? null
+    if (pinned?.[0]) return pinned[0]
+
+    // 핀 고정 없으면 최신 공지
+    const { data: latest } = await supabase
+      .schema('limbus')
+      .from('announcements')
+      .select('id, title, content, pinned, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+    return latest?.[0] ?? null
   } catch {
     return null
   }

@@ -622,6 +622,20 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               ) : (
                 <div className="text-center py-6" style={{ color: '#555566' }}>
                   <p className="text-sm italic">아직 운용법이 작성되지 않았습니다.</p>
+                  <a
+                    href="https://discord.com/users/340124004599988234"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded text-xs font-medium transition-all hover:brightness-110"
+                    style={{
+                      background: 'rgba(88,101,242,0.15)',
+                      border: '1px solid rgba(88,101,242,0.3)',
+                      color: '#7289da',
+                      fontFamily: 'var(--font-heading)',
+                    }}
+                  >
+                    운용법 작성 지원하기 (Discord)
+                  </a>
                 </div>
               )}
             </div>

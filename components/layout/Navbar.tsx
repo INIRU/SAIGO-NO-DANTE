@@ -8,8 +8,9 @@ import { useSession, signOut } from 'next-auth/react'
 import { Menu, X } from 'lucide-react'
 
 const navLinks = [
-  { href: '/sinners', label: '수감자' },
-  { href: '/decks',   label: '덱 게시판' },
+  { href: '/sinners',    label: '수감자' },
+  { href: '/collection', label: '보유 현황' },
+  { href: '/decks',      label: '덱 게시판' },
 ]
 
 export default function Navbar() {

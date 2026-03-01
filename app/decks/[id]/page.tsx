@@ -455,7 +455,7 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
         <div className="flex flex-col gap-2 p-3">
           {sortedSkills.length === 0 ? (
             <p style={{ color: '#2a2035', fontSize: '11px', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
-          ) : sortedSkills.map((skill, idx) => {
+          ) : sortedSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i).map((skill, idx) => {
             const sc = sinColor(skill.sin_affinity)
             const maxPower = skill.base_power + skill.coins * skill.coin_power
             const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`

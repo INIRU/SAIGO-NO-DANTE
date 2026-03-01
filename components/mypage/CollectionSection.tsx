@@ -75,11 +75,14 @@ const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 // ── 컴포넌트 ────────────────────────────────────────────────────────────────
+const LOCAL_STORAGE_KEY = 'limbus-collection'
+
 interface CollectionSectionProps {
   savedCode?: string | null
+  persistMode?: 'db' | 'local'
 }
 
-export default function CollectionSection({ savedCode }: CollectionSectionProps) {
+export default function CollectionSection({ savedCode, persistMode = 'db' }: CollectionSectionProps) {
   const searchParams = useSearchParams()
 
   const [data, setData] = useState<CollectionData | null>(null)
@@ -90,7 +93,7 @@ export default function CollectionSection({ savedCode }: CollectionSectionProps)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
-  const [showUnowned, setShowUnowned] = useState(false)
+  const [showUnowned, setShowUnowned] = useState(persistMode === 'local')
 
   // 데이터 로드
   useEffect(() => {
@@ -100,15 +103,40 @@ export default function CollectionSection({ savedCode }: CollectionSectionProps)
         setData(d)
         if (d.sinners.length > 0) setActiveSinner(d.sinners[0].id)
 
-        // URL 파라미터 우선, 없으면 DB 저장값 사용
-        const code = searchParams.get('collection') || savedCode
-        if (code && d.sinners.length > 0) {
-          const decoded = await decodeCollectionAsync(code, d.sinners, d.identities, d.egos)
-          setOwned(decoded)
+        if (persistMode === 'local') {
+          // local 모드: localStorage 우선, 없으면 로그인 유저의 DB 저장값 동기화
+          const localCode = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
+          if (localCode && d.sinners.length > 0) {
+            const decoded = await decodeCollectionAsync(localCode, d.sinners, d.identities, d.egos)
+            setOwned(decoded)
+          } else {
+            // localStorage 비어있으면 DB에서 가져와 동기화
+            try {
+              const res = await fetch('/api/profile')
+              if (res.ok) {
+                const profile = await res.json()
+                const dbCode = profile?.profile?.collection_code
+                if (dbCode && d.sinners.length > 0) {
+                  const decoded = await decodeCollectionAsync(dbCode, d.sinners, d.identities, d.egos)
+                  setOwned(decoded)
+                  localStorage.setItem(LOCAL_STORAGE_KEY, dbCode)
+                }
+              }
+            } catch {
+              // 비로그인이면 무시
+            }
+          }
+        } else {
+          // db 모드: URL 파라미터 또는 DB 저장값
+          const code = searchParams.get('collection') || savedCode
+          if (code && d.sinners.length > 0) {
+            const decoded = await decodeCollectionAsync(code, d.sinners, d.identities, d.egos)
+            setOwned(decoded)
+          }
         }
       })
       .finally(() => setLoading(false))
-  }, [searchParams])
+  }, [searchParams, persistMode, savedCode])
 
   // 토글
   const toggle = useCallback((id: string) => {
@@ -144,24 +172,40 @@ export default function CollectionSection({ savedCode }: CollectionSectionProps)
     setDirty(true)
   }, [data, activeSinner])
 
-  // DB 저장
+  // 저장 (local: localStorage, db: API)
   const saveCollection = useCallback(async () => {
     if (!data) return
     setSaving(true)
     try {
       const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_code: code }),
-      })
-      if (res.ok) setDirty(false)
+      if (persistMode === 'local') {
+        localStorage.setItem(LOCAL_STORAGE_KEY, code)
+        setDirty(false)
+      } else {
+        const res = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ collection_code: code }),
+        })
+        if (res.ok) setDirty(false)
+      }
     } catch {
       // 저장 실패 무시
     } finally {
       setSaving(false)
     }
-  }, [data, owned])
+  }, [data, owned, persistMode])
+
+  // local 모드: dirty 변경 시 debounce 자동 저장
+  useEffect(() => {
+    if (persistMode !== 'local' || !dirty || !data) return
+    const timer = setTimeout(async () => {
+      const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
+      localStorage.setItem(LOCAL_STORAGE_KEY, code)
+      setDirty(false)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [persistMode, dirty, data, owned])
 
   // 공유 링크 복사
   const copyShareLink = useCallback(async () => {

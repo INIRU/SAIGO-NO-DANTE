@@ -6,6 +6,7 @@ import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, KEYWORD_SIN_
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
+import CollectionSection from '@/components/mypage/CollectionSection'
 
 const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
   { keyword: '출혈', sin: 'wrath' },
@@ -307,10 +308,21 @@ function CollectionViewer() {
 
   if (!data || !code) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-6 flex items-center justify-center">
-        <p className="font-serif text-sm italic" style={{ color: '#333344' }}>
-          유효하지 않은 컬렉션 링크입니다.
-        </p>
+      <div className="min-h-screen pt-24 pb-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-6">
+            <p style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', marginBottom: '6px' }}>
+              MY COLLECTION
+            </p>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
+              보유 현황 설정
+            </h1>
+            <p className="mt-2" style={{ color: '#4a4060', fontSize: '12px', fontFamily: 'var(--font-heading)' }}>
+              로그인 없이 보유 인격/EGO를 설정하고 공유 링크를 만들 수 있습니다.
+            </p>
+          </div>
+          <CollectionSection persistMode="local" />
+        </div>
       </div>
     )
   }

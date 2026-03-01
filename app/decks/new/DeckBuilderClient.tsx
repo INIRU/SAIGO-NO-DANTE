@@ -332,6 +332,7 @@ function SkillsetTab({
         const skills = (skillsByIdentityId[identity.id] ?? [])
           .filter(s => s.skill_order >= 1 && s.skill_order <= 3)
           .sort((a, b) => a.skill_order - b.skill_order)
+          .filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i)
 
         const handleChange = (idx: number, delta: number) => {
           const next: [number, number, number] = [dist[0], dist[1], dist[2]]
@@ -1405,20 +1406,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       <p style={{ color: '#c8a450', fontSize: '12px', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
                     </div>
 
-                    {/* 스킬 공격 유형 */}
+                    {/* 스킬 공격 유형 (S1/S2/S3만) */}
                     <div className="flex items-center gap-2 flex-1">
-                      {idSkills.map((sk, i) => {
-                        const total = idSkills.length
-                        let label: string
-                        if (total <= 5) {
-                          label = sk.skill_order === 4 ? '수비' : sk.skill_order === 5 ? '반격' : String(sk.skill_order)
-                        } else {
-                          if (i === total - 2) label = '수비'
-                          else if (i === total - 1) label = '반격'
-                          else if (i < 2) label = String(i + 1)
-                          else if (i === 2) label = '3'
-                          else label = `3-${i - 1}`
-                        }
+                      {idSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, idx, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === idx).map((sk) => {
+                        const label = String(sk.skill_order)
                         const iconUrl = getSkillIconUrl(identity, idSkillImgIdx.get(sk) ?? sk.skill_order)
                         const atkIcon = ATK_TYPE_ICON_MAP[sk.skill_type]
                         return (
