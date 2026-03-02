@@ -32,6 +32,7 @@ export type Identity = {
   game_id?: string | null
   folder_name?: string | null
   panic_type?: string
+  panic_description?: string
   sanity_increase?: string
   sanity_decrease?: string
 }

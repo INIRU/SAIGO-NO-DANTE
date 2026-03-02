@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS } from '@/lib/data/sinners'
+import { Search, X } from 'lucide-react'
+import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, KEYWORD_SIN_MAP, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
 import IdentityCard from '@/components/sinners/IdentityCard'
 
 interface Props {
@@ -21,6 +22,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const [tab, setTab] = useState<Tab>('identities')
   const [gacksung, setGacksung] = useState(false)
   const [rarityFilter, setRarityFilter] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
   useEffect(() => {
@@ -35,9 +39,179 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     setTab(t)
   }
 
-  const filteredIdentities = rarityFilter
-    ? identities.filter(i => i.rarity === rarityFilter)
-    : identities
+  // 인격 키워드 빈도 계산 + 정렬
+  const keywordStats = useMemo(() => {
+    const freq = new Map<string, number>()
+    for (const i of identities) {
+      if (!i.keywords) continue
+      for (const kw of i.keywords) {
+        freq.set(kw, (freq.get(kw) ?? 0) + 1)
+      }
+    }
+    return [...freq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([kw, count]) => ({ kw, count }))
+  }, [identities])
+
+  // EGO 키워드 빈도 계산
+  const egoKeywordStats = useMemo(() => {
+    const freq = new Map<string, number>()
+    for (const e of egos) {
+      if (!e.keywords) continue
+      for (const kw of e.keywords) {
+        freq.set(kw, (freq.get(kw) ?? 0) + 1)
+      }
+    }
+    return [...freq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([kw, count]) => ({ kw, count }))
+  }, [egos])
+
+  const toggleKeyword = (kw: string) => {
+    setSelectedKeywords(prev => {
+      const next = new Set(prev)
+      if (next.has(kw)) next.delete(kw)
+      else next.add(kw)
+      return next
+    })
+  }
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedKeywords(new Set())
+    setRarityFilter(null)
+  }
+
+  const hasActiveFilters = searchQuery || selectedKeywords.size > 0 || rarityFilter
+
+  // 인격 필터링: 등급 → 검색어 → 키워드
+  const filteredIdentities = useMemo(() => {
+    let result = identities
+    if (rarityFilter) result = result.filter(i => i.rarity === rarityFilter)
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      result = result.filter(i =>
+        i.name_kr.toLowerCase().includes(q) ||
+        i.name.toLowerCase().includes(q) ||
+        (i.affiliation && i.affiliation.toLowerCase().includes(q)) ||
+        (i.keywords && i.keywords.some(kw => kw.toLowerCase().includes(q)))
+      )
+    }
+    if (selectedKeywords.size > 0) {
+      result = result.filter(i =>
+        i.keywords && [...selectedKeywords].every(kw => i.keywords.includes(kw))
+      )
+    }
+    return result
+  }, [identities, rarityFilter, searchQuery, selectedKeywords])
+
+  // EGO 필터링: 검색어 → 키워드
+  const filteredEgos = useMemo(() => {
+    let result = egos
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      result = result.filter(e =>
+        (e.name_kr && e.name_kr.toLowerCase().includes(q)) ||
+        e.name.toLowerCase().includes(q) ||
+        (e.keywords && e.keywords.some(kw => kw.toLowerCase().includes(q)))
+      )
+    }
+    if (selectedKeywords.size > 0) {
+      result = result.filter(e =>
+        e.keywords && [...selectedKeywords].every(kw => e.keywords!.includes(kw))
+      )
+    }
+    return result
+  }, [egos, searchQuery, selectedKeywords])
+
+  // 자동완성 드롭다운
+  const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [acIndex, setAcIndex] = useState(-1)
+  const autocompleteRef = useRef<HTMLDivElement>(null)
+  const autocompleteResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return { keywords: [] as { kw: string; count: number }[], identities: [] as Identity[], egos: [] as EGO[] }
+
+    const currentStats = tab === 'ego' ? egoKeywordStats : keywordStats
+    const matchedKw = currentStats.filter(({ kw }) => kw.toLowerCase().includes(q)).slice(0, 5)
+    const matchedIdent = identities.filter(i =>
+      i.name_kr.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)
+    ).slice(0, 5)
+    const matchedEgo = egos.filter(e =>
+      (e.name_kr && e.name_kr.toLowerCase().includes(q)) || e.name.toLowerCase().includes(q)
+    ).slice(0, 5)
+
+    return { keywords: matchedKw, identities: matchedIdent, egos: matchedEgo }
+  }, [searchQuery, keywordStats, egoKeywordStats, identities, egos, tab])
+
+  // 자동완성 항목을 평탄화 (키보드 탐색용)
+  type AcItem =
+    | { type: 'keyword'; kw: string; count: number }
+    | { type: 'identity'; data: Identity }
+    | { type: 'ego'; data: EGO }
+  const acItems = useMemo<AcItem[]>(() => [
+    ...autocompleteResults.keywords.map(k => ({ type: 'keyword' as const, kw: k.kw, count: k.count })),
+    ...autocompleteResults.identities.map(i => ({ type: 'identity' as const, data: i })),
+    ...autocompleteResults.egos.map(e => ({ type: 'ego' as const, data: e })),
+  ], [autocompleteResults])
+
+  const hasAutocompleteResults = acItems.length > 0
+
+  // 검색어 변경 시 첫 항목 자동 선택
+  useEffect(() => { setAcIndex(acItems.length > 0 ? 0 : -1) }, [searchQuery, acItems.length])
+
+  // 자동완성 항목 선택 실행
+  const executeAcItem = (item: AcItem) => {
+    if (item.type === 'keyword') {
+      toggleKeyword(item.kw)
+      setSearchQuery('')
+    } else if (item.type === 'identity') {
+      router.push(`/sinners/${sinner.id}/identities/${item.data.id}`)
+    } else {
+      router.push(`/sinners/${sinner.id}/ego/${item.data.id}`)
+    }
+    setShowAutocomplete(false)
+    setAcIndex(-1)
+  }
+
+  // 키보드 핸들러
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // ArrowDown으로 드롭다운 열기
+    if (e.key === 'ArrowDown' && !showAutocomplete && hasAutocompleteResults) {
+      e.preventDefault()
+      setShowAutocomplete(true)
+      return
+    }
+    if (!showAutocomplete || !hasAutocompleteResults) {
+      if (e.key === 'Escape') setShowAutocomplete(false)
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setAcIndex(prev => (prev + 1) % acItems.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setAcIndex(prev => (prev <= 0 ? acItems.length - 1 : prev - 1))
+    } else if (e.key === 'Tab' && acIndex >= 0) {
+      e.preventDefault()
+      executeAcItem(acItems[acIndex])
+    } else if (e.key === 'Escape') {
+      setShowAutocomplete(false)
+      setAcIndex(-1)
+    }
+  }
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(e.target as Node)) {
+        setShowAutocomplete(false)
+        setAcIndex(-1)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -151,6 +325,163 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
               ))}
             </div>
 
+            {/* 검색 바 + 자동완성 (공통) */}
+            <div className="mb-3" ref={autocompleteRef}>
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: '#555' }}
+                />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setShowAutocomplete(true) }}
+                  placeholder={tab === 'identities' ? '인격 이름, 소속, 키워드 검색...' : 'EGO 이름, 키워드 검색...'}
+                  className="w-full pl-9 pr-8 py-2 rounded text-xs transition-all"
+                  style={{
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid var(--border)',
+                    color: '#ccc',
+                    outline: 'none',
+                  }}
+                  onFocus={() => { if (searchQuery.trim()) setShowAutocomplete(true) }}
+                  onKeyDown={handleSearchKeyDown}
+                />
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:opacity-80 transition-opacity"
+                    style={{ color: '#666' }}
+                    title="필터 초기화"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+
+                {/* 자동완성 드롭다운 (화살표 키 + Tab 선택) */}
+                {showAutocomplete && hasAutocompleteResults && (() => {
+                  const kwStart = 0
+                  const identStart = autocompleteResults.keywords.length
+                  const egoStart = identStart + autocompleteResults.identities.length
+                  return (
+                    <div
+                      className="absolute z-50 left-0 right-0 mt-1 rounded overflow-hidden"
+                      style={{
+                        background: '#1a1510',
+                        border: '1px solid var(--border)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                        maxHeight: '280px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {/* 키워드 매칭 */}
+                      {autocompleteResults.keywords.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                            키워드 <span style={{ color: '#444', fontWeight: 400 }}>Tab으로 선택</span>
+                          </div>
+                          {autocompleteResults.keywords.map(({ kw, count }, i) => {
+                            const idx = kwStart + i
+                            const isFocused = acIndex === idx
+                            const sinType = KEYWORD_SIN_MAP[kw] as SinType | undefined
+                            const chipColor = sinType ? SIN_COLORS[sinType] : '#888'
+                            const iconSlug = KEYWORD_ICON_MAP[kw]
+                            const isSelected = selectedKeywords.has(kw)
+                            return (
+                              <div
+                                key={kw}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                                style={{
+                                  background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                                  color: isFocused ? chipColor : isSelected ? chipColor : '#aaa',
+                                  borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
+                                }}
+                              >
+                                {iconSlug && (
+                                  <img
+                                    src={`${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`}
+                                    alt="" style={{ width: '14px', height: '14px' }}
+                                  />
+                                )}
+                                <span>{kw}</span>
+                                <span style={{ color: '#444', fontSize: '10px', marginLeft: 'auto' }}>{count}개</span>
+                                {isSelected && <span style={{ color: chipColor, fontSize: '10px' }}>ON</span>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* 인격 매칭 */}
+                      {autocompleteResults.identities.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                            인격
+                          </div>
+                          {autocompleteResults.identities.map((ident, i) => {
+                            const idx = identStart + i
+                            const isFocused = acIndex === idx
+                            return (
+                              <div
+                                key={ident.id}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                                style={{
+                                  background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                                  color: isFocused ? '#e8b030' : '#ccc',
+                                  borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
+                                }}
+                              >
+                                <span
+                                  className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ background: ident.rarity === '3성' ? '#c8900a' : ident.rarity === '2성' ? '#5588bb' : '#556677' }}
+                                />
+                                <span>{ident.name_kr}</span>
+                                <span style={{ color: '#444', fontSize: '10px', marginLeft: 'auto' }}>{ident.rarity}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* EGO 매칭 */}
+                      {autocompleteResults.egos.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                            EGO
+                          </div>
+                          {autocompleteResults.egos.map((ego, i) => {
+                            const idx = egoStart + i
+                            const isFocused = acIndex === idx
+                            const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
+                            return (
+                              <div
+                                key={ego.id}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                                style={{
+                                  background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                                  color: isFocused ? '#e8b030' : '#ccc',
+                                  borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
+                                }}
+                              >
+                                <span
+                                  className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ background: gradeColor }}
+                                />
+                                <span>{ego.name_kr || ego.name}</span>
+                                <span style={{ color: gradeColor, fontSize: '10px', marginLeft: 'auto' }}>{ego.grade}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
+
             {/* 인격 탭 */}
             {tab === 'identities' && (
               <div>
@@ -220,7 +551,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     className="text-center py-16"
                     style={{ color: '#555566' }}
                   >
-                    {rarityFilter ? `${rarityFilter} 인격이 없습니다.` : '등록된 인격이 없습니다.'}
+                    {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
@@ -243,13 +574,15 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {/* EGO 탭 */}
             {tab === 'ego' && (
               <div>
-                {egos.length === 0 ? (
+                {filteredEgos.length === 0 ? (
                   <div className="card p-8 text-center" style={{ color: '#555566' }}>
-                    <p className="font-serif text-lg italic">등록된 EGO가 없습니다.</p>
+                    <p className="font-serif text-lg italic">
+                      {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 EGO가 없습니다.'}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6">
-                    {egos.map(ego => {
+                    {filteredEgos.map(ego => {
                       const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
                       const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 

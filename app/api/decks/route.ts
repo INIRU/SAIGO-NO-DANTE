@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const sort = searchParams.get('sort') || 'latest'
   const limit = parseInt(searchParams.get('limit') || '20')
+  const offset = parseInt(searchParams.get('offset') || '0')
 
   const orderColumn = sort === 'popular' ? 'vote_count' : 'created_at'
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
       deck_egos(ego_id)
     `)
     .order(orderColumn, { ascending: false })
-    .limit(limit)
+    .range(offset, offset + limit - 1)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

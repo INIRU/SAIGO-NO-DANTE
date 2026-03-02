@@ -12,6 +12,8 @@ import { User, PackageOpen } from 'lucide-react'
 // 전체 키워드 목록 (자동완성용)
 const ALL_KEYWORDS = Object.keys(KEYWORD_ICON_MAP)
 
+const PAGE_SIZE = 12
+
 type SortKey = 'latest' | 'popular'
 
 // DeckCard와 동일한 테마 키워드 상수
@@ -45,14 +47,22 @@ function getDeckAllKeywords(deck: DeckSummary): string[] {
   return [...kws]
 }
 
+function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
+  return { ...d, username: d.profiles?.username ?? undefined }
+}
+
 export default function DecksPage() {
   const { status: authStatus } = useSession()
   const [decks, setDecks] = useState<DeckSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [sort, setSort] = useState<SortKey>('latest')
   const [search, setSearch] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [acIndex, setAcIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // 키워드 자동완성 후보
   const suggestions = useMemo(() => {
@@ -63,11 +73,44 @@ export default function DecksPage() {
       .slice(0, 8)
   }, [search])
 
+  // 검색어 변경 시 자동완성 첫 항목 선택
+  useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
+
+  // 자동완성 키보드 핸들러
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // ArrowDown으로 드롭다운 열기
+    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
+      e.preventDefault()
+      setShowSuggestions(true)
+      return
+    }
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Escape') setShowSuggestions(false)
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setAcIndex(prev => (prev + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
+    } else if (e.key === 'Tab' && acIndex >= 0) {
+      e.preventDefault()
+      setSearch(suggestions[acIndex])
+      setShowSuggestions(false)
+      setAcIndex(-1)
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false)
+      setAcIndex(-1)
+    }
+  }
+
   // 외부 클릭 시 자동완성 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowSuggestions(false)
+        setAcIndex(-1)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -85,21 +128,50 @@ export default function DecksPage() {
   const [collectionLoading, setCollectionLoading] = useState(false)
   const [hasCollection, setHasCollection] = useState(false)
 
-  // 덱 목록 로드
+  // 덱 목록 로드 (초기)
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/decks?sort=${sort}&limit=60`)
+    setDecks([])
+    setHasMore(true)
+    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=0`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setDecks(data.map((d: { profiles?: { username?: string } } & DeckSummary) => ({
-            ...d,
-            username: d.profiles?.username ?? undefined,
-          })))
+          setDecks(data.map(mapDeck))
+          if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
       .finally(() => setLoading(false))
   }, [sort])
+
+  // 추가 로드
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=${decks.length}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length === 0) {
+          setHasMore(false)
+          return
+        }
+        if (data.length < PAGE_SIZE) setHasMore(false)
+        setDecks(prev => [...prev, ...data.map(mapDeck)])
+      })
+      .finally(() => setLoadingMore(false))
+  }, [sort, decks.length, loadingMore, hasMore])
+
+  // IntersectionObserver로 무한 스크롤
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) loadMore() },
+      { rootMargin: '300px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   // 컬렉션 데이터 로드 (로그인 시)
   useEffect(() => {
@@ -259,7 +331,7 @@ export default function DecksPage() {
 
       {/* ── 검색 + 정렬 ── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        {/* 검색 + 자동완성 */}
+        {/* 검색 + 자동완성 (화살표 + Tab) */}
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
@@ -274,6 +346,7 @@ export default function DecksPage() {
             value={search}
             onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
             onFocus={() => setShowSuggestions(true)}
+            onKeyDown={handleSearchKeyDown}
             className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
             style={{
               background: '#120e09',
@@ -291,7 +364,7 @@ export default function DecksPage() {
               ✕
             </button>
           )}
-          {/* 키워드 자동완성 드롭다운 */}
+          {/* 키워드 자동완성 드롭다운 (화살표 + Tab) */}
           {showSuggestions && suggestions.length > 0 && (
             <div
               className="absolute left-0 right-0 z-50 overflow-hidden"
@@ -304,24 +377,21 @@ export default function DecksPage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               }}
             >
-              {suggestions.map(kw => {
+              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '10px', fontWeight: 600 }}>
+                키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
+              </div>
+              {suggestions.map((kw, i) => {
                 const iconUrl = getKeywordIconUrl(kw)
+                const isFocused = acIndex === i
                 return (
-                  <button
+                  <div
                     key={kw}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-xs transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-xs"
                     style={{
-                      color: '#c8b890',
+                      color: isFocused ? '#e8b030' : '#c8b890',
                       fontFamily: 'var(--font-heading)',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid rgba(58,42,21,0.3)',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.08)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                    onMouseDown={e => {
-                      e.preventDefault()
-                      setSearch(kw)
-                      setShowSuggestions(false)
+                      background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                      borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
                     }}
                   >
                     {iconUrl && (
@@ -329,7 +399,7 @@ export default function DecksPage() {
                       <img src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
                     )}
                     <span>{kw}</span>
-                  </button>
+                  </div>
                 )
               })}
             </div>
@@ -500,7 +570,7 @@ export default function DecksPage() {
       {/* ── 결과 수 ── */}
       {!loading && (
         <p className="mb-5 text-xs" style={{ color: '#333344', fontFamily: 'var(--font-mono)' }}>
-          {filtered.length}개의 덱
+          {filtered.length}개의 덱{hasMore && '+'}
           {hasAnyFilter && ' (필터 적용됨)'}
         </p>
       )}
@@ -539,6 +609,21 @@ export default function DecksPage() {
           {filtered.map(deck => (
             <DeckCard key={deck.id} deck={deck} onTagClick={toggleTag} />
           ))}
+        </div>
+      )}
+
+      {/* 무한 스크롤 센티널 */}
+      {!loading && hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-8">
+          {loadingMore && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#555566' }}>
+              <div
+                className="w-4 h-4 rounded-full animate-spin"
+                style={{ border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
+              />
+              불러오는 중...
+            </div>
+          )}
         </div>
       )}
     </div>

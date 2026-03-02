@@ -388,7 +388,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   border: `1px solid ${!gacksung ? sinColor : 'var(--border)'}`,
                 }}
               >
-                일반
+                일러스트
               </button>
               <button
                 onClick={() => setGacksung(true)}
@@ -399,7 +399,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   border: `1px solid ${gacksung ? '#ff6b6b' : 'var(--border)'}`,
                 }}
               >
-                3동기화
+                동기화 일러스트
               </button>
             </div>
 
@@ -541,39 +541,6 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   >
                     {identity.affiliation}
                   </span>
-                </div>
-              )}
-
-              {/* 패닉 유형 & 정신력 */}
-              {(identity.panic_type || identity.sanity_increase || identity.sanity_decrease) && (
-                <div className="mt-6 pt-5 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  {identity.panic_type && (
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>패닉 유형</span>
-                      <span
-                        className="text-xs font-semibold px-2 py-0.5 rounded"
-                        style={{
-                          background: identity.panic_type === '공격' ? 'rgba(200,48,48,0.15)' : 'rgba(72,152,176,0.15)',
-                          color: identity.panic_type === '공격' ? '#c83030' : '#4898b0',
-                          border: `1px solid ${identity.panic_type === '공격' ? 'rgba(200,48,48,0.3)' : 'rgba(72,152,176,0.3)'}`,
-                        }}
-                      >
-                        {identity.panic_type}
-                      </span>
-                    </div>
-                  )}
-                  {identity.sanity_increase && (
-                    <div className="flex items-start gap-2">
-                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px', marginTop: '2px' }}>정신력 +</span>
-                      <span style={{ color: '#6bbbff', fontSize: '11px', lineHeight: 1.5 }}>{identity.sanity_increase}</span>
-                    </div>
-                  )}
-                  {identity.sanity_decrease && (
-                    <div className="flex items-start gap-2">
-                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px', marginTop: '2px' }}>정신력 -</span>
-                      <span style={{ color: '#ff6b6b', fontSize: '11px', lineHeight: 1.5 }}>{identity.sanity_decrease}</span>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -1322,6 +1289,126 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 </div>
               ))}
             </div>
+
+            {/* 패닉 유형 + 정신력 증감 조건 */}
+            {(identity.panic_type || identity.sanity_increase || identity.sanity_decrease) && (
+              <div className="card p-6">
+                <h2
+                  className="font-serif font-bold mb-4"
+                  style={{ color: 'var(--gold)', fontSize: '16px' }}
+                >
+                  정신력
+                </h2>
+
+                <div className="space-y-4">
+                  {/* 패닉 유형 */}
+                  {identity.panic_type && (
+                    <div
+                      className="p-3 rounded"
+                      style={{
+                        background: 'rgba(180,50,50,0.08)',
+                        border: '1px solid rgba(180,50,50,0.25)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Image
+                          src={`${STORAGE_BASE}/icons/stats/panic.webp`}
+                          alt=""
+                          width={18}
+                          height={18}
+                          unoptimized
+                          style={{ filter: 'drop-shadow(0 0 3px rgba(180,50,50,0.5))' }}
+                        />
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                          style={{ background: 'rgba(180,50,50,0.15)', color: '#c05050', border: '1px solid rgba(180,50,50,0.3)' }}>
+                          패닉 유형
+                        </span>
+                        <span className="font-semibold" style={{ color: '#c05050', fontSize: '13px' }}>
+                          {identity.panic_type}
+                        </span>
+                      </div>
+                      {identity.panic_description && (
+                        <p style={{ color: '#888', fontSize: '11px', lineHeight: 1.6, paddingLeft: '26px' }}>
+                          {identity.panic_description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 정신력 증가 조건 */}
+                  {identity.sanity_increase && (
+                    <div
+                      className="p-3 rounded"
+                      style={{
+                        background: 'rgba(80,160,100,0.08)',
+                        border: '1px solid rgba(80,160,100,0.25)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '18px',
+                            height: '18px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: '#50a064',
+                            filter: 'drop-shadow(0 0 3px rgba(80,160,100,0.4))',
+                          }}
+                        >
+                          +
+                        </span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                          style={{ background: 'rgba(80,160,100,0.15)', color: '#50a064', border: '1px solid rgba(80,160,100,0.3)' }}>
+                          정신력 증가 조건
+                        </span>
+                      </div>
+                      <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+                        {identity.sanity_increase}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 정신력 감소 조건 */}
+                  {identity.sanity_decrease && (
+                    <div
+                      className="p-3 rounded"
+                      style={{
+                        background: 'rgba(100,130,200,0.08)',
+                        border: '1px solid rgba(100,130,200,0.25)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '18px',
+                            height: '18px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: '#6482c8',
+                            filter: 'drop-shadow(0 0 3px rgba(100,130,200,0.4))',
+                          }}
+                        >
+                          -
+                        </span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                          style={{ background: 'rgba(100,130,200,0.15)', color: '#6482c8', border: '1px solid rgba(100,130,200,0.3)' }}>
+                          정신력 감소 조건
+                        </span>
+                      </div>
+                      <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+                        {identity.sanity_decrease}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* 수감자 페이지로 돌아가기 */}
             <Link
