@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { createClient } from '@supabase/supabase-js'
+import sharp from 'sharp'
 
 export const runtime = 'nodejs'
 export const alt = '덱 공유 이미지'
@@ -18,6 +19,18 @@ function portraitUrl(
   const prefix = gacksung ? 'gacksung' : 'normal'
   const folder = encodeURIComponent(folder_name)
   return `${STORAGE_BASE}/sinners/${sinner_id}/identities/${folder}/${game_id}_${prefix}_info.webp`
+}
+
+async function fetchAsJpegDataUri(url: string): Promise<string> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return ''
+    const buf = Buffer.from(await res.arrayBuffer())
+    const jpeg = await sharp(buf).resize(120, 400, { fit: 'cover', position: 'top' }).jpeg({ quality: 70 }).toBuffer()
+    return `data:image/jpeg;base64,${jpeg.toString('base64')}`
+  } catch {
+    return ''
+  }
 }
 
 type SlotRow = {
@@ -84,6 +97,13 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
     .slice(0, 4)
     .map(([kw]) => kw)
 
+  // 이미지 pre-fetch (WebP → JPEG 변환, 병렬)
+  const imgUrls = slots.map(slot => {
+    const id_ = slot ? (Array.isArray(slot.identities) ? slot.identities[0] : slot.identities) : null
+    return id_ ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false) : ''
+  })
+  const imgDataUris = await Promise.all(imgUrls.map(u => u ? fetchAsJpegDataUri(u) : Promise.resolve('')))
+
   const profile = Array.isArray(deck.profiles) ? deck.profiles[0] : deck.profiles
   const username = (profile as { username: string } | null)?.username ?? null
 
@@ -102,11 +122,8 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
       >
         {/* 12 포트레이트 배경 (상단 60%) */}
         <div style={{ display: 'flex', width: '100%', height: '380px', position: 'relative' }}>
-          {slots.map((slot, i) => {
-            const id_ = slot ? (Array.isArray(slot.identities) ? slot.identities[0] : slot.identities) : null
-            const imgUrl = id_
-              ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false)
-              : ''
+          {slots.map((_, i) => {
+            const dataUri = imgDataUris[i]
             return (
               <div
                 key={i}
@@ -118,10 +135,10 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
                   position: 'relative',
                 }}
               >
-                {imgUrl ? (
+                {dataUri ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={imgUrl}
+                    src={dataUri}
                     alt=""
                     width={100}
                     height={380}
