@@ -24,6 +24,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const [rarityFilter, setRarityFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
@@ -102,8 +103,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         i.keywords && [...selectedKeywords].every(kw => i.keywords.includes(kw))
       )
     }
+    result = [...result].sort((a, b) => {
+      const aId = parseInt(a.game_id ?? '0')
+      const bId = parseInt(b.game_id ?? '0')
+      return sortOrder === 'newest' ? bId - aId : aId - bId
+    })
     return result
-  }, [identities, rarityFilter, searchQuery, selectedKeywords])
+  }, [identities, rarityFilter, searchQuery, selectedKeywords, sortOrder])
 
   // EGO 필터링: 검색어 → 키워드
   const filteredEgos = useMemo(() => {
@@ -121,8 +127,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         e.keywords && [...selectedKeywords].every(kw => e.keywords!.includes(kw))
       )
     }
+    result = [...result].sort((a, b) => {
+      const aId = parseInt(a.game_id ?? '0')
+      const bId = parseInt(b.game_id ?? '0')
+      return sortOrder === 'newest' ? bId - aId : aId - bId
+    })
     return result
-  }, [egos, searchQuery, selectedKeywords])
+  }, [egos, searchQuery, selectedKeywords, sortOrder])
 
   // 자동완성 드롭다운
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -552,6 +563,27 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     })}
                   </div>
 
+                  <div className="flex items-center gap-2">
+                    {/* 정렬 토글 */}
+                    <button
+                      onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
+                      style={{
+                        background: 'rgba(200,164,90,0.08)',
+                        border: '1px solid var(--border)',
+                        color: '#999',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {sortOrder === 'newest' ? (
+                          <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>
+                        ) : (
+                          <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
+                        )}
+                      </svg>
+                      {sortOrder === 'newest' ? '최신순' : '오래된순'}
+                    </button>
+
                   {/* 일반/각성 토글 */}
                   <button
                     onClick={() => setGacksung(!gacksung)}
@@ -568,6 +600,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     />
                     {gacksung ? '3동기화' : '일반'}
                   </button>
+                  </div>
                 </div>
 
                 {filteredIdentities.length === 0 ? (
@@ -598,6 +631,28 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {/* EGO 탭 */}
             {tab === 'ego' && (
               <div>
+                {/* 정렬 */}
+                <div className="flex items-center justify-end mb-3">
+                  <button
+                    onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
+                    style={{
+                      background: 'rgba(200,164,90,0.08)',
+                      border: '1px solid var(--border)',
+                      color: '#999',
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {sortOrder === 'newest' ? (
+                        <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>
+                      ) : (
+                        <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
+                      )}
+                    </svg>
+                    {sortOrder === 'newest' ? '최신순' : '오래된순'}
+                  </button>
+                </div>
+
                 {filteredEgos.length === 0 ? (
                   <div className="card p-8 text-center" style={{ color: '#555566' }}>
                     <p className="font-serif text-lg italic">

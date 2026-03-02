@@ -7,7 +7,7 @@ import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import { getKeywordIconUrl, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
-import { User, PackageOpen } from 'lucide-react'
+import { User, PackageOpen, Link2 } from 'lucide-react'
 
 // 전체 키워드 목록 (자동완성용)
 const ALL_KEYWORDS = Object.keys(KEYWORD_ICON_MAP)
@@ -137,6 +137,9 @@ export default function DecksPage() {
   const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
   const [collectionLoading, setCollectionLoading] = useState(false)
   const [hasCollection, setHasCollection] = useState(false)
+  const [collectionData, setCollectionData] = useState<CollectionData | null>(null)
+  const [codeInput, setCodeInput] = useState('')
+  const [codeError, setCodeError] = useState(false)
 
   // 덱 목록 로드 (초기)
   useEffect(() => {
@@ -183,26 +186,52 @@ export default function DecksPage() {
     return () => observer.disconnect()
   }, [loadMore])
 
-  // 컬렉션 데이터 로드 (로그인 시)
+  // 컬렉션 마스터 데이터 로드 (전체 유저)
   useEffect(() => {
-    if (authStatus !== 'authenticated') return
+    fetch('/api/collection').then(r => r.json())
+      .then((d: CollectionData) => { if (d.sinners?.length > 0) setCollectionData(d) })
+      .catch(() => {})
+  }, [])
 
+  // 로그인 유저: 프로필에서 컬렉션 코드 자동 로드
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || !collectionData) return
     setCollectionLoading(true)
-    Promise.all([
-      fetch('/api/profile').then(r => r.json()),
-      fetch('/api/collection').then(r => r.json()),
-    ])
-      .then(async ([profileData, collectionData]: [{ profile?: { collection_code?: string | null } }, CollectionData]) => {
+    fetch('/api/profile').then(r => r.json())
+      .then(async (profileData: { profile?: { collection_code?: string | null } }) => {
         const code = profileData.profile?.collection_code
-        if (code && collectionData.sinners?.length > 0) {
+        if (code) {
           const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
           setOwnedIds(decoded)
           setHasCollection(true)
         }
       })
-      .catch(() => { /* 로드 실패 무시 */ })
+      .catch(() => {})
       .finally(() => setCollectionLoading(false))
-  }, [authStatus])
+  }, [authStatus, collectionData])
+
+  // 보유 코드 붙여넣기 디코딩
+  const applyCollectionCode = useCallback(async (rawInput: string) => {
+    if (!collectionData) return
+    setCodeError(false)
+    // URL에서 code 파라미터 추출 또는 코드 자체 사용
+    let code = rawInput.trim()
+    try {
+      const url = new URL(code)
+      code = url.searchParams.get('code') ?? code
+    } catch {
+      // URL이 아닌 경우 그대로 사용
+    }
+    if (!code) return
+    try {
+      const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
+      if (decoded.size === 0) { setCodeError(true); return }
+      setOwnedIds(decoded)
+      setHasCollection(true)
+    } catch {
+      setCodeError(true)
+    }
+  }, [collectionData])
 
   // 태그 토글
   const toggleTag = useCallback((tag: string) => {
@@ -486,36 +515,18 @@ export default function DecksPage() {
       {availableKeywords.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           {activeKeywords.size > 0 && (
-            <>
-              <button
-                onClick={() => setActiveKeywords(new Set())}
-                className="px-3 py-1 rounded text-xs transition-all duration-150"
-                style={{
-                  background: 'transparent',
-                  color: '#555566',
-                  border: '1px solid var(--border)',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                키워드 초기화
-              </button>
-              {activeKeywords.size >= 2 && (
-                <button
-                  onClick={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
-                  className="px-2.5 py-1 rounded text-xs transition-all duration-150"
-                  style={{
-                    background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'transparent',
-                    color: keywordMode === 'and' ? '#c8a450' : '#555566',
-                    border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'var(--border)'}`,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '10px',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {keywordMode === 'and' ? 'AND' : 'OR'}
-                </button>
-              )}
-            </>
+            <button
+              onClick={() => setActiveKeywords(new Set())}
+              className="px-3 py-1 rounded text-xs transition-all duration-150"
+              style={{
+                background: 'transparent',
+                color: '#555566',
+                border: '1px solid var(--border)',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              키워드 초기화
+            </button>
           )}
           {availableKeywords.map(kw => {
             const isActive = activeKeywords.has(kw)
@@ -547,60 +558,117 @@ export default function DecksPage() {
               </button>
             )
           })}
-        </div>
-      )}
-
-      {/* ── 컬렉션 필터 (로그인 시만) ── */}
-      {authStatus === 'authenticated' && (
-        <div className="flex flex-wrap items-center gap-2 mb-5">
-          {collectionLoading ? (
-            <span className="text-xs" style={{ color: '#3a3050', fontFamily: 'var(--font-mono)' }}>
-              컬렉션 로딩 중...
-            </span>
-          ) : hasCollection ? (
+          {activeKeywords.size >= 2 && (
             <>
+              <div className="flex-1" />
               <button
-                onClick={() => setFilterOwnedIdentity(prev => !prev)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
+                onClick={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
+                className="px-2.5 py-1 rounded text-xs transition-all duration-150"
                 style={{
-                  background: filterOwnedIdentity ? 'rgba(80,160,80,0.15)' : 'transparent',
-                  color: filterOwnedIdentity ? '#80c880' : '#555566',
-                  border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '11px',
-                  cursor: 'pointer',
+                  background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
+                  color: keywordMode === 'and' ? '#c8a450' : '#9a9aaa',
+                  border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.12)'}`,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.05em',
                 }}
               >
-                <User size={12} />
-                보유 인격 덱
-              </button>
-              <button
-                onClick={() => setFilterOwnedEgo(prev => !prev)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
-                style={{
-                  background: filterOwnedEgo ? 'rgba(80,160,80,0.15)' : 'transparent',
-                  color: filterOwnedEgo ? '#80c880' : '#555566',
-                  border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                <PackageOpen size={12} />
-                보유 에고 덱
+                {keywordMode === 'and' ? 'AND' : 'OR'}
               </button>
             </>
-          ) : (
-            <Link
-              href="/mypage"
-              className="text-xs transition-colors hover:opacity-80"
-              style={{ color: '#4a4060', fontFamily: 'var(--font-body)' }}
-            >
-              마이 페이지에서 보유 컬렉션을 설정하면 필터링할 수 있습니다 →
-            </Link>
           )}
         </div>
       )}
+
+      {/* ── 컬렉션 필터 ── */}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        {collectionLoading ? (
+          <span className="text-xs" style={{ color: '#3a3050', fontFamily: 'var(--font-mono)' }}>
+            컬렉션 로딩 중...
+          </span>
+        ) : hasCollection ? (
+          <>
+            <button
+              onClick={() => setFilterOwnedIdentity(prev => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
+              style={{
+                background: filterOwnedIdentity ? 'rgba(80,160,80,0.15)' : 'transparent',
+                color: filterOwnedIdentity ? '#80c880' : '#555566',
+                border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
+                fontFamily: 'var(--font-heading)',
+                fontSize: '11px',
+                cursor: 'pointer',
+              }}
+            >
+              <User size={12} />
+              보유 인격 덱
+            </button>
+            <button
+              onClick={() => setFilterOwnedEgo(prev => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
+              style={{
+                background: filterOwnedEgo ? 'rgba(80,160,80,0.15)' : 'transparent',
+                color: filterOwnedEgo ? '#80c880' : '#555566',
+                border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
+                fontFamily: 'var(--font-heading)',
+                fontSize: '11px',
+                cursor: 'pointer',
+              }}
+            >
+              <PackageOpen size={12} />
+              보유 에고 덱
+            </button>
+            <button
+              onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
+              className="px-2 py-1.5 rounded text-xs transition-all duration-150"
+              style={{ color: '#555566', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '11px' }}
+            >
+              초기화
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2 w-full">
+            <Link2 size={13} style={{ color: '#555566', flexShrink: 0 }} />
+            <input
+              type="text"
+              value={codeInput}
+              onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+              onKeyDown={e => { if (e.key === 'Enter') applyCollectionCode(codeInput) }}
+              placeholder="보유 현황 URL 또는 코드 붙여넣기..."
+              className="flex-1 px-3 py-1.5 rounded text-xs transition-all"
+              style={{
+                background: 'rgba(0,0,0,0.3)',
+                border: `1px solid ${codeError ? 'rgba(200,80,80,0.5)' : 'var(--border)'}`,
+                color: '#ccc',
+                outline: 'none',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                maxWidth: '400px',
+              }}
+            />
+            <button
+              onClick={() => applyCollectionCode(codeInput)}
+              className="px-3 py-1.5 rounded text-xs transition-all duration-150"
+              style={{
+                background: 'rgba(200,144,10,0.12)',
+                color: 'var(--gold)',
+                border: '1px solid rgba(200,144,10,0.3)',
+                fontFamily: 'var(--font-heading)',
+                fontSize: '11px',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              적용
+            </button>
+            {codeError && (
+              <span className="text-xs" style={{ color: '#c85050', fontFamily: 'var(--font-mono)' }}>
+                잘못된 코드
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── 결과 수 ── */}
       {!loading && (
