@@ -88,8 +88,8 @@ export async function GET(
           identities(
             sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
             hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-            skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, atk_weight, offense_level, description),
-            passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order)
+            skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, atk_weight, offense_level, description, uptie_level),
+            passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
           )
         ),
         deck_egos(

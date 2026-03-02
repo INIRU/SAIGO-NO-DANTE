@@ -21,6 +21,7 @@ type SkillDetail = {
   atk_weight: number | null
   offense_level: number | null
   description?: string | null
+  uptie_level?: number | null
 }
 
 type PassiveDetail = {
@@ -31,6 +32,7 @@ type PassiveDetail = {
   active_cond: string | null
   description: string
   passive_order: number
+  uptie_level?: number | null
 }
 
 type IdentityDetail = {
@@ -226,8 +228,11 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
     if (!id_) continue
     const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
 
-    // 스킬: computeSkillImageIndices로 올바른 이미지 인덱스 + 변형 스킬 지원
-    const sortedSkills = [...id_.skills].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
+    // 스킬: 4동기화 우선, 없으면 3동기화 폴백
+    const rawSk = id_.skills ?? []
+    const sk4 = rawSk.filter(s => (s.uptie_level ?? 3) === 4)
+    const filtSk = sk4.length > 0 ? sk4 : rawSk.filter(s => (s.uptie_level ?? 3) === 3)
+    const sortedSkills = [...filtSk].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
     const imgIdx = computeSkillImageIndices(sortedSkills)
     const orderCount: Record<number, number> = {}
     for (const sk of sortedSkills) {
@@ -245,7 +250,10 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
         iconUrl, identityName: id_.name_kr, sinnerName: sName,
       }
     }
-    for (const pa of id_.passives) {
+    const rawPa = id_.passives ?? []
+    const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
+    const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
+    for (const pa of filtPa) {
       passiveLookup[pa.name] = {
         name: pa.name, sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
@@ -296,8 +304,15 @@ function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: 
   const imgUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot.gacksung)
   const normalUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
   const themeKws = (id_.keywords ?? []).filter(kw => THEME_KEYWORDS.has(kw))
-  const sortedSkills = [...(id_.skills ?? [])].sort((a, b) => a.skill_order - b.skill_order)
-  const sortedPassives = [...(id_.passives ?? [])].sort((a, b) => a.passive_order - b.passive_order)
+  // 4동기화 우선, 없으면 3동기화 폴백
+  const rawSkills = id_.skills ?? []
+  const skills4 = rawSkills.filter(s => (s.uptie_level ?? 3) === 4)
+  const filteredSkills = skills4.length > 0 ? skills4 : rawSkills.filter(s => (s.uptie_level ?? 3) === 3)
+  const sortedSkills = [...filteredSkills].sort((a, b) => a.skill_order - b.skill_order)
+  const rawPassives = id_.passives ?? []
+  const passives4 = rawPassives.filter(p => (p.uptie_level ?? 3) === 4)
+  const filteredPassives = passives4.length > 0 ? passives4 : rawPassives.filter(p => (p.uptie_level ?? 3) === 3)
+  const sortedPassives = [...filteredPassives].sort((a, b) => a.passive_order - b.passive_order)
 
   // 스킬 이미지 인덱스 계산: base(S1/S2/S3/DefSkill) 먼저, 변형(S3-2 등) 마지막
   const skillImageIdx = computeSkillImageIndices(sortedSkills)
@@ -1299,7 +1314,10 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                               {customSkillSlots.map((slot, i) => {
                                 const id_ = slot.identities!
                                 const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                                const sortedSk = [...(id_.skills ?? [])].sort((a, b) => a.skill_order - b.skill_order)
+                                const rawSk2 = id_.skills ?? []
+                                const sk4b = rawSk2.filter(s => (s.uptie_level ?? 3) === 4)
+                                const filtSk2 = sk4b.length > 0 ? sk4b : rawSk2.filter(s => (s.uptie_level ?? 3) === 3)
+                                const sortedSk = [...filtSk2].sort((a, b) => a.skill_order - b.skill_order)
                                 const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.game_id}` : ''
                                 return (
                                   <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
