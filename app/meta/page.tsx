@@ -1,7 +1,7 @@
-import { getSinners, getIdentities } from '@/lib/data/sinners'
+import { getSinners } from '@/lib/data/sinners'
 import MetaClient from './MetaClient'
 
 export default async function MetaPage() {
-  const [sinners, identities] = await Promise.all([getSinners(), getIdentities()])
-  return <MetaClient sinners={sinners} identities={identities} />
+  const sinners = await getSinners()
+  return <MetaClient sinners={sinners} />
 }

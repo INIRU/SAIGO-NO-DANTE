@@ -1,137 +1,873 @@
 'use client'
 
-import { useEffect, useRef, useMemo } from 'react'
-import { Sinner, Identity, SIN_COLORS, SinType, getIdentitySinType, getIdentitySinColor } from '@/lib/data/sinners'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import Image from 'next/image'
+import {
+  Sinner, SinType, SIN_COLORS, GRADE_COLORS, KEYWORD_SIN_MAP,
+  RARITY_ICON_MAP, getSinnerLogoUrl, getKeywordIconUrl, STORAGE_BASE,
+} from '@/lib/data/sinners'
 import SinBadge from '@/components/ui/SinBadge'
 
-const SIN_TYPES: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
+// ── 타입 ──────────────────────────────────────────────────────
+type Tab = 'identity' | 'keyword' | 'synergy' | 'ego'
 
-interface Props {
-  sinners: Sinner[]
-  identities: Identity[]
+interface IdentityStat {
+  identity_id: string
+  sinner_id: string
+  name_kr: string
+  keywords: string[]
+  rarity: string
+  count: number
 }
 
-export default function MetaClient({ sinners, identities }: Props) {
-  const barsRef = useRef<HTMLDivElement>(null)
+interface KeywordStat { keyword: string; count: number }
 
-  const { usageByIdentity, usageBySinner, usageBySin } = useMemo(() => {
-    const byIdentity: Record<string, number> = {}
-    const bySinner: Record<string, number> = {}
-    const bySin: Record<string, number> = {}
-    identities.forEach(identity => {
-      const usage = Math.floor(Math.random() * 200 + 10)
-      byIdentity[identity.id] = usage
-      bySinner[identity.sinner_id] = (bySinner[identity.sinner_id] || 0) + usage
-      const sin = getIdentitySinType(identity)
-      if (sin) bySin[sin] = (bySin[sin] || 0) + usage
-    })
-    return { usageByIdentity: byIdentity, usageBySinner: bySinner, usageBySin: bySin }
-  }, [identities])
+interface Synergy {
+  a_id: string; a_name: string; a_sinner_id: string; a_folder: string | null; a_game_id: string | null
+  b_id: string; b_name: string; b_sinner_id: string; b_folder: string | null; b_game_id: string | null
+  count: number
+}
 
-  const topIdentities = useMemo(() =>
-    [...identities].sort((a, b) => (usageByIdentity[b.id] || 0) - (usageByIdentity[a.id] || 0)).slice(0, 10),
-    [identities, usageByIdentity]
-  )
-  const sinnerRanking = useMemo(() =>
-    [...sinners].sort((a, b) => (usageBySinner[b.id] || 0) - (usageBySinner[a.id] || 0)),
-    [sinners, usageBySinner]
-  )
-  const totalSinUsage = Object.values(usageBySin).reduce((a, b) => a + b, 0)
-  const maxUsage = usageByIdentity[topIdentities[0]?.id] || 1
+interface EGOStat {
+  ego_id: string
+  sinner_id: string
+  name_kr: string
+  grade: string
+  sin_affinity: string | null
+  count: number
+}
+
+interface MetaData {
+  totalDecks: number
+  identityStats: IdentityStat[]
+  usageBySinner: Record<string, number>
+  usageBySin: Record<string, number>
+  keywordUsage: KeywordStat[]
+  synergies: Synergy[]
+  egoStats: EGOStat[]
+}
+
+// ── 상수 ──────────────────────────────────────────────────────
+const TAB_LIST: { key: Tab; label: string }[] = [
+  { key: 'identity', label: '인격 채용률' },
+  { key: 'keyword', label: '키워드' },
+  { key: 'synergy', label: '시너지' },
+  { key: 'ego', label: 'EGO' },
+]
+
+const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
+const GRADE_ICON_URL: Record<string, string> = {
+  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
+  TETH:  `${STORAGE_BASE}/icons/grade/TETH.webp`,
+  HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
+  WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
+}
+const MAIN_KEYWORDS = new Set(['출혈', '화상', '침잠', '파열', '호흡', '충전', '진동'])
+
+/** 스크롤에 따라 점진적으로 아이템을 표시하는 훅 */
+function useProgressiveRender(total: number, step = 8) {
+  const [visible, setVisible] = useState(step)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const initGSAP = async () => {
-      const { gsap } = await import('gsap')
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
-      gsap.registerPlugin(ScrollTrigger)
+    setVisible(step)
+  }, [total, step])
 
-      gsap.fromTo('.usage-bar', { scaleX: 0 }, {
-        scaleX: 1, duration: 0.8, stagger: 0.06, ease: 'power2.out', transformOrigin: 'left center',
-        scrollTrigger: { trigger: '.usage-chart', start: 'top 75%' },
-      })
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(prev => Math.min(prev + step, total))
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [total, step])
 
-      document.querySelectorAll('.count-up').forEach(el => {
-        const target = parseInt(el.getAttribute('data-target') || '0')
-        const proxy = { val: 0 }
-        gsap.to(proxy, {
-          val: target, duration: 1.2, ease: 'power2.out',
-          onUpdate: () => { el.textContent = Math.round(proxy.val).toString() },
-          scrollTrigger: { trigger: el, start: 'top 80%' },
-        })
-      })
-    }
-    initGSAP()
-  }, [])
+  return { visible, sentinelRef }
+}
+
+function mainKeywordColor(keywords: string[]): string {
+  for (const kw of keywords) {
+    const sin = KEYWORD_SIN_MAP[kw]
+    if (sin) return SIN_COLORS[sin]
+  }
+  return '#888888'
+}
+
+/** 키워드 중 KEYWORD_SIN_MAP에 매칭되는 것만 (최대 3개) */
+function mainKeywords(keywords: string[]): string[] {
+  return keywords.filter(kw => KEYWORD_SIN_MAP[kw]).slice(0, 3)
+}
+
+// ── 키워드 배지 (IdentityCard 스타일) ─────────────────────────
+function KeywordBadge({ keyword }: { keyword: string }) {
+  const sin = KEYWORD_SIN_MAP[keyword]
+  const color = sin ? SIN_COLORS[sin] : '#888'
+  const iconUrl = getKeywordIconUrl(keyword)
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2" style={{ color: 'var(--gold)' }}>메타 분석</h1>
-        <p style={{ color: '#666688' }}>인격 사용률 통계 및 트렌드</p>
+    <span
+      className="inline-flex items-center gap-1"
+      style={{
+        background: `${color}18`,
+        color,
+        border: `1px solid ${color}35`,
+        borderRadius: '3px',
+        fontSize: '10px',
+        padding: '1px 5px',
+        lineHeight: '16px',
+      }}
+    >
+      {iconUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} />
+      )}
+      {keyword}
+    </span>
+  )
+}
+
+// ── 컴포넌트 ──────────────────────────────────────────────────
+interface Props { sinners: Sinner[] }
+
+export default function MetaClient({ sinners }: Props) {
+  const [tab, setTab] = useState<Tab>('identity')
+  const [data, setData] = useState<MetaData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [sinnerFilter, setSinnerFilter] = useState<string | null>(null)
+
+  const sinnerMap = useMemo(() => {
+    const m = new Map<string, Sinner>()
+    sinners.forEach(s => m.set(s.id, s))
+    return m
+  }, [sinners])
+
+  // ── API fetch ───────────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/meta/usage')
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  // ── GSAP ────────────────────────────────────────────────────
+  const runAnimations = useCallback(async () => {
+    const { gsap } = await import('gsap')
+    const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+    gsap.registerPlugin(ScrollTrigger)
+    ScrollTrigger.getAll().forEach(t => t.kill())
+
+    gsap.fromTo('.usage-bar', { scaleX: 0 }, {
+      scaleX: 1, duration: 0.8, stagger: 0.04,
+      ease: 'power2.out', transformOrigin: 'left center',
+      scrollTrigger: { trigger: '.usage-chart', start: 'top 85%' },
+    })
+
+    document.querySelectorAll('.count-up').forEach(el => {
+      const target = parseInt(el.getAttribute('data-target') || '0')
+      const proxy = { val: 0 }
+      gsap.to(proxy, {
+        val: target, duration: 1.2, ease: 'power2.out',
+        onUpdate: () => { el.textContent = Math.round(proxy.val).toString() },
+        scrollTrigger: { trigger: el, start: 'top 90%' },
+      })
+    })
+  }, [])
+
+  useEffect(() => {
+    if (loading || !data) return
+    const timer = setTimeout(runAnimations, 60)
+    return () => clearTimeout(timer)
+  }, [loading, data, tab, sinnerFilter, runAnimations])
+
+  // ── 파생 ────────────────────────────────────────────────────
+  const filteredIdentityStats = useMemo(() => {
+    if (!data) return []
+    const stats = sinnerFilter
+      ? data.identityStats.filter(s => s.sinner_id === sinnerFilter)
+      : data.identityStats
+    return stats.slice(0, 20)
+  }, [data, sinnerFilter])
+
+  const egoByGrade = useMemo(() => {
+    if (!data) return {} as Record<string, EGOStat[]>
+    const groups: Record<string, EGOStat[]> = {}
+    for (const ego of data.egoStats) {
+      if (!groups[ego.grade]) groups[ego.grade] = []
+      groups[ego.grade].push(ego)
+    }
+    return groups
+  }, [data])
+
+  // ── 로딩 ────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto">
+        <div className="mb-12">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
+            메타 분석
+          </h1>
+          <p style={{ color: '#666688' }}>덱 데이터 기반 통계 분석</p>
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-16 rounded-lg animate-pulse"
+              style={{ background: 'var(--bg-elevated)', opacity: 1 - i * 0.08 }}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) return null
+  const totalDecks = data.totalDecks || 1
+
+  return (
+    <div className="min-h-screen pt-24 pb-16 px-3 md:px-6 max-w-7xl mx-auto">
+      {/* 헤더 */}
+      <div className="mb-6 md:mb-8">
+        <h1 className="font-serif text-3xl md:text-5xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
+          메타 분석
+        </h1>
+        <p className="text-xs md:text-sm" style={{ color: '#666688' }}>
+          전체 <span className="font-mono" style={{ color: 'var(--gold)' }}>{totalDecks}</span>개 덱 기반 통계
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <h2 className="font-serif text-xl font-semibold mb-6" style={{ color: 'var(--gold-light)' }}>인격 사용률 TOP 10</h2>
-          <div className="usage-chart space-y-3" ref={barsRef}>
-            {topIdentities.map((identity, i) => {
-              const pct = ((usageByIdentity[identity.id] || 0) / maxUsage) * 100
-              const sinColor = getIdentitySinColor(identity)
-              return (
-                <div key={identity.id} className="flex items-center gap-3">
-                  <span className="font-mono text-xs w-6 text-right" style={{ color: '#555566' }}>{i + 1}</span>
+      {/* 탭 */}
+      <div className="flex gap-0 mb-6 md:mb-8 rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+        {TAB_LIST.map(t => (
+          <button
+            key={t.key}
+            onClick={() => { setTab(t.key); setSinnerFilter(null) }}
+            className="flex-1 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-200"
+            style={{
+              background: tab === t.key ? 'var(--gold)' : 'transparent',
+              color: tab === t.key ? 'var(--bg-deep)' : '#666688',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'identity' && (
+        <IdentityTab
+          data={data}
+          totalDecks={totalDecks}
+          sinners={sinners}
+          sinnerMap={sinnerMap}
+          sinnerFilter={sinnerFilter}
+          setSinnerFilter={setSinnerFilter}
+          filteredStats={filteredIdentityStats}
+        />
+      )}
+      {tab === 'keyword' && <KeywordTab data={data} />}
+      {tab === 'synergy' && <SynergyTab data={data} sinnerMap={sinnerMap} />}
+      {tab === 'ego' && <EGOTab data={data} sinnerMap={sinnerMap} egoByGrade={egoByGrade} />}
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════
+// ① 인격 채용률
+// ══════════════════════════════════════════════════════════════
+function IdentityTab({
+  data, totalDecks, sinners, sinnerMap, sinnerFilter, setSinnerFilter, filteredStats,
+}: {
+  data: MetaData
+  totalDecks: number
+  sinners: Sinner[]
+  sinnerMap: Map<string, Sinner>
+  sinnerFilter: string | null
+  setSinnerFilter: (v: string | null) => void
+  filteredStats: IdentityStat[]
+}) {
+  const maxCount = filteredStats[0]?.count || 1
+  const { visible, sentinelRef } = useProgressiveRender(filteredStats.length)
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* 좌: 랭킹 */}
+      <div className="lg:col-span-2">
+        {/* 수감자 필터 */}
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setSinnerFilter(null)}
+            className="px-3 py-1.5 rounded text-xs font-medium transition-all"
+            style={{
+              background: !sinnerFilter ? 'var(--gold)' : 'rgba(255,255,255,0.05)',
+              color: !sinnerFilter ? 'var(--bg-deep)' : '#666688',
+            }}
+          >
+            전체
+          </button>
+          {sinners.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setSinnerFilter(sinnerFilter === s.id ? null : s.id)}
+              className="relative w-8 h-8 rounded-full overflow-hidden transition-all"
+              title={s.name_kr}
+              style={{
+                border: sinnerFilter === s.id ? '2px solid var(--gold)' : '2px solid transparent',
+                opacity: sinnerFilter && sinnerFilter !== s.id ? 0.35 : 1,
+              }}
+            >
+              <Image src={getSinnerLogoUrl(s.id)} alt={s.name_kr} fill unoptimized className="object-contain" />
+            </button>
+          ))}
+        </div>
+
+        <h2 className="font-serif text-xl font-semibold mb-5" style={{ color: 'var(--gold-light)' }}>
+          {sinnerFilter
+            ? `${sinnerMap.get(sinnerFilter)?.name_kr ?? ''} 인격 채용률`
+            : '인격 채용률 TOP 20'}
+        </h2>
+
+        <div className="usage-chart space-y-2">
+          {filteredStats.slice(0, visible).map((stat, i) => {
+            const pct = (stat.count / maxCount) * 100
+            const rate = ((stat.count / totalDecks) * 100).toFixed(1)
+            const color = mainKeywordColor(stat.keywords)
+            const sName = sinnerMap.get(stat.sinner_id)?.name_kr ?? ''
+            const kws = mainKeywords(stat.keywords)
+            const rarityWidth = stat.rarity === '3성' ? 36 : stat.rarity === '2성' ? 26 : 16
+
+            return (
+              <div
+                key={stat.identity_id}
+                className="rounded-lg p-3 transition-colors"
+                style={{
+                  background: 'rgba(26,21,16,0.6)',
+                  border: i < 3 ? `1px solid ${color}30` : '1px solid transparent',
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  {/* 순위 */}
+                  <span
+                    className="font-mono text-sm w-6 text-center font-bold"
+                    style={{
+                      color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#555566',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+
+                  {/* 등급 이미지 */}
+                  {RARITY_ICON_MAP[stat.rarity] && (
+                    <Image
+                      src={RARITY_ICON_MAP[stat.rarity]}
+                      alt={stat.rarity}
+                      width={rarityWidth}
+                      height={14}
+                      unoptimized
+                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
+                    />
+                  )}
+
+                  {/* 인격명 + 수감자 */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-sm font-medium truncate" style={{ color: '#e8e4d8' }}>
+                      {stat.name_kr}
+                    </span>
+                    <span className="text-xs shrink-0" style={{ color: '#555566' }}>{sName}</span>
+                  </div>
+
+                  {/* 채용률 + 카운트 */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs" style={{ color: '#666688' }}>{rate}%</span>
+                    <span
+                      className="count-up font-mono text-sm font-bold"
+                      data-target={stat.count}
+                      style={{ color, minWidth: '24px', textAlign: 'right' }}
+                    >
+                      0
+                    </span>
+                  </div>
+                </div>
+
+                {/* 키워드 배지 + 바 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-6" /> {/* 순위 공간 맞춤 */}
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm" style={{ color: '#e8e4d8' }}>{identity.name_kr || identity.name}</span>
-                      <div className="flex items-center gap-2">
-                        <SinBadge sin={getIdentitySinType(identity)} size="sm" showLabel={false} />
-                        <span className="count-up font-mono text-xs" data-target={usageByIdentity[identity.id] || 0} style={{ color: sinColor }}>
-                          {usageByIdentity[identity.id] || 0}
-                        </span>
+                    {/* 바 */}
+                    <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div
+                        className="usage-bar h-full rounded-full"
+                        style={{
+                          width: `${pct}%`,
+                          background: `linear-gradient(to right, ${color}60, ${color})`,
+                        }}
+                      />
+                    </div>
+                    {/* 키워드 */}
+                    {kws.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {kws.map(kw => <KeywordBadge key={kw} keyword={kw} />)}
                       </div>
-                    </div>
-                    <div className="h-2 rounded overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
-                      <div className="usage-bar h-full rounded" style={{ width: `${pct}%`, background: `linear-gradient(to right, ${sinColor}80, ${sinColor})` }} />
-                    </div>
+                    )}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="font-serif text-xl font-semibold mb-6" style={{ color: 'var(--gold-light)' }}>죄악 타입 분포</h2>
-          <div className="card p-4 space-y-3">
-            {SIN_TYPES.map(sin => {
-              const val = usageBySin[sin] || 0
-              const pct = totalSinUsage > 0 ? (val / totalSinUsage * 100).toFixed(1) : '0.0'
-              const color = SIN_COLORS[sin]
-              return (
-                <div key={sin}>
-                  <div className="flex items-center justify-between mb-1">
-                    <SinBadge sin={sin} size="sm" />
-                    <span className="font-mono text-xs" style={{ color }}>{pct}%</span>
-                  </div>
-                  <div className="h-1.5 rounded overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
-                    <div className="usage-bar h-full rounded" style={{ width: `${pct}%`, background: color }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <h2 className="font-serif text-xl font-semibold mt-8 mb-4" style={{ color: 'var(--gold-light)' }}>수감자별 인기도</h2>
-          <div className="card p-4 space-y-2">
-            {sinnerRanking.map((sinner, i) => (
-              <div key={sinner.id} className="flex items-center gap-3 py-1.5">
-                <span className="font-mono text-xs w-5" style={{ color: i < 3 ? 'var(--gold)' : '#555566' }}>{i + 1}</span>
-                <span className="flex-1 text-sm" style={{ color: '#e8e4d8' }}>{sinner.name_kr}</span>
-                <span className="font-mono text-xs" style={{ color: '#666688' }}>{usageBySinner[sinner.id] || 0}</span>
               </div>
-            ))}
-          </div>
+            )
+          })}
+          {filteredStats.length === 0 && (
+            <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+          )}
+          <div ref={sentinelRef} />
         </div>
+      </div>
+
+      {/* 우: 키워드 분포 */}
+      <div>
+        <h2 className="font-serif text-xl font-semibold mb-5" style={{ color: 'var(--gold-light)' }}>
+          키워드 분포
+        </h2>
+        <div className="card p-5 space-y-4">
+          {(() => {
+            const filtered = data.keywordUsage.filter(k => MAIN_KEYWORDS.has(k.keyword))
+            const maxKw = filtered[0]?.count || 1
+            return filtered.slice(0, 10).map(kw => {
+              const pct = (kw.count / maxKw) * 100
+              const sin = KEYWORD_SIN_MAP[kw.keyword]
+              const color = sin ? SIN_COLORS[sin] : '#888'
+              const iconUrl = getKeywordIconUrl(kw.keyword)
+              return (
+                <div key={kw.keyword}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div
+                      className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                      style={{ background: `${color}15`, border: `1px solid ${color}30` }}
+                    >
+                      {iconUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={iconUrl} alt="" width={14} height={14} />
+                      )}
+                    </div>
+                    <span className="flex-1 text-xs" style={{ color: '#e8e4d8' }}>{kw.keyword}</span>
+                    <span className="font-mono text-xs font-bold" style={{ color }}>{kw.count}</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    <div
+                      className="usage-bar h-full rounded-full"
+                      style={{ width: `${pct}%`, background: `linear-gradient(to right, ${color}80, ${color})` }}
+                    />
+                  </div>
+                </div>
+              )
+            })
+          })()}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════
+// ② 키워드 트렌드
+// ══════════════════════════════════════════════════════════════
+function KeywordTab({ data }: { data: MetaData }) {
+  const keywords = data.keywordUsage.filter(kw => MAIN_KEYWORDS.has(kw.keyword)).slice(0, 15)
+  const maxCount = keywords[0]?.count || 1
+
+  return (
+    <div className="max-w-3xl">
+      <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
+        키워드 트렌드 TOP 15
+      </h2>
+      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+        각 덱에서 등장한 키워드 수 (덱 내 중복 제거)
+      </p>
+      <div className="usage-chart space-y-2">
+        {keywords.map((kw, i) => {
+          const pct = (kw.count / maxCount) * 100
+          const sin = KEYWORD_SIN_MAP[kw.keyword]
+          const color = sin ? SIN_COLORS[sin] : '#888888'
+          const iconUrl = getKeywordIconUrl(kw.keyword)
+
+          return (
+            <div
+              key={kw.keyword}
+              className="rounded-lg p-3 flex items-center gap-3"
+              style={{
+                background: 'rgba(26,21,16,0.6)',
+                border: i < 3 ? `1px solid ${color}30` : '1px solid transparent',
+              }}
+            >
+              {/* 순위 */}
+              <span
+                className="font-mono text-sm w-6 text-center font-bold"
+                style={{
+                  color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#555566',
+                }}
+              >
+                {i + 1}
+              </span>
+
+              {/* 아이콘 */}
+              <div
+                className="w-8 h-8 rounded flex items-center justify-center shrink-0"
+                style={{ background: `${color}15`, border: `1px solid ${color}30` }}
+              >
+                {iconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={iconUrl} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
+                ) : (
+                  <div className="w-5 h-5" />
+                )}
+              </div>
+
+              {/* 이름 + 바 */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: '#e8e4d8' }}>{kw.keyword}</span>
+                  </div>
+                  <span
+                    className="count-up font-mono text-sm font-bold shrink-0"
+                    data-target={kw.count}
+                    style={{ color }}
+                  >
+                    0
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div
+                    className="usage-bar h-full rounded-full"
+                    style={{
+                      width: `${pct}%`,
+                      background: `linear-gradient(to right, ${color}60, ${color})`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        {keywords.length === 0 && (
+          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── 인격 카드 이미지 URL 헬퍼 ────────────────────────────────
+function identityCardUrl(sinnerId: string, folder: string | null, gameId: string | null): string {
+  if (!folder || !gameId) return ''
+  return `${STORAGE_BASE}/sinners/${sinnerId}/identities/${folder}/${gameId}_normal_info.webp`
+}
+
+// ══════════════════════════════════════════════════════════════
+// ③ 시너지
+// ══════════════════════════════════════════════════════════════
+function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string, Sinner> }) {
+  const maxCount = data.synergies[0]?.count || 1
+  const { visible, sentinelRef } = useProgressiveRender(data.synergies.length)
+
+  return (
+    <div className="max-w-4xl">
+      <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
+        동시 편성 TOP 20
+      </h2>
+      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+        같은 덱에서 함께 편성된 인격 조합
+      </p>
+      <div className="usage-chart space-y-3">
+        {data.synergies.slice(0, visible).map((syn, i) => {
+          const pct = (syn.count / maxCount) * 100
+          const aImg = identityCardUrl(syn.a_sinner_id, syn.a_folder, syn.a_game_id)
+          const bImg = identityCardUrl(syn.b_sinner_id, syn.b_folder, syn.b_game_id)
+          const aSinnerName = sinnerMap.get(syn.a_sinner_id)?.name_kr ?? ''
+          const bSinnerName = sinnerMap.get(syn.b_sinner_id)?.name_kr ?? ''
+
+          return (
+            <div
+              key={`${syn.a_id}-${syn.b_id}`}
+              className="rounded-lg overflow-hidden"
+              style={{
+                background: 'rgba(26,21,16,0.6)',
+                border: i < 3 ? '1px solid rgba(200,144,10,0.25)' : '1px solid rgba(255,255,255,0.03)',
+              }}
+            >
+              <div className="p-2.5 md:p-3">
+                {/* 상단: 순위 + 카운트 */}
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    className="font-mono text-base md:text-lg w-7 text-center font-bold"
+                    style={{
+                      color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#444455',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className="count-up font-mono text-sm font-bold"
+                      data-target={syn.count}
+                      style={{ color: 'var(--gold)' }}
+                    >
+                      0
+                    </span>
+                    <span className="text-[10px]" style={{ color: '#555566' }}>덱</span>
+                  </div>
+                </div>
+
+                {/* 인격 카드 쌍 */}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
+                  {/* 인격 A */}
+                  <div
+                    className="flex items-center gap-2.5 flex-1 min-w-0 px-2.5 py-2 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  >
+                    {aImg ? (
+                      <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <Image src={aImg} alt="" fill unoptimized className="object-cover" />
+                      </div>
+                    ) : syn.a_sinner_id && (
+                      <div className="relative w-5 h-5 shrink-0">
+                        <Image src={getSinnerLogoUrl(syn.a_sinner_id)} alt="" fill unoptimized className="object-contain" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.a_name}</span>
+                      {aSinnerName && (
+                        <span className="text-[10px] block mt-0.5" style={{ color: '#555566' }}>{aSinnerName}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 연결 */}
+                  <div
+                    className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 self-center"
+                    style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.25)' }}
+                  >
+                    <span className="text-[10px] md:text-xs font-bold" style={{ color: 'var(--gold-dim)' }}>+</span>
+                  </div>
+
+                  {/* 인격 B */}
+                  <div
+                    className="flex items-center gap-2.5 flex-1 min-w-0 px-2.5 py-2 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  >
+                    {bImg ? (
+                      <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <Image src={bImg} alt="" fill unoptimized className="object-cover" />
+                      </div>
+                    ) : syn.b_sinner_id && (
+                      <div className="relative w-5 h-5 shrink-0">
+                        <Image src={getSinnerLogoUrl(syn.b_sinner_id)} alt="" fill unoptimized className="object-contain" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.b_name}</span>
+                      {bSinnerName && (
+                        <span className="text-[10px] block mt-0.5" style={{ color: '#555566' }}>{bSinnerName}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 바 */}
+              <div className="h-1 overflow-hidden">
+                <div
+                  className="usage-bar h-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: 'linear-gradient(to right, rgba(200,144,10,0.2), var(--gold))',
+                  }}
+                />
+              </div>
+            </div>
+          )
+        })}
+        {data.synergies.length === 0 && (
+          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+        )}
+        <div ref={sentinelRef} />
+      </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════
+// ④ EGO
+// ══════════════════════════════════════════════════════════════
+function EGOTab({
+  data, sinnerMap, egoByGrade,
+}: {
+  data: MetaData
+  sinnerMap: Map<string, Sinner>
+  egoByGrade: Record<string, EGOStat[]>
+}) {
+  const [gradeTab, setGradeTab] = useState<string>('ALL')
+  const globalMax = data.egoStats[0]?.count || 1
+
+  // 표시할 등급 목록 (데이터 있는 것만)
+  const availableGrades = GRADE_ORDER.filter(g => egoByGrade[g]?.length)
+
+  // 선택된 등급의 EGO 목록
+  const displayEgos = gradeTab === 'ALL'
+    ? data.egoStats.slice(0, 30)
+    : (egoByGrade[gradeTab] ?? [])
+  const displayMax = displayEgos[0]?.count || 1
+  const { visible: egoVisible, sentinelRef: egoSentinelRef } = useProgressiveRender(displayEgos.length)
+
+  return (
+    <div className="max-w-4xl">
+      <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
+        EGO 채용률
+      </h2>
+      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+        등급별 EGO 사용 현황
+      </p>
+
+      {/* 등급 서브탭 */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        <button
+          onClick={() => setGradeTab('ALL')}
+          className="px-3 py-1.5 rounded text-xs font-mono font-bold tracking-wider transition-all"
+          style={{
+            background: gradeTab === 'ALL' ? 'var(--gold)' : 'rgba(255,255,255,0.05)',
+            color: gradeTab === 'ALL' ? 'var(--bg-deep)' : '#666688',
+          }}
+        >
+          전체
+        </button>
+        {availableGrades.map(grade => {
+          const gc = GRADE_COLORS[grade] || '#666'
+          const active = gradeTab === grade
+          return (
+            <button
+              key={grade}
+              onClick={() => setGradeTab(active ? 'ALL' : grade)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono font-bold tracking-wider transition-all"
+              style={{
+                background: active ? `${gc}30` : 'rgba(255,255,255,0.05)',
+                color: active ? gc : '#555566',
+                border: active ? `1px solid ${gc}50` : '1px solid transparent',
+              }}
+            >
+              {GRADE_ICON_URL[grade] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} />
+              ) : (
+                grade
+              )}
+              <span className="text-[10px]" style={{ color: '#555566' }}>
+                {egoByGrade[grade]?.length ?? 0}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* EGO 리스트 */}
+      <div className="usage-chart space-y-2">
+        {displayEgos.slice(0, egoVisible).map((ego, i) => {
+          const pct = (ego.count / (gradeTab === 'ALL' ? globalMax : displayMax)) * 100
+          const gradeColor = GRADE_COLORS[ego.grade] || '#666'
+          const sinColor = ego.sin_affinity
+            ? SIN_COLORS[ego.sin_affinity as SinType] || gradeColor
+            : gradeColor
+          const sName = sinnerMap.get(ego.sinner_id)?.name_kr ?? ''
+
+          return (
+            <div
+              key={ego.ego_id}
+              className="rounded-lg overflow-hidden"
+              style={{
+                background: 'rgba(26,21,16,0.6)',
+                border: i < 3 ? `1px solid ${gradeColor}25` : '1px solid rgba(255,255,255,0.03)',
+              }}
+            >
+              <div className="p-3 flex items-center gap-3">
+                {/* 순위 */}
+                <span
+                  className="font-mono text-sm w-6 text-center font-bold shrink-0"
+                  style={{
+                    color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#555566',
+                  }}
+                >
+                  {i + 1}
+                </span>
+
+                {/* 등급 이미지 */}
+                <div className="w-8 flex items-center justify-center shrink-0">
+                  {GRADE_ICON_URL[ego.grade] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} />
+                  ) : (
+                    <span
+                      className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: `${gradeColor}15`, color: gradeColor, border: `1px solid ${gradeColor}30` }}
+                    >
+                      {ego.grade}
+                    </span>
+                  )}
+                </div>
+
+                {/* 수감자 로고 */}
+                <div className="relative w-5 h-5 shrink-0">
+                  <Image
+                    src={getSinnerLogoUrl(ego.sinner_id)}
+                    alt=""
+                    fill
+                    unoptimized
+                    className="object-contain"
+                    style={{ opacity: 0.8 }}
+                  />
+                </div>
+
+                {/* EGO명 + 수감자 + 죄악 */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-sm font-medium truncate" style={{ color: '#e8e4d8' }}>
+                    {ego.name_kr}
+                  </span>
+                  <span className="text-xs shrink-0" style={{ color: '#555566' }}>
+                    {sName}
+                  </span>
+                  {ego.sin_affinity && (
+                    <SinBadge sin={ego.sin_affinity as SinType} size="sm" showLabel={false} />
+                  )}
+                </div>
+
+                {/* 카운트 */}
+                <span
+                  className="count-up font-mono text-sm font-bold shrink-0 w-8 text-right"
+                  data-target={ego.count}
+                  style={{ color: gradeColor }}
+                >
+                  0
+                </span>
+              </div>
+
+              {/* 바 */}
+              <div className="h-1 overflow-hidden">
+                <div
+                  className="usage-bar h-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: `linear-gradient(to right, ${sinColor}30, ${sinColor})`,
+                  }}
+                />
+              </div>
+            </div>
+          )
+        })}
+        {displayEgos.length === 0 && (
+          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+        )}
+        <div ref={egoSentinelRef} />
       </div>
     </div>
   )

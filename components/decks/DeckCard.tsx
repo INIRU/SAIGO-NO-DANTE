@@ -157,7 +157,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
         {/* 설명 */}
         {deck.description ? (
-          <div className="text-xs mb-2 flex-1" style={{ color: '#4a4460', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2 }}>
+          <div className="text-xs mb-2 flex-1" style={{ color: '#4a4460', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
             <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
           </div>
         ) : (

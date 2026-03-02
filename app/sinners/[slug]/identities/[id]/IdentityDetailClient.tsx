@@ -1081,36 +1081,55 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           border: `1px solid ${skillSinColor}30`,
                         }}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {/* 스킬 아이콘 */}
-                            {skillIconUrl && (
-                              <Image
-                                src={skillIconUrl}
-                                alt=""
-                                width={28}
-                                height={28}
-                                unoptimized
-                                className="rounded"
-                                style={{ border: `1px solid ${skillSinColor}40` }}
-                                onError={skillIconFallback ? (e) => { (e.target as HTMLImageElement).src = skillIconFallback } : undefined}
-                              />
+                        <div className="flex flex-col gap-1.5 mb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {/* 스킬 아이콘 */}
+                              {skillIconUrl && (
+                                <Image
+                                  src={skillIconUrl}
+                                  alt=""
+                                  width={28}
+                                  height={28}
+                                  unoptimized
+                                  className="rounded shrink-0"
+                                  style={{ border: `1px solid ${skillSinColor}40` }}
+                                  onError={skillIconFallback ? (e) => { (e.target as HTMLImageElement).src = skillIconFallback } : undefined}
+                                />
+                              )}
+                              <span
+                                className="font-mono text-xs px-1.5 py-0.5 rounded shrink-0"
+                                style={{
+                                  background: `${skillSinColor}20`,
+                                  color: skillSinColor,
+                                  border: `1px solid ${skillSinColor}40`,
+                                }}
+                              >
+                                {skillLabel}
+                              </span>
+                              <span className="font-semibold truncate" style={{ color: skillSinColor, fontSize: '13px' }}>
+                                {skill.name}
+                              </span>
+                            </div>
+                            {/* 스킬 타입 (우측) */}
+                            {isAttackSkill && skill.skill_type && (
+                              <div className="flex items-center gap-1 shrink-0 ml-2">
+                                {['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
+                                  <Image
+                                    src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
+                                    alt=""
+                                    width={14}
+                                    height={14}
+                                    unoptimized
+                                  />
+                                )}
+                                <span style={{ color: '#666', fontSize: '11px' }}>
+                                  {SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}
+                                </span>
+                              </div>
                             )}
-                            <span
-                              className="font-mono text-xs px-1.5 py-0.5 rounded"
-                              style={{
-                                background: `${skillSinColor}20`,
-                                color: skillSinColor,
-                                border: `1px solid ${skillSinColor}40`,
-                              }}
-                            >
-                              {skillLabel}
-                            </span>
-                            <span className="font-semibold" style={{ color: skillSinColor, fontSize: '13px' }}>
-                              {skill.name}
-                            </span>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 pl-0.5">
                             {/* 가중치 */}
                             {isAttackSkill && (
                               <div className="flex items-center gap-1">
@@ -1137,23 +1156,6 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                 </span>
                                 <span className="font-mono text-xs font-bold" style={{ color: '#aaa' }}>
                                   {skill.offense_level}{offCorrStr}
-                                </span>
-                              </div>
-                            )}
-                            {/* 스킬 타입 */}
-                            {isAttackSkill && skill.skill_type && (
-                              <div className="flex items-center gap-1">
-                                {['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
-                                  <Image
-                                    src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
-                                    alt=""
-                                    width={14}
-                                    height={14}
-                                    unoptimized
-                                  />
-                                )}
-                                <span style={{ color: '#666', fontSize: '11px' }}>
-                                  {SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}
                                 </span>
                               </div>
                             )}
