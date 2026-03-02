@@ -52,10 +52,22 @@ interface Props {
 export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
-  const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
+  const [pageTab, setPageTab] = useState<'info' | 'decks'>(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#decks') return 'decks'
+    return 'info'
+  })
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
   const sinColor = getIdentitySinColor(identity)
+
+  // 뒤로가기/앞으로가기 시 탭 상태 동기화
+  useEffect(() => {
+    const onPopState = () => {
+      setPageTab(window.location.hash === '#decks' ? 'decks' : 'info')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   // 동기화 단계 필터링
   const hasUptieData = useMemo(() =>
@@ -479,7 +491,13 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 return (
                   <button
                     key={tab.key}
-                    onClick={() => setPageTab(tab.key)}
+                    onClick={() => {
+                      if (pageTab !== tab.key) {
+                        const hash = tab.key === 'decks' ? '#decks' : ''
+                        window.history.pushState(null, '', hash || window.location.pathname + window.location.search)
+                        setPageTab(tab.key)
+                      }
+                    }}
                     className="relative px-6 py-3 font-semibold transition-all"
                     style={{
                       color: isActive ? 'var(--gold)' : '#555',
