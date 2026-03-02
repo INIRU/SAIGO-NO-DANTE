@@ -1718,9 +1718,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                               ADMIN
                             </span>
                           )}
-                          {comment.role === 'moderator' && (
-                            <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#50b080', background: 'rgba(80,176,128,0.12)', border: '1px solid rgba(80,176,128,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
-                              MOD
+                          {comment.role === 'wanjang' && (
+                            <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#e89040', background: 'rgba(232,144,64,0.12)', border: '1px solid rgba(232,144,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
+                              완장
                             </span>
                           )}
                           <span style={{ color: '#2a2035', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
