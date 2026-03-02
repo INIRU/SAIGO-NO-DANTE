@@ -133,13 +133,35 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     if (!q) return { keywords: [] as { kw: string; count: number }[], identities: [] as Identity[], egos: [] as EGO[] }
 
     const currentStats = tab === 'ego' ? egoKeywordStats : keywordStats
-    const matchedKw = currentStats.filter(({ kw }) => kw.toLowerCase().includes(q)).slice(0, 5)
-    const matchedIdent = identities.filter(i =>
-      i.name_kr.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)
-    ).slice(0, 5)
-    const matchedEgo = egos.filter(e =>
-      (e.name_kr && e.name_kr.toLowerCase().includes(q)) || e.name.toLowerCase().includes(q)
-    ).slice(0, 5)
+    const matchedKw = currentStats
+      .filter(({ kw }) => kw.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aS = a.kw.toLowerCase().startsWith(q) ? 0 : 1
+        const bS = b.kw.toLowerCase().startsWith(q) ? 0 : 1
+        if (aS !== bS) return aS - bS
+        return a.kw.length - b.kw.length
+      })
+      .slice(0, 5)
+    const matchedIdent = identities
+      .filter(i => i.name_kr.toLowerCase().includes(q) || i.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aS = a.name_kr.toLowerCase().startsWith(q) ? 0 : 1
+        const bS = b.name_kr.toLowerCase().startsWith(q) ? 0 : 1
+        if (aS !== bS) return aS - bS
+        return a.name_kr.length - b.name_kr.length
+      })
+      .slice(0, 5)
+    const matchedEgo = egos
+      .filter(e => (e.name_kr && e.name_kr.toLowerCase().includes(q)) || e.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aName = a.name_kr || a.name
+        const bName = b.name_kr || b.name
+        const aS = aName.toLowerCase().startsWith(q) ? 0 : 1
+        const bS = bName.toLowerCase().startsWith(q) ? 0 : 1
+        if (aS !== bS) return aS - bS
+        return aName.length - bName.length
+      })
+      .slice(0, 5)
 
     return { keywords: matchedKw, identities: matchedIdent, egos: matchedEgo }
   }, [searchQuery, keywordStats, egoKeywordStats, identities, egos, tab])

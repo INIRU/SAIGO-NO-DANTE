@@ -68,9 +68,15 @@ export default function DecksPage() {
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (q.length === 0) return []
-    return ALL_KEYWORDS
-      .filter(kw => kw.toLowerCase().includes(q))
-      .slice(0, 8)
+    const matches = ALL_KEYWORDS.filter(kw => kw.toLowerCase().includes(q))
+    // 시작 일치 우선, 짧은 것 우선
+    matches.sort((a, b) => {
+      const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1
+      const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1
+      if (aStarts !== bStarts) return aStarts - bStarts
+      return a.length - b.length
+    })
+    return matches.slice(0, 8)
   }, [search])
 
   // 검색어 변경 시 자동완성 첫 항목 선택
