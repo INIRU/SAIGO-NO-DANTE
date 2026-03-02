@@ -102,9 +102,12 @@ export default function DecksPage() {
       setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
     } else if (e.key === 'Tab' && acIndex >= 0) {
       e.preventDefault()
+      // IME 조합 중이면 강제 종료
+      e.currentTarget.blur()
       setSearch(suggestions[acIndex])
       setShowSuggestions(false)
       setAcIndex(-1)
+      setTimeout(() => (e.target as HTMLInputElement).focus(), 0)
     } else if (e.key === 'Escape') {
       setShowSuggestions(false)
       setAcIndex(-1)

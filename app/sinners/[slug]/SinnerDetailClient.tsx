@@ -216,7 +216,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       setAcIndex(prev => (prev <= 0 ? acItems.length - 1 : prev - 1))
     } else if (e.key === 'Tab' && acIndex >= 0) {
       e.preventDefault()
+      e.currentTarget.blur()
       executeAcItem(acItems[acIndex])
+      setTimeout(() => (e.target as HTMLInputElement).focus(), 0)
     } else if (e.key === 'Escape') {
       setShowAutocomplete(false)
       setAcIndex(-1)
