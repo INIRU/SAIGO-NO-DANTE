@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { writeAuditLog } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -250,6 +251,8 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
+
   return NextResponse.json({ ok: true })
 }
 
@@ -335,6 +338,8 @@ export async function PATCH(
     }))
     await admin.schema('limbus').from('deck_egos').insert(rows)
   }
+
+  writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })
 
   return NextResponse.json({ ok: true })
 }

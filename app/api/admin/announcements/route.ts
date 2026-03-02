@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { writeAuditLog } from '@/lib/audit'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,5 +45,10 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const admin = createAdminClient()
+  const userId = await findOrCreateSupabaseUser(admin, session.user!.email!, session.user!.name, session.user!.image)
+  writeAuditLog({ actorId: userId, action: 'announcement_create', targetType: 'announcement', targetId: data.id, details: { title } })
+
   return NextResponse.json(data, { status: 201 })
 }

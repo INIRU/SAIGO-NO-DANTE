@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { writeAuditLog } from '@/lib/audit'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +29,11 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const adminClient = createAdminClient()
+  const userId = await findOrCreateSupabaseUser(adminClient, session.user!.email!, session.user!.name, session.user!.image)
+  writeAuditLog({ actorId: userId, action: 'announcement_update', targetType: 'announcement', targetId: id, details: { title: body.title } })
+
   return NextResponse.json(data)
 }
 
@@ -48,5 +55,10 @@ export async function DELETE(
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const adminClient2 = createAdminClient()
+  const delUserId = await findOrCreateSupabaseUser(adminClient2, session.user!.email!, session.user!.name, session.user!.image)
+  writeAuditLog({ actorId: delUserId, action: 'announcement_delete', targetType: 'announcement', targetId: id })
+
   return NextResponse.json({ ok: true })
 }

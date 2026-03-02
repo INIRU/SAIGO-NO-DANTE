@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { writeAuditLog } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +18,7 @@ export async function GET(
     const { data, error } = await admin
       .schema('limbus')
       .from('deck_comments')
-      .select('id, content, created_at, user_id, profiles(username, avatar_url)')
+      .select('id, content, created_at, user_id, profiles(username, avatar_url, role)')
       .eq('deck_id', id)
       .order('created_at', { ascending: false })
 
@@ -34,6 +35,7 @@ export async function GET(
         user_id: c.user_id,
         username: (profile as Record<string, unknown> | null)?.username ?? null,
         avatar_url: (profile as Record<string, unknown> | null)?.avatar_url ?? null,
+        role: (profile as Record<string, unknown> | null)?.role ?? 'user',
       }
     })
 
@@ -83,10 +85,19 @@ export async function POST(
 
   await admin.schema('limbus').rpc('increment_comment', { deck_id: id })
 
+  // 프로필에서 username, role 조회
+  const { data: profile } = await admin
+    .schema('limbus')
+    .from('profiles')
+    .select('username, avatar_url, role')
+    .eq('id', userId)
+    .single()
+
   return NextResponse.json({
     ...data,
-    username: session.user.name,
-    avatar_url: session.user.image,
+    username: profile?.username ?? session.user.name,
+    avatar_url: profile?.avatar_url ?? session.user.image,
+    role: profile?.role ?? 'user',
   })
 }
 
@@ -141,6 +152,8 @@ export async function DELETE(
   }
 
   await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
+
+  writeAuditLog({ actorId: userId, action: 'comment_delete', targetType: 'comment', targetId: commentId, details: { deck_id: id } })
 
   return NextResponse.json({ ok: true })
 }

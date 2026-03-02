@@ -108,6 +108,7 @@ type Comment = {
   user_id: string
   username: string | null
   avatar_url: string | null
+  role?: string
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
@@ -1712,6 +1713,16 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                           <span style={{ color: '#9a8a70', fontSize: '12px', fontWeight: 600 }}>
                             {comment.username ?? '익명'}
                           </span>
+                          {comment.role === 'admin' && (
+                            <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#e84040', background: 'rgba(232,64,64,0.12)', border: '1px solid rgba(232,64,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
+                              ADMIN
+                            </span>
+                          )}
+                          {comment.role === 'moderator' && (
+                            <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#50b080', background: 'rgba(80,176,128,0.12)', border: '1px solid rgba(80,176,128,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
+                              MOD
+                            </span>
+                          )}
                           <span style={{ color: '#2a2035', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
                             {commentDate}
                           </span>
