@@ -129,6 +129,7 @@ export default function DecksPage() {
   // 멀티 선택 필터
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
+  const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
 
   // 컬렉션 필터
   const [filterOwnedIdentity, setFilterOwnedIdentity] = useState(false)
@@ -274,14 +275,21 @@ export default function DecksPage() {
       })
     }
 
-    // 키워드 멀티 필터: 선택된 키워드 중 하나 이상 매칭
+    // 키워드 멀티 필터: AND(모두 포함) 또는 OR(하나 이상)
     if (activeKeywords.size > 0) {
       list = list.filter(d => {
         const deckKws = getDeckThemeKeywords(d)
-        for (const kw of activeKeywords) {
-          if (deckKws.includes(kw)) return true
+        if (keywordMode === 'and') {
+          for (const kw of activeKeywords) {
+            if (!deckKws.includes(kw)) return false
+          }
+          return true
+        } else {
+          for (const kw of activeKeywords) {
+            if (deckKws.includes(kw)) return true
+          }
+          return false
         }
-        return false
       })
     }
 
@@ -306,7 +314,7 @@ export default function DecksPage() {
     }
 
     return list
-  }, [decks, search, activeTags, activeKeywords, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, search, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   const hasAnyFilter = search || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
 
@@ -478,18 +486,36 @@ export default function DecksPage() {
       {availableKeywords.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           {activeKeywords.size > 0 && (
-            <button
-              onClick={() => setActiveKeywords(new Set())}
-              className="px-3 py-1 rounded text-xs transition-all duration-150"
-              style={{
-                background: 'transparent',
-                color: '#555566',
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              키워드 초기화
-            </button>
+            <>
+              <button
+                onClick={() => setActiveKeywords(new Set())}
+                className="px-3 py-1 rounded text-xs transition-all duration-150"
+                style={{
+                  background: 'transparent',
+                  color: '#555566',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                키워드 초기화
+              </button>
+              {activeKeywords.size >= 2 && (
+                <button
+                  onClick={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
+                  className="px-2.5 py-1 rounded text-xs transition-all duration-150"
+                  style={{
+                    background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'transparent',
+                    color: keywordMode === 'and' ? '#c8a450' : '#555566',
+                    border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'var(--border)'}`,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {keywordMode === 'and' ? 'AND' : 'OR'}
+                </button>
+              )}
+            </>
           )}
           {availableKeywords.map(kw => {
             const isActive = activeKeywords.has(kw)

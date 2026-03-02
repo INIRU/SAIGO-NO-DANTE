@@ -419,8 +419,25 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             })}
           </div>
 
-          {/* 미보유 표시 토글 */}
-          <div className="flex items-center justify-end mb-3">
+          {/* 미보유 표시 + 전체 선택/해제 */}
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={selectAll}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
+              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
+            >
+              <CheckSquare size={11} />
+              전체 선택
+            </button>
+            <button
+              onClick={deselectAll}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
+              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
+            >
+              <Square size={11} />
+              전체 해제
+            </button>
+            <div className="flex-1" />
             <button
               onClick={() => setShowUnowned(v => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
@@ -618,28 +635,11 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             </div>
           )}
 
-          {/* 하단 액션 바 */}
+          {/* 하단 저장 바 */}
           <div
-            className="flex flex-wrap items-center gap-2 pt-4 mt-4"
+            className="flex flex-wrap items-center justify-end gap-2 pt-4 mt-4"
             style={{ borderTop: '1px solid var(--border)' }}
           >
-            <button
-              onClick={selectAll}
-              className="flex items-center gap-1 px-3 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
-            >
-              <CheckSquare size={11} />
-              전체 선택
-            </button>
-            <button
-              onClick={deselectAll}
-              className="flex items-center gap-1 px-3 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
-            >
-              <Square size={11} />
-              전체 해제
-            </button>
-            <div className="flex-1" />
             {dirty && (
               <button
                 onClick={saveCollection}

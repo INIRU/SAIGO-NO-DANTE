@@ -888,7 +888,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               <Link
                 href="/decks"
                 className="inline-flex items-center gap-1.5 mb-3 transition-opacity hover:opacity-70"
-                style={{ color: '#3a3850', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em' }}
+                style={{ color: '#6a6880', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em' }}
               >
                 <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                   <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
