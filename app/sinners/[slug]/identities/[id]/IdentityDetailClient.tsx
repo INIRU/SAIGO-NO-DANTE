@@ -45,10 +45,13 @@ interface Props {
   guides?: GuideData[]
   sinnerIdentities: Identity[]
   sinnerEgos: EGO[]
+  allSinners: Sinner[]
+  allIdentities: Identity[]
+  allEgos: EGO[]
   canEditGuide?: boolean
 }
 
-export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, sinnerIdentities, sinnerEgos, canEditGuide }: Props) {
+export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, sinnerIdentities, sinnerEgos, allSinners, allIdentities, allEgos, canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
@@ -154,10 +157,18 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     return map
   }, [sinnerIdentities, sinner.name_kr])
 
+  // sinner_id → name_kr 매핑 (자동완성용)
+  const sinnerNameMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const s of allSinners) map[s.id] = s.name_kr
+    return map
+  }, [allSinners])
+
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
+  // 스킬만 현재 인격 한정, 인격/에고/키워드는 전체
   const acPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
-    // 스킬 — variantMap으로 변형 스킬 라벨/토큰 생성
+    // 스킬 — 현재 인격의 스킬만
     for (const sk of filteredSkills) {
       const sc = SIN_COLORS[sk.sin_affinity] || sinColor
       const v = variantMap[sk.id]
@@ -177,31 +188,33 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
         token,
       })
     }
-    // 인격
-    for (const ident of sinnerIdentities) {
+    // 인격 — 전체 수감자
+    for (const ident of allIdentities) {
       const mainKw = ident.keywords?.find(kw => KEYWORD_SIN_MAP[kw])
       const sinType = mainKw ? KEYWORD_SIN_MAP[mainKw] : undefined
       const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
+      const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
       pool.push({
-        label: ident.name_kr, type: 'identity', typeLabel: '인격', color: sc,
+        label: ident.name_kr, type: 'identity', typeLabel: sinnerName || '인격', color: sc,
         imageUrl: getIdentityProfileUrl(ident, false),
         token: `[i:${ident.name_kr}]`,
       })
     }
-    // 에고
-    for (const ego of sinnerEgos) {
+    // 에고 — 전체 수감자
+    for (const ego of allEgos) {
       const name = ego.name_kr || ego.name
       const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity] ?? '#c8900a') : '#c8900a'
+      const sinnerName = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
       pool.push({
-        label: name, type: 'ego', typeLabel: 'E.G.O', color: sc,
+        label: name, type: 'ego', typeLabel: sinnerName || 'E.G.O', color: sc,
         imageUrl: ego.image_url ?? undefined,
-        token: `[e:${sinner.name_kr}:${name}]`,
+        token: `[e:${sinnerName}:${name}]`,
       })
     }
     // 키워드
     pool.push(...buildKeywordPool())
     return pool
-  }, [filteredSkills, sinnerIdentities, sinnerEgos, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap])
+  }, [filteredSkills, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap])
 
   const ac = useNoteAutocomplete({
     text: guideContent,
