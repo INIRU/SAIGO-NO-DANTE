@@ -372,7 +372,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       <button
                         key={lv}
                         onClick={() => setSkillLevel(lv)}
-                        className="px-3 py-1.5 text-xs font-mono transition-all"
+                        className="px-3 py-1.5 text-xs font-semibold transition-all"
                         style={{
                           background: skillLevel === lv ? `${sinColor}20` : 'transparent',
                           color: skillLevel === lv ? sinColor : '#444',
@@ -437,7 +437,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       <button
                         key={lv}
                         onClick={() => setCorSkillLevel(lv)}
-                        className="px-3 py-1.5 text-xs font-mono transition-all"
+                        className="px-3 py-1.5 text-xs font-semibold transition-all"
                         style={{
                           background: corSkillLevel === lv ? 'rgba(180,20,20,0.3)' : 'transparent',
                           color: corSkillLevel === lv ? '#dd4444' : 'rgba(180,60,60,0.4)',
