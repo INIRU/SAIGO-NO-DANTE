@@ -107,6 +107,7 @@ export type EGO = {
   keywords: string[] | null
   obtaining_method: string | null
   cor_image_url: string | null
+  game_id: string | null
 }
 
 export type SinType = 'wrath' | 'lust' | 'sloth' | 'gluttony' | 'gloom' | 'pride' | 'envy'

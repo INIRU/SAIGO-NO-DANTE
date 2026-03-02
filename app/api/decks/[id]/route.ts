@@ -134,7 +134,7 @@ export async function GET(
       ? supabase.schema('limbus').from('identities').select('sinner_id, game_id').in('sinner_id', sinnerIds)
       : Promise.resolve({ data: [] }),
     allSinnerIds.length > 0
-      ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url').in('sinner_id', allSinnerIds).order('grade').order('name_kr')
+      ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
       : Promise.resolve({ data: [] }),
   ])
 
@@ -148,7 +148,7 @@ export async function GET(
     sinnerGameIds[sid].sort((a, b) => parseInt(a) - parseInt(b))
   }
 
-  // sinnerId → ego_id[] (grade,name_kr 정렬 순)
+  // sinnerId → ego_id[] (game_id 정렬 = 출시 순서)
   const sinnerEgoIds: Record<string, string[]> = {}
   for (const ego of egoRes.data ?? []) {
     ;(sinnerEgoIds[ego.sinner_id] ??= []).push(ego.id)

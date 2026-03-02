@@ -529,6 +529,7 @@ async function decodeDeckCode(
       const off = si * 46
       const sinnerIds = sortedIdentities(identities.filter(i => i.sinner_id === sinner.id))
       const sinnerEgos = egos.filter(e => e.sinner_id === sinner.id)
+        .sort((a, b) => parseInt(a.game_id ?? '99999') - parseInt(b.game_id ?? '99999'))
 
       const idxOrder = readBits(bits, off + CODE_BIT_POSITIONS.identity, 4)
       if (idxOrder > 0 && idxOrder <= sinnerIds.length) {
@@ -578,6 +579,7 @@ async function encodeDeckCode(
     const off = si * 46
     const sinnerIds = sortedIdentities(identities.filter(i => i.sinner_id === sinner.id))
     const sinnerEgos = egos.filter(e => e.sinner_id === sinner.id)
+      .sort((a, b) => parseInt(a.game_id ?? '99999') - parseInt(b.game_id ?? '99999'))
 
     const identity = deckSlots[sinner.id]
     if (identity) {
