@@ -43,15 +43,13 @@ interface Props {
   skills: Skill[]
   passives: Passive[]
   guides?: GuideData[]
-  sinnerIdentities: Identity[]
-  sinnerEgos: EGO[]
   allSinners: Sinner[]
   allIdentities: Identity[]
   allEgos: EGO[]
   canEditGuide?: boolean
 }
 
-export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, sinnerIdentities, sinnerEgos, allSinners, allIdentities, allEgos, canEditGuide }: Props) {
+export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
@@ -133,36 +131,44 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     return map
   }, [filteredSkills, sinner.name_kr, identity, skillImgIdxMap, variantMap])
 
-  const egoTokenLookup = useMemo(() => {
-    const map: Record<string, NoteEgoEntry> = {}
-    for (const ego of sinnerEgos) {
-      const name = ego.name_kr || ego.name
-      map[`${sinner.name_kr}:${name}`] = {
-        name, grade: ego.grade, sin_affinity: ego.sin_affinity,
-        image_url: ego.image_url, sinnerName: sinner.name_kr,
-      }
-    }
-    return map
-  }, [sinnerEgos, sinner.name_kr])
-
-  const identityTokenLookup = useMemo(() => {
-    const map: Record<string, NoteIdentityEntry> = {}
-    for (const ident of sinnerIdentities) {
-      map[ident.name_kr] = {
-        name: ident.name_kr, rarity: ident.rarity,
-        imageUrl: getIdentityProfileUrl(ident, false),
-        sinnerName: sinner.name_kr, keywords: ident.keywords,
-      }
-    }
-    return map
-  }, [sinnerIdentities, sinner.name_kr])
-
   // sinner_id → name_kr 매핑 (자동완성용)
   const sinnerNameMap = useMemo(() => {
     const map: Record<string, string> = {}
     for (const s of allSinners) map[s.id] = s.name_kr
     return map
   }, [allSinners])
+
+  const egoTokenLookup = useMemo(() => {
+    const map: Record<string, NoteEgoEntry> = {}
+    for (const ego of allEgos) {
+      const name = ego.name_kr || ego.name
+      const sinnerName = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
+      map[`${sinnerName}:${name}`] = {
+        name, grade: ego.grade, sin_affinity: ego.sin_affinity,
+        image_url: ego.image_url, sinnerName,
+      }
+    }
+    return map
+  }, [allEgos, sinnerNameMap, sinner.name_kr])
+
+  const identityTokenLookup = useMemo(() => {
+    const map: Record<string, NoteIdentityEntry> = {}
+    // 전체 인격 (sinnerName:name_kr 형식)
+    for (const ident of allIdentities) {
+      const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
+      const entry: NoteIdentityEntry = {
+        name: ident.name_kr, rarity: ident.rarity,
+        imageUrl: getIdentityProfileUrl(ident, false),
+        sinnerName, keywords: ident.keywords,
+      }
+      map[`${sinnerName}:${ident.name_kr}`] = entry
+      // 기존 가이드 호환: name_kr만으로도 조회 가능 (현재 수감자 우선)
+      if (sinnerName === sinner.name_kr || !map[ident.name_kr]) {
+        map[ident.name_kr] = entry
+      }
+    }
+    return map
+  }, [allIdentities, sinnerNameMap, sinner.name_kr])
 
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
   // 스킬만 현재 인격 한정, 인격/에고/키워드는 전체
@@ -197,7 +203,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
       pool.push({
         label: ident.name_kr, type: 'identity', typeLabel: sinnerName || '인격', color: sc,
         imageUrl: getIdentityProfileUrl(ident, false),
-        token: `[i:${ident.name_kr}]`,
+        token: `[i:${sinnerName}:${ident.name_kr}]`,
       })
     }
     // 에고 — 전체 수감자

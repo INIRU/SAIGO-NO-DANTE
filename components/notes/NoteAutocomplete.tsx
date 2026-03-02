@@ -167,7 +167,7 @@ export function NoteAutocompleteDropdown({
           const isSelected = i === selectedIdx
           return (
             <button
-              key={`${sugg.type}-${sugg.label}`}
+              key={sugg.token}
               onMouseDown={e => { e.preventDefault(); onSelect(sugg) }}
               onMouseEnter={() => onHover(i)}
               className="flex items-center gap-2 px-2 py-1 rounded text-left"

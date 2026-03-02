@@ -17,12 +17,10 @@ export default async function IdentityPage({
   ])
   if (!sinner || !identity) notFound()
 
-  const [skills, passives, session, sinnerIdentities, sinnerEgos, allSinners, allIdentities, allEgos] = await Promise.all([
+  const [skills, passives, session, allSinners, allIdentities, allEgos] = await Promise.all([
     getSkills(identity.id),
     getPassives(identity.id),
     getServerSession(authOptions),
-    getIdentities(sinner.id),
-    getEGOs(sinner.id),
     getSinners(),
     getIdentities(),
     getEGOs(),
@@ -63,8 +61,6 @@ export default async function IdentityPage({
       skills={skills}
       passives={passives}
       guides={guides}
-      sinnerIdentities={sinnerIdentities}
-      sinnerEgos={sinnerEgos}
       allSinners={allSinners}
       allIdentities={allIdentities}
       allEgos={allEgos}
