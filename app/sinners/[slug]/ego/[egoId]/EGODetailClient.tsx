@@ -192,7 +192,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const corSkillList = ego.ego_cor_skills ?? []
   const hasCor = corSkillList.length > 0
 
-  // 이름별 그룹화 후 선택된 동기화 레벨 스킬 추출 (다중 스킬 EGO 대응)
+  // 이름별 그룹화 후 선택된 해석 레벨 스킬 추출 (다중 스킬 EGO 대응)
   function pickByLevel(list: EGOSkill[], level: 3 | 4): EGOSkill[] {
     const groups: Record<string, EGOSkill[]> = {}
     for (const s of list) {
@@ -366,7 +366,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>EGO 스킬</h2>
-                  {/* 3동기화 / 4동기화 */}
+                  {/* 3해석 / 4해석 */}
                   <div className="flex rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                     {([3, 4] as const).map(lv => (
                       <button
@@ -379,7 +379,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                           borderRight: lv === 3 ? '1px solid var(--border)' : undefined,
                         }}
                       >
-                        {lv}동기화
+                        {lv}해석
                       </button>
                     ))}
                   </div>
@@ -431,7 +431,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   >
                     ▌ 침식
                   </span>
-                  {/* 3동기화 / 4동기화 */}
+                  {/* 3해석 / 4해석 */}
                   <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(180,20,20,0.4)' }}>
                     {([3, 4] as const).map(lv => (
                       <button
@@ -444,7 +444,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                           borderRight: lv === 3 ? '1px solid rgba(180,20,20,0.4)' : undefined,
                         }}
                       >
-                        {lv}동기화
+                        {lv}해석
                       </button>
                     ))}
                   </div>
