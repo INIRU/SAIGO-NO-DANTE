@@ -3,7 +3,7 @@
 import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { Heart, Copy, Check, Pencil } from 'lucide-react'
+import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
 import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices } from '@/lib/data/sinners'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry } from '@/components/decks/NoteChips'
@@ -99,6 +99,15 @@ type DeckDetail = {
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
   all_sinner_egos?: SinnerEgo[]
+}
+
+type Comment = {
+  id: string
+  content: string
+  created_at: string
+  user_id: string
+  username: string | null
+  avatar_url: string | null
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
@@ -211,6 +220,11 @@ function topKeywords(slots: IdentitySlot[]): string[] {
 }
 
 // ── 수감자 이름 ──────────────────────────────────────────────────────────
+const SINNER_ORDER = [
+  'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault', 'hong-lu',
+  'heathcliff', 'ishmael', 'rodion', 'sinclair', 'outis', 'gregor',
+] as const
+
 const SINNER_NAMES: Record<string, string> = {
   'yi-sang': '이상', 'faust': '파우스트', 'don-quixote': '돈키호테',
   'ryoshu': '료슈', 'meursault': '뫼르소', 'hong-lu': '홍루',
@@ -673,6 +687,19 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
   const [notesOpen, setNotesOpen] = useState(true)
 
+  // 북마크
+  const [bookmarked, setBookmarked] = useState(false)
+  const [bookmarking, setBookmarking] = useState(false)
+
+  // 댓글
+  const [comments, setComments] = useState<Comment[]>([])
+  const [commentText, setCommentText] = useState('')
+  const [commentSubmitting, setCommentSubmitting] = useState(false)
+
+  // 공유
+  const [shared, setShared] = useState(false)
+  const [shareGenerating, setShareGenerating] = useState(false)
+
   useEffect(() => {
     fetch('/api/keyword-meta')
       .then(r => r.ok ? r.json() : [])
@@ -720,6 +747,23 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       .catch(() => {})
   }, [id, authStatus])
 
+  // 북마크 상태 로드
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return
+    fetch(`/api/decks/${id}/bookmark`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBookmarked(data.bookmarked) })
+      .catch(() => {})
+  }, [id, authStatus])
+
+  // 댓글 로드
+  useEffect(() => {
+    fetch(`/api/decks/${id}/comments`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Comment[]) => setComments(data))
+      .catch(() => {})
+  }, [id])
+
   const handleVote = useCallback(async () => {
     if (authStatus !== 'authenticated' || voting) return
     setVoting(true)
@@ -741,6 +785,67 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [deck?.deck_code])
+
+  const handleBookmark = useCallback(async () => {
+    if (authStatus !== 'authenticated' || bookmarking) return
+    setBookmarking(true)
+    try {
+      const res = await fetch(`/api/decks/${id}/bookmark`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) setBookmarked(data.bookmarked)
+    } finally {
+      setBookmarking(false)
+    }
+  }, [authStatus, id, bookmarking])
+
+  const handleShare = useCallback(async () => {
+    if (shareGenerating || !deck) return
+    setShareGenerating(true)
+    try {
+      const shareUrl = `${window.location.origin}/decks/${id}`
+      if (navigator.share) {
+        try {
+          await navigator.share({ url: shareUrl, title: deck.title })
+        } catch (e) {
+          if (e instanceof Error && e.name !== 'AbortError') throw e
+        }
+      } else {
+        await navigator.clipboard.writeText(shareUrl)
+        setShared(true)
+        setTimeout(() => setShared(false), 2000)
+      }
+    } finally {
+      setShareGenerating(false)
+    }
+  }, [shareGenerating, deck, id])
+
+  const handleCommentSubmit = useCallback(async () => {
+    if (!commentText.trim() || commentSubmitting || authStatus !== 'authenticated') return
+    setCommentSubmitting(true)
+    try {
+      const res = await fetch(`/api/decks/${id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText.trim() }),
+      })
+      if (res.ok) {
+        const comment: Comment = await res.json()
+        setComments(prev => [comment, ...prev])
+        setCommentText('')
+      }
+    } finally {
+      setCommentSubmitting(false)
+    }
+  }, [commentText, commentSubmitting, authStatus, id])
+
+  const handleCommentDelete = useCallback(async (commentId: string) => {
+    try {
+      const res = await fetch(`/api/decks/${id}/comments?commentId=${commentId}`, { method: 'DELETE' })
+      if (res.ok) {
+        setComments(prev => prev.filter(c => c.id !== commentId))
+      }
+    } catch { /* ignore */ }
+  }, [id])
 
   if (loading) return <Skeleton />
 
@@ -803,11 +908,22 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     ;(acc[sid] ??= []).push(slot)
     return acc
   }, {})
-  // 인격 + EGO 수감자 합산 (인격 순서 우선)
+  // 인격 + EGO 수감자 합산 (정규 수감자 순서)
   const sinnerIds = [
     ...Object.keys(slotsBySinner),
     ...egoSinnerIds.filter(sid => !slotsBySinner[sid]),
-  ]
+  ].sort((a, b) => {
+    const ai = SINNER_ORDER.indexOf(a as typeof SINNER_ORDER[number])
+    const bi = SINNER_ORDER.indexOf(b as typeof SINNER_ORDER[number])
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+  })
+
+  // 수감자별 편성 순서 (slot_order → 표시 번호)
+  const sinnerFormationOrder: Record<string, number> = {}
+  for (const slot of filledSlots) {
+    const sid = slot.identities!.sinner_id
+    if (slot.slot_order !== 99) sinnerFormationOrder[sid] = slot.slot_order + 1
+  }
   const activeSinner = selectedSinner ?? sinnerIds[0] ?? null
   const activeSlots = activeSinner ? (slotsBySinner[activeSinner] ?? []) : []
   const activeEgos = activeSinner ? (egoGrouped[activeSinner] ?? []) : []
@@ -952,6 +1068,50 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#444455' }}>
                 {voteCount}
               </span>
+            </button>
+
+            {/* 북마크 */}
+            <button
+              onClick={handleBookmark}
+              disabled={bookmarking || authStatus !== 'authenticated'}
+              className="inline-flex items-center justify-center transition-all duration-200"
+              style={{ opacity: bookmarking ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
+              title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
+            >
+              <div
+                className="flex items-center justify-center rounded-full transition-all duration-300"
+                style={{
+                  width: 32, height: 32,
+                  background: bookmarked ? 'rgba(200,144,10,0.14)' : 'rgba(44,28,12,0.5)',
+                  border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.45)' : 'rgba(58,40,18,0.7)'}`,
+                  boxShadow: bookmarked ? '0 0 12px rgba(200,144,10,0.18)' : 'none',
+                }}
+              >
+                <Bookmark
+                  size={14}
+                  fill={bookmarked ? 'currentColor' : 'none'}
+                  style={{ color: bookmarked ? 'var(--gold)' : '#3a3050' }}
+                />
+              </div>
+            </button>
+
+            {/* 공유 */}
+            <button
+              onClick={handleShare}
+              disabled={shareGenerating}
+              className="inline-flex items-center justify-center transition-all duration-200"
+              style={{ opacity: shareGenerating ? 0.5 : 1 }}
+            >
+              <div
+                className="flex items-center justify-center rounded-full transition-all duration-300"
+                style={{
+                  width: 32, height: 32,
+                  background: shareGenerating ? 'rgba(200,144,10,0.14)' : 'rgba(44,28,12,0.5)',
+                  border: `1px solid ${shareGenerating ? 'rgba(200,144,10,0.45)' : 'rgba(58,40,18,0.7)'}`,
+                }}
+              >
+                <Share2 size={14} style={{ color: shareGenerating ? 'var(--gold)' : '#3a3050' }} />
+              </div>
             </button>
 
             <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
@@ -1125,6 +1285,46 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                 </button>
               )}
 
+              {/* 북마크 + 공유 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBookmark}
+                  disabled={bookmarking || authStatus !== 'authenticated'}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150"
+                  style={{
+                    background: bookmarked ? 'rgba(200,144,10,0.12)' : '#120e09',
+                    border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.4)' : 'var(--border)'}`,
+                    color: bookmarked ? 'var(--gold)' : '#484858',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.1em',
+                    opacity: bookmarking ? 0.5 : 1,
+                    cursor: authStatus !== 'authenticated' ? 'default' : 'pointer',
+                  }}
+                  title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
+                >
+                  <Bookmark size={11} fill={bookmarked ? 'currentColor' : 'none'} />
+                  {bookmarked ? 'SAVED' : 'SAVE'}
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={shareGenerating}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150"
+                  style={{
+                    background: shared ? 'rgba(88,136,40,0.12)' : '#120e09',
+                    border: `1px solid ${shared ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
+                    color: shared ? '#88a830' : '#484858',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.1em',
+                    opacity: shareGenerating ? 0.5 : 1,
+                  }}
+                >
+                  {shared ? <Check size={11} /> : <Share2 size={11} />}
+                  {shared ? 'COPIED!' : 'SHARE'}
+                </button>
+              </div>
+
               {/* 태그 + 키워드 */}
               {(deck.tags.length > 0 || keywords.length > 0) && (
                 <div className="rounded-lg p-3 flex flex-col gap-2" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
@@ -1264,6 +1464,42 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                         )}
                         {/* 등급 바 */}
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: rc, opacity: isActive ? 1 : 0.4 }} />
+                        {/* 편성/대기 순서 */}
+                        {sinnerFormationOrder[sid] != null && (() => {
+                          const n = sinnerFormationOrder[sid]
+                          const isFormation = n <= 7
+                          return (
+                            <div
+                              className="absolute inset-0 flex items-center justify-center"
+                              style={{
+                                opacity: isActive ? 0.95 : 0.55,
+                                transition: 'opacity 0.15s',
+                                pointerEvents: 'none',
+                                gap: '3px',
+                              }}
+                            >
+                              <span style={{
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-body)',
+                                color: isFormation ? '#e8b030' : '#5ab0d0',
+                                textShadow: `0 0 8px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)`,
+                              }}>
+                                {isFormation ? '편성' : '대기'}
+                              </span>
+                              <span style={{
+                                fontSize: '22px',
+                                fontWeight: 800,
+                                fontFamily: 'var(--font-body)',
+                                lineHeight: 1,
+                                color: isFormation ? '#e8b030' : '#5ab0d0',
+                                textShadow: `0 0 10px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)`,
+                              }}>
+                                {n}
+                              </span>
+                            </div>
+                          )
+                        })()}
                         {/* 수감자 로고 */}
                         <div
                           className="absolute bottom-0 left-0 right-0 flex items-end justify-center"
@@ -1367,7 +1603,150 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
           </main>
 
         </div>
+
+        {/* ── 댓글 섹션 ── */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+              COMMENTS
+            </span>
+            <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+              댓글
+            </span>
+            <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+              {comments.length}
+            </span>
+          </div>
+
+          {/* 댓글 입력 */}
+          {authStatus === 'authenticated' ? (
+            <div
+              className="rounded-lg p-4 mb-4"
+              style={{ background: '#120e09', border: '1px solid var(--border)' }}
+            >
+              <textarea
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="덱에 대한 의견을 남겨보세요..."
+                className="w-full px-3 py-2 text-sm outline-none resize-none"
+                style={{
+                  background: '#0a0806',
+                  border: '1px solid rgba(58,40,18,0.5)',
+                  borderRadius: '4px',
+                  color: '#e8dcc8',
+                  fontFamily: 'var(--font-body)',
+                }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                  {commentText.length}/500
+                </span>
+                <button
+                  onClick={handleCommentSubmit}
+                  disabled={commentSubmitting || !commentText.trim()}
+                  className="px-4 py-1.5 text-xs font-medium transition-all duration-150 hover:brightness-110"
+                  style={{
+                    background: commentText.trim() ? 'var(--gold)' : 'rgba(44,28,12,0.5)',
+                    color: commentText.trim() ? 'var(--bg-deep)' : '#3a3050',
+                    borderRadius: '4px',
+                    cursor: commentText.trim() ? 'pointer' : 'default',
+                    fontFamily: 'var(--font-heading)',
+                    opacity: commentSubmitting ? 0.5 : 1,
+                  }}
+                >
+                  {commentSubmitting ? '등록 중...' : '등록'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="rounded-lg px-4 py-3 mb-4 text-center"
+              style={{ background: '#120e09', border: '1px solid var(--border)', color: '#3a3050', fontSize: '13px', fontFamily: 'var(--font-body)' }}
+            >
+              로그인 후 댓글을 작성할 수 있습니다.
+            </div>
+          )}
+
+          {/* 댓글 목록 */}
+          {comments.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {comments.map(comment => {
+                const commentDate = new Date(comment.created_at).toLocaleDateString('ko-KR', {
+                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                })
+                return (
+                  <div
+                    key={comment.id}
+                    className="rounded-lg p-4"
+                    style={{ background: '#120e09', border: '1px solid var(--border)' }}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* 아바타 */}
+                      {comment.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={comment.avatar_url}
+                          alt=""
+                          width={28}
+                          height={28}
+                          style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 28, height: 28, borderRadius: '50%',
+                            background: 'rgba(200,144,10,0.12)',
+                            border: '1px solid rgba(58,40,18,0.5)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'var(--gold-dim)', fontSize: '11px', fontWeight: 'bold',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {(comment.username ?? '?')[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span style={{ color: '#9a8a70', fontSize: '12px', fontWeight: 600 }}>
+                            {comment.username ?? '익명'}
+                          </span>
+                          <span style={{ color: '#2a2035', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                            {commentDate}
+                          </span>
+                        </div>
+                        <p style={{ color: '#7a7060', fontSize: '13px', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                          {comment.content}
+                        </p>
+                      </div>
+                      {/* 삭제 (본인만) */}
+                      {authStatus === 'authenticated' && (
+                        <button
+                          onClick={() => handleCommentDelete(comment.id)}
+                          className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70"
+                          style={{ color: '#3a2020', cursor: 'pointer' }}
+                          title="댓글 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div
+              className="text-center py-8"
+              style={{ color: '#2a2035', fontSize: '13px', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}
+            >
+              아직 댓글이 없습니다.
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   )
 }

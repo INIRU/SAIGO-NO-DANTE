@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Heart, Eye } from 'lucide-react'
+import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { STORAGE_BASE, getKeywordIconUrl } from '@/lib/data/sinners'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 
@@ -27,6 +27,7 @@ export type DeckSummary = {
   tags: string[]
   vote_count: number
   view_count: number
+  comment_count?: number
   created_at: string
   username?: string
   deck_identities?: IdentityPreview[]
@@ -232,6 +233,12 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
               <Eye size={10} />
               {deck.view_count}
             </span>
+            {(deck.comment_count ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#3a3050' }}>
+                <MessageCircle size={10} />
+                {deck.comment_count}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs" style={{ color: '#3a3050' }}>

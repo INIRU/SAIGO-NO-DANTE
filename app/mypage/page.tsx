@@ -7,7 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import CollectionSection from '@/components/mypage/CollectionSection'
-import { Pencil, Trash2, Calendar, X, Check, Plus, LogOut } from 'lucide-react'
+import { Pencil, Trash2, Calendar, X, Check, Plus, LogOut, Bookmark } from 'lucide-react'
 
 type Profile = {
   username: string | null
@@ -20,6 +20,7 @@ type Profile = {
 type ProfileData = {
   profile: Profile
   decks: DeckSummary[]
+  bookmarkedDecks: DeckSummary[]
   email: string
 }
 
@@ -198,6 +199,19 @@ export default function MyPage() {
   }
 
   if (!session?.user || !data) return null
+
+  // 북마크 해제
+  const removeBookmark = async (deckId: string) => {
+    try {
+      const res = await fetch(`/api/decks/${deckId}/bookmark`, { method: 'POST' })
+      if (res.ok) {
+        setData(prev => prev ? { ...prev, bookmarkedDecks: prev.bookmarkedDecks.filter(d => d.id !== deckId) } : prev)
+        showToast('북마크가 해제되었습니다.', 'success')
+      }
+    } catch {
+      showToast('북마크 해제에 실패했습니다.')
+    }
+  }
 
   const { profile, decks, email } = data
   const displayName = profile.username ?? session.user.name ?? email
@@ -584,6 +598,64 @@ export default function MyPage() {
                           <Trash2 size={14} />
                         </button>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* BOOKMARKS */}
+            <section className="mt-8">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="flex items-center gap-2">
+                  <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+                    BOOKMARKS
+                  </span>
+                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+                    저장한 덱
+                  </span>
+                </h2>
+              </div>
+
+              {data.bookmarkedDecks.length === 0 ? (
+                <div
+                  className="flex flex-col items-center justify-center py-12 gap-3"
+                  style={{
+                    background: '#1a1510',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <Bookmark size={24} style={{ color: '#2a2035' }} />
+                  <p className="font-serif text-sm italic" style={{ color: '#333344' }}>
+                    아직 저장한 덱이 없습니다.
+                  </p>
+                  <Link
+                    href="/decks"
+                    style={{ color: 'var(--gold-dim)', fontSize: '13px' }}
+                    className="hover:text-yellow-300 transition-colors underline underline-offset-2"
+                  >
+                    덱 게시판 둘러보기 &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {data.bookmarkedDecks.map(deck => (
+                    <div key={deck.id} className="relative group/card flex flex-col [&>*:first-child]:flex-1">
+                      <DeckCard deck={deck} />
+                      <button
+                        onClick={() => removeBookmark(deck.id)}
+                        className="absolute top-2 right-2 p-2 rounded opacity-0 group-hover/card:opacity-100 transition-all duration-200 hover:scale-110 z-10"
+                        style={{
+                          background: 'rgba(44,28,12,0.9)',
+                          color: 'var(--gold-dim)',
+                          cursor: 'pointer',
+                          border: '1px solid rgba(200,144,10,0.3)',
+                        }}
+                        title="북마크 해제"
+                      >
+                        <X size={14} />
+                      </button>
                     </div>
                   ))}
                 </div>

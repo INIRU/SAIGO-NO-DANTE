@@ -194,6 +194,37 @@ CREATE TRIGGER announcements_updated_at
   BEFORE UPDATE ON limbus.announcements
   FOR EACH ROW EXECUTE FUNCTION limbus.update_updated_at();
 
+-- ⑪ 덱 북마크
+CREATE TABLE IF NOT EXISTS limbus.deck_bookmarks (
+  deck_id    UUID REFERENCES limbus.decks(id) ON DELETE CASCADE,
+  user_id    UUID REFERENCES limbus.profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (deck_id, user_id)
+);
+
+-- ⑫ 덱 댓글
+CREATE TABLE IF NOT EXISTS limbus.deck_comments (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deck_id    UUID REFERENCES limbus.decks(id) ON DELETE CASCADE,
+  user_id    UUID REFERENCES limbus.profiles(id) ON DELETE SET NULL,
+  content    TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- decks 테이블에 comment_count 추가
+ALTER TABLE limbus.decks ADD COLUMN IF NOT EXISTS comment_count INT DEFAULT 0;
+
+-- 댓글 수 증감 RPC
+CREATE OR REPLACE FUNCTION limbus.increment_comment(deck_id UUID)
+RETURNS void AS $$
+  UPDATE limbus.decks SET comment_count = comment_count + 1 WHERE id = deck_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION limbus.decrement_comment(deck_id UUID)
+RETURNS void AS $$
+  UPDATE limbus.decks SET comment_count = GREATEST(0, comment_count - 1) WHERE id = deck_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
 -- ── RLS (Row Level Security) ───────────────────────────────
 
 ALTER TABLE limbus.profiles      ENABLE ROW LEVEL SECURITY;
@@ -222,6 +253,18 @@ CREATE POLICY "decks_delete" ON limbus.decks FOR DELETE USING (auth.uid() = user
 CREATE POLICY "votes_select" ON limbus.deck_votes FOR SELECT USING (true);
 CREATE POLICY "votes_insert" ON limbus.deck_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "votes_delete" ON limbus.deck_votes FOR DELETE USING (auth.uid() = user_id);
+
+-- 북마크: 누구나 읽기, 로그인 유저만 추가/삭제
+ALTER TABLE limbus.deck_bookmarks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "bookmarks_select" ON limbus.deck_bookmarks FOR SELECT USING (true);
+CREATE POLICY "bookmarks_insert" ON limbus.deck_bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "bookmarks_delete" ON limbus.deck_bookmarks FOR DELETE USING (auth.uid() = user_id);
+
+-- 댓글: 누구나 읽기, 로그인 유저만 추가, 본인만 삭제
+ALTER TABLE limbus.deck_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "comments_select" ON limbus.deck_comments FOR SELECT USING (true);
+CREATE POLICY "comments_insert" ON limbus.deck_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "comments_delete" ON limbus.deck_comments FOR DELETE USING (auth.uid() = user_id);
 
 -- 공지사항: 누구나 읽기
 ALTER TABLE limbus.announcements ENABLE ROW LEVEL SECURITY;

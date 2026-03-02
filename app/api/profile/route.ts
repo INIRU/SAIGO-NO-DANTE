@@ -23,7 +23,7 @@ export async function GET() {
     return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
   }
 
-  const [profileRes, decksRes] = await Promise.all([
+  const [profileRes, decksRes, bookmarksRes] = await Promise.all([
     admin
       .schema('limbus')
       .from('profiles')
@@ -34,16 +34,43 @@ export async function GET() {
       .schema('limbus')
       .from('decks')
       .select(`
-        id, title, description, tags, vote_count, view_count, created_at,
+        id, title, description, tags, vote_count, view_count, comment_count, created_at,
         deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    admin
+      .schema('limbus')
+      .from('deck_bookmarks')
+      .select(`
+        deck_id,
+        decks:deck_id(
+          id, title, description, tags, vote_count, view_count, comment_count, created_at,
+          profiles(username),
+          deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
+        )
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
   ])
 
+  const bookmarkedDecks = (bookmarksRes.data ?? [])
+    .map((b: Record<string, unknown>) => {
+      const d = Array.isArray(b.decks) ? b.decks[0] : b.decks
+      if (!d) return null
+      const deck = d as Record<string, unknown>
+      const prof = Array.isArray(deck.profiles) ? deck.profiles[0] : deck.profiles
+      return {
+        ...deck,
+        username: (prof as Record<string, string> | null)?.username ?? null,
+      }
+    })
+    .filter(Boolean)
+
   return NextResponse.json({
     profile: profileRes.data ?? { username: session.user.name, bio: null, avatar_url: session.user.image, created_at: null, collection_code: null },
     decks: decksRes.data ?? [],
+    bookmarkedDecks,
     email: session.user.email,
   })
 }

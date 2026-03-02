@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     .schema('limbus')
     .from('decks')
     .select(`
-      id, title, description, tags, vote_count, view_count, created_at,
+      id, title, description, tags, vote_count, view_count, comment_count, created_at,
       profiles!decks_user_id_fkey(username),
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords)),
       deck_egos(ego_id)

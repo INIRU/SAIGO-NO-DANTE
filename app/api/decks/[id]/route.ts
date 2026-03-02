@@ -81,7 +81,7 @@ export async function GET(
       .schema('limbus')
       .from('decks')
       .select(`
-        id, user_id, title, description, tags, vote_count, view_count, created_at,
+        id, user_id, title, description, tags, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, s1_count, s2_count, s3_count,
