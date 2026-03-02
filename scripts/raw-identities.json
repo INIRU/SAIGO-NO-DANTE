@@ -6386,7 +6386,7 @@
     "identitySkill2s": [
       {
         "name": "진창다지기",
-        "power": "63(+2)",
+        "power": "63(+3)",
         "type": "타격",
         "resource": "우울",
         "skillSeq": 2,
@@ -6409,7 +6409,7 @@
       },
       {
         "name": "진창다지기",
-        "power": "63(+2)",
+        "power": "63(+3)",
         "type": "타격",
         "resource": "우울",
         "skillSeq": 2,
@@ -6434,7 +6434,7 @@
     "identitySkill3s": [
       {
         "name": "퍼져라!",
-        "power": "63(+2)",
+        "power": "63(+3)",
         "type": "관통",
         "resource": "나태",
         "skillSeq": 3,
@@ -6457,7 +6457,7 @@
       },
       {
         "name": "퍼져라!",
-        "power": "63(+2)",
+        "power": "63(+3)",
         "type": "관통",
         "resource": "나태",
         "skillSeq": 3,

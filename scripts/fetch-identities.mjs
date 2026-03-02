@@ -317,25 +317,29 @@ async function main() {
     const skillRows = []
     for (const { skills, order } of skillSets) {
       if (!skills?.length) continue
-      const level3 = skills.filter(s => s.level === 3)
-      const seen = new Set()
-      for (const s of level3) {
-        if (seen.has(s.name)) continue
-        seen.add(s.name)
-        skillRows.push({
-          identity_id: identityId,
-          name: s.name,
-          skill_type: TYPE_MAP[s.type] || s.type,
-          sin_affinity: SIN_MAP[s.resource] || null,
-          coins: s.coinNum,
-          base_power: s.skillPower,
-          coin_power: s.coinPower,
-          description: buildSkillDesc(s),
-          skill_order: order,
-          atk_weight: s.atkWeight || 1,
-          offense_level: parseInt(s.power) || null,
-          quantity: s.quantity || null,
-        })
+      for (const level of [3, 4]) {
+        const filtered = skills.filter(s => s.level === level)
+        if (filtered.length === 0) continue
+        const seen = new Set()
+        for (const s of filtered) {
+          if (seen.has(s.name)) continue
+          seen.add(s.name)
+          skillRows.push({
+            identity_id: identityId,
+            name: s.name,
+            skill_type: TYPE_MAP[s.type] || s.type,
+            sin_affinity: SIN_MAP[s.resource] || null,
+            coins: s.coinNum,
+            base_power: s.skillPower,
+            coin_power: s.coinPower,
+            description: buildSkillDesc(s),
+            skill_order: order,
+            atk_weight: s.atkWeight || 1,
+            offense_level: parseInt(s.power) || null,
+            quantity: s.quantity || null,
+            uptie_level: level,
+          })
+        }
       }
     }
 
@@ -348,17 +352,24 @@ async function main() {
     await supabase.schema('limbus').from('passives').delete().eq('identity_id', identityId)
 
     if (raw.identityPassives?.length) {
-      const level3 = raw.identityPassives.filter(p => p.level === 3)
-      const passiveRows = level3.map((p, i) => ({
-        identity_id: identityId,
-        passive_type: p.isMain ? 'battle' : 'support',
-        name: p.name,
-        sin_affinity: (p.resource && p.resource !== '없음') ? p.resource : null,
-        sin_count: p.resQuantity || null,
-        active_cond: p.activeCond || null,
-        description: p.effect,
-        passive_order: i + 1,
-      }))
+      const passiveRows = []
+      for (const level of [3, 4]) {
+        const filtered = raw.identityPassives.filter(p => p.level === level)
+        if (filtered.length === 0) continue
+        filtered.forEach((p, i) => {
+          passiveRows.push({
+            identity_id: identityId,
+            passive_type: p.isMain ? 'battle' : 'support',
+            name: p.name,
+            sin_affinity: (p.resource && p.resource !== '없음') ? p.resource : null,
+            sin_count: p.resQuantity || null,
+            active_cond: p.activeCond || null,
+            description: p.effect,
+            passive_order: i + 1,
+            uptie_level: level,
+          })
+        })
+      }
 
       if (passiveRows.length > 0) {
         const { error } = await supabase.schema('limbus').from('passives').insert(passiveRows)
