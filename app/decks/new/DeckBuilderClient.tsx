@@ -626,18 +626,16 @@ const SIN_KR_TO_TYPE: Record<string, SinType> = {
 }
 
 /* ── 패시브 뱃지 ─────────────────────────────────────── */
-function PassiveBadge({ p, identity, skillsByIdentityId }: {
+function PassiveBadge({ p, deckSinCounts }: {
   p: Passive
-  identity: Identity
-  skillsByIdentityId: Record<string, Skill[]>
+  deckSinCounts: Record<string, number>
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null)
 
   const sinType = p.sin_affinity ? SIN_KR_TO_TYPE[p.sin_affinity] : null
   const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
-  const idSkills = skillsByIdentityId[identity.id] ?? []
-  const currentCount = sinType ? idSkills.filter(sk => sk.sin_affinity === sinType).length : 0
+  const currentCount = sinType ? (deckSinCounts[sinType] ?? 0) : 0
   const requiredCount = p.sin_count ?? 1
 
   const handleMouseEnter = () => {
@@ -1490,7 +1488,17 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             </button>
           </div>
 
-          {showPassiveDetail && (
+          {showPassiveDetail && (() => {
+            // 덱 전체 스킬 죄악 합산
+            const deckSinCounts: Record<string, number> = {}
+            for (const sinner of sinners) {
+              const id = deckSlots[sinner.id]
+              if (!id) continue
+              for (const sk of skillsByIdentityId[id.id] ?? []) {
+                if (sk.sin_affinity) deckSinCounts[sk.sin_affinity] = (deckSinCounts[sk.sin_affinity] ?? 0) + 1
+              }
+            }
+            return (
             <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
               {sinners.map((sinner, idx) => {
                 const identity = deckSlots[sinner.id]
@@ -1519,7 +1527,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
                       <div className="flex flex-col gap-1.5">
                         {battlePassives.length > 0
-                          ? battlePassives.map(p => <PassiveBadge key={p.id} p={p} identity={identity} skillsByIdentityId={skillsByIdentityId} />)
+                          ? battlePassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
                           : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>
                         }
                       </div>
@@ -1533,7 +1541,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
                       <div className="flex flex-col gap-1.5">
                         {supportPassives.length > 0
-                          ? supportPassives.map(p => <PassiveBadge key={p.id} p={p} identity={identity} skillsByIdentityId={skillsByIdentityId} />)
+                          ? supportPassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
                           : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>
                         }
                       </div>
@@ -1545,7 +1553,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 <p className="text-center py-4" style={{ color: '#333344', fontSize: '11px' }}>인격을 먼저 편성해주세요</p>
               )}
             </div>
-          )}
+            )
+          })()}
         </div>
 
         </>)}

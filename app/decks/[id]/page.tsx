@@ -687,6 +687,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const [selectedSinner, setSelectedSinner] = useState<string | null>(null)
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
   const [notesOpen, setNotesOpen] = useState(true)
+  const [passivesOpen, setPassivesOpen] = useState(false)
 
   // 북마크
   const [bookmarked, setBookmarked] = useState(false)
@@ -1592,6 +1593,126 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                     )}
                   </div>
                 )}
+
+                {/* ── 패시브 패널 ── */}
+                <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setPassivesOpen(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
+                    style={{ background: passivesOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: passivesOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: passivesOpen ? '#8a7040' : '#3a3050', letterSpacing: '0.12em' }}>
+                      PASSIVES
+                    </span>
+                    <svg
+                      width="12" height="12" viewBox="0 0 16 16" fill="none"
+                      style={{ color: passivesOpen ? '#8a7040' : '#2a2035', transition: 'transform 0.2s', transform: passivesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    >
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  {passivesOpen && (() => {
+                    // 덱 전체 스킬 죄악 합산
+                    const deckSinCounts: Record<string, number> = {}
+                    for (const slot of filledSlots) {
+                      const id__ = slot.identities!
+                      const rawSk__ = id__.skills ?? []
+                      const sk4__ = rawSk__.filter(s => (s.uptie_level ?? 3) === 4)
+                      const filtSk__ = sk4__.length > 0 ? sk4__ : rawSk__.filter(s => (s.uptie_level ?? 3) === 3)
+                      for (const sk of filtSk__) {
+                        if (sk.sin_affinity) {
+                          const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
+                          deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+                        }
+                      }
+                    }
+                    return (
+                    <div style={{ borderTop: '1px solid var(--border)' }}>
+                      {filledSlots.map((slot, idx) => {
+                        const id_ = slot.identities!
+                        const rawPa = id_.passives ?? []
+                        const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
+                        const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
+                        const battlePassives = filtPa.filter(p => p.passive_type === 'battle' && p.sin_affinity)
+                        const supportPassives = filtPa.filter(p => p.passive_type === 'support' && p.sin_affinity)
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 px-4 py-2.5"
+                            style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
+                          >
+                            {/* 수감자 + 인격명 */}
+                            <div style={{ minWidth: '130px', flexShrink: 0 }}>
+                              <div className="flex items-center gap-1 mb-0.5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.4 }} />
+                                <span style={{ color: '#3a2e18', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
+                              </div>
+                              <p style={{ color: '#c8a450', fontSize: '11px', fontWeight: 700, lineHeight: 1.2 }}>{id_.name_kr}</p>
+                            </div>
+
+                            {/* 배틀 패시브 */}
+                            <div style={{ flex: 1 }}>
+                              <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
+                              <div className="flex flex-col gap-1.5">
+                                {battlePassives.length > 0 ? battlePassives.map((p, pi) => {
+                                  const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                                  const pc = sinEn ? (SIN_COLORS[sinEn] ?? '#888') : '#888'
+                                  const current = sinEn ? (deckSinCounts[sinEn] ?? 0) : 0
+                                  const required = p.sin_count ?? 1
+                                  return (
+                                    <div key={pi} className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: `${pc}12`, border: `1px solid ${pc}30` }}>
+                                      {sinEn && (
+                                        <div className="flex items-center gap-0.5">
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={sinIconUrl(sinEn)} alt="" style={{ width: '11px', height: '11px' }} />
+                                          <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
+                                          {p.active_cond && <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
+                                        </div>
+                                      )}
+                                      <span style={{ color: pc, fontSize: '9px', fontWeight: 600 }}>{p.name}</span>
+                                    </div>
+                                  )
+                                }) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
+                              </div>
+                            </div>
+
+                            {/* 구분선 (데스크탑) */}
+                            <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
+
+                            {/* 서포트 패시브 */}
+                            <div style={{ flex: 1 }}>
+                              <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
+                              <div className="flex flex-col gap-1.5">
+                                {supportPassives.length > 0 ? supportPassives.map((p, pi) => {
+                                  const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                                  const pc = sinEn ? (SIN_COLORS[sinEn] ?? '#888') : '#888'
+                                  const current = sinEn ? (deckSinCounts[sinEn] ?? 0) : 0
+                                  const required = p.sin_count ?? 1
+                                  return (
+                                    <div key={pi} className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: `${pc}12`, border: `1px solid ${pc}30` }}>
+                                      {sinEn && (
+                                        <div className="flex items-center gap-0.5">
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={sinIconUrl(sinEn)} alt="" style={{ width: '11px', height: '11px' }} />
+                                          <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
+                                          {p.active_cond && <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
+                                        </div>
+                                      )}
+                                      <span style={{ color: pc, fontSize: '9px', fontWeight: 600 }}>{p.name}</span>
+                                    </div>
+                                  )
+                                }) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    )
+                  })()}
+                </div>
 
                 {/* 선택된 수감자 인격 상세 (첫 번째 카드에 EGO 탭 포함) */}
                 <div className="flex flex-col gap-2">
