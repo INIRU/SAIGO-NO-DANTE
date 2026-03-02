@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect, useCallback } from 'react'
+import { use, useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
@@ -289,6 +289,71 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
 }
 
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
+function PassiveBadgeDetail({ p, deckSinCounts }: { p: PassiveDetail; deckSinCounts: Record<string, number> }) {
+  const [hover, setHover] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const [tipPos, setTipPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
+
+  const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+  const pc = sinEn ? (SIN_COLORS[sinEn] ?? '#888') : '#888'
+  const current = sinEn ? (deckSinCounts[sinEn] ?? 0) : 0
+  const required = p.sin_count ?? 1
+
+  const onEnter = () => {
+    if (!ref.current || !p.description) return
+    setHover(true)
+    const rect = ref.current.getBoundingClientRect()
+    const above = rect.top > 180
+    setTipPos({
+      left: Math.min(rect.left, window.innerWidth - 330),
+      ...(above ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }),
+    })
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="relative flex items-center gap-1.5 px-2 py-1 rounded"
+      style={{ background: `${pc}12`, border: `1px solid ${pc}30`, cursor: 'default' }}
+      onMouseEnter={onEnter}
+      onMouseLeave={() => { setHover(false); setTipPos(null) }}
+    >
+      {sinEn && (
+        <div className="flex items-center gap-0.5" style={{ flexShrink: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={sinIconUrl(sinEn)} alt="" style={{ width: '11px', height: '11px' }} />
+          <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
+          {p.active_cond && <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
+        </div>
+      )}
+      <span style={{ color: pc, fontSize: '9px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.name}</span>
+
+      {/* 호버 툴팁 */}
+      {hover && tipPos && p.description && (
+        <div
+          className="z-[200] px-3 py-2.5 rounded shadow-lg pointer-events-none"
+          style={{
+            position: 'fixed',
+            left: tipPos.left,
+            top: tipPos.top,
+            bottom: tipPos.bottom,
+            background: '#1a1510',
+            border: '1px solid #3a3020',
+            minWidth: '220px',
+            maxWidth: '320px',
+            whiteSpace: 'normal',
+          }}
+        >
+          <div style={{ color: pc, fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>{p.name}</div>
+          <div style={{ color: '#999', fontSize: '11px', lineHeight: 1.5 }}>
+            {formatSkillDesc(p.description, pc)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Skeleton() {
   return (
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
@@ -1643,38 +1708,22 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                             style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
                           >
                             {/* 수감자 + 인격명 */}
-                            <div style={{ minWidth: '130px', flexShrink: 0 }}>
+                            <div style={{ width: '130px', minWidth: 0, flexShrink: 0 }}>
                               <div className="flex items-center gap-1 mb-0.5">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.4 }} />
                                 <span style={{ color: '#3a2e18', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
                               </div>
-                              <p style={{ color: '#c8a450', fontSize: '11px', fontWeight: 700, lineHeight: 1.2 }}>{id_.name_kr}</p>
+                              <p style={{ color: '#c8a450', fontSize: '11px', fontWeight: 700, lineHeight: 1.3, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{id_.name_kr}</p>
                             </div>
 
                             {/* 배틀 패시브 */}
-                            <div style={{ flex: 1 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
                               <div className="flex flex-col gap-1.5">
-                                {battlePassives.length > 0 ? battlePassives.map((p, pi) => {
-                                  const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                                  const pc = sinEn ? (SIN_COLORS[sinEn] ?? '#888') : '#888'
-                                  const current = sinEn ? (deckSinCounts[sinEn] ?? 0) : 0
-                                  const required = p.sin_count ?? 1
-                                  return (
-                                    <div key={pi} className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: `${pc}12`, border: `1px solid ${pc}30` }}>
-                                      {sinEn && (
-                                        <div className="flex items-center gap-0.5">
-                                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                                          <img src={sinIconUrl(sinEn)} alt="" style={{ width: '11px', height: '11px' }} />
-                                          <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
-                                          {p.active_cond && <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
-                                        </div>
-                                      )}
-                                      <span style={{ color: pc, fontSize: '9px', fontWeight: 600 }}>{p.name}</span>
-                                    </div>
-                                  )
-                                }) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
+                                {battlePassives.length > 0 ? battlePassives.map((p, pi) => (
+                                  <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
+                                )) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
                               </div>
                             </div>
 
@@ -1682,28 +1731,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                             <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
 
                             {/* 서포트 패시브 */}
-                            <div style={{ flex: 1 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
                               <div className="flex flex-col gap-1.5">
-                                {supportPassives.length > 0 ? supportPassives.map((p, pi) => {
-                                  const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                                  const pc = sinEn ? (SIN_COLORS[sinEn] ?? '#888') : '#888'
-                                  const current = sinEn ? (deckSinCounts[sinEn] ?? 0) : 0
-                                  const required = p.sin_count ?? 1
-                                  return (
-                                    <div key={pi} className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: `${pc}12`, border: `1px solid ${pc}30` }}>
-                                      {sinEn && (
-                                        <div className="flex items-center gap-0.5">
-                                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                                          <img src={sinIconUrl(sinEn)} alt="" style={{ width: '11px', height: '11px' }} />
-                                          <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
-                                          {p.active_cond && <span style={{ color: pc, fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
-                                        </div>
-                                      )}
-                                      <span style={{ color: pc, fontSize: '9px', fontWeight: 600 }}>{p.name}</span>
-                                    </div>
-                                  )
-                                }) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
+                                {supportPassives.length > 0 ? supportPassives.map((p, pi) => (
+                                  <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
+                                )) : <span style={{ color: '#2a2230', fontSize: '9px' }}>-</span>}
                               </div>
                             </div>
                           </div>
