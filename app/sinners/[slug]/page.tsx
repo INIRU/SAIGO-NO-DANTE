@@ -3,6 +3,8 @@ import { getSinnerById, getIdentities, getEGOs, SINNER_SLUGS } from '@/lib/data/
 import { notFound } from 'next/navigation'
 import SinnerDetailClient from './SinnerDetailClient'
 
+export const revalidate = 60
+
 export function generateStaticParams() {
   return SINNER_SLUGS.map(slug => ({ slug }))
 }

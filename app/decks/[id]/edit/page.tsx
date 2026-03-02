@@ -43,7 +43,14 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
   ])
 
   const deck = deckRes.data
-  if (!deck || deck.user_id !== userId) {
+  if (!deck) {
+    redirect(`/decks/${id}`)
+  }
+
+  // 소유자 또는 관리자만 수정 가능
+  const isOwner = deck.user_id === userId
+  const isAdmin = session.user?.isAdmin === true
+  if (!isOwner && !isAdmin) {
     redirect(`/decks/${id}`)
   }
 

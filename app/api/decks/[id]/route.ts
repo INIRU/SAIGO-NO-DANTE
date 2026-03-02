@@ -176,14 +176,16 @@ export async function GET(
 
   const deckCode = await buildDeckCode(sinnerOrder, slotMap, sinnerGameIds, egoMap, sinnerEgoIds)
 
-  // 소유권 확인 (로그인한 경우만)
+  // 소유권 + 관리자 확인 (로그인한 경우만)
   let isOwner = false
+  let isAdmin = false
   try {
     const session = await getServerSession(authOptions)
     if (session?.user?.email) {
       const adminClient = createAdminClient()
       const { data: { user: deckOwner } } = await adminClient.auth.admin.getUserById(deck.user_id)
       isOwner = deckOwner?.email === session.user.email
+      isAdmin = session.user.isAdmin === true
     }
   } catch { /* not authenticated */ }
 
@@ -197,7 +199,7 @@ export async function GET(
     image_url: (e as Record<string, unknown>).image_url as string | null,
   }))
 
-  return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner, all_sinner_egos: allSinnerEgos })
+  return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })
 }
 
 // ── DELETE ──────────────────────────────────────────────────────────────────
@@ -280,7 +282,7 @@ export async function PATCH(
     return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
   }
 
-  // 소유권 확인
+  // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
   const { data: deck } = await admin
     .schema('limbus')
     .from('decks')
@@ -291,11 +293,13 @@ export async function PATCH(
   if (!deck) {
     return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
   }
-  if (deck.user_id !== userId) {
+  const isOwner = deck.user_id === userId
+  const isAdmin = session.user?.isAdmin === true
+  if (!isOwner && !isAdmin) {
     return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
   }
 
-  // decks 테이블 UPDATE
+  // decks 테이블 UPDATE (소유자는 변경하지 않음)
   const { error: updateError } = await admin
     .schema('limbus')
     .from('decks')

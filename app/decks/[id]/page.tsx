@@ -92,6 +92,7 @@ type DeckDetail = {
   created_at: string
   deck_code?: string
   is_owner?: boolean
+  is_admin?: boolean
   profiles: { username: string } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
@@ -941,7 +942,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
 
             {/* 수정 */}
-            {deck.is_owner && (
+            {(deck.is_owner || deck.is_admin) && (
               <Link
                 href={`/decks/${id}/edit`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 hover:brightness-125"
@@ -1072,7 +1073,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               {/* 수정 */}
-              {deck.is_owner && (
+              {(deck.is_owner || deck.is_admin) && (
                 <Link
                   href={`/decks/${id}/edit`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150 hover:brightness-125"

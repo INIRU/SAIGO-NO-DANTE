@@ -2,6 +2,8 @@ import { getSinnerById, getEGOById, getEGOs } from '@/lib/data/sinners'
 import { notFound } from 'next/navigation'
 import EGODetailClient from './EGODetailClient'
 
+export const revalidate = 60
+
 export async function generateStaticParams() {
   const egos = await getEGOs()
   return egos.map(e => ({ slug: e.sinner_id, egoId: e.id }))

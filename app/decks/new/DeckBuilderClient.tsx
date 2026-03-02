@@ -985,7 +985,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
 
   const handleSave = async () => {
-    if (!title.trim()) return
+    if (!title.trim() || identityCount < 12) return
     setSaving(true)
     const identitySlots = sinners
       .filter(s => deckSlots[s.id])
@@ -1138,7 +1138,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         {authStatus === 'authenticated' && (
           <button
             onClick={handleSave}
-            disabled={!title.trim() || saving}
+            disabled={!title.trim() || identityCount < 12 || saving}
+            title={identityCount < 12 ? `12명 전원 인격을 편성해야 합니다 (${identityCount}/12)` : ''}
             className="px-5 py-1.5 rounded font-medium text-sm transition-all duration-200 disabled:opacity-40 hover:brightness-110"
             style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
           >
