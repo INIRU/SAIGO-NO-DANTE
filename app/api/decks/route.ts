@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
   const sort = searchParams.get('sort') || 'latest'
   const limit = parseInt(searchParams.get('limit') || '20')
   const offset = parseInt(searchParams.get('offset') || '0')
+  const identityId = searchParams.get('identity_id')
 
   const orderColumn = sort === 'popular' ? 'vote_count' : 'created_at'
 
-  const { data, error } = await supabase
+  let query = supabase
     .schema('limbus')
     .from('decks')
     .select(`
@@ -26,7 +27,26 @@ export async function GET(request: NextRequest) {
       deck_egos(ego_id)
     `)
     .order(orderColumn, { ascending: false })
-    .range(offset, offset + limit - 1)
+
+  // identity_id 필터: 해당 인격이 포함된 덱 ID를 먼저 조회 후 in() 필터
+  if (identityId) {
+    const { data: matches } = await supabase
+      .schema('limbus')
+      .from('deck_identities')
+      .select('deck_id')
+      .eq('identity_id', identityId)
+
+    if (!matches || matches.length === 0) {
+      return NextResponse.json([])
+    }
+
+    const deckIds = [...new Set(matches.map(m => m.deck_id))]
+    query = query.in('id', deckIds)
+  }
+
+  query = query.range(offset, offset + limit - 1)
+
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

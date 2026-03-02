@@ -59,8 +59,9 @@ export default function Navbar() {
     setMobileMenuOpen(false)
   }, [pathname])
 
+  const [avatarError, setAvatarError] = useState(false)
   const user = session?.user
-  const avatarUrl = user?.image ?? undefined
+  const avatarUrl = !avatarError ? (user?.image ?? undefined) : undefined
   const displayName = user?.name ?? user?.email ?? ''
 
   const linkStyle = (href: string) => ({
@@ -124,6 +125,7 @@ export default function Navbar() {
                 >
                   {avatarUrl ? (
                     <Image src={avatarUrl} alt="" width={30} height={30} unoptimized
+                      onError={() => setAvatarError(true)}
                       style={{ borderRadius: '50%', border: '1.5px solid var(--gold-dim)' }} />
                   ) : (
                     <div style={{
@@ -244,6 +246,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 py-4" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                   {avatarUrl ? (
                     <Image src={avatarUrl} alt="" width={36} height={36} unoptimized
+                      onError={() => setAvatarError(true)}
                       style={{ borderRadius: '50%', border: '1.5px solid var(--gold-dim)' }} />
                   ) : (
                     <div style={{

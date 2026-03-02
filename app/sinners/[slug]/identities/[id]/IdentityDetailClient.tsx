@@ -27,6 +27,7 @@ import {
 import { KeywordWithTooltip, formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import IdentityDecksTab from '@/components/sinners/IdentityDecksTab'
 
 interface GuideData {
   id: string
@@ -50,6 +51,7 @@ interface Props {
 export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, sinnerIdentities, sinnerEgos, canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
+  const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
   const sinColor = getIdentitySinColor(identity)
@@ -443,6 +445,43 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
           {/* 우측: 스탯 + 스킬 (2/3) */}
           <div className="lg:col-span-2 space-y-8">
+            {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
+            <div
+              className="flex"
+              style={{
+                borderBottom: '2px solid var(--border)',
+              }}
+            >
+              {([
+                { key: 'info' as const, label: '인격 정보' },
+                { key: 'decks' as const, label: '덱' },
+              ]).map(tab => {
+                const isActive = pageTab === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setPageTab(tab.key)}
+                    className="relative px-6 py-3 font-semibold transition-all"
+                    style={{
+                      color: isActive ? 'var(--gold)' : '#555',
+                      fontSize: '14px',
+                      fontFamily: 'var(--font-heading)',
+                      background: 'transparent',
+                      borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                      marginBottom: '-2px',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {pageTab === 'decks' && (
+              <IdentityDecksTab identityId={identity.id} />
+            )}
+
+            {pageTab === 'info' && (<>
             {/* 기본 정보 */}
             <div className="card p-6">
               <h2
@@ -1422,6 +1461,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
             >
               ← {sinner.name_kr}의 인격 목록으로
             </Link>
+            </>)}
           </div>
         </div>
       </div>
