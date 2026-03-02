@@ -8,24 +8,43 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const pinnedOnly = searchParams.get('pinned') === 'true'
 
-  let query = supabase
+  if (pinnedOnly) {
+    // pinned 공지 먼저, 없으면 최신 공지 fallback
+    const { data: pinned, error: pErr } = await supabase
+      .schema('limbus')
+      .from('announcements')
+      .select('id, title, content, pinned, created_at')
+      .eq('pinned', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 })
+
+    if (pinned && pinned.length > 0) {
+      return NextResponse.json({ data: pinned[0] })
+    }
+
+    // pinned 없으면 최신 공지
+    const { data: latest, error: lErr } = await supabase
+      .schema('limbus')
+      .from('announcements')
+      .select('id, title, content, pinned, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (lErr) return NextResponse.json({ error: lErr.message }, { status: 500 })
+
+    return NextResponse.json({ data: latest?.[0] ?? null })
+  }
+
+  const { data, error } = await supabase
     .schema('limbus')
     .from('announcements')
     .select('id, title, content, pinned, created_at')
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (pinnedOnly) {
-    query = query.eq('pinned', true).limit(1)
-  }
-
-  const { data, error } = await query
-
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  if (pinnedOnly) {
-    return NextResponse.json({ data: data?.[0] ?? null })
-  }
 
   return NextResponse.json({ data: data ?? [] })
 }
