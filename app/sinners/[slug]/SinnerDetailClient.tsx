@@ -5,7 +5,10 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
+import Dropdown from '@/components/ui/Dropdown'
 import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, KEYWORD_SIN_MAP, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
+import { decodeCollectionAsync } from '@/lib/collection'
+import type { CollectionData } from '@/lib/collection'
 import IdentityCard from '@/components/sinners/IdentityCard'
 
 interface Props {
@@ -15,6 +18,9 @@ interface Props {
 }
 
 type Tab = 'identities' | 'ego'
+type OwnershipFilter = 'all' | 'owned' | 'unowned'
+
+const LOCAL_STORAGE_KEY = 'limbus-collection'
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
   const router = useRouter()
@@ -25,7 +31,39 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all')
+  const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // 보유 데이터 로드 (localStorage → 없으면 DB에서 동기화)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/collection')
+        if (!res.ok) return
+        const data: CollectionData = await res.json()
+        if (!data.sinners?.length) return
+
+        let code = localStorage.getItem(LOCAL_STORAGE_KEY)
+        if (!code) {
+          try {
+            const profileRes = await fetch('/api/profile')
+            if (profileRes.ok) {
+              const profile = await profileRes.json()
+              code = profile?.profile?.collection_code ?? null
+              if (code) localStorage.setItem(LOCAL_STORAGE_KEY, code)
+            }
+          } catch { /* 비로그인 */ }
+        }
+        if (code) {
+          const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+          setOwnedIds(decoded)
+        } else {
+          setOwnedIds(new Set())
+        }
+      } catch { /* 실패 시 필터 비활성 */ }
+    })()
+  }, [])
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
   useEffect(() => {
@@ -81,11 +119,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     setSearchQuery('')
     setSelectedKeywords(new Set())
     setRarityFilter(null)
+    setOwnershipFilter('all')
   }
 
-  const hasActiveFilters = searchQuery || selectedKeywords.size > 0 || rarityFilter
+  const hasActiveFilters = searchQuery || selectedKeywords.size > 0 || rarityFilter || ownershipFilter !== 'all'
 
-  // 인격 필터링: 등급 → 검색어 → 키워드
+  // 인격 필터링: 등급 → 검색어 → 키워드 → 보유
   const filteredIdentities = useMemo(() => {
     let result = identities
     if (rarityFilter) result = result.filter(i => i.rarity === rarityFilter)
@@ -103,15 +142,20 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         i.keywords && [...selectedKeywords].every(kw => i.keywords.includes(kw))
       )
     }
+    if (ownershipFilter !== 'all' && ownedIds) {
+      result = result.filter(i =>
+        ownershipFilter === 'owned' ? ownedIds.has(i.id) : !ownedIds.has(i.id)
+      )
+    }
     result = [...result].sort((a, b) => {
       const aId = parseInt(a.game_id ?? '0')
       const bId = parseInt(b.game_id ?? '0')
       return sortOrder === 'newest' ? bId - aId : aId - bId
     })
     return result
-  }, [identities, rarityFilter, searchQuery, selectedKeywords, sortOrder])
+  }, [identities, rarityFilter, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
 
-  // EGO 필터링: 검색어 → 키워드
+  // EGO 필터링: 검색어 → 키워드 → 보유
   const filteredEgos = useMemo(() => {
     let result = egos
     if (searchQuery.trim()) {
@@ -127,13 +171,18 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         e.keywords && [...selectedKeywords].every(kw => e.keywords!.includes(kw))
       )
     }
+    if (ownershipFilter !== 'all' && ownedIds) {
+      result = result.filter(e =>
+        ownershipFilter === 'owned' ? ownedIds.has(e.id) : !ownedIds.has(e.id)
+      )
+    }
     result = [...result].sort((a, b) => {
       const aId = parseInt(a.game_id ?? '0')
       const bId = parseInt(b.game_id ?? '0')
       return sortOrder === 'newest' ? bId - aId : aId - bId
     })
     return result
-  }, [egos, searchQuery, selectedKeywords, sortOrder])
+  }, [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
 
   // 자동완성 드롭다운
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -564,6 +613,21 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* 보유 필터 드롭다운 */}
+                    {ownedIds !== null && (
+                      <Dropdown
+                        value={ownershipFilter}
+                        defaultValue="all"
+                        options={[
+                          { value: 'all', label: '전체 보기' },
+                          { value: 'owned', label: '보유 인격' },
+                          { value: 'unowned', label: '미보유 인격' },
+                        ]}
+                        onChange={v => setOwnershipFilter(v as OwnershipFilter)}
+                        minWidth={110}
+                      />
+                    )}
+
                     {/* 정렬 토글 */}
                     <button
                       onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
@@ -631,8 +695,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {/* EGO 탭 */}
             {tab === 'ego' && (
               <div>
-                {/* 정렬 */}
-                <div className="flex items-center justify-end mb-3">
+                {/* 정렬 + 보유 필터 */}
+                <div className="flex items-center justify-end gap-2 mb-3">
                   <button
                     onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
@@ -651,6 +715,21 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     </svg>
                     {sortOrder === 'newest' ? '최신순' : '오래된순'}
                   </button>
+
+                  {/* 보유 필터 드롭다운 */}
+                  {ownedIds !== null && (
+                    <Dropdown
+                      value={ownershipFilter}
+                      defaultValue="all"
+                      options={[
+                        { value: 'all', label: '전체 보기' },
+                        { value: 'owned', label: '보유 EGO' },
+                        { value: 'unowned', label: '미보유 EGO' },
+                      ]}
+                      onChange={v => setOwnershipFilter(v as OwnershipFilter)}
+                      minWidth={110}
+                    />
+                  )}
                 </div>
 
                 {filteredEgos.length === 0 ? (

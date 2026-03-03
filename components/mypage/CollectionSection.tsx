@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, KEYWORD_SIN_MAP, normalizeSin, type SinType } from '@/lib/data/sinners'
-import { Check, CheckSquare, Square, Link2 } from 'lucide-react'
+import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
 import type { SinnerInfo, IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 
@@ -94,6 +94,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [dirty, setDirty] = useState(false)
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [showUnowned, setShowUnowned] = useState(persistMode === 'local')
+  const [generating, setGenerating] = useState(false)
+  const downloadRef = useRef<HTMLDivElement>(null)
 
   // 데이터 로드
   useEffect(() => {
@@ -216,6 +218,42 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [data, owned])
+
+  // 전체 스크롤 다운로드
+  const generateImage = useCallback(async () => {
+    if (!data || generating) return
+    setGenerating(true)
+    try {
+      // React 렌더 대기
+      await new Promise(r => setTimeout(r, 200))
+      const container = downloadRef.current
+      if (!container) return
+
+      // 이미지 로드 대기
+      const images = container.querySelectorAll('img')
+      await Promise.allSettled(
+        Array.from(images).map(img =>
+          img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })
+        )
+      )
+
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(container, {
+        useCORS: true,
+        scale: 1,
+        backgroundColor: '#0d0b08',
+      })
+
+      const link = document.createElement('a')
+      link.download = `limbus-collection-${Date.now()}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch {
+      // 다운로드 실패 무시
+    } finally {
+      setGenerating(false)
+    }
+  }, [data, generating])
 
   // 통계
   const stats = useMemo(() => {
@@ -457,6 +495,57 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             </button>
           </div>
 
+          {/* 공유 / 다운로드 */}
+          <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
+            {dirty && (
+              <button
+                onClick={saveCollection}
+                disabled={saving}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
+                style={{
+                  background: 'rgba(200,144,10,0.15)',
+                  color: 'var(--gold)',
+                  border: '1px solid var(--gold-dim)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-heading)',
+                }}
+              >
+                <Check size={12} />
+                {saving ? '저장 중...' : '저장'}
+              </button>
+            )}
+            <button
+              onClick={copyShareLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
+              style={{
+                background: copied ? 'rgba(26,100,26,0.8)' : 'rgba(200,144,10,0.15)',
+                color: copied ? '#80ff80' : 'var(--gold)',
+                border: `1px solid ${copied ? 'rgba(26,100,26,0.5)' : 'var(--gold-dim)'}`,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-heading)',
+              }}
+            >
+              {copied ? <Check size={12} /> : <Link2 size={12} />}
+              {copied ? '복사 완료!' : '공유 링크 복사'}
+            </button>
+            <button
+              onClick={generateImage}
+              disabled={generating}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
+              style={{
+                background: 'rgba(90,80,112,0.15)',
+                color: '#8a7aaa',
+                border: '1px solid rgba(90,80,112,0.4)',
+                cursor: generating ? 'wait' : 'pointer',
+                fontFamily: 'var(--font-heading)',
+                opacity: generating ? 0.6 : 1,
+              }}
+            >
+              <Download size={12} />
+              {generating ? '생성 중...' : '전체 스크롤 다운로드'}
+            </button>
+          </div>
+
           {/* 인격 섹션 */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
@@ -635,44 +724,186 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             </div>
           )}
 
-          {/* 하단 저장 바 */}
-          <div
-            className="flex flex-wrap items-center justify-end gap-2 pt-4 mt-4"
-            style={{ borderTop: '1px solid var(--border)' }}
-          >
-            {dirty && (
-              <button
-                onClick={saveCollection}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
-                style={{
-                  background: 'rgba(200,144,10,0.15)',
-                  color: 'var(--gold)',
-                  border: '1px solid var(--gold-dim)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >
-                <Check size={12} />
-                {saving ? '저장 중...' : '저장'}
-              </button>
-            )}
-            <button
-              onClick={copyShareLink}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
-              style={{
-                background: copied ? 'rgba(26,100,26,0.8)' : 'var(--gold)',
-                color: copied ? '#80ff80' : 'var(--bg-deep)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-heading)',
-              }}
-            >
-              {copied ? <Check size={12} /> : <Link2 size={12} />}
-              {copied ? '복사 완료!' : '공유 링크 복사'}
-            </button>
-          </div>
         </div>
       </div>
+      {/* 전체 스크롤 다운로드용 히든 컨테이너 */}
+      {generating && (
+        <div
+          ref={downloadRef}
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: 0,
+            width: '1200px',
+            background: '#0d0b08',
+            padding: '40px',
+            zIndex: -1,
+          }}
+        >
+          {/* 헤더 */}
+          <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
+            <p style={{ color: '#3a3050', fontFamily: 'PerfectDOS, monospace', fontSize: '11px', letterSpacing: '0.2em', marginBottom: '8px' }}>
+              SAIGO NO DANTE
+            </p>
+            <p style={{ color: '#c8900a', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>
+              보유 현황
+            </p>
+            <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '13px' }}>
+              인격 {stats.ownedIdentities}/{stats.totalIdentities}
+              {' \u00B7 '}
+              EGO {stats.ownedEgos}/{stats.totalEgos}
+            </p>
+          </div>
+
+          {/* 모든 수감자 */}
+          {data.sinners.map(sinner => {
+            const allIds = data.identities[sinner.id] ?? []
+            const allEgos = data.egos[sinner.id] ?? []
+            const ids = allIds.filter(i => owned.has(i.id))
+            const egoList = allEgos.filter(e => owned.has(e.id))
+            const ownedCount = ids.length + egoList.length
+            const totalCount = allIds.length + allEgos.length
+
+            if (ownedCount === 0) return null
+
+            return (
+              <div key={sinner.id} style={{ marginBottom: '28px' }}>
+                {/* 수감자 헤더 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={sinnerLogoUrl(sinner.id)}
+                    alt={sinner.name_kr}
+                    width={28}
+                    height={28}
+                    crossOrigin="anonymous"
+                    style={{ borderRadius: '50%' }}
+                  />
+                  <span style={{ color: '#c8900a', fontSize: '16px', fontWeight: 'bold' }}>
+                    {sinner.name_kr}
+                  </span>
+                  <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '11px' }}>
+                    {ownedCount}/{totalCount}
+                  </span>
+                </div>
+
+                {/* 인격 그리드 */}
+                {ids.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ color: '#5a5070', fontSize: '10px', marginBottom: '6px' }}>인격</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
+                      {ids.map(identity => {
+                        const url = identityProfileUrl(identity)
+                        return (
+                          <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div
+                              style={{
+                                position: 'relative',
+                                width: '100%',
+                                aspectRatio: '3/4',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                border: '2px solid #8a6010',
+                                background: '#0a0806',
+                              }}
+                            >
+                              {url && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={url}
+                                  alt={identity.name_kr}
+                                  crossOrigin="anonymous"
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                    display: 'block',
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <p style={{
+                              fontSize: '10px',
+                              color: '#c8a450',
+                              textAlign: 'center',
+                              lineHeight: 1.3,
+                              marginTop: '4px',
+                              wordBreak: 'keep-all',
+                            }}>
+                              {identity.name_kr}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* EGO 그리드 */}
+                {egoList.length > 0 && (
+                  <div>
+                    <p style={{ color: '#5a5070', fontSize: '10px', marginBottom: '6px' }}>E.G.O</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
+                      {egoList.map(ego => {
+                        const sinType = normalizeSin(ego.sin_affinity)
+                        const egoColor = sinType ? SIN_COLORS[sinType] : '#8a6010'
+                        return (
+                          <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div
+                              style={{
+                                position: 'relative',
+                                width: '100%',
+                                aspectRatio: '1',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                border: `2px solid ${egoColor}`,
+                                background: '#0a0806',
+                              }}
+                            >
+                              {ego.image_url && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={ego.image_url}
+                                  alt={ego.name_kr ?? ''}
+                                  crossOrigin="anonymous"
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    display: 'block',
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <p style={{
+                              fontSize: '9px',
+                              color: '#c8a450',
+                              textAlign: 'center',
+                              lineHeight: 1.3,
+                              marginTop: '3px',
+                              wordBreak: 'keep-all',
+                            }}>
+                              {ego.name_kr}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {/* 푸터 */}
+          <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
+            <p style={{ color: '#3a3050', fontFamily: 'PerfectDOS, monospace', fontSize: '10px', letterSpacing: '0.15em' }}>
+              saigono-dante.vercel.app
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

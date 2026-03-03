@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
-import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
+import { Search, X, FlaskConical } from 'lucide-react'
+import Dropdown from '@/components/ui/Dropdown'
 import { getKeywordIconUrl, ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 
@@ -101,7 +102,6 @@ export default function MirrorDungeonClient({
   const [grade, setGrade] = useState('전체')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<EgoGift | null>(null)
-  const [gradeOpen, setGradeOpen] = useState(false)
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'grade'>('default')
   const [sortDesc, setSortDesc] = useState(false)
 
@@ -227,48 +227,13 @@ export default function MirrorDungeonClient({
         {/* 등급 + 검색 */}
         <div className="flex gap-3 justify-center items-center flex-wrap">
           {/* 등급 드롭다운 */}
-          <div className="relative">
-            <button
-              onClick={() => setGradeOpen(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-              style={{
-                cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: grade === '전체' ? '#777' : 'var(--gold)',
-                fontFamily: 'var(--font-heading)',
-              }}
-            >
-              등급: {grade === '전체' ? '전체' : GRADE_LABELS[grade] ?? grade}
-              <ChevronDown size={14} style={{ opacity: 0.5 }} />
-            </button>
-            {gradeOpen && (
-              <div
-                className="absolute top-full mt-1 left-0 z-30 rounded overflow-hidden"
-                style={{
-                  background: '#1a1510',
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                  minWidth: '100px',
-                }}
-              >
-                {GRADES.map(g => (
-                  <button
-                    key={g}
-                    onClick={() => { setGrade(g); setGradeOpen(false) }}
-                    className="block w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/5"
-                    style={{
-                      cursor: 'pointer',
-                      color: grade === g ? 'var(--gold)' : '#777',
-                      fontFamily: 'var(--font-heading)',
-                    }}
-                  >
-                    {g === '전체' ? '전체' : GRADE_LABELS[g] ?? g}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <Dropdown
+            value={grade}
+            options={GRADES.map(g => ({ value: g, label: g === '전체' ? '전체' : GRADE_LABELS[g] ?? g }))}
+            onChange={setGrade}
+            prefix="등급:"
+            defaultValue="전체"
+          />
 
           {/* 정렬 버튼 */}
           <div className="flex items-center gap-1">

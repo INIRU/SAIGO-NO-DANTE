@@ -633,7 +633,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               )}
 
               {/* 출시시기 & 획득 방법 */}
-              {(identity.release_date || identity.acquisition) && (
+              {(identity.release_date || identity.acquisition_info) && (
                 <div className="mt-5 space-y-2">
                   {identity.release_date && (
                     <div className="flex items-center gap-2">
@@ -641,12 +641,127 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                       <span style={{ color: '#aaa', fontSize: '12px' }}>{identity.release_date}</span>
                     </div>
                   )}
-                  {identity.acquisition && (
-                    <div className="flex items-start gap-2">
-                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px', marginTop: '2px' }}>획득 방법</span>
-                      <span style={{ color: '#aaa', fontSize: '11px', lineHeight: 1.5 }}>{identity.acquisition}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const info = identity.acquisition_info
+                    if (!info) return null
+
+                    const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+                      default:    { label: '기본',      color: '#8a8a8a', bg: 'rgba(138,138,138,0.12)' },
+                      standard:   { label: '추출',      color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' },
+                      event:      { label: '이벤트',    color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' },
+                      walpurgis:  { label: '발푸르기스', color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' },
+                      attendance: { label: '출석',      color: '#a29bfe', bg: 'rgba(162,155,254,0.12)' },
+                    }
+                    const GACHA_LABELS: Record<string, { label: string; color: string }> = {
+                      always:   { label: '상시 추출',   color: '#6bbbff' },
+                      seasonal: { label: '시즌 한정',   color: '#ffa502' },
+                      walpurgis:{ label: '발푸밤 한정', color: '#7bed9f' },
+                      none:     { label: '추출 불가',   color: '#666' },
+                    }
+
+                    const typeInfo = TYPE_LABELS[info.type] ?? TYPE_LABELS.standard
+                    const gachaInfo = GACHA_LABELS[info.gacha] ?? GACHA_LABELS.none
+
+                    return (
+                      <div className="space-y-2">
+                        {/* 타입 + 시즌 배지 */}
+                        <div className="flex items-center gap-2">
+                          <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>획득 방법</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* 타입 배지 */}
+                            <span
+                              style={{
+                                fontSize: '10px', fontWeight: 600,
+                                padding: '2px 8px', borderRadius: '3px',
+                                color: typeInfo.color,
+                                background: typeInfo.bg,
+                                border: `1px solid ${typeInfo.color}30`,
+                              }}
+                            >
+                              {typeInfo.label}
+                            </span>
+
+                            {/* 시즌 */}
+                            {info.release_season > 0 && (
+                              <span
+                                style={{
+                                  fontSize: '10px', fontWeight: 500,
+                                  padding: '2px 8px', borderRadius: '3px',
+                                  color: '#c8900a',
+                                  background: 'rgba(200,144,10,0.1)',
+                                  border: '1px solid rgba(200,144,10,0.2)',
+                                }}
+                              >
+                                시즌 {info.release_season}
+                              </span>
+                            )}
+
+                            {/* 발푸밤 회차 */}
+                            {info.walpurgis_edition && (
+                              <span
+                                style={{
+                                  fontSize: '10px', fontWeight: 500,
+                                  padding: '2px 8px', borderRadius: '3px',
+                                  color: '#7bed9f',
+                                  background: 'rgba(123,237,159,0.08)',
+                                  border: '1px solid rgba(123,237,159,0.2)',
+                                }}
+                              >
+                                {info.walpurgis_edition}회차
+                              </span>
+                            )}
+
+                            {/* 이벤트명 */}
+                            {info.event_name && (
+                              <span
+                                style={{
+                                  fontSize: '10px', fontWeight: 500,
+                                  padding: '2px 8px', borderRadius: '3px',
+                                  color: '#ff9f43',
+                                  background: 'rgba(255,159,67,0.08)',
+                                  border: '1px solid rgba(255,159,67,0.2)',
+                                }}
+                              >
+                                {info.event_name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 추출 상태 */}
+                        {info.type !== 'default' && (
+                          <div className="flex items-center gap-2">
+                            <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>추출</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span style={{ fontSize: '10px', color: gachaInfo.color }}>
+                                {gachaInfo.label}
+                                {info.gacha === 'seasonal' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
+                              </span>
+                              {info.target_sinner && (
+                                <span style={{ fontSize: '10px', color: '#ffa502' }}>
+                                  · {info.target_sinner} 특정 추출
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 파편 교환 */}
+                        {info.fragment_cost && (
+                          <div className="flex items-center gap-2">
+                            <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>파편 교환</span>
+                            <span style={{ fontSize: '10px', color: '#aaa' }}>
+                              자아 파편 {info.fragment_cost}
+                              {info.exchange_from_season
+                                ? ` (S${info.exchange_from_season}~ 상시)`
+                                : info.gacha === 'always' ? ' (상시)' : ''
+                              }
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>

@@ -35,6 +35,19 @@ export type Identity = {
   panic_description?: string
   sanity_increase?: string
   sanity_decrease?: string
+  acquisition_info?: {
+    type: 'default' | 'standard' | 'event' | 'walpurgis' | 'attendance'
+    release_season: number
+    fragment_cost: number | null
+    gacha: 'always' | 'seasonal' | 'walpurgis' | 'none'
+    gacha_from_season?: number
+    target_sinner?: string
+    exchange_from_season?: number
+    walpurgis_edition?: number
+    event_name?: string
+    event_currency?: string
+    event_cost?: number
+  } | null
 }
 
 export type Skill = {

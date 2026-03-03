@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 
 import GlitchText from '@/components/ui/GlitchText'
+import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import {
   IdentityWithSinner,
   getSinnerLogoUrl, getIdentityProfileUrl, getIdentityInfoUrl,
@@ -88,6 +89,8 @@ function HeroGlitchSlider({
   const [currentIdx, setCurrentIdx]       = useState(0)
   const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
   const layerARef        = useRef<HTMLDivElement>(null)
+  const chromaRRef       = useRef<HTMLDivElement>(null)
+  const chromaBRef       = useRef<HTMLDivElement>(null)
   const sliderRef        = useRef<HTMLDivElement>(null)
   const isTransitionRef  = useRef(false)
   const advanceRef       = useRef<() => void>(() => {})
@@ -155,17 +158,23 @@ function HeroGlitchSlider({
 
     const { gsap } = await import('gsap')
     const a = layerARef.current
+    const rCh = chromaRRef.current
+    const bCh = chromaBRef.current
     if (!a) { isTransitionRef.current = false; return }
 
-    gsap.timeline({
+    const tl = gsap.timeline({
       onComplete: () => {
         setCurrentIdx(nextIdx)
         setPendingIdx(null)
         gsap.set(a, { clipPath: '', x: 0, filter: 'none' })
+        if (rCh) gsap.set(rCh, { opacity: 0, x: 0, clipPath: 'none' })
+        if (bCh) gsap.set(bCh, { opacity: 0, x: 0, clipPath: 'none' })
         isTransitionRef.current = false
       },
     })
-      .to(a, { clipPath: 'inset(12% 0 75% 0)', x: -7, filter: 'brightness(1.8)',     duration: 0.05 })
+
+    // 메인 이미지 글리치
+    tl.to(a, { clipPath: 'inset(12% 0 75% 0)', x: -7, filter: 'brightness(1.8)',     duration: 0.05 })
       .to(a, { clipPath: 'inset(50% 0 28% 0)', x: 9,  filter: 'hue-rotate(80deg)',   duration: 0.04 })
       .to(a, { clipPath: 'inset(6%  0 82% 0)', x: -5, filter: 'brightness(2.2)',     duration: 0.05 })
       .to(a, { clipPath: 'inset(70% 0 10% 0)', x: 6,  filter: 'hue-rotate(-60deg)',  duration: 0.04 })
@@ -204,6 +213,13 @@ function HeroGlitchSlider({
       {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
         <Image src={current.url} alt={current.identity.name_kr} fill unoptimized priority className="object-cover object-top" />
+        {/* RGB Chromatic Aberration 오버레이 (전환 시 GSAP 제어) */}
+        <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
+          <Image src={current.url} alt="" fill unoptimized className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+        </div>
+        <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
+          <Image src={current.url} alt="" fill unoptimized className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+        </div>
       </div>
       {/* 그라디언트 오버레이 — 모바일은 더 진하게 */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 15, background: 'linear-gradient(to right, var(--bg-deep) 0%, rgba(13,11,8,0.9) 25%, rgba(13,11,8,0.5) 55%, transparent 85%)' }} />
@@ -429,7 +445,7 @@ export default function HomeClient({
               <Pin size={13} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
               <span
                 className="font-serif font-bold"
-                style={{ color: 'var(--gold-light)', fontSize: '14px', flex: 1, minWidth: 0 }}
+                style={{ color: 'var(--gold-light)', fontSize: '14px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               >
                 {pinnedAnnouncement.title}
               </span>

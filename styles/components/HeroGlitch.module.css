@@ -1,0 +1,14 @@
+/* ── Hero Image RGB Chromatic Aberration (전환 시에만) ── */
+
+.chromaR,
+.chromaB {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40px;
+  right: -40px;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  will-change: opacity, transform;
+}
