@@ -600,19 +600,30 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   return data
 }
 
+export type ActivationCondition = {
+  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+  keyword?: string
+  keywords?: string[]
+  affiliation?: string
+  affiliations?: string[]
+  skill_condition?: string
+  count: number
+}
+
 export type EgoGiftNote = {
   name: string
   keyword: string
   grade: string
   image_url: string | null
   effect_base: string | null
+  activation_condition: ActivationCondition | null
 }
 
 export async function getEgoGiftsForNotes(): Promise<EgoGiftNote[]> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego_gifts')
-    .select('name, keyword, grade, image_url, effect_base')
+    .select('name, keyword, grade, image_url, effect_base, activation_condition')
   if (error) throw error
   return data ?? []
 }

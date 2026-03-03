@@ -24,6 +24,8 @@ import {
   SIN_LABELS_KR,
   SIN_ICON_MAP,
   ATK_TYPE_ICON_MAP,
+  getKeywordIconUrl,
+  type ActivationCondition,
 } from '@/lib/data/sinners'
 import {
   NoteRenderer,
@@ -53,7 +55,7 @@ interface Props {
   egos: EGO[]
   skills: Skill[]
   passives: Passive[]
-  egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
+  egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]
   editMode?: EditMode
 }
 
@@ -783,6 +785,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }, [passives])
 
   const [showPassiveDetail, setShowPassiveDetail] = useState(false)
+  const [showGiftPanel, setShowGiftPanel] = useState(false)
+  const [giftTabKw, setGiftTabKw] = useState('전체')
 
   const atkTypeTotals = useMemo(() => {
     const totals: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
@@ -863,6 +867,70 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     return map
   }, [deckSlots, egoSlots, sinners])
+
+  // 활성 가능한 EGO 기프트 계산
+  const activatableGifts = useMemo(() => {
+    const selectedIdentities = Object.values(deckSlots).filter(Boolean) as Identity[]
+    if (selectedIdentities.length === 0) return []
+
+    // 키워드별 인격 수 (화상, 출혈 등)
+    const kwCounts: Record<string, number> = {}
+    // 소속별 인격 수 (검계, 흑운회 등)
+    const affCounts: Record<string, number> = {}
+
+    for (const id of selectedIdentities) {
+      if (id.keywords) {
+        for (const kw of id.keywords) {
+          kwCounts[kw] = (kwCounts[kw] ?? 0) + 1
+        }
+      }
+      if (id.affiliation) {
+        affCounts[id.affiliation] = (affCounts[id.affiliation] ?? 0) + 1
+      }
+    }
+
+    type GiftStatus = {
+      name: string; keyword: string; grade: string; image_url: string | null
+      effect_base: string | null; condition: ActivationCondition
+      current: number; met: boolean
+    }
+
+    const results: GiftStatus[] = []
+    for (const g of egoGifts) {
+      const c = g.activation_condition
+      if (!c) continue
+
+      let current = 0
+      if (c.type === 'keyword') {
+        current = kwCounts[c.keyword!] ?? 0
+      } else if (c.type === 'multi_keyword') {
+        for (const kw of c.keywords!) current += kwCounts[kw] ?? 0
+      } else if (c.type === 'affiliation') {
+        if (c.affiliations) {
+          for (const aff of c.affiliations) current += affCounts[aff] ?? 0
+        } else {
+          current = affCounts[c.affiliation!] ?? 0
+        }
+      } else if (c.type === 'skill') {
+        continue // 스킬 조건은 키워드/소속으로 판별 불가
+      }
+
+      if (current > 0) {
+        results.push({
+          name: g.name, keyword: g.keyword, grade: g.grade,
+          image_url: g.image_url, effect_base: g.effect_base,
+          condition: c, current, met: current >= c.count,
+        })
+      }
+    }
+
+    // 활성 우선, 그 안에서 달성률 내림차순
+    results.sort((a, b) => {
+      if (a.met !== b.met) return a.met ? -1 : 1
+      return (b.current / b.condition.count) - (a.current / a.condition.count)
+    })
+    return results
+  }, [deckSlots, egoGifts])
 
   // EGO 기프트 룩업 (NoteRenderer용)
   const egoGiftLookup = useMemo(() => {
@@ -1565,6 +1633,135 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               {Object.values(deckSlots).filter(Boolean).length === 0 && (
                 <p className="text-center py-4" style={{ color: '#333344', fontSize: '11px' }}>인격을 먼저 편성해주세요</p>
               )}
+            </div>
+            )
+          })()}
+        </div>
+
+        {/* ── 활성 가능 EGO 기프트 패널 ─────────────────────── */}
+        <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
+          <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
+            <span style={{ color: '#444455', fontSize: '10px', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>E.G.O 기프트</span>
+            {activatableGifts.length > 0 && (
+              <span style={{ color: '#333344', fontSize: '9px' }}>
+                <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{activatableGifts.filter(g => g.met).length}</span>
+                <span> 활성</span>
+              </span>
+            )}
+            <div className="flex-1" />
+            <button
+              onClick={() => setShowGiftPanel(v => !v)}
+              className="text-xs px-2.5 py-1 rounded transition-all"
+              style={{ color: showGiftPanel ? 'var(--gold)' : '#444455', border: `1px solid ${showGiftPanel ? 'var(--gold)' : 'var(--border)'}`, background: showGiftPanel ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
+            >
+              상세보기 {showGiftPanel ? '▲' : '▼'}
+            </button>
+          </div>
+
+          {showGiftPanel && (() => {
+            const GIFT_KW_TABS = ['전체', '화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통'] as const
+            const filtered = giftTabKw === '전체'
+              ? activatableGifts
+              : activatableGifts.filter(g => g.keyword === giftTabKw)
+            // 탭별 활성 개수
+            const metByKw: Record<string, number> = {}
+            for (const g of activatableGifts) {
+              if (g.met) metByKw[g.keyword] = (metByKw[g.keyword] ?? 0) + 1
+            }
+
+            return (
+            <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
+              {/* 키워드 탭 */}
+              <div className="flex flex-wrap gap-1 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                {GIFT_KW_TABS.map(kw => {
+                  const isActive = giftTabKw === kw
+                  const kwIcon = kw !== '전체' ? (getKeywordIconUrl(kw) ?? ATK_TYPE_ICON_MAP[kw] ?? null) : null
+                  const metCount = kw === '전체' ? activatableGifts.filter(g => g.met).length : (metByKw[kw] ?? 0)
+                  const totalCount = kw === '전체' ? activatableGifts.length : activatableGifts.filter(g => g.keyword === kw).length
+                  if (kw !== '전체' && totalCount === 0) return null
+                  return (
+                    <button
+                      key={kw}
+                      onClick={() => setGiftTabKw(kw)}
+                      className="flex items-center gap-1 px-2 py-1 rounded transition-all"
+                      style={{
+                        fontSize: '10px', fontWeight: isActive ? 700 : 400,
+                        color: isActive ? 'var(--gold)' : '#555',
+                        background: isActive ? 'rgba(200,144,10,0.1)' : 'transparent',
+                        border: `1px solid ${isActive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.04)'}`,
+                      }}
+                    >
+                      {kwIcon && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={kwIcon} alt="" style={{ width: 11, height: 11 }} />
+                      )}
+                      {kw}
+                      {metCount > 0 && <span style={{ color: 'var(--gold)', fontSize: '9px' }}>{metCount}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* 기프트 목록 */}
+              <div style={{ padding: '6px 8px', maxHeight: '320px', overflowY: 'auto' }}>
+                {Object.values(deckSlots).filter(Boolean).length === 0 ? (
+                  <p className="text-center py-4" style={{ color: '#333344', fontSize: '11px' }}>인격을 먼저 편성해주세요</p>
+                ) : filtered.length === 0 ? (
+                  <p className="text-center py-3" style={{ color: '#333344', fontSize: '11px' }}>해당하는 기프트가 없습니다</p>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {filtered.map(g => {
+                      const c = g.condition
+                      const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
+                        : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
+                        : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
+                        : `${c.count}인`
+                      const pct = Math.min(g.current / c.count, 1)
+                      const kwIcon = getKeywordIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null
+
+                      return (
+                        <div
+                          key={g.name}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded"
+                          style={{
+                            background: g.met ? 'rgba(200,144,10,0.06)' : 'rgba(255,255,255,0.01)',
+                            border: `1px solid ${g.met ? 'rgba(200,144,10,0.2)' : 'rgba(255,255,255,0.03)'}`,
+                            opacity: g.met ? 1 : 0.6,
+                          }}
+                        >
+                          {g.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={g.image_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)' }} />
+                          ) : (
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1510', flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="flex items-center gap-1.5">
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: g.met ? 'var(--gold)' : '#777', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
+                              <span style={{ fontSize: '9px', color: '#444', flexShrink: 0 }}>{g.grade}</span>
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {kwIcon && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={kwIcon} alt="" style={{ width: 10, height: 10, flexShrink: 0 }} />
+                              )}
+                              <span style={{ fontSize: '9px', color: g.met ? '#88a830' : '#666' }}>
+                                {condLabel} ({g.current}/{c.count})
+                              </span>
+                              <div style={{ width: 40, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, flexShrink: 0, marginLeft: 4 }}>
+                                <div style={{ width: `${pct * 100}%`, height: '100%', background: g.met ? 'var(--gold)' : '#555', borderRadius: 2, transition: 'width 0.3s' }} />
+                              </div>
+                            </div>
+                          </div>
+                          {g.met && (
+                            <span style={{ fontSize: '9px', color: 'var(--gold)', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>ON</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
             )
           })()}
