@@ -5,23 +5,47 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
-const navLinks = [
-  { href: '/sinners',          label: '수감자' },
-  { href: '/mirror-dungeon',   label: '거던' },
-  { href: '/collection',       label: '보유 현황' },
-  { href: '/decks',            label: '덱 게시판' },
-  { href: '/meta',             label: '분석' },
+type NavGroup = {
+  label: string
+  items: { href: string; label: string }[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'DB',
+    items: [
+      { href: '/sinners',        label: '수감자' },
+      { href: '/mirror-dungeon', label: '거던' },
+    ],
+  },
+  {
+    label: '커뮤니티',
+    items: [
+      { href: '/decks',       label: '덱 게시판' },
+      { href: '/collection',  label: '보유 현황' },
+    ],
+  },
+  {
+    label: '기타',
+    items: [
+      { href: '/meta',       label: '분석' },
+      { href: '/extraction', label: '추출' },
+    ],
+  },
 ]
+
 
 export default function Navbar() {
   const [hidden, setHidden] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
   const lastScrollY = useRef(0)
   const pathname = usePathname()
   const menuRef = useRef<HTMLDivElement>(null)
+  const groupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { data: session } = useSession()
 
   // 스크롤 숨김
@@ -66,14 +90,6 @@ export default function Navbar() {
   const avatarUrl = !avatarError ? (user?.image ?? undefined) : undefined
   const displayName = user?.name ?? user?.email ?? ''
 
-  const linkStyle = (href: string) => ({
-    fontFamily: 'var(--font-heading)',
-    fontSize: '14px',
-    color: pathname === href ? 'var(--gold)' : '#7a6845',
-    borderBottom: pathname === href ? '1px solid var(--gold)' : 'none',
-    paddingBottom: '2px',
-  })
-
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
     fontSize: '17px',
@@ -104,18 +120,100 @@ export default function Navbar() {
             최애의 관리자
           </Link>
 
-          {/* 데스크탑 네비게이션 */}
-          <div className="hidden md:flex items-center gap-6">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="transition-colors duration-200 hover:text-yellow-300"
-                style={linkStyle(link.href)}
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
+          <div className="hidden md:flex items-center gap-5">
+            {navGroups.map(group => {
+              const isActive = group.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+              return (
+                <div
+                  key={group.label}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => {
+                    if (groupTimerRef.current) clearTimeout(groupTimerRef.current)
+                    setOpenGroup(group.label)
+                  }}
+                  onMouseLeave={() => {
+                    groupTimerRef.current = setTimeout(() => setOpenGroup(null), 150)
+                  }}
+                >
+                  <button
+                    className="flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '14px',
+                      color: isActive ? 'var(--gold)' : '#7a6845',
+                      cursor: 'pointer',
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px 0',
+                    }}
+                  >
+                    {group.label}
+                    <ChevronDown size={12} style={{
+                      opacity: 0.5,
+                      transform: openGroup === group.label ? 'rotate(180deg)' : 'rotate(0)',
+                      transition: 'transform 0.2s',
+                    }} />
+                  </button>
+
+                  {openGroup === group.label && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 12px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'linear-gradient(to bottom, #1a1510, #15120d)',
+                      border: '1px solid rgba(200,144,10,0.12)',
+                      borderRadius: '4px',
+                      minWidth: '130px',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 1px rgba(200,144,10,0.15)',
+                      overflow: 'hidden',
+                      padding: '4px 0',
+                    }}>
+                      {/* 상단 골드 라인 */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
+                        background: 'linear-gradient(to right, transparent, rgba(200,144,10,0.3), transparent)',
+                      }} />
+                      {group.items.map(item => {
+                        const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className="block transition-all duration-150"
+                            style={{
+                              padding: '10px 20px',
+                              fontFamily: 'var(--font-heading)',
+                              fontSize: '13px',
+                              color: active ? 'var(--gold)' : '#8a7855',
+                              whiteSpace: 'nowrap',
+                              background: active ? 'rgba(200,144,10,0.06)' : 'transparent',
+                              borderLeft: active ? '2px solid var(--gold)' : '2px solid transparent',
+                            }}
+                            onMouseEnter={e => {
+                              if (!active) {
+                                (e.currentTarget as HTMLElement).style.color = '#c8a050'
+                                ;(e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.04)'
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!active) {
+                                (e.currentTarget as HTMLElement).style.color = '#8a7855'
+                                ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                              }
+                            }}
+                            onClick={() => setOpenGroup(null)}
+                          >
+                            {item.label}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
 
             {/* 데스크탑 로그인 / 유저 메뉴 */}
             {user ? (
@@ -231,15 +329,28 @@ export default function Navbar() {
           }}
         >
           <div className="flex flex-col px-6 py-4">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block transition-colors duration-200 hover:text-yellow-300"
-                style={mobileLinkStyle(link.href)}
-              >
-                {link.label}
-              </Link>
+            {navGroups.map(group => (
+              <div key={group.label}>
+                <p style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  color: '#5a4838',
+                  letterSpacing: '0.1em',
+                  padding: '12px 0 4px',
+                }}>
+                  {group.label}
+                </p>
+                {group.items.map(item => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block transition-colors duration-200 hover:text-yellow-300"
+                    style={mobileLinkStyle(item.href)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             ))}
 
             {user ? (
