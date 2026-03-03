@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import MirrorDungeonClient from './MirrorDungeonClient'
 
+export const revalidate = 300
+
 export const metadata: Metadata = {
   title: '거울 던전 — E.G.O 기프트',
   description: '거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피까지.',
