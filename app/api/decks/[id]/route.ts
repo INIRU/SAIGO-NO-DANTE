@@ -82,12 +82,12 @@ export async function GET(
       .schema('limbus')
       .from('decks')
       .select(`
-        id, user_id, title, description, tags, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, s1_count, s2_count, s3_count,
           identities(
-            sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
+            id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
             hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
             skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, atk_weight, offense_level, description, uptie_level),
             passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
@@ -268,7 +268,7 @@ export async function PATCH(
   }
 
   const body = await request.json()
-  const { title, description, tags, identitySlots, egoSlots } = body
+  const { title, description, tags, identitySlots, egoSlots, content_type } = body
 
   if (!title?.trim()) {
     return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 })
@@ -306,7 +306,7 @@ export async function PATCH(
   const { error: updateError } = await admin
     .schema('limbus')
     .from('decks')
-    .update({ title, description, tags: tags || [] })
+    .update({ title, description, tags: tags || [], content_type: content_type || '없음' })
     .eq('id', id)
 
   if (updateError) {

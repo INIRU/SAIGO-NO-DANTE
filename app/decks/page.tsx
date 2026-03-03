@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import { getKeywordIconUrl, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
@@ -45,6 +46,16 @@ function getDeckAllKeywords(deck: DeckSummary): string[] {
     }
   }
   return [...kws]
+}
+
+const CONTENT_TYPES = ['스토리', '거던5층', '거던10층', '거던15층', '거굴철'] as const
+
+const CONTENT_TYPE_FILTER_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  '스토리':   { bg: 'rgba(80,120,200,0.2)', color: '#6090d0', border: 'rgba(80,120,200,0.5)' },
+  '거던5층':  { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
+  '거던10층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
+  '거던15층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
+  '거굴철':   { bg: 'rgba(200,70,70,0.2)', color: '#d06060', border: 'rgba(200,70,70,0.5)' },
 }
 
 function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
@@ -125,6 +136,9 @@ export default function DecksPage() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // 콘텐츠 유형 필터
+  const [activeContentType, setActiveContentType] = useState<string>('')
 
   // 멀티 선택 필터
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
@@ -283,6 +297,11 @@ export default function DecksPage() {
   const filtered = useMemo(() => {
     let list = decks
 
+    // 콘텐츠 유형 필터
+    if (activeContentType) {
+      list = list.filter(d => d.content_type === activeContentType)
+    }
+
     // 텍스트 검색: 제목 + 설명 + 태그 + 키워드
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -343,9 +362,9 @@ export default function DecksPage() {
     }
 
     return list
-  }, [decks, search, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, search, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
-  const hasAnyFilter = search || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
+  const hasAnyFilter = search || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto">
@@ -353,13 +372,13 @@ export default function DecksPage() {
       {/* ── 헤더 ── */}
       <div className="flex items-end justify-between mb-10">
         <div>
-          <p style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', marginBottom: '6px' }}>
+          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             DECK ARCHIVE
           </p>
           <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
             덱 게시판
           </h1>
-          <p className="mt-2" style={{ color: '#666688', fontSize: '13px' }}>
+          <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
             관리자들의 편성을 공유하는 공간
           </p>
         </div>
@@ -381,7 +400,7 @@ export default function DecksPage() {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#3a3050', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -405,7 +424,7 @@ export default function DecksPage() {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#3a3050', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -423,7 +442,7 @@ export default function DecksPage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               }}
             >
-              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '10px', fontWeight: 600 }}>
+              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
                 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
               </div>
               {suggestions.map((kw, i) => {
@@ -441,8 +460,7 @@ export default function DecksPage() {
                     }}
                   >
                     {iconUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                      <Image src={iconUrl} alt="" width={14} height={14} unoptimized style={{ flexShrink: 0 }} />
                     )}
                     <span>{kw}</span>
                   </div>
@@ -464,13 +482,51 @@ export default function DecksPage() {
                 color: sort === s ? 'var(--bg-deep)' : '#888899',
                 border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '12px',
+                fontSize: '0.75rem',
               }}
             >
               {s === 'latest' ? '최신순' : '인기순'}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ── 콘텐츠 유형 필터 ── */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {CONTENT_TYPES.map(ct => {
+          const active = activeContentType === ct
+          const colors = CONTENT_TYPE_FILTER_COLORS[ct]
+          return (
+            <button
+              key={ct}
+              onClick={() => setActiveContentType(active ? '' : ct)}
+              className="px-3 py-1 rounded text-xs transition-all duration-150"
+              style={{
+                background: active ? colors.bg : 'transparent',
+                color: active ? colors.color : '#555566',
+                border: `1px solid ${active ? colors.border : 'var(--border)'}`,
+                fontFamily: 'var(--font-heading)',
+                fontSize: '0.6875rem',
+              }}
+            >
+              {ct}
+            </button>
+          )
+        })}
+        {activeContentType && (
+          <button
+            onClick={() => setActiveContentType('')}
+            className="px-3 py-1 rounded text-xs transition-all duration-150"
+            style={{
+              background: 'transparent',
+              color: '#555566',
+              border: '1px solid var(--border)',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            초기화
+          </button>
+        )}
       </div>
 
       {/* ── 태그 필터 (멀티 선택) ── */}
@@ -541,16 +597,16 @@ export default function DecksPage() {
                   color: isActive ? '#c8a450' : '#555566',
                   border: `1px solid ${isActive ? 'rgba(136,88,40,0.5)' : 'var(--border)'}`,
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '11px',
+                  fontSize: '0.6875rem',
                 }}
               >
                 {iconUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={iconUrl}
                     alt=""
                     width={13}
                     height={13}
+                    unoptimized
                     style={{ flexShrink: 0, opacity: isActive ? 1 : 0.5 }}
                   />
                 )}
@@ -569,7 +625,7 @@ export default function DecksPage() {
                   color: keywordMode === 'and' ? '#c8a450' : '#9a9aaa',
                   border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.12)'}`,
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: '0.625rem',
                   letterSpacing: '0.05em',
                 }}
               >
@@ -583,7 +639,7 @@ export default function DecksPage() {
       {/* ── 컬렉션 필터 ── */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
         {collectionLoading ? (
-          <span className="text-xs" style={{ color: '#3a3050', fontFamily: 'var(--font-mono)' }}>
+          <span className="text-xs" style={{ color: '#5a5070', fontFamily: 'var(--font-mono)' }}>
             컬렉션 로딩 중...
           </span>
         ) : hasCollection ? (
@@ -596,7 +652,7 @@ export default function DecksPage() {
                 color: filterOwnedIdentity ? '#80c880' : '#555566',
                 border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '11px',
+                fontSize: '0.6875rem',
                 cursor: 'pointer',
               }}
             >
@@ -611,7 +667,7 @@ export default function DecksPage() {
                 color: filterOwnedEgo ? '#80c880' : '#555566',
                 border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '11px',
+                fontSize: '0.6875rem',
                 cursor: 'pointer',
               }}
             >
@@ -621,7 +677,7 @@ export default function DecksPage() {
             <button
               onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
               className="px-2 py-1.5 rounded text-xs transition-all duration-150"
-              style={{ color: '#555566', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '11px' }}
+              style={{ color: '#555566', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
             >
               초기화
             </button>
@@ -642,7 +698,7 @@ export default function DecksPage() {
                 color: '#ccc',
                 outline: 'none',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
+                fontSize: '0.6875rem',
                 maxWidth: '400px',
               }}
             />
@@ -654,7 +710,7 @@ export default function DecksPage() {
                 color: 'var(--gold)',
                 border: '1px solid rgba(200,144,10,0.3)',
                 fontFamily: 'var(--font-heading)',
-                fontSize: '11px',
+                fontSize: '0.6875rem',
                 cursor: 'pointer',
                 flexShrink: 0,
               }}
@@ -672,7 +728,7 @@ export default function DecksPage() {
 
       {/* ── 결과 수 ── */}
       {!loading && (
-        <p className="mb-5 text-xs" style={{ color: '#333344', fontFamily: 'var(--font-mono)' }}>
+        <p className="mb-5 text-xs" style={{ color: '#555570', fontFamily: 'var(--font-mono)' }}>
           {filtered.length}개의 덱{hasMore && '+'}
           {hasAnyFilter && ' (필터 적용됨)'}
         </p>
@@ -693,14 +749,14 @@ export default function DecksPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <div style={{ color: '#2a2035', fontSize: '48px' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: '#333344' }}>
+          <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
+          <p className="font-serif text-base italic" style={{ color: '#555570' }}>
             {hasAnyFilter ? '검색 결과가 없습니다.' : '아직 등록된 덱이 없습니다.'}
           </p>
           {!hasAnyFilter && (
             <Link
               href="/decks/new"
-              style={{ color: 'var(--gold-dim)', fontSize: '13px' }}
+              style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
               className="hover:text-yellow-300 transition-colors underline underline-offset-2"
             >
               첫 번째 덱을 만들어보세요 →

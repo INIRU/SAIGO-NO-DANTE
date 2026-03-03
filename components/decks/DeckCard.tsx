@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { STORAGE_BASE, getKeywordIconUrl } from '@/lib/data/sinners'
 import { NoteRenderer } from '@/components/decks/NoteChips'
@@ -25,6 +27,7 @@ export type DeckSummary = {
   title: string
   description: string | null
   tags: string[]
+  content_type?: string
   vote_count: number
   view_count: number
   comment_count?: number
@@ -32,6 +35,14 @@ export type DeckSummary = {
   username?: string
   deck_identities?: IdentityPreview[]
   deck_egos?: { ego_id: string }[]
+}
+
+const CONTENT_TYPE_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  '스토리':   { bg: 'rgba(80,120,200,0.15)', color: '#6090d0', border: 'rgba(80,120,200,0.35)' },
+  '거던5층':  { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
+  '거던10층': { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
+  '거던15층': { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
+  '거굴철':   { bg: 'rgba(200,70,70,0.15)', color: '#d06060', border: 'rgba(200,70,70,0.35)' },
 }
 
 interface DeckCardProps {
@@ -45,6 +56,31 @@ function identityPortraitUrl(id: IdentityPreview, gacksung?: boolean): string {
   const prefix = (gacksung ?? id.gacksung) ? 'gacksung' : 'normal'
   const folder = encodeURIComponent(id_.folder_name)
   return `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${folder}/${id_.game_id}_${prefix}_info.webp`
+}
+
+function PortraitSlot({ slot }: { slot: IdentityPreview }) {
+  const [fallback, setFallback] = useState(false)
+  const url = identityPortraitUrl(slot, fallback ? false : undefined)
+  if (!url) return null
+
+  return (
+    <>
+      <Image
+        src={url}
+        alt=""
+        fill
+        sizes="80px"
+        quality={50}
+        style={{ objectFit: 'cover', objectPosition: 'center top' }}
+        onError={() => {
+          if (slot.gacksung && !fallback) setFallback(true)
+        }}
+      />
+      {slot.gacksung && (
+        <div style={{ position: 'absolute', top: 2, right: 2, width: 4, height: 4, borderRadius: '50%', background: 'var(--gold)', zIndex: 1 }} />
+      )}
+    </>
+  )
 }
 
 export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
@@ -61,6 +97,8 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
   // 12칸 고정 (빈 슬롯 포함)
   const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
+
+  const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
   // 덱 전체 키워드 빈도 집계
   // 편성 기준: 같은 상태이상 키워드를 가진 인격이 5명 이상일 때 표시
@@ -107,44 +145,19 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-1">
         {/* 인격 포트레이트 그리드 (2×6) */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
-          {slots.map((slot, i) => {
-            const url = slot ? identityPortraitUrl(slot) : ''
-            return (
-              <div
-                key={i}
-                className="relative overflow-hidden"
-                style={{ aspectRatio: '3/4', background: '#0a0806' }}
-              >
-                {url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={url}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'center top',
-                      display: 'block',
-                    }}
-                    loading="lazy"
-                    onError={e => {
-                      // gacksung 이미지 없으면 normal로 폴백
-                      if (slot?.gacksung) {
-                        e.currentTarget.src = identityPortraitUrl(slot, false)
-                      }
-                    }}
-                  />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
-                )}
-                {/* 각성 표시 */}
-                {slot?.gacksung && (
-                  <div style={{ position: 'absolute', top: 2, right: 2, width: 4, height: 4, borderRadius: '50%', background: 'var(--gold)' }} />
-                )}
-              </div>
-            )
-          })}
+          {slots.map((slot, i) => (
+            <div
+              key={i}
+              className="relative overflow-hidden"
+              style={{ aspectRatio: '3/4', background: '#0a0806' }}
+            >
+              {slot ? (
+                <PortraitSlot slot={slot} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="flex flex-col flex-1 p-4">
@@ -158,16 +171,31 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
         {/* 설명 */}
         {deck.description ? (
-          <div className="text-xs mb-2 flex-1" style={{ color: '#4a4460', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
+          <div className="text-xs mb-2 flex-1" style={{ color: '#6a6480', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
             <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
           </div>
         ) : (
           <div className="flex-1" />
         )}
 
-        {/* 자동 키워드 */}
-        {topKeywords.length > 0 && (
+        {/* 콘텐츠 유형 + 자동 키워드 (한 줄) */}
+        {(showContentType || topKeywords.length > 0) && (
           <div className="flex flex-wrap gap-1 mb-2">
+            {showContentType && (
+              <span
+                className="flex items-center px-2 py-0.5 rounded"
+                style={{
+                  background: CONTENT_TYPE_COLORS[deck.content_type!].bg,
+                  color: CONTENT_TYPE_COLORS[deck.content_type!].color,
+                  border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.625rem',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                {deck.content_type}
+              </span>
+            )}
             {topKeywords.map(kw => {
               const iconUrl = getKeywordIconUrl(kw)
               return (
@@ -179,7 +207,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     color: '#c8a450',
                     border: '1px solid rgba(136,88,40,0.3)',
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '10px',
+                    fontSize: '0.625rem',
                     letterSpacing: '0.03em',
                   }}
                 >
@@ -225,27 +253,27 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
           style={{ borderTop: '1px solid rgba(58,42,21,0.5)' }}
         >
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#3a3050' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
               <Heart size={10} fill="currentColor" stroke="none" />
               {deck.vote_count}
             </span>
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#3a3050' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
               <Eye size={10} />
               {deck.view_count}
             </span>
             {(deck.comment_count ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#3a3050' }}>
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
                 <MessageCircle size={10} />
                 {deck.comment_count}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs" style={{ color: '#3a3050' }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: '#5a5070' }}>
             {deck.username && (
               <>
-                <span style={{ color: '#4a4060' }}>{deck.username}</span>
-                <span style={{ color: '#2a2035', fontFamily: 'sans-serif' }}>·</span>
+                <span style={{ color: '#6a6080' }}>{deck.username}</span>
+                <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
               </>
             )}
             <span>{date}</span>

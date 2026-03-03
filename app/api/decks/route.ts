@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     .schema('limbus')
     .from('decks')
     .select(`
-      id, title, description, tags, vote_count, view_count, comment_count, created_at,
+      id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
       profiles!decks_user_id_fkey(username),
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords)),
       deck_egos(ego_id)
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { title, description, tags, identitySlots, egoSlots } = body
+  const { title, description, tags, identitySlots, egoSlots, content_type } = body
   // identitySlots: [{ identity_id, gacksung, slot_order }]
   // egoSlots: [{ ego_id, grade }]
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   const { data: deck, error: deckError } = await admin
     .schema('limbus')
     .from('decks')
-    .insert({ user_id: userId, title, description, tags: tags || [] })
+    .insert({ user_id: userId, title, description, tags: tags || [], content_type: content_type || '없음' })
     .select()
     .single()
 

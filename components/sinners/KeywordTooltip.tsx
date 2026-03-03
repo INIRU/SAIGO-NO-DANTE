@@ -61,10 +61,10 @@ export function KeywordWithTooltip({
             whiteSpace: 'normal',
           }}
         >
-          <span style={{ color: '#e8dcc8', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+          <span style={{ color: '#e8dcc8', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
             {keyword}{info.maxStack ? ` (최대 ${info.maxStack})` : ''}
           </span>
-          <span style={{ color: '#999', fontSize: '11px', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
+          <span style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
             {info.desc}
           </span>
         </span>
@@ -93,6 +93,7 @@ export function formatSkillDesc(
     skillColor?: string
   }[] = []
   let remaining = text
+  let prevChar = ''
 
   const skillNames = skillNameColors
     ? Object.keys(skillNameColors).sort((a, b) => b.length - a.length)
@@ -103,20 +104,24 @@ export function formatSkillDesc(
     const bracketMatch = remaining.match(/^\[([^\]]+)\]/)
     if (bracketMatch) {
       parts.push({ text: bracketMatch[0], type: 'bracket' })
+      prevChar = bracketMatch[0][bracketMatch[0].length - 1]
       remaining = remaining.slice(bracketMatch[0].length)
       continue
     }
 
-    // 2. 상태이상 키워드 (짧은 키워드 뒤에 한글이 이어지면 무시)
+    // 2. 상태이상 키워드 (짧은 키워드 앞뒤에 한글이 이어지면 무시)
     let foundKeyword = false
     for (const kw of ALL_KEYWORDS) {
-      const needBoundary = kw.length === 1 && isHangul(remaining[kw.length])
-      if (remaining.startsWith(kw) && !needBoundary) {
+      const afterBoundary = kw.length <= 2 && isHangul(remaining[kw.length])
+      const beforeBoundary = kw.length <= 2 && isHangul(prevChar)
+      if (remaining.startsWith(kw) && !afterBoundary && !beforeBoundary) {
         parts.push({ text: kw, type: 'keyword' })
+        prevChar = kw[kw.length - 1]
         remaining = remaining.slice(kw.length)
         const numMatch = remaining.match(/^( 횟수)?( \d+)/)
         if (numMatch) {
           parts.push({ text: numMatch[0], type: 'number' })
+          prevChar = numMatch[0][numMatch[0].length - 1]
           remaining = remaining.slice(numMatch[0].length)
         }
         foundKeyword = true
@@ -130,6 +135,7 @@ export function formatSkillDesc(
     for (const name of skillNames) {
       if (remaining.startsWith(name)) {
         parts.push({ text: name, type: 'skillname', skillColor: skillNameColors![name] })
+        prevChar = name[name.length - 1]
         remaining = remaining.slice(name.length)
         foundSkillName = true
         break
@@ -146,8 +152,9 @@ export function formatSkillDesc(
       while (searchFrom < remaining.length) {
         const kwIdx = remaining.indexOf(kw, searchFrom)
         if (kwIdx < 0) break
-        const needBound = kw.length === 1 && isHangul(remaining[kwIdx + kw.length])
-        if (kwIdx > 0 && !needBound) { nextIdx = Math.min(nextIdx, kwIdx); break }
+        const afterBound = kw.length <= 2 && isHangul(remaining[kwIdx + kw.length])
+        const beforeBound = kw.length <= 2 && kwIdx > 0 && isHangul(remaining[kwIdx - 1])
+        if (kwIdx > 0 && !afterBound && !beforeBound) { nextIdx = Math.min(nextIdx, kwIdx); break }
         searchFrom = kwIdx + 1
       }
     }
@@ -155,7 +162,9 @@ export function formatSkillDesc(
       const nameIdx = remaining.indexOf(name)
       if (nameIdx > 0) nextIdx = Math.min(nextIdx, nameIdx)
     }
-    parts.push({ text: remaining.slice(0, nextIdx), type: 'normal' })
+    const chunk = remaining.slice(0, nextIdx)
+    parts.push({ text: chunk, type: 'normal' })
+    prevChar = chunk[chunk.length - 1] ?? prevChar
     remaining = remaining.slice(nextIdx)
   }
 

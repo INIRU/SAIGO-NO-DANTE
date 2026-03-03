@@ -29,7 +29,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
       .schema('limbus')
       .from('decks')
       .select(`
-        id, user_id, title, description, tags,
+        id, user_id, title, description, tags, content_type,
         deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
         deck_egos(ego_id, grade)
       `)
@@ -104,6 +104,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
         title: deck.title ?? '',
         description: deck.description ?? '',
         tags: deck.tags ?? [],
+        content_type: (deck as Record<string, unknown>).content_type as string ?? '없음',
         identitySlotIds,
         gacksungSlots,
         skillDistribution,
