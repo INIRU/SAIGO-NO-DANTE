@@ -51,7 +51,7 @@ export default function AdminDecksPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>덱 관리</h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>전체 덱을 조회하고 관리합니다.</p>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>전체 덱을 조회하고 관리합니다.</p>
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -64,20 +64,20 @@ export default function AdminDecksPage() {
             className="w-full"
             style={{
               padding: '8px 12px 8px 34px', background: '#0d0b08', border: '1px solid var(--border)',
-              borderRadius: '4px', color: '#c8a450', fontSize: '13px', outline: 'none',
+              borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none',
             }}
           />
         </div>
         <button type="submit" style={{
           padding: '8px 16px', background: 'rgba(200,144,10,0.1)', border: '1px solid var(--border)',
-          borderRadius: '4px', color: 'var(--gold)', fontSize: '13px', cursor: 'pointer',
+          borderRadius: '4px', color: 'var(--gold)', fontSize: '0.8125rem', cursor: 'pointer',
         }}>
           검색
         </button>
       </form>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : (
@@ -86,24 +86,24 @@ export default function AdminDecksPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 {['제목', '작성자', '날짜', '조회', '추천', ''].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '11px', fontWeight: 600 }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {decks.map(deck => (
                 <tr key={deck.id} style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-                  <td style={{ padding: '10px 14px', color: '#c8a450', fontSize: '13px', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '10px 14px', color: '#c8a450', fontSize: '0.8125rem', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {deck.title}
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '12px' }}>
+                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
                     {deck.profiles?.username ?? '-'}
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '12px' }}>
+                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>
                     {new Date(deck.created_at).toLocaleDateString('ko-KR')}
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '12px' }}>{deck.view_count}</td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '12px' }}>{deck.vote_count}</td>
+                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>{deck.view_count}</td>
+                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>{deck.vote_count}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <button
                       onClick={() => setDeleteTarget(deck)}
@@ -118,7 +118,7 @@ export default function AdminDecksPage() {
               ))}
               {decks.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '13px' }}>
+                  <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}>
                     덱이 없습니다.
                   </td>
                 </tr>

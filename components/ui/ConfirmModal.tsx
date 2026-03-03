@@ -62,12 +62,12 @@ export default function ConfirmModal({
         {title && (
           <div className="flex items-center gap-2 mb-3">
             {variant === 'danger' && <AlertTriangle size={16} style={{ color: accentColor }} />}
-            <h3 className="font-serif font-bold" style={{ color: accentColor, fontSize: '15px' }}>
+            <h3 className="font-serif font-bold" style={{ color: accentColor, fontSize: '0.9375rem' }}>
               {title}
             </h3>
           </div>
         )}
-        <p style={{ color: '#c8a450', fontSize: '13px', lineHeight: 1.6, marginBottom: '20px' }}>
+        <p style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: 1.6, marginBottom: '20px' }}>
           {message}
         </p>
         <div className="flex justify-end gap-2">
@@ -75,7 +75,7 @@ export default function ConfirmModal({
             onClick={onCancel}
             style={{
               padding: '7px 16px', border: '1px solid var(--border)', borderRadius: '4px',
-              color: '#555566', fontSize: '13px', cursor: 'pointer',
+              color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
               background: 'transparent',
             }}
             className="transition-colors hover:bg-white/5"
@@ -85,7 +85,7 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             style={{
-              padding: '7px 16px', borderRadius: '4px', fontSize: '13px', cursor: 'pointer',
+              padding: '7px 16px', borderRadius: '4px', fontSize: '0.8125rem', cursor: 'pointer',
               background: variant === 'danger' ? 'rgba(170,68,68,0.2)' : 'rgba(200,144,10,0.2)',
               border: `1px solid ${variant === 'danger' ? '#aa4444' : 'var(--gold-dim)'}`,
               color: variant === 'danger' ? '#ee6666' : 'var(--gold)',

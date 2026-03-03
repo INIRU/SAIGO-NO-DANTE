@@ -109,7 +109,7 @@ export default function AdminAnnouncementsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>공지 관리</h1>
-          <p style={{ color: '#555566', fontSize: '13px' }}>공지사항을 작성하고 관리합니다.</p>
+          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>공지사항을 작성하고 관리합니다.</p>
         </div>
         {!showForm && (
           <button
@@ -117,7 +117,7 @@ export default function AdminAnnouncementsPage() {
             className="flex items-center gap-2 transition-colors hover:opacity-80"
             style={{
               padding: '8px 16px', background: 'rgba(200,144,10,0.15)', border: '1px solid var(--border)',
-              borderRadius: '4px', color: 'var(--gold)', fontSize: '13px', cursor: 'pointer',
+              borderRadius: '4px', color: 'var(--gold)', fontSize: '0.8125rem', cursor: 'pointer',
             }}
           >
             <Plus size={14} /> 새 공지
@@ -134,7 +134,7 @@ export default function AdminAnnouncementsPage() {
             border: '1px solid rgba(170,68,68,0.3)',
             borderRadius: 4,
             color: '#ee6666',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -150,7 +150,7 @@ export default function AdminAnnouncementsPage() {
       {showForm && (
         <div className="card p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '15px' }}>
+            <h3 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '0.9375rem' }}>
               {creating ? '새 공지 작성' : '공지 수정'}
             </h3>
             <button onClick={cancelForm} style={{ color: '#555566', cursor: 'pointer' }}><X size={16} /></button>
@@ -162,7 +162,7 @@ export default function AdminAnnouncementsPage() {
               placeholder="제목"
               style={{
                 width: '100%', padding: '8px 12px', background: '#0d0b08', border: '1px solid var(--border)',
-                borderRadius: '4px', color: '#c8a450', fontSize: '13px', outline: 'none',
+                borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none',
               }}
             />
             <textarea
@@ -172,10 +172,10 @@ export default function AdminAnnouncementsPage() {
               rows={5}
               style={{
                 width: '100%', padding: '8px 12px', background: '#0d0b08', border: '1px solid var(--border)',
-                borderRadius: '4px', color: '#c8a450', fontSize: '13px', outline: 'none', resize: 'vertical',
+                borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none', resize: 'vertical',
               }}
             />
-            <label className="flex items-center gap-2" style={{ color: '#7a6845', fontSize: '13px', cursor: 'pointer' }}>
+            <label className="flex items-center gap-2" style={{ color: '#7a6845', fontSize: '0.8125rem', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={form.pinned}
@@ -189,7 +189,7 @@ export default function AdminAnnouncementsPage() {
                 disabled={saving || !form.title.trim()}
                 style={{
                   padding: '8px 20px', background: 'rgba(200,144,10,0.2)', border: '1px solid var(--gold-dim)',
-                  borderRadius: '4px', color: 'var(--gold)', fontSize: '13px', cursor: 'pointer',
+                  borderRadius: '4px', color: 'var(--gold)', fontSize: '0.8125rem', cursor: 'pointer',
                   opacity: saving || !form.title.trim() ? 0.5 : 1,
                 }}
               >
@@ -197,7 +197,7 @@ export default function AdminAnnouncementsPage() {
               </button>
               <button onClick={cancelForm} style={{
                 padding: '8px 16px', border: '1px solid var(--border)', borderRadius: '4px',
-                color: '#555566', fontSize: '13px', cursor: 'pointer',
+                color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
               }}>
                 취소
               </button>
@@ -207,11 +207,11 @@ export default function AdminAnnouncementsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : items.length === 0 ? (
-        <div className="card p-8 text-center" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="card p-8 text-center" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           공지가 없습니다.
         </div>
       ) : (
@@ -221,14 +221,14 @@ export default function AdminAnnouncementsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {a.pinned && <Pin size={12} style={{ color: 'var(--gold)' }} />}
-                  <p style={{ color: '#c8a450', fontSize: '14px', fontWeight: 600 }}>{a.title}</p>
+                  <p style={{ color: '#c8a450', fontSize: '0.875rem', fontWeight: 600 }}>{a.title}</p>
                 </div>
                 {a.content && (
-                  <p style={{ color: '#7a6845', fontSize: '12px', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                  <p style={{ color: '#7a6845', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                     {a.content.length > 200 ? a.content.slice(0, 200) + '...' : a.content}
                   </p>
                 )}
-                <p style={{ color: '#444455', fontSize: '11px', marginTop: '6px' }}>
+                <p style={{ color: '#6a6a80', fontSize: '0.6875rem', marginTop: '6px' }}>
                   {new Date(a.created_at).toLocaleDateString('ko-KR')}
                 </p>
               </div>

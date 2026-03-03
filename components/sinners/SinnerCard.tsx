@@ -60,7 +60,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               <span
                 className="font-serif font-bold select-none"
                 style={{
-                  fontSize: '64px',
+                  fontSize: '4rem',
                   color: 'rgba(200,144,10,0.12)',
                   lineHeight: 1,
                 }}
@@ -110,13 +110,13 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
           <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-20">
             <div
               className="font-serif font-bold leading-tight mb-0.5 group-hover:text-yellow-300 transition-colors"
-              style={{ color: 'var(--gold-light)', fontSize: '17px' }}
+              style={{ color: 'var(--gold-light)', fontSize: '1.0625rem' }}
             >
               {sinner.name_kr}
             </div>
             <div
               className="font-title"
-              style={{ color: '#7a6845', fontSize: '10px', fontFamily: 'var(--font-title)' }}
+              style={{ color: '#7a6845', fontSize: '0.625rem', fontFamily: 'var(--font-title)' }}
             >
               {sinner.name}
             </div>
@@ -133,7 +133,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
         >
           <p
             className="italic truncate"
-            style={{ color: '#4a3820', fontSize: '9px' }}
+            style={{ color: '#7a6840', fontSize: '0.5625rem' }}
           >
             {sinner.literary_source}
           </p>

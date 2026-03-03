@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
   SIN_COLORS, type SinType,
@@ -74,12 +75,10 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {entry.iconUrl && <img src={entry.iconUrl} alt="" style={{ width: 20, height: 20, borderRadius: '50%' }} />}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {atkIcon && <img src={atkIcon} alt="" style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10 }} />}
+        {entry.iconUrl && <Image src={entry.iconUrl} alt="" width={20} height={20} style={{ borderRadius: '50%' }} />}
+        {atkIcon && <Image src={atkIcon} alt="" width={10} height={10} style={{ position: 'absolute', bottom: -1, right: -1 }} />}
       </span>
-      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -89,21 +88,30 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
             ? { bottom: window.innerHeight - rect.top + 6 }
             : { top: rect.bottom + 6 }),
           zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
+          borderRadius: 6, padding: '10px 12px', minWidth: '220px', maxWidth: '340px', whiteSpace: 'normal',
         }}>
-          <div style={{ color: sc, fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.identityName} · 스킬 {entry.skill_order}
           </div>
           {atkIcon && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={atkIcon} alt="" style={{ width: 12, height: 12 }} />
-              <span style={{ color: '#666677', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>{SKILL_TYPE_LABELS[entry.skill_type] ?? entry.skill_type}</span>
+              <Image src={atkIcon} alt="" width={12} height={12} />
+              <span style={{ color: '#666677', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{SKILL_TYPE_LABELS[entry.skill_type] ?? entry.skill_type}</span>
             </div>
           )}
           {entry.description && (
-            <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
-              {formatSkillDesc(entry.description, sc)}
+            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.7 }}>
+              {entry.description.split('\n').map((line, li) => {
+                const isCoinStart = /^\[코인\s?\d/.test(line)
+                return (
+                  <div key={li}>
+                    {isCoinStart && li > 0 && (
+                      <div style={{ borderTop: `1px solid ${sc}25`, margin: '4px 0' }} />
+                    )}
+                    {formatSkillDesc(line, sc)}
+                  </div>
+                )
+              })}
             </div>
           )}
         </span>
@@ -125,9 +133,8 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
       onMouseLeave={() => setRect(null)}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {sinEn && <img src={SIN_ICON_MAP[sinEn]} alt="" style={{ width: 11, height: 11 }} />}
-      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+      {sinEn && <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />}
+      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -139,18 +146,17 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
           zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
           borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
         }}>
-          <div style={{ color: sc, fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
+          <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
           {sinEn && entry.sin_count && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={SIN_ICON_MAP[sinEn]} alt="" style={{ width: 11, height: 11 }} />
-              <span style={{ color: sc, fontSize: '9px', fontFamily: 'var(--font-mono)' }}>
+              <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />
+              <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
                 {entry.sin_count} {entry.active_cond}
               </span>
             </div>
           )}
           {entry.description && (
-            <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
+            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
               {formatSkillDesc(entry.description, sc)}
             </div>
           )}
@@ -175,11 +181,10 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${gc}18`, border: `1px solid ${gc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={entry.image_url} alt="" style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover' }} />
+        <Image src={entry.image_url} alt="" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover' }} />
       )}
-      <span style={{ color: '#888899', fontSize: '10px' }}>{entry.sinnerName}</span>
-      <span style={{ color: gc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+      <span style={{ color: '#888899', fontSize: '0.75rem' }}>{entry.sinnerName}</span>
+      <span style={{ color: gc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -191,17 +196,16 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
           zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
           borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
         }}>
-          <div style={{ color: gc, fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ color: gc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.grade} E.G.O
           </div>
-          <div style={{ color: '#c8a450', fontSize: '11px', fontWeight: 600, marginBottom: 4 }}>
+          <div style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 4 }}>
             {entry.name}
           </div>
           {sinEn && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={SIN_ICON_MAP[sinEn]} alt="" style={{ width: 11, height: 11 }} />
-              <span style={{ color: sc, fontSize: '9px', fontFamily: 'var(--font-mono)' }}>{sinEn ? (SIN_LABELS_KR[sinEn] ?? entry.sin_affinity) : entry.sin_affinity}</span>
+              <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />
+              <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>{sinEn ? (SIN_LABELS_KR[sinEn] ?? entry.sin_affinity) : entry.sin_affinity}</span>
             </div>
           )}
         </span>
@@ -225,11 +229,10 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={entry.imageUrl} alt="" style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover' }} />
+        <Image src={entry.imageUrl} alt="" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover' }} />
       )}
-      <span style={{ color: '#888899', fontSize: '10px' }}>{entry.sinnerName}</span>
-      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+      <span style={{ color: '#888899', fontSize: '0.75rem' }}>{entry.sinnerName}</span>
+      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -241,10 +244,10 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
           zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
           borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
         }}>
-          <div style={{ color: sc, fontSize: '11px', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.rarity}
           </div>
-          <div style={{ color: '#c8a450', fontSize: '11px', fontWeight: 600, marginBottom: 4 }}>
+          <div style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 4 }}>
             {entry.name}
           </div>
           {entry.keywords && entry.keywords.length > 0 && (
@@ -253,7 +256,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
                 const kwSin = KEYWORD_SIN_MAP[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
                 return (
-                  <span key={kw} style={{ color: kwColor, fontSize: '9px', fontFamily: 'var(--font-mono)' }}>{kw}</span>
+                  <span key={kw} style={{ color: kwColor, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>{kw}</span>
                 )
               })}
             </div>
@@ -279,9 +282,8 @@ export function KeywordChip({ keyword }: { keyword: string }) {
       onMouseLeave={() => setRect(null)}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {iconUrl && <img src={iconUrl} alt="" style={{ width: 13, height: 13 }} />}
-      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{keyword}</span>
+      {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
+      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{keyword}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -294,15 +296,14 @@ export function KeywordChip({ keyword }: { keyword: string }) {
           borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: info ? 4 : 0 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {iconUrl && <img src={iconUrl} alt="" style={{ width: 14, height: 14 }} />}
-            <span style={{ color: sc, fontSize: '11px', fontWeight: 700 }}>{keyword}</span>
+            {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
+            <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{keyword}</span>
           </div>
           {info && (
-            <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
+            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.55 }}>
               {info.desc}
               {info.maxStack != null && (
-                <span style={{ display: 'block', marginTop: 2, color: '#666', fontSize: '9px' }}>
+                <span style={{ display: 'block', marginTop: 2, color: '#666', fontSize: '0.8125rem' }}>
                   최대 {info.maxStack}
                 </span>
               )}
@@ -333,10 +334,9 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={entry.image_url} alt="" style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} />
+        <Image src={entry.image_url} alt="" width={16} height={16} style={{ objectFit: 'contain', flexShrink: 0 }} />
       )}
-      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
         <span className="pointer-events-none" style={{
@@ -350,14 +350,13 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
             {entry.image_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={entry.image_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+              <Image src={entry.image_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
             )}
-            <span style={{ color: sc, fontSize: '11px', fontWeight: 700 }}>{entry.name}</span>
-            <span style={{ color: '#555', fontSize: '9px' }}>{entry.keyword} {entry.grade}</span>
+            <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{entry.name}</span>
+            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{entry.keyword} {entry.grade}</span>
           </div>
           {entry.effect_base && (
-            <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
+            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.55 }}>
               {formatSkillDesc(entry.effect_base, sc)}
             </div>
           )}
@@ -388,7 +387,7 @@ function FallbackChip({ type, tokenKey }: { type: string; tokenKey: string }) {
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle',
       background: s.bg, border: `1px solid ${s.border}`, borderRadius: 4,
-      padding: '1px 6px', margin: '0 2px', fontSize: '10px',
+      padding: '1px 6px', margin: '0 2px', fontSize: '0.75rem',
     }}>
       <span style={{ color: s.color, fontWeight: 600 }}>{display}</span>
     </span>
@@ -414,7 +413,7 @@ export function NoteRenderer({
   inline?: boolean
 }) {
   if (!text.trim()) return (
-    <p style={{ color: '#2a2535', fontSize: '12px', fontStyle: 'italic' }}>내용이 없습니다.</p>
+    <p style={{ color: '#2a2535', fontSize: '0.75rem', fontStyle: 'italic' }}>내용이 없습니다.</p>
   )
   // [s:skill] [p:passive] [e:ego] [k:keyword] [i:identity] [g:egogift]
   const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+)\]|\[p:((?:[^\[\]]|\[[^\]]*\])+)\]|\[e:((?:[^\[\]]|\[[^\]]*\])+)\]|\[k:((?:[^\[\]]|\[[^\]]*\])+)\]|\[i:((?:[^\[\]]|\[[^\]]*\])+)\]|\[g:((?:[^\[\]]|\[[^\]]*\])+)\]/g
@@ -459,6 +458,6 @@ export function NoteRenderer({
     last = m.index + m[0].length
   }
   if (last < text.length) elements.push(<span key="tend">{formatSkillDesc(text.slice(last), '#b0a898')}</span>)
-  if (inline) return <span style={{ fontSize: '11px', color: '#b0a898', lineHeight: 1.6 }}>{elements}</span>
-  return <div style={{ fontSize: '13px', color: '#b0a898', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{elements}</div>
+  if (inline) return <span style={{ fontSize: '0.8125rem', color: '#b0a898', lineHeight: 1.6 }}>{elements}</span>
+  return <div style={{ fontSize: '0.8125rem', color: '#b0a898', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{elements}</div>
 }

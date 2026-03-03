@@ -180,7 +180,7 @@ export default function MirrorDungeonClient({
         <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
           거울 던전
         </h1>
-        <p style={{ color: '#666688', fontSize: '14px' }}>
+        <p style={{ color: '#666688', fontSize: '0.875rem' }}>
           E.G.O 기프트 도감 — {gifts.length}종
         </p>
       </div>
@@ -250,7 +250,7 @@ export default function MirrorDungeonClient({
                       setSortDesc(false)
                     }
                   }}
-                  className="px-2.5 py-1.5 rounded text-[11px] transition-colors"
+                  className="px-2.5 py-1.5 rounded text-[0.6875rem] transition-colors"
                   style={{
                     cursor: 'pointer',
                     background: sortBy === key ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
@@ -302,7 +302,7 @@ export default function MirrorDungeonClient({
           </div>
 
           {/* 결과 수 */}
-          <span style={{ color: '#555', fontSize: '12px', fontFamily: 'var(--font-heading)' }}>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
             {filtered.length}건
           </span>
         </div>
@@ -357,7 +357,7 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
     >
       {/* 등급 배지 */}
       <div
-        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold"
+        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[0.5625rem] font-bold"
         style={{
           background: 'rgba(0,0,0,0.5)',
           color: gift.grade === 'EX' ? '#e8b030' : kwColor,
@@ -387,7 +387,7 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
 
       {/* 이름 */}
       <p
-        className="text-[10px] md:text-[11px] leading-tight text-center mt-1 line-clamp-2"
+        className="text-[0.625rem] md:text-[0.6875rem] leading-tight text-center mt-1 line-clamp-2"
         style={{ color: '#aaa', fontFamily: 'var(--font-heading)' }}
       >
         {gift.name}
@@ -395,12 +395,12 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
 
       {/* 가격 */}
       {gift.price != null ? (
-        <p className="flex items-center gap-0.5 text-[9px] mt-1" style={{ color: '#8a7a50', fontFamily: 'var(--font-mono)' }}>
+        <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#8a7a50', fontFamily: 'var(--font-mono)' }}>
           <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} unoptimized />
           {gift.price}
         </p>
       ) : gift.sell_price != null ? (
-        <p className="flex items-center gap-0.5 text-[9px] mt-1" style={{ color: '#665540', fontFamily: 'var(--font-mono)' }}>
+        <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#665540', fontFamily: 'var(--font-mono)' }}>
           <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} unoptimized style={{ opacity: 0.6 }} />
           {gift.sell_price}
         </p>
@@ -503,7 +503,7 @@ function GiftModal({
             </h2>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
                 style={{ background: `${kwColor}25`, color: kwColor, fontFamily: 'var(--font-heading)' }}
               >
                 {(() => {
@@ -513,7 +513,7 @@ function GiftModal({
                 {gift.keyword}
               </span>
               <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   color: gift.grade === 'EX' ? '#e8b030' : '#999',
@@ -524,7 +524,7 @@ function GiftModal({
               </span>
               {gift.enhancement && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px]"
+                  className="px-2 py-0.5 rounded-full text-[0.625rem]"
                   style={{ background: 'rgba(64,160,96,0.15)', color: '#40a060', fontFamily: 'var(--font-heading)' }}
                 >
                   강화 가능
@@ -532,7 +532,7 @@ function GiftModal({
               )}
               {gift.is_synthesis && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px]"
+                  className="px-2 py-0.5 rounded-full text-[0.625rem]"
                   style={{ background: 'rgba(180,120,220,0.15)', color: '#b478dc', fontFamily: 'var(--font-heading)' }}
                 >
                   합성
@@ -599,7 +599,7 @@ function GiftModal({
               style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
             >
               <p
-                className="text-[11px] font-bold mb-2 flex items-center gap-1.5"
+                className="text-[0.6875rem] font-bold mb-2 flex items-center gap-1.5"
                 style={{ color: '#b478dc', fontFamily: 'var(--font-heading)' }}
               >
                 <FlaskConical size={13} />
@@ -609,7 +609,7 @@ function GiftModal({
                 {recipe.ingredients.map((ing, i) => (
                   <span key={i} className="flex items-center">
                     <span
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px]"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.6875rem]"
                       style={{
                         background: 'rgba(255,255,255,0.05)',
                         color: '#bbb',
@@ -627,7 +627,7 @@ function GiftModal({
                 ))}
                 <span style={{ color: '#555', margin: '0 4px', fontFamily: 'sans-serif' }}>=</span>
                 <span
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.6875rem] font-bold"
                   style={{
                     background: `${kwColor}15`,
                     color: kwColor,
@@ -640,7 +640,7 @@ function GiftModal({
                 </span>
               </div>
               {recipe.final_result && (
-                <p className="mt-2 text-[11px]" style={{ color: '#888' }}>
+                <p className="mt-2 text-[0.6875rem]" style={{ color: '#888' }}>
                   <span style={{ color: '#666' }}>최종 합성:</span>{' '}
                   <span style={{ color: '#e8b030' }}>{recipe.final_result}</span>
                 </p>
@@ -665,12 +665,12 @@ function EffectBlock({ label, text, color }: { label: string; text: string; colo
   return (
     <div>
       <p
-        className="text-[10px] font-bold mb-1.5"
+        className="text-[0.625rem] font-bold mb-1.5"
         style={{ color: label === '++' ? '#e8b030' : '#666', fontFamily: 'var(--font-heading)' }}
       >
         효과 {label}
       </p>
-      <div className="text-[12px] leading-[1.7] space-y-1" style={{ color }}>
+      <div className="text-[0.75rem] leading-[1.7] space-y-1" style={{ color }}>
         {lines.map((line, i) => (
           <p key={i}>{formatSkillDesc(line, color)}</p>
         ))}
@@ -693,11 +693,11 @@ function MetaItem({
 }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-[10px]" style={{ color: '#555', fontFamily: 'var(--font-heading)' }}>
+      <span className="text-[0.625rem]" style={{ color: '#555', fontFamily: 'var(--font-heading)' }}>
         {label}
       </span>
       {icon && <Image src={icon} alt="" width={12} height={12} unoptimized />}
-      <span className="text-[11px]" style={{ color: valueColor }}>
+      <span className="text-[0.6875rem]" style={{ color: valueColor }}>
         {value}
       </span>
     </div>

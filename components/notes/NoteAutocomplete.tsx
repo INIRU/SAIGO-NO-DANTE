@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, type RefObject } from 'react'
+import Image from 'next/image'
 import {
   KEYWORD_ICON_MAP,
   KEYWORD_SIN_MAP,
@@ -179,8 +180,8 @@ export function NoteAutocompleteDropdown({
         display: 'flex', alignItems: 'center', gap: 4,
         padding: '0 6px 4px', borderBottom: '1px solid rgba(200,144,10,0.08)', marginBottom: 4,
       }}>
-        <span style={{ color: '#333344', fontSize: '8px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
-        <span style={{ color: '#252530', fontSize: '8px' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
+        <span style={{ color: '#555570', fontSize: '0.5rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
+        <span style={{ color: '#252530', fontSize: '0.5rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {suggestions.map((sugg, i) => {
@@ -198,21 +199,19 @@ export function NoteAutocompleteDropdown({
             >
               {/* 아이콘/이미지 영역 */}
               {sugg.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={sugg.imageUrl} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                <Image src={sugg.imageUrl} alt="" width={18} height={18} unoptimized style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               ) : sugg.iconUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={sugg.iconUrl} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />
+                <Image src={sugg.iconUrl} alt="" width={14} height={14} unoptimized style={{ flexShrink: 0 }} />
               ) : sugg.typeLabel ? (
-                <span style={{ fontSize: '9px', color: '#555', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
+                <span style={{ fontSize: '0.5625rem', color: '#555', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
               ) : (
                 <span style={{ width: 14, flexShrink: 0 }} />
               )}
               {/* 라벨 */}
-              <span style={{ color: sugg.color, fontSize: '11px', fontWeight: 600, flex: 1 }}>{sugg.label}</span>
+              <span style={{ color: sugg.color, fontSize: '0.6875rem', fontWeight: 600, flex: 1 }}>{sugg.label}</span>
               {/* 타입 표시 (아이콘이 있을 때만 우측에) */}
               {sugg.typeLabel && (sugg.imageUrl || sugg.iconUrl) && (
-                <span style={{ color: '#333', fontSize: '9px', flexShrink: 0 }}>{sugg.typeLabel}</span>
+                <span style={{ color: '#333', fontSize: '0.5625rem', flexShrink: 0 }}>{sugg.typeLabel}</span>
               )}
             </button>
           )

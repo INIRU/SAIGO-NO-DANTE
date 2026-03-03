@@ -36,11 +36,11 @@ export default function AdminDashboard() {
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
           대시보드
         </h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>서비스 현황을 한눈에 확인합니다.</p>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>서비스 현황을 한눈에 확인합니다.</p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : stats && (
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
             { label: '총 조회수', value: stats.totalViews.toLocaleString() },
           ].map(card => (
             <div key={card.label} className="card p-5">
-              <p style={{ color: '#555566', fontSize: '11px', marginBottom: '4px' }}>{card.label}</p>
+              <p style={{ color: '#555566', fontSize: '0.6875rem', marginBottom: '4px' }}>{card.label}</p>
               <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>{card.value}</p>
             </div>
           ))}
@@ -72,8 +72,8 @@ export default function AdminDashboard() {
               >
                 <Icon size={20} style={{ color: 'var(--gold-dim)' }} />
                 <div>
-                  <p style={{ color: '#c8a450', fontSize: '13px', fontWeight: 600 }}>{link.label}</p>
-                  <p style={{ color: '#555566', fontSize: '11px' }}>{link.desc}</p>
+                  <p style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{link.label}</p>
+                  <p style={{ color: '#555566', fontSize: '0.6875rem' }}>{link.desc}</p>
                 </div>
               </Link>
             )

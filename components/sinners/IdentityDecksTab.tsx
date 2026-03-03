@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import { getKeywordIconUrl, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
 
@@ -166,7 +167,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#3a3050', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -190,7 +191,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#3a3050', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -208,7 +209,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               }}
             >
-              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '10px', fontWeight: 600 }}>
+              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
                 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
               </div>
               {suggestions.map((kw, i) => {
@@ -231,8 +232,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                     }}
                   >
                     {iconUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                      <Image src={iconUrl} alt="" width={14} height={14} unoptimized style={{ flexShrink: 0 }} />
                     )}
                     <span>{kw}</span>
                   </div>
@@ -254,7 +254,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 color: sort === s ? 'var(--bg-deep)' : '#888899',
                 border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '12px',
+                fontSize: '0.75rem',
               }}
             >
               {s === 'latest' ? '최신순' : '인기순'}
@@ -265,7 +265,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
 
       {/* 결과 수 */}
       {!loading && (
-        <p className="text-xs" style={{ color: '#333344', fontFamily: 'var(--font-mono)' }}>
+        <p className="text-xs" style={{ color: '#555570', fontFamily: 'var(--font-mono)' }}>
           {filtered.length}개의 덱{hasMore && '+'}
           {search.trim() && ' (필터 적용됨)'}
         </p>
@@ -286,8 +286,8 @@ export default function IdentityDecksTab({ identityId }: Props) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div style={{ color: '#2a2035', fontSize: '48px' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: '#333344' }}>
+          <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
+          <p className="font-serif text-base italic" style={{ color: '#555570' }}>
             {search.trim() ? '검색 결과가 없습니다.' : '이 인격이 사용된 덱이 아직 없습니다.'}
           </p>
         </div>

@@ -42,10 +42,10 @@ export default function AdminSidebar() {
   const navContent = (
     <>
       <div style={{ padding: '12px 20px', marginBottom: '4px' }}>
-        <p className="font-serif" style={{ color: 'var(--gold)', fontSize: '15px', fontWeight: 700 }}>
+        <p className="font-serif" style={{ color: 'var(--gold)', fontSize: '0.9375rem', fontWeight: 700 }}>
           관리자
         </p>
-        <p style={{ color: '#555566', fontSize: '11px', marginTop: '2px' }}>
+        <p style={{ color: '#555566', fontSize: '0.6875rem', marginTop: '2px' }}>
           SAIGO NO DANTE Admin
         </p>
       </div>
@@ -60,7 +60,7 @@ export default function AdminSidebar() {
               className="flex items-center gap-3 transition-colors hover:text-yellow-300"
               style={{
                 padding: '10px 20px',
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 fontFamily: 'var(--font-heading)',
                 color: active ? 'var(--gold)' : '#7a6845',
                 background: active ? 'rgba(200,144,10,0.08)' : 'transparent',

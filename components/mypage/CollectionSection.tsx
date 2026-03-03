@@ -334,16 +334,16 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     <section>
       <div className="flex items-center justify-between mb-5">
         <h2 className="flex items-center gap-2">
-          <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+          <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
             MY COLLECTION
           </span>
-          <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+          <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
             보유 현황
           </span>
         </h2>
-        <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#4a4060' }}>
+        <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#6a6080' }}>
           <span>인격 <span style={{ color: 'var(--gold)' }}>{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
-          <span style={{ color: '#2a2035', fontFamily: 'sans-serif' }}>·</span>
+          <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
           <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
         </div>
       </div>
@@ -391,17 +391,17 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   }}
                 />
                 <span style={{
-                  fontSize: '9px',
-                  color: isActive ? 'var(--gold)' : '#4a4060',
+                  fontSize: '0.6875rem',
+                  color: isActive ? 'var(--gold)' : '#6a6080',
                   fontFamily: 'var(--font-heading)',
                   whiteSpace: 'nowrap',
                 }}>
                   {s.name_kr}
                 </span>
                 <span style={{
-                  fontSize: '8px',
+                  fontSize: '0.5625rem',
                   fontFamily: 'var(--font-mono)',
-                  color: ownCount === totalCount ? 'var(--gold)' : '#3a3050',
+                  color: ownCount === totalCount ? 'var(--gold)' : '#5a5070',
                 }}>
                   {ownCount}/{totalCount}
                 </span>
@@ -419,7 +419,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               style={{
                 background: !keywordFilter ? 'rgba(200,144,10,0.15)' : 'transparent',
                 border: `1px solid ${!keywordFilter ? 'var(--gold-dim)' : 'rgba(58,42,21,0.4)'}`,
-                color: !keywordFilter ? 'var(--gold)' : '#4a4060',
+                color: !keywordFilter ? 'var(--gold)' : '#6a6080',
                 cursor: 'pointer',
               }}
             >
@@ -436,7 +436,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   style={{
                     background: isActive ? `${color}20` : 'transparent',
                     border: `1px solid ${isActive ? color : 'rgba(58,42,21,0.4)'}`,
-                    color: isActive ? color : '#4a4060',
+                    color: isActive ? color : '#6a6080',
                     cursor: 'pointer',
                   }}
                 >
@@ -482,7 +482,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               style={{
                 background: showUnowned ? 'rgba(90,80,112,0.15)' : 'transparent',
                 border: `1px solid ${showUnowned ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
-                color: showUnowned ? '#8a7aaa' : '#4a4060',
+                color: showUnowned ? '#8a7aaa' : '#6a6080',
                 cursor: 'pointer',
               }}
             >
@@ -549,8 +549,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {/* 인격 섹션 */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
-              <span style={{ color: '#5a5070', fontSize: '11px', fontFamily: 'var(--font-heading)' }}>인격</span>
-              <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: '#5a5070', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
+              <span style={{ color: '#5a5070', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                 {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
               </span>
             </div>
@@ -609,8 +609,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                       }}
                     >
                       <p style={{
-                        fontSize: '9px',
-                        color: isOwned ? '#c8a450' : '#4a4060',
+                        fontSize: '0.8125rem',
+                        color: isOwned ? '#c8a450' : '#6a6080',
                         textAlign: 'center',
                         fontFamily: 'var(--font-heading)',
                         lineHeight: 1.2,
@@ -626,7 +626,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               })}
             </div>
             ) : (
-              <p className="text-center py-6" style={{ color: '#3a3050', fontSize: '12px' }}>
+              <p className="text-center py-6" style={{ color: '#5a5070', fontSize: '0.75rem' }}>
                 해당 키워드의 인격이 없습니다
               </p>
             )}
@@ -636,8 +636,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {Object.keys(egosByGrade).length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span style={{ color: '#5a5070', fontSize: '11px', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-                <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: '#5a5070', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
+                <span style={{ color: '#5a5070', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                   {currentEgos.filter(e => owned.has(e.id)).length}/{currentEgos.length}
                 </span>
               </div>
@@ -645,7 +645,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               {Object.entries(egosByGrade).map(([grade, egoList]) => (
                 <div key={grade} className="mb-3">
                   <p className="mb-1.5" style={{
-                    fontSize: '9px',
+                    fontSize: '0.6875rem',
                     fontFamily: 'var(--font-mono)',
                     letterSpacing: '0.1em',
                     color: GRADE_COLORS[grade] ?? '#555',
@@ -703,8 +703,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                             }}
                           >
                             <p style={{
-                              fontSize: '8px',
-                              color: isOwned ? '#c8a450' : '#4a4060',
+                              fontSize: '0.625rem',
+                              color: isOwned ? '#c8a450' : '#6a6080',
                               textAlign: 'center',
                               fontFamily: 'var(--font-heading)',
                               lineHeight: 1.2,
@@ -742,13 +742,13 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         >
           {/* 헤더 */}
           <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
-            <p style={{ color: '#3a3050', fontFamily: 'PerfectDOS, monospace', fontSize: '11px', letterSpacing: '0.2em', marginBottom: '8px' }}>
+            <p style={{ color: '#5a5070', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>
               SAIGO NO DANTE
             </p>
-            <p style={{ color: '#c8900a', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>
+            <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
               보유 현황
             </p>
-            <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '13px' }}>
+            <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.8125rem' }}>
               인격 {stats.ownedIdentities}/{stats.totalIdentities}
               <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>
               EGO {stats.ownedEgos}/{stats.totalEgos}
@@ -779,10 +779,10 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                     crossOrigin="anonymous"
                     style={{ borderRadius: '50%' }}
                   />
-                  <span style={{ color: '#c8900a', fontSize: '16px', fontWeight: 'bold' }}>
+                  <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>
                     {sinner.name_kr}
                   </span>
-                  <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '11px' }}>
+                  <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>
                     {ownedCount}/{totalCount}
                   </span>
                 </div>
@@ -790,7 +790,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                 {/* 인격 그리드 */}
                 {ids.length > 0 && (
                   <div style={{ marginBottom: '12px' }}>
-                    <p style={{ color: '#5a5070', fontSize: '10px', marginBottom: '6px' }}>인격</p>
+                    <p style={{ color: '#5a5070', fontSize: '0.625rem', marginBottom: '6px' }}>인격</p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
                       {ids.map(identity => {
                         const url = identityProfileUrl(identity)
@@ -824,7 +824,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                               )}
                             </div>
                             <p style={{
-                              fontSize: '10px',
+                              fontSize: '0.625rem',
                               color: '#c8a450',
                               textAlign: 'center',
                               lineHeight: 1.3,
@@ -843,7 +843,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                 {/* EGO 그리드 */}
                 {egoList.length > 0 && (
                   <div>
-                    <p style={{ color: '#5a5070', fontSize: '10px', marginBottom: '6px' }}>E.G.O</p>
+                    <p style={{ color: '#5a5070', fontSize: '0.625rem', marginBottom: '6px' }}>E.G.O</p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
                       {egoList.map(ego => {
                         const sinType = normalizeSin(ego.sin_affinity)
@@ -877,7 +877,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                               )}
                             </div>
                             <p style={{
-                              fontSize: '9px',
+                              fontSize: '0.5625rem',
                               color: '#c8a450',
                               textAlign: 'center',
                               lineHeight: 1.3,
@@ -898,7 +898,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
           {/* 푸터 */}
           <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
-            <p style={{ color: '#3a3050', fontFamily: 'PerfectDOS, monospace', fontSize: '10px', letterSpacing: '0.15em' }}>
+            <p style={{ color: '#5a5070', fontFamily: 'PerfectDOS, monospace', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
               saigono-dante.vercel.app
             </p>
           </div>

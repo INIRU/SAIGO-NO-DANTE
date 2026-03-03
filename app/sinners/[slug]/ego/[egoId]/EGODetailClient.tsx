@@ -24,8 +24,7 @@ const RESISTANCE_STYLE: Record<string, { color: string; bg: string }> = {
 // ─── Grade 이미지 ─────────────────────────────────────────────────────
 function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
   if (grade === 'ALEPH') return <span style={{ fontFamily: 'monospace', fontSize: `${height - 2}px`, color: '#c83040', letterSpacing: '0.1em' }}>ALEPH</span>
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={`${STORAGE_BASE}/icons/grade/${grade}.webp`} alt={grade} style={{ height, width: 'auto' }} />
+  return <Image src={`${STORAGE_BASE}/icons/grade/${grade}.webp`} alt={grade} width={40} height={height} unoptimized style={{ width: 'auto', height }} />
 }
 
 // ─── EGO 스킬 패널 ────────────────────────────────────────────────────
@@ -59,7 +58,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
           {ATK_TYPE_ICON_MAP[skill.atkType] && (
             <Image src={ATK_TYPE_ICON_MAP[skill.atkType]} alt="" width={16} height={16} unoptimized />
           )}
-          <span className="font-semibold" style={{ color: accentColor, fontSize: '14px' }}>
+          <span className="font-semibold" style={{ color: accentColor, fontSize: '0.875rem' }}>
             {skill.name}
           </span>
         </div>
@@ -67,7 +66,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
         <div className="flex items-center gap-3">
           {/* 가중치 */}
           <div className="flex items-center gap-1">
-            <span style={{ color: '#666', fontSize: '10px' }}>가중치</span>
+            <span style={{ color: '#666', fontSize: '0.625rem' }}>가중치</span>
             <div className="flex items-center gap-0.5">
               {Array.from({ length: skill.atkWeight }).map((_, i) => (
                 <div key={i} className="w-2 h-2 rounded-sm" style={{ background: `${accentColor}50`, border: `1.5px solid ${accentColor}` }} />
@@ -76,7 +75,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
           </div>
           {/* 정신력 소모 */}
           {skill.mentalConsume !== 0 && (
-            <span className="font-mono" style={{ color: '#666', fontSize: '10px' }}>
+            <span className="font-mono" style={{ color: '#666', fontSize: '0.625rem' }}>
               정신력 -{skill.mentalConsume}
             </span>
           )}
@@ -86,28 +85,28 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
       {/* 위력 + 자원 */}
       <div className="flex items-center gap-4 mb-2 flex-wrap">
         <div className="flex items-center gap-1">
-          <span style={{ color: '#888', fontSize: '11px' }}>위력</span>
-          <span className="font-mono font-bold" style={{ color: accentColor, fontSize: '13px' }}>{skill.skillPower}</span>
+          <span style={{ color: '#888', fontSize: '0.6875rem' }}>위력</span>
+          <span className="font-mono font-bold" style={{ color: accentColor, fontSize: '0.8125rem' }}>{skill.skillPower}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span style={{ color: '#888', fontSize: '11px' }}>코인</span>
-          <span className="font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '13px' }}>{skill.coinNum}</span>
+          <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인</span>
+          <span className="font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '0.8125rem' }}>{skill.coinNum}</span>
         </div>
         {skill.coinPower !== 0 && (
           <div className="flex items-center gap-1">
-            <span style={{ color: '#888', fontSize: '11px' }}>코인 위력</span>
-            <span className="font-mono font-bold" style={{ color: accentColor, fontSize: '13px' }}>
+            <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인 위력</span>
+            <span className="font-mono font-bold" style={{ color: accentColor, fontSize: '0.8125rem' }}>
               {skill.coinPower > 0 ? `+${skill.coinPower}` : skill.coinPower}
             </span>
           </div>
         )}
         <div className="flex items-center gap-1 ml-auto">
-          <span style={{ color: '#888', fontSize: '11px' }}>최대</span>
-          <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '13px' }}>{skill.power.replace(/\(\d+\)/g, '')}</span>
+          <span style={{ color: '#888', fontSize: '0.6875rem' }}>최대</span>
+          <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>{skill.power.replace(/\(\d+\)/g, '')}</span>
         </div>
         {/* 죄악 자원 */}
         {resourceSin && (
-          <Image src={getSinIconUrl(resourceSin)} alt={skill.resource} width={16} height={16} unoptimized style={{ filter: `drop-shadow(0 0 3px ${resourceColor}70)` }} />
+          <Image src={getSinIconUrl(resourceSin)} alt={skill.resource} width={20} height={20} unoptimized style={{ filter: `drop-shadow(0 0 3px ${resourceColor}70)` }} />
         )}
       </div>
 
@@ -128,7 +127,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
 
       {/* 일반 효과 */}
       {skill.normalEffect && (
-        <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: '8px' }}>
+        <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: '8px' }}>
           {skill.normalEffect.split('\n').map((line, li) => (
             <div key={li}>{formatSkillDesc(line, accentColor)}</div>
           ))}
@@ -154,13 +153,13 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
                   background: isUnbreakable ? `${accentColor}30` : `${accentColor}18`,
                   border: `1px solid ${accentColor}${isUnbreakable ? '70' : '40'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: accentColor, fontFamily: 'monospace', fontSize: '9px', fontWeight: 'bold',
+                  color: accentColor, fontFamily: 'monospace', fontSize: '0.5625rem', fontWeight: 'bold',
                 }}>
                   {i + 1}
                 </div>
-                <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, flex: 1 }}>
+                <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, flex: 1 }}>
                   {isUnbreakable && (
-                    <span style={{ color: '#aaa', fontSize: '10px', fontWeight: 600 }}>파괴 불가 코인</span>
+                    <span style={{ color: '#aaa', fontSize: '0.625rem', fontWeight: 600 }}>파괴 불가 코인</span>
                   )}
                   {displayLines.map((line, li) => (
                     <div key={li}>{formatSkillDesc(line, accentColor)}</div>
@@ -221,11 +220,11 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%', background: 'linear-gradient(to bottom, transparent, #0d0b08)' }} />
         <div style={{ position: 'absolute', bottom: '28px', left: '40px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
           <GradeImg grade={ego.grade} height={20} />
-          <h1 className="font-serif" style={{ fontSize: '32px', fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 40px ${sinColor}60` }}>
+          <h1 className="font-serif" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 40px ${sinColor}60` }}>
             {ego.name_kr || ego.name}
           </h1>
           {ego.name_kr && (
-            <p className="font-mono" style={{ fontSize: '13px', color: '#8a6010', letterSpacing: '0.08em' }}>{ego.name}</p>
+            <p className="font-mono" style={{ fontSize: '0.8125rem', color: '#8a6010', letterSpacing: '0.08em' }}>{ego.name}</p>
           )}
         </div>
       </div>
@@ -267,7 +266,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               <div className="flex items-center gap-2" style={{ padding: '5px 14px', background: `${gradeColor}12`, border: `1px solid ${gradeColor}35`, borderRadius: '4px' }}>
                 <GradeImg grade={ego.grade} height={20} />
                 {ego.sin_affinity && (
-                  <Image src={getSinIconUrl(ego.sin_affinity as SinType)} alt="" width={16} height={16} unoptimized
+                  <Image src={getSinIconUrl(ego.sin_affinity as SinType)} alt="" width={20} height={20} unoptimized
                     style={{ opacity: 0.75, marginLeft: '6px' }} />
                 )}
               </div>
@@ -278,7 +277,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               {/* 죄악 내성 */}
               {ego.resistance && ego.resistance.length === 7 && (
                 <div>
-                  <p style={{ color: '#666', fontSize: '10px', marginBottom: '8px', letterSpacing: '0.1em' }}>죄악 내성</p>
+                  <p style={{ color: '#666', fontSize: '0.625rem', marginBottom: '8px', letterSpacing: '0.1em' }}>죄악 내성</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                     {SIN_ORDER.map((sin, i) => {
                       const res = ego.resistance![i] ?? '보통'
@@ -286,9 +285,9 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       const sc = SIN_COLORS[sin]
                       return (
                         <div key={sin} className="flex items-center gap-1.5">
-                          <Image src={getSinIconUrl(sin)} alt="" width={14} height={14} unoptimized
+                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18} unoptimized
                             style={{ filter: `drop-shadow(0 0 2px ${sc}60)`, flexShrink: 0 }} />
-                          <span className="font-mono" style={{ fontSize: '10px', color: rs.color, fontWeight: 600 }}>
+                          <span className="font-mono" style={{ fontSize: '0.625rem', color: rs.color, fontWeight: 600 }}>
                             {res}
                           </span>
                         </div>
@@ -301,7 +300,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               {/* 코스트 */}
               {ego.cost && ego.cost.some(c => c > 0) && (
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                  <p style={{ color: '#666', fontSize: '10px', marginBottom: '8px', letterSpacing: '0.1em' }}>코스트</p>
+                  <p style={{ color: '#666', fontSize: '0.625rem', marginBottom: '8px', letterSpacing: '0.1em' }}>코스트</p>
                   <div className="flex flex-wrap gap-2">
                     {SIN_ORDER.map((sin, i) => {
                       const amount = ego.cost![i]
@@ -310,9 +309,9 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       return (
                         <div key={sin} className="flex items-center gap-1.5"
                           style={{ padding: '4px 10px', background: `${sc}12`, border: `1px solid ${sc}40`, borderRadius: '4px' }}>
-                          <Image src={getSinIconUrl(sin)} alt="" width={14} height={14} unoptimized
+                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18} unoptimized
                             style={{ filter: `drop-shadow(0 0 3px ${sc}60)` }} />
-                          <span className="font-mono font-bold" style={{ fontSize: '12px', color: sc }}>{amount}</span>
+                          <span className="font-mono font-bold" style={{ fontSize: '0.75rem', color: sc }}>{amount}</span>
                         </div>
                       )
                     })}
@@ -323,8 +322,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               {/* 입수 방법 */}
               {ego.obtaining_method && (
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                  <p style={{ color: '#666', fontSize: '10px', marginBottom: '6px', letterSpacing: '0.1em' }}>입수 방법</p>
-                  <p style={{ fontSize: '11px', color: '#7a6a5a', lineHeight: '1.6' }}>{ego.obtaining_method}</p>
+                  <p style={{ color: '#666', fontSize: '0.625rem', marginBottom: '6px', letterSpacing: '0.1em' }}>입수 방법</p>
+                  <p style={{ fontSize: '0.6875rem', color: '#7a6a5a', lineHeight: '1.6' }}>{ego.obtaining_method}</p>
                 </div>
               )}
             </div>
@@ -345,13 +344,13 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {/* 패시브 */}
             {ego.passive_name && (
               <div className="card p-6">
-                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '16px' }}>패시브</h2>
+                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>패시브</h2>
                 <div className="p-4 rounded" style={{ background: `${sinColor}08`, border: `1px solid ${sinColor}30` }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold" style={{ color: sinColor, fontSize: '14px' }}>{ego.passive_name}</span>
+                    <span className="font-semibold" style={{ color: sinColor, fontSize: '0.875rem' }}>{ego.passive_name}</span>
                   </div>
                   {ego.passive_content && (
-                    <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                    <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                       {ego.passive_content.split('\n').map((line, li) => (
                         <div key={li}>{formatSkillDesc(line, sinColor)}</div>
                       ))}
@@ -365,7 +364,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {normalSkillList.length > 0 && (
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>EGO 스킬</h2>
+                  <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>EGO 스킬</h2>
                   {/* 3해석 / 4해석 */}
                   <div className="flex rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                     {([3, 4] as const).map(lv => (
@@ -391,7 +390,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                     ))}
                   </div>
                 ) : (
-                  <p style={{ color: '#444', fontSize: '13px', fontStyle: 'italic' }}>스킬 데이터 없음</p>
+                  <p style={{ color: '#444', fontSize: '0.8125rem', fontStyle: 'italic' }}>스킬 데이터 없음</p>
                 )}
               </div>
             )}
@@ -422,7 +421,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   <span
                     className="font-mono font-bold"
                     style={{
-                      fontSize: '11px',
+                      fontSize: '0.6875rem',
                       color: '#cc2222',
                       letterSpacing: '0.18em',
                       textTransform: 'uppercase',
@@ -459,7 +458,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       ))}
                     </div>
                   ) : (
-                    <p style={{ color: '#442222', fontSize: '13px', fontStyle: 'italic' }}>침식 스킬 데이터 없음</p>
+                    <p style={{ color: '#442222', fontSize: '0.8125rem', fontStyle: 'italic' }}>침식 스킬 데이터 없음</p>
                   )}
                 </div>
               </div>
@@ -468,11 +467,11 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {/* 키워드 */}
             {ego.keywords && ego.keywords.length > 0 && (
               <div className="card p-6">
-                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '16px' }}>키워드</h2>
+                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>키워드</h2>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
                   {ego.keywords.map((kw, i) => (
                     <KeywordWithTooltip key={i} keyword={kw}>
-                      <span className="font-semibold" style={{ fontSize: '12px', color: '#668877' }}>{kw}</span>
+                      <span className="font-semibold" style={{ fontSize: '0.75rem', color: '#668877' }}>{kw}</span>
                     </KeywordWithTooltip>
                   ))}
                 </div>

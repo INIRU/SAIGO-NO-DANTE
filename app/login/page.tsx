@@ -15,8 +15,8 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
         className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/5"
         style={{ background: 'transparent', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span style={{ color: '#888899', fontSize: '12px', letterSpacing: '0.05em' }}>{title}</span>
-        <span style={{ color: '#555566', fontSize: '12px', transition: 'transform 200ms', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+        <span style={{ color: '#888899', fontSize: '0.75rem', letterSpacing: '0.05em' }}>{title}</span>
+        <span style={{ color: '#555566', fontSize: '0.75rem', transition: 'transform 200ms', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </button>
       {open && (
         <div
@@ -57,7 +57,7 @@ export default function LoginPage() {
         <h1 className="font-serif text-2xl font-bold tracking-widest" style={{ color: 'var(--gold)' }}>
           최애의 관리자
         </h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>
           수감자 DB · 덱 공유 · 메타 분석
         </p>
       </div>
@@ -72,14 +72,14 @@ export default function LoginPage() {
           padding: '32px',
         }}
       >
-        <h2 className="font-serif font-bold text-center mb-6" style={{ color: '#c8a450', fontSize: '18px' }}>
+        <h2 className="font-serif font-bold text-center mb-6" style={{ color: '#c8a450', fontSize: '1.125rem' }}>
           로그인
         </h2>
 
         {/* 약관 아코디언 */}
         <div className="space-y-2 mb-5">
           <Accordion title="이용약관">
-            <div style={{ color: '#666677', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+            <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
               {`최애의 관리자는 Limbus Company 팬 사이트입니다.
 Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이 운영됩니다.
 
@@ -88,13 +88,13 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
 • 서비스는 예고 없이 변경되거나 종료될 수 있습니다.`}
             </div>
             <Link href="/terms" target="_blank"
-              style={{ display: 'block', marginTop: '10px', color: 'var(--gold-dim)', fontSize: '11px', textDecoration: 'underline' }}>
+              style={{ display: 'block', marginTop: '10px', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
               전문 보기 →
             </Link>
           </Accordion>
 
           <Accordion title="개인정보 처리방침">
-            <div style={{ color: '#666677', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+            <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
               {`Google OAuth를 통해 다음 정보를 수집합니다.
 • 이메일 주소 (계정 식별)
 • 프로필 이름 · 프로필 사진
@@ -104,14 +104,14 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
 회원 탈퇴 시 즉시 삭제됩니다.`}
             </div>
             <Link href="/privacy" target="_blank"
-              style={{ display: 'block', marginTop: '10px', color: 'var(--gold-dim)', fontSize: '11px', textDecoration: 'underline' }}>
+              style={{ display: 'block', marginTop: '10px', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
               전문 보기 →
             </Link>
           </Accordion>
         </div>
 
         {/* 동의 문구 */}
-        <p style={{ color: '#444455', fontSize: '11px', textAlign: 'center', marginBottom: '16px', lineHeight: 1.6 }}>
+        <p style={{ color: '#6a6a80', fontSize: '0.6875rem', textAlign: 'center', marginBottom: '16px', lineHeight: 1.6 }}>
           로그인 시 이용약관 및 개인정보 처리방침에<br />동의한 것으로 간주됩니다.
         </p>
 
@@ -122,7 +122,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
           style={{
             background: '#fff',
             color: '#1a1a1a',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontWeight: 600,
             border: 'none',
             cursor: 'pointer',
@@ -139,7 +139,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
         </button>
 
         <div className="mt-6 text-center">
-          <Link href="/" style={{ color: '#333344', fontSize: '12px' }}
+          <Link href="/" style={{ color: '#555570', fontSize: '0.75rem' }}
             className="hover:text-yellow-300 transition-colors">
             ← 로그인 없이 둘러보기
           </Link>

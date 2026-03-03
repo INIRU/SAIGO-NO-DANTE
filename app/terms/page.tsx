@@ -49,10 +49,10 @@ export default async function TermsPage() {
           <h1 className="font-serif text-3xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
             {title}
           </h1>
-          <p style={{ color: '#555566', fontSize: '13px' }}>최종 수정일: {lastUpdated}</p>
+          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>최종 수정일: {lastUpdated}</p>
         </div>
 
-        <div className="space-y-8" style={{ fontSize: '14px', lineHeight: '1.9' }}>
+        <div className="space-y-8" style={{ fontSize: '0.875rem', lineHeight: '1.9' }}>
           {sections.length > 0
             ? sections.map((s, i) => <SectionBlock key={i} section={s} />)
             : <div className="card p-8 text-center" style={{ color: '#555566' }}>내용이 없습니다.</div>
@@ -60,7 +60,7 @@ export default async function TermsPage() {
         </div>
 
         <div className="mt-10 text-center">
-          <Link href="/privacy" style={{ color: 'var(--gold-dim)', fontSize: '13px' }}
+          <Link href="/privacy" style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
             className="hover:text-yellow-300 transition-colors underline underline-offset-2">
             개인정보 처리방침 보기 →
           </Link>

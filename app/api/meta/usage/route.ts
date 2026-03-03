@@ -15,7 +15,7 @@ export async function GET() {
     supabase
       .schema('limbus')
       .from('deck_egos')
-      .select('deck_id, ego_id, ego(sinner_id, name_kr, grade, sin_affinity)'),
+      .select('deck_id, ego_id, ego(sinner_id, name_kr, grade, sin_affinity, image_url)'),
     supabase
       .schema('limbus')
       .from('decks')
@@ -122,7 +122,7 @@ export async function GET() {
 
   // ④ EGO 채용률
   const egoMap = new Map<string, {
-    sinner_id: string; name_kr: string; grade: string; sin_affinity: string | null; count: number
+    sinner_id: string; name_kr: string; grade: string; sin_affinity: string | null; image_url: string | null; count: number
   }>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const row of egoRows as any[]) {
@@ -137,6 +137,7 @@ export async function GET() {
         name_kr: ego.name_kr ?? '',
         grade: ego.grade ?? row.grade,
         sin_affinity: ego.sin_affinity,
+        image_url: ego.image_url ?? null,
         count: 1,
       })
     }

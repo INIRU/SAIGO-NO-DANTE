@@ -166,11 +166,11 @@ export default function AdminDataPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>데이터 관리</h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>게임 데이터 현황을 확인하고 관리합니다.</p>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>게임 데이터 현황을 확인하고 관리합니다.</p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : data && (
@@ -184,7 +184,7 @@ export default function AdminDataPage() {
               { label: '총 패시브', value: data.totalPassives },
             ].map(card => (
               <div key={card.label} className="card p-5">
-                <p style={{ color: '#555566', fontSize: '11px', marginBottom: '4px' }}>{card.label}</p>
+                <p style={{ color: '#555566', fontSize: '0.6875rem', marginBottom: '4px' }}>{card.label}</p>
                 <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>{card.value}</p>
               </div>
             ))}
@@ -230,7 +230,7 @@ export default function AdminDataPage() {
                       }
                       <span
                         className="font-serif"
-                        style={{ color: isExpanded ? '#c8a450' : '#7a6845', fontSize: '14px', fontWeight: 600 }}
+                        style={{ color: isExpanded ? '#c8a450' : '#7a6845', fontSize: '0.875rem', fontWeight: 600 }}
                       >
                         {sinner.name_kr}
                       </span>
@@ -241,7 +241,7 @@ export default function AdminDataPage() {
                       style={{ display: 'flex', alignItems: 'center', gap: 12 }}
                       onClick={e => e.stopPropagation()}
                     >
-                      <span style={{ color: '#555566', fontSize: '12px' }}>
+                      <span style={{ color: '#555566', fontSize: '0.75rem' }}>
                         인격 <span className="font-mono" style={{ color: '#7a6845' }}>{sinner.identity_count}</span>
                         {'  |  '}
                         EGO <span className="font-mono" style={{ color: '#7a6845' }}>{sinner.ego_count}</span>
@@ -283,7 +283,7 @@ export default function AdminDataPage() {
                       }}
                     >
                       {loadingSinner === sinner.id ? (
-                        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '12px', padding: '8px 0' }}>
+                        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.75rem', padding: '8px 0' }}>
                           <Loader2 size={12} className="animate-spin" /> 불러오는 중...
                         </div>
                       ) : (
@@ -291,12 +291,12 @@ export default function AdminDataPage() {
                           {/* 인격 목록 */}
                           <h4
                             className="font-serif"
-                            style={{ color: '#8a6010', fontSize: '11px', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                            style={{ color: '#8a6010', fontSize: '0.6875rem', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                           >
                             인격
                           </h4>
                           {identities.length === 0 ? (
-                            <p style={{ color: '#555566', fontSize: '12px', padding: '4px 0 10px' }}>등록된 인격이 없습니다.</p>
+                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0 10px' }}>등록된 인격이 없습니다.</p>
                           ) : (
                             <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {identities.map(identity => (
@@ -311,13 +311,13 @@ export default function AdminDataPage() {
                                     background: 'rgba(255,255,255,0.02)',
                                   }}
                                 >
-                                  <span style={{ color: '#c8a450', fontSize: '13px', flex: 1, minWidth: 0 }}>
+                                  <span style={{ color: '#c8a450', fontSize: '0.8125rem', flex: 1, minWidth: 0 }}>
                                     {identity.name_kr || identity.name}
                                   </span>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                     <span
                                       style={{
-                                        fontSize: '10px',
+                                        fontSize: '0.625rem',
                                         padding: '2px 6px',
                                         border: '1px solid rgba(200,144,10,0.3)',
                                         borderRadius: 3,
@@ -371,12 +371,12 @@ export default function AdminDataPage() {
                           {/* EGO 목록 */}
                           <h4
                             className="font-serif"
-                            style={{ color: '#8a6010', fontSize: '11px', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                            style={{ color: '#8a6010', fontSize: '0.6875rem', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                           >
                             E.G.O
                           </h4>
                           {egos.length === 0 ? (
-                            <p style={{ color: '#555566', fontSize: '12px', padding: '4px 0' }}>등록된 E.G.O가 없습니다.</p>
+                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0' }}>등록된 E.G.O가 없습니다.</p>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {egos.map(ego => (
@@ -391,13 +391,13 @@ export default function AdminDataPage() {
                                     background: 'rgba(255,255,255,0.02)',
                                   }}
                                 >
-                                  <span style={{ color: '#c8a450', fontSize: '13px', flex: 1, minWidth: 0 }}>
+                                  <span style={{ color: '#c8a450', fontSize: '0.8125rem', flex: 1, minWidth: 0 }}>
                                     {ego.name_kr || ego.name}
                                   </span>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                     <span
                                       style={{
-                                        fontSize: '10px',
+                                        fontSize: '0.625rem',
                                         padding: '2px 6px',
                                         border: '1px solid rgba(200,144,10,0.3)',
                                         borderRadius: 3,

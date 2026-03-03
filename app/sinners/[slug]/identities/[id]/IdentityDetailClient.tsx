@@ -53,6 +53,7 @@ interface Props {
 export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, egoGifts = [], canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
+  const [showArtTip, setShowArtTip] = useState(false)
   const [pageTab, setPageTab] = useState<'info' | 'decks'>(() => {
     if (typeof window !== 'undefined' && window.location.hash === '#decks') return 'decks'
     return 'info'
@@ -68,6 +69,13 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  // 풀 일러스트 클릭 안내 (첫 방문 시만)
+  useEffect(() => {
+    if (localStorage.getItem('art-tip-seen')) return
+    const timer = setTimeout(() => setShowArtTip(true), 1500)
+    return () => clearTimeout(timer)
   }, [])
 
   // 동기화 단계 필터링
@@ -412,11 +420,11 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               <div className="flex-1 min-w-0">
                 <h1
                   className="font-serif font-bold truncate"
-                  style={{ color: '#e8dcc8', fontSize: '18px', lineHeight: 1.2 }}
+                  style={{ color: '#e8dcc8', fontSize: '1.125rem', lineHeight: 1.2 }}
                 >
                   {identity.name_kr || identity.name}
                 </h1>
-                <p className="truncate" style={{ color: '#7a6845', fontSize: '11px' }}>
+                <p className="truncate" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>
                   {identity.name}
                 </p>
               </div>
@@ -450,24 +458,78 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
             {/* 인격 정보 이미지 (클릭하면 풀 일러스트) */}
             {infoSrc && (
-              <div
-                className={`game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
-                onClick={() => setShowFullArt(true)}
-                title="클릭하면 풀 일러스트 보기"
-              >
-                <Image
-                  src={infoSrc}
-                  alt="인격 정보"
-                  width={480}
-                  height={320}
-                  unoptimized
-                  className="w-full h-auto max-w-[320px] mx-auto"
-                  onError={() => {
-                    if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
-                      setInfoSrc(fallbackInfoUrl)
+              <div style={{ position: 'relative' }}>
+                <div
+                  className={`game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
+                  onClick={() => {
+                    setShowFullArt(true)
+                    if (showArtTip) {
+                      setShowArtTip(false)
+                      localStorage.setItem('art-tip-seen', '1')
                     }
                   }}
-                />
+                  title="클릭하면 풀 일러스트 보기"
+                >
+                  <Image
+                    src={infoSrc}
+                    alt="인격 정보"
+                    width={480}
+                    height={320}
+                    unoptimized
+                    className="w-full h-auto max-w-[320px] mx-auto"
+                    onError={() => {
+                      if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
+                        setInfoSrc(fallbackInfoUrl)
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* 첫 방문 툴팁: 풀 일러스트 안내 */}
+                {showArtTip && (
+                  <div
+                    onClick={() => {
+                      setShowArtTip(false)
+                      localStorage.setItem('art-tip-seen', '1')
+                      setShowFullArt(true)
+                    }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.55)',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      animation: 'fadeIn 0.4s ease',
+                    }}
+                  >
+                    <div style={{
+                      background: 'rgba(26,21,16,0.95)',
+                      border: '1px solid var(--border-gold)',
+                      borderRadius: '0.5rem',
+                      padding: '0.625rem 1rem',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                    }}>
+                      <p style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.75rem',
+                        color: 'var(--gold)',
+                        marginBottom: '0.25rem',
+                      }}>
+                        이미지를 탭하면
+                      </p>
+                      <p style={{
+                        fontSize: '0.6875rem',
+                        color: '#9e9e9e',
+                      }}>
+                        풀 일러스트를 볼 수 있어요
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -513,7 +575,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     className="relative px-6 py-3 font-semibold transition-all"
                     style={{
                       color: isActive ? 'var(--gold)' : '#555',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontFamily: 'var(--font-heading)',
                       background: 'transparent',
                       borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
@@ -535,7 +597,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
             <div className="card p-6">
               <h2
                 className="font-serif font-bold mb-4"
-                style={{ color: 'var(--gold)', fontSize: '16px' }}
+                style={{ color: 'var(--gold)', fontSize: '1rem' }}
               >
                 기본 정보
               </h2>
@@ -606,7 +668,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           height={14}
                           unoptimized
                         />
-                        <span style={{ color: resColor, fontSize: '11px', fontWeight: 600 }}>
+                        <span style={{ color: resColor, fontSize: '0.6875rem', fontWeight: 600 }}>
                           {res}
                         </span>
                       </div>
@@ -618,7 +680,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               {/* 소속 */}
               {identity.affiliation && (
                 <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '6px' }}>소속</div>
+                  <div style={{ color: '#666', fontSize: '0.625rem', marginBottom: '6px' }}>소속</div>
                   <span
                     className="px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1"
                     style={{
@@ -637,8 +699,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 <div className="mt-5 space-y-2">
                   {identity.release_date && (
                     <div className="flex items-center gap-2">
-                      <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>출시시기</span>
-                      <span style={{ color: '#aaa', fontSize: '12px' }}>{identity.release_date}</span>
+                      <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>출시시기</span>
+                      <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{identity.release_date}</span>
                     </div>
                   )}
                   {(() => {
@@ -666,12 +728,12 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                       <div className="space-y-2">
                         {/* 타입 + 시즌 배지 */}
                         <div className="flex items-center gap-2">
-                          <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>획득 방법</span>
+                          <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>획득 방법</span>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {/* 타입 배지 */}
                             <span
                               style={{
-                                fontSize: '10px', fontWeight: 600,
+                                fontSize: '0.625rem', fontWeight: 600,
                                 padding: '2px 8px', borderRadius: '3px',
                                 color: typeInfo.color,
                                 background: typeInfo.bg,
@@ -685,7 +747,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             {info.release_season > 0 && (
                               <span
                                 style={{
-                                  fontSize: '10px', fontWeight: 500,
+                                  fontSize: '0.625rem', fontWeight: 500,
                                   padding: '2px 8px', borderRadius: '3px',
                                   color: '#c8900a',
                                   background: 'rgba(200,144,10,0.1)',
@@ -700,7 +762,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             {info.walpurgis_edition && (
                               <span
                                 style={{
-                                  fontSize: '10px', fontWeight: 500,
+                                  fontSize: '0.625rem', fontWeight: 500,
                                   padding: '2px 8px', borderRadius: '3px',
                                   color: '#7bed9f',
                                   background: 'rgba(123,237,159,0.08)',
@@ -715,7 +777,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             {info.event_name && (
                               <span
                                 style={{
-                                  fontSize: '10px', fontWeight: 500,
+                                  fontSize: '0.625rem', fontWeight: 500,
                                   padding: '2px 8px', borderRadius: '3px',
                                   color: '#ff9f43',
                                   background: 'rgba(255,159,67,0.08)',
@@ -731,14 +793,14 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                         {/* 추출 상태 */}
                         {info.type !== 'default' && (
                           <div className="flex items-center gap-2">
-                            <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>추출</span>
+                            <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>추출</span>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span style={{ fontSize: '10px', color: gachaInfo.color }}>
+                              <span style={{ fontSize: '0.625rem', color: gachaInfo.color }}>
                                 {gachaInfo.label}
                                 {info.gacha === 'seasonal' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
                               </span>
                               {info.target_sinner && (
-                                <span style={{ fontSize: '10px', color: '#ffa502' }}>
+                                <span style={{ fontSize: '0.625rem', color: '#ffa502' }}>
                                   · {info.target_sinner} 특정 추출
                                 </span>
                               )}
@@ -749,8 +811,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                         {/* 파편 교환 */}
                         {info.fragment_cost && (
                           <div className="flex items-center gap-2">
-                            <span style={{ color: '#666', fontSize: '10px', minWidth: '52px' }}>파편 교환</span>
-                            <span style={{ fontSize: '10px', color: '#aaa' }}>
+                            <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>파편 교환</span>
+                            <span style={{ fontSize: '0.625rem', color: '#aaa' }}>
                               자아 파편 {info.fragment_cost}
                               {info.exchange_from_season
                                 ? ` (S${info.exchange_from_season}~ 상시)`
@@ -770,7 +832,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
             <div className="card p-6">
               <h2
                 className="font-serif font-bold mb-4"
-                style={{ color: 'var(--gold)', fontSize: '16px' }}
+                style={{ color: 'var(--gold)', fontSize: '1rem' }}
               >
                 스탯
               </h2>
@@ -795,11 +857,11 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     </div>
                     <div
                       className="font-mono font-bold"
-                      style={{ color: sinColor, fontSize: '20px' }}
+                      style={{ color: sinColor, fontSize: '1.25rem' }}
                     >
                       {value}
                     </div>
-                    <div style={{ color: '#555', fontSize: '10px', marginTop: '2px' }}>{label}</div>
+                    <div style={{ color: '#555', fontSize: '0.625rem', marginTop: '2px' }}>{label}</div>
                   </div>
                 ))}
               </div>
@@ -812,12 +874,12 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   <Swords size={16} style={{ color: 'var(--gold)' }} />
                   <h2
                     className="font-serif font-bold"
-                    style={{ color: 'var(--gold)', fontSize: '16px' }}
+                    style={{ color: 'var(--gold)', fontSize: '1rem' }}
                   >
                     운영법
                   </h2>
                   {guides.length > 0 && (
-                    <span style={{ color: '#555', fontSize: '11px' }}>({guides.length})</span>
+                    <span style={{ color: '#555', fontSize: '0.6875rem' }}>({guides.length})</span>
                   )}
                 </div>
                 {canEditGuide && editingGuideId === null && (
@@ -882,8 +944,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                   </div>
                   {guideContent.trim() && (
                     <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-                      <div style={{ color: '#555', fontSize: '10px', marginBottom: '6px' }}>미리보기</div>
-                      <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                      <div style={{ color: '#555', fontSize: '0.625rem', marginBottom: '6px' }}>미리보기</div>
+                      <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                         <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                       </div>
                     </div>
@@ -940,12 +1002,12 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                             {g.author_name && (
-                              <span style={{ color: '#555', fontSize: '10px' }}>
+                              <span style={{ color: '#555', fontSize: '0.625rem' }}>
                                 {g.author_name}
                               </span>
                             )}
                             {g.updated_at && (
-                              <span style={{ color: '#444', fontSize: '10px' }}>
+                              <span style={{ color: '#444', fontSize: '0.625rem' }}>
                                 {new Date(g.updated_at).toLocaleDateString('ko-KR')}
                               </span>
                             )}
@@ -1000,8 +1062,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                 </div>
                                 {guideContent.trim() && (
                                   <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-                                    <div style={{ color: '#555', fontSize: '10px', marginBottom: '6px' }}>미리보기</div>
-                                    <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                                    <div style={{ color: '#555', fontSize: '0.625rem', marginBottom: '6px' }}>미리보기</div>
+                                    <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                                       <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                     </div>
                                   </div>
@@ -1028,7 +1090,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                               </div>
                             ) : (
                               <div className="pt-3">
-                                <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                                <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                                   <NoteRenderer text={g.content} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                 </div>
                                 {canEditGuide && editingGuideId === null && (
@@ -1106,7 +1168,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                         style={{
                           background: isActive ? `${sinColor}18` : 'transparent',
                           color: isActive ? '#e8dcc8' : '#555',
-                          fontSize: '13px',
+                          fontSize: '0.8125rem',
                           borderTop: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
                           borderLeft: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
                           borderRight: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
@@ -1119,7 +1181,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           className="font-mono"
                           style={{
                             color: isActive ? sinColor : '#444',
-                            fontSize: '12px',
+                            fontSize: '0.75rem',
                             marginLeft: '10px',
                           }}
                         >
@@ -1166,7 +1228,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
                 <h2
                   className="font-serif font-bold mb-4"
-                  style={{ color: 'var(--gold)', fontSize: '16px' }}
+                  style={{ color: 'var(--gold)', fontSize: '1rem' }}
                 >
                   스킬
                 </h2>
@@ -1234,7 +1296,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                               >
                                 {skillLabel}
                               </span>
-                              <span className="font-semibold truncate" style={{ color: skillSinColor, fontSize: '13px' }}>
+                              <span className="font-semibold truncate" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
                                 {skill.name}
                               </span>
                             </div>
@@ -1250,7 +1312,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                     unoptimized
                                   />
                                 )}
-                                <span style={{ color: '#666', fontSize: '11px' }}>
+                                <span style={{ color: '#666', fontSize: '0.6875rem' }}>
                                   {SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}
                                 </span>
                               </div>
@@ -1260,7 +1322,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             {/* 가중치 */}
                             {isAttackSkill && (
                               <div className="flex items-center gap-1">
-                                <span style={{ color: '#666', fontSize: '10px' }}>가중치</span>
+                                <span style={{ color: '#666', fontSize: '0.625rem' }}>가중치</span>
                                 <div className="flex items-center gap-0.5">
                                   {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
                                     <div
@@ -1278,7 +1340,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             {/* 공격/방어 레벨 */}
                             {skill.offense_level != null && (
                               <div className="flex items-center gap-1">
-                                <span style={{ color: '#666', fontSize: '10px' }}>
+                                <span style={{ color: '#666', fontSize: '0.625rem' }}>
                                   {isAttackSkill ? '공격 레벨' : '방어 레벨'}
                                 </span>
                                 <span className="font-mono text-xs font-bold" style={{ color: '#aaa' }}>
@@ -1292,27 +1354,27 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                         {/* 코인 정보 */}
                         <div className="flex items-center gap-4 mb-2">
                           <div className="flex items-center gap-1">
-                            <span style={{ color: '#888', fontSize: '11px' }}>위력</span>
-                            <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '13px' }}>
+                            <span style={{ color: '#888', fontSize: '0.6875rem' }}>위력</span>
+                            <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
                               {skill.base_power}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span style={{ color: '#888', fontSize: '11px' }}>코인</span>
-                            <span className="font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '13px' }}>
+                            <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인</span>
+                            <span className="font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '0.8125rem' }}>
                               {skill.coins}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span style={{ color: '#888', fontSize: '11px' }}>코인 위력</span>
-                            <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '13px' }}>
+                            <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인 위력</span>
+                            <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
                               +{skill.coin_power}
                             </span>
                           </div>
                           {/* 최종 위력 */}
                           <div className="flex items-center gap-1 ml-auto">
-                            <span style={{ color: '#888', fontSize: '11px' }}>최대</span>
-                            <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '13px' }}>
+                            <span style={{ color: '#888', fontSize: '0.6875rem' }}>최대</span>
+                            <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>
                               {skill.base_power + skill.coins * skill.coin_power}
                             </span>
                           </div>
@@ -1337,7 +1399,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                         </div>
 
                         {skill.description && (
-                          <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                          <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                             {skill.description.split('\n').map((line, li) => {
                               // 코인 구간 전환 시 구분선 추가 (예: [코인 2] 시작 전)
                               const isCoinStart = /^\[코인\s?\d/.test(line)
@@ -1396,7 +1458,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="font-semibold" style={{ color: primaryColor, fontSize: '13px' }}>
+                      <span className="font-semibold" style={{ color: primaryColor, fontSize: '0.8125rem' }}>
                         {p.name}
                       </span>
                     </div>
@@ -1409,14 +1471,14 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             key={i}
                             src={getSinIconUrl(st)}
                             alt=""
-                            width={16}
-                            height={16}
+                            width={20}
+                            height={20}
                             unoptimized
                             style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st]}60)` }}
                           />
                         ))}
                         {p.sin_count && (
-                          <span className="font-mono font-bold" style={{ color: primaryColor, fontSize: '12px' }}>
+                          <span className="font-mono font-bold" style={{ color: primaryColor, fontSize: '0.875rem' }}>
                             x{p.sin_count}
                           </span>
                         )}
@@ -1437,7 +1499,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
 
                     {/* 설명 */}
                     {p.description && (
-                      <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                      <div style={{ color: '#888', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                         {formatSkillDesc(p.description, primaryColor, skillNameColors)}
                       </div>
                     )}
@@ -1449,7 +1511,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
                   <h2
                     className="font-serif font-bold mb-4"
-                    style={{ color: 'var(--gold)', fontSize: '16px' }}
+                    style={{ color: 'var(--gold)', fontSize: '1rem' }}
                   >
                     패시브
                   </h2>
@@ -1500,7 +1562,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               <div className="card p-6">
                 <h2
                   className="font-serif font-bold mb-4"
-                  style={{ color: 'var(--gold)', fontSize: '16px' }}
+                  style={{ color: 'var(--gold)', fontSize: '1rem' }}
                 >
                   정신력
                 </h2>
@@ -1528,12 +1590,12 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           style={{ background: 'rgba(180,50,50,0.15)', color: '#c05050', border: '1px solid rgba(180,50,50,0.3)' }}>
                           패닉 유형
                         </span>
-                        <span className="font-semibold" style={{ color: '#c05050', fontSize: '13px' }}>
+                        <span className="font-semibold" style={{ color: '#c05050', fontSize: '0.8125rem' }}>
                           {identity.panic_type}
                         </span>
                       </div>
                       {identity.panic_description && (
-                        <p style={{ color: '#888', fontSize: '11px', lineHeight: 1.6, paddingLeft: '26px' }}>
+                        <p style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.6, paddingLeft: '26px' }}>
                           {identity.panic_description}
                         </p>
                       )}
@@ -1557,7 +1619,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             justifyContent: 'center',
                             width: '18px',
                             height: '18px',
-                            fontSize: '13px',
+                            fontSize: '0.8125rem',
                             fontWeight: 700,
                             color: '#50a064',
                             filter: 'drop-shadow(0 0 3px rgba(80,160,100,0.4))',
@@ -1570,7 +1632,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           정신력 증가 조건
                         </span>
                       </div>
-                      <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+                      <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
                         {identity.sanity_increase}
                       </div>
                     </div>
@@ -1593,7 +1655,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             justifyContent: 'center',
                             width: '18px',
                             height: '18px',
-                            fontSize: '13px',
+                            fontSize: '0.8125rem',
                             fontWeight: 700,
                             color: '#6482c8',
                             filter: 'drop-shadow(0 0 3px rgba(100,130,200,0.4))',
@@ -1606,7 +1668,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           정신력 감소 조건
                         </span>
                       </div>
-                      <div style={{ color: '#888', fontSize: '11px', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+                      <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
                         {identity.sanity_decrease}
                       </div>
                     </div>

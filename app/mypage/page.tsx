@@ -226,7 +226,7 @@ export default function MyPage() {
 
         {/* 섹션 헤더 */}
         <div className="mb-10">
-          <p style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', marginBottom: '6px' }}>
+          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             MY PAGE
           </p>
           <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
@@ -272,7 +272,7 @@ export default function MyPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'var(--gold)',
-                      fontSize: '28px',
+                      fontSize: '1.75rem',
                       fontWeight: 'bold',
                     }}
                   >
@@ -335,7 +335,7 @@ export default function MyPage() {
                 )}
 
                 {/* 이메일 */}
-                <p style={{ color: '#4a4060', fontSize: '11px', wordBreak: 'break-all', textAlign: 'center' }}>
+                <p style={{ color: '#6a6080', fontSize: '0.6875rem', wordBreak: 'break-all', textAlign: 'center' }}>
                   {email}
                 </p>
 
@@ -344,14 +344,14 @@ export default function MyPage() {
 
                 {/* 가입일 */}
                 {joinDate && (
-                  <div className="flex items-center gap-1.5" style={{ color: '#4a4060', fontSize: '11px' }}>
+                  <div className="flex items-center gap-1.5" style={{ color: '#6a6080', fontSize: '0.6875rem' }}>
                     <Calendar size={12} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px' }}>{joinDate}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem' }}>{joinDate}</span>
                   </div>
                 )}
 
                 {/* 덱 수 */}
-                <div style={{ color: '#4a4060', fontSize: '11px' }}>
+                <div style={{ color: '#6a6080', fontSize: '0.6875rem' }}>
                   덱 <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)' }}>{decks.length}</span>개
                 </div>
               </div>
@@ -369,7 +369,7 @@ export default function MyPage() {
             >
               {showWithdraw ? (
                 <div className="flex flex-col gap-3">
-                  <p style={{ color: '#ff6060', fontSize: '12px', lineHeight: 1.6 }}>
+                  <p style={{ color: '#ff6060', fontSize: '0.75rem', lineHeight: 1.6 }}>
                     탈퇴하면 모든 덱과 프로필이 영구 삭제됩니다. 정말 탈퇴하시겠습니까?
                   </p>
                   <div className="flex gap-2">
@@ -400,7 +400,7 @@ export default function MyPage() {
                 <button
                   onClick={() => setShowWithdraw(true)}
                   className="flex items-center gap-1.5 w-full justify-center transition-opacity hover:opacity-80"
-                  style={{ color: '#4a3030', fontSize: '11px', cursor: 'pointer' }}
+                  style={{ color: '#4a3030', fontSize: '0.6875rem', cursor: 'pointer' }}
                 >
                   <LogOut size={11} />
                   회원 탈퇴
@@ -424,10 +424,10 @@ export default function MyPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="flex items-center gap-2">
-                  <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     ABOUT ME
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     내 소개
                   </span>
                 </h2>
@@ -461,7 +461,7 @@ export default function MyPage() {
                     }}
                   />
                   <div className="flex items-center justify-between mt-2">
-                    <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                       {bioValue.length}/300
                     </span>
                     <div className="flex gap-2">
@@ -490,7 +490,7 @@ export default function MyPage() {
                   </div>
                 </div>
               ) : (
-                <p style={{ color: profile.bio ? '#9a8a70' : '#3a3050', fontSize: '13px', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                <p style={{ color: profile.bio ? '#9a8a70' : '#5a5070', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                   {profile.bio || '아직 소개가 없습니다.'}
                 </p>
               )}
@@ -500,10 +500,10 @@ export default function MyPage() {
             <section>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="flex items-center gap-2">
-                  <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     MY DECKS
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     내 덱 관리
                   </span>
                 </h2>
@@ -531,13 +531,13 @@ export default function MyPage() {
                     borderRadius: '8px',
                   }}
                 >
-                  <div style={{ color: '#2a2035', fontSize: '48px' }}>&#x2298;</div>
-                  <p className="font-serif text-sm italic" style={{ color: '#333344' }}>
+                  <div style={{ color: '#5a5065', fontSize: '3rem' }}>&#x2298;</div>
+                  <p className="font-serif text-sm italic" style={{ color: '#555570' }}>
                     아직 작성한 덱이 없습니다.
                   </p>
                   <Link
                     href="/decks/new"
-                    style={{ color: 'var(--gold-dim)', fontSize: '13px' }}
+                    style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
                     className="hover:text-yellow-300 transition-colors underline underline-offset-2"
                   >
                     첫 번째 덱을 만들어보세요 &rarr;
@@ -608,10 +608,10 @@ export default function MyPage() {
             <section className="mt-8">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="flex items-center gap-2">
-                  <span style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     BOOKMARKS
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '16px' }}>
+                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     저장한 덱
                   </span>
                 </h2>
@@ -626,13 +626,13 @@ export default function MyPage() {
                     borderRadius: '8px',
                   }}
                 >
-                  <Bookmark size={24} style={{ color: '#2a2035' }} />
-                  <p className="font-serif text-sm italic" style={{ color: '#333344' }}>
+                  <Bookmark size={24} style={{ color: '#5a5065' }} />
+                  <p className="font-serif text-sm italic" style={{ color: '#555570' }}>
                     아직 저장한 덱이 없습니다.
                   </p>
                   <Link
                     href="/decks"
-                    style={{ color: 'var(--gold-dim)', fontSize: '13px' }}
+                    style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
                     className="hover:text-yellow-300 transition-colors underline underline-offset-2"
                   >
                     덱 게시판 둘러보기 &rarr;

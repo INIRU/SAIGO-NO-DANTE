@@ -32,12 +32,12 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: '4px',
   color: '#c8a450',
-  fontSize: '13px',
+  fontSize: '0.8125rem',
 }
 
 const labelStyle: React.CSSProperties = {
   color: '#555566',
-  fontSize: '11px',
+  fontSize: '0.6875rem',
   marginBottom: '4px',
   display: 'block',
 }
@@ -120,7 +120,7 @@ export default function EditEGOPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+      <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
         <Loader2 size={14} className="animate-spin" /> 로딩 중...
       </div>
     )
@@ -138,12 +138,12 @@ export default function EditEGOPage() {
         </button>
         <div>
           <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>E.G.O 편집</h1>
-          <p style={{ color: '#555566', fontSize: '13px' }}>{form.name || '이름 없음'}</p>
+          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>{form.name || '이름 없음'}</p>
         </div>
       </div>
 
       <div className="card" style={{ padding: 24 }}>
-        <h2 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '15px', marginBottom: 16 }}>
+        <h2 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '0.9375rem', marginBottom: 16 }}>
           기본 정보
         </h2>
 
@@ -264,7 +264,7 @@ export default function EditEGOPage() {
               border: '1px solid var(--border)',
               borderRadius: '4px',
               color: '#555566',
-              fontSize: '13px',
+              fontSize: '0.8125rem',
               cursor: 'pointer',
               background: 'transparent',
             }}
@@ -282,7 +282,7 @@ export default function EditEGOPage() {
               border: '1px solid var(--gold-dim)',
               borderRadius: '4px',
               color: saved ? '#44aa44' : 'var(--gold)',
-              fontSize: '13px',
+              fontSize: '0.8125rem',
               cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer',
               opacity: saving || !form.name.trim() ? 0.5 : 1,
             }}

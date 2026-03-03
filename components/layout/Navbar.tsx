@@ -68,7 +68,7 @@ export default function Navbar() {
 
   const linkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
-    fontSize: '13px',
+    fontSize: '14px',
     color: pathname === href ? 'var(--gold)' : '#7a6845',
     borderBottom: pathname === href ? '1px solid var(--gold)' : 'none',
     paddingBottom: '2px',
@@ -76,7 +76,7 @@ export default function Navbar() {
 
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
-    fontSize: '16px',
+    fontSize: '17px',
     color: pathname === href ? 'var(--gold)' : '#7a6845',
     padding: '14px 0',
     borderBottom: '1px solid rgba(58,42,21,0.3)',
@@ -93,11 +93,11 @@ export default function Navbar() {
           borderBottom: '1px solid rgba(58,42,21,0.7)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-[64px] flex items-center justify-between">
           {/* 로고 — 모바일 축소 */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-display tracking-wider transition-colors hover:text-yellow-300 text-[16px] md:text-[19px]"
+            className="flex items-center gap-2 font-display tracking-wider transition-colors hover:text-yellow-300 text-[17px] md:text-[20px]"
             style={{ color: 'var(--gold)' }}
           >
             <Image src="/images/logo.webp" alt="" width={25} height={36} unoptimized />
@@ -135,7 +135,7 @@ export default function Navbar() {
                       background: 'rgba(200,144,10,0.15)',
                       border: '1.5px solid var(--gold-dim)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--gold)', fontSize: '12px', fontWeight: 'bold',
+                      color: 'var(--gold)', fontSize: '0.75rem', fontWeight: 'bold',
                     }}>
                       {displayName[0]?.toUpperCase()}
                     </div>
@@ -151,11 +151,11 @@ export default function Navbar() {
                     overflow: 'hidden',
                   }}>
                     <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                      <p style={{ color: '#c8a450', fontSize: '12px', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ color: '#c8a450', fontSize: '13px', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {displayName}
                       </p>
                       {user.email && (
-                        <p style={{ color: '#555566', fontSize: '10px', marginTop: '2px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ color: '#555566', fontSize: '11px', marginTop: '2px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {user.email}
                         </p>
                       )}
@@ -164,7 +164,7 @@ export default function Navbar() {
                       href="/mypage"
                       onClick={() => setMenuOpen(false)}
                       className="block w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '10px 14px', color: '#666677', fontSize: '12px' }}
+                      style={{ padding: '10px 14px', color: '#666677', fontSize: '13px' }}
                     >
                       마이 페이지
                     </Link>
@@ -173,7 +173,7 @@ export default function Navbar() {
                         href="/admin"
                         onClick={() => setMenuOpen(false)}
                         className="block w-full text-left transition-colors hover:bg-white/5"
-                        style={{ padding: '10px 14px', color: '#666677', fontSize: '12px' }}
+                        style={{ padding: '10px 14px', color: '#666677', fontSize: '13px' }}
                       >
                         관리
                       </Link>
@@ -181,7 +181,7 @@ export default function Navbar() {
                     <button
                       onClick={() => { signOut({ callbackUrl: '/' }); setMenuOpen(false) }}
                       className="w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '10px 14px', color: '#666677', fontSize: '12px', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
+                      style={{ padding: '10px 14px', color: '#666677', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
                     >
                       로그아웃
                     </button>
@@ -193,8 +193,8 @@ export default function Navbar() {
                 href="/login"
                 className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 hover:opacity-80"
                 style={{
-                  fontSize: '12px', color: '#888899',
-                  border: '1px solid #333344', borderRadius: '4px',
+                  fontSize: '13px', color: '#888899',
+                  border: '1px solid #555570', borderRadius: '4px',
                 }}
               >
                 <svg width="13" height="13" viewBox="0 0 18 18" fill="none">
@@ -256,15 +256,15 @@ export default function Navbar() {
                       background: 'rgba(200,144,10,0.15)',
                       border: '1.5px solid var(--gold-dim)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--gold)', fontSize: '14px', fontWeight: 'bold',
+                      color: 'var(--gold)', fontSize: '15px', fontWeight: 'bold',
                     }}>
                       {displayName[0]?.toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <p style={{ color: '#c8a450', fontSize: '14px', fontWeight: 600 }}>{displayName}</p>
+                    <p style={{ color: '#c8a450', fontSize: '15px', fontWeight: 600 }}>{displayName}</p>
                     {user.email && (
-                      <p style={{ color: '#555566', fontSize: '11px', marginTop: '1px' }}>{user.email}</p>
+                      <p style={{ color: '#555566', fontSize: '12px', marginTop: '1px' }}>{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export default function Navbar() {
                   className="text-left transition-colors duration-200 hover:text-yellow-300"
                   style={{
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '16px',
+                    fontSize: '17px',
                     color: '#7a6845',
                     padding: '14px 0',
                     cursor: 'pointer',
@@ -304,8 +304,8 @@ export default function Navbar() {
                 href="/login"
                 className="flex items-center gap-2 mt-4 justify-center py-3 transition-all duration-200 hover:opacity-80"
                 style={{
-                  fontSize: '14px', color: '#888899',
-                  border: '1px solid #333344', borderRadius: '6px',
+                  fontSize: '15px', color: '#888899',
+                  border: '1px solid #555570', borderRadius: '6px',
                 }}
               >
                 <svg width="15" height="15" viewBox="0 0 18 18" fill="none">

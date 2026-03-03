@@ -134,7 +134,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         i.name_kr.toLowerCase().includes(q) ||
         i.name.toLowerCase().includes(q) ||
         (i.affiliation && i.affiliation.toLowerCase().includes(q)) ||
-        (i.keywords && i.keywords.some(kw => kw.toLowerCase().includes(q)))
+        (i.keywords && i.keywords.some(kw => kw.toLowerCase().startsWith(q)))
       )
     }
     if (selectedKeywords.size > 0) {
@@ -163,7 +163,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       result = result.filter(e =>
         (e.name_kr && e.name_kr.toLowerCase().includes(q)) ||
         e.name.toLowerCase().includes(q) ||
-        (e.keywords && e.keywords.some(kw => kw.toLowerCase().includes(q)))
+        (e.keywords && e.keywords.some(kw => kw.toLowerCase().startsWith(q)))
       )
     }
     if (selectedKeywords.size > 0) {
@@ -194,7 +194,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
     const currentStats = tab === 'ego' ? egoKeywordStats : keywordStats
     const matchedKw = currentStats
-      .filter(({ kw }) => kw.toLowerCase().includes(q))
+      .filter(({ kw }) => kw.toLowerCase().startsWith(q))
       .sort((a, b) => {
         const aS = a.kw.toLowerCase().startsWith(q) ? 0 : 1
         const bS = b.kw.toLowerCase().startsWith(q) ? 0 : 1
@@ -298,10 +298,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* 브레드크럼 */}
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+        <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             수감자 목록
           </Link>
@@ -309,13 +309,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           <span style={{ color: 'var(--gold)' }}>{sinner.name_kr}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="card p-6">
+            <div className="card p-4 sm:p-6">
+              <div className="flex gap-4 sm:block">
               {/* 프로필 이미지 */}
               <div
-                className="relative w-full rounded-lg mb-6 overflow-hidden"
+                className="relative w-24 sm:w-full rounded-lg mb-0 sm:mb-6 overflow-hidden flex-shrink-0"
                 style={{ aspectRatio: '3/4', background: 'var(--bg-elevated)' }}
               >
                 {getSinnerProfileUrl(sinner.id) ? (
@@ -339,14 +340,16 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 )}
               </div>
 
+              <div className="flex-1 min-w-0">
               {/* 이름 + 로고 */}
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-2 sm:gap-3 mb-1">
                 <Image
                   src={getSinnerLogoUrl(sinner.id)}
                   alt=""
                   width={40}
                   height={40}
                   unoptimized
+                  className="w-7 h-7 sm:w-10 sm:h-10"
                   style={{
                     filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
                     opacity: 0.9,
@@ -354,12 +357,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 />
                 <div>
                   <h1
-                    className="font-serif text-3xl font-bold"
+                    className="font-serif text-xl sm:text-3xl font-bold"
                     style={{ color: 'var(--gold)' }}
                   >
                     {sinner.name}
                   </h1>
-                  <p className="text-sm" style={{ color: '#666688' }}>
+                  <p className="text-xs sm:text-sm" style={{ color: '#666688' }}>
                     {sinner.name_kr} · #{String(sinner.order_num).padStart(2, '0')}
                   </p>
                 </div>
@@ -367,7 +370,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 설명 */}
               <p
-                className="text-sm leading-relaxed mb-4"
+                className="text-xs sm:text-sm leading-relaxed mb-2 sm:mb-4"
                 style={{ color: '#9e9e9e' }}
               >
                 {sinner.description}
@@ -375,7 +378,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 문학 출처 */}
               <div
-                className="text-xs italic px-3 py-2 rounded"
+                className="text-[0.625rem] sm:text-xs italic px-2 sm:px-3 py-1.5 sm:py-2 rounded"
                 style={{
                   background: 'rgba(200,164,90,0.08)',
                   borderLeft: '2px solid var(--gold)',
@@ -383,6 +386,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 }}
               >
                 {sinner.literary_source}
+              </div>
+              </div>
               </div>
             </div>
           </div>
@@ -463,7 +468,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* 키워드 매칭 */}
                       {autocompleteResults.keywords.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
                             키워드 <span style={{ color: '#444', fontWeight: 400 }}>Tab으로 선택</span>
                           </div>
                           {autocompleteResults.keywords.map(({ kw, count }, i) => {
@@ -490,8 +495,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   />
                                 )}
                                 <span>{kw}</span>
-                                <span style={{ color: '#444', fontSize: '10px', marginLeft: 'auto' }}>{count}개</span>
-                                {isSelected && <span style={{ color: chipColor, fontSize: '10px' }}>ON</span>}
+                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{count}개</span>
+                                {isSelected && <span style={{ color: chipColor, fontSize: '0.625rem' }}>ON</span>}
                               </div>
                             )
                           })}
@@ -501,7 +506,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* 인격 매칭 */}
                       {autocompleteResults.identities.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
                             인격
                           </div>
                           {autocompleteResults.identities.map((ident, i) => {
@@ -522,7 +527,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   style={{ background: ident.rarity === '3성' ? '#c8900a' : ident.rarity === '2성' ? '#5588bb' : '#556677' }}
                                 />
                                 <span>{ident.name_kr}</span>
-                                <span style={{ color: '#444', fontSize: '10px', marginLeft: 'auto' }}>{ident.rarity}</span>
+                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{ident.rarity}</span>
                               </div>
                             )
                           })}
@@ -532,7 +537,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* EGO 매칭 */}
                       {autocompleteResults.egos.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '10px', fontWeight: 600 }}>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
                             EGO
                           </div>
                           {autocompleteResults.egos.map((ego, i) => {
@@ -554,7 +559,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   style={{ background: gradeColor }}
                                 />
                                 <span>{ego.name_kr || ego.name}</span>
-                                <span style={{ color: gradeColor, fontSize: '10px', marginLeft: 'auto' }}>{ego.grade}</span>
+                                <span style={{ color: gradeColor, fontSize: '0.625rem', marginLeft: 'auto' }}>{ego.grade}</span>
                               </div>
                             )
                           })}
@@ -570,9 +575,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {tab === 'identities' && (
               <div>
                 {/* 필터 바 */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-wrap items-center justify-between gap-y-2 mb-4 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   {/* 등급 필터 */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
                     {[
                       { value: null, label: '전체', icon: null },
                       { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
@@ -594,10 +599,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           }}
                         >
                           {icon ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={icon}
                               alt={label}
+                              width={28}
+                              height={14}
+                              unoptimized
                               style={{
                                 height: '14px',
                                 width: 'auto',
@@ -696,7 +703,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {tab === 'ego' && (
               <div>
                 {/* 정렬 + 보유 필터 */}
-                <div className="flex items-center justify-end gap-2 mb-3">
+                <div className="flex items-center justify-end gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   <button
                     onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
@@ -767,7 +774,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 className="object-cover" style={{ objectPosition: '50% 10%' }} />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '14px' }}>{ego.grade?.[0]}</span>
+                                <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '0.875rem' }}>{ego.grade?.[0]}</span>
                               </div>
                             )}
                           </div>
@@ -775,14 +782,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           {/* 등급 + 이름 */}
                           <div className="flex items-center justify-center gap-1.5">
                             {ego.grade !== 'ALEPH' ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
-                                style={{ height: '13px', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
+                              <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
+                                width={33} height={13} unoptimized
+                                style={{ width: 'auto', opacity: 0.8, flexShrink: 0 }} />
                             ) : (
-                              <span style={{ fontFamily: 'monospace', fontSize: '8px', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.5rem', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
                             )}
                             <p className="font-serif font-bold text-center leading-snug"
-                              style={{ color: '#c8a450', fontSize: '13px', lineHeight: '1.35' }}>
+                              style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: '1.35' }}>
                               {ego.name_kr || ego.name}
                             </p>
                           </div>

@@ -363,7 +363,7 @@ export default function HomeClient({
             <GlitchText
               text="SAIGO NO DANTE"
               tag="h1"
-              className="font-display text-[26px] sm:text-4xl md:text-6xl tracking-wider"
+              className="font-display text-[1.625rem] sm:text-4xl md:text-6xl tracking-wider"
               style={{ color: 'var(--gold)' } as React.CSSProperties}
             />
           </div>
@@ -377,10 +377,10 @@ export default function HomeClient({
             <div className="hero-desc mb-8" style={{ opacity: 0 }}>
               <div className="flex items-center gap-2 flex-wrap">
                 <RarityIcon rarity={heroIdentity.rarity} />
-                <span className="font-serif font-bold" style={{ color: 'var(--gold-light)', fontSize: '15px' }}>
+                <span className="font-serif font-bold" style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}>
                   {heroIdentity.name_kr}
                 </span>
-                <span style={{ color: '#4a3820', fontSize: '11px', fontFamily: 'var(--font-title)' }}>
+                <span style={{ color: '#7a6840', fontSize: '0.6875rem', fontFamily: 'var(--font-title)' }}>
                   — {heroIdentity.sinner?.name_kr}
                 </span>
               </div>
@@ -445,18 +445,18 @@ export default function HomeClient({
               <Pin size={13} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
               <span
                 className="font-serif font-bold"
-                style={{ color: 'var(--gold-light)', fontSize: '14px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                style={{ color: 'var(--gold-light)', fontSize: '0.875rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               >
                 {pinnedAnnouncement.title}
               </span>
-              <span className="font-mono" style={{ color: '#4a3820', fontSize: '10px', flexShrink: 0 }}>
+              <span className="font-mono" style={{ color: '#7a6840', fontSize: '0.625rem', flexShrink: 0 }}>
                 {new Date(pinnedAnnouncement.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
               </span>
               <Link
                 href="/announcements"
                 onClick={e => e.stopPropagation()}
                 className="font-mono transition-colors hover:opacity-70"
-                style={{ color: '#8a6010', fontSize: '10px', flexShrink: 0, letterSpacing: '0.05em' }}
+                style={{ color: '#8a6010', fontSize: '0.625rem', flexShrink: 0, letterSpacing: '0.05em' }}
               >
                 전체보기
               </Link>
@@ -474,7 +474,7 @@ export default function HomeClient({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#4a3820',
+                  color: '#7a6840',
                   cursor: 'pointer',
                   padding: 4,
                   flexShrink: 0,
@@ -493,7 +493,7 @@ export default function HomeClient({
                   paddingBottom: 14,
                   paddingLeft: 25,
                   color: '#7a6845',
-                  fontSize: '13px',
+                  fontSize: '0.8125rem',
                   lineHeight: 1.7,
                   borderTop: '1px solid rgba(200,144,10,0.1)',
                   paddingTop: 12,
@@ -531,7 +531,7 @@ export default function HomeClient({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Youtube size={11} style={{ color: '#c83030' }} />
-                  <span className="font-mono" style={{ color: '#c83030', fontSize: '10px', letterSpacing: '0.4em', opacity: 0.8 }}>
+                  <span className="font-mono" style={{ color: '#c83030', fontSize: '0.625rem', letterSpacing: '0.4em', opacity: 0.8 }}>
                     LATEST VIDEO
                   </span>
                 </div>
@@ -589,9 +589,9 @@ export default function HomeClient({
 
                 {/* 출판일 */}
                 {latestVideo.publishedAt && (
-                  <div className="flex items-center gap-1.5" style={{ color: '#4a3820' }}>
+                  <div className="flex items-center gap-1.5" style={{ color: '#7a6840' }}>
                     <Calendar size={11} />
-                    <span className="font-mono" style={{ fontSize: '11px' }}>
+                    <span className="font-mono" style={{ fontSize: '0.6875rem' }}>
                       {formatDate(latestVideo.publishedAt.slice(0, 10))}
                     </span>
                   </div>
@@ -612,7 +612,7 @@ export default function HomeClient({
                     <div className="font-serif text-sm font-bold" style={{ color: 'var(--gold-light)' }}>
                       Project Moon
                     </div>
-                    <div className="font-mono" style={{ color: '#4a3820', fontSize: '10px' }}>
+                    <div className="font-mono" style={{ color: '#7a6840', fontSize: '0.625rem' }}>
                       @projectmoon_official
                     </div>
                   </div>
@@ -636,14 +636,14 @@ export default function HomeClient({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles size={11} style={{ color: 'var(--gold)' }} />
-                  <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '10px', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
+                  <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '0.625rem', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
                 </div>
                 <h2 className="font-serif text-4xl font-bold tracking-wide" style={{ color: 'var(--gold-light)' }}>최신 인격</h2>
               </div>
               {latestDate && (
-                <div className="flex items-center gap-1.5 mb-1" style={{ color: '#4a3820' }}>
+                <div className="flex items-center gap-1.5 mb-1" style={{ color: '#7a6840' }}>
                   <Calendar size={11} />
-                  <span className="font-mono" style={{ fontSize: '11px' }}>{formatDate(latestDate)}</span>
+                  <span className="font-mono" style={{ fontSize: '0.6875rem' }}>{formatDate(latestDate)}</span>
                 </div>
               )}
             </div>
@@ -675,7 +675,7 @@ export default function HomeClient({
                           style={{ objectPosition: '50% 10%' }} />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}>
-                          <span className="font-serif font-bold" style={{ fontSize: '40px', color: 'rgba(200,144,10,0.08)' }}>
+                          <span className="font-serif font-bold" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
                             {identity.name_kr?.[0] ?? '?'}
                           </span>
                         </div>
@@ -690,10 +690,10 @@ export default function HomeClient({
                       )}
                       <div className="absolute bottom-0 left-0 right-0 z-10" style={{ height: '60%', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }} />
                       <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 z-20">
-                        <div className="font-serif font-bold leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '13px' }}>
+                        <div className="font-serif font-bold leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}>
                           {identity.name_kr}
                         </div>
-                        <div style={{ color: '#4a3820', fontSize: '9px', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
+                        <div style={{ color: '#7a6840', fontSize: '0.5625rem', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
                           {identity.sinner?.name_kr ?? identity.sinner_id}
                         </div>
                       </div>
@@ -701,7 +701,7 @@ export default function HomeClient({
                     {identity.release_date && (
                       <div className="mt-1.5 flex items-center gap-1" style={{ color: '#3a2a15' }}>
                         <Calendar size={9} />
-                        <span className="font-mono" style={{ fontSize: '9px' }}>{formatDate(identity.release_date)}</span>
+                        <span className="font-mono" style={{ fontSize: '0.5625rem' }}>{formatDate(identity.release_date)}</span>
                       </div>
                     )}
                   </Link>
@@ -724,7 +724,7 @@ export default function HomeClient({
         {/* 섹션 헤더 */}
         <div className="flex items-center gap-4 mb-8">
           <div className="divider-gold flex-1" />
-          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '10px', letterSpacing: '0.4em' }}>
+          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
             FEATURES
           </span>
           <div className="divider-gold flex-1" />
@@ -806,7 +806,7 @@ export default function HomeClient({
                     <div
                       className="font-mono"
                       style={{
-                        fontSize: '9px',
+                        fontSize: '0.5625rem',
                         letterSpacing: '0.35em',
                         color: feature.accent,
                         opacity: isHovered ? 0.9 : 0.5,
@@ -820,7 +820,7 @@ export default function HomeClient({
                     <div
                       className="font-serif font-bold"
                       style={{
-                        fontSize: '17px',
+                        fontSize: '1.0625rem',
                         color: isHovered ? 'var(--gold-light)' : 'var(--gold)',
                         marginBottom: '3px',
                         transition: 'color 0.25s ease',
@@ -831,8 +831,8 @@ export default function HomeClient({
                     {/* 설명 */}
                     <div
                       style={{
-                        fontSize: '12px',
-                        color: isHovered ? '#7a6040' : '#4a3820',
+                        fontSize: '0.75rem',
+                        color: isHovered ? '#7a6040' : '#7a6840',
                         fontFamily: 'var(--font-body)',
                         transition: 'color 0.25s ease',
                         lineHeight: 1.5,
@@ -863,7 +863,7 @@ export default function HomeClient({
       <section className="official-section max-w-7xl mx-auto px-6 pb-24">
         <div className="flex items-center gap-4 mb-8">
           <div className="divider-gold flex-1" />
-          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '10px', letterSpacing: '0.4em' }}>OFFICIAL</span>
+          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
           <div className="divider-gold flex-1" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -896,7 +896,7 @@ export default function HomeClient({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-serif font-bold text-sm mb-0.5" style={{ color: 'var(--gold-light)' }}>{label}</div>
-                <div className="truncate font-mono" style={{ color: '#4a3820', fontSize: '10px' }}>{sub}</div>
+                <div className="truncate font-mono" style={{ color: '#7a6840', fontSize: '0.625rem' }}>{sub}</div>
               </div>
               <ExternalLink size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: '#3a2a15' }} />
             </a>

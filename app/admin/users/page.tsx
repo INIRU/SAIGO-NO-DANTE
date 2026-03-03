@@ -48,7 +48,7 @@ function getRoleBadgeStyle(role: string) {
   return {
     background: 'rgba(100,100,120,0.1)',
     color: '#666677',
-    border: '1px solid #333344',
+    border: '1px solid #555570',
   }
 }
 
@@ -121,20 +121,20 @@ export default function AdminUsersPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>유저 관리</h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>유저 목록 조회, 권한 변경, 계정 정지를 관리합니다.</p>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>유저 목록 조회, 권한 변경, 계정 정지를 관리합니다.</p>
       </div>
 
       <div className="card p-4 mb-6" style={{ borderColor: '#2a2020' }}>
-        <p style={{ color: '#555566', fontSize: '12px', lineHeight: 1.7 }}>
+        <p style={{ color: '#555566', fontSize: '0.75rem', lineHeight: 1.7 }}>
           <span style={{ color: '#c8a450' }}>역할 변경 시</span> 해당 유저가 다시 로그인해야 적용됩니다.
-          환경변수 <code style={{ color: '#88cc88', fontSize: '11px' }}>ADMIN_EMAILS</code>에 등록된 이메일은 항상 관리자입니다.
+          환경변수 <code style={{ color: '#88cc88', fontSize: '0.6875rem' }}>ADMIN_EMAILS</code>에 등록된 이메일은 항상 관리자입니다.
           <br />
           <span style={{ color: '#7a6845' }}>역할 순환: 유저 → 완장 → 관리자 → 유저</span>
         </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : (
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 {['유저', '이메일', '역할', '상태', '가입일', '덱', '관리'].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '11px', fontWeight: 600 }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -165,20 +165,20 @@ export default function AdminUsersPage() {
                           width: 28, height: 28, borderRadius: '50%',
                           background: 'rgba(200,144,10,0.1)', border: '1px solid var(--border)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: 'var(--gold)', fontSize: '11px', fontWeight: 'bold',
+                          color: 'var(--gold)', fontSize: '0.6875rem', fontWeight: 'bold',
                         }}>
                           {(user.username ?? '?')[0]?.toUpperCase()}
                         </div>
                       )}
-                      <span style={{ color: '#c8a450', fontSize: '13px' }}>{user.username ?? '(없음)'}</span>
+                      <span style={{ color: '#c8a450', fontSize: '0.8125rem' }}>{user.username ?? '(없음)'}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '12px' }}>
+                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
                     {user.email ?? '-'}
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <span style={{
-                      padding: '2px 8px', borderRadius: '3px', fontSize: '11px', fontWeight: 600,
+                      padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
                       ...badgeStyle,
                     }}>
                       {ROLE_LABELS[user.role] ?? user.role}
@@ -186,15 +186,15 @@ export default function AdminUsersPage() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     {user.suspended ? (
-                      <span style={{ color: '#aa4444', fontSize: '11px', fontWeight: 600 }}>정지됨</span>
+                      <span style={{ color: '#aa4444', fontSize: '0.6875rem', fontWeight: 600 }}>정지됨</span>
                     ) : (
-                      <span style={{ color: '#44aa44', fontSize: '11px' }}>정상</span>
+                      <span style={{ color: '#44aa44', fontSize: '0.6875rem' }}>정상</span>
                     )}
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '12px' }}>
+                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>
                     {new Date(user.created_at).toLocaleDateString('ko-KR')}
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '12px' }}>{user.deck_count}</td>
+                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>{user.deck_count}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <div className="flex items-center gap-1">
                       <button
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
               )})}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '13px' }}>
+                  <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}>
                     유저가 없습니다.
                   </td>
                 </tr>

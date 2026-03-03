@@ -75,7 +75,16 @@
   box-sizing: border-box;
   text-rendering: optimizeLegibility;
 }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; font-size: 17px !important; }
+html[data-font-size="small"]  { font-size: 15px !important; }
+html[data-font-size="large"]  { font-size: 20px !important; }
+
+/* 모바일: 폰트 크기 제한 (레이아웃 깨짐 방지) */
+@media (max-width: 768px) {
+  html { font-size: 15px !important; }
+  html[data-font-size="small"]  { font-size: 13px !important; }
+  html[data-font-size="large"]  { font-size: 17px !important; }
+}
 
 body {
   background-color: var(--bg-deep);

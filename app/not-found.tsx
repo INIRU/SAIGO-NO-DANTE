@@ -50,7 +50,7 @@ export default function NotFound() {
         <p
           style={{
             color: '#6a5a4a',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.8,
           }}
@@ -60,7 +60,7 @@ export default function NotFound() {
         <p
           style={{
             color: '#4a3a2a',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.8,
           }}
@@ -87,7 +87,7 @@ export default function NotFound() {
         className="mt-16"
         style={{
           color: '#2a2015',
-          fontSize: '10px',
+          fontSize: '0.625rem',
           fontFamily: 'var(--font-mono)',
           letterSpacing: '0.2em',
         }}

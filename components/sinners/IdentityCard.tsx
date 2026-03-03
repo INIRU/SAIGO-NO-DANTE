@@ -97,7 +97,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             >
               <span
                 className="font-serif font-bold"
-                style={{ fontSize: '36px', color: `${sinColor}18`, lineHeight: 1 }}
+                style={{ fontSize: '2.25rem', color: `${sinColor}18`, lineHeight: 1 }}
               >
                 {identity.name[0]}
               </span>
@@ -127,7 +127,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               className="font-mono font-bold"
               style={{
                 color: rarity.border,
-                fontSize: '10px',
+                fontSize: '0.625rem',
                 background: 'rgba(13,11,8,0.85)',
                 padding: '1px 5px',
                 borderRadius: '2px',
@@ -141,11 +141,13 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
 
         {/* 등급 프레임 오버레이 */}
         {RARITY_FRAME_MAP[identity.rarity] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             ref={frameRef}
             src={RARITY_FRAME_MAP[identity.rarity]}
             alt=""
+            width={200}
+            height={300}
+            unoptimized
             className={styles.frame}
           />
         )}
@@ -167,10 +169,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               { label: '방어', value: identity.def_level },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: '10px' }}>
+                <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: '0.625rem' }}>
                   {value}
                 </div>
-                <div style={{ color: '#4a3820', fontSize: '8px' }}>{label}</div>
+                <div style={{ color: '#7a6840', fontSize: '0.5rem' }}>{label}</div>
               </div>
             ))}
           </div>
@@ -190,13 +192,12 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                       color: kwColor,
                       border: `1px solid ${kwColor}35`,
                       borderRadius: '2px',
-                      fontSize: '8px',
+                      fontSize: '0.5rem',
                       padding: '1px 3px',
                     }}
                   >
                     {iconUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={10} height={10} style={{ display: 'inline-block' }} />
+                      <Image src={iconUrl} alt="" width={10} height={10} unoptimized style={{ display: 'inline-block' }} />
                     )}
                     {kw}
                   </span>
@@ -214,7 +215,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                   color: sinColor,
                   border: `1px solid ${sinColor}40`,
                   borderRadius: '2px',
-                  fontSize: '8px',
+                  fontSize: '0.5rem',
                   padding: '0px 4px',
                 }}
               >

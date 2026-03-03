@@ -74,12 +74,12 @@ export default function AuditLogsPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>감사 로그</h1>
-        <p style={{ color: '#555566', fontSize: '13px' }}>관리자 및 완장 활동 기록을 조회합니다.</p>
+        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>관리자 및 완장 활동 기록을 조회합니다.</p>
       </div>
 
       {/* 필터 */}
       <div className="mb-4 flex items-center gap-2">
-        <span style={{ color: '#555566', fontSize: '12px' }}>필터:</span>
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>필터:</span>
         <div className="flex gap-1 flex-wrap">
           {FILTER_OPTIONS.map(opt => (
             <button
@@ -89,7 +89,7 @@ export default function AuditLogsPage() {
               style={{
                 background: filter === opt.value ? 'rgba(200,144,10,0.15)' : 'rgba(100,100,120,0.08)',
                 color: filter === opt.value ? 'var(--gold)' : '#666677',
-                border: `1px solid ${filter === opt.value ? 'var(--gold-dim)' : '#333344'}`,
+                border: `1px solid ${filter === opt.value ? 'var(--gold-dim)' : '#555570'}`,
               }}
             >
               {opt.label}
@@ -99,7 +99,7 @@ export default function AuditLogsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '13px' }}>
+        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : logs.length === 0 ? (
@@ -112,7 +112,7 @@ export default function AuditLogsPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 {['시각', '수행자', '활동', '대상', '세부 정보'].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '11px', fontWeight: 600 }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -121,18 +121,18 @@ export default function AuditLogsPage() {
                 const details = formatDetails(log)
                 return (
                   <tr key={log.id} style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-                    <td style={{ padding: '10px 14px', color: '#555566', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
                       {new Date(log.created_at).toLocaleString('ko-KR', {
                         month: '2-digit', day: '2-digit',
                         hour: '2-digit', minute: '2-digit',
                       })}
                     </td>
-                    <td style={{ padding: '10px 14px', color: '#8a7a5a', fontSize: '12px' }}>
+                    <td style={{ padding: '10px 14px', color: '#8a7a5a', fontSize: '0.75rem' }}>
                       {log.actor_name}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <span style={{
-                        padding: '2px 8px', borderRadius: '3px', fontSize: '11px', fontWeight: 600,
+                        padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
                         background: `${ACTION_COLORS[log.action] ?? '#888'}20`,
                         color: ACTION_COLORS[log.action] ?? '#888',
                         border: `1px solid ${ACTION_COLORS[log.action] ?? '#888'}40`,
@@ -140,13 +140,13 @@ export default function AuditLogsPage() {
                         {ACTION_LABELS[log.action] ?? log.action}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '12px' }}>
+                    <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
                       {log.target_type && (
-                        <span style={{ color: '#555', fontSize: '10px', marginRight: 4 }}>{log.target_type}</span>
+                        <span style={{ color: '#555', fontSize: '0.625rem', marginRight: 4 }}>{log.target_type}</span>
                       )}
                       {log.target_id ? log.target_id.slice(0, 8) + '...' : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', color: '#666', fontSize: '11px' }}>
+                    <td style={{ padding: '10px 14px', color: '#666', fontSize: '0.6875rem' }}>
                       {details || '-'}
                     </td>
                   </tr>

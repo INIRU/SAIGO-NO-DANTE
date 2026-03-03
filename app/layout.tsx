@@ -5,6 +5,7 @@ import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
+import FloatingFontControl from '@/components/ui/FloatingFontControl'
 
 const songMyung = Song_Myung({
   weight: '400',
@@ -57,7 +58,7 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   verification: {
-    google: 'k1Ye3HEakIndc164rlhQ_wDgNSJY0f9inR7BN9wSx0w',
+    google: 'Aj4bgbiMwETOsd8qKciqA6u8AyX7str5bylMewPSfxw',
   },
 }
 
@@ -73,6 +74,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <Footer />
+          <FloatingFontControl />
         </SessionProvider>
         <Analytics />
       </body>

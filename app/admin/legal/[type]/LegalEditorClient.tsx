@@ -27,7 +27,7 @@ function SectionEditor({
 
   const inputStyle = {
     background: '#0d0b08', border: '1px solid #2a2520', borderRadius: '4px',
-    padding: '6px 10px', color: '#e8dcc8', fontSize: '13px', width: '100%',
+    padding: '6px 10px', color: '#e8dcc8', fontSize: '0.8125rem', width: '100%',
     outline: 'none',
   }
 
@@ -35,7 +35,7 @@ function SectionEditor({
     <div style={{ background: '#1a1510', border: '1px solid #2a2520', borderRadius: '6px', padding: '16px' }}>
       {/* 섹션 헤더 */}
       <div className="flex items-center gap-2 mb-3">
-        <span style={{ color: '#666', fontSize: '11px', fontFamily: 'monospace', flexShrink: 0 }}>
+        <span style={{ color: '#666', fontSize: '0.6875rem', fontFamily: 'monospace', flexShrink: 0 }}>
           #{index + 1}
         </span>
         <input
@@ -46,15 +46,15 @@ function SectionEditor({
         />
         <div className="flex gap-1 flex-shrink-0">
           <button onClick={() => onMove(-1)} disabled={index === 0}
-            style={{ padding: '4px 8px', fontSize: '12px', background: '#252015', border: '1px solid #3a3020', borderRadius: '3px', color: index === 0 ? '#333' : '#888', cursor: index === 0 ? 'default' : 'pointer' }}>
+            style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#252015', border: '1px solid #3a3020', borderRadius: '3px', color: index === 0 ? '#333' : '#888', cursor: index === 0 ? 'default' : 'pointer' }}>
             ↑
           </button>
           <button onClick={() => onMove(1)} disabled={index === total - 1}
-            style={{ padding: '4px 8px', fontSize: '12px', background: '#252015', border: '1px solid #3a3020', borderRadius: '3px', color: index === total - 1 ? '#333' : '#888', cursor: index === total - 1 ? 'default' : 'pointer' }}>
+            style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#252015', border: '1px solid #3a3020', borderRadius: '3px', color: index === total - 1 ? '#333' : '#888', cursor: index === total - 1 ? 'default' : 'pointer' }}>
             ↓
           </button>
           <button onClick={onDelete}
-            style={{ padding: '4px 8px', fontSize: '12px', background: 'rgba(160,40,40,0.15)', border: '1px solid rgba(160,40,40,0.4)', borderRadius: '3px', color: '#cc5555', cursor: 'pointer' }}>
+            style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'rgba(160,40,40,0.15)', border: '1px solid rgba(160,40,40,0.4)', borderRadius: '3px', color: '#cc5555', cursor: 'pointer' }}>
             ✕
           </button>
         </div>
@@ -80,18 +80,18 @@ function SectionEditor({
               style={inputStyle}
             />
             <button onClick={() => removeItem(i)}
-              style={{ flexShrink: 0, padding: '4px 10px', fontSize: '12px', background: 'rgba(160,40,40,0.1)', border: '1px solid rgba(160,40,40,0.3)', borderRadius: '3px', color: '#cc5555', cursor: 'pointer' }}>
+              style={{ flexShrink: 0, padding: '4px 10px', fontSize: '0.75rem', background: 'rgba(160,40,40,0.1)', border: '1px solid rgba(160,40,40,0.3)', borderRadius: '3px', color: '#cc5555', cursor: 'pointer' }}>
               −
             </button>
           </div>
         ))}
         <div className="flex items-center gap-3">
           <button onClick={addItem}
-            style={{ fontSize: '12px', color: '#888', border: '1px dashed #333', borderRadius: '3px', padding: '4px 12px', cursor: 'pointer', background: 'transparent' }}>
+            style={{ fontSize: '0.75rem', color: '#888', border: '1px dashed #333', borderRadius: '3px', padding: '4px 12px', cursor: 'pointer', background: 'transparent' }}>
             + 항목 추가
           </button>
           {(section.items ?? []).length > 0 && (
-            <label className="flex items-center gap-1.5" style={{ fontSize: '11px', color: '#666', cursor: 'pointer' }}>
+            <label className="flex items-center gap-1.5" style={{ fontSize: '0.6875rem', color: '#666', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={section.itemAccent === 'red'}
@@ -170,7 +170,7 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
             placeholder="문서 제목"
             style={{
               background: '#0d0b08', border: '1px solid #2a2520', borderRadius: '4px',
-              padding: '6px 12px', color: '#c8a450', fontSize: '16px', fontWeight: 'bold',
+              padding: '6px 12px', color: '#c8a450', fontSize: '1rem', fontWeight: 'bold',
               outline: 'none', minWidth: '200px',
             }}
           />
@@ -180,19 +180,19 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
             placeholder="최종 수정일 (예: 2025년 1월 1일)"
             style={{
               background: '#0d0b08', border: '1px solid #2a2520', borderRadius: '4px',
-              padding: '6px 12px', color: '#666677', fontSize: '12px',
+              padding: '6px 12px', color: '#666677', fontSize: '0.75rem',
               outline: 'none', minWidth: '180px',
             }}
           />
         </div>
         <div className="flex items-center gap-2">
-          {error && <span style={{ color: '#cc4444', fontSize: '12px' }}>{error}</span>}
-          {saved && <span style={{ color: '#44aa66', fontSize: '12px' }}>✓ 저장됨</span>}
+          {error && <span style={{ color: '#cc4444', fontSize: '0.75rem' }}>{error}</span>}
+          {saved && <span style={{ color: '#44aa66', fontSize: '0.75rem' }}>✓ 저장됨</span>}
           <button
             onClick={save}
             disabled={saving}
             style={{
-              padding: '8px 20px', borderRadius: '4px', fontSize: '13px', fontWeight: 600,
+              padding: '8px 20px', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 600,
               background: saving ? '#2a2520' : 'var(--gold)',
               color: saving ? '#666' : '#0d0b08',
               border: 'none', cursor: saving ? 'default' : 'pointer',
@@ -225,7 +225,7 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
         className="w-full mt-4 py-3 transition-colors"
         style={{
           border: '1px dashed #2a2520', borderRadius: '6px',
-          color: '#555566', fontSize: '13px', cursor: 'pointer',
+          color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
           background: 'transparent',
         }}
       >

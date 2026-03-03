@@ -75,7 +75,7 @@ function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: 
         padding: '16px 4px 4px',
       }}>
         <p style={{
-          fontSize: '9px', color: isOwned ? '#c8a450' : '#4a4060',
+          fontSize: '0.5625rem', color: isOwned ? '#c8a450' : '#6a6080',
           textAlign: 'center', fontFamily: 'var(--font-heading)',
           lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
@@ -127,7 +127,7 @@ function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
         padding: '12px 3px 3px',
       }}>
         <p style={{
-          fontSize: '8px', color: isOwned ? '#c8a450' : '#4a4060',
+          fontSize: '0.5rem', color: isOwned ? '#c8a450' : '#6a6080',
           textAlign: 'center', fontFamily: 'var(--font-heading)',
           lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
@@ -152,7 +152,7 @@ function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
         style={{
           background: !keywordFilter ? 'rgba(200,144,10,0.15)' : 'transparent',
           border: `1px solid ${!keywordFilter ? 'var(--gold-dim)' : 'rgba(58,42,21,0.4)'}`,
-          color: !keywordFilter ? 'var(--gold)' : '#4a4060',
+          color: !keywordFilter ? 'var(--gold)' : '#6a6080',
         }}
       >
         전체
@@ -168,7 +168,7 @@ function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
             style={{
               background: isActive ? `${color}20` : 'transparent',
               border: `1px solid ${isActive ? color : 'rgba(58,42,21,0.4)'}`,
-              color: isActive ? color : '#4a4060',
+              color: isActive ? color : '#6a6080',
             }}
           >
             {getKeywordIconUrl(keyword) && (
@@ -203,8 +203,8 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
     <div>
       {!compact && (
         <div className="flex items-center gap-2 mb-3">
-          <span style={{ color: '#5a5070', fontSize: '11px', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-          <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ color: '#5a5070', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
+          <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
             {egoList.filter(e => owned.has(e.id)).length}/{egoList.length}
           </span>
         </div>
@@ -212,7 +212,7 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
       {Object.entries(egosByGrade).map(([grade, list]) => (
         <div key={grade} className="mb-3">
           <p className="mb-1.5" style={{
-            fontSize: '9px', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em',
+            fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em',
             color: GRADE_COLORS[grade] ?? '#555',
           }}>
             {grade}
@@ -313,13 +313,13 @@ function CollectionViewer() {
       <div className="min-h-screen pt-24 pb-16 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-6">
-            <p style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', marginBottom: '6px' }}>
+            <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
               MY COLLECTION
             </p>
             <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
               보유 현황 설정
             </h1>
-            <p className="mt-2" style={{ color: '#4a4060', fontSize: '12px', fontFamily: 'var(--font-heading)' }}>
+            <p className="mt-2" style={{ color: '#6a6080', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
               로그인 없이 보유 인격/EGO를 설정하고 공유 링크를 만들 수 있습니다.
             </p>
           </div>
@@ -349,15 +349,15 @@ function CollectionViewer() {
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
-          <p style={{ color: '#3a3050', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', marginBottom: '6px' }}>
+          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             SHARED COLLECTION
           </p>
           <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
             보유 현황
           </h1>
-          <div className="mt-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#4a4060' }}>
+          <div className="mt-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: '#6a6080' }}>
             <span>인격 <span style={{ color: 'var(--gold)' }}>{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
-            <span style={{ color: '#2a2035', fontFamily: 'sans-serif' }}>·</span>
+            <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
             <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
           </div>
         </div>
@@ -374,7 +374,7 @@ function CollectionViewer() {
               className="flex-1 py-2 text-xs font-medium transition-all duration-200"
               style={{
                 background: viewMode === mode ? 'var(--gold)' : 'transparent',
-                color: viewMode === mode ? '#0d0b08' : '#4a4060',
+                color: viewMode === mode ? '#0d0b08' : '#6a6080',
               }}
             >
               {label}
@@ -426,17 +426,17 @@ function CollectionViewer() {
                       }}
                     />
                     <span style={{
-                      fontSize: '9px',
-                      color: isActive ? 'var(--gold)' : '#4a4060',
+                      fontSize: '0.5625rem',
+                      color: isActive ? 'var(--gold)' : '#6a6080',
                       fontFamily: 'var(--font-heading)',
                       whiteSpace: 'nowrap',
                     }}>
                       {s.name_kr}
                     </span>
                     <span style={{
-                      fontSize: '8px',
+                      fontSize: '0.5rem',
                       fontFamily: 'var(--font-mono)',
-                      color: ownCount === totalCount ? 'var(--gold)' : '#3a3050',
+                      color: ownCount === totalCount ? 'var(--gold)' : '#5a5070',
                     }}>
                       {ownCount}/{totalCount}
                     </span>
@@ -458,7 +458,7 @@ function CollectionViewer() {
                 style={{
                   background: showUnowned ? 'rgba(90,80,112,0.15)' : 'transparent',
                   border: `1px solid ${showUnowned ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
-                  color: showUnowned ? '#8a7aaa' : '#4a4060',
+                  color: showUnowned ? '#8a7aaa' : '#6a6080',
                   cursor: 'pointer',
                 }}
               >
@@ -473,8 +473,8 @@ function CollectionViewer() {
                 {/* 인격 */}
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <span style={{ color: '#5a5070', fontSize: '11px', fontFamily: 'var(--font-heading)' }}>인격</span>
-                    <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: '#5a5070', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>인격</span>
+                    <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                       {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
                     </span>
                   </div>
@@ -485,7 +485,7 @@ function CollectionViewer() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center py-8" style={{ color: '#3a3050', fontSize: '12px' }}>
+                    <p className="text-center py-8" style={{ color: '#5a5070', fontSize: '0.75rem' }}>
                       해당 키워드의 인격이 없습니다
                     </p>
                   )}
@@ -520,10 +520,10 @@ function CollectionViewer() {
                           height={22}
                           style={{ borderRadius: '50%', opacity: 0.85 }}
                         />
-                        <span style={{ color: 'var(--gold-light)', fontSize: '13px', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--gold-light)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
                           {sinner.name_kr}
                         </span>
-                        <span style={{ color: '#3a3050', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                           {ownedIdCount + ownedEgoCount}/{ids.length + egoList.length}
                         </span>
                       </div>

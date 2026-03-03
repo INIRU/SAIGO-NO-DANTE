@@ -48,12 +48,12 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: '4px',
   color: '#c8a450',
-  fontSize: '13px',
+  fontSize: '0.8125rem',
 }
 
 const labelStyle: React.CSSProperties = {
   color: '#555566',
-  fontSize: '11px',
+  fontSize: '0.6875rem',
   marginBottom: '4px',
   display: 'block',
 }
@@ -67,7 +67,7 @@ const btnGold: React.CSSProperties = {
   border: '1px solid var(--gold)',
   borderRadius: '4px',
   color: 'var(--gold)',
-  fontSize: '13px',
+  fontSize: '0.8125rem',
   cursor: 'pointer',
 }
 
@@ -174,21 +174,21 @@ export default function NewIdentityPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           onClick={() => router.back()}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '13px', cursor: 'pointer', padding: 0 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
         >
           <ArrowLeft size={14} /> 뒤로
         </button>
-        <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '20px', fontWeight: 'bold' }}>
+        <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.25rem', fontWeight: 'bold' }}>
           인격 추가
         </h1>
       </div>
 
       {/* Form Card */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <h2 className="font-serif" style={{ color: '#c8a450', marginBottom: '16px', fontSize: '15px', fontWeight: 'bold' }}>기본 정보</h2>
+        <h2 className="font-serif" style={{ color: '#c8a450', marginBottom: '16px', fontSize: '0.9375rem', fontWeight: 'bold' }}>기본 정보</h2>
 
         {loadingSinners ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '13px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '0.8125rem', marginBottom: '16px' }}>
             <Loader2 size={13} className="animate-spin" /> 수감자 목록 로딩 중...
           </div>
         ) : null}
@@ -344,10 +344,10 @@ export default function NewIdentityPage() {
           <button style={btnGold} onClick={handleCreate} disabled={saving}>
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} 인격 생성
           </button>
-          {error && <span style={{ color: '#ee6666', fontSize: '12px' }}>{error}</span>}
+          {error && <span style={{ color: '#ee6666', fontSize: '0.75rem' }}>{error}</span>}
         </div>
 
-        <p style={{ color: '#555566', fontSize: '11px', marginTop: '12px' }}>
+        <p style={{ color: '#555566', fontSize: '0.6875rem', marginTop: '12px' }}>
           * 필수 항목. 생성 후 스킬과 패시브를 추가할 수 있습니다.
         </p>
       </div>

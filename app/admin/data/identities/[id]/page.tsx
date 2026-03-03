@@ -81,12 +81,12 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: '4px',
   color: '#c8a450',
-  fontSize: '13px',
+  fontSize: '0.8125rem',
 }
 
 const labelStyle: React.CSSProperties = {
   color: '#555566',
-  fontSize: '11px',
+  fontSize: '0.6875rem',
   marginBottom: '4px',
   display: 'block',
 }
@@ -100,7 +100,7 @@ const btnGold: React.CSSProperties = {
   border: '1px solid var(--gold)',
   borderRadius: '4px',
   color: 'var(--gold)',
-  fontSize: '13px',
+  fontSize: '0.8125rem',
   cursor: 'pointer',
 }
 
@@ -113,7 +113,7 @@ const btnSmall: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: '4px',
   color: '#c8a450',
-  fontSize: '12px',
+  fontSize: '0.75rem',
   cursor: 'pointer',
 }
 
@@ -126,7 +126,7 @@ const btnDanger: React.CSSProperties = {
   border: '1px solid rgba(170,68,68,0.4)',
   borderRadius: '4px',
   color: '#ee6666',
-  fontSize: '12px',
+  fontSize: '0.75rem',
   cursor: 'pointer',
 }
 
@@ -489,14 +489,14 @@ export default function EditIdentityPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '13px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '0.8125rem' }}>
         <Loader2 size={14} className="animate-spin" /> 로딩 중...
       </div>
     )
   }
 
   if (!identity) {
-    return <div style={{ color: '#ee6666', fontSize: '13px' }}>인격을 찾을 수 없습니다.</div>
+    return <div style={{ color: '#ee6666', fontSize: '0.8125rem' }}>인격을 찾을 수 없습니다.</div>
   }
 
   return (
@@ -505,19 +505,19 @@ export default function EditIdentityPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           onClick={() => router.back()}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '13px', cursor: 'pointer', padding: 0 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
         >
           <ArrowLeft size={14} /> 뒤로
         </button>
-        <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '20px', fontWeight: 'bold' }}>
+        <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.25rem', fontWeight: 'bold' }}>
           인격 편집
         </h1>
-        <span style={{ color: '#555566', fontSize: '12px' }}>{identity.name_kr ?? identity.name}</span>
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{identity.name_kr ?? identity.name}</span>
       </div>
 
       {/* Basic Info Card */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <h2 className="font-serif" style={{ color: '#c8a450', marginBottom: '16px', fontSize: '15px', fontWeight: 'bold' }}>기본 정보</h2>
+        <h2 className="font-serif" style={{ color: '#c8a450', marginBottom: '16px', fontSize: '0.9375rem', fontWeight: 'bold' }}>기본 정보</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '16px' }}>
           {/* sinner_id */}
@@ -671,7 +671,7 @@ export default function EditIdentityPage() {
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} 저장
           </button>
           {saveMsg && (
-            <span style={{ fontSize: '12px', color: saveMsg === '저장됨' ? '#44aa66' : '#ee6666' }}>
+            <span style={{ fontSize: '0.75rem', color: saveMsg === '저장됨' ? '#44aa66' : '#ee6666' }}>
               {saveMsg === '저장됨' ? '✓ ' : ''}{saveMsg}
             </span>
           )}
@@ -681,7 +681,7 @@ export default function EditIdentityPage() {
       {/* Skills Card */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '15px', fontWeight: 'bold' }}>스킬</h2>
+          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 'bold' }}>스킬</h2>
           <button
             style={btnSmall}
             onClick={() => {
@@ -695,7 +695,7 @@ export default function EditIdentityPage() {
         </div>
 
         {skills.length === 0 && !newSkill && (
-          <p style={{ color: '#555566', fontSize: '12px' }}>스킬이 없습니다.</p>
+          <p style={{ color: '#555566', fontSize: '0.75rem' }}>스킬이 없습니다.</p>
         )}
 
         {skills.map(skill => (
@@ -711,10 +711,10 @@ export default function EditIdentityPage() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                 <div style={{ flex: 1 }}>
-                  <span style={{ color: '#c8a450', fontSize: '13px', fontWeight: 600 }}>{skill.name}</span>
-                  <span style={{ color: '#555566', fontSize: '11px', marginLeft: '8px' }}>{skill.skill_type} · {skill.sin_affinity}</span>
+                  <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{skill.name}</span>
+                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type} · {skill.sin_affinity}</span>
                   {skill.coins != null && (
-                    <span style={{ color: '#555566', fontSize: '11px', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
+                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
                   )}
                 </div>
                 <button style={btnSmall} onClick={() => handleStartEditSkill(skill)}>
@@ -742,7 +742,7 @@ export default function EditIdentityPage() {
       {/* Passives Card */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '15px', fontWeight: 'bold' }}>패시브</h2>
+          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 'bold' }}>패시브</h2>
           <button
             style={btnSmall}
             onClick={() => {
@@ -756,7 +756,7 @@ export default function EditIdentityPage() {
         </div>
 
         {passives.length === 0 && !newPassive && (
-          <p style={{ color: '#555566', fontSize: '12px' }}>패시브가 없습니다.</p>
+          <p style={{ color: '#555566', fontSize: '0.75rem' }}>패시브가 없습니다.</p>
         )}
 
         {passives.map(passive => (
@@ -772,10 +772,10 @@ export default function EditIdentityPage() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                 <div style={{ flex: 1 }}>
-                  <span style={{ color: '#c8a450', fontSize: '13px', fontWeight: 600 }}>{passive.name}</span>
-                  <span style={{ color: '#555566', fontSize: '11px', marginLeft: '8px' }}>{passive.passive_type}</span>
+                  <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{passive.name}</span>
+                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.passive_type}</span>
                   {passive.sin_affinity && (
-                    <span style={{ color: '#555566', fontSize: '11px', marginLeft: '8px' }}>{passive.sin_affinity} {passive.sin_count ?? ''} {passive.active_cond ?? ''}</span>
+                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.sin_affinity} {passive.sin_count ?? ''} {passive.active_cond ?? ''}</span>
                   )}
                 </div>
                 <button style={btnSmall} onClick={() => handleStartEditPassive(passive)}>

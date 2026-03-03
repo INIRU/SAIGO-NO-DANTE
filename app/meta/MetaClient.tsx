@@ -17,6 +17,8 @@ interface IdentityStat {
   name_kr: string
   keywords: string[]
   rarity: string
+  folder_name: string | null
+  game_id: string | null
   count: number
 }
 
@@ -34,6 +36,7 @@ interface EGOStat {
   name_kr: string
   grade: string
   sin_affinity: string | null
+  image_url: string | null
   count: number
 }
 
@@ -118,14 +121,13 @@ function KeywordBadge({ keyword }: { keyword: string }) {
         color,
         border: `1px solid ${color}35`,
         borderRadius: '3px',
-        fontSize: '10px',
+        fontSize: '0.625rem',
         padding: '1px 5px',
         lineHeight: '16px',
       }}
     >
       {iconUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} />
+        <Image src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} unoptimized />
       )}
       {keyword}
     </span>
@@ -361,24 +363,40 @@ function IdentityTab({
                     {i + 1}
                   </span>
 
-                  {/* 등급 이미지 */}
-                  {RARITY_ICON_MAP[stat.rarity] && (
-                    <Image
-                      src={RARITY_ICON_MAP[stat.rarity]}
-                      alt={stat.rarity}
-                      width={rarityWidth}
-                      height={14}
-                      unoptimized
-                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
-                    />
+                  {/* 초상화 */}
+                  {stat.folder_name && stat.game_id ? (
+                    <div className="relative overflow-hidden shrink-0" style={{ width: 36, height: 48, borderRadius: 4, background: '#0a0806', border: `1px solid ${i < 3 ? color + '40' : 'rgba(58,42,21,0.4)'}` }}>
+                      <Image
+                        src={`${STORAGE_BASE}/sinners/${stat.sinner_id}/identities/${encodeURIComponent(stat.folder_name)}/${stat.game_id}_normal_info.webp`}
+                        alt=""
+                        fill
+                        sizes="36px"
+                        quality={50}
+                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ width: 36, height: 48, borderRadius: 4, background: '#0a0806', border: '1px solid rgba(58,42,21,0.4)' }} />
                   )}
 
-                  {/* 인격명 + 수감자 */}
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* 등급 + 인격명 + 수감자 */}
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {RARITY_ICON_MAP[stat.rarity] && (
+                        <Image
+                          src={RARITY_ICON_MAP[stat.rarity]}
+                          alt={stat.rarity}
+                          width={rarityWidth}
+                          height={14}
+                          unoptimized
+                          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
+                        />
+                      )}
+                      <span className="text-xs shrink-0" style={{ color: '#555566' }}>{sName}</span>
+                    </div>
                     <span className="text-sm font-medium truncate" style={{ color: '#e8e4d8' }}>
                       {stat.name_kr}
                     </span>
-                    <span className="text-xs shrink-0" style={{ color: '#555566' }}>{sName}</span>
                   </div>
 
                   {/* 채용률 + 카운트 */}
@@ -448,8 +466,7 @@ function IdentityTab({
                       style={{ background: `${color}15`, border: `1px solid ${color}30` }}
                     >
                       {iconUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={iconUrl} alt="" width={14} height={14} />
+                        <Image src={iconUrl} alt="" width={14} height={14} unoptimized />
                       )}
                     </div>
                     <span className="flex-1 text-xs" style={{ color: '#e8e4d8' }}>{kw.keyword}</span>
@@ -518,8 +535,7 @@ function KeywordTab({ data }: { data: MetaData }) {
                 style={{ background: `${color}15`, border: `1px solid ${color}30` }}
               >
                 {iconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={iconUrl} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
+                  <Image src={iconUrl} alt="" width={20} height={20} style={{ objectFit: 'contain' }} unoptimized />
                 ) : (
                   <div className="w-5 h-5" />
                 )}
@@ -604,7 +620,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                   <span
                     className="font-mono text-base md:text-lg w-7 text-center font-bold"
                     style={{
-                      color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#444455',
+                      color: i === 0 ? '#e8b030' : i === 1 ? '#b0a088' : i === 2 ? '#a07040' : '#6a6a80',
                     }}
                   >
                     {i + 1}
@@ -617,7 +633,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                     >
                       0
                     </span>
-                    <span className="text-[10px]" style={{ color: '#555566' }}>덱</span>
+                    <span className="text-[0.625rem]" style={{ color: '#555566' }}>덱</span>
                   </div>
                 </div>
 
@@ -640,7 +656,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                     <div className="min-w-0">
                       <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.a_name}</span>
                       {aSinnerName && (
-                        <span className="text-[10px] block mt-0.5" style={{ color: '#555566' }}>{aSinnerName}</span>
+                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#555566' }}>{aSinnerName}</span>
                       )}
                     </div>
                   </div>
@@ -650,7 +666,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                     className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 self-center"
                     style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.25)' }}
                   >
-                    <span className="text-[10px] md:text-xs font-bold" style={{ color: 'var(--gold-dim)' }}>+</span>
+                    <span className="text-[0.625rem] md:text-xs font-bold" style={{ color: 'var(--gold-dim)' }}>+</span>
                   </div>
 
                   {/* 인격 B */}
@@ -670,7 +686,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                     <div className="min-w-0">
                       <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.b_name}</span>
                       {bSinnerName && (
-                        <span className="text-[10px] block mt-0.5" style={{ color: '#555566' }}>{bSinnerName}</span>
+                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#555566' }}>{bSinnerName}</span>
                       )}
                     </div>
                   </div>
@@ -758,12 +774,11 @@ function EGOTab({
               }}
             >
               {GRADE_ICON_URL[grade] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} />
+                <Image src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} unoptimized />
               ) : (
                 grade
               )}
-              <span className="text-[10px]" style={{ color: '#555566' }}>
+              <span className="text-[0.625rem]" style={{ color: '#555566' }}>
                 {egoByGrade[grade]?.length ?? 0}
               </span>
             </button>
@@ -804,11 +819,10 @@ function EGOTab({
                 {/* 등급 이미지 */}
                 <div className="w-8 flex items-center justify-center shrink-0">
                   {GRADE_ICON_URL[ego.grade] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} />
+                    <Image src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} unoptimized />
                   ) : (
                     <span
-                      className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      className="font-mono text-[0.625rem] font-bold px-1.5 py-0.5 rounded"
                       style={{ background: `${gradeColor}15`, color: gradeColor, border: `1px solid ${gradeColor}30` }}
                     >
                       {ego.grade}
@@ -816,16 +830,15 @@ function EGOTab({
                   )}
                 </div>
 
-                {/* 수감자 로고 */}
-                <div className="relative w-5 h-5 shrink-0">
-                  <Image
-                    src={getSinnerLogoUrl(ego.sinner_id)}
-                    alt=""
-                    fill
-                    unoptimized
-                    className="object-contain"
-                    style={{ opacity: 0.8 }}
-                  />
+                {/* EGO 초상화 */}
+                <div className="relative shrink-0 overflow-hidden" style={{ width: 36, height: 36, borderRadius: '50%', border: `1.5px solid ${gradeColor}40`, background: '#0d0b08' }}>
+                  {ego.image_url ? (
+                    <Image src={ego.image_url} alt="" fill unoptimized className="object-cover" style={{ objectPosition: '50% 15%' }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} unoptimized style={{ opacity: 0.5 }} />
+                    </div>
+                  )}
                 </div>
 
                 {/* EGO명 + 수감자 + 죄악 */}
