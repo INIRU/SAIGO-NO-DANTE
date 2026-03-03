@@ -750,7 +750,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             </p>
             <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '13px' }}>
               인격 {stats.ownedIdentities}/{stats.totalIdentities}
-              {' \u00B7 '}
+              <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>
               EGO {stats.ownedEgos}/{stats.totalEgos}
             </p>
           </div>
