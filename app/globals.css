@@ -77,7 +77,10 @@
   --font-mono:    'PerfectDOS', monospace;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  text-rendering: optimizeLegibility;
+}
 html { scroll-behavior: smooth; }
 
 body {
@@ -86,6 +89,7 @@ body {
   font-family: var(--font-body);
   min-height: 100vh;
   overflow-x: hidden;
+  transform: rotate(0.03deg); /* GPU 렌더링 강제 — 텍스트 서브픽셀 품질 향상 */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
@@ -94,3 +98,15 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
+
+/* 모바일 볼드 가독성 — KotraBold는 자체 볼드 서체이므로 font-weight 경감 */
+@media (max-width: 768px) {
+  .font-bold, .font-serif {
+    -webkit-text-stroke: 0;
+    font-synthesis: none;
+  }
+  /* KotraBold 제목: 모바일에서 weight 경감 */
+  [style*="--font-heading"], .font-serif {
+    font-weight: normal;
+  }
+}
