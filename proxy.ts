@@ -8,7 +8,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3001',
 ]
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // API 라우트만 보호 (NextAuth 콜백은 제외)
   if (!request.nextUrl.pathname.startsWith('/api/')) return NextResponse.next()
   if (request.nextUrl.pathname.startsWith('/api/auth/')) return NextResponse.next()
