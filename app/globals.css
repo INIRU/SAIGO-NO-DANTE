@@ -35,13 +35,7 @@
   font-style: normal;
   font-display: swap;
 }
-@font-face {
-  font-family: 'Pretendard';
-  src: url('/fonts/Pretendard-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+
 
 @import "tailwindcss";
 @import "../styles/globals/utilities.css";
@@ -73,7 +67,7 @@
   --font-logo:    'CorporateLogo', 'BebasKai', sans-serif;
   --font-title:   'BebasKai', sans-serif;
   --font-heading: 'KotraBold', 'SCDream', sans-serif;
-  --font-body:    'SCDream', 'Pretendard', sans-serif;
+  --font-body:    'SCDream', sans-serif;
   --font-mono:    'PerfectDOS', monospace;
 }
 
@@ -89,7 +83,7 @@ body {
   font-family: var(--font-body);
   min-height: 100vh;
   overflow-x: hidden;
-  transform: rotate(0.03deg); /* GPU 렌더링 강제 — 텍스트 서브픽셀 품질 향상 */
+  -webkit-font-smoothing: antialiased; /* 텍스트 서브픽셀 품질 향상 */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
