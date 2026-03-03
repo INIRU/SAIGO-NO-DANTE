@@ -74,6 +74,8 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
   }
 }
 
+export const revalidate = 300  // 5분마다 재검증
+
 export default async function HomePage() {
   const [latestIdentities, latestVideo, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
