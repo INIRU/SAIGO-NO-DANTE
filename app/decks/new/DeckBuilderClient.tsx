@@ -30,8 +30,9 @@ import {
   type NoteSkillEntry,
   type NotePassiveEntry,
   type NoteEgoEntry,
+  type NoteEgoGiftEntry,
 } from '@/components/decks/NoteChips'
-import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import IdentityCard from '@/components/sinners/IdentityCard'
 
 interface EditMode {
@@ -52,6 +53,7 @@ interface Props {
   egos: EGO[]
   skills: Skill[]
   passives: Passive[]
+  egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
   editMode?: EditMode
 }
 
@@ -699,7 +701,7 @@ function PassiveBadge({ p, deckSinCounts }: {
   )
 }
 
-export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, editMode }: Props) {
+export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('identity')
   const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
@@ -862,6 +864,15 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return map
   }, [deckSlots, egoSlots, sinners])
 
+  // EGO 기프트 룩업 (NoteRenderer용)
+  const egoGiftLookup = useMemo(() => {
+    const map: Record<string, NoteEgoGiftEntry> = {}
+    for (const g of egoGifts) {
+      map[g.name] = { name: g.name, keyword: g.keyword, grade: g.grade, image_url: g.image_url, effect_base: g.effect_base }
+    }
+    return map
+  }, [egoGifts])
+
   // 자동완성 풀 (키워드 + 스킬 + 패시브 + 에고)
   const noteAcPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
@@ -914,8 +925,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     // 키워드
     pool.push(...buildKeywordPool())
+    // EGO 기프트
+    pool.push(...buildEgoGiftPool(egoGifts))
     return pool
-  }, [deckSlots, skillsByIdentityId, passivesByIdentityId, egoSlots, sinners])
+  }, [deckSlots, skillsByIdentityId, passivesByIdentityId, egoSlots, sinners, egoGifts])
 
   const noteAc = useNoteAutocomplete({
     text: description,
@@ -1697,6 +1710,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 skillLookup={skillTokenLookup}
                 passiveLookup={passiveTokenLookup}
                 egoLookup={egoTokenLookup}
+                egoGiftLookup={egoGiftLookup}
               />
             </div>
           ) : (

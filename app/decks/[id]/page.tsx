@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
 import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices } from '@/lib/data/sinners'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
-import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type SkillDetail = {
@@ -774,6 +774,19 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         const map: Record<string, { description: string }> = {}
         for (const r of rows) map[r.name] = { description: r.description }
         setKeywordMeta(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  // EGO 기프트 룩업
+  const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
+  useEffect(() => {
+    fetch('/api/ego-gifts')
+      .then(r => r.ok ? r.json() : [])
+      .then((gifts: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]) => {
+        const map: Record<string, NoteEgoGiftEntry> = {}
+        for (const g of gifts) map[g.name] = g
+        setEgoGiftLookup(map)
       })
       .catch(() => {})
   }, [])
@@ -1604,6 +1617,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                           <NoteRenderer
                             text={deck.description}
                             {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [])}
+                            egoGiftLookup={egoGiftLookup}
                           />
                         )}
 

@@ -25,8 +25,8 @@ import {
   getSinIconUrl,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip, formatSkillDesc } from '@/components/sinners/KeywordTooltip'
-import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
-import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import IdentityDecksTab from '@/components/sinners/IdentityDecksTab'
 
 interface GuideData {
@@ -46,10 +46,11 @@ interface Props {
   allSinners: Sinner[]
   allIdentities: Identity[]
   allEgos: EGO[]
+  egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
   canEditGuide?: boolean
 }
 
-export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, canEditGuide }: Props) {
+export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, egoGifts = [], canEditGuide }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [pageTab, setPageTab] = useState<'info' | 'decks'>(() => {
@@ -182,6 +183,15 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     return map
   }, [allIdentities, sinnerNameMap, sinner.name_kr])
 
+  // EGO 기프트 룩업 (NoteRenderer용)
+  const egoGiftLookup = useMemo(() => {
+    const map: Record<string, NoteEgoGiftEntry> = {}
+    for (const g of egoGifts) {
+      map[g.name] = { name: g.name, keyword: g.keyword, grade: g.grade, image_url: g.image_url, effect_base: g.effect_base }
+    }
+    return map
+  }, [egoGifts])
+
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
   // 스킬만 현재 인격 한정, 인격/에고/키워드는 전체
   const acPool = useMemo((): AutocompleteSuggestion[] => {
@@ -231,8 +241,10 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     }
     // 키워드
     pool.push(...buildKeywordPool())
+    // EGO 기프트
+    pool.push(...buildEgoGiftPool(egoGifts))
     return pool
-  }, [filteredSkills, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap])
+  }, [filteredSkills, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap, egoGifts])
 
   const ac = useNoteAutocomplete({
     text: guideContent,
@@ -757,7 +769,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                       <div style={{ color: '#555', fontSize: '10px', marginBottom: '6px' }}>미리보기</div>
                       <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                        <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} />
+                        <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                       </div>
                     </div>
                   )}
@@ -875,7 +887,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                   <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                                     <div style={{ color: '#555', fontSize: '10px', marginBottom: '6px' }}>미리보기</div>
                                     <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                                      <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} />
+                                      <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                     </div>
                                   </div>
                                 )}
@@ -902,7 +914,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             ) : (
                               <div className="pt-3">
                                 <div style={{ color: '#b0a898', fontSize: '12px', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                                  <NoteRenderer text={g.content} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} />
+                                  <NoteRenderer text={g.content} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                 </div>
                                 {canEditGuide && editingGuideId === null && (
                                   <div className="flex items-center gap-2 mt-5 pt-3" style={{ borderTop: '1px solid var(--border)' }}>

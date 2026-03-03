@@ -52,6 +52,14 @@ export type NoteIdentityEntry = {
   keywords?: string[]
 }
 
+export type NoteEgoGiftEntry = {
+  name: string
+  keyword: string
+  grade: string
+  image_url?: string | null
+  effect_base?: string | null
+}
+
 // ── SkillChip ───────────────────────────────────────────────────────────
 export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -306,6 +314,59 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   )
 }
 
+// ── EgoGiftChip ─────────────────────────────────────────────────────────
+const EGO_GIFT_KW_COLORS: Record<string, string> = {
+  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
+  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
+  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888',
+}
+
+export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  const sc = EGO_GIFT_KW_COLORS[entry.keyword] ?? '#888'
+  return (
+    <span
+      ref={ref}
+      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
+      onMouseLeave={() => setRect(null)}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+    >
+      {entry.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={entry.image_url} alt="" style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} />
+      )}
+      <span style={{ color: sc, fontSize: '10px', fontWeight: 600 }}>{entry.name}</span>
+
+      {rect && (
+        <span className="pointer-events-none" style={{
+          position: 'fixed',
+          left: Math.min(rect.left, window.innerWidth - 300),
+          ...(rect.top > 150
+            ? { bottom: window.innerHeight - rect.top + 6 }
+            : { top: rect.bottom + 6 }),
+          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
+          borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            {entry.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={entry.image_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+            )}
+            <span style={{ color: sc, fontSize: '11px', fontWeight: 700 }}>{entry.name}</span>
+            <span style={{ color: '#555', fontSize: '9px' }}>{entry.keyword} {entry.grade}</span>
+          </div>
+          {entry.effect_base && (
+            <div style={{ color: '#888', fontSize: '10px', lineHeight: 1.55 }}>
+              {formatSkillDesc(entry.effect_base, sc)}
+            </div>
+          )}
+        </span>
+      )}
+    </span>
+  )
+}
+
 // ── FallbackChip (lookup 없을 때 토큰 키를 파싱해서 미니 칩으로 표시) ──
 const FALLBACK_STYLE: Record<string, { color: string; bg: string; border: string }> = {
   s: { color: '#888899', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
@@ -341,6 +402,7 @@ export function NoteRenderer({
   passiveLookup = {},
   egoLookup = {},
   identityLookup = {},
+  egoGiftLookup = {},
   inline,
 }: {
   text: string
@@ -348,13 +410,14 @@ export function NoteRenderer({
   passiveLookup?: Record<string, NotePassiveEntry>
   egoLookup?: Record<string, NoteEgoEntry>
   identityLookup?: Record<string, NoteIdentityEntry>
+  egoGiftLookup?: Record<string, NoteEgoGiftEntry>
   inline?: boolean
 }) {
   if (!text.trim()) return (
     <p style={{ color: '#2a2535', fontSize: '12px', fontStyle: 'italic' }}>내용이 없습니다.</p>
   )
-  // [s:skill] [p:passive] [e:ego] [k:keyword] [i:identity]
-  const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+)\]|\[p:((?:[^\[\]]|\[[^\]]*\])+)\]|\[e:((?:[^\[\]]|\[[^\]]*\])+)\]|\[k:((?:[^\[\]]|\[[^\]]*\])+)\]|\[i:((?:[^\[\]]|\[[^\]]*\])+)\]/g
+  // [s:skill] [p:passive] [e:ego] [k:keyword] [i:identity] [g:egogift]
+  const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+)\]|\[p:((?:[^\[\]]|\[[^\]]*\])+)\]|\[e:((?:[^\[\]]|\[[^\]]*\])+)\]|\[k:((?:[^\[\]]|\[[^\]]*\])+)\]|\[i:((?:[^\[\]]|\[[^\]]*\])+)\]|\[g:((?:[^\[\]]|\[[^\]]*\])+)\]/g
   const elements: React.ReactNode[] = []
   let last = 0
   let m: RegExpExecArray | null
@@ -385,6 +448,12 @@ export function NoteRenderer({
       elements.push(e
         ? <IdentityChip key={`i${m.index}`} entry={e} />
         : <FallbackChip key={`i${m.index}`} type="i" tokenKey={m[5]} />
+      )
+    } else if (m[6]) {
+      const e = egoGiftLookup[m[6]]
+      elements.push(e
+        ? <EgoGiftChip key={`g${m.index}`} entry={e} />
+        : <FallbackChip key={`g${m.index}`} type="g" tokenKey={m[6]} />
       )
     }
     last = m.index + m[0].length

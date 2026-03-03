@@ -1,4 +1,4 @@
-import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners } from '@/lib/data/sinners'
+import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes } from '@/lib/data/sinners'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -17,13 +17,14 @@ export default async function IdentityPage({
   ])
   if (!sinner || !identity) notFound()
 
-  const [skills, passives, session, allSinners, allIdentities, allEgos] = await Promise.all([
+  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts] = await Promise.all([
     getSkills(identity.id),
     getPassives(identity.id),
     getServerSession(authOptions),
     getSinners(),
     getIdentities(),
     getEGOs(),
+    getEgoGiftsForNotes(),
   ])
 
   // 운영법 조회 (여러 개)
@@ -64,6 +65,7 @@ export default async function IdentityPage({
       allSinners={allSinners}
       allIdentities={allIdentities}
       allEgos={allEgos}
+      egoGifts={egoGifts}
       canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
     />
   )

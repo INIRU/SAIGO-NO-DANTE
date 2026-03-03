@@ -600,6 +600,23 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   return data
 }
 
+export type EgoGiftNote = {
+  name: string
+  keyword: string
+  grade: string
+  image_url: string | null
+  effect_base: string | null
+}
+
+export async function getEgoGiftsForNotes(): Promise<EgoGiftNote[]> {
+  const { data, error } = await supabase()
+    .schema('limbus')
+    .from('ego_gifts')
+    .select('name, keyword, grade, image_url, effect_base')
+  if (error) throw error
+  return data ?? []
+}
+
 // 12인 수감자 ID 목록 (generateStaticParams용 — DB 불필요)
 export const SINNER_SLUGS = [
   'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault',

@@ -11,7 +11,7 @@ import {
 // ── 타입 ─────────────────────────────────────────────────────────────────
 export type AutocompleteSuggestion = {
   label: string
-  type: 'keyword' | 'skill' | 'identity' | 'ego' | 'passive'
+  type: 'keyword' | 'skill' | 'identity' | 'ego' | 'passive' | 'egogift'
   typeLabel?: string
   color: string
   iconUrl?: string
@@ -32,6 +32,26 @@ export function buildKeywordPool(): AutocompleteSuggestion[] {
       token: `[k:${kw}]`,
     }
   })
+}
+
+// ── EGO 기프트 풀 생성 헬퍼 ──────────────────────────────────────────────
+const EGO_GIFT_KW_COLORS: Record<string, string> = {
+  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
+  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
+  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888',
+}
+
+export function buildEgoGiftPool(
+  gifts: { name: string; keyword: string; image_url: string | null }[]
+): AutocompleteSuggestion[] {
+  return gifts.map(g => ({
+    label: g.name,
+    type: 'egogift' as const,
+    typeLabel: '기프트',
+    color: EGO_GIFT_KW_COLORS[g.keyword] ?? '#888',
+    imageUrl: g.image_url ?? undefined,
+    token: `[g:${g.name}]`,
+  }))
 }
 
 // ── useNoteAutocomplete 훅 ──────────────────────────────────────────────
