@@ -25,7 +25,15 @@ interface EgoGift {
   effect_base: string | null
   effect_plus: string | null
   effect_plusplus: string | null
-  min_identities: number | null
+  activation_condition: {
+    type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+    keyword?: string
+    keywords?: string[]
+    affiliation?: string
+    affiliations?: string[]
+    skill_condition?: string
+    count: number
+  } | null
   is_synthesis: boolean
   first_appearance: string | null
   related: string | null
@@ -596,9 +604,21 @@ function GiftModal({
             {gift.buy_disabled && (
               <MetaItem label="구매" value="불가" valueColor="#c83030" />
             )}
-            {gift.min_identities != null && (
-              <MetaItem label="최소 키워드 인격" value={`${gift.min_identities}명`} valueColor="#6090d0" />
-            )}
+            {gift.activation_condition != null && (() => {
+              const c = gift.activation_condition
+              let label = '발동 조건'
+              let value = `${c.count}인`
+              if (c.type === 'keyword') {
+                label = `${c.keyword} 인격`; value = `${c.count}인 이상`
+              } else if (c.type === 'multi_keyword') {
+                label = `${c.keywords!.join('+')} 인격`; value = `${c.count}인 이상`
+              } else if (c.type === 'affiliation') {
+                label = `${c.affiliation ?? c.affiliations!.join('/')} 소속`; value = `${c.count}인 이상`
+              } else if (c.type === 'skill') {
+                label = c.skill_condition!; value = `${c.count}인 이상`
+              }
+              return <MetaItem label={label} value={value} valueColor="#6090d0" />
+            })()}
             {gift.first_appearance && (
               <MetaItem label="첫 등장" value={gift.first_appearance} />
             )}
