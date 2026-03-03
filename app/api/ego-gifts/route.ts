@@ -6,7 +6,7 @@ export async function GET() {
   const { data, error } = await supabase
     .schema('limbus')
     .from('ego_gifts')
-    .select('name, keyword, grade, image_url, effect_base')
+    .select('name, keyword, grade, image_url, effect_base, activation_condition')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

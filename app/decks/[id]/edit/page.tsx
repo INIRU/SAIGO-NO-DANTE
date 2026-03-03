@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives } from '@/lib/data/sinners'
+import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/data/sinners'
 import DeckBuilderClient from '../../new/DeckBuilderClient'
 
 export default async function EditDeckPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +24,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
   )
 
   // 덱 데이터 + 게임 데이터 병렬 fetch
-  const [deckRes, sinners, identities, egos, skills, passives] = await Promise.all([
+  const [deckRes, sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
     admin
       .schema('limbus')
       .from('decks')
@@ -40,6 +40,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
     getEGOs(),
     getAllSkills(),
     getAllPassives(),
+    getEgoGiftsForNotes(),
   ])
 
   const deck = deckRes.data
@@ -97,6 +98,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
       egos={egos}
       skills={skills}
       passives={passives}
+      egoGifts={egoGifts}
       editMode={{
         deckId: id,
         title: deck.title ?? '',

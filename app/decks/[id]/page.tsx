@@ -4,7 +4,7 @@ import { use, useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
-import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices } from '@/lib/data/sinners'
+import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices, ATK_TYPE_ICON_MAP, type ActivationCondition } from '@/lib/data/sinners'
 import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 
@@ -753,6 +753,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
   const [notesOpen, setNotesOpen] = useState(true)
   const [passivesOpen, setPassivesOpen] = useState(false)
+  const [giftsOpen, setGiftsOpen] = useState(false)
 
   // 북마크
   const [bookmarked, setBookmarked] = useState(false)
@@ -780,13 +781,15 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
   // EGO 기프트 룩업
   const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
+  const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
   useEffect(() => {
     fetch('/api/ego-gifts')
       .then(r => r.ok ? r.json() : [])
-      .then((gifts: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]) => {
+      .then((gifts: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]) => {
         const map: Record<string, NoteEgoGiftEntry> = {}
         for (const g of gifts) map[g.name] = g
         setEgoGiftLookup(map)
+        setAllEgoGifts(gifts)
       })
       .catch(() => {})
   }, [])
@@ -1760,6 +1763,114 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                     )
                   })()}
                 </div>
+
+                {/* ── 활성화된 EGO 기프트 패널 ── */}
+                {(() => {
+                  // 편성된 인격만 (slot_order !== 99)
+                  const formedSlots = filledSlots.filter(s => s.slot_order !== 99)
+                  if (formedSlots.length === 0 || allEgoGifts.length === 0) return null
+
+                  const kwCounts: Record<string, number> = {}
+                  const affCounts: Record<string, number> = {}
+                  for (const slot of formedSlots) {
+                    const id_ = slot.identities!
+                    if (id_.keywords) {
+                      for (const kw of id_.keywords) kwCounts[kw] = (kwCounts[kw] ?? 0) + 1
+                    }
+                    // affiliation은 keywords 안에 포함
+                  }
+
+                  const activated = allEgoGifts.filter(g => {
+                    const c = g.activation_condition
+                    if (!c) return false
+                    let current = 0
+                    if (c.type === 'keyword') {
+                      current = kwCounts[c.keyword!] ?? 0
+                    } else if (c.type === 'multi_keyword') {
+                      for (const kw of c.keywords!) current += kwCounts[kw] ?? 0
+                    } else if (c.type === 'affiliation') {
+                      if (c.affiliations) {
+                        for (const aff of c.affiliations) current += affCounts[aff] ?? 0
+                      } else {
+                        current = affCounts[c.affiliation!] ?? 0
+                      }
+                    }
+                    return current >= c.count
+                  })
+
+                  if (activated.length === 0) return null
+
+                  // 키워드별 그룹
+                  const kwOrder = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통']
+                  const grouped: Record<string, typeof activated> = {}
+                  for (const g of activated) {
+                    ;(grouped[g.keyword] ??= []).push(g)
+                  }
+
+                  return (
+                    <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+                      <button
+                        onClick={() => setGiftsOpen(v => !v)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
+                        style={{ background: giftsOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: giftsOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: giftsOpen ? '#8a7040' : '#3a3050', letterSpacing: '0.12em' }}>
+                            EGO GIFTS
+                          </span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#c8900a' }}>
+                            {activated.length}
+                          </span>
+                        </div>
+                        <svg
+                          width="12" height="12" viewBox="0 0 16 16" fill="none"
+                          style={{ color: giftsOpen ? '#8a7040' : '#2a2035', transition: 'transform 0.2s', transform: giftsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        >
+                          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {giftsOpen && (
+                        <div className="px-4 py-3 flex flex-col gap-2" style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                          {kwOrder.filter(kw => grouped[kw]).map(kw => (
+                            <div key={kw}>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                {getKeywordIconUrl(kw) && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={getKeywordIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
+                                )}
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: '#8a7040', letterSpacing: '0.05em' }}>
+                                  {kw} ({grouped[kw].length})
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                {grouped[kw].map(g => {
+                                  const c = g.activation_condition!
+                                  const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
+                                    : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
+                                    : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
+                                    : `${c.count}인`
+                                  return (
+                                    <div key={g.name} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(200,144,10,0.06)' }}>
+                                      {g.image_url && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={g.image_url} alt="" width={20} height={20} className="rounded" style={{ flexShrink: 0 }} />
+                                      )}
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: '11px', color: '#c8a450', fontWeight: 600 }}>{g.name}</span>
+                                        <span style={{ fontSize: '9px', color: '#5a5040', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
+                                      </div>
+                                      <span style={{ fontSize: '8px', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ON</span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* 선택된 수감자 인격 상세 (첫 번째 카드에 EGO 탭 포함) */}
                 <div className="flex flex-col gap-2">

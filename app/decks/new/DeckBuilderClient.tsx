@@ -870,15 +870,18 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   // 활성 가능한 EGO 기프트 계산
   const activatableGifts = useMemo(() => {
-    const selectedIdentities = Object.values(deckSlots).filter(Boolean) as Identity[]
-    if (selectedIdentities.length === 0) return []
+    // 편성 순서에 포함된 인격만 계산
+    const formedIdentities = formationOrder
+      .map(sid => deckSlots[sid])
+      .filter(Boolean) as Identity[]
+    if (formedIdentities.length === 0) return []
 
     // 키워드별 인격 수 (화상, 출혈 등)
     const kwCounts: Record<string, number> = {}
     // 소속별 인격 수 (검계, 흑운회 등)
     const affCounts: Record<string, number> = {}
 
-    for (const id of selectedIdentities) {
+    for (const id of formedIdentities) {
       if (id.keywords) {
         for (const kw of id.keywords) {
           kwCounts[kw] = (kwCounts[kw] ?? 0) + 1
@@ -930,7 +933,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       return (b.current / b.condition.count) - (a.current / a.condition.count)
     })
     return results
-  }, [deckSlots, egoGifts])
+  }, [deckSlots, egoGifts, formationOrder])
 
   // EGO 기프트 룩업 (NoteRenderer용)
   const egoGiftLookup = useMemo(() => {
