@@ -559,6 +559,7 @@ export async function getAllSkills(): Promise<Skill[]> {
     .order('skill_order')
     .order('variant_order')
     .order('id')
+    .limit(3000)
   if (error) return []
   return data ?? []
 }
@@ -583,6 +584,7 @@ export async function getAllPassives(): Promise<Passive[]> {
     .from('passives')
     .select('*')
     .order('passive_order')
+    .limit(2000)
   if (error) return []
   return data ?? []
 }
