@@ -207,18 +207,18 @@ function HeroGlitchSlider({
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          <Image src={pending.url} alt="" fill unoptimized className="object-cover object-top" />
+          <Image src={pending.url} alt="" fill className="object-cover object-top" />
         </div>
       )}
       {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image src={current.url} alt={current.identity.name_kr} fill unoptimized priority className="object-cover object-top" />
+        <Image src={current.url} alt={current.identity.name_kr} fill priority className="object-cover object-top" />
         {/* RGB Chromatic Aberration 오버레이 (전환 시 GSAP 제어) */}
         <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill unoptimized className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+          <Image src={current.url} alt="" fill className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
         </div>
         <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill unoptimized className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+          <Image src={current.url} alt="" fill className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
         </div>
       </div>
       {/* 그라디언트 오버레이 — 모바일은 더 진하게 */}
@@ -352,14 +352,14 @@ export default function HomeClient({
         {/* 수감자 아이콘 워터마크 (왼쪽 영역) — 모바일 숨김 */}
         {heroIdentity && (
           <div className="absolute pointer-events-none hidden md:block" style={{ left: '8%', top: '50%', transform: 'translateY(-50%)', width: '320px', height: '320px', zIndex: 2, opacity: 0.045 }}>
-            <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill unoptimized style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
+            <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
           </div>
         )}
 
         {/* 텍스트 콘텐츠 */}
         <div className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl" style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh' }}>
           <div className="flex items-center gap-3 md:gap-4 mb-2">
-            <Image src="/images/logo.webp" alt="" width={41} height={60} unoptimized className="w-[30px] md:w-[41px] h-auto" style={{ flexShrink: 0 }} />
+            <Image src="/images/logo.webp" alt="" width={41} height={60} className="w-[30px] md:w-[41px] h-auto" style={{ flexShrink: 0 }} />
             <GlitchText
               text="SAIGO NO DANTE"
               tag="h1"
@@ -670,7 +670,7 @@ export default function HomeClient({
                       }}
                     >
                       {portraitUrl ? (
-                        <Image src={portraitUrl} alt={identity.name_kr} fill unoptimized
+                        <Image src={portraitUrl} alt={identity.name_kr} fill
                           className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                           style={{ objectPosition: '50% 10%' }} />
                       ) : (
@@ -681,7 +681,7 @@ export default function HomeClient({
                         </div>
                       )}
                       <div className="absolute top-2 left-2 z-10">
-                        <Image src={logoUrl} alt="" width={20} height={20} unoptimized style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75 }} />
+                        <Image src={logoUrl} alt="" width={20} height={20} style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75 }} />
                       </div>
                       {rarityIconSrc && (
                         <div className="absolute top-2 right-2 z-10">

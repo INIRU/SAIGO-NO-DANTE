@@ -45,7 +45,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               src={profileUrl}
               alt={sinner.name}
               fill
-              unoptimized
+             
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
               className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
               style={{ objectPosition: '50% 15%' }}
@@ -77,7 +77,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               alt=""
               width={28}
               height={28}
-              unoptimized
+             
               style={{
                 filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))',
                 opacity: 0.85,
@@ -92,7 +92,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               alt={`#${String(sinner.order_num).padStart(2, '0')}`}
               width={389}
               height={1023}
-              unoptimized
+             
               className="w-full h-auto"
             />
           </div>

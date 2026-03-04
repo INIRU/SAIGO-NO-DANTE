@@ -35,7 +35,7 @@ export default function SinBadge({ sin, size = 'md', showLabel = true }: SinBadg
         alt={label}
         width={iconSize}
         height={iconSize}
-        unoptimized
+       
         className="inline-block"
         style={{ filter: `drop-shadow(0 0 3px ${color}80)` }}
       />

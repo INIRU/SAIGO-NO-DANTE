@@ -52,7 +52,7 @@ export default function LoginPage() {
     >
       {/* 로고 */}
       <div className="flex flex-col items-center gap-3 mb-10">
-        <Image src="/images/logo.webp" alt="" width={36} height={52} unoptimized
+        <Image src="/images/logo.webp" alt="" width={36} height={52}
           style={{ filter: 'drop-shadow(0 0 12px rgba(200,144,10,0.5))' }} />
         <h1 className="font-serif text-2xl font-bold tracking-widest" style={{ color: 'var(--gold)' }}>
           최애의 관리자

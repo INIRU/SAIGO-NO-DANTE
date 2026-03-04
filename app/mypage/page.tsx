@@ -254,7 +254,7 @@ export default function MyPage() {
                     alt=""
                     width={80}
                     height={80}
-                    unoptimized
+                   
                     style={{
                       borderRadius: '50%',
                       border: '2px solid var(--gold-dim)',

@@ -232,7 +232,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                     }}
                   >
                     {iconUrl && (
-                      <Image src={iconUrl} alt="" width={14} height={14} unoptimized style={{ flexShrink: 0 }} />
+                      <Image src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
                     )}
                     <span>{kw}</span>
                   </div>

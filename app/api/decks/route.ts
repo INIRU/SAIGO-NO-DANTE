@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
@@ -112,5 +113,6 @@ export async function POST(request: NextRequest) {
     await admin.schema('limbus').from('deck_egos').insert(rows)
   }
 
+  revalidatePath('/decks')
   return NextResponse.json(deck, { status: 201 })
 }

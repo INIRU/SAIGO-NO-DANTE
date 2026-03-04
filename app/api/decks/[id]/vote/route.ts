@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -71,11 +72,15 @@ export async function POST(
       await admin.schema('limbus').from('deck_votes')
         .delete().eq('deck_id', id).eq('user_id', userId)
       await admin.schema('limbus').rpc('decrement_vote', { deck_id: id })
+      revalidatePath('/decks')
+      revalidatePath(`/decks/${id}`)
       return NextResponse.json({ voted: false })
     }
     return NextResponse.json({ error: voteError.message }, { status: 500 })
   }
 
   await admin.schema('limbus').rpc('increment_vote', { deck_id: id })
+  revalidatePath('/decks')
+  revalidatePath(`/decks/${id}`)
   return NextResponse.json({ voted: true })
 }
