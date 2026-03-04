@@ -26,7 +26,7 @@ async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
     .from('tier_list')
     .select(`
       tier, sort_order,
-      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info)
+      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info, release_date)
     `)
     .order('sort_order')
 
@@ -48,7 +48,18 @@ async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
   return tiers
 }
 
+async function getCurrentSeason(): Promise<number> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .schema('limbus')
+    .from('app_config')
+    .select('value')
+    .eq('key', 'current_season')
+    .single()
+  return data?.value?.season ?? 7
+}
+
 export default async function TierListPage() {
-  const tiers = await getTierData()
-  return <TierListClient tiers={tiers} />
+  const [tiers, currentSeason] = await Promise.all([getTierData(), getCurrentSeason()])
+  return <TierListClient tiers={tiers} currentSeason={currentSeason} />
 }

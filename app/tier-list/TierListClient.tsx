@@ -34,12 +34,31 @@ type AcquisitionInfo = {
 
 type TierIdentity = Pick<Identity, 'id' | 'name_kr' | 'rarity' | 'sinner_id' | 'game_id' | 'folder_name'> & {
   acquisition_info?: AcquisitionInfo | null
+  release_date?: string | null
 }
 
-function getAcquisitionBar(info: AcquisitionInfo | null | undefined): { color: string; label: string } | null {
+function getAcquisitionBar(
+  info: AcquisitionInfo | null | undefined,
+  releaseDate: string | null | undefined,
+  currentSeason: number,
+): { color: string; label: string } | null {
   if (!info) return null
   if (info.gacha === 'walpurgis') return { color: '#60c860', label: '발푸르기스 밤' }
-  if (info.gacha === 'seasonal') return { color: '#ffd040', label: '자판기 교환 불가 (추출 가능)' }
+  if (info.gacha === 'seasonal') {
+    const releaseSeason = Number(info.release_season ?? 0)
+    const diff = currentSeason - releaseSeason
+
+    // 같은 시즌 출시 인격: 첫 주는 자판기 교환 불가
+    if (diff === 0 && releaseDate) {
+      const daysSince = Math.floor((Date.now() - new Date(releaseDate).getTime()) / (1000 * 60 * 60 * 24))
+      if (daysSince < 7) return { color: '#ffd040', label: '자판기 교환 불가 (추출 가능)' }
+      return null // 자판기 교환 가능
+    }
+
+    // 짝수 차이: 획득 가능 시즌, 홀수 차이: 획득 불가 시즌
+    if (diff % 2 === 0) return null // 획득 가능
+    return { color: '#ff5050', label: '이번 시즌 획득 불가' }
+  }
   if (info.type === 'event' && info.gacha === 'none') return { color: '#ff5050', label: '이번 시즌 획득 불가' }
   return null
 }
@@ -77,8 +96,10 @@ const QNA = [
 
 export default function TierListClient({
   tiers,
+  currentSeason,
 }: {
   tiers: Record<Tier, TierIdentity[]>
+  currentSeason: number
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [calcOpen, setCalcOpen] = useState(false)
@@ -267,6 +288,7 @@ export default function TierListClient({
                         identity={identity}
                         isSelected={selected.has(identity.id)}
                         onToggle={() => toggleSelect(identity.id)}
+                        currentSeason={currentSeason}
                       />
                     ))}
                   </div>
@@ -461,14 +483,16 @@ function TierCard({
   identity,
   isSelected,
   onToggle,
+  currentSeason,
 }: {
   identity: TierIdentity
   isSelected: boolean
   onToggle: () => void
+  currentSeason: number
 }) {
   const imgUrl = getIdentityInfoUrl(identity as Identity)
   const rarityIcon = RARITY_ICON_MAP[identity.rarity]
-  const bar = getAcquisitionBar(identity.acquisition_info)
+  const bar = getAcquisitionBar(identity.acquisition_info, identity.release_date, currentSeason)
   return (
     <button
       onClick={onToggle}
