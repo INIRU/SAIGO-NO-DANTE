@@ -29,16 +29,31 @@ const RESULT_PRIORITY: Record<ExtractResult, number> = {
   ego: 3, '000': 2, '00': 1, '0': 0,
 }
 
+function cryptoRandom(): number {
+  const buf = new Uint32Array(1)
+  crypto.getRandomValues(buf)
+  return buf[0] / (0xFFFFFFFF + 1)  // 0 ~ 0.999...
+}
+
 function rollSingle(): ExtractResult {
-  const r = Math.random() * 100
+  const r = cryptoRandom() * 100
   if (r < 1.3) return 'ego'
   if (r < 1.3 + 2.9) return '000'
   if (r < 1.3 + 2.9 + 12.8) return '00'
   return '0'
 }
 
+/** 10번째는 1성 없음: EGO 1.3%, 3성 2.9%, 2성 95.8% */
+function rollGuaranteed(): ExtractResult {
+  const r = cryptoRandom() * 100
+  if (r < 1.3) return 'ego'
+  if (r < 1.3 + 2.9) return '000'
+  return '00'
+}
+
 function roll10(): ExtractResult[] {
-  return Array.from({ length: 10 }, () => rollSingle())
+  const first9 = Array.from({ length: 9 }, () => rollSingle())
+  return [...first9, rollGuaranteed()]
 }
 
 /** 10연뽑 중 최고 등급 — 금색 연출 판정용 */
@@ -50,6 +65,7 @@ function bestResult(results: ExtractResult[]): ExtractResult {
 
 export default function ExtractionScene() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [showRates, setShowRates] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'extracting' | 'done'>('idle')
   const [results, setResults] = useState<ExtractResult[] | null>(null)
   const phaseRef = useRef(phase)
@@ -979,11 +995,27 @@ export default function ExtractionScene() {
   const best = results ? bestResult(results) : null
   const isGoldResult = best === '000' || best === 'ego'
 
+  // 결과 요약 카운트
+  const resultCounts = results ? results.reduce((acc, r) => {
+    acc[r] = (acc[r] || 0) + 1
+    return acc
+  }, {} as Record<string, number>) : null
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#030201' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* ── 10연뽑 결과 표시 ── */}
+      {/* ── 배경 딤 (결과 표시 시) ── */}
+      {phase === 'done' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 15,
+          background: 'radial-gradient(ellipse at center, rgba(3,2,1,0.5) 0%, rgba(3,2,1,0.85) 100%)',
+          animation: 'dimFadeIn 0.4s ease-out both',
+          pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* ── 10연뽑 결과 ── */}
       {phase === 'done' && results && (
         <div style={{
           position: 'absolute',
@@ -994,78 +1026,114 @@ export default function ExtractionScene() {
           animation: 'resultFadeIn 0.5s ease-out both',
         }}>
           {/* 결과 헤더 */}
-          <p style={{
-            marginBottom: '1rem',
-            fontSize: '0.95rem',
-            fontFamily: 'var(--font-heading, sans-serif)',
-            fontWeight: 700,
-            color: isGoldResult ? '#ffd040' : '#c08060',
-            textShadow: isGoldResult ? '0 0 16px rgba(255,208,64,0.3)' : 'none',
-          }}>
-            {best === 'ego' ? 'E.G.O 추출 성공!' :
-              best === '000' ? '★★★ 인격 획득!' :
-              best === '00' ? '★★ 인격 획득' : '추출 완료'}
-          </p>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <p style={{
+              fontSize: '1.1rem',
+              fontFamily: 'var(--font-heading, sans-serif)',
+              fontWeight: 700,
+              color: best === 'ego' ? '#ff5050' : isGoldResult ? '#ffd040' : '#c8a060',
+              textShadow: best === 'ego' ? '0 0 24px rgba(255,60,60,0.4), 0 0 48px rgba(255,60,60,0.15)'
+                : isGoldResult ? '0 0 20px rgba(255,208,64,0.3), 0 0 40px rgba(255,208,64,0.1)' : 'none',
+              letterSpacing: '0.08em',
+            }}>
+              {best === 'ego' ? 'E.G.O 추출 성공' :
+                best === '000' ? '★★★ 인격 획득' :
+                best === '00' ? '★★ 인격 획득' : '추출 완료'}
+            </p>
+            {/* 요약 라인 */}
+            <div style={{
+              marginTop: '0.5rem',
+              display: 'flex', gap: '0.75rem', justifyContent: 'center',
+              fontSize: '0.65rem',
+              fontFamily: 'var(--font-body, sans-serif)',
+              color: '#7a6a50',
+            }}>
+              {resultCounts && (['ego', '000', '00', '0'] as ExtractResult[]).map(key => {
+                const count = resultCounts[key]
+                if (!count) return null
+                return (
+                  <span key={key} style={{ color: `${RESULT_COLORS[key]}b0` }}>
+                    {RESULT_LABELS[key]} <span style={{ fontWeight: 600 }}>×{count}</span>
+                  </span>
+                )
+              })}
+            </div>
+          </div>
 
           {/* 결과 카드 그리드 */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: '0.4rem',
-            padding: '0.875rem 1rem',
-            background: 'rgba(13,11,8,0.8)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(200,144,10,0.12)',
-            borderRadius: '6px',
+            gap: '0.5rem',
+            padding: '1.25rem 1.5rem',
+            background: 'rgba(10,8,5,0.85)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(200,144,10,0.1)',
+            borderRadius: '8px',
+            boxShadow: isGoldResult
+              ? '0 0 40px rgba(200,144,10,0.08), inset 0 1px 0 rgba(200,144,10,0.1)'
+              : 'inset 0 1px 0 rgba(255,255,255,0.03)',
           }}>
             {results.map((r, i) => {
               const isSpecial = r === 'ego' || r === '000'
+              const glowColor = RESULT_COLORS[r]
               return (
                 <div
                   key={i}
                   style={{
-                    width: '52px', height: '60px',
+                    width: '56px', height: '68px',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: '3px',
-                    background: r === 'ego' ? 'rgba(255,60,60,0.06)' :
-                      r === '000' ? 'rgba(255,200,40,0.06)' :
-                      r === '00' ? 'rgba(180,180,180,0.04)' : 'rgba(26,21,16,0.6)',
-                    border: `1px solid ${RESULT_COLORS[r]}${isSpecial ? '40' : '18'}`,
-                    borderRadius: '4px',
-                    animation: `resultSlotReveal 0.35s ease-out ${i * 0.04}s both`,
+                    gap: '5px',
+                    position: 'relative',
+                    background: r === 'ego' ? 'rgba(255,60,60,0.05)' :
+                      r === '000' ? 'rgba(255,200,40,0.05)' :
+                      r === '00' ? 'rgba(192,192,192,0.03)' : 'rgba(20,16,10,0.6)',
+                    border: `1px solid ${glowColor}${isSpecial ? '35' : '12'}`,
+                    borderRadius: '5px',
+                    animation: `resultSlotReveal 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 0.05}s both`,
+                    boxShadow: isSpecial ? `0 0 12px ${glowColor}15, inset 0 0 8px ${glowColor}08` : 'none',
+                    overflow: 'hidden',
                   }}
                 >
+                  {/* 상단 빛줄기 (특별 등급) */}
+                  {isSpecial && (
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                      background: `linear-gradient(90deg, transparent, ${glowColor}60, transparent)`,
+                    }} />
+                  )}
                   {RESULT_RARITY_IMG[r] ? (
-                    <div style={{ width: '28px', height: '28px', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: '30px', height: '30px', position: 'relative', flexShrink: 0 }}>
                       <Image
                         src={RESULT_RARITY_IMG[r]!}
                         alt={RESULT_LABELS[r]}
                         fill
-                        sizes="28px"
+                        sizes="30px"
                         style={{
                           objectFit: 'contain',
-                          filter: isSpecial ? `drop-shadow(0 0 4px ${RESULT_COLORS[r]}50)` : 'none',
+                          filter: isSpecial ? `drop-shadow(0 0 6px ${glowColor}50)` : 'none',
                         }}
                       />
                     </div>
                   ) : (
                     <span style={{
-                      fontSize: '0.6rem',
+                      fontSize: '0.7rem',
                       fontFamily: 'var(--font-heading, sans-serif)',
                       fontWeight: 700,
-                      color: RESULT_COLORS[r],
-                      textShadow: `0 0 10px ${RESULT_COLORS[r]}40`,
+                      color: glowColor,
+                      textShadow: `0 0 12px ${glowColor}50`,
                     }}>
                       {RESULT_LABELS[r]}
                     </span>
                   )}
                   <span style={{
                     fontSize: '0.5rem',
-                    color: `${RESULT_COLORS[r]}90`,
+                    color: `${glowColor}80`,
                     fontFamily: 'var(--font-body, sans-serif)',
+                    letterSpacing: '0.02em',
                   }}>
-                    {RESULT_LABELS[r]}
+                    {r === 'ego' ? 'E.G.O' : r === '000' ? '3성' : r === '00' ? '2성' : '1성'}
                   </span>
                 </div>
               )
@@ -1074,54 +1142,224 @@ export default function ExtractionScene() {
         </div>
       )}
 
-      {/* ── 하단 버튼 ── */}
+      {/* ── 하단 버튼 영역 ── */}
       <div style={{
-        position: 'absolute', bottom: '3rem', left: '50%', transform: 'translateX(-50%)',
-        zIndex: 10,
+        position: 'absolute', bottom: '2.5rem', left: '50%', transform: 'translateX(-50%)',
+        zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
       }}>
         <button
           onClick={handleExtract}
           disabled={phase === 'extracting'}
           className="extraction-btn"
           style={{
-            padding: '0.7rem 2.5rem',
+            padding: '0.75rem 3rem',
             background: phase === 'idle'
-              ? 'var(--gold, #c8900a)'
+              ? 'linear-gradient(180deg, #d4a020 0%, #b08010 100%)'
               : phase === 'done'
-              ? 'rgba(200,144,10,0.15)'
+              ? 'rgba(200,144,10,0.1)'
               : 'rgba(26,21,16,0.6)',
             color: phase === 'idle'
               ? '#0d0b08'
               : phase === 'done'
-              ? 'var(--gold, #c8900a)'
+              ? '#c8a050'
               : '#5a4838',
             border: phase === 'idle'
-              ? '1px solid var(--gold, #c8900a)'
-              : `1px solid rgba(200,144,10,${phase === 'done' ? '0.4' : '0.15'})`,
+              ? '1px solid #e0b830'
+              : `1px solid rgba(200,144,10,${phase === 'done' ? '0.3' : '0.12'})`,
             borderRadius: '4px',
-            fontSize: '0.8rem',
+            fontSize: '0.85rem',
             fontFamily: 'var(--font-heading, sans-serif)',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: phase === 'extracting' ? 'default' : 'pointer',
             transition: 'all 0.3s',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
+            boxShadow: phase === 'idle'
+              ? '0 2px 16px rgba(200,144,10,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'
+              : 'none',
+            textShadow: phase === 'idle' ? '0 1px 0 rgba(0,0,0,0.2)' : 'none',
           }}
         >
           {phase === 'idle' ? '10회 추출' : phase === 'extracting' ? '추출 중...' : '다시 추출'}
         </button>
       </div>
 
+      {/* ── 왼쪽 하단 확률 정보 버튼 ── */}
+      <button
+        onClick={() => setShowRates(true)}
+        style={{
+          position: 'absolute', bottom: '2.5rem', left: '2rem', zIndex: 20,
+          display: 'flex', alignItems: 'center', gap: '0.35rem',
+          padding: '0.4rem 0.75rem',
+          background: 'rgba(13,11,8,0.7)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(200,144,10,0.15)',
+          borderRadius: '4px',
+          color: '#8a7a60',
+          fontSize: '0.65rem',
+          fontFamily: 'var(--font-body, sans-serif)',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          letterSpacing: '0.02em',
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.35)'
+          ;(e.currentTarget as HTMLElement).style.color = '#c8a060'
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.15)'
+          ;(e.currentTarget as HTMLElement).style.color = '#8a7a60'
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+        </svg>
+        확률 정보
+      </button>
+
+      {/* ── 확률 정보 모달 ── */}
+      {showRates && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(3,2,1,0.8)',
+            backdropFilter: 'blur(6px)',
+            animation: 'dimFadeIn 0.25s ease-out both',
+          }}
+          onClick={() => setShowRates(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#120e09',
+              border: '1px solid rgba(200,144,10,0.15)',
+              borderRadius: '8px',
+              padding: '1.75rem 2rem',
+              maxWidth: '380px',
+              width: '90%',
+              animation: 'modalPopIn 0.3s ease-out both',
+              position: 'relative',
+            }}
+          >
+            {/* 상단 골드 라인 */}
+            <div style={{ position: 'absolute', top: 0, left: '1rem', right: '1rem', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), transparent)' }} />
+
+            <h3 style={{
+              fontSize: '0.9rem', fontFamily: 'var(--font-heading, sans-serif)',
+              fontWeight: 700, color: '#c8a060', marginBottom: '1.25rem',
+              textAlign: 'center', letterSpacing: '0.08em',
+            }}>
+              추출 확률 정보
+            </h3>
+
+            {/* 기본 확률 테이블 */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(200,144,10,0.12)' }}>
+                  <th style={{ padding: '0.4rem 0', fontSize: '0.6rem', color: '#6a5a40', fontWeight: 600, textAlign: 'left', fontFamily: 'var(--font-body, sans-serif)' }}>등급</th>
+                  <th style={{ padding: '0.4rem 0', fontSize: '0.6rem', color: '#6a5a40', fontWeight: 600, textAlign: 'right', fontFamily: 'var(--font-body, sans-serif)' }}>확률</th>
+                </tr>
+              </thead>
+              <tbody>
+                {([
+                  { key: 'ego' as const, label: 'E.G.O', color: '#ff4444', rate: '1.3%' },
+                  { key: '000' as const, label: '3성', color: '#ffd040', rate: '2.9%' },
+                  { key: '00' as const, label: '2성', color: '#c0c0c0', rate: '12.8%' },
+                  { key: '0' as const, label: '1성', color: '#8a7050', rate: '83.0%' },
+                ]).map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(200,144,10,0.06)' }}>
+                    <td style={{ padding: '0.5rem 0', fontSize: '0.75rem', color: row.color, fontFamily: 'var(--font-heading, sans-serif)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {RESULT_RARITY_IMG[row.key] ? (
+                        <Image src={RESULT_RARITY_IMG[row.key]!} alt={row.label} width={48} height={16} style={{ height: '16px', width: 'auto' }} />
+                      ) : (
+                        <span>{row.label}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.5rem 0', fontSize: '0.75rem', color: '#b0a080', textAlign: 'right', fontFamily: 'var(--font-body, sans-serif)' }}>
+                      {row.rate}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* 10번째 확정 */}
+            <div style={{
+              padding: '0.65rem 0.85rem',
+              background: 'rgba(200,144,10,0.05)',
+              border: '1px solid rgba(200,144,10,0.1)',
+              borderRadius: '5px',
+              marginBottom: '1rem',
+            }}>
+              <p style={{ fontSize: '0.65rem', color: '#a08a60', fontFamily: 'var(--font-body, sans-serif)', lineHeight: 1.6 }}>
+                <span style={{ color: '#c8a060', fontWeight: 600 }}>10회차 확정</span>
+                <br />
+                10번째 추출은 1성 등급이 제외됩니다.
+                <br />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  E.G.O 1.3% ·{' '}
+                  <Image src={RESULT_RARITY_IMG['000']!} alt="3성" width={36} height={12} style={{ height: '12px', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
+                  {' '}2.9% ·{' '}
+                  <Image src={RESULT_RARITY_IMG['00']!} alt="2성" width={36} height={12} style={{ height: '12px', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
+                  {' '}95.8%
+                </span>
+              </p>
+            </div>
+
+            {/* 닫기 */}
+            <button
+              onClick={() => setShowRates(false)}
+              style={{
+                display: 'block', width: '100%',
+                padding: '0.5rem',
+                background: 'rgba(200,144,10,0.08)',
+                border: '1px solid rgba(200,144,10,0.15)',
+                borderRadius: '4px',
+                color: '#a09070',
+                fontSize: '0.7rem',
+                fontFamily: 'var(--font-body, sans-serif)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.15)'
+                ;(e.currentTarget as HTMLElement).style.color = '#c8a060'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.08)'
+                ;(e.currentTarget as HTMLElement).style.color = '#a09070'
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
       <style>{`
+        @keyframes dimFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
         @keyframes resultFadeIn {
-          from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); }
+          from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
           to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
+        @keyframes modalPopIn {
+          from { opacity: 0; transform: scale(0.96) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
         @keyframes resultSlotReveal {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(10px) scale(0.9); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .extraction-btn:not(:disabled):hover {
-          filter: brightness(1.1);
+          filter: brightness(1.12);
+          transform: translateY(-1px);
+        }
+        .extraction-btn:not(:disabled):active {
+          transform: translateY(0);
+          filter: brightness(0.95);
         }
       `}</style>
     </div>
