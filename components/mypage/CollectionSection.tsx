@@ -96,7 +96,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
-  const [showUnowned, setShowUnowned] = useState(persistMode === 'local')
+  const [showUnowned, setShowUnowned] = useState(true)
   const [generating, setGenerating] = useState(false)
   const downloadRef = useRef<HTMLDivElement>(null)
 
@@ -212,12 +212,19 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     }
   }, [data, owned, persistMode])
 
-  // local 모드: dirty 변경 시 debounce 자동 저장
+  // local 모드: dirty 변경 시 debounce 자동 저장 + 로그인 시 DB 동기화
   useEffect(() => {
     if (persistMode !== 'local' || !dirty || !data) return
     const timer = setTimeout(async () => {
       const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
       localStorage.setItem(LOCAL_STORAGE_KEY, code)
+      // 로그인 상태면 DB에도 동기화 (fire-and-forget)
+      fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ collection_code: code }),
+      }).catch(() => {})
       setDirty(false)
       setAutoSaved(true)
       setTimeout(() => setAutoSaved(false), 2000)
