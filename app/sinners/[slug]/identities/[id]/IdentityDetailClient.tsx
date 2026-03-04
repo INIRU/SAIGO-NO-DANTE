@@ -48,9 +48,10 @@ interface Props {
   allEgos: EGO[]
   egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
   canEditGuide?: boolean
+  currentSeason?: number
 }
 
-export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, egoGifts = [], canEditGuide }: Props) {
+export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, egoGifts = [], canEditGuide, currentSeason = 7 }: Props) {
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [showArtTip, setShowArtTip] = useState(false)
@@ -807,6 +808,24 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             </div>
                           </div>
                         )}
+
+                        {/* 자판기 교환 */}
+                        {(info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')) && (() => {
+                          const releaseSeason = Number(info.release_season ?? 0)
+                          const diff = currentSeason - releaseSeason
+                          // diff === 0: 같은 시즌 (초기 기간 후 가능)
+                          // diff === 1: N+1 시즌 → 자판기 불가
+                          // diff >= 2: N+2 이후 → 자판기 가능
+                          const available = diff !== 1
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>자판기</span>
+                              <span style={{ fontSize: '0.625rem', color: available ? '#7bed9f' : '#ff6b6b' }}>
+                                {available ? '교환 가능' : '교환 불가 (다음 시즌부터 가능)'}
+                              </span>
+                            </div>
+                          )
+                        })()}
 
                         {/* 파편 교환 */}
                         {info.fragment_cost && (
