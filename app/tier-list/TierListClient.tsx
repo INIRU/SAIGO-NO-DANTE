@@ -48,18 +48,25 @@ function getAcquisitionBar(
     const releaseSeason = Number(info.release_season ?? 0)
     const diff = currentSeason - releaseSeason
 
-    // 같은 시즌 출시 인격: 첫 주는 자판기 교환 불가
+    // 같은 시즌 출시: 초기 기간(7일)은 추출만, 이후 자판기+추출
     if (diff === 0 && releaseDate) {
       const daysSince = Math.floor((Date.now() - new Date(releaseDate).getTime()) / (1000 * 60 * 60 * 24))
       if (daysSince < 7) return { color: '#ffd040', label: '자판기 교환 불가 (추출 가능)' }
-      return null // 자판기 교환 가능
+      return null // 자판기 + 추출 가능
     }
 
-    // 짝수 차이: 획득 가능 시즌, 홀수 차이: 획득 불가 시즌
-    if (diff % 2 === 0) return null // 획득 가능
-    return { color: '#ff5050', label: '이번 시즌 획득 불가' }
+    // N+1 시즌: 추출만 가능 (자판기 교환 불가)
+    if (diff === 1) return { color: '#ffd040', label: '추출만 가능' }
+
+    // N+2 이후: 자판기 + 추출 모두 가능
+    return null
   }
-  if (info.type === 'event' && info.gacha === 'none') return { color: '#ff5050', label: '이번 시즌 획득 불가' }
+  if (info.type === 'event' && info.gacha === 'none') {
+    const releaseSeason = Number(info.release_season ?? 0)
+    const diff = currentSeason - releaseSeason
+    if (diff === 1) return { color: '#ffd040', label: '자판기 교환 불가' }
+    return null // N+2 이후 자판기 교환 가능
+  }
   return null
 }
 
@@ -191,7 +198,7 @@ export default function TierListClient({
         </span>
         <span className="flex items-center gap-1.5">
           <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ffd040', display: 'inline-block' }} />
-          <span style={{ color: '#8a8a8a' }}>자판기 교환 불가 (추출 가능)</span>
+          <span style={{ color: '#8a8a8a' }}>추출만 가능</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ff5050', display: 'inline-block' }} />

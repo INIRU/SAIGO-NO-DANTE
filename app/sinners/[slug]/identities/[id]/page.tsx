@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import IdentityDetailClient from './IdentityDetailClient'
 
 export default async function IdentityPage({
@@ -17,7 +18,7 @@ export default async function IdentityPage({
   ])
   if (!sinner || !identity) notFound()
 
-  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts] = await Promise.all([
+  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts, currentSeason] = await Promise.all([
     getSkills(identity.id),
     getPassives(identity.id),
     getServerSession(authOptions),
@@ -25,6 +26,13 @@ export default async function IdentityPage({
     getIdentities(),
     getEGOs(),
     getEgoGiftsForNotes(),
+    (async () => {
+      const supabase = await createClient()
+      const { data } = await supabase
+        .schema('limbus').from('app_config').select('value')
+        .eq('key', 'current_season').single()
+      return data?.value?.season ?? 7
+    })(),
   ])
 
   // 운영법 조회 (여러 개)
@@ -67,6 +75,7 @@ export default async function IdentityPage({
       allEgos={allEgos}
       egoGifts={egoGifts}
       canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
+      currentSeason={currentSeason}
     />
   )
 }
