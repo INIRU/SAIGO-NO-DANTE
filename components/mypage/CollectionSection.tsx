@@ -92,6 +92,9 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const [autoSaved, setAutoSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [showUnowned, setShowUnowned] = useState(persistMode === 'local')
   const [generating, setGenerating] = useState(false)
@@ -178,6 +181,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const saveCollection = useCallback(async () => {
     if (!data) return
     setSaving(true)
+    setSaveError(null)
     try {
       const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
       if (persistMode === 'local') {
@@ -187,12 +191,22 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         const res = await fetch('/api/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ collection_code: code }),
         })
-        if (res.ok) setDirty(false)
+        if (res.ok) {
+          setDirty(false)
+          setSaved(true)
+          setTimeout(() => setSaved(false), 2000)
+        } else {
+          const err = await res.json().catch(() => ({}))
+          setSaveError(err.error ?? `저장 실패 (${res.status})`)
+          setTimeout(() => setSaveError(null), 4000)
+        }
       }
-    } catch {
-      // 저장 실패 무시
+    } catch (e) {
+      setSaveError('네트워크 오류로 저장에 실패했습니다.')
+      setTimeout(() => setSaveError(null), 4000)
     } finally {
       setSaving(false)
     }
@@ -205,6 +219,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
       const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
       localStorage.setItem(LOCAL_STORAGE_KEY, code)
       setDirty(false)
+      setAutoSaved(true)
+      setTimeout(() => setAutoSaved(false), 2000)
     }, 500)
     return () => clearTimeout(timer)
   }, [persistMode, dirty, data, owned])
@@ -497,7 +513,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
           {/* 공유 / 다운로드 */}
           <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-            {dirty && (
+            {/* DB 모드: 수동 저장 버튼 + 성공/에러 표시 */}
+            {persistMode === 'db' && dirty && (
               <button
                 onClick={saveCollection}
                 disabled={saving}
@@ -513,6 +530,24 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                 <Check size={12} />
                 {saving ? '저장 중...' : '저장'}
               </button>
+            )}
+            {persistMode === 'db' && saved && (
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#50b878', fontFamily: 'var(--font-heading)' }}>
+                <Check size={12} />
+                저장 완료
+              </span>
+            )}
+            {saveError && (
+              <span className="text-xs" style={{ color: '#d06060', fontFamily: 'var(--font-heading)' }}>
+                {saveError}
+              </span>
+            )}
+            {/* Local 모드: 자동 저장 표시 */}
+            {persistMode === 'local' && autoSaved && (
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#50b878', fontFamily: 'var(--font-heading)' }}>
+                <Check size={12} />
+                자동 저장됨
+              </span>
             )}
             <button
               onClick={copyShareLink}
