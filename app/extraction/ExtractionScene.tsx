@@ -1025,55 +1025,89 @@ export default function ExtractionScene() {
           zIndex: 20,
           animation: 'resultFadeIn 0.5s ease-out both',
         }}>
-          {/* 결과 헤더 */}
-          <div style={{ marginBottom: '1.25rem' }}>
+          {/* 결과 통합 카드 */}
+          <div style={{
+            padding: '1.5rem 1.75rem',
+            background: 'linear-gradient(180deg, rgba(18,14,9,0.92) 0%, rgba(10,8,5,0.95) 100%)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(200,144,10,0.12)',
+            borderRadius: '10px',
+            boxShadow: isGoldResult
+              ? '0 0 60px rgba(200,144,10,0.1), 0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(200,144,10,0.12)'
+              : '0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* 상단 장식 라인 */}
+            <div style={{
+              position: 'absolute', top: 0, left: '2rem', right: '2rem', height: '1px',
+              background: best === 'ego'
+                ? 'linear-gradient(90deg, transparent, rgba(255,80,80,0.4), transparent)'
+                : isGoldResult
+                ? 'linear-gradient(90deg, transparent, rgba(255,208,64,0.35), transparent)'
+                : 'linear-gradient(90deg, transparent, rgba(200,144,10,0.2), transparent)',
+            }} />
+
+            {/* 헤더 */}
             <p style={{
-              fontSize: '1.1rem',
+              fontSize: '1.2rem',
               fontFamily: 'var(--font-heading, sans-serif)',
               fontWeight: 700,
-              color: best === 'ego' ? '#ff5050' : isGoldResult ? '#ffd040' : '#c8a060',
-              textShadow: best === 'ego' ? '0 0 24px rgba(255,60,60,0.4), 0 0 48px rgba(255,60,60,0.15)'
-                : isGoldResult ? '0 0 20px rgba(255,208,64,0.3), 0 0 40px rgba(255,208,64,0.1)' : 'none',
-              letterSpacing: '0.08em',
+              color: best === 'ego' ? '#ff6060' : isGoldResult ? '#ffe070' : '#e0c890',
+              textShadow: best === 'ego'
+                ? '0 0 24px rgba(255,60,60,0.4)'
+                : isGoldResult
+                ? '0 0 20px rgba(255,224,100,0.3)'
+                : 'none',
+              letterSpacing: '0.1em',
+              marginBottom: '0.6rem',
             }}>
-              {best === 'ego' ? 'E.G.O 추출 성공' :
-                best === '000' ? '★★★ 인격 획득' :
-                best === '00' ? '★★ 인격 획득' : '추출 완료'}
+              {best === 'ego' ? 'E.G.O 추출 성공' : '추출 완료'}
             </p>
+
             {/* 요약 라인 */}
             <div style={{
-              marginTop: '0.5rem',
-              display: 'flex', gap: '0.75rem', justifyContent: 'center',
-              fontSize: '0.65rem',
+              display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center',
+              fontSize: '0.75rem',
               fontFamily: 'var(--font-body, sans-serif)',
-              color: '#7a6a50',
+              marginBottom: '1rem',
             }}>
               {resultCounts && (['ego', '000', '00', '0'] as ExtractResult[]).map(key => {
                 const count = resultCounts[key]
                 if (!count) return null
                 return (
-                  <span key={key} style={{ color: `${RESULT_COLORS[key]}b0` }}>
-                    {RESULT_LABELS[key]} <span style={{ fontWeight: 600 }}>×{count}</span>
+                  <span key={key} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                    color: RESULT_COLORS[key],
+                    padding: '0.2rem 0.5rem',
+                    background: `${RESULT_COLORS[key]}0a`,
+                    borderRadius: '4px',
+                    border: `1px solid ${RESULT_COLORS[key]}15`,
+                  }}>
+                    {RESULT_RARITY_IMG[key] ? (
+                      <Image src={RESULT_RARITY_IMG[key]!} alt="" width={32} height={12} style={{ height: '12px', width: 'auto' }} />
+                    ) : (
+                      <span style={{ fontWeight: 700, fontSize: '0.7rem' }}>E.G.O</span>
+                    )}
+                    <span style={{ fontWeight: 700 }}>×{count}</span>
                   </span>
                 )
               })}
             </div>
-          </div>
 
-          {/* 결과 카드 그리드 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: '0.5rem',
-            padding: '1.25rem 1.5rem',
-            background: 'rgba(10,8,5,0.85)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(200,144,10,0.1)',
-            borderRadius: '8px',
-            boxShadow: isGoldResult
-              ? '0 0 40px rgba(200,144,10,0.08), inset 0 1px 0 rgba(200,144,10,0.1)'
-              : 'inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}>
+            {/* 구분선 */}
+            <div style={{
+              height: '1px', marginBottom: '1rem',
+              background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.12), transparent)',
+            }} />
+
+            {/* 결과 카드 그리드 */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '0.6rem',
+              justifyItems: 'center',
+            }}>
             {results.map((r, i) => {
               const isSpecial = r === 'ego' || r === '000'
               const glowColor = RESULT_COLORS[r]
@@ -1081,63 +1115,72 @@ export default function ExtractionScene() {
                 <div
                   key={i}
                   style={{
-                    width: '56px', height: '68px',
+                    width: '64px', height: '80px',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: '5px',
+                    gap: '6px',
                     position: 'relative',
-                    background: r === 'ego' ? 'rgba(255,60,60,0.05)' :
-                      r === '000' ? 'rgba(255,200,40,0.05)' :
-                      r === '00' ? 'rgba(192,192,192,0.03)' : 'rgba(20,16,10,0.6)',
-                    border: `1px solid ${glowColor}${isSpecial ? '35' : '12'}`,
-                    borderRadius: '5px',
-                    animation: `resultSlotReveal 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 0.05}s both`,
-                    boxShadow: isSpecial ? `0 0 12px ${glowColor}15, inset 0 0 8px ${glowColor}08` : 'none',
+                    background: r === 'ego'
+                      ? 'linear-gradient(180deg, rgba(255,60,60,0.08) 0%, rgba(255,40,40,0.02) 100%)'
+                      : r === '000'
+                      ? 'linear-gradient(180deg, rgba(255,208,64,0.08) 0%, rgba(255,200,40,0.02) 100%)'
+                      : r === '00'
+                      ? 'linear-gradient(180deg, rgba(192,192,192,0.06) 0%, rgba(160,160,160,0.02) 100%)'
+                      : 'rgba(20,16,10,0.5)',
+                    border: `1px solid ${glowColor}${isSpecial ? '40' : '18'}`,
+                    borderRadius: '6px',
+                    animation: `resultSlotReveal 0.45s cubic-bezier(0.16,1,0.3,1) ${i * 0.06}s both`,
+                    boxShadow: isSpecial
+                      ? `0 0 20px ${glowColor}18, 0 2px 8px rgba(0,0,0,0.3), inset 0 0 12px ${glowColor}08`
+                      : '0 2px 6px rgba(0,0,0,0.2)',
                     overflow: 'hidden',
                   }}
                 >
-                  {/* 상단 빛줄기 (특별 등급) */}
+                  {/* 상단 빛줄기 */}
                   {isSpecial && (
                     <div style={{
                       position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                      background: `linear-gradient(90deg, transparent, ${glowColor}60, transparent)`,
+                      background: `linear-gradient(90deg, transparent, ${glowColor}70, transparent)`,
                     }} />
                   )}
                   {RESULT_RARITY_IMG[r] ? (
-                    <div style={{ width: '30px', height: '30px', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: '36px', height: '36px', position: 'relative', flexShrink: 0 }}>
                       <Image
                         src={RESULT_RARITY_IMG[r]!}
-                        alt={RESULT_LABELS[r]}
+                        alt={r === '000' ? '3성' : r === '00' ? '2성' : '1성'}
                         fill
-                        sizes="30px"
+                        sizes="36px"
                         style={{
                           objectFit: 'contain',
-                          filter: isSpecial ? `drop-shadow(0 0 6px ${glowColor}50)` : 'none',
+                          filter: isSpecial ? `drop-shadow(0 0 8px ${glowColor}60)` : 'none',
                         }}
                       />
                     </div>
                   ) : (
                     <span style={{
-                      fontSize: '0.7rem',
+                      fontSize: '0.85rem',
                       fontFamily: 'var(--font-heading, sans-serif)',
                       fontWeight: 700,
                       color: glowColor,
-                      textShadow: `0 0 12px ${glowColor}50`,
+                      textShadow: `0 0 16px ${glowColor}60, 0 0 32px ${glowColor}20`,
                     }}>
-                      {RESULT_LABELS[r]}
+                      E.G.O
                     </span>
                   )}
                   <span style={{
-                    fontSize: '0.5rem',
-                    color: `${glowColor}80`,
+                    fontSize: '0.55rem',
+                    color: `${glowColor}`,
+                    opacity: 0.7,
                     fontFamily: 'var(--font-body, sans-serif)',
-                    letterSpacing: '0.02em',
+                    letterSpacing: '0.03em',
+                    fontWeight: 500,
                   }}>
                     {r === 'ego' ? 'E.G.O' : r === '000' ? '3성' : r === '00' ? '2성' : '1성'}
                   </span>
                 </div>
               )
             })}
+            </div>
           </div>
         </div>
       )}
@@ -1231,76 +1274,118 @@ export default function ExtractionScene() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#120e09',
-              border: '1px solid rgba(200,144,10,0.15)',
-              borderRadius: '8px',
-              padding: '1.75rem 2rem',
-              maxWidth: '380px',
+              background: 'linear-gradient(180deg, #16120c 0%, #0e0b07 100%)',
+              border: '1px solid rgba(200,144,10,0.18)',
+              borderRadius: '10px',
+              padding: '2rem 2.25rem',
+              maxWidth: '400px',
               width: '90%',
               animation: 'modalPopIn 0.3s ease-out both',
               position: 'relative',
+              boxShadow: '0 8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(200,144,10,0.05), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}
           >
             {/* 상단 골드 라인 */}
-            <div style={{ position: 'absolute', top: 0, left: '1rem', right: '1rem', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), transparent)' }} />
+            <div style={{ position: 'absolute', top: 0, left: '1.5rem', right: '1.5rem', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.4), transparent)' }} />
+            {/* 하단 골드 라인 */}
+            <div style={{ position: 'absolute', bottom: 0, left: '2rem', right: '2rem', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.15), transparent)' }} />
 
             <h3 style={{
-              fontSize: '0.9rem', fontFamily: 'var(--font-heading, sans-serif)',
-              fontWeight: 700, color: '#c8a060', marginBottom: '1.25rem',
-              textAlign: 'center', letterSpacing: '0.08em',
+              fontSize: '1rem', fontFamily: 'var(--font-heading, sans-serif)',
+              fontWeight: 700, color: '#e0c080', marginBottom: '1.5rem',
+              textAlign: 'center', letterSpacing: '0.1em',
+              textShadow: '0 0 20px rgba(200,160,80,0.15)',
             }}>
               추출 확률 정보
             </h3>
 
-            {/* 기본 확률 테이블 */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(200,144,10,0.12)' }}>
-                  <th style={{ padding: '0.4rem 0', fontSize: '0.6rem', color: '#6a5a40', fontWeight: 600, textAlign: 'left', fontFamily: 'var(--font-body, sans-serif)' }}>등급</th>
-                  <th style={{ padding: '0.4rem 0', fontSize: '0.6rem', color: '#6a5a40', fontWeight: 600, textAlign: 'right', fontFamily: 'var(--font-body, sans-serif)' }}>확률</th>
-                </tr>
-              </thead>
-              <tbody>
-                {([
-                  { key: 'ego' as const, label: 'E.G.O', color: '#ff4444', rate: '1.3%' },
-                  { key: '000' as const, label: '3성', color: '#ffd040', rate: '2.9%' },
-                  { key: '00' as const, label: '2성', color: '#c0c0c0', rate: '12.8%' },
-                  { key: '0' as const, label: '1성', color: '#8a7050', rate: '83.0%' },
-                ]).map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(200,144,10,0.06)' }}>
-                    <td style={{ padding: '0.5rem 0', fontSize: '0.75rem', color: row.color, fontFamily: 'var(--font-heading, sans-serif)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      {RESULT_RARITY_IMG[row.key] ? (
-                        <Image src={RESULT_RARITY_IMG[row.key]!} alt={row.label} width={48} height={16} style={{ height: '16px', width: 'auto' }} />
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.5rem 0', fontSize: '0.75rem', color: '#b0a080', textAlign: 'right', fontFamily: 'var(--font-body, sans-serif)' }}>
+            {/* 기본 확률 */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '0.15rem',
+              marginBottom: '1.25rem',
+            }}>
+              {([
+                { key: 'ego' as const, label: 'E.G.O', color: '#ff5555', rate: '1.3%' },
+                { key: '000' as const, label: '3성', color: '#ffd040', rate: '2.9%' },
+                { key: '00' as const, label: '2성', color: '#c8c8c8', rate: '12.8%' },
+                { key: '0' as const, label: '1성', color: '#9a8a6a', rate: '83.0%' },
+              ]).map((row, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.6rem 0.85rem',
+                    borderRadius: '6px',
+                    background: i === 0 ? 'rgba(255,60,60,0.04)' :
+                      i === 1 ? 'rgba(255,208,64,0.04)' :
+                      i % 2 === 0 ? 'rgba(200,144,10,0.03)' : 'transparent',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {RESULT_RARITY_IMG[row.key] ? (
+                      <Image src={RESULT_RARITY_IMG[row.key]!} alt={row.label} width={52} height={18} style={{ height: '18px', width: 'auto' }} />
+                    ) : (
+                      <span style={{
+                        fontSize: '0.8rem', fontFamily: 'var(--font-heading, sans-serif)',
+                        fontWeight: 700, color: row.color,
+                        textShadow: `0 0 10px ${row.color}40`,
+                      }}>
+                        {row.label}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {/* 확률 바 */}
+                    <div style={{
+                      width: '60px', height: '3px',
+                      background: 'rgba(200,144,10,0.08)',
+                      borderRadius: '2px',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${Math.min(parseFloat(row.rate), 100)}%`,
+                        height: '100%',
+                        background: row.color,
+                        borderRadius: '2px',
+                        opacity: 0.6,
+                      }} />
+                    </div>
+                    <span style={{
+                      fontSize: '0.8rem', color: '#d0c0a0',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontWeight: 600, minWidth: '3rem', textAlign: 'right',
+                    }}>
                       {row.rate}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 구분선 */}
+            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.12), transparent)', marginBottom: '1rem' }} />
 
             {/* 10번째 확정 */}
             <div style={{
-              padding: '0.65rem 0.85rem',
-              background: 'rgba(200,144,10,0.05)',
+              padding: '0.75rem 1rem',
+              background: 'rgba(200,144,10,0.04)',
               border: '1px solid rgba(200,144,10,0.1)',
-              borderRadius: '5px',
-              marginBottom: '1rem',
+              borderRadius: '6px',
+              marginBottom: '1.25rem',
             }}>
-              <p style={{ fontSize: '0.65rem', color: '#a08a60', fontFamily: 'var(--font-body, sans-serif)', lineHeight: 1.6 }}>
-                <span style={{ color: '#c8a060', fontWeight: 600 }}>10회차 확정</span>
+              <p style={{
+                fontSize: '0.7rem', color: '#b09a70',
+                fontFamily: 'var(--font-body, sans-serif)', lineHeight: 1.7,
+              }}>
+                <span style={{ color: '#e0c080', fontWeight: 700, fontSize: '0.72rem' }}>10회차 보장</span>
                 <br />
-                10번째 추출은 1성 등급이 제외됩니다.
+                10번째 추출 시 1성 등급이 제외됩니다.
                 <br />
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                  E.G.O 1.3% ·{' '}
-                  <Image src={RESULT_RARITY_IMG['000']!} alt="3성" width={36} height={12} style={{ height: '12px', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                  <span style={{ color: '#ff5555', fontWeight: 600 }}>E.G.O</span> 1.3% ·{' '}
+                  <Image src={RESULT_RARITY_IMG['000']!} alt="3성" width={36} height={12} style={{ height: '12px', width: 'auto', verticalAlign: 'middle' }} />
                   {' '}2.9% ·{' '}
-                  <Image src={RESULT_RARITY_IMG['00']!} alt="2성" width={36} height={12} style={{ height: '12px', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
+                  <Image src={RESULT_RARITY_IMG['00']!} alt="2성" width={36} height={12} style={{ height: '12px', width: 'auto', verticalAlign: 'middle' }} />
                   {' '}95.8%
                 </span>
               </p>
@@ -1311,23 +1396,26 @@ export default function ExtractionScene() {
               onClick={() => setShowRates(false)}
               style={{
                 display: 'block', width: '100%',
-                padding: '0.5rem',
-                background: 'rgba(200,144,10,0.08)',
-                border: '1px solid rgba(200,144,10,0.15)',
-                borderRadius: '4px',
+                padding: '0.55rem',
+                background: 'rgba(200,144,10,0.06)',
+                border: '1px solid rgba(200,144,10,0.12)',
+                borderRadius: '5px',
                 color: '#a09070',
-                fontSize: '0.7rem',
+                fontSize: '0.72rem',
                 fontFamily: 'var(--font-body, sans-serif)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                letterSpacing: '0.03em',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.15)'
-                ;(e.currentTarget as HTMLElement).style.color = '#c8a060'
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.12)'
+                ;(e.currentTarget as HTMLElement).style.color = '#e0c080'
+                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.25)'
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.08)'
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.06)'
                 ;(e.currentTarget as HTMLElement).style.color = '#a09070'
+                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.12)'
               }}
             >
               닫기
