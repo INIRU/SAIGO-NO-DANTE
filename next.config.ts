@@ -9,9 +9,20 @@ const nextConfig: NextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
+    qualities: [25, 50, 75],
   },
   async headers() {
     return [
+      {
+        // Supabase Storage 이미지 — 1년 캐시 (immutable)
+        source: '/_next/image',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

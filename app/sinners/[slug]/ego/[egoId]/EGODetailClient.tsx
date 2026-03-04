@@ -56,7 +56,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
         <div className="flex items-center gap-2">
           {/* 공격 타입 아이콘 */}
           {ATK_TYPE_ICON_MAP[skill.atkType] && (
-            <Image src={ATK_TYPE_ICON_MAP[skill.atkType]} alt="" width={16} height={16} unoptimized />
+            <Image src={ATK_TYPE_ICON_MAP[skill.atkType]} alt="" width={16} height={16} />
           )}
           <span className="font-semibold" style={{ color: accentColor, fontSize: '0.875rem' }}>
             {skill.name}
@@ -106,7 +106,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
         </div>
         {/* 죄악 자원 */}
         {resourceSin && (
-          <Image src={getSinIconUrl(resourceSin)} alt={skill.resource} width={20} height={20} unoptimized style={{ filter: `drop-shadow(0 0 3px ${resourceColor}70)` }} />
+          <Image src={getSinIconUrl(resourceSin)} alt={skill.resource} width={20} height={20} style={{ filter: `drop-shadow(0 0 3px ${resourceColor}70)` }} />
         )}
       </div>
 
@@ -119,7 +119,7 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
             alt={unbreakableCoins.has(i) ? '파괴 불가 코인' : '코인'}
             width={18}
             height={18}
-            unoptimized
+           
             style={{ filter: `drop-shadow(0 0 2px ${accentColor}60)` }}
           />
         ))}
@@ -212,7 +212,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
       {/* ─── 히어로 배너 ─── */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604' }}>
         {ego.image_url && (
-          <Image src={ego.image_url} alt="" fill unoptimized
+          <Image src={ego.image_url} alt="" fill
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
           />
         )}
@@ -254,7 +254,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                 boxShadow: `0 0 0 1px ${sinColor}28, 0 0 40px ${sinColor}40, 0 0 80px ${sinColor}18`,
               }}>
                 {ego.image_url ? (
-                  <Image src={ego.image_url} alt={ego.name_kr || ego.name} fill unoptimized className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                  <Image src={ego.image_url} alt={ego.name_kr || ego.name} fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="font-mono text-3xl" style={{ color: gradeColor }}>{ego.grade?.[0]}</span>
@@ -266,7 +266,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               <div className="flex items-center gap-2" style={{ padding: '5px 14px', background: `${gradeColor}12`, border: `1px solid ${gradeColor}35`, borderRadius: '4px' }}>
                 <GradeImg grade={ego.grade} height={20} />
                 {ego.sin_affinity && (
-                  <Image src={getSinIconUrl(ego.sin_affinity as SinType)} alt="" width={20} height={20} unoptimized
+                  <Image src={getSinIconUrl(ego.sin_affinity as SinType)} alt="" width={20} height={20}
                     style={{ opacity: 0.75, marginLeft: '6px' }} />
                 )}
               </div>
@@ -285,7 +285,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       const sc = SIN_COLORS[sin]
                       return (
                         <div key={sin} className="flex items-center gap-1.5">
-                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18} unoptimized
+                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18}
                             style={{ filter: `drop-shadow(0 0 2px ${sc}60)`, flexShrink: 0 }} />
                           <span className="font-mono" style={{ fontSize: '0.625rem', color: rs.color, fontWeight: 600 }}>
                             {res}
@@ -309,7 +309,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       return (
                         <div key={sin} className="flex items-center gap-1.5"
                           style={{ padding: '4px 10px', background: `${sc}12`, border: `1px solid ${sc}40`, borderRadius: '4px' }}>
-                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18} unoptimized
+                          <Image src={getSinIconUrl(sin)} alt="" width={18} height={18}
                             style={{ filter: `drop-shadow(0 0 3px ${sc}60)` }} />
                           <span className="font-mono font-bold" style={{ fontSize: '0.75rem', color: sc }}>{amount}</span>
                         </div>

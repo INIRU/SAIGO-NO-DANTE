@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -50,5 +51,6 @@ export async function POST(request: Request) {
   const userId = await findOrCreateSupabaseUser(admin, session.user!.email!, session.user!.name, session.user!.image)
   writeAuditLog({ actorId: userId, action: 'announcement_create', targetType: 'announcement', targetId: data.id, details: { title } })
 
+  revalidatePath('/')
   return NextResponse.json(data, { status: 201 })
 }

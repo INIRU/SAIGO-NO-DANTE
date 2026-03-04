@@ -414,7 +414,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 alt=""
                 width={28}
                 height={28}
-                unoptimized
+               
                 style={{ filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
               />
               <div className="flex-1 min-w-0">
@@ -475,7 +475,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     alt="인격 정보"
                     width={480}
                     height={320}
-                    unoptimized
+                   
                     className="w-full h-auto max-w-[320px] mx-auto"
                     onError={() => {
                       if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
@@ -617,7 +617,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                       alt=""
                       width={identity.rarity === '1성' ? 16 : identity.rarity === '2성' ? 28 : 40}
                       height={16}
-                      unoptimized
+                     
                       style={{ filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
                     />
                   )}
@@ -666,7 +666,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           alt=""
                           width={14}
                           height={14}
-                          unoptimized
+                         
                         />
                         <span style={{ color: resColor, fontSize: '0.6875rem', fontWeight: 600 }}>
                           {res}
@@ -853,7 +853,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
                   >
                     <div className="flex justify-center mb-1">
-                      <Image src={iconUrl} alt="" width={20} height={20} unoptimized />
+                      <Image src={iconUrl} alt="" width={20} height={20} />
                     </div>
                     <div
                       className="font-mono font-bold"
@@ -1280,7 +1280,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                   alt=""
                                   width={28}
                                   height={28}
-                                  unoptimized
+                                 
                                   className="rounded shrink-0"
                                   style={{ border: `1px solid ${skillSinColor}40` }}
                                   onError={skillIconFallback ? (e) => { (e.target as HTMLImageElement).src = skillIconFallback } : undefined}
@@ -1309,7 +1309,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                     alt=""
                                     width={14}
                                     height={14}
-                                    unoptimized
+                                   
                                   />
                                 )}
                                 <span style={{ color: '#666', fontSize: '0.6875rem' }}>
@@ -1391,7 +1391,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                 alt={isUnbreakable ? '파괴 불가 코인' : '코인'}
                                 width={18}
                                 height={18}
-                                unoptimized
+                               
                                 style={{ filter: `drop-shadow(0 0 2px ${skillSinColor}60)` }}
                               />
                             )
@@ -1473,7 +1473,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             alt=""
                             width={20}
                             height={20}
-                            unoptimized
+                           
                             style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st]}60)` }}
                           />
                         ))}
@@ -1583,7 +1583,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           alt=""
                           width={18}
                           height={18}
-                          unoptimized
+                         
                           style={{ filter: 'drop-shadow(0 0 3px rgba(180,50,50,0.5))' }}
                         />
                         <span className="text-xs font-semibold px-2 py-0.5 rounded"

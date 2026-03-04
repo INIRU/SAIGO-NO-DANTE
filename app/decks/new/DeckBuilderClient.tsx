@@ -97,10 +97,10 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
       }}
     >
       {profileUrl && (
-        <Image src={profileUrl} alt={sinner.name} fill unoptimized className="object-cover object-top" style={{ opacity: 0.18 }} />
+        <Image src={profileUrl} alt={sinner.name} fill className="object-cover object-top" style={{ opacity: 0.18 }} />
       )}
       <div className="absolute" style={{ top: 0, right: 0, width: '36%', opacity: 0.2, pointerEvents: 'none' }}>
-        <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} unoptimized className="w-full h-auto" />
+        <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
       </div>
       {children}
       <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '20px' }}>
@@ -152,7 +152,7 @@ function IdentityTab({
             ) : (
               <SinnerGhostCard sinner={sinner}>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} unoptimized style={{ opacity: 0.35 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
                 </div>
               </SinnerGhostCard>
             )}
@@ -186,7 +186,7 @@ function EgoTab({
           }}>
             {/* 수감자 헤더 */}
             <div className="flex items-center gap-1.5 px-2 py-1.5" style={{ borderBottom: '1px solid #1a1208' }}>
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} unoptimized style={{ opacity: 0.5 }} />
+              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.5 }} />
               <span className="font-serif font-bold truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
             {/* 등급 세로 목록 */}
@@ -220,6 +220,7 @@ function EgoTab({
                         alt={grade}
                         width={22}
                         height={11}
+                       
                         unoptimized
                         style={{ height: '11px', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}
                       />
@@ -272,7 +273,7 @@ function OrderTab({
             ) : (
               <SinnerGhostCard sinner={sinner}>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} unoptimized style={{ opacity: 0.35 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
                 </div>
               </SinnerGhostCard>
             )}
@@ -338,7 +339,7 @@ function SkillsetTab({
             <div key={sinner.id}>
               <SinnerGhostCard sinner={sinner}>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} unoptimized style={{ opacity: 0.35 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
                 </div>
               </SinnerGhostCard>
             </div>
@@ -382,7 +383,7 @@ function SkillsetTab({
                         alt={skill.name}
                         width={16}
                         height={16}
-                        unoptimized
+                       
                         style={{ borderRadius: '2px', flexShrink: 0 }}
                       />
                     ) : (
@@ -684,7 +685,7 @@ function PassiveBadge({ p, deckSinCounts }: {
       {sinTypeList.length > 0 ? (
         <div className="flex items-center gap-0.5">
           {sinTypeList.map((st, i) => (
-            <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={16} height={16} unoptimized />
+            <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={16} height={16} />
           ))}
           <span style={{ color: sinColor, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
             {currentCount}/{requiredCount}
@@ -1404,7 +1405,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 if (total === 0) return null
                 return (
                   <div key={sin} className="flex items-center gap-1">
-                    <Image src={SIN_ICON_MAP[sin]} alt={SIN_LABELS_KR[sin]} width={18} height={18} unoptimized />
+                    <Image src={SIN_ICON_MAP[sin]} alt={SIN_LABELS_KR[sin]} width={18} height={18} />
                     <span style={{ color: SIN_COLORS[sin], fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{total}</span>
                   </div>
                 )
@@ -1437,7 +1438,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       {/* 일러스트 */}
                       <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06', border: `1px solid ${sc}40` }}>
                         {ego.image_url
-                          ? <Image src={ego.image_url} alt="" fill unoptimized className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                          ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
                           : <div className="w-full h-full flex items-center justify-center"><span style={{ color: gc, fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>{ego.grade?.[0]}</span></div>
                         }
                       </div>
@@ -1454,7 +1455,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       {/* 수감자 + EGO명 */}
                       <div style={{ minWidth: '140px', flexShrink: 0 }}>
                         <div className="flex items-center gap-1 mb-0.5">
-                          <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} unoptimized style={{ opacity: 0.4 }} />
+                          <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ opacity: 0.4 }} />
                           <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                         </div>
                         <p style={{ color: sc, fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{ego.name_kr || ego.name}</p>
@@ -1463,7 +1464,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       {/* 공격 유형 */}
                       <div style={{ flexShrink: 0, width: '24px' }}>
                         {atkType && ATK_TYPE_ICON_MAP[atkType] && (
-                          <Image src={ATK_TYPE_ICON_MAP[atkType]} alt={atkType} title={atkType} width={18} height={18} unoptimized style={{ opacity: 0.85 }} />
+                          <Image src={ATK_TYPE_ICON_MAP[atkType]} alt={atkType} title={atkType} width={18} height={18} style={{ opacity: 0.85 }} />
                         )}
                       </div>
 
@@ -1473,7 +1474,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                           const cost = ego.cost?.[i] ?? 0
                           return (
                             <div key={sin} className="flex items-center gap-0.5" style={{ opacity: cost === 0 ? 0.15 : 1, minWidth: '28px' }}>
-                              <Image src={SIN_ICON_MAP[sin]} alt="" width={14} height={14} unoptimized />
+                              <Image src={SIN_ICON_MAP[sin]} alt="" width={14} height={14} />
                               <span style={{ color: SIN_COLORS[sin], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{cost}</span>
                             </div>
                           )
@@ -1497,7 +1498,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 if (count === 0) return null
                 return (
                   <div key={type} className="flex items-center gap-1">
-                    <Image src={ATK_TYPE_ICON_MAP[type]} alt={type} width={16} height={16} unoptimized />
+                    <Image src={ATK_TYPE_ICON_MAP[type]} alt={type} width={16} height={16} />
                     <span style={{ color: '#aaaaaa', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
                   </div>
                 )
@@ -1528,7 +1529,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     {/* 일러스트 */}
                     <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06' }}>
                       {getIdentityInfoUrl(identity) ? (
-                        <Image src={getIdentityInfoUrl(identity)} alt="" fill unoptimized className="object-cover object-top" />
+                        <Image src={getIdentityInfoUrl(identity)} alt="" fill className="object-cover object-top" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <span style={{ color: '#6a5e38', fontSize: '0.875rem' }}>{identity.name_kr?.[0]}</span>
@@ -1539,7 +1540,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     {/* 수감자 + 인격명 */}
                     <div style={{ minWidth: '150px', flexShrink: 0 }}>
                       <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} unoptimized style={{ opacity: 0.4 }} />
+                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
                         <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                       </div>
                       <p style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
@@ -1556,13 +1557,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                             {/* 스킬 아이콘 */}
                             <div style={{ position: 'relative', width: '24px', height: '24px' }}>
                               {iconUrl ? (
-                                <Image src={iconUrl} alt={label} width={24} height={24} unoptimized style={{ borderRadius: '50%' }} />
+                                <Image src={iconUrl} alt={label} width={24} height={24} style={{ borderRadius: '50%' }} />
                               ) : (
                                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#1a1510' }} />
                               )}
                               {/* 공격 유형 아이콘 오버레이 */}
                               {atkIcon && (
-                                <Image src={atkIcon} alt="" width={11} height={11} unoptimized style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
+                                <Image src={atkIcon} alt="" width={11} height={11} style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
                               )}
                             </div>
                             <span style={{ color: '#6a6a80', fontSize: '0.5rem', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>{label}</span>
@@ -1579,7 +1580,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                         const col = RES_COLORS[val] ?? '#555566'
                         return (
                           <div key={resKey} className="flex items-center gap-1">
-                            <Image src={ATK_TYPE_ICON_MAP[atkSlug]} alt={atkSlug} width={16} height={16} unoptimized style={{ opacity: 0.6 }} />
+                            <Image src={ATK_TYPE_ICON_MAP[atkSlug]} alt={atkSlug} width={16} height={16} style={{ opacity: 0.6 }} />
                             <span style={{ color: col, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{val}</span>
                           </div>
                         )
@@ -1637,7 +1638,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     {/* 수감자 + 인격명 */}
                     <div style={{ minWidth: '150px', flexShrink: 0 }}>
                       <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} unoptimized style={{ opacity: 0.4 }} />
+                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
                         <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                       </div>
                       <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
@@ -1733,7 +1734,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       }}
                     >
                       {kwIcon && (
-                        <Image src={kwIcon} alt="" width={11} height={11} unoptimized />
+                        <Image src={kwIcon} alt="" width={11} height={11} />
                       )}
                       {kw}
                       {metCount > 0 && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>{metCount}</span>}
@@ -1770,7 +1771,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                           }}
                         >
                           {g.image_url ? (
-                            <Image src={g.image_url} alt="" width={28} height={28} unoptimized style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)' }} />
+                            <Image src={g.image_url} alt="" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)' }} />
                           ) : (
                             <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1510', flexShrink: 0 }} />
                           )}
@@ -1781,7 +1782,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">
                               {kwIcon && (
-                                <Image src={kwIcon} alt="" width={10} height={10} unoptimized style={{ flexShrink: 0 }} />
+                                <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0 }} />
                               )}
                               <span style={{ fontSize: '0.5625rem', color: g.met ? '#88a830' : '#666' }}>
                                 {condLabel} ({g.current}/{c.count})
@@ -1842,7 +1843,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                         const noteSkillImgIdx = computeSkillImageIndices(idSkills)
                         return (
                           <div key={identity.id} className="flex items-center gap-1.5">
-                            <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} unoptimized style={{ opacity: 0.3, flexShrink: 0 }} />
+                            <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.3, flexShrink: 0 }} />
                             <div className="flex items-center gap-1">
                               {idSkills.map(sk => {
                                 const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx[sk.id] ?? sk.skill_order)
@@ -1853,7 +1854,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                                     title={`${identity.name_kr} 스킬 ${sk.skill_order}`}
                                     style={{ width: 24, height: 24, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#0d0a06', cursor: 'pointer', flexShrink: 0, padding: 0 }}
                                   >
-                                    {iconUrl && <Image src={iconUrl} alt="" width={24} height={24} unoptimized />}
+                                    {iconUrl && <Image src={iconUrl} alt="" width={24} height={24} />}
                                   </button>
                                 )
                               })}
@@ -1886,7 +1887,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                                 style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}35`, cursor: 'pointer' }}
                               >
                                 {sinType && (
-                                  <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} unoptimized />
+                                  <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} />
                                 )}
                                 <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
                               </button>
@@ -1919,7 +1920,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                                 style={{ background: `${gradeColor}18`, border: `1px solid ${gradeColor}35`, cursor: 'pointer' }}
                               >
                                 {ego.image_url && (
-                                  <Image src={ego.image_url} alt="" width={14} height={14} unoptimized style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                                  <Image src={ego.image_url} alt="" width={14} height={14} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                                 )}
                                 <span style={{ color: gradeColor, fontSize: '0.5625rem', fontWeight: 600 }}>{ego.name_kr || ego.name}</span>
                               </button>
@@ -2074,7 +2075,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                             background: '#0d0a06', transition: 'all 0.2s',
                           }}>
                             {ego.image_url
-                              ? <Image src={ego.image_url} alt="" fill unoptimized className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                              ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
                               : <div className="w-full h-full flex items-center justify-center"><span style={{ fontFamily: 'monospace', color: gc, fontSize: '0.75rem' }}>{ego.grade?.[0]}</span></div>
                             }
                           </div>

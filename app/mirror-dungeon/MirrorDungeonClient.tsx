@@ -214,7 +214,7 @@ export default function MirrorDungeonClient({
                     alt={kw.label}
                     width={14}
                     height={14}
-                    unoptimized
+                   
                     style={{ opacity: keyword === kw.key ? 0.9 : 0.5 }}
                   />
                 )}
@@ -376,7 +376,7 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
             fill
             className="object-contain drop-shadow-lg"
             sizes="64px"
-            unoptimized
+           
           />
         ) : (
           <div className="w-full h-full rounded bg-white/5 flex items-center justify-center">
@@ -396,12 +396,12 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
       {/* 가격 */}
       {gift.price != null ? (
         <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#8a7a50', fontFamily: 'var(--font-mono)' }}>
-          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} unoptimized />
+          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} />
           {gift.price}
         </p>
       ) : gift.sell_price != null ? (
         <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#665540', fontFamily: 'var(--font-mono)' }}>
-          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} unoptimized style={{ opacity: 0.6 }} />
+          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} style={{ opacity: 0.6 }} />
           {gift.sell_price}
         </p>
       ) : (
@@ -412,7 +412,7 @@ function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
       {(() => {
         const iconUrl = getGiftKeywordIcon(gift.keyword)
         return iconUrl ? (
-          <Image src={iconUrl} alt={gift.keyword} width={14} height={14} unoptimized
+          <Image src={iconUrl} alt={gift.keyword} width={14} height={14}
             className="mt-0.5 mb-0.5" style={{ opacity: 0.6 }} />
         ) : (
           <div className="w-1.5 h-1.5 rounded-full mt-0.5 mb-0.5" style={{ background: kwColor }} />
@@ -485,7 +485,7 @@ function GiftModal({
                 fill
                 className="object-contain drop-shadow-xl"
                 sizes="80px"
-                unoptimized
+               
               />
             ) : (
               <div className="w-full h-full rounded-lg bg-white/5 flex items-center justify-center">
@@ -508,7 +508,7 @@ function GiftModal({
               >
                 {(() => {
                   const iconUrl = getGiftKeywordIcon(gift.keyword)
-                  return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} unoptimized /> : null
+                  return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
                 })()}
                 {gift.keyword}
               </span>
@@ -616,7 +616,7 @@ function GiftModal({
                       }}
                     >
                       {giftImageMap.get(ing) && (
-                        <Image src={giftImageMap.get(ing)!} alt="" width={16} height={16} unoptimized className="flex-shrink-0" />
+                        <Image src={giftImageMap.get(ing)!} alt="" width={16} height={16} className="flex-shrink-0" />
                       )}
                       {ing}
                     </span>
@@ -634,7 +634,7 @@ function GiftModal({
                   }}
                 >
                   {giftImageMap.get(recipe.result_name) && (
-                    <Image src={giftImageMap.get(recipe.result_name)!} alt="" width={16} height={16} unoptimized className="flex-shrink-0" />
+                    <Image src={giftImageMap.get(recipe.result_name)!} alt="" width={16} height={16} className="flex-shrink-0" />
                   )}
                   {recipe.result_name}
                 </span>
@@ -696,7 +696,7 @@ function MetaItem({
       <span className="text-[0.625rem]" style={{ color: '#555', fontFamily: 'var(--font-heading)' }}>
         {label}
       </span>
-      {icon && <Image src={icon} alt="" width={12} height={12} unoptimized />}
+      {icon && <Image src={icon} alt="" width={12} height={12} />}
       <span className="text-[0.6875rem]" style={{ color: valueColor }}>
         {value}
       </span>

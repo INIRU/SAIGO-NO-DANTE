@@ -199,9 +199,9 @@ export function NoteAutocompleteDropdown({
             >
               {/* 아이콘/이미지 영역 */}
               {sugg.imageUrl ? (
-                <Image src={sugg.imageUrl} alt="" width={18} height={18} unoptimized style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                <Image src={sugg.imageUrl} alt="" width={18} height={18} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               ) : sugg.iconUrl ? (
-                <Image src={sugg.iconUrl} alt="" width={14} height={14} unoptimized style={{ flexShrink: 0 }} />
+                <Image src={sugg.iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
               ) : sugg.typeLabel ? (
                 <span style={{ fontSize: '0.5625rem', color: '#555', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
               ) : (

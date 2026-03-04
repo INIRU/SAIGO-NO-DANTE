@@ -324,7 +324,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     src={getSinnerProfileUrl(sinner.id)}
                     alt={sinner.name_kr}
                     fill
-                    unoptimized
+                   
                     className="object-cover object-top"
                     style={{ objectPosition: '50% 15%' }}
                   />
@@ -348,7 +348,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   alt=""
                   width={40}
                   height={40}
-                  unoptimized
+                 
                   className="w-7 h-7 sm:w-10 sm:h-10"
                   style={{
                     filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
@@ -770,7 +770,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             background: '#0d0a06',
                           }}>
                             {ego.image_url ? (
-                              <Image src={ego.image_url} alt="" fill unoptimized
+                              <Image src={ego.image_url} alt="" fill
                                 className="object-cover" style={{ objectPosition: '50% 10%' }} />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -784,7 +784,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             {ego.grade !== 'ALEPH' ? (
                               <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
                                 width={33} height={13} unoptimized
-                                style={{ width: 'auto', opacity: 0.8, flexShrink: 0 }} />
+                                style={{ height: '13px', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
                             ) : (
                               <span style={{ fontFamily: 'monospace', fontSize: '0.5rem', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
                             )}

@@ -127,7 +127,7 @@ function KeywordBadge({ keyword }: { keyword: string }) {
       }}
     >
       {iconUrl && (
-        <Image src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} unoptimized />
+        <Image src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} />
       )}
       {keyword}
     </span>
@@ -323,7 +323,7 @@ function IdentityTab({
                 opacity: sinnerFilter && sinnerFilter !== s.id ? 0.35 : 1,
               }}
             >
-              <Image src={getSinnerLogoUrl(s.id)} alt={s.name_kr} fill unoptimized className="object-contain" />
+              <Image src={getSinnerLogoUrl(s.id)} alt={s.name_kr} fill className="object-contain" />
             </button>
           ))}
         </div>
@@ -388,7 +388,7 @@ function IdentityTab({
                           alt={stat.rarity}
                           width={rarityWidth}
                           height={14}
-                          unoptimized
+                         
                           style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
                         />
                       )}
@@ -466,7 +466,7 @@ function IdentityTab({
                       style={{ background: `${color}15`, border: `1px solid ${color}30` }}
                     >
                       {iconUrl && (
-                        <Image src={iconUrl} alt="" width={14} height={14} unoptimized />
+                        <Image src={iconUrl} alt="" width={14} height={14} />
                       )}
                     </div>
                     <span className="flex-1 text-xs" style={{ color: '#e8e4d8' }}>{kw.keyword}</span>
@@ -535,7 +535,7 @@ function KeywordTab({ data }: { data: MetaData }) {
                 style={{ background: `${color}15`, border: `1px solid ${color}30` }}
               >
                 {iconUrl ? (
-                  <Image src={iconUrl} alt="" width={20} height={20} style={{ objectFit: 'contain' }} unoptimized />
+                  <Image src={iconUrl} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
                 ) : (
                   <div className="w-5 h-5" />
                 )}
@@ -646,11 +646,11 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                   >
                     {aImg ? (
                       <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Image src={aImg} alt="" fill unoptimized className="object-cover" />
+                        <Image src={aImg} alt="" fill className="object-cover" />
                       </div>
                     ) : syn.a_sinner_id && (
                       <div className="relative w-5 h-5 shrink-0">
-                        <Image src={getSinnerLogoUrl(syn.a_sinner_id)} alt="" fill unoptimized className="object-contain" />
+                        <Image src={getSinnerLogoUrl(syn.a_sinner_id)} alt="" fill className="object-contain" />
                       </div>
                     )}
                     <div className="min-w-0">
@@ -676,11 +676,11 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                   >
                     {bImg ? (
                       <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Image src={bImg} alt="" fill unoptimized className="object-cover" />
+                        <Image src={bImg} alt="" fill className="object-cover" />
                       </div>
                     ) : syn.b_sinner_id && (
                       <div className="relative w-5 h-5 shrink-0">
-                        <Image src={getSinnerLogoUrl(syn.b_sinner_id)} alt="" fill unoptimized className="object-contain" />
+                        <Image src={getSinnerLogoUrl(syn.b_sinner_id)} alt="" fill className="object-contain" />
                       </div>
                     )}
                     <div className="min-w-0">
@@ -774,7 +774,7 @@ function EGOTab({
               }}
             >
               {GRADE_ICON_URL[grade] ? (
-                <Image src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} unoptimized />
+                <Image src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} />
               ) : (
                 grade
               )}
@@ -819,7 +819,7 @@ function EGOTab({
                 {/* 등급 이미지 */}
                 <div className="w-8 flex items-center justify-center shrink-0">
                   {GRADE_ICON_URL[ego.grade] ? (
-                    <Image src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} unoptimized />
+                    <Image src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} />
                   ) : (
                     <span
                       className="font-mono text-[0.625rem] font-bold px-1.5 py-0.5 rounded"
@@ -833,10 +833,10 @@ function EGOTab({
                 {/* EGO 초상화 */}
                 <div className="relative shrink-0 overflow-hidden" style={{ width: 36, height: 36, borderRadius: '50%', border: `1.5px solid ${gradeColor}40`, background: '#0d0b08' }}>
                   {ego.image_url ? (
-                    <Image src={ego.image_url} alt="" fill unoptimized className="object-cover" style={{ objectPosition: '50% 15%' }} />
+                    <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 15%' }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} unoptimized style={{ opacity: 0.5 }} />
+                      <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} style={{ opacity: 0.5 }} />
                     </div>
                   )}
                 </div>

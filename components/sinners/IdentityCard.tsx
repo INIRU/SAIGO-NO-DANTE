@@ -82,7 +82,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               src={imgSrc}
               alt={identity.name_kr || identity.name}
               fill
-              unoptimized
+             
               className="object-cover object-top"
               onError={() => {
                 if (fallbackUrl && imgSrc !== fallbackUrl) {
@@ -119,7 +119,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               alt={identity.rarity}
               width={identity.rarity === '1성' ? 20 : identity.rarity === '2성' ? 34 : 46}
               height={14}
-              unoptimized
+             
               style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}
             />
           ) : (
@@ -147,7 +147,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             alt=""
             width={200}
             height={300}
-            unoptimized
+           
             className={styles.frame}
           />
         )}
@@ -197,7 +197,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                     }}
                   >
                     {iconUrl && (
-                      <Image src={iconUrl} alt="" width={10} height={10} unoptimized style={{ display: 'inline-block' }} />
+                      <Image src={iconUrl} alt="" width={10} height={10} style={{ display: 'inline-block' }} />
                     )}
                     {kw}
                   </span>

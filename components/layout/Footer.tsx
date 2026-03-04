@@ -23,7 +23,7 @@ export default function Footer() {
 
         {/* 로고 + 사이트명 */}
         <div className="flex flex-col items-center gap-2">
-          <Image src="/images/logo.webp" alt="" width={22} height={32} unoptimized
+          <Image src="/images/logo.webp" alt="" width={22} height={32}
             style={{ opacity: 0.85, filter: 'drop-shadow(0 0 6px rgba(200,144,10,0.4))' }} />
           <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: '0.9375rem' }}>
             최애의 관리자

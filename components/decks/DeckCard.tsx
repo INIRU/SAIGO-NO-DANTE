@@ -70,7 +70,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
         alt=""
         fill
         sizes="80px"
-        quality={50}
+        quality={25}
         style={{ objectFit: 'cover', objectPosition: 'center top' }}
         onError={() => {
           if (slot.gacksung && !fallback) setFallback(true)
