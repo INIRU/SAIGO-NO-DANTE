@@ -100,21 +100,27 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
   const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
-  // 덱 전체 키워드 빈도 집계
-  // 편성 기준: 같은 상태이상 키워드를 가진 인격이 5명 이상일 때 표시
+  // 편성(slot_order<99) 인격 기준 키워드 비율 집계
   const topKeywords = (() => {
+    const formed = sorted.filter(s => s && s.slot_order < 99 && s.identities)
+    const total = formed.length
+    if (total === 0) return []
+
     const freq: Record<string, number> = {}
-    for (const slot of sorted) {
-      for (const kw of slot?.identities?.keywords ?? []) {
+    for (const slot of formed) {
+      for (const kw of slot!.identities!.keywords ?? []) {
         if (THEME_KEYWORDS.has(kw)) {
           freq[kw] = (freq[kw] ?? 0) + 1
         }
       }
     }
+
+    // 1명: 해당 인격 키워드 표시, 2명+: 40% 이상 & 최소 2명 공유
+    const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
     return Object.entries(freq)
-      .filter(([, n]) => n >= 5)
+      .filter(([, n]) => n >= minCount)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
+      .slice(0, 3)
       .map(([kw]) => kw)
   })()
 

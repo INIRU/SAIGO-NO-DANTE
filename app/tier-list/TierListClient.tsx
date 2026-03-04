@@ -179,7 +179,7 @@ export default function TierListClient({
           className="transition-colors hover:text-yellow-300"
           style={{ color: '#3a3028' }}
         >
-          원본: 전국파인애플피자협회 (림버스 컴퍼니 갤러리)
+          원본: 림버스 컴퍼니 갤러리
         </a>
       </p>
 
