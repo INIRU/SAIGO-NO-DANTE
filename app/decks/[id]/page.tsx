@@ -213,15 +213,22 @@ function portraitUrl(
 }
 
 function topKeywords(slots: IdentitySlot[]): string[] {
+  const formed = slots.filter(s => s.slot_order < 99 && s.identities)
+  const total = formed.length
+  if (total === 0) return []
+
   const freq: Record<string, number> = {}
-  for (const slot of slots) {
+  for (const slot of formed) {
     for (const kw of slot.identities?.keywords ?? []) {
       if (THEME_KEYWORDS.has(kw)) freq[kw] = (freq[kw] ?? 0) + 1
     }
   }
+
+  const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
   return Object.entries(freq)
-    .filter(([, n]) => n >= 5)
+    .filter(([, n]) => n >= minCount)
     .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
     .map(([kw]) => kw)
 }
 
