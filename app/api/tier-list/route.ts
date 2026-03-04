@@ -11,7 +11,7 @@ export async function GET() {
     .from('tier_list')
     .select(`
       tier, sort_order,
-      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info)
+      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info, release_date)
     `)
     .order('sort_order')
 

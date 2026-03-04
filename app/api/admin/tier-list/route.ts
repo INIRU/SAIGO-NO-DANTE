@@ -17,7 +17,7 @@ export async function GET() {
     .from('tier_list')
     .select(`
       tier, sort_order,
-      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info)
+      identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info, release_date)
     `)
     .order('sort_order')
 
@@ -34,7 +34,7 @@ export async function GET() {
   let unassignedQuery = supabase
     .schema('limbus')
     .from('identities')
-    .select('id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info')
+    .select('id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info, release_date')
     .order('name_kr')
 
   if (assignedIds.length > 0) {
