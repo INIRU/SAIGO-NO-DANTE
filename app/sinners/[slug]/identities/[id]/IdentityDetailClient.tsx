@@ -28,6 +28,7 @@ import IdentityGuideSection, { type GuideData } from '@/components/identity/Iden
 import IdentitySkillsTab from '@/components/identity/IdentitySkillsTab'
 import IdentityPassivesTab from '@/components/identity/IdentityPassivesTab'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
+import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
 
 interface Props {
   sinner: Sinner
@@ -461,6 +462,8 @@ export default function IdentityDetailClient({
               </div>
 
               <IdentitySanitySection identity={identity} />
+
+              <IdentityReviewSection identityId={identity.id} sinColor={sinColor} />
 
               {/* 수감자 페이지로 돌아가기 */}
               <Link
