@@ -186,6 +186,23 @@ export function KeywordWithTooltip({
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimeout.current)
   }, [])
+  const toggle = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setRect(prev => prev ? null : ref.current?.getBoundingClientRect() ?? null)
+  }, [])
+
+  // 외부 탭 시 닫기
+  useEffect(() => {
+    if (!rect) return
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setRect(null)
+      }
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [rect])
 
   if (!info && !iconUrl) return <>{children}</>
 
@@ -195,6 +212,7 @@ export function KeywordWithTooltip({
       className="inline-flex items-center"
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ cursor: info ? 'help' : 'default', verticalAlign: 'middle', position: 'relative' }}
     >
       {iconUrl && (

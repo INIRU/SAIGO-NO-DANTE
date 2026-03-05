@@ -15,7 +15,7 @@ function sinColorOf(sin: string | null): string {
   return en ? (SIN_COLORS[en] ?? '#888888') : '#888888'
 }
 
-// ── 툴팁 hover 관리 훅 ──────────────────────────────────────────────────
+// ── 툴팁 hover + 터치 관리 훅 ───────────────────────────────────────────
 function useTooltip(ref: React.RefObject<HTMLElement | null>) {
   const [rect, setRect] = useState<DOMRect | null>(null)
   const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -33,7 +33,26 @@ function useTooltip(ref: React.RefObject<HTMLElement | null>) {
     clearTimeout(hideTimeout.current)
   }, [])
 
-  return { rect, show, scheduleHide, cancelHide }
+  // 모바일 터치 토글
+  const toggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setRect(prev => prev ? null : ref.current?.getBoundingClientRect() ?? null)
+  }, [ref])
+
+  // 외부 탭 시 닫기
+  useEffect(() => {
+    if (!rect) return
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setRect(null)
+      }
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [rect, ref])
+
+  return { rect, show, scheduleHide, cancelHide, toggle }
 }
 
 // ── 공용 툴팁 래퍼 (스마트 포지셔닝 + 스크롤 + 페이드) ─────────────────
@@ -153,7 +172,7 @@ export type NoteEgoGiftEntry = {
 export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
   const sc = sinColorOf(entry.sin_affinity)
   return (
@@ -161,6 +180,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
@@ -205,7 +225,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
 export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const sinEn = normalizeSin(entry.sin_affinity)
   const sc = sinColorOf(entry.sin_affinity)
   return (
@@ -213,6 +233,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
@@ -246,7 +267,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
 // ── EgoChip ─────────────────────────────────────────────────────────────
 export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const sinEn = normalizeSin(entry.sin_affinity)
   const sc = sinEn ? (SIN_COLORS[sinEn] ?? '#667788') : '#667788'
   const gc = GRADE_COLORS[entry.grade] ?? '#667788'
@@ -255,6 +276,7 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${gc}18`, border: `1px solid ${gc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
@@ -287,7 +309,7 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
 export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
   const { sinMap: kwSinMap } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const mainKw = entry.keywords?.find(kw => kwSinMap[kw])
   const sinType = mainKw ? kwSinMap[mainKw] : undefined
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
@@ -296,6 +318,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
@@ -334,7 +357,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   const keywords = useKeywords()
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const iconUrl = getIconUrl(keyword)
   const sinType = kwSinMap[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
@@ -344,6 +367,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
@@ -381,13 +405,14 @@ const EGO_GIFT_KW_COLORS: Record<string, string> = {
 export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
+  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const sc = EGO_GIFT_KW_COLORS[entry.keyword] ?? '#888'
   return (
     <span
       ref={ref}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onClick={toggle}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
