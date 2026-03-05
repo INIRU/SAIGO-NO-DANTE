@@ -69,8 +69,8 @@ export function KeywordWithTooltip({
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const keywords = useKeywords()
-  const iconUrl = getKeywordIconUrl(keyword)
   const info = keywords[keyword]
+  const iconUrl = getKeywordIconUrl(keyword, info?.iconSlug)
 
   if (!info && !iconUrl) return <>{children}</>
 

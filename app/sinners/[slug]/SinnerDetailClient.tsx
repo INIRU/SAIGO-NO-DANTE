@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
-import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, KEYWORD_SIN_MAP, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
+import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, KEYWORD_SIN_MAP, KEYWORD_ICON_MAP, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import IdentityCard from '@/components/sinners/IdentityCard'
@@ -324,7 +324,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     src={getSinnerProfileUrl(sinner.id)}
                     alt={sinner.name_kr}
                     fill
-                   
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
                     className="object-cover object-top"
                     style={{ objectPosition: '50% 15%' }}
                   />

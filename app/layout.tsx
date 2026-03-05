@@ -74,13 +74,15 @@ export default async function RootLayout({
   const { data } = await supabase
     .schema('limbus')
     .from('keyword_meta')
-    .select('name, description, max_stack')
+    .select('name, description, max_stack, icon_slug, sin_affinity')
 
   const keywords: Record<string, KeywordInfo> = {}
   for (const row of data ?? []) {
     keywords[row.name] = {
       desc: row.description ?? '',
       ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
+      ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
+      ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
     }
   }
 

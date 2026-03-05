@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Identity, getIdentityInfoUrl, getIdentitySinColor, getKeywordIconUrl, KEYWORD_SIN_MAP, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS } from '@/lib/data/sinners'
+import { Identity, getIdentityInfoUrl, getIdentitySinColor, getKeywordIconUrl, KEYWORD_SIN_MAP, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import styles from '@/styles/components/IdentityCard.module.css'
 
 
@@ -82,7 +82,8 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               src={imgSrc}
               alt={identity.name_kr || identity.name}
               fill
-             
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
               className="object-cover object-top"
               onError={() => {
                 if (fallbackUrl && imgSrc !== fallbackUrl) {

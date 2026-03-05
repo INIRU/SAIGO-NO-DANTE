@@ -13,7 +13,7 @@ import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import {
   IdentityWithSinner,
   getSinnerLogoUrl, getIdentityProfileUrl, getIdentityInfoUrl,
-  RARITY_ICON_MAP,
+  RARITY_ICON_MAP, BLUR_PLACEHOLDER,
 } from '@/lib/data/sinners'
 
 function DiscordIcon({ size = 18, style }: { size?: number; style?: React.CSSProperties }) {
@@ -207,12 +207,12 @@ function HeroGlitchSlider({
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          <Image src={pending.url} alt="" fill className="object-cover object-top" />
+          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" />
         </div>
       )}
       {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image src={current.url} alt={current.identity.name_kr} fill priority className="object-cover object-top" />
+        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" />
         {/* RGB Chromatic Aberration 오버레이 (전환 시 GSAP 제어) */}
         <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
           <Image src={current.url} alt="" fill className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
@@ -671,6 +671,7 @@ export default function HomeClient({
                     >
                       {portraitUrl ? (
                         <Image src={portraitUrl} alt={identity.name_kr} fill
+                          placeholder="blur" blurDataURL={BLUR_PLACEHOLDER}
                           className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                           style={{ objectPosition: '50% 10%' }} />
                       ) : (
