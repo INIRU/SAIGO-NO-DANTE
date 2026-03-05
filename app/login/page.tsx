@@ -43,6 +43,21 @@ export default function LoginPage() {
     if (status === 'authenticated') router.replace('/')
   }, [status, router])
 
+  useEffect(() => {
+    if (status !== 'loading' && !session) {
+      import('gsap').then(({ gsap }) => {
+        gsap.fromTo('.login-logo',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        )
+        gsap.fromTo('.login-card',
+          { opacity: 0, y: 20, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        )
+      })
+    }
+  }, [status, session])
+
   if (status === 'loading' || session) return null
 
   return (
@@ -51,7 +66,7 @@ export default function LoginPage() {
       style={{ background: '#0d0b08' }}
     >
       {/* 로고 */}
-      <div className="flex flex-col items-center gap-3 mb-10">
+      <div className="login-logo flex flex-col items-center gap-3 mb-10" style={{ opacity: 0 }}>
         <Image src="/images/logo.webp" alt="" width={36} height={52}
           style={{ filter: 'drop-shadow(0 0 12px rgba(200,144,10,0.5))' }} />
         <h1 className="font-serif text-2xl font-bold tracking-widest" style={{ color: 'var(--gold)' }}>
@@ -64,7 +79,9 @@ export default function LoginPage() {
 
       {/* 로그인 카드 */}
       <div
+        className="login-card"
         style={{
+          opacity: 0,
           width: '100%', maxWidth: '420px',
           background: '#12100d',
           border: '1px solid #2a2520',

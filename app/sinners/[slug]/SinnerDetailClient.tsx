@@ -67,6 +67,20 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     })()
   }, [])
 
+  // GSAP 카드 등장 애니메이션
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.sinner-info-card',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+      )
+      gsap.fromTo('.sinner-content-area',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power3.out' }
+      )
+    })
+  }, [])
+
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
   useEffect(() => {
     const readHash = () => setTab(window.location.hash === '#ego' ? 'ego' : 'identities')
@@ -185,6 +199,17 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     })
     return result
   }, [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
+
+  // 인격/EGO 카드 스태거 애니메이션 (탭 전환 시)
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      const selector = tab === 'identities' ? '.identity-card-item' : '.ego-card-item'
+      gsap.fromTo(selector,
+        { opacity: 0, y: 20, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.03, ease: 'power2.out' }
+      )
+    })
+  }, [tab, filteredIdentities, filteredEgos])
 
   // 자동완성 드롭다운
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -313,7 +338,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="sinner-info-card lg:sticky lg:top-24 lg:self-start" style={{ opacity: 0 }}>
             <div className="card p-4 sm:p-6">
               <div className="flex gap-4 sm:block">
               {/* 프로필 이미지 */}
@@ -396,7 +421,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           </div>
 
           {/* 우측: 탭 콘텐츠 */}
-          <div className="lg:col-span-2">
+          <div className="sinner-content-area lg:col-span-2" style={{ opacity: 0 }}>
             {/* 탭 */}
             <div
               className="flex gap-0 mb-4 rounded overflow-hidden"
@@ -687,8 +712,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
                     {filteredIdentities.map(identity => (
+                      <div key={identity.id} className="identity-card-item">
                       <IdentityCard
-                        key={identity.id}
                         identity={identity}
                         gacksung={gacksung}
                         compact
@@ -696,6 +721,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
                         }
                       />
+                      </div>
                     ))}
                   </div>
                 )}
@@ -758,7 +784,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         <button
                           key={ego.id}
                           onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
-                          className="group flex flex-col items-center gap-2"
+                          className="ego-card-item group flex flex-col items-center gap-2"
                           style={{ cursor: 'pointer', transition: 'transform 200ms ease' }}
                           onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
                           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}

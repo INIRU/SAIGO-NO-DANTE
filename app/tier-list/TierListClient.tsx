@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { Calculator, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { getIdentityInfoUrl, RARITY_ICON_MAP, type Identity } from '@/lib/data/sinners'
@@ -112,6 +112,19 @@ export default function TierListClient({
   const [calcOpen, setCalcOpen] = useState(false)
   const [qnaOpen, setQnaOpen] = useState(false)
 
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.tier-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
+      gsap.fromTo('.tier-row',
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
+      )
+    })
+  }, [])
+
   const hasTiers = TIERS.some(t => tiers[t].length > 0)
 
   // 인격 id → { tier, sinner_id } 매핑
@@ -166,6 +179,7 @@ export default function TierListClient({
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 pt-28 pb-16">
+      <div className="tier-header" style={{ opacity: 0 }}>
       <h1
         className="font-serif text-center mb-2"
         style={{ color: 'var(--gold)', fontSize: '1.5rem', fontWeight: 700 }}
@@ -189,6 +203,7 @@ export default function TierListClient({
           원본: 림버스 컴퍼니 갤러리
         </a>
       </p>
+      </div>
 
       {/* 범례 */}
       <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
@@ -248,7 +263,7 @@ export default function TierListClient({
             {TIERS.map(tier => {
               if (tiers[tier].length === 0) return null
               return (
-                <div key={tier}>
+                <div key={tier} className="tier-row" style={{ opacity: 0 }}>
                   {/* 티어 헤더 */}
                   <div className="flex items-center gap-3 mb-3">
                     <div

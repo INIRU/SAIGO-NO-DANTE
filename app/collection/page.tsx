@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, useMemo } from 'react'
+import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -246,6 +246,7 @@ function CollectionViewer() {
   const [viewMode, setViewMode] = useState<ViewMode>('sinner')
   const [showUnowned, setShowUnowned] = useState(true)
   const { sinMap: kwSinMap } = useKeywordData()
+  const animatedRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/collection')
@@ -258,7 +259,22 @@ function CollectionViewer() {
           setOwned(decoded)
         }
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        if (!animatedRef.current) {
+          animatedRef.current = true
+          import('gsap').then(({ gsap }) => {
+            gsap.fromTo('.collection-header',
+              { opacity: 0, y: -20 },
+              { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+            )
+            gsap.fromTo('.collection-content',
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+            )
+          })
+        }
+      })
   }, [code])
 
   const stats = useMemo(() => {
@@ -350,7 +366,7 @@ function CollectionViewer() {
     <div className="min-h-screen pt-24 pb-16 px-6">
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
-        <div className="mb-6">
+        <div className="collection-header mb-6" style={{ opacity: 0 }}>
           <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             SHARED COLLECTION
           </p>
@@ -366,7 +382,7 @@ function CollectionViewer() {
 
         {/* 보기 모드 토글 */}
         <div
-          className="flex gap-0 mb-4 rounded overflow-hidden"
+          className="collection-content flex gap-0 mb-4 rounded overflow-hidden"
           style={{ border: '1px solid var(--border)' }}
         >
           {([['sinner', '수감자별'], ['all', '전체']] as [ViewMode, string][]).map(([mode, label]) => (

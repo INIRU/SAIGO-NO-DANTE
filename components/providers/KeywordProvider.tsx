@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 export type KeywordInfo = {
   desc: string
@@ -159,6 +160,9 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
   )
 }
 
+// 한 번에 하나의 키워드 툴팁만 표시
+let activeKwClose: (() => void) | null = null
+
 /** 키워드 아이콘 + 툴팁 (context에서 키워드 데이터 사용) */
 export function KeywordWithTooltip({
   keyword,
@@ -176,13 +180,16 @@ export function KeywordWithTooltip({
   const info = keywords[keyword]
   const iconUrl = getKeywordIconUrl(keyword, info?.iconSlug)
 
+  const hide = useCallback(() => setRect(null), [])
   const show = useCallback(() => {
+    if (activeKwClose && activeKwClose !== hide) activeKwClose()
     clearTimeout(hideTimeout.current)
     setRect(ref.current?.getBoundingClientRect() ?? null)
-  }, [])
+    activeKwClose = hide
+  }, [hide])
   const scheduleHide = useCallback(() => {
-    hideTimeout.current = setTimeout(() => setRect(null), 120)
-  }, [])
+    hideTimeout.current = setTimeout(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, 120)
+  }, [hide])
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimeout.current)
   }, [])
@@ -231,7 +238,10 @@ export function KeywordWithTooltip({
         />
       )}
       {children}
-      {rect && info && <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={keyword} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />}
+      {rect && info && typeof document !== 'undefined' && createPortal(
+        <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={keyword} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
+        document.body,
+      )}
     </span>
   )
 }

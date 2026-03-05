@@ -71,18 +71,28 @@ export default async function RootLayout({
 }) {
   // 서버 사이드: keyword_meta 전체 fetch → KeywordProvider로 전달
   const supabase = await createClient()
-  const { data } = await supabase
+  let { data, error } = await supabase
     .schema('limbus')
     .from('keyword_meta')
     .select('name, description, max_stack, icon_slug, sin_affinity')
 
+  // icon_slug/sin_affinity 컬럼이 아직 없으면 기본 컬럼만으로 재시도
+  if (error) {
+    const fallback = await supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .select('name, description, max_stack')
+    data = fallback.data as typeof data
+    error = fallback.error
+  }
+
   const keywords: Record<string, KeywordInfo> = {}
-  for (const row of data ?? []) {
-    keywords[row.name] = {
-      desc: row.description ?? '',
-      ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
-      ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
-      ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    keywords[row.name as string] = {
+      desc: (row.description as string) ?? '',
+      ...(row.max_stack != null ? { maxStack: row.max_stack as number } : {}),
+      ...((row.icon_slug as string) ? { iconSlug: row.icon_slug as string } : {}),
+      ...((row.sin_affinity as string) ? { sinAffinity: row.sin_affinity as string } : {}),
     }
   }
 

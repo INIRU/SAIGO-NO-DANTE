@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -208,11 +208,24 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.ego-detail-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
+      gsap.fromTo('.ego-detail-content',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+      )
+    })
+  }, [])
+
   return (
     <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
 
       {/* ─── 히어로 배너 ─── */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604' }}>
+      <div className="ego-detail-header" style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604', opacity: 0 }}>
         {ego.image_url && (
           <Image src={ego.image_url} alt="" fill
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
@@ -232,7 +245,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
       </div>
 
       {/* ─── 메인 ─── */}
-      <div className="max-w-6xl mx-auto px-6 pt-8">
+      <div className="ego-detail-content max-w-6xl mx-auto px-6 pt-8" style={{ opacity: 0 }}>
 
         {/* 브레드크럼 */}
         <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
