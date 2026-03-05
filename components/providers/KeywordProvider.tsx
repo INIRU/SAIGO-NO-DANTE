@@ -5,6 +5,8 @@ import { createContext, useContext, useMemo, useCallback } from 'react'
 export type KeywordInfo = {
   desc: string
   maxStack?: number
+  iconSlug?: string
+  sinAffinity?: string
 }
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})

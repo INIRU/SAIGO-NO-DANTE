@@ -1,70 +1,19 @@
 'use client'
 
-import { use, useState, useEffect, useCallback, useRef } from 'react'
+import { use, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
-import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices, ATK_TYPE_ICON_MAP, type ActivationCondition } from '@/lib/data/sinners'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { Trash2 } from 'lucide-react'
+import { STORAGE_BASE, getSinnerLogoUrl, GRADE_COLORS, computeSkillImageIndices, SIN_COLORS, SIN_KR_TO_EN, type ActivationCondition } from '@/lib/data/sinners'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
+import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
+import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
+import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
+import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
-type SkillDetail = {
-  id: string
-  name: string
-  skill_type: string
-  sin_affinity: string
-  coins: number
-  base_power: number
-  coin_power: number
-  skill_order: number
-  atk_weight: number | null
-  offense_level: number | null
-  description?: string | null
-  uptie_level?: number | null
-}
-
-type PassiveDetail = {
-  name: string
-  passive_type: string
-  sin_affinity: string | null
-  sin_count: number | null
-  active_cond: string | null
-  description: string
-  passive_order: number
-  uptie_level?: number | null
-}
-
-type IdentityDetail = {
-  id: string
-  sinner_id: string
-  folder_name: string | null
-  game_id: string | null
-  keywords: string[] | null
-  name_kr: string
-  tier: number
-  rarity: string
-  hp: number | null
-  speed_min: number | null
-  speed_max: number | null
-  def_level: number | null
-  slash_res: string | null
-  pierce_res: string | null
-  blunt_res: string | null
-  skills: SkillDetail[]
-  passives: PassiveDetail[]
-}
-
-type IdentitySlot = {
-  slot_order: number
-  gacksung: boolean
-  s1_count?: number
-  s2_count?: number
-  s3_count?: number
-  identities: IdentityDetail | null
-}
-
 type EgoSlot = {
   grade: string
   ego: {
@@ -118,7 +67,6 @@ type Comment = {
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
 const THEME_KEYWORDS = new Set(['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡'])
-const SIN_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'] as const
 
 const RARITY_COLORS: Record<string, string> = {
   '1성': '#667788',
@@ -126,90 +74,10 @@ const RARITY_COLORS: Record<string, string> = {
   '3성': '#c8900a',
 }
 
-
-const GRADE_ICON_URL: Record<string, string> = {
-  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
-  TETH:  `${STORAGE_BASE}/icons/grade/TETH.webp`,
-  HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
-  WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
-}
-
-const SIN_COLORS: Record<string, string> = {
-  wrath:    '#c83030',
-  lust:     '#d06030',
-  sloth:    '#d4b830',
-  gluttony: '#88b028',
-  gloom:    '#4898b0',
-  pride:    '#3870b0',
-  envy:     '#8058a8',
-}
-
-const SIN_KR_TO_EN: Record<string, string> = {
-  '분노': 'wrath',
-  '색욕': 'lust',
-  '나태': 'sloth',
-  '탐식': 'gluttony',
-  '우울': 'gloom',
-  '오만': 'pride',
-  '질투': 'envy',
-}
-
-const SKILL_TYPE_KR: Record<string, string> = {
-  'evade': '회피',
-  'defense': '수비',
-  'counter': '반격',
-}
-
-const ATK_ICON_URL: Record<string, string> = {
-  'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  'pierce': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  'blunt': `${STORAGE_BASE}/icons/stats/blunt.webp`,
-}
-
-const STAT_ICON_URL: Record<string, string> = {
-  hp:    `${STORAGE_BASE}/icons/stats/health.webp`,
-  spd:   `${STORAGE_BASE}/icons/stats/speed.webp`,
-  def:   `${STORAGE_BASE}/icons/stats/defense.webp`,
-}
-
-const RES_ATK_ICON: Record<string, string> = {
-  '참': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  '관': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  '타': `${STORAGE_BASE}/icons/stats/blunt.webp`,
-}
-
-const RES_STYLE: Record<string, { color: string; bg: string; border: string }> = {
-  '효율': { color: '#e06070', bg: 'rgba(200,64,80,0.12)', border: 'rgba(200,64,80,0.3)' },
-  '취약': { color: '#e06070', bg: 'rgba(200,64,80,0.12)', border: 'rgba(200,64,80,0.3)' },
-  '보통': { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' },
-  '내성': { color: '#4898b0', bg: 'rgba(52,120,160,0.12)', border: 'rgba(52,120,160,0.3)' },
-  '견딤': { color: '#4898b0', bg: 'rgba(52,120,160,0.12)', border: 'rgba(52,120,160,0.3)' },
-  '무효': { color: '#334455', bg: 'rgba(20,28,36,0.3)', border: 'rgba(40,56,72,0.2)' },
-}
-
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
-function sinIconUrl(sin: string | null, isKr = false): string {
-  if (!sin) return ''
-  const en = isKr ? (SIN_KR_TO_EN[sin] ?? sin) : sin
-  const cap = en.charAt(0).toUpperCase() + en.slice(1)
-  return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
-}
-
 function sinColor(sin: string, isKr = false): string {
   const en = isKr ? (SIN_KR_TO_EN[sin] ?? sin) : sin
-  return SIN_COLORS[en] ?? '#888888'
-}
-
-function portraitUrl(
-  sinner_id: string,
-  folder_name: string | null,
-  game_id: string | null,
-  gacksung: boolean,
-): string {
-  if (!game_id || !folder_name) return ''
-  const prefix = gacksung ? 'gacksung' : 'normal'
-  const folder = encodeURIComponent(folder_name)
-  return `${STORAGE_BASE}/sinners/${sinner_id}/identities/${folder}/${game_id}_${prefix}_info.webp`
+  return SIN_COLORS[en as keyof typeof SIN_COLORS] ?? '#888888'
 }
 
 function topKeywords(slots: IdentitySlot[]): string[] {
@@ -232,7 +100,6 @@ function topKeywords(slots: IdentitySlot[]): string[] {
     .map(([kw]) => kw)
 }
 
-// ── 수감자 이름 ──────────────────────────────────────────────────────────
 const SINNER_ORDER = [
   'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault', 'hong-lu',
   'heathcliff', 'ishmael', 'rodion', 'sinclair', 'outis', 'gregor',
@@ -255,7 +122,6 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
     if (!id_) continue
     const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
 
-    // 스킬: 4동기화 우선, 없으면 3동기화 폴백
     const rawSk = id_.skills ?? []
     const sk4 = rawSk.filter(s => (s.uptie_level ?? 3) === 4)
     const filtSk = sk4.length > 0 ? sk4 : rawSk.filter(s => (s.uptie_level ?? 3) === 3)
@@ -288,7 +154,6 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
       }
     }
   }
-  // 에고: 덱 내 수감자의 전체 에고 사용 (에디터 미리보기와 동일)
   for (const ego of allEgos) {
     const sName = SINNER_NAMES[ego.sinner_id] ?? ego.sinner_id
     const name = ego.name_kr ?? sName
@@ -301,75 +166,6 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
 }
 
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
-function PassiveBadgeDetail({ p, deckSinCounts }: { p: PassiveDetail; deckSinCounts: Record<string, number> }) {
-  const formatSkillDesc = useFormatSkillDesc()
-  const [hover, setHover] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const [tipPos, setTipPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
-
-  // 복수 죄악 지원 (예: "나태, 오만")
-  const sinNames = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
-  const sinTypeList = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as string[]
-  const pc = sinTypeList[0] ? (SIN_COLORS[sinTypeList[0]] ?? '#888') : '#888'
-  const current = sinTypeList.reduce((sum, st) => sum + (deckSinCounts[st] ?? 0), 0)
-  const required = p.sin_count ?? 1
-
-  const onEnter = () => {
-    if (!ref.current || !p.description) return
-    setHover(true)
-    const rect = ref.current.getBoundingClientRect()
-    const above = rect.top > 180
-    setTipPos({
-      left: Math.min(rect.left, window.innerWidth - 330),
-      ...(above ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }),
-    })
-  }
-
-  return (
-    <div
-      ref={ref}
-      className="relative flex items-center gap-1.5 px-2 py-1 rounded"
-      style={{ background: `${pc}12`, border: `1px solid ${pc}30`, cursor: 'default' }}
-      onMouseEnter={onEnter}
-      onMouseLeave={() => { setHover(false); setTipPos(null) }}
-    >
-      {sinTypeList.length > 0 && (
-        <div className="flex items-center gap-0.5" style={{ flexShrink: 0 }}>
-          {sinTypeList.map((st, i) => (
-            <Image key={i} src={sinIconUrl(st)} alt="" width={16} height={16} />
-          ))}
-          <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
-          {p.active_cond && <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
-        </div>
-      )}
-      <span style={{ color: pc, fontSize: '0.6875rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.name}</span>
-
-      {/* 호버 툴팁 */}
-      {hover && tipPos && p.description && (
-        <div
-          className="z-[200] px-3 py-2.5 rounded shadow-lg pointer-events-none"
-          style={{
-            position: 'fixed',
-            left: tipPos.left,
-            top: tipPos.top,
-            bottom: tipPos.bottom,
-            background: '#1a1510',
-            border: '1px solid #3a3020',
-            minWidth: '220px',
-            maxWidth: '320px',
-            whiteSpace: 'normal',
-          }}
-        >
-          <div style={{ color: pc, fontSize: '0.6875rem', fontWeight: 700, marginBottom: '4px' }}>{p.name}</div>
-          <div style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5 }}>
-            {formatSkillDesc(p.description, pc)}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 function Skeleton() {
   return (
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
@@ -385,361 +181,6 @@ function Skeleton() {
           ))}
         </div>
       </div>
-    </div>
-  )
-}
-
-// ── IdentityCard ───────────────────────────────────────────────────────────
-type EgoEntry = { grade: string; ego: NonNullable<EgoSlot['ego']> }
-
-function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: EgoEntry[]; keywordMeta?: Record<string, { description: string }> }) {
-  const formatSkillDesc = useFormatSkillDesc()
-  const id_ = slot.identities!
-  const [activeTab, setActiveTab] = useState<'skills' | 'passives' | 'ego'>('skills')
-
-  const rarityColor = RARITY_COLORS[id_.rarity] ?? '#667788'
-  const imgUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot.gacksung)
-  const normalUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
-  const themeKws = (id_.keywords ?? []).filter(kw => THEME_KEYWORDS.has(kw))
-  // 4동기화 우선, 없으면 3동기화 폴백
-  const rawSkills = id_.skills ?? []
-  const skills4 = rawSkills.filter(s => (s.uptie_level ?? 3) === 4)
-  const filteredSkills = skills4.length > 0 ? skills4 : rawSkills.filter(s => (s.uptie_level ?? 3) === 3)
-  const sortedSkills = [...filteredSkills].sort((a, b) => a.skill_order - b.skill_order)
-  const rawPassives = id_.passives ?? []
-  const passives4 = rawPassives.filter(p => (p.uptie_level ?? 3) === 4)
-  const filteredPassives = passives4.length > 0 ? passives4 : rawPassives.filter(p => (p.uptie_level ?? 3) === 3)
-  const sortedPassives = [...filteredPassives].sort((a, b) => a.passive_order - b.passive_order)
-
-  // 스킬 이미지 인덱스 계산: base(S1/S2/S3/DefSkill) 먼저, 변형(S3-2 등) 마지막
-  const skillImageIdx = computeSkillImageIndices(sortedSkills)
-
-  // S1 기준 인격 주요 색상
-  const s1 = sortedSkills.find(s => s.skill_order === 1) ?? sortedSkills[0]
-  const primaryColor = s1 ? sinColor(s1.sin_affinity) : rarityColor
-
-  // 스킬 아이콘 URL
-  const skillIconUrl = (order: number) =>
-    id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.game_id}${String(order).padStart(2, '0')}.webp` : ''
-
-  return (
-    <div
-      className="rounded-lg overflow-hidden"
-      style={{ background: '#0f0c09', border: '1px solid rgba(38,24,10,0.9)' }}
-    >
-      {/* 등급 컬러 바 */}
-      <div style={{ height: '2px', background: rarityColor }} />
-
-      {/* 상단: 포트레이트 + 기본 정보 */}
-      <div className="flex">
-        {/* 포트레이트 */}
-        <div className="flex-shrink-0 flex flex-col" style={{ width: 88, borderRight: '1px solid rgba(32,20,8,0.7)' }}>
-          <div className="relative overflow-hidden" style={{ width: 88, height: 116 }}>
-            {imgUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imgUrl}
-                alt={id_.name_kr}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-                loading="lazy"
-                onError={e => {
-                  if (slot.gacksung && e.currentTarget.src !== normalUrl) e.currentTarget.src = normalUrl
-                }}
-              />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: '#0a0806' }} />
-            )}
-          </div>
-          <div className="flex items-center justify-center flex-1" style={{ minHeight: 28 }}>
-            <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={18} height={18} style={{ opacity: 0.3 }} />
-          </div>
-        </div>
-
-        {/* 정보 영역 */}
-        <div className="flex-1 min-w-0 p-3">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-bold text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{id_.name_kr}</Link>
-            </div>
-            {RARITY_ICON_MAP[id_.rarity] ? (
-              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={id_.rarity} width={id_.rarity === '1성' ? 16 : id_.rarity === '2성' ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9 }} />
-            ) : (
-              <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.5625rem' }}>
-                {id_.rarity}
-              </span>
-            )}
-          </div>
-
-          {/* 테마 키워드 */}
-          {themeKws.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2.5">
-              {themeKws.map(kw => {
-                const iconUrl = getKeywordIconUrl(kw)
-                const desc = keywordMeta?.[kw]?.description
-                return (
-                  <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.625rem', cursor: desc ? 'help' : 'default' }}>
-                    {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
-                    {kw}
-                  </span>
-                )
-              })}
-            </div>
-          )}
-
-          {/* 스탯 */}
-          <div className="flex items-center gap-3 mb-2.5">
-            {id_.hp != null && (
-              <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
-                <Image src={STAT_ICON_URL.hp} alt="HP" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#cc5050' }}>{id_.hp}</strong>
-              </span>
-            )}
-            {id_.speed_min != null && id_.speed_max != null && (
-              <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
-                <Image src={STAT_ICON_URL.spd} alt="SPD" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#88a830' }}>{id_.speed_min}-{id_.speed_max}</strong>
-              </span>
-            )}
-            {id_.def_level != null && (
-              <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
-                <Image src={STAT_ICON_URL.def} alt="DEF" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#4898b0' }}>{id_.def_level}</strong>
-              </span>
-            )}
-          </div>
-
-          {/* 저항 */}
-          <div className="flex flex-wrap gap-1">
-            {([
-              { label: '참', val: id_.slash_res },
-              { label: '관', val: id_.pierce_res },
-              { label: '타', val: id_.blunt_res },
-            ] as { label: string; val: string | null }[]).map(({ label, val }) => {
-              if (!val) return null
-              const st = RES_STYLE[val] ?? { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' }
-              return (
-                <span key={label} className="inline-flex items-center gap-0.5 px-1.5 py-px rounded" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontFamily: 'var(--font-mono)', fontSize: '0.5625rem' }}>
-                  <Image src={RES_ATK_ICON[label]} alt={label} width={12} height={12} style={{ opacity: 0.75 }} />
-                  {val}
-                </span>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 스킬 / 패시브 / E.G.O 탭 바 */}
-      <div className="flex" style={{ borderTop: '1px solid rgba(28,16,6,0.9)', background: 'rgba(0,0,0,0.18)' }}>
-        {([
-          { key: 'skills' as const, label: '스킬', count: sortedSkills.length },
-          { key: 'passives' as const, label: '패시브', count: sortedPassives.length },
-          ...(egos && egos.length > 0 ? [{ key: 'ego' as const, label: 'E.G.O', count: egos.length }] : []),
-        ]).map(tab => {
-          const isActive = activeTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex-1 py-2 text-xs transition-all"
-              style={{
-                background: isActive ? `${primaryColor}12` : 'transparent',
-                color: isActive ? '#d0c8b8' : '#5a5070',
-                borderBottom: `2px solid ${isActive ? primaryColor + '55' : 'transparent'}`,
-                fontFamily: 'var(--font-heading)',
-                letterSpacing: '0.05em',
-              }}
-            >
-              {tab.label}
-              <span className="ml-2" style={{ color: isActive ? primaryColor : '#5a5065', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', opacity: 0.8 }}>
-                {tab.count}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* 스킬 탭 */}
-      {activeTab === 'skills' && (
-        <div className="flex flex-col gap-2 p-3">
-          {sortedSkills.length === 0 ? (
-            <p style={{ color: '#5a5065', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
-          ) : sortedSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i).map((skill, idx) => {
-            const sc = sinColor(skill.sin_affinity)
-            const maxPower = skill.base_power + skill.coins * skill.coin_power
-            const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
-            const skillLabel = skill.skill_order <= 3 ? `S${skill.skill_order}` : (SKILL_TYPE_KR[skill.skill_type] ?? skill.skill_type)
-            const imgIdx = skillImageIdx[skill.id] ?? idx + 1
-            const iconUrl = skillIconUrl(imgIdx)
-            const iconFallback = imgIdx >= 5 ? skillIconUrl(3) : undefined
-            return (
-              <div key={idx} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
-                {/* 헤더 */}
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {iconUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={24} height={24} style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} onError={iconFallback ? (e) => { (e.target as HTMLImageElement).src = iconFallback } : undefined} />
-                    )}
-                    <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${sc}20`, color: sc, border: `1px solid ${sc}40` }}>
-                      {skillLabel}
-                    </span>
-                    <span className="font-semibold truncate" style={{ color: sc, fontSize: '0.8125rem' }}>{skill.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* 가중치 */}
-                    {skill.atk_weight != null && skill.atk_weight > 0 && (
-                      <div className="flex gap-0.5">
-                        {Array.from({ length: skill.atk_weight }).map((_, i) => (
-                          <div key={i} style={{ width: 7, height: 7, borderRadius: 1, background: `${sc}50`, border: `1.5px solid ${sc}` }} />
-                        ))}
-                      </div>
-                    )}
-                    {/* 공격 레벨 */}
-                    {skill.offense_level != null && (
-                      <span style={{ color: '#555566', fontFamily: 'var(--font-mono)', fontSize: '0.625rem' }}>ATK Lv.{skill.offense_level}</span>
-                    )}
-                    {/* 공격 타입 */}
-                    {ATK_ICON_URL[skill.skill_type] && (
-                      <Image src={ATK_ICON_URL[skill.skill_type]} alt={skill.skill_type} width={16} height={16} style={{ opacity: 0.65 }} />
-                    )}
-                  </div>
-                </div>
-
-                {/* 위력 수치 */}
-                <div className="flex items-center gap-3 mb-2">
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.base_power}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>코인 <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.coins}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{coinPowerStr}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566', marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong></span>
-                </div>
-
-                {/* 코인 시각화 */}
-                <div className="flex gap-1">
-                  {Array.from({ length: skill.coins }).map((_, i) => (
-                    <Image key={i} src={`${STORAGE_BASE}/icons/stats/coin.webp`} alt="" width={16} height={16} style={{ filter: `drop-shadow(0 0 2px ${sc}60)` }} />
-                  ))}
-                </div>
-
-                {/* 스킬 설명 */}
-                {skill.description && (
-                  <div style={{ fontSize: '0.6875rem', lineHeight: 1.8, marginTop: 8, borderTop: `1px solid ${sc}18`, paddingTop: 8 }}>
-                    {skill.description.split('\n').map((line, li) => {
-                      const isCoinStart = /^\[코인\s?\d/.test(line)
-                      return (
-                        <div key={li}>
-                          {li > 0 && isCoinStart && (
-                            <div style={{ borderTop: `1px solid ${sc}20`, margin: '5px 0' }} />
-                          )}
-                          <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, sc)}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* 패시브 탭 */}
-      {activeTab === 'passives' && (
-        <div className="flex flex-col gap-2 p-3">
-          {sortedPassives.length === 0 ? (
-            <p style={{ color: '#5a5065', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>패시브 정보 없음</p>
-          ) : sortedPassives.map((passive, idx) => {
-            const isBattle = passive.passive_type === 'battle'
-            // sin_affinity가 "나태, 오만" 처럼 쉼표로 구분될 수 있으므로 전부 파싱
-            const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
-            const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as string[]
-            const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#888888') : '#888888'
-            return (
-              <div key={idx} className="p-3 rounded" style={{ background: `${pc}08`, border: `1px solid ${pc}25` }}>
-                {/* 이름 + 배틀/서포트 */}
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded font-semibold flex-shrink-0"
-                    style={{
-                      background: isBattle ? 'rgba(200,64,80,0.15)' : 'rgba(72,120,160,0.15)',
-                      color: isBattle ? '#c84050' : '#4898b0',
-                      border: `1px solid ${isBattle ? 'rgba(200,64,80,0.3)' : 'rgba(72,120,160,0.3)'}`,
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    {isBattle ? '배틀' : '서포트'}
-                  </span>
-                  <span className="font-semibold" style={{ color: pc, fontSize: '0.8125rem' }}>{passive.name}</span>
-                </div>
-
-                {/* 발동 조건: 죄악 아이콘(복수 가능) + x수량 */}
-                {sinTypes.length > 0 && passive.sin_count != null && (
-                  <div className="flex items-center gap-1.5 mb-2">
-                    {sinTypes.map((st, i) => (
-                      <Image key={i} src={sinIconUrl(st)} alt="" width={20} height={20} style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st] ?? pc}60)` }} />
-                    ))}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
-                    {passive.active_cond && (
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${pc}18`, color: pc, border: `1px solid ${pc}35` }}>
-                        {passive.active_cond}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* 설명 */}
-                {passive.description && (
-                  <div style={{ fontSize: '0.6875rem', lineHeight: 1.8 }}>
-                    {passive.description.split('\n').map((line, li) => (
-                      <div key={li}>
-                        <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, pc)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* E.G.O 탭 */}
-      {activeTab === 'ego' && egos && (
-        <div className="flex flex-col gap-2 p-3">
-          {egos.map(({ grade, ego }) => {
-            const gc = GRADE_COLORS[grade] ?? '#667788'
-            const sinEn = ego.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
-            const sc = sinEn ? (SIN_COLORS[sinEn] ?? gc) : gc
-            return (
-              <div key={ego.id} className="p-3 rounded flex items-center gap-3"
-                style={{ background: `${gc}08`, border: `1px solid ${gc}28` }}>
-                <div style={{ width: 2, alignSelf: 'stretch', background: gc, borderRadius: 1, flexShrink: 0 }} />
-                {ego.image_url ? (
-                  <Image src={ego.image_url} alt={ego.name_kr ?? ''} width={52} height={52}
-                    style={{ borderRadius: 4, objectFit: 'cover', border: `1px solid ${gc}30`, flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 52, height: 52, borderRadius: 4, background: '#0a0806', border: `1px solid ${gc}20`, flexShrink: 0 }} />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="px-1.5 py-px rounded" style={{ background: `${gc}18`, color: gc, border: `1px solid ${gc}38`, fontFamily: 'var(--font-mono)', fontSize: '0.5rem' }}>
-                      E.G.O
-                    </span>
-                    {GRADE_ICON_URL[grade] ? (
-                      <Image src={GRADE_ICON_URL[grade]} alt={grade} width={32} height={12} style={{ opacity: 0.9 }} />
-                    ) : (
-                      <span style={{ color: gc, fontFamily: 'var(--font-mono)', fontSize: '0.5rem' }}>{grade}</span>
-                    )}
-                    {sinEn && (
-                      <Image src={sinIconUrl(sinEn)} alt="" width={12} height={12} style={{ opacity: 0.8 }} />
-                    )}
-                  </div>
-                  <span className="font-serif font-bold" style={{ color: sc, fontSize: '0.8125rem' }}>{ego.name_kr ?? ego.id}</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
@@ -762,18 +203,18 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const [passivesOpen, setPassivesOpen] = useState(false)
   const [giftsOpen, setGiftsOpen] = useState(false)
 
-  // 북마크
   const [bookmarked, setBookmarked] = useState(false)
   const [bookmarking, setBookmarking] = useState(false)
 
-  // 댓글
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const [commentSubmitting, setCommentSubmitting] = useState(false)
 
-  // 공유
   const [shared, setShared] = useState(false)
   const [shareGenerating, setShareGenerating] = useState(false)
+
+  const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
+  const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
 
   useEffect(() => {
     fetch('/api/keyword-meta')
@@ -786,11 +227,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       .catch(() => {})
   }, [])
 
-  const isGeodun = deck ? GEODUN_TYPES.has(deck.content_type ?? '') : false
-
-  // EGO 기프트 룩업
-  const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
-  const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
   useEffect(() => {
     fetch('/api/ego-gifts')
       .then(r => r.ok ? r.json() : [])
@@ -830,7 +266,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       .finally(() => setLoading(false))
   }, [id])
 
-  // 투표 상태 로드
   useEffect(() => {
     if (authStatus !== 'authenticated') return
     fetch(`/api/decks/${id}/vote`)
@@ -839,7 +274,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       .catch(() => {})
   }, [id, authStatus])
 
-  // 북마크 상태 로드
   useEffect(() => {
     if (authStatus !== 'authenticated') return
     fetch(`/api/decks/${id}/bookmark`)
@@ -848,7 +282,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       .catch(() => {})
   }, [id, authStatus])
 
-  // 댓글 로드
   useEffect(() => {
     fetch(`/api/decks/${id}/comments`)
       .then(r => r.ok ? r.json() : [])
@@ -968,7 +401,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     return !(s1 === 3 && s2 === 2 && s3 === 1)
   })
 
-  // 죄악 자원 & 공격 유형 종합
+  // 죄악 자원 & 공격 유형
   const sinAffinityTotals: Record<string, number> = {}
   const atkTypeTotals: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
   for (const slot of filledSlots) {
@@ -983,7 +416,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
   // EGO 그룹핑
   const gradeOrder = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-  const egoGrouped: Record<string, { grade: string; ego: NonNullable<EgoSlot['ego']> }[]> = {}
+  const egoGrouped: Record<string, EgoEntry[]> = {}
   for (const row of deck.deck_egos ?? []) {
     if (!row.ego) continue
     const sid = row.ego.sinner_id
@@ -1000,7 +433,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     ;(acc[sid] ??= []).push(slot)
     return acc
   }, {})
-  // 인격 + EGO 수감자 합산 (정규 수감자 순서)
   const sinnerIds = [
     ...Object.keys(slotsBySinner),
     ...egoSinnerIds.filter(sid => !slotsBySinner[sid]),
@@ -1010,7 +442,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
   })
 
-  // 수감자별 편성 순서 (slot_order → 표시 번호)
   const sinnerFormationOrder: Record<string, number> = {}
   for (const slot of filledSlots) {
     const sid = slot.identities!.sinner_id
@@ -1020,9 +451,40 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const activeSlots = activeSinner ? (slotsBySinner[activeSinner] ?? []) : []
   const activeEgos = activeSinner ? (egoGrouped[activeSinner] ?? []) : []
 
+  const isGeodun = GEODUN_TYPES.has(deck.content_type ?? '')
   const date = new Date(deck.created_at).toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
+
+  // 공통 props for header components
+  const headerProps = {
+    deckId: id,
+    title: deck.title,
+    username: deck.profiles?.username,
+    date,
+    viewCount: deck.view_count,
+    tags: deck.tags,
+    keywords,
+    isOwner: deck.is_owner,
+    isAdmin: deck.is_admin,
+    deckCode: deck.deck_code,
+    voted,
+    voteCount,
+    voting,
+    authStatus,
+    bookmarked,
+    bookmarking,
+    shared,
+    shareGenerating,
+    copied,
+    sinAffinityTotals,
+    atkTypeTotals,
+    filledSlotsCount: filledSlots.length,
+    onVote: handleVote,
+    onBookmark: handleBookmark,
+    onShare: handleShare,
+    onCopyCode: handleCopyCode,
+  }
 
   return (
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
@@ -1060,11 +522,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   ) : (
                     <div style={{ width: '100%', height: '100%', background: '#08060410' }} />
                   )}
-                  {/* 스트립 구분 그림자 */}
                   {i > 0 && (
                     <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '1px', background: 'rgba(0,0,0,0.5)' }} />
                   )}
-                  {/* 등급 상단 바 */}
                   {rarityColor && (
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: rarityColor, opacity: 0.6 }} />
                   )}
@@ -1073,7 +533,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             })}
           </div>
 
-          {/* 그라디언트: 상하 */}
+          {/* 그라디언트 */}
           <div
             className="absolute inset-0"
             style={{
@@ -1081,7 +541,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               pointerEvents: 'none',
             }}
           />
-          {/* 그라디언트: 좌우 */}
           <div
             className="absolute inset-0"
             style={{
@@ -1132,372 +591,17 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       {/* ── 콘텐츠 ── */}
       <div className="max-w-5xl mx-auto px-4 md:px-6 pb-24 pt-6">
 
-          {/* ── 모바일 액션바 (lg 미만에서만 표시) ── */}
-          <div className="flex lg:hidden flex-wrap items-center gap-2.5 mb-5 rounded-lg px-4 py-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-            {/* 추천 */}
-            <button
-              onClick={handleVote}
-              disabled={voting || authStatus !== 'authenticated'}
-              className="inline-flex items-center gap-2 transition-all duration-200"
-              style={{ opacity: voting ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-              title={authStatus !== 'authenticated' ? '로그인 후 추천 가능' : voted ? '추천 취소' : '추천'}
-            >
-              <div
-                className="flex items-center justify-center rounded-full transition-all duration-300"
-                style={{
-                  width: 32, height: 32,
-                  background: voted ? 'rgba(200,48,64,0.14)' : 'rgba(44,28,12,0.5)',
-                  border: `1px solid ${voted ? 'rgba(200,48,64,0.45)' : 'rgba(58,40,18,0.7)'}`,
-                  boxShadow: voted ? '0 0 12px rgba(200,48,64,0.18)' : 'none',
-                }}
-              >
-                <Heart
-                  size={14}
-                  fill={voted ? 'currentColor' : 'none'}
-                  style={{ color: voted ? '#e05060' : '#5a5070' }}
-                />
-              </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#6a6a80' }}>
-                {voteCount}
-              </span>
-            </button>
-
-            {/* 북마크 */}
-            <button
-              onClick={handleBookmark}
-              disabled={bookmarking || authStatus !== 'authenticated'}
-              className="inline-flex items-center justify-center transition-all duration-200"
-              style={{ opacity: bookmarking ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-              title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
-            >
-              <div
-                className="flex items-center justify-center rounded-full transition-all duration-300"
-                style={{
-                  width: 32, height: 32,
-                  background: bookmarked ? 'rgba(200,144,10,0.14)' : 'rgba(44,28,12,0.5)',
-                  border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.45)' : 'rgba(58,40,18,0.7)'}`,
-                  boxShadow: bookmarked ? '0 0 12px rgba(200,144,10,0.18)' : 'none',
-                }}
-              >
-                <Bookmark
-                  size={14}
-                  fill={bookmarked ? 'currentColor' : 'none'}
-                  style={{ color: bookmarked ? 'var(--gold)' : '#5a5070' }}
-                />
-              </div>
-            </button>
-
-            {/* 공유 */}
-            <button
-              onClick={handleShare}
-              disabled={shareGenerating}
-              className="inline-flex items-center justify-center transition-all duration-200"
-              style={{ opacity: shareGenerating ? 0.5 : 1 }}
-            >
-              <div
-                className="flex items-center justify-center rounded-full transition-all duration-300"
-                style={{
-                  width: 32, height: 32,
-                  background: shareGenerating ? 'rgba(200,144,10,0.14)' : 'rgba(44,28,12,0.5)',
-                  border: `1px solid ${shareGenerating ? 'rgba(200,144,10,0.45)' : 'rgba(58,40,18,0.7)'}`,
-                }}
-              >
-                <Share2 size={14} style={{ color: shareGenerating ? 'var(--gold)' : '#5a5070' }} />
-              </div>
-            </button>
-
-            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
-
-            {/* 수정 */}
-            {(deck.is_owner || deck.is_admin) && (
-              <Link
-                href={`/decks/${id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 hover:brightness-125"
-                style={{
-                  background: 'rgba(200,144,10,0.1)',
-                  border: '1px solid rgba(200,144,10,0.3)',
-                  color: 'var(--gold)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.625rem',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                <Pencil size={10} />
-                EDIT
-              </Link>
-            )}
-
-            {/* 편성코드 */}
-            {deck.deck_code && (
-              <button
-                onClick={handleCopyCode}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150"
-                style={{
-                  background: copied ? 'rgba(88,136,40,0.12)' : 'rgba(44,28,12,0.3)',
-                  border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'rgba(58,40,18,0.5)'}`,
-                  color: copied ? '#88a830' : '#484858',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.625rem',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                {copied ? <Check size={10} /> : <Copy size={10} />}
-                {copied ? 'COPIED!' : 'COPY CODE'}
-              </button>
-            )}
-
-            {/* 죄악 자원 + 공격 유형 */}
-            {filledSlots.length > 0 && (
-              <>
-                <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
-                <div className="flex items-center gap-2 flex-wrap">
-                  {SIN_ORDER.map(sin => {
-                    const count = sinAffinityTotals[sin] ?? 0
-                    if (count === 0) return null
-                    return (
-                      <div key={sin} className="flex items-center gap-0.5">
-                        <Image src={sinIconUrl(sin)} alt="" width={14} height={14} />
-                        <span style={{ color: SIN_COLORS[sin], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
-                      </div>
-                    )
-                  })}
-                  <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.04)' }} />
-                  {(['slash', 'pierce', 'blunt'] as const).map(type => {
-                    const count = atkTypeTotals[type]
-                    if (count === 0) return null
-                    return (
-                      <div key={type} className="flex items-center gap-0.5">
-                        <Image src={ATK_ICON_URL[type]} alt="" width={13} height={13} />
-                        <span style={{ color: '#999', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            )}
-
-            {/* 태그 */}
-            {deck.tags.length > 0 && (
-              <>
-                <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.06)' }} />
-                <div className="flex flex-wrap gap-1">
-                  {deck.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(200,144,10,0.07)', color: 'var(--gold-dim)', border: '1px solid rgba(200,144,10,0.16)', fontFamily: 'var(--font-body)' }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+        {/* 모바일 액션바 */}
+        <DeckMobileActionBar {...headerProps} />
 
         <div className="flex gap-5 items-start">
 
-          {/* ── 데스크탑 사이드바 (lg 이상에서만 표시) ── */}
+          {/* 데스크탑 사이드바 */}
           <aside className="hidden lg:block" style={{ width: 252, flexShrink: 0 }}>
-            <div className="flex flex-col gap-3" style={{ position: 'sticky', top: 88 }}>
-
-              {/* 추천 */}
-              <div
-                className="rounded-lg flex flex-col items-center py-5 gap-2"
-                style={{ background: '#120e09', border: '1px solid var(--border)' }}
-              >
-                <button
-                  onClick={handleVote}
-                  disabled={voting || authStatus !== 'authenticated'}
-                  className="flex flex-col items-center gap-2 transition-all duration-200"
-                  style={{ opacity: voting ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-                  title={authStatus !== 'authenticated' ? '로그인 후 추천 가능' : voted ? '추천 취소' : '추천'}
-                >
-                  <div
-                    className="flex items-center justify-center rounded-full transition-all duration-300"
-                    style={{
-                      width: 48, height: 48,
-                      background: voted ? 'rgba(200,48,64,0.14)' : 'rgba(44,28,12,0.5)',
-                      border: `1px solid ${voted ? 'rgba(200,48,64,0.45)' : 'rgba(58,40,18,0.7)'}`,
-                      boxShadow: voted ? '0 0 16px rgba(200,48,64,0.18)' : 'none',
-                    }}
-                  >
-                    <Heart
-                      size={20}
-                      fill={voted ? 'currentColor' : 'none'}
-                      style={{ color: voted ? '#e05060' : '#5a5070' }}
-                    />
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#6a6a80' }}>
-                    {voteCount}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5rem', letterSpacing: '0.12em', color: voted ? '#c84050' : (authStatus !== 'authenticated' ? '#222233' : '#555570') }}>
-                    {authStatus !== 'authenticated' ? 'LOGIN TO VOTE' : voted ? 'LIKED' : 'LIKE'}
-                  </span>
-                </button>
-              </div>
-
-              {/* 수정 */}
-              {(deck.is_owner || deck.is_admin) && (
-                <Link
-                  href={`/decks/${id}/edit`}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150 hover:brightness-125"
-                  style={{
-                    background: 'rgba(200,144,10,0.1)',
-                    border: '1px solid rgba(200,144,10,0.3)',
-                    color: 'var(--gold)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.625rem',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  <Pencil size={11} />
-                  EDIT DECK
-                </Link>
-              )}
-
-              {/* 편성코드 */}
-              {deck.deck_code && (
-                <button
-                  onClick={handleCopyCode}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150"
-                  style={{
-                    background: copied ? 'rgba(88,136,40,0.12)' : '#120e09',
-                    border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
-                    color: copied ? '#88a830' : '#484858',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.625rem',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  {copied ? <Check size={11} /> : <Copy size={11} />}
-                  {copied ? 'COPIED!' : 'COPY DECK CODE'}
-                </button>
-              )}
-
-              {/* 북마크 + 공유 */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleBookmark}
-                  disabled={bookmarking || authStatus !== 'authenticated'}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150"
-                  style={{
-                    background: bookmarked ? 'rgba(200,144,10,0.12)' : '#120e09',
-                    border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.4)' : 'var(--border)'}`,
-                    color: bookmarked ? 'var(--gold)' : '#484858',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.625rem',
-                    letterSpacing: '0.1em',
-                    opacity: bookmarking ? 0.5 : 1,
-                    cursor: authStatus !== 'authenticated' ? 'default' : 'pointer',
-                  }}
-                  title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
-                >
-                  <Bookmark size={11} fill={bookmarked ? 'currentColor' : 'none'} />
-                  {bookmarked ? 'SAVED' : 'SAVE'}
-                </button>
-                <button
-                  onClick={handleShare}
-                  disabled={shareGenerating}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150"
-                  style={{
-                    background: shared ? 'rgba(88,136,40,0.12)' : '#120e09',
-                    border: `1px solid ${shared ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
-                    color: shared ? '#88a830' : '#484858',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.625rem',
-                    letterSpacing: '0.1em',
-                    opacity: shareGenerating ? 0.5 : 1,
-                  }}
-                >
-                  {shared ? <Check size={11} /> : <Share2 size={11} />}
-                  {shared ? 'COPIED!' : 'SHARE'}
-                </button>
-              </div>
-
-              {/* 태그 + 키워드 */}
-              {(deck.tags.length > 0 || keywords.length > 0) && (
-                <div className="rounded-lg p-3 flex flex-col gap-2" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                  {deck.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {deck.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ background: 'rgba(200,144,10,0.07)', color: 'var(--gold-dim)', border: '1px solid rgba(200,144,10,0.16)', fontFamily: 'var(--font-body)' }}
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {keywords.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {keywords.map(kw => {
-                        const iconUrl = getKeywordIconUrl(kw)
-                        return (
-                          <span
-                            key={kw}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded"
-                            style={{ background: 'rgba(136,88,40,0.14)', color: '#c8a450', border: '1px solid rgba(136,88,40,0.24)', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-                          >
-                            {iconUrl && (
-                              <Image src={iconUrl} alt="" width={11} height={11} />
-                            )}
-                            {kw}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 죄악 자원 & 공격 유형 종합 */}
-              {filledSlots.length > 0 && (
-                <div className="rounded-lg p-3 flex flex-col gap-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                  {/* 죄악 자원 */}
-                  <div>
-                    <div style={{ color: '#6a6a80', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>죄악 자원</div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {SIN_ORDER.map(sin => {
-                        const count = sinAffinityTotals[sin] ?? 0
-                        if (count === 0) return null
-                        return (
-                          <div key={sin} className="flex items-center gap-1">
-                            <Image src={sinIconUrl(sin)} alt="" width={16} height={16} />
-                            <span style={{ color: SIN_COLORS[sin], fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} />
-
-                  {/* 공격 유형 */}
-                  <div>
-                    <div style={{ color: '#6a6a80', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>공격 유형</div>
-                    <div className="flex items-center gap-3">
-                      {(['slash', 'pierce', 'blunt'] as const).map(type => {
-                        const count = atkTypeTotals[type]
-                        if (count === 0) return null
-                        return (
-                          <div key={type} className="flex items-center gap-1">
-                            <Image src={ATK_ICON_URL[type]} alt="" width={15} height={15} />
-                            <span style={{ color: '#aaaaaa', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
+            <DeckSidebarPanel {...headerProps} />
           </aside>
 
-          {/* ── 수감자 탭 + 인격 상세 ── */}
+          {/* 수감자 탭 + 인격 상세 */}
           <main className="flex-1 min-w-0">
             {filledSlots.length === 0 ? (
               <p className="text-sm italic" style={{ color: '#2a2a3a', fontFamily: 'var(--font-body)' }}>인격 정보 없음</p>
@@ -1549,45 +653,24 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: '#080604' }} />
                         )}
-                        {/* 등급 바 */}
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: rc, opacity: isActive ? 1 : 0.4 }} />
-                        {/* 편성/대기 순서 */}
                         {sinnerFormationOrder[sid] != null && (() => {
                           const n = sinnerFormationOrder[sid]
                           const isFormation = n <= 7
                           return (
                             <div
                               className="absolute inset-0 flex items-center justify-center"
-                              style={{
-                                opacity: isActive ? 0.95 : 0.55,
-                                transition: 'opacity 0.15s',
-                                pointerEvents: 'none',
-                                gap: '3px',
-                              }}
+                              style={{ opacity: isActive ? 0.95 : 0.55, transition: 'opacity 0.15s', pointerEvents: 'none', gap: '3px' }}
                             >
-                              <span style={{
-                                fontSize: '0.875rem',
-                                fontWeight: 700,
-                                fontFamily: 'var(--font-body)',
-                                color: isFormation ? '#e8b030' : '#5ab0d0',
-                                textShadow: `0 0 8px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)`,
-                              }}>
+                              <span style={{ fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 8px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)` }}>
                                 {isFormation ? '편성' : '대기'}
                               </span>
-                              <span style={{
-                                fontSize: '1.375rem',
-                                fontWeight: 800,
-                                fontFamily: 'var(--font-body)',
-                                lineHeight: 1,
-                                color: isFormation ? '#e8b030' : '#5ab0d0',
-                                textShadow: `0 0 10px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)`,
-                              }}>
+                              <span style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 10px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)` }}>
                                 {n}
                               </span>
                             </div>
                           )
                         })()}
-                        {/* 수감자 로고 */}
                         <div
                           className="absolute bottom-0 left-0 right-0 flex items-end justify-center"
                           style={{ background: 'linear-gradient(to top, rgba(8,6,4,0.92) 0%, transparent 100%)', paddingBottom: 5, paddingTop: 16 }}
@@ -1599,7 +682,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   })}
                 </div>
 
-                {/* ── 인격 정보 (접기/펼치기) ── */}
+                {/* 인격 정보 아코디언 */}
                 <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
                   <button
                     onClick={() => setIdentitiesOpen(v => !v)}
@@ -1624,13 +707,13 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   {identitiesOpen && (
                     <div className="flex flex-col gap-2 p-3">
                       {activeSlots.map((slot, i) => (
-                        <IdentityCard key={i} slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} />
+                        <DeckIdentityCard key={i} slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} />
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* 덱 노트 (접기/펼치기) */}
+                {/* 덱 노트 아코디언 */}
                 {(deck.description || customSkillSlots.length > 0) && (
                   <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
                     <button
@@ -1657,8 +740,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                             egoGiftLookup={egoGiftLookup}
                           />
                         )}
-
-                        {/* 스킬 편성 (거전) */}
                         {customSkillSlots.length > 0 && (
                           <div style={{ marginTop: deck.description ? '12px' : 0, borderTop: deck.description ? '1px solid rgba(32,20,8,0.5)' : 'none', paddingTop: deck.description ? '12px' : 0 }}>
                             <div className="flex items-center gap-2 mb-2">
@@ -1675,13 +756,11 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                                 const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.game_id}` : ''
                                 return (
                                   <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
-                                    {/* 수감자 로고 + 인격명 */}
                                     <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
                                     <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '120px' }}>
                                       {id_.name_kr}
                                     </span>
                                     <div style={{ flex: 1 }} />
-                                    {/* S1 / S2 / S3 */}
                                     {[0, 1, 2].map(idx => {
                                       const skill = sortedSk.find(s => s.skill_order === idx + 1)
                                       const sc = skill ? sinColor(skill.sin_affinity) : '#888'
@@ -1708,7 +787,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                {/* ── 패시브 패널 ── */}
+                {/* 패시브 패널 */}
                 <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
                   <button
                     onClick={() => setPassivesOpen(v => !v)}
@@ -1726,7 +805,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                     </svg>
                   </button>
                   {passivesOpen && (() => {
-                    // 덱 전체 스킬 죄악 합산
                     const deckSinCounts: Record<string, number> = {}
                     for (const slot of filledSlots) {
                       const id__ = slot.identities!
@@ -1741,165 +819,61 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                       }
                     }
                     return (
-                    <div style={{ borderTop: '1px solid var(--border)' }}>
-                      {filledSlots.map((slot, idx) => {
-                        const id_ = slot.identities!
-                        const rawPa = id_.passives ?? []
-                        const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
-                        const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
-                        const battlePassives = filtPa.filter(p => p.passive_type === 'battle' && p.sin_affinity)
-                        const supportPassives = filtPa.filter(p => p.passive_type === 'support' && p.sin_affinity)
-
-                        return (
-                          <div
-                            key={idx}
-                            className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 px-4 py-2.5"
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                          >
-                            {/* 수감자 + 인격명 */}
-                            <div style={{ width: '130px', minWidth: 0, flexShrink: 0 }}>
-                              <div className="flex items-center gap-1 mb-0.5">
-                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
-                                <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
+                      <div style={{ borderTop: '1px solid var(--border)' }}>
+                        {filledSlots.map((slot, idx) => {
+                          const id_ = slot.identities!
+                          const rawPa = id_.passives ?? []
+                          const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
+                          const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
+                          const battlePassives = filtPa.filter(p => p.passive_type === 'battle' && p.sin_affinity)
+                          const supportPassives = filtPa.filter(p => p.passive_type === 'support' && p.sin_affinity)
+                          return (
+                            <div
+                              key={idx}
+                              className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 px-4 py-2.5"
+                              style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
+                            >
+                              <div style={{ width: '130px', minWidth: 0, flexShrink: 0 }}>
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
+                                  <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
+                                </div>
+                                <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{id_.name_kr}</p>
                               </div>
-                              <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{id_.name_kr}</p>
-                            </div>
-
-                            {/* 배틀 패시브 */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
-                              <div className="flex flex-col gap-1.5">
-                                {battlePassives.length > 0 ? battlePassives.map((p, pi) => (
-                                  <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
-                                )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
+                                <div className="flex flex-col gap-1.5">
+                                  {battlePassives.length > 0 ? battlePassives.map((p, pi) => (
+                                    <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
+                                  )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
+                                </div>
                               </div>
-                            </div>
-
-                            {/* 구분선 (데스크탑) */}
-                            <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
-
-                            {/* 서포트 패시브 */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
-                              <div className="flex flex-col gap-1.5">
-                                {supportPassives.length > 0 ? supportPassives.map((p, pi) => (
-                                  <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
-                                )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
+                              <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
+                                <div className="flex flex-col gap-1.5">
+                                  {supportPassives.length > 0 ? supportPassives.map((p, pi) => (
+                                    <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
+                                  )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )
+                        })}
+                      </div>
                     )
                   })()}
                 </div>
 
-                {/* ── 활성화된 EGO 기프트 패널 (거던 유형만) ── */}
-                {isGeodun && (() => {
-                  // 편성된 인격만 (slot_order !== 99)
-                  const formedSlots = filledSlots.filter(s => s.slot_order !== 99)
-                  if (formedSlots.length === 0 || allEgoGifts.length === 0) return null
-
-                  const kwCounts: Record<string, number> = {}
-                  const affCounts: Record<string, number> = {}
-                  for (const slot of formedSlots) {
-                    const id_ = slot.identities!
-                    if (id_.keywords) {
-                      for (const kw of id_.keywords) kwCounts[kw] = (kwCounts[kw] ?? 0) + 1
-                    }
-                    // affiliation은 keywords 안에 포함
-                  }
-
-                  const activated = allEgoGifts.filter(g => {
-                    const c = g.activation_condition
-                    if (!c) return false
-                    let current = 0
-                    if (c.type === 'keyword') {
-                      current = kwCounts[c.keyword!] ?? 0
-                    } else if (c.type === 'multi_keyword') {
-                      for (const kw of c.keywords!) current += kwCounts[kw] ?? 0
-                    } else if (c.type === 'affiliation') {
-                      if (c.affiliations) {
-                        for (const aff of c.affiliations) current += affCounts[aff] ?? 0
-                      } else {
-                        current = affCounts[c.affiliation!] ?? 0
-                      }
-                    }
-                    return current >= c.count
-                  })
-
-                  if (activated.length === 0) return null
-
-                  // 키워드별 그룹
-                  const kwOrder = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통']
-                  const grouped: Record<string, typeof activated> = {}
-                  for (const g of activated) {
-                    ;(grouped[g.keyword] ??= []).push(g)
-                  }
-
-                  return (
-                    <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                      <button
-                        onClick={() => setGiftsOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
-                        style={{ background: giftsOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: giftsOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: giftsOpen ? '#8a7040' : '#5a5070', letterSpacing: '0.12em' }}>
-                            EGO GIFTS
-                          </span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: '#c8900a' }}>
-                            {activated.length}
-                          </span>
-                        </div>
-                        <svg
-                          width="12" height="12" viewBox="0 0 16 16" fill="none"
-                          style={{ color: giftsOpen ? '#8a7040' : '#5a5065', transition: 'transform 0.2s', transform: giftsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                        >
-                          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                      {giftsOpen && (
-                        <div className="px-4 py-3 flex flex-col gap-2" style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                          {kwOrder.filter(kw => grouped[kw]).map(kw => (
-                            <div key={kw}>
-                              <div className="flex items-center gap-1.5 mb-1">
-                                {getKeywordIconUrl(kw) && (
-                                  <Image src={getKeywordIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
-                                )}
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a7040', letterSpacing: '0.05em' }}>
-                                  {kw} ({grouped[kw].length})
-                                </span>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                {grouped[kw].map(g => {
-                                  const c = g.activation_condition!
-                                  const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
-                                    : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
-                                    : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
-                                    : `${c.count}인`
-                                  return (
-                                    <div key={g.name} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(200,144,10,0.06)' }}>
-                                      {g.image_url && (
-                                        <Image src={g.image_url} alt="" width={20} height={20} className="rounded" style={{ flexShrink: 0 }} />
-                                      )}
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <span style={{ fontSize: '0.6875rem', color: '#c8a450', fontWeight: 600 }}>{g.name}</span>
-                                        <span style={{ fontSize: '0.5625rem', color: '#5a5040', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
-                                      </div>
-                                      <span style={{ fontSize: '0.5rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ON</span>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
+                {/* EGO 기프트 아코디언 (거던 유형만) */}
+                {isGeodun && (
+                  <DeckEgoGiftAccordion
+                    filledSlots={filledSlots.map(s => ({ slot_order: s.slot_order, identities: s.identities ? { keywords: s.identities.keywords } : null }))}
+                    allEgoGifts={allEgoGifts}
+                    open={giftsOpen}
+                    onToggle={() => setGiftsOpen(v => !v)}
+                  />
+                )}
 
               </>
             )}
@@ -1907,7 +881,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
         </div>
 
-        {/* ── 댓글 섹션 ── */}
+        {/* 댓글 섹션 */}
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-4">
             <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
@@ -1921,12 +895,8 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             </span>
           </div>
 
-          {/* 댓글 입력 */}
           {authStatus === 'authenticated' ? (
-            <div
-              className="rounded-lg p-4 mb-4"
-              style={{ background: '#120e09', border: '1px solid var(--border)' }}
-            >
+            <div className="rounded-lg p-4 mb-4" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
               <textarea
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
@@ -1934,13 +904,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                 rows={3}
                 placeholder="덱에 대한 의견을 남겨보세요..."
                 className="w-full px-3 py-2 text-sm outline-none resize-none"
-                style={{
-                  background: '#0a0806',
-                  border: '1px solid rgba(58,40,18,0.5)',
-                  borderRadius: '4px',
-                  color: '#e8dcc8',
-                  fontFamily: 'var(--font-body)',
-                }}
+                style={{ background: '#0a0806', border: '1px solid rgba(58,40,18,0.5)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
               />
               <div className="flex items-center justify-between mt-2">
                 <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
@@ -1972,7 +936,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
 
-          {/* 댓글 목록 */}
           {comments.length > 0 ? (
             <div className="flex flex-col gap-2">
               {comments.map(comment => {
@@ -1980,32 +943,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                 })
                 return (
-                  <div
-                    key={comment.id}
-                    className="rounded-lg p-4"
-                    style={{ background: '#120e09', border: '1px solid var(--border)' }}
-                  >
+                  <div key={comment.id} className="rounded-lg p-4" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
                     <div className="flex items-start gap-3">
-                      {/* 아바타 */}
                       {comment.avatar_url ? (
-                        <Image
-                          src={comment.avatar_url}
-                          alt=""
-                          width={28}
-                          height={28}
-                          style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }}
-                        />
+                        <Image src={comment.avatar_url} alt="" width={28} height={28} style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }} />
                       ) : (
-                        <div
-                          style={{
-                            width: 28, height: 28, borderRadius: '50%',
-                            background: 'rgba(200,144,10,0.12)',
-                            border: '1px solid rgba(58,40,18,0.5)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--gold-dim)', fontSize: '0.6875rem', fontWeight: 'bold',
-                            flexShrink: 0,
-                          }}
-                        >
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(200,144,10,0.12)', border: '1px solid rgba(58,40,18,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-dim)', fontSize: '0.6875rem', fontWeight: 'bold', flexShrink: 0 }}>
                           {(comment.username ?? '?')[0]?.toUpperCase()}
                         </div>
                       )}
@@ -2032,7 +975,6 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                           {comment.content}
                         </p>
                       </div>
-                      {/* 삭제 (본인만) */}
                       {authStatus === 'authenticated' && (
                         <button
                           onClick={() => handleCommentDelete(comment.id)}
@@ -2049,10 +991,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               })}
             </div>
           ) : (
-            <div
-              className="text-center py-8"
-              style={{ color: '#5a5065', fontSize: '0.8125rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}
-            >
+            <div className="text-center py-8" style={{ color: '#5a5065', fontSize: '0.8125rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>
               아직 댓글이 없습니다.
             </div>
           )}
