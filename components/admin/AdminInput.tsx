@@ -1,5 +1,8 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown } from 'lucide-react'
+
 // Shared styles
 export const adminInputStyle: React.CSSProperties = {
   width: '100%',
@@ -68,22 +71,112 @@ interface AdminSelectProps {
 }
 
 export function AdminSelect({ label, value, onChange, options, placeholder, required, disabled, style }: AdminSelectProps) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const selectedLabel = options.find(o => o.value === value)?.label
+
   return (
     <div>
       {label && <label style={adminLabelStyle}>{label}{required && ' *'}</label>}
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        disabled={disabled}
-        style={{
-          ...adminInputStyle,
-          ...(disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
-          ...style,
-        }}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <div ref={containerRef} style={{ position: 'relative', ...style }}>
+        <button
+          type="button"
+          onClick={() => !disabled && setOpen(prev => !prev)}
+          style={{
+            ...adminInputStyle,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            color: selectedLabel ? '#c8a450' : '#888',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selectedLabel ?? placeholder ?? '선택'}
+          </span>
+          <ChevronDown
+            size={14}
+            style={{
+              flexShrink: 0,
+              transition: 'transform 0.2s ease',
+              transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+              color: '#888',
+            }}
+          />
+        </button>
+        {open && (
+          <div style={{
+            position: 'absolute',
+            top: 'calc(100% + 2px)',
+            left: 0,
+            right: 0,
+            background: '#1a1510',
+            border: '1px solid var(--border)',
+            borderRadius: '4px',
+            zIndex: 50,
+            maxHeight: '240px',
+            overflowY: 'auto',
+          }}>
+            {placeholder && (
+              <button
+                type="button"
+                onClick={() => { onChange(''); setOpen(false) }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: '0.8125rem',
+                  color: '#888',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {placeholder}
+              </button>
+            )}
+            {options.map(o => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: '0.8125rem',
+                  color: o.value === value ? '#e8b030' : '#c8a450',
+                  background: o.value === value ? 'rgba(200,144,10,0.12)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: o.value === value ? 600 : 400,
+                }}
+                onMouseEnter={e => { if (o.value !== value) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                onMouseLeave={e => { if (o.value !== value) e.currentTarget.style.background = 'transparent' }}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

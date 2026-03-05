@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { Settings } from 'lucide-react'
 import {
   Sinner,
   Identity,
@@ -41,6 +42,7 @@ interface Props {
   allEgos: EGO[]
   egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
   canEditGuide?: boolean
+  isAdmin?: boolean
   currentSeason?: number
 }
 
@@ -55,6 +57,7 @@ export default function IdentityDetailClient({
   allEgos,
   egoGifts = [],
   canEditGuide,
+  isAdmin,
   currentSeason = 7,
 }: Props) {
   const [gacksung, setGacksung] = useState(false)
@@ -481,6 +484,33 @@ export default function IdentityDetailClient({
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <Link
+          href={`/admin/data/identities/${identity.id}`}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            background: 'rgba(200,144,10,0.15)',
+            border: '1px solid var(--gold-dim)',
+            color: 'var(--gold)',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.35)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.15)')}
+          title="관리자: 인격 편집"
+        >
+          <Settings size={18} />
+        </Link>
+      )}
     </div>
   )
 }

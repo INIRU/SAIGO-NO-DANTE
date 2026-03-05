@@ -75,6 +75,7 @@ export default async function IdentityPage({
       allEgos={allEgos}
       egoGifts={egoGifts}
       canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
+      isAdmin={!!session?.user?.isAdmin}
       currentSeason={currentSeason}
     />
   )

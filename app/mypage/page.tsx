@@ -244,8 +244,19 @@ export default function MyPage() {
                 border: '1px solid var(--border)',
                 borderRadius: '8px',
                 padding: '24px',
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
+              {/* 골드 그라디언트 상단 장식선 */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, var(--gold), transparent)',
+              }} />
               <div className="flex flex-col items-center gap-3">
                 {/* 아바타 */}
                 {avatarUrl ? (
@@ -254,10 +265,10 @@ export default function MyPage() {
                     alt=""
                     width={80}
                     height={80}
-                   
                     style={{
                       borderRadius: '50%',
                       border: '2px solid var(--gold-dim)',
+                      boxShadow: '0 0 16px rgba(200,144,10,0.35)',
                     }}
                   />
                 ) : (
@@ -268,6 +279,7 @@ export default function MyPage() {
                       borderRadius: '50%',
                       background: 'rgba(200,144,10,0.15)',
                       border: '2px solid var(--gold-dim)',
+                      boxShadow: '0 0 16px rgba(200,144,10,0.25)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -340,7 +352,7 @@ export default function MyPage() {
                 </p>
 
                 {/* 구분선 */}
-                <div style={{ width: '100%', height: 1, background: 'var(--border)', margin: '4px 0' }} />
+                <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border), transparent)', margin: '4px 0' }} />
 
                 {/* 가입일 */}
                 {joinDate && (
@@ -350,6 +362,9 @@ export default function MyPage() {
                   </div>
                 )}
 
+                {/* 구분선 */}
+                <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border), transparent)', margin: '2px 0' }} />
+
                 {/* 덱 수 */}
                 <div style={{ color: '#6a6080', fontSize: '0.6875rem' }}>
                   덱 <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)' }}>{decks.length}</span>개
@@ -357,7 +372,7 @@ export default function MyPage() {
               </div>
             </div>
 
-            {/* 탈퇴 */}
+            {/* 로그아웃 + 탈퇴 */}
             <div
               style={{
                 background: '#1a1510',
@@ -365,8 +380,38 @@ export default function MyPage() {
                 borderRadius: '8px',
                 padding: '16px',
                 marginTop: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
               }}
             >
+              {/* 로그아웃 버튼 */}
+              {!showWithdraw && (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="flex items-center gap-2 w-full justify-center transition-all duration-200 hover:opacity-90"
+                  style={{
+                    color: '#9a8a70',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    padding: '7px 12px',
+                    background: 'rgba(255,255,255,0.03)',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <LogOut size={13} />
+                  로그아웃
+                </button>
+              )}
+
+              {/* 구분선 */}
+              {!showWithdraw && (
+                <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border), transparent)' }} />
+              )}
+
+              {/* 탈퇴 */}
               {showWithdraw ? (
                 <div className="flex flex-col gap-3">
                   <p style={{ color: '#ff6060', fontSize: '0.75rem', lineHeight: 1.6 }}>
@@ -376,7 +421,7 @@ export default function MyPage() {
                     <button
                       onClick={() => setShowWithdraw(false)}
                       className="flex-1 py-1.5 text-xs"
-                      style={{ color: '#888', cursor: 'pointer', border: '1px solid var(--border)', borderRadius: 4 }}
+                      style={{ color: '#888', cursor: 'pointer', border: '1px solid var(--border)', borderRadius: 4, transition: 'opacity 0.15s' }}
                     >
                       취소
                     </button>
@@ -390,6 +435,7 @@ export default function MyPage() {
                         borderRadius: 4,
                         cursor: 'pointer',
                         border: '1px solid rgba(139,26,26,0.5)',
+                        transition: 'opacity 0.15s',
                       }}
                     >
                       {withdrawing ? '처리 중...' : '탈퇴 확인'}
@@ -402,7 +448,6 @@ export default function MyPage() {
                   className="flex items-center gap-1.5 w-full justify-center transition-opacity hover:opacity-80"
                   style={{ color: '#4a3030', fontSize: '0.6875rem', cursor: 'pointer' }}
                 >
-                  <LogOut size={11} />
                   회원 탈퇴
                 </button>
               )}
@@ -423,7 +468,7 @@ export default function MyPage() {
               }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="flex items-center gap-2">
+                <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
                   <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     ABOUT ME
                   </span>
@@ -499,7 +544,7 @@ export default function MyPage() {
             {/* MY DECKS */}
             <section>
               <div className="flex items-center justify-between mb-5">
-                <h2 className="flex items-center gap-2">
+                <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
                   <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     MY DECKS
                   </span>
@@ -526,21 +571,29 @@ export default function MyPage() {
                 <div
                   className="flex flex-col items-center justify-center py-20 gap-4"
                   style={{
-                    background: '#1a1510',
+                    background: 'linear-gradient(180deg, #1a1510 0%, #120e09 100%)',
                     border: '1px solid var(--border)',
                     borderRadius: '8px',
                   }}
                 >
-                  <div style={{ color: '#5a5065', fontSize: '3rem' }}>&#x2298;</div>
-                  <p className="font-serif text-sm italic" style={{ color: '#555570' }}>
+                  <div style={{ color: '#3a2a18', fontSize: '3.5rem', lineHeight: 1, userSelect: 'none' }}>&#x2741;</div>
+                  <p className="font-serif text-sm italic" style={{ color: '#5a5070', fontFamily: 'var(--font-heading)' }}>
                     아직 작성한 덱이 없습니다.
                   </p>
                   <Link
                     href="/decks/new"
-                    style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
-                    className="hover:text-yellow-300 transition-colors underline underline-offset-2"
+                    className="transition-all duration-200 hover:opacity-90"
+                    style={{
+                      color: 'var(--bg-deep)',
+                      background: 'var(--gold)',
+                      fontSize: '0.75rem',
+                      padding: '6px 16px',
+                      borderRadius: '4px',
+                      fontFamily: 'var(--font-heading)',
+                      cursor: 'pointer',
+                    }}
                   >
-                    첫 번째 덱을 만들어보세요 &rarr;
+                    첫 번째 덱 만들기
                   </Link>
                 </div>
               ) : (
@@ -607,7 +660,7 @@ export default function MyPage() {
             {/* BOOKMARKS */}
             <section className="mt-8">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="flex items-center gap-2">
+                <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
                   <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     BOOKMARKS
                   </span>
@@ -621,19 +674,19 @@ export default function MyPage() {
                 <div
                   className="flex flex-col items-center justify-center py-12 gap-3"
                   style={{
-                    background: '#1a1510',
+                    background: 'linear-gradient(180deg, #1a1510 0%, #120e09 100%)',
                     border: '1px solid var(--border)',
                     borderRadius: '8px',
                   }}
                 >
-                  <Bookmark size={24} style={{ color: '#5a5065' }} />
-                  <p className="font-serif text-sm italic" style={{ color: '#555570' }}>
+                  <Bookmark size={22} style={{ color: '#3a3048', strokeWidth: 1.5 }} />
+                  <p className="font-serif text-sm italic" style={{ color: '#5a5070', fontFamily: 'var(--font-heading)' }}>
                     아직 저장한 덱이 없습니다.
                   </p>
                   <Link
                     href="/decks"
-                    style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
-                    className="hover:text-yellow-300 transition-colors underline underline-offset-2"
+                    style={{ color: 'var(--gold-dim)', fontSize: '0.75rem', fontFamily: 'var(--font-body)' }}
+                    className="hover:opacity-80 transition-opacity underline underline-offset-2"
                   >
                     덱 게시판 둘러보기 &rarr;
                   </Link>
@@ -663,7 +716,7 @@ export default function MyPage() {
             </section>
 
             {/* MY COLLECTION */}
-            <section className="mt-8">
+            <section className="mt-8" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px', borderRadius: '0 0 0 2px' }}>
               <Suspense fallback={
                 <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: 8, padding: 24 }}>
                   <div style={{ width: 140, height: 14, background: '#2a2015', borderRadius: 2 }} />
@@ -679,12 +732,16 @@ export default function MyPage() {
       {/* 토스트 */}
       {toast && (
         <div
-          className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded text-sm shadow-lg transition-all"
+          className="fixed top-24 right-6 z-50 px-4 py-3 rounded text-sm shadow-xl toast-slide-in"
           style={{
-            background: toast.type === 'error' ? 'rgba(139,26,26,0.95)' : 'rgba(26,100,26,0.95)',
-            color: toast.type === 'error' ? '#ff8080' : '#80ff80',
-            border: `1px solid ${toast.type === 'error' ? 'rgba(139,26,26,0.5)' : 'rgba(26,100,26,0.5)'}`,
+            background: toast.type === 'error' ? 'rgba(100,18,18,0.97)' : 'rgba(18,70,18,0.97)',
+            color: toast.type === 'error' ? '#ff8080' : '#80e880',
+            border: `1px solid ${toast.type === 'error' ? 'rgba(180,40,40,0.5)' : 'rgba(40,160,40,0.4)'}`,
             fontFamily: 'var(--font-body)',
+            maxWidth: '280px',
+            boxShadow: toast.type === 'error'
+              ? '0 4px 24px rgba(139,26,26,0.3)'
+              : '0 4px 24px rgba(26,100,26,0.3)',
           }}
         >
           {toast.message}
