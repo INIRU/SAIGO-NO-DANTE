@@ -74,7 +74,23 @@ export default function MyPage() {
         setBioValue(d.profile.bio ?? '')
       })
       .catch(() => showToast('프로필을 불러올 수 없습니다.'))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        import('gsap').then(({ gsap }) => {
+          gsap.fromTo('.mypage-header',
+            { opacity: 0, y: -20 },
+            { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+          )
+          gsap.fromTo('.mypage-sidebar',
+            { opacity: 0, x: -20 },
+            { opacity: 1, x: 0, duration: 0.5, delay: 0.15, ease: 'power2.out' }
+          )
+          gsap.fromTo('.mypage-content',
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, delay: 0.25, ease: 'power2.out' }
+          )
+        })
+      })
   }, [status, showToast])
 
   // 닉네임 저장
@@ -225,7 +241,7 @@ export default function MyPage() {
       <div className="max-w-6xl mx-auto">
 
         {/* 섹션 헤더 */}
-        <div className="mb-10">
+        <div className="mypage-header mb-10" style={{ opacity: 0 }}>
           <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             MY PAGE
           </p>
@@ -237,7 +253,7 @@ export default function MyPage() {
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* ── 사이드바 ── */}
-          <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:self-start">
+          <aside className="mypage-sidebar lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:self-start" style={{ opacity: 0 }}>
             <div
               style={{
                 background: '#1a1510',
@@ -455,7 +471,7 @@ export default function MyPage() {
           </aside>
 
           {/* ── 메인 콘텐츠 ── */}
-          <main className="flex-1 min-w-0">
+          <main className="mypage-content flex-1 min-w-0" style={{ opacity: 0 }}>
 
             {/* ABOUT ME */}
             <section

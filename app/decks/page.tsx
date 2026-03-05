@@ -154,6 +154,20 @@ export default function DecksPage() {
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState(false)
 
+  // GSAP 진입 애니메이션
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.decks-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
+      gsap.fromTo('.decks-filters',
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+      )
+    })
+  }, [])
+
   // 덱 목록 로드 (초기)
   useEffect(() => {
     setLoading(true)
@@ -369,7 +383,7 @@ export default function DecksPage() {
     <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto">
 
       {/* ── 헤더 ── */}
-      <div className="flex items-end justify-between mb-10">
+      <div className="decks-header flex items-end justify-between mb-10" style={{ opacity: 0 }}>
         <div>
           <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
             DECK ARCHIVE
@@ -394,7 +408,7 @@ export default function DecksPage() {
       </div>
 
       {/* ── 검색 + 정렬 ── */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="decks-filters flex flex-col sm:flex-row gap-3 mb-5" style={{ opacity: 0 }}>
         {/* 검색 + 자동완성 (화살표 + Tab) */}
         <div className="relative flex-1" ref={searchRef}>
           <svg

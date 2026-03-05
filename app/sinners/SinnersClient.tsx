@@ -12,6 +12,10 @@ export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
       const { ScrollTrigger } = await import('gsap/ScrollTrigger')
       gsap.registerPlugin(ScrollTrigger)
 
+      gsap.fromTo('.sinners-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
       gsap.fromTo('.sinner-card-item',
         { opacity: 0, y: 30, scale: 0.95 },
         { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.05, ease: 'power2.out',
@@ -23,7 +27,7 @@ export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto">
-      <div className="mb-12 text-center">
+      <div className="sinners-header mb-12 text-center" style={{ opacity: 0 }}>
         <h1 className="font-serif text-4xl md:text-5xl font-bold mb-3" style={{ color: 'var(--gold)' }}>
           Limbus Company
         </h1>

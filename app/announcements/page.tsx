@@ -21,14 +21,26 @@ export default function AnnouncementsPage() {
     fetch('/api/announcements')
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        import('gsap').then(({ gsap }) => {
+          gsap.fromTo('.announcements-header',
+            { opacity: 0, y: -20 },
+            { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+          )
+          gsap.fromTo('.announcement-item',
+            { opacity: 0, y: 15 },
+            { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power2.out', delay: 0.2 }
+          )
+        })
+      })
   }, [])
 
   return (
     <div style={{ background: 'var(--bg-deep)', minHeight: '100dvh' }}>
       <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
         {/* 헤더 */}
-        <div className="mb-8">
+        <div className="announcements-header mb-8" style={{ opacity: 0 }}>
           <Link
             href="/"
             className="flex items-center gap-1.5 mb-4 transition-colors hover:opacity-70"
@@ -65,7 +77,7 @@ export default function AnnouncementsPage() {
               return (
                 <div
                   key={item.id}
-                  className="card"
+                  className="announcement-item card"
                   style={{
                     overflow: 'hidden',
                     border: item.pinned ? '1px solid rgba(200,144,10,0.3)' : undefined,

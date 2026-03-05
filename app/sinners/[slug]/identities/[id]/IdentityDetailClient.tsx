@@ -83,6 +83,20 @@ export default function IdentityDetailClient({
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
+  // GSAP 입장 애니메이션
+  useEffect(() => {
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.identity-detail-portrait',
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.6, ease: 'power3.out' }
+      )
+      gsap.fromTo('.identity-detail-content',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power3.out' }
+      )
+    })
+  }, [])
+
   // 풀 일러스트 클릭 안내 (첫 방문 시만)
   useEffect(() => {
     if (localStorage.getItem('art-tip-seen')) return
@@ -296,6 +310,7 @@ export default function IdentityDetailClient({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 좌측: 인격 이미지 + 이름 (1/3) */}
+          <div className="identity-detail-portrait" style={{ opacity: 0 }}>
           <IdentityPortraitSection
             sinner={sinner}
             identity={identity}
@@ -308,9 +323,10 @@ export default function IdentityDetailClient({
             sinColor={sinColor}
             rarityNum={rarityNum}
           />
+          </div>
 
           {/* 우측: 스탯 + 스킬 (2/3) */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="identity-detail-content lg:col-span-2 space-y-8" style={{ opacity: 0 }}>
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
             <div className="flex" style={{ borderBottom: '2px solid var(--border)' }}>
               {([
