@@ -50,7 +50,7 @@ export function useFormatSkillDesc() {
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import type { SinType } from '@/lib/types'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 /**
  * Context 기반 키워드 데이터 훅.
@@ -90,6 +90,75 @@ function isHangul(ch: string | undefined): boolean {
   return (code >= 0xAC00 && code <= 0xD7A3) || (code >= 0x3131 && code <= 0x318E)
 }
 
+function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLeave }: {
+  rect: DOMRect; iconUrl: string | null; keyword: string; info: KeywordInfo
+  onMouseEnter: () => void; onMouseLeave: () => void
+}) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [overflowing, setOverflowing] = useState(false)
+
+  const spaceAbove = rect.top
+  const spaceBelow = window.innerHeight - rect.bottom
+  const showAbove = spaceAbove > spaceBelow
+  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 20, window.innerHeight * 0.5)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (el) setOverflowing(el.scrollHeight > el.clientHeight)
+  }, [])
+
+  return (
+    <span
+      className="z-[200] rounded shadow-lg text-left"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: 'fixed',
+        left: Math.min(rect.left, window.innerWidth - 310),
+        ...(showAbove
+          ? { bottom: window.innerHeight - rect.top + 6 }
+          : { top: rect.bottom + 6 }),
+        background: '#1a1510',
+        border: '1px solid #3a3020',
+        minWidth: '200px',
+        maxWidth: '300px',
+        whiteSpace: 'normal',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        ref={contentRef}
+        style={{
+          padding: '8px 12px',
+          maxHeight: maxH,
+          overflowY: overflowing ? 'auto' : 'hidden',
+          overscrollBehavior: 'contain',
+        }}
+      >
+        <span style={{ color: '#e8dcc8', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px' }}>
+          {iconUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={iconUrl} alt="" width={16} height={16} style={{ flexShrink: 0 }} />
+          )}
+          {keyword}{info.maxStack ? ` (최대 ${info.maxStack})` : ''}
+        </span>
+        <span style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
+          {info.desc}
+        </span>
+      </div>
+      {overflowing && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0, height: 32,
+          background: 'linear-gradient(to bottom, transparent, #1a1510)',
+          borderRadius: '0 0 4px 4px',
+          pointerEvents: 'none',
+        }} />
+      )}
+    </span>
+  )
+}
+
 /** 키워드 아이콘 + 툴팁 (context에서 키워드 데이터 사용) */
 export function KeywordWithTooltip({
   keyword,
@@ -102,9 +171,21 @@ export function KeywordWithTooltip({
 }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
   const keywords = useKeywords()
   const info = keywords[keyword]
   const iconUrl = getKeywordIconUrl(keyword, info?.iconSlug)
+
+  const show = useCallback(() => {
+    clearTimeout(hideTimeout.current)
+    setRect(ref.current?.getBoundingClientRect() ?? null)
+  }, [])
+  const scheduleHide = useCallback(() => {
+    hideTimeout.current = setTimeout(() => setRect(null), 120)
+  }, [])
+  const cancelHide = useCallback(() => {
+    clearTimeout(hideTimeout.current)
+  }, [])
 
   if (!info && !iconUrl) return <>{children}</>
 
@@ -112,8 +193,8 @@ export function KeywordWithTooltip({
     <span
       ref={ref}
       className="inline-flex items-center"
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ cursor: info ? 'help' : 'default', verticalAlign: 'middle', position: 'relative' }}
     >
       {iconUrl && (
@@ -132,30 +213,7 @@ export function KeywordWithTooltip({
         />
       )}
       {children}
-      {rect && info && (
-        <span
-          className="z-[200] px-3 py-2 rounded shadow-lg text-left pointer-events-none"
-          style={{
-            position: 'fixed',
-            left: Math.min(rect.left, window.innerWidth - 310),
-            ...(rect.top > 120
-              ? { bottom: window.innerHeight - rect.top + 6 }
-              : { top: rect.bottom + 6 }),
-            background: '#1a1510',
-            border: '1px solid #3a3020',
-            minWidth: '200px',
-            maxWidth: '300px',
-            whiteSpace: 'normal',
-          }}
-        >
-          <span style={{ color: '#e8dcc8', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
-            {keyword}{info.maxStack ? ` (최대 ${info.maxStack})` : ''}
-          </span>
-          <span style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
-            {info.desc}
-          </span>
-        </span>
-      )}
+      {rect && info && <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={keyword} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />}
     </span>
   )
 }

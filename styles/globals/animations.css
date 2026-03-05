@@ -16,6 +16,12 @@
   animation: spin 0.8s linear infinite;
 }
 
+/* ── 히어로 워터마크 페이드 ──────────────────────────────── */
+@keyframes heroWatermarkFade {
+  from { opacity: 0; }
+  to   { opacity: 0.045; }
+}
+
 /* ── 토스트 슬라이드인 ───────────────────────────────────── */
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(24px); }
