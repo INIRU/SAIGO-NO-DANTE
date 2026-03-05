@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import {
-  Sinner, SinType, SIN_COLORS, GRADE_COLORS, KEYWORD_SIN_MAP,
+  Sinner, SinType, SIN_COLORS, GRADE_COLORS,
   RARITY_ICON_MAP, getSinnerLogoUrl, getKeywordIconUrl, STORAGE_BASE,
 } from '@/lib/data/sinners'
 import SinBadge from '@/components/ui/SinBadge'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Tab = 'identity' | 'keyword' | 'synergy' | 'ego'
@@ -94,22 +95,23 @@ function useProgressiveRender(total: number, step = 8) {
   return { visible, sentinelRef }
 }
 
-function mainKeywordColor(keywords: string[]): string {
+function mainKeywordColor(keywords: string[], sinMap: Record<string, string>): string {
   for (const kw of keywords) {
-    const sin = KEYWORD_SIN_MAP[kw]
-    if (sin) return SIN_COLORS[sin]
+    const sin = sinMap[kw]
+    if (sin) return SIN_COLORS[sin as SinType]
   }
   return '#888888'
 }
 
-/** 키워드 중 KEYWORD_SIN_MAP에 매칭되는 것만 (최대 3개) */
-function mainKeywords(keywords: string[]): string[] {
-  return keywords.filter(kw => KEYWORD_SIN_MAP[kw]).slice(0, 3)
+/** 키워드 중 sinMap에 매칭되는 것만 (최대 3개) */
+function mainKeywords(keywords: string[], sinMap: Record<string, string>): string[] {
+  return keywords.filter(kw => sinMap[kw]).slice(0, 3)
 }
 
 // ── 키워드 배지 (IdentityCard 스타일) ─────────────────────────
 function KeywordBadge({ keyword }: { keyword: string }) {
-  const sin = KEYWORD_SIN_MAP[keyword]
+  const { sinMap: kwSinMap } = useKeywordData()
+  const sin = kwSinMap[keyword]
   const color = sin ? SIN_COLORS[sin] : '#888'
   const iconUrl = getKeywordIconUrl(keyword)
 
@@ -293,6 +295,7 @@ function IdentityTab({
   setSinnerFilter: (v: string | null) => void
   filteredStats: IdentityStat[]
 }) {
+  const { sinMap: kwSinMap } = useKeywordData()
   const maxCount = filteredStats[0]?.count || 1
   const { visible, sentinelRef } = useProgressiveRender(filteredStats.length)
 
@@ -338,9 +341,9 @@ function IdentityTab({
           {filteredStats.slice(0, visible).map((stat, i) => {
             const pct = (stat.count / maxCount) * 100
             const rate = ((stat.count / totalDecks) * 100).toFixed(1)
-            const color = mainKeywordColor(stat.keywords)
+            const color = mainKeywordColor(stat.keywords, kwSinMap)
             const sName = sinnerMap.get(stat.sinner_id)?.name_kr ?? ''
-            const kws = mainKeywords(stat.keywords)
+            const kws = mainKeywords(stat.keywords, kwSinMap)
             const rarityWidth = stat.rarity === 3 ? 36 : stat.rarity === 2 ? 26 : 16
 
             return (
@@ -455,7 +458,7 @@ function IdentityTab({
             const maxKw = filtered[0]?.count || 1
             return filtered.slice(0, 10).map(kw => {
               const pct = (kw.count / maxKw) * 100
-              const sin = KEYWORD_SIN_MAP[kw.keyword]
+              const sin = kwSinMap[kw.keyword]
               const color = sin ? SIN_COLORS[sin] : '#888'
               const iconUrl = getKeywordIconUrl(kw.keyword)
               return (
@@ -492,6 +495,7 @@ function IdentityTab({
 // ② 키워드 트렌드
 // ══════════════════════════════════════════════════════════════
 function KeywordTab({ data }: { data: MetaData }) {
+  const { sinMap: kwSinMap } = useKeywordData()
   const keywords = data.keywordUsage.filter(kw => MAIN_KEYWORDS.has(kw.keyword)).slice(0, 15)
   const maxCount = keywords[0]?.count || 1
 
@@ -506,7 +510,7 @@ function KeywordTab({ data }: { data: MetaData }) {
       <div className="usage-chart space-y-2">
         {keywords.map((kw, i) => {
           const pct = (kw.count / maxCount) * 100
-          const sin = KEYWORD_SIN_MAP[kw.keyword]
+          const sin = kwSinMap[kw.keyword]
           const color = sin ? SIN_COLORS[sin] : '#888888'
           const iconUrl = getKeywordIconUrl(kw.keyword)
 

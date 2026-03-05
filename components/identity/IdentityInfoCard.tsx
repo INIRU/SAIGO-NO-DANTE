@@ -1,13 +1,14 @@
+'use client'
+
 import Image from 'next/image'
 import {
   Identity,
   SIN_COLORS,
-  KEYWORD_SIN_MAP,
   STORAGE_BASE,
   RARITY_ICON_MAP,
-  getIdentitySinColor,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 interface IdentityInfoCardProps {
   identity: Identity
@@ -16,6 +17,7 @@ interface IdentityInfoCardProps {
 }
 
 export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7 }: IdentityInfoCardProps) {
+  const { sinMap: kwSinMap } = useKeywordData()
   return (
     <div className="card p-6">
       <h2
@@ -46,12 +48,12 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
         </div>
 
         {/* 키워드 (메인 상태이상만) */}
-        {identity.keywords && identity.keywords.filter(kw => KEYWORD_SIN_MAP[kw]).length > 0 && (
+        {identity.keywords && identity.keywords.filter(kw => kwSinMap[kw]).length > 0 && (
           <>
             <div style={{ width: '1px', height: '18px', background: 'var(--border)' }} />
             <div className="flex items-center gap-2 flex-wrap">
-              {identity.keywords.filter(kw => KEYWORD_SIN_MAP[kw]).map(kw => {
-                const kwColor = SIN_COLORS[KEYWORD_SIN_MAP[kw]] || '#888'
+              {identity.keywords.filter(kw => kwSinMap[kw]).map(kw => {
+                const kwColor = SIN_COLORS[kwSinMap[kw]] || '#888'
                 return (
                   <KeywordWithTooltip key={kw} keyword={kw}>
                     <span

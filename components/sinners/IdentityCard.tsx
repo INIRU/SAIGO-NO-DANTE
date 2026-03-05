@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Identity, getIdentityInfoUrl, getIdentitySinColor, getKeywordIconUrl, KEYWORD_SIN_MAP, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import styles from '@/styles/components/IdentityCard.module.css'
 
 
@@ -15,7 +16,8 @@ interface IdentityCardProps {
 }
 
 export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
-  const sinColor = getIdentitySinColor(identity)
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
+  const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS[1]
   const rarityNum = identity.rarity
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
@@ -183,9 +185,9 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           {/* 키워드 배지 */}
           {identity.keywords && identity.keywords.length > 0 && (
             <div className="flex flex-wrap gap-0.5 mt-1">
-              {identity.keywords.filter(kw => KEYWORD_SIN_MAP[kw]).slice(0, 3).map(kw => {
-                const kwColor = SIN_COLORS[KEYWORD_SIN_MAP[kw]] || sinColor
-                const iconUrl = getKeywordIconUrl(kw)
+              {identity.keywords.filter(kw => kwSinMap[kw]).slice(0, 3).map(kw => {
+                const kwColor = SIN_COLORS[kwSinMap[kw]] || sinColor
+                const iconUrl = getIconUrl(kw)
                 return (
                   <span
                     key={kw}

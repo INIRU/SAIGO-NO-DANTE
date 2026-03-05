@@ -3,11 +3,10 @@
 import { useState, useMemo, useCallback, type RefObject } from 'react'
 import Image from 'next/image'
 import {
-  KEYWORD_ICON_MAP,
-  KEYWORD_SIN_MAP,
   SIN_COLORS,
-  getKeywordIconUrl,
+  STORAGE_BASE,
 } from '@/lib/data/sinners'
+import type { KeywordInfo } from '@/components/providers/KeywordProvider'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────
 export type AutocompleteSuggestion = {
@@ -21,15 +20,16 @@ export type AutocompleteSuggestion = {
 }
 
 // ── 키워드 풀 생성 헬퍼 ──────────────────────────────────────────────────
-export function buildKeywordPool(): AutocompleteSuggestion[] {
-  return Object.keys(KEYWORD_ICON_MAP).map(kw => {
-    const sinType = KEYWORD_SIN_MAP[kw]
-    const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
+export function buildKeywordPool(kwContext: Record<string, KeywordInfo>): AutocompleteSuggestion[] {
+  return Object.entries(kwContext).filter(([, info]) => info.iconSlug).map(([kw, info]) => {
+    const sinType = info.sinAffinity
+    const sc = sinType ? (SIN_COLORS[sinType as keyof typeof SIN_COLORS] ?? '#c8900a') : '#c8900a'
+    const iconSlug = info.iconSlug
     return {
       label: kw,
       type: 'keyword' as const,
       color: sc,
-      iconUrl: getKeywordIconUrl(kw) ?? undefined,
+      iconUrl: iconSlug ? `${STORAGE_BASE}/icons/keywords/${iconSlug}.webp` : undefined,
       token: `[k:${kw}]`,
     }
   })

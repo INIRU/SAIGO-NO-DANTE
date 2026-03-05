@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { KEYWORD_SIN_MAP } from '@/lib/data/sinners'
-
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const supabase = await createClient()
 
-  const [identityResult, egoResult, deckCountResult] = await Promise.all([
+  const [identityResult, egoResult, deckCountResult, keywordMetaResult] = await Promise.all([
     supabase
       .schema('limbus')
       .from('deck_identities')
@@ -20,6 +18,10 @@ export async function GET() {
       .schema('limbus')
       .from('decks')
       .select('*', { count: 'exact', head: true }),
+    supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .select('name, sin_affinity'),
   ])
 
   if (identityResult.error) {
@@ -29,6 +31,12 @@ export async function GET() {
   const totalDecks = deckCountResult.count ?? 0
   const rows = identityResult.data ?? []
   const egoRows = egoResult.data ?? []
+
+  // 키워드 → 죄악 매핑 (keyword_meta에서 런타임 빌드)
+  const keywordSinMap: Record<string, string> = {}
+  for (const km of keywordMetaResult.data ?? []) {
+    if (km.sin_affinity) keywordSinMap[km.name] = km.sin_affinity
+  }
 
   // ① 인격 채용률 집계
   const identityMap = new Map<string, {
@@ -66,7 +74,7 @@ export async function GET() {
 
     const keywords: string[] = identity.keywords || []
     for (const kw of keywords) {
-      const sin = KEYWORD_SIN_MAP[kw]
+      const sin = keywordSinMap[kw]
       if (sin) { usageBySin[sin] = (usageBySin[sin] || 0) + 1; break }
     }
 

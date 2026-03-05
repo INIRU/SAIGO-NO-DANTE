@@ -5,13 +5,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
-import { getKeywordIconUrl, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import { User, PackageOpen, Link2 } from 'lucide-react'
-
-// 전체 키워드 목록 (자동완성용)
-const ALL_KEYWORDS = Object.keys(KEYWORD_ICON_MAP)
 
 const PAGE_SIZE = 12
 
@@ -63,6 +60,8 @@ function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSum
 }
 
 export default function DecksPage() {
+  const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
+  const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const { status: authStatus } = useSession()
   const [decks, setDecks] = useState<DeckSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -446,7 +445,7 @@ export default function DecksPage() {
                 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
               </div>
               {suggestions.map((kw, i) => {
-                const iconUrl = getKeywordIconUrl(kw)
+                const iconUrl = getIconUrl(kw)
                 const isFocused = acIndex === i
                 return (
                   <div
@@ -586,7 +585,7 @@ export default function DecksPage() {
           )}
           {availableKeywords.map(kw => {
             const isActive = activeKeywords.has(kw)
-            const iconUrl = getKeywordIconUrl(kw)
+            const iconUrl = getIconUrl(kw)
             return (
               <button
                 key={kw}

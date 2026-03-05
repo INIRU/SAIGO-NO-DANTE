@@ -47,8 +47,42 @@ export function useFormatSkillDesc() {
 // ─── 내부 구현 (KeywordTooltip.tsx에서 이동) ────────────────────────
 // 이 함수는 훅이 아니므로 직접 호출하지 마세요. useFormatSkillDesc()를 사용하세요.
 
-import { getKeywordIconUrl } from '@/lib/data/sinners'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import type { SinType } from '@/lib/types'
 import { useState, useRef } from 'react'
+
+/**
+ * Context 기반 키워드 데이터 훅.
+ * KEYWORD_SIN_MAP / KEYWORD_ICON_MAP 하드코딩 대체용.
+ */
+export function useKeywordData() {
+  const keywords = useKeywords()
+
+  const sinMap = useMemo(() => {
+    const map: Record<string, SinType> = {}
+    for (const [kw, info] of Object.entries(keywords)) {
+      if (info.sinAffinity) map[kw] = info.sinAffinity as SinType
+    }
+    return map
+  }, [keywords])
+
+  const iconMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const [kw, info] of Object.entries(keywords)) {
+      if (info.iconSlug) map[kw] = info.iconSlug
+    }
+    return map
+  }, [keywords])
+
+  const getIconUrl = useCallback((keyword: string): string | null => {
+    const slug = keywords[keyword]?.iconSlug
+    if (!slug) return null
+    return `${STORAGE_BASE}/icons/keywords/${slug}.webp`
+  }, [keywords])
+
+  return { sinMap, iconMap, getIconUrl, keywords }
+}
 
 function isHangul(ch: string | undefined): boolean {
   if (!ch) return false

@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, KEYWORD_SIN_MAP, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
@@ -244,6 +245,7 @@ function CollectionViewer() {
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('sinner')
   const [showUnowned, setShowUnowned] = useState(true)
+  const { sinMap: kwSinMap } = useKeywordData()
 
   useEffect(() => {
     fetch('/api/collection')
@@ -275,15 +277,15 @@ function CollectionViewer() {
 
   const filterByKeyword = (identities: IdentityInfo[]) => {
     if (!keywordFilter) return identities
-    const filterSin = KEYWORD_SIN_MAP[keywordFilter]
+    const filterSin = kwSinMap[keywordFilter]
     return identities.filter(i =>
-      i.keywords?.some(kw => kw === keywordFilter || (filterSin && KEYWORD_SIN_MAP[kw] === filterSin))
+      i.keywords?.some(kw => kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin))
     )
   }
 
   const filterEgoByKeyword = (egoList: EGOInfo[]) => {
     if (!keywordFilter) return egoList
-    const filterSin = KEYWORD_SIN_MAP[keywordFilter]
+    const filterSin = kwSinMap[keywordFilter]
     if (!filterSin) return egoList
     return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
   }
