@@ -559,7 +559,7 @@ function TierCard({
         {/* 등급 아이콘 */}
         {rarityIcon && (
           <div style={{ position: 'absolute', top: '4px', right: '4px' }}>
-            <Image src={rarityIcon} alt={identity.rarity} width={18} height={18} unoptimized />
+            <Image src={rarityIcon} alt={`${identity.rarity}성`} width={18} height={18} unoptimized />
           </div>
         )}
       </div>

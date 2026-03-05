@@ -127,7 +127,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   // 인격 필터링: 등급 → 검색어 → 키워드 → 보유
   const filteredIdentities = useMemo(() => {
     let result = identities
-    if (rarityFilter) result = result.filter(i => i.rarity === rarityFilter)
+    if (rarityFilter) result = result.filter(i => `${i.rarity}성` === rarityFilter)
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       result = result.filter(i =>
@@ -524,10 +524,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                               >
                                 <span
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                  style={{ background: ident.rarity === '3성' ? '#c8900a' : ident.rarity === '2성' ? '#5588bb' : '#556677' }}
+                                  style={{ background: ident.rarity === 3 ? '#c8900a' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
                                 <span>{ident.name_kr}</span>
-                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{ident.rarity}</span>
+                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{ident.rarity}성</span>
                               </div>
                             )
                           })}

@@ -70,7 +70,7 @@ export default function IdentityDetailClient({
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
   const sinColor = getIdentitySinColor(identity)
-  const rarityNum = identity.rarity === '3성' ? 3 : identity.rarity === '2성' ? 2 : 1
+  const rarityNum = identity.rarity
 
   // 뒤로가기/앞으로가기 시 탭 상태 동기화
   useEffect(() => {

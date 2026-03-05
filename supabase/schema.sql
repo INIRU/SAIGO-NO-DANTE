@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS limbus.identities (
   def_level    INT,
   sin_affinity TEXT,               -- 'wrath','lust','sloth' 등
   keywords     TEXT[],
-  rarity       TEXT DEFAULT '1성', -- '1성','2성','3성'
+  rarity       INT DEFAULT 1 NOT NULL, -- 1, 2, 3
   game_id      TEXT,               -- 게임 내부 ID (이미지 파일 접두사)
   folder_name  TEXT                -- Supabase Storage 영문 폴더명
 );

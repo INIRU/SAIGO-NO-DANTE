@@ -6,10 +6,10 @@ import Image from 'next/image'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
-const RARITY_ICONS: Record<string, string> = {
-  '1성': `${STORAGE_BASE}/icons/Rarity/1star.webp`,
-  '2성': `${STORAGE_BASE}/icons/Rarity/2star.webp`,
-  '3성': `${STORAGE_BASE}/icons/Rarity/3star.webp`,
+const RARITY_ICONS: Record<number, string> = {
+  1: `${STORAGE_BASE}/icons/Rarity/1star.webp`,
+  2: `${STORAGE_BASE}/icons/Rarity/2star.webp`,
+  3: `${STORAGE_BASE}/icons/Rarity/3star.webp`,
 }
 
 const GRADE_COLORS: Record<string, string> = {
@@ -24,7 +24,7 @@ const GRADE_ICONS: Record<string, string> = {
 }
 
 interface SearchResult {
-  identities: { id: string; name_kr: string; rarity: string; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }[]
+  identities: { id: string; name_kr: string; rarity: number; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }[]
   ego: { id: string; name_kr: string; grade: string; image_url: string | null; sinners: { id: string; name_kr: string } }[]
   sinners: { id: string; name_kr: string; name_en: string; sinner_id: number }[]
   keywords: { name: string; description: string | null; icon_slug: string | null }[]
@@ -37,7 +37,7 @@ type FlatItem = {
   sublabel: string
   href: string
   icon?: string
-  rarity?: string
+  rarity?: number
   grade?: string
 }
 
@@ -324,7 +324,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       {item.label}
                     </span>
                     {item.rarity && RARITY_ICONS[item.rarity] && (
-                      <Image src={RARITY_ICONS[item.rarity]} alt={item.rarity} width={20} height={20} unoptimized style={{ height: '16px', width: 'auto' }} />
+                      <Image src={RARITY_ICONS[item.rarity]} alt={`${item.rarity}성`} width={20} height={20} unoptimized style={{ height: '16px', width: 'auto' }} />
                     )}
                     {item.grade && (
                       GRADE_ICONS[item.grade]
