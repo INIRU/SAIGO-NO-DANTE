@@ -45,6 +45,12 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [mobileOpenGroups, setMobileOpenGroups] = useState<Set<string>>(new Set())
+  const [isMac, setIsMac] = useState(false)
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone/.test(navigator.userAgent))
+  }, [])
   const lastScrollY = useRef(0)
   const pathname = usePathname()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -234,30 +240,55 @@ export default function Navbar() {
             {/* 검색 버튼 */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded transition-colors hover:bg-white/5"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
               style={{
                 cursor: 'pointer',
                 color: '#7a6845',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(200,144,10,0.12)',
+                background: 'rgba(200,144,10,0.04)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.08)'
+                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.2)'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.04)'
+                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.12)'
               }}
               title="검색 (Ctrl+K)"
             >
-              <Search size={13} />
-              <kbd style={{
-                marginLeft: 6,
-                padding: '1px 6px',
-                fontSize: '0.5625rem',
-                fontFamily: 'var(--font-mono)',
-                color: '#666',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 4,
-                boxShadow: '0 1px 0 rgba(255,255,255,0.05)',
-                lineHeight: '1.4',
-              }}>
-                {typeof navigator !== 'undefined' && /Mac|iPhone/.test(navigator.userAgent) ? '⌘ K' : 'Ctrl K'}
-              </kbd>
+              <Search size={13} style={{ opacity: 0.7 }} />
+              <span style={{ fontSize: '12px', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>검색</span>
+              <div className="flex items-center gap-0.5" style={{ marginLeft: 4 }}>
+                <kbd style={{
+                  padding: '2px 5px',
+                  fontSize: '11px',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  color: '#6a5838',
+                  background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
+                  border: '1px solid rgba(200,144,10,0.15)',
+                  borderRadius: 4,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
+                  lineHeight: '1.3',
+                  fontWeight: 500,
+                }}>
+                  {isMac ? '⌘' : 'Ctrl'}
+                </kbd>
+                <kbd style={{
+                  padding: '2px 5px',
+                  fontSize: '11px',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  color: '#6a5838',
+                  background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
+                  border: '1px solid rgba(200,144,10,0.15)',
+                  borderRadius: 4,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
+                  lineHeight: '1.3',
+                  fontWeight: 500,
+                }}>
+                  K
+                </kbd>
+              </div>
             </button>
 
             {/* 데스크탑 로그인 / 유저 메뉴 */}
@@ -351,15 +382,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* 모바일 검색 + 햄버거 */}
-          <button
-            className="md:hidden flex items-center justify-center"
-            onClick={() => setSearchOpen(true)}
-            style={{ color: '#7a6845', cursor: 'pointer', padding: '4px', marginRight: 4 }}
-            aria-label="검색"
-          >
-            <Search size={20} />
-          </button>
           {/* 모바일 햄버거 버튼 */}
           <button
             className="md:hidden flex items-center justify-center"
@@ -382,30 +404,48 @@ export default function Navbar() {
             backdropFilter: 'blur(20px)',
           }}
         >
-          <div className="flex flex-col px-6 py-4">
-            {navGroups.map(group => (
-              <div key={group.label}>
-                <p style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '11px',
-                  color: '#5a4838',
-                  letterSpacing: '0.1em',
-                  padding: '12px 0 4px',
-                }}>
-                  {group.label}
-                </p>
-                {group.items.map(item => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block transition-colors duration-200 hover:text-yellow-300"
-                    style={mobileLinkStyle(item.href)}
+          <div className="flex flex-col px-6 py-4" style={{ overflowY: 'auto', flex: 1 }}>
+            {navGroups.map(group => {
+              const isOpen = mobileOpenGroups.has(group.label)
+              return (
+                <div key={group.label}>
+                  <button
+                    onClick={() => setMobileOpenGroups(prev => {
+                      const next = new Set(prev)
+                      if (next.has(group.label)) next.delete(group.label)
+                      else next.add(group.label)
+                      return next
+                    })}
+                    className="flex items-center justify-between w-full"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      color: isOpen ? '#8a7855' : '#5a4838',
+                      letterSpacing: '0.1em',
+                      padding: '14px 0 8px',
+                      cursor: 'pointer',
+                    }}
                   >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
+                    {group.label}
+                    <ChevronDown size={12} style={{
+                      opacity: 0.5,
+                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
+                      transition: 'transform 0.2s',
+                    }} />
+                  </button>
+                  {isOpen && group.items.map(item => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block transition-colors duration-200 hover:text-yellow-300"
+                      style={mobileLinkStyle(item.href)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )
+            })}
 
             {user ? (
               <>
