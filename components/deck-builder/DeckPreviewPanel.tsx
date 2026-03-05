@@ -18,11 +18,11 @@ import {
   SIN_LABELS_KR,
   SIN_ICON_MAP,
   ATK_TYPE_ICON_MAP,
-  getKeywordIconUrl,
   SIN_ORDER,
   type ActivationCondition,
 } from '@/lib/data/sinners'
 import PassiveBadge from './PassiveBadge'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 const RES_COLORS: Record<string, string> = {
   '효율': '#c83040', '취약': '#c83040',
@@ -74,6 +74,7 @@ export default function DeckPreviewPanel({
   showGiftPanel, setShowGiftPanel,
   giftTabKw, setGiftTabKw,
 }: Props) {
+  const { getIconUrl } = useKeywordData()
   // 덱 전체 스킬 죄악 합산 (패시브 패널용)
   const deckSinCounts: Record<string, number> = {}
   for (const sinner of sinners) {
@@ -395,7 +396,7 @@ export default function DeckPreviewPanel({
                 <div className="flex flex-wrap gap-1 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   {GIFT_KW_TABS.map(kw => {
                     const isActive = giftTabKw === kw
-                    const kwIcon = kw !== '전체' ? (getKeywordIconUrl(kw) ?? ATK_TYPE_ICON_MAP[kw] ?? null) : null
+                    const kwIcon = kw !== '전체' ? (getIconUrl(kw) ?? ATK_TYPE_ICON_MAP[kw] ?? null) : null
                     const metCount = kw === '전체' ? activatableGifts.filter(g => g.met).length : (metByKw[kw] ?? 0)
                     const totalCount = kw === '전체' ? activatableGifts.length : activatableGifts.filter(g => g.keyword === kw).length
                     if (kw !== '전체' && totalCount === 0) return null
@@ -434,7 +435,7 @@ export default function DeckPreviewPanel({
                           : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
                           : `${c.count}인`
                         const pct = Math.min(g.current / c.count, 1)
-                        const kwIcon = getKeywordIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null
+                        const kwIcon = getIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null
 
                         return (
                           <div

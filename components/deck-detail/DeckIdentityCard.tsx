@@ -5,7 +5,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   STORAGE_BASE,
-  getKeywordIconUrl,
   getSinnerLogoUrl,
   GRADE_COLORS,
   RARITY_ICON_MAP,
@@ -15,7 +14,7 @@ import {
   SIN_KR_TO_EN,
   type SinType,
 } from '@/lib/data/sinners'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
@@ -168,6 +167,7 @@ export default function DeckIdentityCard({
   keywordMeta?: Record<string, { description: string }>
 }) {
   const formatSkillDesc = useFormatSkillDesc()
+  const { getIconUrl } = useKeywordData()
   const id_ = slot.identities!
   const [activeTab, setActiveTab] = useState<'skills' | 'passives' | 'ego'>('skills')
 
@@ -246,7 +246,7 @@ export default function DeckIdentityCard({
           {themeKws.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2.5">
               {themeKws.map(kw => {
-                const iconUrl = getKeywordIconUrl(kw)
+                const iconUrl = getIconUrl(kw)
                 const desc = keywordMeta?.[kw]?.description
                 return (
                   <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.625rem', cursor: desc ? 'help' : 'default' }}>

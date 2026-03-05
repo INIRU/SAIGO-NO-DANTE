@@ -27,6 +27,7 @@ import {
   type NoteEgoGiftEntry,
 } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import IdentityCard from '@/components/sinners/IdentityCard'
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
@@ -84,6 +85,7 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
 }
 
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode }: Props) {
+  const { keywords: kwContext } = useKeywordData()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('identity')
   const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
@@ -363,7 +365,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         })
       }
     }
-    pool.push(...buildKeywordPool())
+    pool.push(...buildKeywordPool(kwContext))
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
   }, [deckSlots, skillsByIdentityId, passivesByIdentityId, egoSlots, sinners, egoGifts])

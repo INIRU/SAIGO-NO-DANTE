@@ -10,7 +10,6 @@ import {
   Passive,
   EGO,
   SIN_COLORS,
-  KEYWORD_SIN_MAP,
   SIN_KR_TO_EN,
   SKILL_TYPE_LABELS,
   getIdentitySinColor,
@@ -30,6 +29,7 @@ import IdentitySkillsTab from '@/components/identity/IdentitySkillsTab'
 import IdentityPassivesTab from '@/components/identity/IdentityPassivesTab'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
 import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 interface Props {
   sinner: Sinner
@@ -69,7 +69,8 @@ export default function IdentityDetailClient({
   })
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
-  const sinColor = getIdentitySinColor(identity)
+  const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
+  const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
 
   // 뒤로가기/앞으로가기 시 탭 상태 동기화
@@ -250,8 +251,8 @@ export default function IdentityDetailClient({
       })
     }
     for (const ident of allIdentities) {
-      const mainKw = ident.keywords?.find(kw => KEYWORD_SIN_MAP[kw])
-      const sinType = mainKw ? KEYWORD_SIN_MAP[mainKw] : undefined
+      const mainKw = ident.keywords?.find(kw => kwSinMap[kw])
+      const sinType = mainKw ? kwSinMap[mainKw] : undefined
       const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
       const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
       pool.push({
@@ -270,7 +271,7 @@ export default function IdentityDetailClient({
         token: `[e:${sinnerName}:${name}]`,
       })
     }
-    pool.push(...buildKeywordPool())
+    pool.push(...buildKeywordPool(kwContext))
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
   }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap, egoGifts])

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
-import { STORAGE_BASE, getKeywordIconUrl } from '@/lib/data/sinners'
+import { STORAGE_BASE } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 
 // 덱 테마를 정의하는 핵심 상태이상 키워드만 표시
@@ -93,6 +94,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
 }
 
 export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
+  const { getIconUrl } = useKeywordData()
   const date = new Date(deck.created_at).toLocaleDateString('ko-KR', {
     month: 'short', day: 'numeric',
   })
@@ -212,7 +214,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
               </span>
             )}
             {topKeywords.map(kw => {
-              const iconUrl = getKeywordIconUrl(kw)
+              const iconUrl = getIconUrl(kw)
               return (
                 <span
                   key={kw}

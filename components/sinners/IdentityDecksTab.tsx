@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
-import { getKeywordIconUrl, KEYWORD_ICON_MAP } from '@/lib/data/sinners'
-
-const ALL_KEYWORDS = Object.keys(KEYWORD_ICON_MAP)
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 const PAGE_SIZE = 12
 
 type SortKey = 'latest' | 'popular'
@@ -29,6 +27,8 @@ interface Props {
 }
 
 export default function IdentityDecksTab({ identityId }: Props) {
+  const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
+  const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const [decks, setDecks] = useState<DeckSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -213,7 +213,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
               </div>
               {suggestions.map((kw, i) => {
-                const iconUrl = getKeywordIconUrl(kw)
+                const iconUrl = getIconUrl(kw)
                 const isFocused = acIndex === i
                 return (
                   <div

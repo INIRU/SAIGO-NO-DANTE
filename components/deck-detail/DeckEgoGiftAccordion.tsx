@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { getKeywordIconUrl, type ActivationCondition } from '@/lib/data/sinners'
+import { type ActivationCondition } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 export type EgoGiftEntry = {
   name: string
@@ -62,6 +63,7 @@ export default function DeckEgoGiftAccordion({
   open: boolean
   onToggle: () => void
 }) {
+  const { getIconUrl } = useKeywordData()
   const formedSlots = filledSlots.filter(s => s.slot_order !== 99)
   if (formedSlots.length === 0 || allEgoGifts.length === 0) return null
 
@@ -100,8 +102,8 @@ export default function DeckEgoGiftAccordion({
           {KW_ORDER.filter(kw => grouped[kw]).map(kw => (
             <div key={kw}>
               <div className="flex items-center gap-1.5 mb-1">
-                {getKeywordIconUrl(kw) && (
-                  <Image src={getKeywordIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
+                {getIconUrl(kw) && (
+                  <Image src={getIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
                 )}
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a7040', letterSpacing: '0.05em' }}>
                   {kw} ({grouped[kw].length})

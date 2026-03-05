@@ -4,13 +4,8 @@ import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { Search, X, FlaskConical } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
-import { getKeywordIconUrl, ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
-
-/** 키워드 아이콘 URL (상태이상 + 참격/관통/타격 통합) */
-function getGiftKeywordIcon(keyword: string): string | null {
-  return getKeywordIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null
-}
+import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
+import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
 
 /* ── 타입 ── */
 interface EgoGift {
@@ -98,6 +93,9 @@ export default function MirrorDungeonClient({
   gifts: EgoGift[]
   recipes: Recipe[]
 }) {
+  const { getIconUrl } = useKeywordData()
+  const getGiftKeywordIcon = (keyword: string) => getIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null
+
   const [keyword, setKeyword] = useState('전체')
   const [grade, setGrade] = useState('전체')
   const [search, setSearch] = useState('')
@@ -321,6 +319,7 @@ export default function MirrorDungeonClient({
               key={gift.id}
               gift={gift}
               onClick={() => setSelected(gift)}
+              getGiftKeywordIcon={getGiftKeywordIcon}
             />
           ))}
         </div>
@@ -333,6 +332,7 @@ export default function MirrorDungeonClient({
           recipe={recipeMap.get(selected.name) ?? null}
           giftImageMap={giftImageMap}
           onClose={() => setSelected(null)}
+          getGiftKeywordIcon={getGiftKeywordIcon}
         />
       )}
     </div>
@@ -340,7 +340,7 @@ export default function MirrorDungeonClient({
 }
 
 /* ── 기프트 카드 ── */
-function GiftCard({ gift, onClick }: { gift: EgoGift; onClick: () => void }) {
+function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClick: () => void; getGiftKeywordIcon: (keyword: string) => string | null }) {
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
 
@@ -438,11 +438,13 @@ function GiftModal({
   recipe,
   giftImageMap,
   onClose,
+  getGiftKeywordIcon,
 }: {
   gift: EgoGift
   recipe: Recipe | null
   giftImageMap: Map<string, string>
   onClose: () => void
+  getGiftKeywordIcon: (keyword: string) => string | null
 }) {
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade

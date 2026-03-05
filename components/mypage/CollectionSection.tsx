@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, KEYWORD_SIN_MAP, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
 import type { SinnerInfo, IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
@@ -98,6 +99,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [showUnowned, setShowUnowned] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const { sinMap: kwSinMap } = useKeywordData()
   const downloadRef = useRef<HTMLDivElement>(null)
 
   // 데이터 로드
@@ -308,18 +310,18 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
   const filterByKeyword = useCallback((identities: IdentityInfo[]) => {
     if (!keywordFilter) return identities
-    const filterSin = KEYWORD_SIN_MAP[keywordFilter]
+    const filterSin = kwSinMap[keywordFilter]
     return identities.filter(i =>
-      i.keywords?.some(kw => kw === keywordFilter || (filterSin && KEYWORD_SIN_MAP[kw] === filterSin))
+      i.keywords?.some(kw => kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin))
     )
-  }, [keywordFilter])
+  }, [keywordFilter, kwSinMap])
 
   const filterEgoByKeyword = useCallback((egoList: EGOInfo[]) => {
     if (!keywordFilter) return egoList
-    const filterSin = KEYWORD_SIN_MAP[keywordFilter]
+    const filterSin = kwSinMap[keywordFilter]
     if (!filterSin) return egoList
     return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
-  }, [keywordFilter])
+  }, [keywordFilter, kwSinMap])
 
   if (loading) {
     return (

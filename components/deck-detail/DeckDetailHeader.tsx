@@ -3,7 +3,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2 } from 'lucide-react'
-import { STORAGE_BASE, SIN_COLORS, SIN_ORDER, getKeywordIconUrl } from '@/lib/data/sinners'
+import { STORAGE_BASE, SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 const ATK_ICON_URL: Record<string, string> = {
   'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
@@ -69,6 +70,7 @@ export function DeckSidebarPanel({
   onShare,
   onCopyCode,
 }: DeckHeaderProps) {
+  const { getIconUrl } = useKeywordData()
   return (
     <div className="flex flex-col gap-3" style={{ position: 'sticky', top: 88 }}>
       {/* 추천 */}
@@ -204,7 +206,7 @@ export function DeckSidebarPanel({
           {keywords.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {keywords.map(kw => {
-                const iconUrl = getKeywordIconUrl(kw)
+                const iconUrl = getIconUrl(kw)
                 return (
                   <span
                     key={kw}

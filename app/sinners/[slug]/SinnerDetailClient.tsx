@@ -6,7 +6,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
-import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, KEYWORD_SIN_MAP, KEYWORD_ICON_MAP, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import IdentityCard from '@/components/sinners/IdentityCard'
@@ -23,6 +24,7 @@ type OwnershipFilter = 'all' | 'owned' | 'unowned'
 const LOCAL_STORAGE_KEY = 'limbus-collection'
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
+  const { sinMap: kwSinMap, iconMap: kwIconMap } = useKeywordData()
   const router = useRouter()
   const pathname = usePathname()
   const [tab, setTab] = useState<Tab>('identities')
@@ -475,9 +477,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           {autocompleteResults.keywords.map(({ kw, count }, i) => {
                             const idx = kwStart + i
                             const isFocused = acIndex === idx
-                            const sinType = KEYWORD_SIN_MAP[kw] as SinType | undefined
+                            const sinType = kwSinMap[kw] as SinType | undefined
                             const chipColor = sinType ? SIN_COLORS[sinType] : '#888'
-                            const iconSlug = KEYWORD_ICON_MAP[kw]
+                            const iconSlug = kwIconMap[kw]
                             const isSelected = selectedKeywords.has(kw)
                             return (
                               <div

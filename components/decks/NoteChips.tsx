@@ -2,12 +2,12 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { useFormatSkillDesc, useKeywords } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/sinners/KeywordTooltip'
 import {
   SIN_COLORS,
   GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
   SKILL_TYPE_LABELS, SIN_LABELS_KR,
-  normalizeSin, getKeywordIconUrl, KEYWORD_SIN_MAP,
+  normalizeSin,
 } from '@/lib/data/sinners'
 
 function sinColorOf(sin: string | null): string {
@@ -217,10 +217,11 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
 
 // ── IdentityChip ────────────────────────────────────────────────────────
 export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
+  const { sinMap: kwSinMap } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
-  const mainKw = entry.keywords?.find(kw => KEYWORD_SIN_MAP[kw])
-  const sinType = mainKw ? KEYWORD_SIN_MAP[mainKw] : undefined
+  const mainKw = entry.keywords?.find(kw => kwSinMap[kw])
+  const sinType = mainKw ? kwSinMap[mainKw] : undefined
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
   return (
     <span
@@ -254,7 +255,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
           {entry.keywords && entry.keywords.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {entry.keywords.map(kw => {
-                const kwSin = KEYWORD_SIN_MAP[kw]
+                const kwSin = kwSinMap[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
                 return (
                   <span key={kw} style={{ color: kwColor, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>{kw}</span>
@@ -271,10 +272,11 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 // ── KeywordChip ──────────────────────────────────────────────────────────
 export function KeywordChip({ keyword }: { keyword: string }) {
   const keywords = useKeywords()
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
-  const iconUrl = getKeywordIconUrl(keyword)
-  const sinType = KEYWORD_SIN_MAP[keyword]
+  const iconUrl = getIconUrl(keyword)
+  const sinType = kwSinMap[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
   const info = keywords[keyword]
   return (
