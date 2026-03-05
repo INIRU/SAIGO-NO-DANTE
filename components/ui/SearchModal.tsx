@@ -28,7 +28,7 @@ type IdentityResult = { id: string; name_kr: string; rarity: number; game_id: st
 interface SearchResult {
   identities: IdentityResult[]
   ego: { id: string; name_kr: string; grade: string; image_url: string | null; sinners: { id: string; name_kr: string } }[]
-  sinners: { id: string; name_kr: string; name_en: string; sinner_id: number }[]
+  sinners: { id: string; name: string; name_kr: string; order_num: number }[]
   keywords: { name: string; description: string | null; icon_slug: string | null }[]
   egoGifts: { name: string; keyword: string | null; grade: string | null; image_url: string | null }[]
   suggestions?: IdentityResult[]
@@ -51,9 +51,9 @@ function flatten(data: SearchResult): FlatItem[] {
     items.push({
       type: 'sinner',
       label: s.name_kr,
-      sublabel: s.name_en,
+      sublabel: s.name,
       href: `/sinners/${s.id}`,
-      icon: `${STORAGE_BASE}/icons/Sinners/${s.sinner_id}.webp`,
+      icon: `${STORAGE_BASE}/icons/Sinners/${s.order_num}.webp`,
     })
   }
 
