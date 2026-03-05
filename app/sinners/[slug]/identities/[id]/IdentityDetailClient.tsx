@@ -14,6 +14,7 @@ import {
   SKILL_TYPE_LABELS,
   getIdentitySinColor,
   getIdentityProfileUrl,
+  getIdentityInfoUrl,
   getSkillIconUrl,
   computeSkillImageIndices,
   getSinIconUrl,
@@ -211,6 +212,7 @@ export default function IdentityDetailClient({
         active_cond: ps.active_cond ?? null,
         description: ps.description ?? null,
         sinnerName: sinner.name_kr,
+        imageUrl: getIdentityInfoUrl(identity) || undefined,
       }
     }
     return map

@@ -12,7 +12,7 @@ import GlitchText from '@/components/ui/GlitchText'
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import {
   IdentityWithSinner,
-  getSinnerLogoUrl, getIdentityProfileUrl, getIdentityInfoUrl,
+  getSinnerLogoUrl, getIdentityInfoUrl,
   RARITY_ICON_MAP, BLUR_PLACEHOLDER,
 } from '@/lib/data/sinners'
 
@@ -349,9 +349,18 @@ export default function HomeClient({
           <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(200,164,90,0.08) 0%, transparent 60%)' }} />
         )}
 
-        {/* 수감자 아이콘 워터마크 (왼쪽 영역) — 모바일 숨김 */}
+        {/* 수감자 아이콘 워터마크 (왼쪽 영역) — 모바일 숨김, 페이드 전환 */}
         {heroIdentity && (
-          <div className="absolute pointer-events-none hidden md:block" style={{ left: '8%', top: '50%', transform: 'translateY(-50%)', width: '320px', height: '320px', zIndex: 2, opacity: 0.045 }}>
+          <div
+            key={heroIdentity.sinner_id}
+            className="absolute pointer-events-none hidden md:block"
+            style={{
+              left: '8%', top: '50%', transform: 'translateY(-50%)',
+              width: '320px', height: '320px', zIndex: 2,
+              opacity: 0.045,
+              animation: 'heroWatermarkFade 0.6s ease-out',
+            }}
+          >
             <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
           </div>
         )}
@@ -652,7 +661,7 @@ export default function HomeClient({
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {latestIdentities.map((identity) => {
-                const portraitUrl   = getIdentityProfileUrl(identity)
+                const portraitUrl   = getIdentityInfoUrl(identity)
                 const logoUrl       = getSinnerLogoUrl(identity.sinner_id)
                 const rarityIconSrc = RARITY_ICON_MAP[identity.rarity]
                 return (

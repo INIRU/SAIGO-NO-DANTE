@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/sinners/KeywordTooltip'
 import {
@@ -13,6 +13,94 @@ import {
 function sinColorOf(sin: string | null): string {
   const en = normalizeSin(sin)
   return en ? (SIN_COLORS[en] ?? '#888888') : '#888888'
+}
+
+// ── 툴팁 hover 관리 훅 ──────────────────────────────────────────────────
+function useTooltip(ref: React.RefObject<HTMLElement | null>) {
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const show = useCallback(() => {
+    clearTimeout(hideTimeout.current)
+    setRect(ref.current?.getBoundingClientRect() ?? null)
+  }, [ref])
+
+  const scheduleHide = useCallback(() => {
+    hideTimeout.current = setTimeout(() => setRect(null), 120)
+  }, [])
+
+  const cancelHide = useCallback(() => {
+    clearTimeout(hideTimeout.current)
+  }, [])
+
+  return { rect, show, scheduleHide, cancelHide }
+}
+
+// ── 공용 툴팁 래퍼 (스마트 포지셔닝 + 스크롤 + 페이드) ─────────────────
+function TooltipPopup({
+  rect, children, minWidth = 200, maxWidth = 300, onMouseEnter, onMouseLeave,
+}: {
+  rect: DOMRect
+  children: React.ReactNode
+  minWidth?: number
+  maxWidth?: number
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [overflowing, setOverflowing] = useState(false)
+
+  const spaceAbove = rect.top
+  const spaceBelow = window.innerHeight - rect.bottom
+  const showAbove = spaceAbove > spaceBelow
+  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 20, window.innerHeight * 0.5)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (el) setOverflowing(el.scrollHeight > el.clientHeight)
+  }, [])
+
+  return (
+    <span
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: 'fixed',
+        left: Math.min(rect.left, window.innerWidth - maxWidth - 10),
+        ...(showAbove
+          ? { bottom: window.innerHeight - rect.top + 6 }
+          : { top: rect.bottom + 6 }),
+        zIndex: 200,
+        background: '#1a1510',
+        border: '1px solid #3a3020',
+        borderRadius: 4,
+        minWidth, maxWidth,
+        whiteSpace: 'normal',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        ref={contentRef}
+        style={{
+          padding: '8px 10px',
+          maxHeight: maxH,
+          overflowY: overflowing ? 'auto' : 'hidden',
+          overscrollBehavior: 'contain',
+        }}
+      >
+        {children}
+      </div>
+      {overflowing && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0, height: 32,
+          background: 'linear-gradient(to bottom, transparent, #1a1510)',
+          borderRadius: '0 0 4px 4px',
+          pointerEvents: 'none',
+        }} />
+      )}
+    </span>
+  )
 }
 
 // ── 엔트리 타입 ─────────────────────────────────────────────────────────
@@ -34,6 +122,7 @@ export type NotePassiveEntry = {
   active_cond: string | null
   description: string | null
   sinnerName: string
+  imageUrl?: string
 }
 
 export type NoteEgoEntry = {
@@ -64,14 +153,14 @@ export type NoteEgoGiftEntry = {
 export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
   const sc = sinColorOf(entry.sin_affinity)
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
@@ -81,15 +170,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 300),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 6, padding: '10px 12px', minWidth: '220px', maxWidth: '340px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} minWidth={220} maxWidth={340} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.identityName} · 스킬 {entry.skill_order}
           </div>
@@ -114,7 +195,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
               })}
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )
@@ -124,29 +205,24 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
 export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const sinEn = normalizeSin(entry.sin_affinity)
   const sc = sinColorOf(entry.sin_affinity)
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
+      {entry.imageUrl && (
+        <Image src={entry.imageUrl} alt="" width={12} height={18} quality={20} style={{ borderRadius: 2, objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
+      )}
       {sinEn && <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />}
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 320),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
           {sinEn && entry.sin_count && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
@@ -161,7 +237,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
               {formatSkillDesc(entry.description, sc)}
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )
@@ -170,15 +246,15 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
 // ── EgoChip ─────────────────────────────────────────────────────────────
 export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const sinEn = normalizeSin(entry.sin_affinity)
   const sc = sinEn ? (SIN_COLORS[sinEn] ?? '#667788') : '#667788'
   const gc = GRADE_COLORS[entry.grade] ?? '#667788'
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${gc}18`, border: `1px solid ${gc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
@@ -188,15 +264,7 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
       <span style={{ color: gc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 300),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} minWidth={180} maxWidth={280} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: gc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} · {entry.grade} E.G.O
           </div>
@@ -209,7 +277,7 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
               <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>{sinEn ? (SIN_LABELS_KR[sinEn] ?? entry.sin_affinity) : entry.sin_affinity}</span>
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )
@@ -219,15 +287,15 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
 export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
   const { sinMap: kwSinMap } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const mainKw = entry.keywords?.find(kw => kwSinMap[kw])
   const sinType = mainKw ? kwSinMap[mainKw] : undefined
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
@@ -237,15 +305,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 300),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} minWidth={180} maxWidth={280} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
             {entry.sinnerName} <span style={{ fontFamily: 'sans-serif' }}>·</span> {entry.rarity}성
           </div>
@@ -258,12 +318,12 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
                 const kwSin = kwSinMap[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
                 return (
-                  <span key={kw} style={{ color: kwColor, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>{kw}</span>
+                  <span key={kw} style={{ color: kwColor, fontSize: '0.75rem', fontWeight: 600 }}>{kw}</span>
                 )
               })}
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )
@@ -274,7 +334,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   const keywords = useKeywords()
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const iconUrl = getIconUrl(keyword)
   const sinType = kwSinMap[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
@@ -282,23 +342,15 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{keyword}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 320),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: info ? 4 : 0 }}>
             {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
             <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{keyword}</span>
@@ -313,7 +365,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
               )}
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )
@@ -329,13 +381,13 @@ const EGO_GIFT_KW_COLORS: Record<string, string> = {
 export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
-  const [rect, setRect] = useState<DOMRect | null>(null)
+  const { rect, show, scheduleHide, cancelHide } = useTooltip(ref)
   const sc = EGO_GIFT_KW_COLORS[entry.keyword] ?? '#888'
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setRect(ref.current?.getBoundingClientRect() ?? null)}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.image_url && (
@@ -344,15 +396,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && (
-        <span className="pointer-events-none" style={{
-          position: 'fixed',
-          left: Math.min(rect.left, window.innerWidth - 300),
-          ...(rect.top > 150
-            ? { bottom: window.innerHeight - rect.top + 6 }
-            : { top: rect.bottom + 6 }),
-          zIndex: 200, background: '#1a1510', border: '1px solid #3a3020',
-          borderRadius: 4, padding: '8px 10px', minWidth: '200px', maxWidth: '300px', whiteSpace: 'normal',
-        }}>
+        <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
             {entry.image_url && (
               <Image src={entry.image_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
@@ -365,7 +409,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
               {formatSkillDesc(entry.effect_base, sc)}
             </div>
           )}
-        </span>
+        </TooltipPopup>
       )}
     </span>
   )

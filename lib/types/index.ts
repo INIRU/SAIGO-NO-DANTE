@@ -125,6 +125,7 @@ export type EGO = {
 }
 
 export type IdentityWithSinner = Identity & { sinner: Sinner }
+export type EGOWithSinner = EGO & { sinner: Sinner }
 
 export type ActivationCondition = {
   type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'

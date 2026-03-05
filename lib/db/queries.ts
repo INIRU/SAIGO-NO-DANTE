@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EgoGiftNote } from '@/lib/types'
+import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote } from '@/lib/types'
 
 // ── Supabase 클라이언트 (browser/server 공용 anon key) ─────────────────────
 function supabase() {
@@ -110,6 +110,19 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
     .order('uptie_level')
   if (error) return []
   return data ?? []
+}
+
+export async function getLatestEGOs(limit = 6): Promise<EGOWithSinner[]> {
+  const { data, error } = await supabase()
+    .schema('limbus')
+    .from('ego')
+    .select('*, sinner:sinners(*)')
+    .not('image_url', 'is', null)
+    .not('game_id', 'is', null)
+    .order('game_id', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as EGOWithSinner[]
 }
 
 export async function getEGOs(sinnerId?: string): Promise<EGO[]> {

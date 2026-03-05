@@ -151,6 +151,7 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
         name: pa.name, sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
         description: pa.description, sinnerName: sName,
+        imageUrl: id_.game_id && id_.folder_name ? `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${id_.folder_name}/${id_.game_id}_normal_info.webp` : undefined,
       }
     }
   }

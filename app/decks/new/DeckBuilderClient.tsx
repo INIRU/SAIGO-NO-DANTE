@@ -13,6 +13,7 @@ import {
   Skill,
   Passive,
   getSkillIconUrl,
+  getIdentityInfoUrl,
   computeSkillImageIndices,
   STORAGE_BASE,
   SIN_COLORS,
@@ -226,6 +227,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           name: p.name, sin_affinity: p.sin_affinity,
           sin_count: p.sin_count, active_cond: p.active_cond,
           description: p.description, sinnerName,
+          imageUrl: getIdentityInfoUrl(identity) || undefined,
         }
       }
     }
