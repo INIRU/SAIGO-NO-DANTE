@@ -42,11 +42,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com",
               "font-src 'self'",
-              "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co",
+              "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
               "frame-src https://www.youtube.com",
               "media-src 'self'",
               "object-src 'none'",

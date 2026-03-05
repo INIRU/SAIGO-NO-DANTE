@@ -60,8 +60,16 @@ function identityPortraitUrl(id: IdentityPreview, gacksung?: boolean): string {
 
 function PortraitSlot({ slot }: { slot: IdentityPreview }) {
   const [fallback, setFallback] = useState(false)
+  const [failed, setFailed] = useState(false)
   const url = identityPortraitUrl(slot, fallback ? false : undefined)
-  if (!url) return null
+  if (!url || failed) {
+    const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
+    return (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
+        <span className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#c8900a30' }}>{initial}</span>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -74,6 +82,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
         style={{ objectFit: 'cover', objectPosition: 'center top' }}
         onError={() => {
           if (slot.gacksung && !fallback) setFallback(true)
+          else setFailed(true)
         }}
       />
       {slot.gacksung && (

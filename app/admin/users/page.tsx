@@ -2,8 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { Loader2, Shield, ShieldOff, Ban, CheckCircle } from 'lucide-react'
+import { Ban, CheckCircle } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import {
+  AdminInput, AdminSelect, AdminIconButton,
+  AdminTable, useToast, AdminToastContainer,
+} from '@/components/admin'
 
 interface User {
   id: string
@@ -18,17 +22,17 @@ interface User {
 
 type PendingAction = { type: 'role'; user: User; newRole: string } | { type: 'suspend'; user: User }
 
-const ROLE_CYCLE: Record<string, string> = {
-  user: 'wanjang',
-  wanjang: 'admin',
-  admin: 'user',
-}
-
 const ROLE_LABELS: Record<string, string> = {
   user: '유저',
   wanjang: '완장',
   admin: '관리자',
 }
+
+const ROLE_OPTIONS = [
+  { value: 'user', label: '일반' },
+  { value: 'wanjang', label: '완장' },
+  { value: 'admin', label: '관리자' },
+]
 
 function getRoleBadgeStyle(role: string) {
   if (role === 'admin') {
@@ -55,14 +59,18 @@ function getRoleBadgeStyle(role: string) {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+
   const [updating, setUpdating] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction | null>(null)
+  const [search, setSearch] = useState('')
+  const { toasts, showToast, dismissToast } = useToast()
 
   const fetchUsers = () => {
     setLoading(true)
     fetch('/api/admin/users')
       .then(r => r.json())
       .then(data => setUsers(Array.isArray(data) ? data : []))
+      .catch(() => showToast('유저 목록을 불러오지 못했습니다.', 'error'))
       .finally(() => setLoading(false))
   }
 
@@ -74,24 +82,32 @@ export default function AdminUsersPage() {
     setPending(null)
     setUpdating(user.id)
 
-    if (pending.type === 'role') {
-      const newRole = pending.newRole
-      await fetch(`/api/admin/users/${user.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      })
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
-    } else {
-      await fetch(`/api/admin/users/${user.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ suspended: !user.suspended }),
-      })
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, suspended: !u.suspended } : u))
+    try {
+      if (pending.type === 'role') {
+        const newRole = pending.newRole
+        const res = await fetch(`/api/admin/users/${user.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole }),
+        })
+        if (!res.ok) throw new Error()
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+        showToast(`역할이 "${ROLE_LABELS[newRole] ?? newRole}"(으)로 변경되었습니다.`, 'success')
+      } else {
+        const res = await fetch(`/api/admin/users/${user.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ suspended: !user.suspended }),
+        })
+        if (!res.ok) throw new Error()
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, suspended: !u.suspended } : u))
+        showToast(user.suspended ? '계정 정지가 해제되었습니다.' : '계정이 정지되었습니다.', 'success')
+      }
+    } catch {
+      showToast('작업 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setUpdating(null)
     }
-
-    setUpdating(null)
   }, [pending])
 
   const getModalProps = () => {
@@ -117,6 +133,109 @@ export default function AdminUsersPage() {
 
   const modalProps = getModalProps()
 
+  const filteredUsers = search
+    ? users.filter(u =>
+        (u.username ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (u.email ?? '').toLowerCase().includes(search.toLowerCase())
+      )
+    : users
+
+  const columns = [
+    {
+      key: 'user' as const,
+      header: '유저',
+      render: (user: User) => (
+        <div className="flex items-center gap-3">
+          {user.avatar_url ? (
+            <Image src={user.avatar_url} alt="" width={28} height={28} unoptimized
+              style={{ borderRadius: '50%', border: '1px solid var(--border)' }} />
+          ) : (
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(200,144,10,0.1)', border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--gold)', fontSize: '0.6875rem', fontWeight: 'bold',
+            }}>
+              {(user.username ?? '?')[0]?.toUpperCase()}
+            </div>
+          )}
+          <span style={{ color: '#c8a450', fontSize: '0.8125rem' }}>{user.username ?? '(없음)'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email' as const,
+      header: '이메일',
+      render: (user: User) => (
+        <span style={{ color: '#7a6845', fontSize: '0.75rem' }}>{user.email ?? '-'}</span>
+      ),
+    },
+    {
+      key: 'role' as const,
+      header: '역할',
+      render: (user: User) => {
+        const badgeStyle = getRoleBadgeStyle(user.role)
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
+              ...badgeStyle,
+            }}>
+              {ROLE_LABELS[user.role] ?? user.role}
+            </span>
+            <AdminSelect
+              value={user.role}
+              onChange={newRole => {
+                if (newRole !== user.role) setPending({ type: 'role', user, newRole })
+              }}
+              options={ROLE_OPTIONS}
+            />
+          </div>
+        )
+      },
+    },
+    {
+      key: 'status' as const,
+      header: '상태',
+      render: (user: User) => user.suspended ? (
+        <span style={{ color: '#aa4444', fontSize: '0.6875rem', fontWeight: 600 }}>정지됨</span>
+      ) : (
+        <span style={{ color: '#44aa44', fontSize: '0.6875rem' }}>정상</span>
+      ),
+    },
+    {
+      key: 'created_at' as const,
+      header: '가입일',
+      render: (user: User) => (
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+          {new Date(user.created_at).toLocaleDateString('ko-KR')}
+        </span>
+      ),
+    },
+    {
+      key: 'deck_count' as const,
+      header: '덱',
+      render: (user: User) => (
+        <span style={{ color: '#7a6845', fontSize: '0.75rem' }}>{user.deck_count}</span>
+      ),
+    },
+    {
+      key: 'actions' as const,
+      header: '관리',
+      render: (user: User) => (
+        <div className="flex items-center gap-1">
+          <AdminIconButton
+            onClick={() => setPending({ type: 'suspend', user })}
+            variant={user.suspended ? 'default' : 'danger'}
+            title={user.suspended ? '정지 해제' : '계정 정지'}
+          >
+            {user.suspended ? <CheckCircle size={14} /> : <Ban size={14} />}
+          </AdminIconButton>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div>
       <div className="mb-6">
@@ -128,118 +247,26 @@ export default function AdminUsersPage() {
         <p style={{ color: '#555566', fontSize: '0.75rem', lineHeight: 1.7 }}>
           <span style={{ color: '#c8a450' }}>역할 변경 시</span> 해당 유저가 다시 로그인해야 적용됩니다.
           환경변수 <code style={{ color: '#88cc88', fontSize: '0.6875rem' }}>ADMIN_EMAILS</code>에 등록된 이메일은 항상 관리자입니다.
-          <br />
-          <span style={{ color: '#7a6845' }}>역할 순환: 유저 → 완장 → 관리자 → 유저</span>
         </p>
       </div>
 
+      <div className="mb-4">
+        <AdminInput
+          value={search}
+          onChange={setSearch}
+          placeholder="이름 또는 이메일로 검색..."
+        />
+      </div>
+
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
-          <Loader2 size={14} className="animate-spin" /> 로딩 중...
-        </div>
+        <div style={{ color: '#555566', fontSize: '0.8125rem' }}>로딩 중...</div>
       ) : (
-        <div className="card overflow-x-auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['유저', '이메일', '역할', '상태', '가입일', '덱', '관리'].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => {
-                const badgeStyle = getRoleBadgeStyle(user.role)
-                return (
-                <tr key={user.id} style={{
-                  borderBottom: '1px solid rgba(58,42,21,0.3)',
-                  opacity: user.suspended ? 0.5 : 1,
-                }}>
-                  <td style={{ padding: '10px 14px' }}>
-                    <div className="flex items-center gap-3">
-                      {user.avatar_url ? (
-                        <Image src={user.avatar_url} alt="" width={28} height={28} unoptimized
-                          style={{ borderRadius: '50%', border: '1px solid var(--border)' }} />
-                      ) : (
-                        <div style={{
-                          width: 28, height: 28, borderRadius: '50%',
-                          background: 'rgba(200,144,10,0.1)', border: '1px solid var(--border)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: 'var(--gold)', fontSize: '0.6875rem', fontWeight: 'bold',
-                        }}>
-                          {(user.username ?? '?')[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <span style={{ color: '#c8a450', fontSize: '0.8125rem' }}>{user.username ?? '(없음)'}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
-                    {user.email ?? '-'}
-                  </td>
-                  <td style={{ padding: '10px 14px' }}>
-                    <span style={{
-                      padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
-                      ...badgeStyle,
-                    }}>
-                      {ROLE_LABELS[user.role] ?? user.role}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 14px' }}>
-                    {user.suspended ? (
-                      <span style={{ color: '#aa4444', fontSize: '0.6875rem', fontWeight: 600 }}>정지됨</span>
-                    ) : (
-                      <span style={{ color: '#44aa44', fontSize: '0.6875rem' }}>정상</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>
-                    {new Date(user.created_at).toLocaleDateString('ko-KR')}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>{user.deck_count}</td>
-                  <td style={{ padding: '10px 14px' }}>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          const newRole = ROLE_CYCLE[user.role] ?? 'user'
-                          setPending({ type: 'role', user, newRole })
-                        }}
-                        disabled={updating === user.id}
-                        title={`역할 변경: ${ROLE_LABELS[user.role] ?? user.role} → ${ROLE_LABELS[ROLE_CYCLE[user.role] ?? 'user']}`}
-                        className="transition-opacity hover:opacity-70"
-                        style={{
-                          padding: '4px', cursor: 'pointer', borderRadius: '3px',
-                          color: user.role === 'admin' ? '#cc6666' : user.role === 'wanjang' ? 'var(--gold)' : '#555566',
-                          opacity: updating === user.id ? 0.3 : 1,
-                        }}
-                      >
-                        {user.role === 'admin' ? <ShieldOff size={14} /> : <Shield size={14} />}
-                      </button>
-                      <button
-                        onClick={() => setPending({ type: 'suspend', user })}
-                        disabled={updating === user.id}
-                        title={user.suspended ? '정지 해제' : '계정 정지'}
-                        className="transition-opacity hover:opacity-70"
-                        style={{
-                          padding: '4px', cursor: 'pointer', borderRadius: '3px',
-                          color: user.suspended ? '#44aa44' : '#aa4444',
-                          opacity: updating === user.id ? 0.3 : 1,
-                        }}
-                      >
-                        {user.suspended ? <CheckCircle size={14} /> : <Ban size={14} />}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )})}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}>
-                    유저가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable
+          columns={columns}
+          data={filteredUsers.map(u => ({ ...u, suspended: u.suspended ?? false }))}
+          keyExtractor={u => u.id}
+          emptyMessage="유저가 없습니다."
+        />
       )}
 
       <ConfirmModal
@@ -251,6 +278,8 @@ export default function AdminUsersPage() {
         onConfirm={handleConfirm}
         onCancel={() => setPending(null)}
       />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

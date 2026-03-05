@@ -5,7 +5,9 @@ import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
+import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
+import { createClient } from '@/lib/supabase/server'
 
 const songMyung = Song_Myung({
   weight: '400',
@@ -62,19 +64,36 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // 서버 사이드: keyword_meta 전체 fetch → KeywordProvider로 전달
+  const supabase = await createClient()
+  const { data } = await supabase
+    .schema('limbus')
+    .from('keyword_meta')
+    .select('name, description, max_stack')
+
+  const keywords: Record<string, KeywordInfo> = {}
+  for (const row of data ?? []) {
+    keywords[row.name] = {
+      desc: row.description ?? '',
+      ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
+    }
+  }
+
   return (
     <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable}`}>
       <body className="antialiased">
         <SessionProvider>
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-          <FloatingFontControl />
+          <KeywordProvider keywords={keywords}>
+            <Navbar />
+            <main>{children}</main>
+            <Footer />
+            <FloatingFontControl />
+          </KeywordProvider>
         </SessionProvider>
         <Analytics />
       </body>

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, DragEvent } from 'react'
 import Image from 'next/image'
 import { Save, GripVertical, Search, X } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import { AdminButton, useToast, AdminToastContainer } from '@/components/admin'
 import { getIdentityInfoUrl, RARITY_ICON_MAP, type Identity } from '@/lib/data/sinners'
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
@@ -29,6 +30,7 @@ export default function AdminTierListPage() {
   const [saving, setSaving] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const { toasts, showToast, dismissToast } = useToast()
 
   // drag state
   const dragItem = useRef<{ id: string; source: Tier | 'unassigned' } | null>(null)
@@ -79,8 +81,9 @@ export default function AdminTierListPage() {
         const err = await res.json()
         throw new Error(err.error || '저장 실패')
       }
-    } catch {
-      // ignore
+      showToast('티어표가 저장되었습니다.', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.', 'error')
     } finally {
       setSaving(false)
     }
@@ -165,25 +168,16 @@ export default function AdminTierListPage() {
             인격을 드래그하여 티어에 배치하세요 ({totalAssigned}개 배정)
           </p>
         </div>
-        <button
+        <AdminButton
           onClick={() => setConfirmOpen(true)}
+          variant="gold"
+          size="sm"
+          loading={saving}
           disabled={saving}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
-          style={{
-            padding: '8px 20px',
-            background: 'rgba(200,144,10,0.15)',
-            border: '1px solid var(--gold-dim)',
-            borderRadius: '6px',
-            color: 'var(--gold)',
-            fontSize: '0.8125rem',
-            fontFamily: 'var(--font-heading)',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            opacity: saving ? 0.5 : 1,
-          }}
         >
           <Save size={14} />
           {saving ? '저장 중...' : '저장'}
-        </button>
+        </AdminButton>
       </div>
 
       {/* 티어 영역 */}
@@ -326,7 +320,31 @@ export default function AdminTierListPage() {
         onConfirm={handleSave}
         onCancel={() => setConfirmOpen(false)}
       />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+  )
+}
+
+function MiniIdentityImage({ imgUrl, nameKr }: { imgUrl: string; nameKr: string }) {
+  const [failed, setFailed] = useState(false)
+  if (!imgUrl || failed) {
+    return (
+      <div style={{ width: 32, height: 32, borderRadius: '2px', background: 'linear-gradient(160deg, #1e1810, #0d0a06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="font-serif font-bold" style={{ fontSize: '0.75rem', color: '#c8900a30' }}>{nameKr[0]}</span>
+      </div>
+    )
+  }
+  return (
+    <Image
+      src={imgUrl}
+      alt={nameKr}
+      width={32}
+      height={32}
+      unoptimized
+      style={{ borderRadius: '2px', objectFit: 'cover' }}
+      onError={() => setFailed(true)}
+    />
   )
 }
 
@@ -358,16 +376,7 @@ function MiniIdentityCard({
       className="transition-colors hover:border-[var(--gold-dim)]"
     >
       <GripVertical size={12} style={{ color: '#3a3028', flexShrink: 0 }} />
-      {imgUrl && (
-        <Image
-          src={imgUrl}
-          alt={identity.name_kr}
-          width={32}
-          height={32}
-          unoptimized
-          style={{ borderRadius: '2px', objectFit: 'cover' }}
-        />
-      )}
+      <MiniIdentityImage imgUrl={imgUrl} nameKr={identity.name_kr} />
       <span style={{ fontSize: '0.6875rem', color: '#c8a450', whiteSpace: 'nowrap' }}>
         {identity.name_kr}
       </span>

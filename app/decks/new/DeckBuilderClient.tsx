@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
   Sinner,
   Identity,
@@ -651,6 +651,7 @@ function PassiveBadge({ p, deckSinCounts }: {
   p: Passive
   deckSinCounts: Record<string, number>
 }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLDivElement>(null)
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null)
 
