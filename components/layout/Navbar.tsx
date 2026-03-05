@@ -418,10 +418,10 @@ export default function Navbar() {
                     })}
                     className="flex items-center justify-between w-full"
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '11px',
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '13px',
                       color: isOpen ? '#8a7855' : '#5a4838',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '0.08em',
                       padding: '14px 0 8px',
                       cursor: 'pointer',
                     }}

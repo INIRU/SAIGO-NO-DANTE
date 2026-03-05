@@ -665,7 +665,7 @@ export default function HomeClient({
                 const logoUrl       = getSinnerLogoUrl(identity.sinner_id)
                 const rarityIconSrc = RARITY_ICON_MAP[identity.rarity]
                 return (
-                  <Link key={identity.id} href={`/sinners/${identity.sinner_id}`} className="latest-card group block" style={{ opacity: 0 }}>
+                  <Link key={identity.id} href={`/sinners/${identity.sinner_id}/identities/${identity.id}`} className="latest-card group block" style={{ opacity: 0 }}>
                     <div
                       className="relative overflow-hidden"
                       style={{ aspectRatio: '3/4', background: 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)', border: '1px solid var(--border)', borderRadius: '4px', transition: 'border-color 0.25s, box-shadow 0.25s' }}

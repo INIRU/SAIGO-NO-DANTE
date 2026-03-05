@@ -44,7 +44,7 @@ export async function GET() {
       .from('deck_bookmarks')
       .select(`
         deck_id,
-        decks:deck_id(
+        decks!deck_id(
           id, title, description, tags, vote_count, view_count, comment_count, created_at,
           profiles(username),
           deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
