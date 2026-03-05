@@ -17,7 +17,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ na
   const { data, error } = await supabase
     .schema('limbus')
     .from('keyword_meta')
-    .update({ description: body.description, max_stack: body.max_stack ?? null })
+    .update({
+      description: body.description,
+      max_stack: body.max_stack ?? null,
+      icon_slug: body.icon_slug ?? null,
+      sin_affinity: body.sin_affinity ?? null,
+    })
     .eq('name', decodedName)
     .select()
     .single()

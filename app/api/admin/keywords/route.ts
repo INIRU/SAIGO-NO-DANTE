@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   let query = supabase
     .schema('limbus')
     .from('keyword_meta')
-    .select('name, description, max_stack')
+    .select('name, description, max_stack, icon_slug, sin_affinity')
     .order('name')
 
   if (q) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
   const body = await request.json()
-  const { name, description, max_stack } = body
+  const { name, description, max_stack, icon_slug, sin_affinity } = body
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
@@ -44,7 +44,13 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .schema('limbus')
     .from('keyword_meta')
-    .insert({ name: name.trim(), description: description ?? null, max_stack: max_stack ?? null })
+    .insert({
+      name: name.trim(),
+      description: description ?? null,
+      max_stack: max_stack ?? null,
+      icon_slug: icon_slug ?? null,
+      sin_affinity: sin_affinity ?? null,
+    })
     .select()
     .single()
 

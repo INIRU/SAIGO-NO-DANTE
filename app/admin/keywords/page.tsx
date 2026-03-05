@@ -10,6 +10,8 @@ interface KeywordRow {
   name: string
   description: string | null
   max_stack: number | null
+  icon_slug: string | null
+  sin_affinity: string | null
 }
 
 export default function AdminKeywordsPage() {
@@ -18,7 +20,7 @@ export default function AdminKeywordsPage() {
   const [search, setSearch] = useState('')
   const [editRow, setEditRow] = useState<KeywordRow | null>(null)
   const [addMode, setAddMode] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', max_stack: '' })
+  const [form, setForm] = useState({ name: '', description: '', max_stack: '', icon_slug: '', sin_affinity: '' })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
@@ -39,7 +41,7 @@ export default function AdminKeywordsPage() {
 
   const openAdd = () => {
     setEditRow(null)
-    setForm({ name: '', description: '', max_stack: '' })
+    setForm({ name: '', description: '', max_stack: '', icon_slug: '', sin_affinity: '' })
     setAddMode(true)
   }
 
@@ -50,6 +52,8 @@ export default function AdminKeywordsPage() {
       name: row.name,
       description: row.description ?? '',
       max_stack: row.max_stack?.toString() ?? '',
+      icon_slug: row.icon_slug ?? '',
+      sin_affinity: row.sin_affinity ?? '',
     })
   }
 
@@ -64,6 +68,8 @@ export default function AdminKeywordsPage() {
             name: form.name.trim(),
             description: form.description || null,
             max_stack: form.max_stack ? parseInt(form.max_stack) : null,
+            icon_slug: form.icon_slug.trim() || null,
+            sin_affinity: form.sin_affinity.trim() || null,
           }),
         })
         if (!res.ok) {
@@ -78,6 +84,8 @@ export default function AdminKeywordsPage() {
           body: JSON.stringify({
             description: form.description || null,
             max_stack: form.max_stack ? parseInt(form.max_stack) : null,
+            icon_slug: form.icon_slug.trim() || null,
+            sin_affinity: form.sin_affinity.trim() || null,
           }),
         })
         if (!res.ok) {
@@ -175,6 +183,18 @@ export default function AdminKeywordsPage() {
               placeholder="없으면 비워두기"
               min={0}
             />
+            <AdminInput
+              label="아이콘 슬러그 (icon_slug)"
+              value={form.icon_slug}
+              onChange={v => setForm(f => ({ ...f, icon_slug: v }))}
+              placeholder="예: bleed, tremor-burst"
+            />
+            <AdminInput
+              label="죄악 속성 (sin_affinity)"
+              value={form.sin_affinity}
+              onChange={v => setForm(f => ({ ...f, sin_affinity: v }))}
+              placeholder="예: wrath, lust, sloth"
+            />
             <div style={{ display: 'flex', gap: 8 }}>
               <AdminButton onClick={handleSave} loading={saving} size="sm">
                 저장
@@ -221,6 +241,16 @@ export default function AdminKeywordsPage() {
                     {row.max_stack != null && (
                       <span style={{ color: '#555566', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
                         max {row.max_stack}
+                      </span>
+                    )}
+                    {row.icon_slug && (
+                      <span style={{ color: '#446644', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+                        icon:{row.icon_slug}
+                      </span>
+                    )}
+                    {row.sin_affinity && (
+                      <span style={{ color: '#664444', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+                        sin:{row.sin_affinity}
                       </span>
                     )}
                   </div>

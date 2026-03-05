@@ -8,12 +8,11 @@ import {
   SIN_COLORS, SinType,
   GRADE_COLORS, SIN_KR_TO_EN, ATK_TYPE_ICON_MAP,
   getSinIconUrl,
+  SIN_ORDER,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip, useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
-const SIN_ORDER: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
-
 const RESISTANCE_STYLE: Record<string, { color: string; bg: string }> = {
   '내성': { color: '#4488dd', bg: 'rgba(44,88,180,0.15)' },
   '견딤': { color: '#9966cc', bg: 'rgba(120,80,180,0.15)' },

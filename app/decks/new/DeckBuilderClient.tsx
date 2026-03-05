@@ -12,30 +12,27 @@ import {
   EGO,
   Skill,
   Passive,
-  getSinnerProfileUrl,
-  getSinnerLogoUrl,
-  getIdentityInfoUrl,
   getSkillIconUrl,
   computeSkillImageIndices,
   STORAGE_BASE,
   SIN_COLORS,
   SinType,
   GRADE_COLORS,
-  SIN_LABELS_KR,
-  SIN_ICON_MAP,
-  ATK_TYPE_ICON_MAP,
-  getKeywordIconUrl,
   type ActivationCondition,
 } from '@/lib/data/sinners'
 import {
-  NoteRenderer,
   type NoteSkillEntry,
   type NotePassiveEntry,
   type NoteEgoEntry,
   type NoteEgoGiftEntry,
 } from '@/components/decks/NoteChips'
-import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import { useNoteAutocomplete, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import IdentityCard from '@/components/sinners/IdentityCard'
+
+import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { IdentityTab, EgoTab, OrderTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
+import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
+import DeckNoteEditor from '@/components/deck-builder/DeckNoteEditor'
 
 interface EditMode {
   deckId: string
@@ -73,407 +70,6 @@ interface Props {
 
 type Tab = 'identity' | 'ego' | 'skillset' | 'order' | 'note'
 
-const SIN_ORDER: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
-
-const RES_COLORS: Record<string, string> = {
-  '효율': '#c83040', '취약': '#c83040',
-  '보통': '#888899',
-  '내성': '#4898b0', '견딤': '#4898b0',
-  '무효': '#334455',
-}
-
-/* ── 수감자 빈 카드 (공통) ────────────────────────────── */
-function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: React.ReactNode }) {
-  const profileUrl = getSinnerProfileUrl(sinner.id)
-  return (
-    <div
-      className="relative w-full"
-      style={{
-        aspectRatio: '2/3',
-        background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-        border: '1.5px dashed #2a2015',
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}
-    >
-      {profileUrl && (
-        <Image src={profileUrl} alt={sinner.name} fill className="object-cover object-top" style={{ opacity: 0.18 }} />
-      )}
-      <div className="absolute" style={{ top: 0, right: 0, width: '36%', opacity: 0.2, pointerEvents: 'none' }}>
-        <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
-      </div>
-      {children}
-      <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '20px' }}>
-        <p className="font-serif font-bold" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
-      </div>
-    </div>
-  )
-}
-
-/* ── 탭 1: 인격 편성 ─────────────────────────────────── */
-function IdentityTab({
-  sinners, deckSlots, onCardClick, gacksungSlots, onGacksungToggle,
-}: {
-  sinners: Sinner[]
-  deckSlots: Record<string, Identity | undefined>
-  onCardClick: (sinnerId: string) => void
-  gacksungSlots: Record<string, boolean>
-  onGacksungToggle: (sinnerId: string) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-8">
-      {sinners.map(sinner => {
-        const identity = deckSlots[sinner.id]
-        const isGacksung = gacksungSlots[sinner.id] ?? false
-        return (
-          <div key={sinner.id} className="relative cursor-pointer" style={{ overflow: 'visible' }} onClick={() => onCardClick(sinner.id)}>
-            {identity ? (
-              <>
-                <IdentityCard identity={identity} compact gacksung={isGacksung} />
-                <button
-                  onClick={e => { e.stopPropagation(); onGacksungToggle(sinner.id) }}
-                  title={isGacksung ? '각성 일러스트 — 클릭하여 일반으로' : '일반 일러스트 — 클릭하여 각성으로'}
-                  style={{
-                    position: 'absolute', top: '-7px', right: '-7px', zIndex: 20,
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: isGacksung ? 'rgba(200,144,10,0.92)' : 'rgba(18,14,9,0.92)',
-                    border: `1.5px solid ${isGacksung ? '#c8900a' : '#2a2015'}`,
-                    color: isGacksung ? '#0d0b08' : '#5a4830',
-                    fontSize: '0.8125rem', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: isGacksung ? '0 0 8px rgba(200,144,10,0.5)' : 'none',
-                    transition: 'all 0.2s',
-                    lineHeight: 1,
-                  }}
-                >
-                  ↺
-                </button>
-              </>
-            ) : (
-              <SinnerGhostCard sinner={sinner}>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
-                </div>
-              </SinnerGhostCard>
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-
-/* ── 탭 2: 에고 편성 ─────────────────────────────────── */
-function EgoTab({
-  sinners, egoSlots, onGradeClick,
-}: {
-  sinners: Sinner[]
-  egoSlots: Record<string, Record<string, EGO>>
-  onGradeClick: (sinnerId: string, grade: string) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
-      {sinners.map(sinner => {
-        const sinnerEgos = egoSlots[sinner.id] ?? {}
-        return (
-          <div key={sinner.id} style={{
-            background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-            border: '1px solid #221a0f',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            {/* 수감자 헤더 */}
-            <div className="flex items-center gap-1.5 px-2 py-1.5" style={{ borderBottom: '1px solid #1a1208' }}>
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.5 }} />
-              <span className="font-serif font-bold truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
-            </div>
-            {/* 등급 세로 목록 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '2px' }}>
-              {GRADE_ORDER.map(grade => {
-                const ego = sinnerEgos[grade]
-                const gc = GRADE_COLORS[grade]
-                const sc = ego?.sin_affinity ? (SIN_COLORS[ego.sin_affinity as SinType] ?? gc) : gc
-                return (
-                  <button
-                    key={grade}
-                    onClick={() => onGradeClick(sinner.id, grade)}
-                    style={{
-                      background: ego ? `${sc}1a` : 'rgba(10,8,5,0.7)',
-                      border: `1px solid ${ego ? sc + '55' : '#18120a'}`,
-                      borderRadius: '2px',
-                      padding: '4px 5px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: '5px',
-                      transition: 'all 0.15s',
-                      minHeight: '24px',
-                    }}
-                  >
-                    {/* 등급 아이콘 */}
-                    {grade !== 'ALEPH' ? (
-                      <Image
-                        src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
-                        alt={grade}
-                        width={22}
-                        height={11}
-                       
-                        unoptimized
-                        style={{ height: '11px', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}
-                      />
-                    ) : (
-                      <span style={{ color: ego ? sc : gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
-                    )}
-                    {ego
-                      ? <span style={{ color: sc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'keep-all', flex: 1, textAlign: 'left' }}>{ego.name_kr || ego.name}</span>
-                      : <span style={{ color: '#2a1e10', fontSize: '0.75rem', lineHeight: 1 }}>+</span>
-                    }
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-/* ── 탭 3: 편성 순서 ─────────────────────────────────── */
-function OrderTab({
-  sinners, deckSlots, formationOrder, onToggle,
-}: {
-  sinners: Sinner[]
-  deckSlots: Record<string, Identity | undefined>
-  formationOrder: string[]
-  onToggle: (sinnerId: string) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-8">
-      {sinners.map(sinner => {
-        const idx = formationOrder.indexOf(sinner.id)
-        const position = idx === -1 ? 0 : idx + 1
-        const isAssigned = position > 0
-        const isBattle = position <= 7
-        const color = isBattle ? '#c83020' : '#3870b0'
-        const identity = deckSlots[sinner.id]
-
-        return (
-          <div
-            key={sinner.id}
-            onClick={() => onToggle(sinner.id)}
-            className="relative cursor-pointer"
-            style={{ overflow: 'visible' }}
-          >
-            {identity ? (
-              <IdentityCard identity={identity} compact />
-            ) : (
-              <SinnerGhostCard sinner={sinner}>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
-                </div>
-              </SinnerGhostCard>
-            )}
-
-            <div
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                zIndex: 20,
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isAssigned ? color : 'rgba(20,16,10,0.9)',
-                border: isAssigned ? `2px solid ${color}` : '1.5px dashed rgba(200,144,10,0.3)',
-                boxShadow: isAssigned ? `0 0 10px ${color}88` : 'none',
-                transition: 'all 0.2s',
-                cursor: 'pointer',
-              }}
-            >
-              {isAssigned ? (
-                <>
-                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.375rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>
-                    {isBattle ? 'B' : 'S'}
-                  </span>
-                  <span style={{ color: '#fff', fontSize: '0.8125rem', fontFamily: 'var(--font-title)', fontWeight: 700, lineHeight: 1 }}>
-                    {position}
-                  </span>
-                </>
-              ) : (
-                <span style={{ color: 'rgba(200,144,10,0.4)', fontSize: '1rem', lineHeight: 1 }}>+</span>
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-/* ── 탭 2.5: 거전 (스킬 배분) ────────────────────────── */
-const SKILL_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
-
-function SkillsetTab({
-  sinners, deckSlots, skillsByIdentityId, skillDistribution, onDistributionChange,
-}: {
-  sinners: Sinner[]
-  deckSlots: Record<string, Identity | undefined>
-  skillsByIdentityId: Record<string, Skill[]>
-  skillDistribution: Record<string, [number, number, number]>
-  onDistributionChange: (sinnerId: string, dist: [number, number, number]) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-8">
-      {sinners.map(sinner => {
-        const identity = deckSlots[sinner.id]
-        if (!identity) {
-          return (
-            <div key={sinner.id}>
-              <SinnerGhostCard sinner={sinner}>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
-                </div>
-              </SinnerGhostCard>
-            </div>
-          )
-        }
-
-        const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
-        const total = dist[0] + dist[1] + dist[2]
-        const isDefault = dist[0] === 3 && dist[1] === 2 && dist[2] === 1
-        const skills = (skillsByIdentityId[identity.id] ?? [])
-          .filter(s => s.skill_order >= 1 && s.skill_order <= 3)
-          .sort((a, b) => a.skill_order - b.skill_order)
-          .filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i)
-
-        const handleChange = (idx: number, delta: number) => {
-          const next: [number, number, number] = [dist[0], dist[1], dist[2]]
-          const newVal = next[idx] + delta
-          if (newVal < 0 || total + delta > 6) return
-          next[idx] = newVal
-          onDistributionChange(sinner.id, next)
-        }
-
-        return (
-          <div key={sinner.id}>
-            <IdentityCard identity={identity} compact />
-            <div style={{
-              marginTop: '6px',
-              background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-              border: `1px solid ${isDefault ? '#221a0f' : 'rgba(200,144,10,0.4)'}`,
-              borderRadius: '4px',
-              padding: '6px',
-            }}>
-              {[0, 1, 2].map(idx => {
-                const skill = skills[idx]
-                const sinColor = skill ? (SIN_COLORS[skill.sin_affinity] ?? '#888') : '#555'
-                return (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
-                    {skill && identity.game_id ? (
-                      <Image
-                        src={getSkillIconUrl(identity, skill.skill_order)}
-                        alt={skill.name}
-                        width={16}
-                        height={16}
-                       
-                        style={{ borderRadius: '2px', flexShrink: 0 }}
-                      />
-                    ) : (
-                      <div style={{ width: '16px', height: '16px', borderRadius: '2px', background: '#1a1510', flexShrink: 0 }} />
-                    )}
-                    <span style={{ fontSize: '0.5625rem', color: sinColor, fontFamily: 'var(--font-mono)', fontWeight: 700, width: '18px', flexShrink: 0 }}>
-                      S{idx + 1}
-                    </span>
-                    <div style={{ flex: 1 }} />
-                    <button
-                      onClick={() => handleChange(idx, -1)}
-                      disabled={dist[idx] <= 0}
-                      style={{
-                        width: '18px', height: '18px', borderRadius: '2px',
-                        background: dist[idx] <= 0 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                        border: `1px solid ${dist[idx] <= 0 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                        color: dist[idx] <= 0 ? '#2a2015' : '#c8900a',
-                        fontSize: '0.75rem', cursor: dist[idx] <= 0 ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        lineHeight: 1, padding: 0,
-                      }}
-                    >
-                      −
-                    </button>
-                    <span style={{
-                      width: '16px', textAlign: 'center', fontSize: '0.8125rem',
-                      fontFamily: 'var(--font-mono)', fontWeight: 700,
-                      color: dist[idx] === 0 ? '#3a2a10' : sinColor,
-                    }}>
-                      {dist[idx]}
-                    </span>
-                    <button
-                      onClick={() => handleChange(idx, 1)}
-                      disabled={total >= 6}
-                      style={{
-                        width: '18px', height: '18px', borderRadius: '2px',
-                        background: total >= 6 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                        border: `1px solid ${total >= 6 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                        color: total >= 6 ? '#2a2015' : '#c8900a',
-                        fontSize: '0.75rem', cursor: total >= 6 ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        lineHeight: 1, padding: 0,
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-                )
-              })}
-              {/* 합계 + 프리셋 */}
-              <div style={{
-                borderTop: '1px solid #1a1208', marginTop: '4px', paddingTop: '4px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{
-                  fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                  color: total === 6 ? '#5a8a40' : '#c83020',
-                }}>
-                  {total}/6
-                </span>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {SKILL_PRESETS.map(preset => {
-                    const active = dist[0] === preset[0] && dist[1] === preset[1] && dist[2] === preset[2]
-                    return (
-                      <button
-                        key={preset.join(',')}
-                        onClick={() => onDistributionChange(sinner.id, preset)}
-                        style={{
-                          fontSize: '0.5rem', fontFamily: 'var(--font-mono)',
-                          padding: '1px 4px', borderRadius: '2px',
-                          background: active ? 'rgba(200,144,10,0.2)' : 'transparent',
-                          border: `1px solid ${active ? 'rgba(200,144,10,0.5)' : '#18120a'}`,
-                          color: active ? '#c8900a' : '#444',
-                          cursor: 'pointer', lineHeight: 1.4,
-                        }}
-                      >
-                        {preset.join('/')}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // 수감자별 기본 E.G.O (name_kr 기준)
 const DEFAULT_EGO_NAMES: Record<string, string> = {
   '이상':    '오감도',
@@ -485,244 +81,6 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
   '이스마엘': '작살박이',
   '오티스':  '토 파토스 마토스',
   '그레고르': '어느날 갑자기',
-}
-
-/* ── 덱 코드 헬퍼 ──────────────────────────────────── */
-// 비트 읽기/쓰기 (start0: 0-indexed)
-function readBits(bits: string, start0: number, length: number): number {
-  const s = bits.slice(start0, start0 + length)
-  return s.length ? parseInt(s, 2) : 0
-}
-function writeBitsArr(arr: string[], start0: number, length: number, value: number) {
-  const s = value.toString(2).padStart(length, '0')
-  for (let i = 0; i < length; i++) arr[start0 + i] = s[i]
-}
-
-// 출시 순서 정렬 (game_id 기준)
-function sortedIdentities(list: Identity[]): Identity[] {
-  return [...list].sort((a, b) => {
-    const aId = a.game_id ? parseInt(a.game_id) : 99999
-    const bId = b.game_id ? parseInt(b.game_id) : 99999
-    return aId - bId
-  })
-}
-
-// 비트 위치 (0-indexed, sinner block 내 상대 위치)
-// 1-indexed 문서 기준: 5-8=identity, 9-12=formation, 16-19=ZAYIN, 23-26=TETH, 30-33=HE, 37-40=WAW
-const CODE_BIT_POSITIONS = {
-  identity:  4,  // 0-indexed = 1-indexed - 1
-  formation: 8,
-  ZAYIN:     15,
-  TETH:      22,
-  HE:        29,
-  WAW:       36,
-} as const
-
-async function decodeDeckCode(
-  code: string,
-  sinners: Sinner[],
-  identities: Identity[],
-  egos: EGO[],
-): Promise<{ deckSlots: Record<string, Identity | undefined>; egoSlots: Record<string, Record<string, EGO>>; formationOrder: string[] } | null> {
-  try {
-    // 1) base64 decode → compressed bytes
-    const compressed = Uint8Array.from(atob(code), c => c.charCodeAt(0))
-    // 2) gzip decompress
-    const ds = new DecompressionStream('gzip')
-    const w = ds.writable.getWriter()
-    w.write(compressed); w.close()
-    const decompBuf = await new Response(ds.readable).arrayBuffer()
-    const b64str = new TextDecoder().decode(decompBuf)
-    // 3) base64 decode → bytes
-    const bytes = Uint8Array.from(atob(b64str), c => c.charCodeAt(0))
-    // 4) bytes → bits
-    const bits = Array.from(bytes).map(b => b.toString(2).padStart(8, '0')).join('')
-    if (bits.length < 560) return null
-
-    const sorted = [...sinners].sort((a, b) => a.order_num - b.order_num)
-    const deckSlots: Record<string, Identity | undefined> = {}
-    const egoSlots: Record<string, Record<string, EGO>> = {}
-    const formEntries: { sinnerId: string; order: number }[] = []
-
-    for (let si = 0; si < 12; si++) {
-      const sinner = sorted[si]
-      if (!sinner) continue
-      const off = si * 46
-      const sinnerIds = sortedIdentities(identities.filter(i => i.sinner_id === sinner.id))
-      const sinnerEgos = egos.filter(e => e.sinner_id === sinner.id)
-        .sort((a, b) => parseInt(a.game_id ?? '99999') - parseInt(b.game_id ?? '99999'))
-
-      const idxOrder = readBits(bits, off + CODE_BIT_POSITIONS.identity, 4)
-      if (idxOrder > 0 && idxOrder <= sinnerIds.length) {
-        deckSlots[sinner.id] = sinnerIds[idxOrder - 1]
-      }
-
-      const formOrder = readBits(bits, off + CODE_BIT_POSITIONS.formation, 4)
-      if (formOrder > 0) formEntries.push({ sinnerId: sinner.id, order: formOrder })
-
-      const gradeMap: Record<string, number> = {
-        ZAYIN: CODE_BIT_POSITIONS.ZAYIN,
-        TETH:  CODE_BIT_POSITIONS.TETH,
-        HE:    CODE_BIT_POSITIONS.HE,
-        WAW:   CODE_BIT_POSITIONS.WAW,
-      }
-      const sinnerEgoMap: Record<string, EGO> = {}
-      for (const [grade, bitPos] of Object.entries(gradeMap)) {
-        const egoOrder = readBits(bits, off + bitPos, 4)
-        if (egoOrder > 0 && egoOrder <= sinnerEgos.length) {
-          sinnerEgoMap[grade] = sinnerEgos[egoOrder - 1]
-        }
-      }
-      if (Object.keys(sinnerEgoMap).length > 0) egoSlots[sinner.id] = sinnerEgoMap
-    }
-
-    formEntries.sort((a, b) => a.order - b.order)
-    return { deckSlots, egoSlots, formationOrder: formEntries.map(e => e.sinnerId) }
-  } catch {
-    return null
-  }
-}
-
-async function encodeDeckCode(
-  sinners: Sinner[],
-  identities: Identity[],
-  egos: EGO[],
-  deckSlots: Record<string, Identity | undefined>,
-  egoSlots: Record<string, Record<string, EGO>>,
-  formationOrder: string[],
-): Promise<string> {
-  const sorted = [...sinners].sort((a, b) => a.order_num - b.order_num)
-  const arr = Array(560).fill('0')
-
-  for (let si = 0; si < 12; si++) {
-    const sinner = sorted[si]
-    if (!sinner) continue
-    const off = si * 46
-    const sinnerIds = sortedIdentities(identities.filter(i => i.sinner_id === sinner.id))
-    const sinnerEgos = egos.filter(e => e.sinner_id === sinner.id)
-      .sort((a, b) => parseInt(a.game_id ?? '99999') - parseInt(b.game_id ?? '99999'))
-
-    const identity = deckSlots[sinner.id]
-    if (identity) {
-      const order = sinnerIds.findIndex(i => i.id === identity.id) + 1
-      if (order > 0) writeBitsArr(arr, off + CODE_BIT_POSITIONS.identity, 4, order)
-
-      const formIdx = formationOrder.indexOf(sinner.id)
-      if (formIdx !== -1) writeBitsArr(arr, off + CODE_BIT_POSITIONS.formation, 4, formIdx + 1)
-    }
-
-    const gradeMap: Record<string, number> = {
-      ZAYIN: CODE_BIT_POSITIONS.ZAYIN,
-      TETH:  CODE_BIT_POSITIONS.TETH,
-      HE:    CODE_BIT_POSITIONS.HE,
-      WAW:   CODE_BIT_POSITIONS.WAW,
-    }
-    for (const [grade, bitPos] of Object.entries(gradeMap)) {
-      const ego = egoSlots[sinner.id]?.[grade]
-      if (!ego) continue
-      const order = sinnerEgos.findIndex(e => e.id === ego.id) + 1
-      if (order > 0) writeBitsArr(arr, off + bitPos, 4, order)
-    }
-  }
-
-  // bits → bytes → base64
-  const bytes = new Uint8Array(70)
-  for (let i = 0; i < 70; i++) bytes[i] = parseInt(arr.slice(i * 8, i * 8 + 8).join(''), 2)
-  const b64 = btoa(String.fromCharCode(...bytes))
-
-  // gzip compress
-  const cs = new CompressionStream('gzip')
-  const cw = cs.writable.getWriter()
-  cw.write(new TextEncoder().encode(b64)); cw.close()
-  const compBuf = await new Response(cs.readable).arrayBuffer()
-
-  return btoa(String.fromCharCode(...new Uint8Array(compBuf)))
-}
-
-/* ── 메인 컴포넌트 ──────────────────────────────────── */
-// 한국어 죄악명 → SinType
-const SIN_KR_TO_TYPE: Record<string, SinType> = {
-  '분노': 'wrath', '색욕': 'lust', '나태': 'sloth', '탐식': 'gluttony',
-  '우울': 'gloom', '오만': 'pride', '질투': 'envy',
-}
-
-/* ── 패시브 뱃지 ─────────────────────────────────────── */
-function PassiveBadge({ p, deckSinCounts }: {
-  p: Passive
-  deckSinCounts: Record<string, number>
-}) {
-  const formatSkillDesc = useFormatSkillDesc()
-  const ref = useRef<HTMLDivElement>(null)
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null)
-
-  // 복수 죄악 지원 (예: "나태, 오만")
-  const sinNames = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
-  const sinTypeList = sinNames.map(s => SIN_KR_TO_TYPE[s]).filter(Boolean) as SinType[]
-  const sinType = sinTypeList[0] ?? null
-  const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
-  const currentCount = sinTypeList.reduce((sum, st) => sum + (deckSinCounts[st] ?? 0), 0)
-  const requiredCount = p.sin_count ?? 1
-
-  const handleMouseEnter = () => {
-    if (!ref.current || !p.description) return
-    const rect = ref.current.getBoundingClientRect()
-    const above = rect.top > 160
-    setTooltipStyle(
-      above
-        ? { bottom: window.innerHeight - rect.top + 6 }
-        : { top: rect.bottom + 6 }
-    )
-  }
-
-  return (
-    <div
-      ref={ref}
-      className="relative flex items-center gap-1.5 px-2 py-1 rounded"
-      style={{ background: `${sinColor}12`, border: `1px solid ${sinColor}30`, flexShrink: 0, cursor: 'default' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setTooltipStyle(null)}
-    >
-      {/* 죄악 조건 */}
-      {sinTypeList.length > 0 ? (
-        <div className="flex items-center gap-0.5">
-          {sinTypeList.map((st, i) => (
-            <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={16} height={16} />
-          ))}
-          <span style={{ color: sinColor, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-            {currentCount}/{requiredCount}
-          </span>
-          <span style={{ color: sinColor, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginLeft: '1px', opacity: 0.8 }}>
-            {p.active_cond}
-          </span>
-        </div>
-      ) : (
-        <span style={{ color: '#445566', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{p.active_cond ?? '-'}</span>
-      )}
-      <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
-
-      {/* 호버 툴팁 — fixed로 overflow 탈출 */}
-      {tooltipStyle && p.description && (
-        <div
-          className="z-[200] px-3 py-2.5 rounded shadow-lg pointer-events-none"
-          style={{
-            position: 'fixed',
-            left: ref.current ? Math.min(ref.current.getBoundingClientRect().left, window.innerWidth - 330) : 0,
-            ...tooltipStyle,
-            background: '#1a1510',
-            border: '1px solid #3a3020',
-            minWidth: '220px',
-            maxWidth: '320px',
-            whiteSpace: 'normal',
-          }}
-        >
-          <div style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 700, marginBottom: '4px' }}>{p.name}</div>
-          <div style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5 }}>
-            {formatSkillDesc(p.description, sinColor)}
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode }: Props) {
@@ -753,7 +111,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     const initial: Record<string, Record<string, EGO>> = {}
     for (const sinner of sinners) {
-      // 이름 지정 기본값 우선, 없으면 ZAYIN EGO 사용
       const defaultName = DEFAULT_EGO_NAMES[sinner.name_kr]
       const ego = defaultName
         ? egos.find(e => e.sinner_id === sinner.id && (e.name_kr === defaultName || e.name === defaultName))
@@ -783,11 +140,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const { status: authStatus } = useSession()
   const [draftSaved, setDraftSaved] = useState(false)
   const [hasDraft, setHasDraft] = useState(false)
+  const [showPassiveDetail, setShowPassiveDetail] = useState(false)
+  const [showGiftPanel, setShowGiftPanel] = useState(false)
+  const [giftTabKw, setGiftTabKw] = useState('전체')
 
   useEffect(() => {
     setHasDraft(!!localStorage.getItem('limbus-deck-draft'))
   }, [])
-
 
   const skillsByIdentityId = useMemo(() => {
     const map: Record<string, Skill[]> = {}
@@ -806,10 +165,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     return map
   }, [passives])
-
-  const [showPassiveDetail, setShowPassiveDetail] = useState(false)
-  const [showGiftPanel, setShowGiftPanel] = useState(false)
-  const [giftTabKw, setGiftTabKw] = useState('전체')
 
   const atkTypeTotals = useMemo(() => {
     const totals: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
@@ -893,15 +248,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   // 활성 가능한 EGO 기프트 계산
   const activatableGifts = useMemo(() => {
-    // 편성 순서에 포함된 인격만 계산
     const formedIdentities = formationOrder
       .map(sid => deckSlots[sid])
       .filter(Boolean) as Identity[]
     if (formedIdentities.length === 0) return []
 
-    // 키워드별 인격 수 (화상, 출혈 등)
     const kwCounts: Record<string, number> = {}
-    // 소속별 인격 수 (검계, 흑운회 등)
     const affCounts: Record<string, number> = {}
 
     for (const id of formedIdentities) {
@@ -938,7 +290,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           current = affCounts[c.affiliation!] ?? 0
         }
       } else if (c.type === 'skill') {
-        continue // 스킬 조건은 키워드/소속으로 판별 불가
+        continue
       }
 
       if (current > 0) {
@@ -950,7 +302,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       }
     }
 
-    // 활성 우선, 그 안에서 달성률 내림차순
     results.sort((a, b) => {
       if (a.met !== b.met) return a.met ? -1 : 1
       return (b.current / b.condition.count) - (a.current / a.condition.count)
@@ -958,7 +309,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return results
   }, [deckSlots, egoGifts, formationOrder])
 
-  // EGO 기프트 룩업 (NoteRenderer용)
   const egoGiftLookup = useMemo(() => {
     const map: Record<string, NoteEgoGiftEntry> = {}
     for (const g of egoGifts) {
@@ -967,10 +317,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return map
   }, [egoGifts])
 
-  // 자동완성 풀 (키워드 + 스킬 + 패시브 + 에고)
   const noteAcPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
-    // 스킬
     for (const identity of Object.values(deckSlots)) {
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
@@ -992,7 +340,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         })
       }
     }
-    // 패시브
     for (const identity of Object.values(deckSlots)) {
       if (!identity) continue
       for (const p of passivesByIdentityId[identity.id] ?? []) {
@@ -1003,7 +350,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         })
       }
     }
-    // 에고
     for (const identity of Object.values(deckSlots)) {
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
@@ -1017,9 +363,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         })
       }
     }
-    // 키워드
     pool.push(...buildKeywordPool())
-    // EGO 기프트
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
   }, [deckSlots, skillsByIdentityId, passivesByIdentityId, egoSlots, sinners, egoGifts])
@@ -1393,591 +737,51 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           />
         )}
 
-        {/* ── 정보 패널 (note 탭 제외) ──────────────────────── */}
-        {tab !== 'note' && (<>
-        {/* ── 죄악 자원 패널 ──────────────────────────────── */}
-        <div className="mt-8" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-          {/* 요약 바 */}
-          <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-            <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>죄악 자원</span>
-            <div className="flex items-center gap-4 flex-1 flex-wrap">
-              {SIN_ORDER.map((sin, i) => {
-                const total = sinCostTotals[i]
-                if (total === 0) return null
-                return (
-                  <div key={sin} className="flex items-center gap-1">
-                    <Image src={SIN_ICON_MAP[sin]} alt={SIN_LABELS_KR[sin]} width={18} height={18} />
-                    <span style={{ color: SIN_COLORS[sin], fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{total}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <button
-              onClick={() => setShowCostDetail(v => !v)}
-              className="text-xs px-2.5 py-1 rounded transition-all"
-              style={{ color: showCostDetail ? 'var(--gold)' : '#6a6a80', border: `1px solid ${showCostDetail ? 'var(--gold)' : 'var(--border)'}`, background: showCostDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
-            >
-              상세보기 {showCostDetail ? '▲' : '▼'}
-            </button>
-          </div>
-
-          {/* 상세 보기 — 각 EGO 한 줄씩 */}
-          {showCostDetail && (
-            <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
-              {sinners.flatMap(sinner => {
-                const sinnerSlots = egoSlots[sinner.id] ?? {}
-                return Object.values(sinnerSlots).map((ego, idx) => {
-                  const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity as SinType] ?? '#667788') : '#667788'
-                  const gc = GRADE_COLORS[ego.grade] ?? '#667788'
-                  const atkType = ego.ego_skills?.[0]?.atkType ?? null
-                  return (
-                    <div
-                      key={ego.id}
-                      className="flex items-center gap-4 px-4 py-2"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                    >
-                      {/* 일러스트 */}
-                      <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06', border: `1px solid ${sc}40` }}>
-                        {ego.image_url
-                          ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
-                          : <div className="w-full h-full flex items-center justify-center"><span style={{ color: gc, fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>{ego.grade?.[0]}</span></div>
-                        }
-                      </div>
-
-                      {/* 등급 아이콘 */}
-                      <div style={{ flexShrink: 0, width: '28px' }}>
-                        {ego.grade !== 'ALEPH' ? (
-                          <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade} width={28} height={14} unoptimized style={{ height: '14px', width: 'auto' }} />
-                        ) : (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.4375rem', color: gc, letterSpacing: '0.08em' }}>ALEPH</span>
-                        )}
-                      </div>
-
-                      {/* 수감자 + EGO명 */}
-                      <div style={{ minWidth: '140px', flexShrink: 0 }}>
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ opacity: 0.4 }} />
-                          <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
-                        </div>
-                        <p style={{ color: sc, fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{ego.name_kr || ego.name}</p>
-                      </div>
-
-                      {/* 공격 유형 */}
-                      <div style={{ flexShrink: 0, width: '24px' }}>
-                        {atkType && ATK_TYPE_ICON_MAP[atkType] && (
-                          <Image src={ATK_TYPE_ICON_MAP[atkType]} alt={atkType} title={atkType} width={18} height={18} style={{ opacity: 0.85 }} />
-                        )}
-                      </div>
-
-                      {/* 죄악 비용 — 7칸 고정 */}
-                      <div className="flex items-center gap-3 flex-1">
-                        {SIN_ORDER.map((sin, i) => {
-                          const cost = ego.cost?.[i] ?? 0
-                          return (
-                            <div key={sin} className="flex items-center gap-0.5" style={{ opacity: cost === 0 ? 0.15 : 1, minWidth: '28px' }}>
-                              <Image src={SIN_ICON_MAP[sin]} alt="" width={14} height={14} />
-                              <span style={{ color: SIN_COLORS[sin], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{cost}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ── 인격 스킬 유형 패널 ──────────────────────────── */}
-        <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-          <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-            <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>공격 유형</span>
-            <div className="flex items-center gap-4 flex-1">
-              {(['slash', 'pierce', 'blunt'] as const).map(type => {
-                const count = atkTypeTotals[type]
-                if (count === 0) return null
-                return (
-                  <div key={type} className="flex items-center gap-1">
-                    <Image src={ATK_TYPE_ICON_MAP[type]} alt={type} width={16} height={16} />
-                    <span style={{ color: '#aaaaaa', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <button
-              onClick={() => setShowIdentityDetail(v => !v)}
-              className="text-xs px-2.5 py-1 rounded transition-all"
-              style={{ color: showIdentityDetail ? 'var(--gold)' : '#6a6a80', border: `1px solid ${showIdentityDetail ? 'var(--gold)' : 'var(--border)'}`, background: showIdentityDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
-            >
-              상세보기 {showIdentityDetail ? '▲' : '▼'}
-            </button>
-          </div>
-
-          {showIdentityDetail && (
-            <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
-              {sinners.map((sinner, idx) => {
-                const identity = deckSlots[sinner.id]
-                if (!identity) return null
-                const idSkills = skillsByIdentityId[identity.id] ?? []
-                const idSkillImgIdx = computeSkillImageIndices(idSkills)
-                return (
-                  <div
-                    key={sinner.id}
-                    className="flex items-center gap-4 px-4 py-2"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                  >
-                    {/* 일러스트 */}
-                    <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06' }}>
-                      {getIdentityInfoUrl(identity) ? (
-                        <Image src={getIdentityInfoUrl(identity)} alt="" fill className="object-cover object-top" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span style={{ color: '#6a5e38', fontSize: '0.875rem' }}>{identity.name_kr?.[0]}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 수감자 + 인격명 */}
-                    <div style={{ minWidth: '150px', flexShrink: 0 }}>
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
-                        <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
-                      </div>
-                      <p style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
-                    </div>
-
-                    {/* 스킬 공격 유형 (S1/S2/S3만) */}
-                    <div className="flex items-center gap-2 flex-1">
-                      {idSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, idx, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === idx).map((sk) => {
-                        const label = String(sk.skill_order)
-                        const iconUrl = getSkillIconUrl(identity, idSkillImgIdx[sk.id] ?? sk.skill_order)
-                        const atkIcon = ATK_TYPE_ICON_MAP[sk.skill_type]
-                        return (
-                          <div key={sk.id} className="flex flex-col items-center gap-0.5" style={{ minWidth: '30px' }}>
-                            {/* 스킬 아이콘 */}
-                            <div style={{ position: 'relative', width: '24px', height: '24px' }}>
-                              {iconUrl ? (
-                                <Image src={iconUrl} alt={label} width={24} height={24} style={{ borderRadius: '50%' }} />
-                              ) : (
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#1a1510' }} />
-                              )}
-                              {/* 공격 유형 아이콘 오버레이 */}
-                              {atkIcon && (
-                                <Image src={atkIcon} alt="" width={11} height={11} style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
-                              )}
-                            </div>
-                            <span style={{ color: '#6a6a80', fontSize: '0.5rem', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>{label}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-
-                    {/* 내성 — 참격/관통/타격 */}
-                    <div className="flex items-center gap-4 flex-1">
-                      {(['slash_res', 'pierce_res', 'blunt_res'] as const).map(resKey => {
-                        const atkSlug = resKey === 'slash_res' ? 'slash' : resKey === 'pierce_res' ? 'pierce' : 'blunt'
-                        const val = identity[resKey] ?? '-'
-                        const col = RES_COLORS[val] ?? '#555566'
-                        return (
-                          <div key={resKey} className="flex items-center gap-1">
-                            <Image src={ATK_TYPE_ICON_MAP[atkSlug]} alt={atkSlug} width={16} height={16} style={{ opacity: 0.6 }} />
-                            <span style={{ color: col, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{val}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-              {Object.values(deckSlots).filter(Boolean).length === 0 && (
-                <p className="text-center py-4" style={{ color: '#555570', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── 패시브 패널 ──────────────────────────────────── */}
-        <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-          <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-            <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>패시브</span>
-            <div className="flex-1" />
-            <button
-              onClick={() => setShowPassiveDetail(v => !v)}
-              className="text-xs px-2.5 py-1 rounded transition-all"
-              style={{ color: showPassiveDetail ? 'var(--gold)' : '#6a6a80', border: `1px solid ${showPassiveDetail ? 'var(--gold)' : 'var(--border)'}`, background: showPassiveDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
-            >
-              상세보기 {showPassiveDetail ? '▲' : '▼'}
-            </button>
-          </div>
-
-          {showPassiveDetail && (() => {
-            // 덱 전체 스킬 죄악 합산
-            const deckSinCounts: Record<string, number> = {}
-            for (const sinner of sinners) {
-              const id = deckSlots[sinner.id]
-              if (!id) continue
-              for (const sk of skillsByIdentityId[id.id] ?? []) {
-                if (sk.sin_affinity) deckSinCounts[sk.sin_affinity] = (deckSinCounts[sk.sin_affinity] ?? 0) + 1
-              }
-            }
-            return (
-            <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
-              {sinners.map((sinner, idx) => {
-                const identity = deckSlots[sinner.id]
-                if (!identity) return null
-                const allPassives = passivesByIdentityId[identity.id] ?? []
-                const battlePassives = allPassives.filter(p => p.passive_type === 'battle' && p.sin_affinity)
-                const supportPassives = allPassives.filter(p => p.passive_type === 'support' && p.sin_affinity)
-
-                return (
-                  <div
-                    key={sinner.id}
-                    className="flex items-start gap-4 px-4 py-2.5"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                  >
-                    {/* 수감자 + 인격명 */}
-                    <div style={{ minWidth: '150px', flexShrink: 0 }}>
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
-                        <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
-                      </div>
-                      <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
-                    </div>
-
-                    {/* 배틀 패시브 */}
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
-                      <div className="flex flex-col gap-1.5">
-                        {battlePassives.length > 0
-                          ? battlePassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
-                          : <span style={{ color: '#5a5260', fontSize: '0.5625rem' }}>-</span>
-                        }
-                      </div>
-                    </div>
-
-                    {/* 구분선 */}
-                    <div style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
-
-                    {/* 서포트 패시브 */}
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
-                      <div className="flex flex-col gap-1.5">
-                        {supportPassives.length > 0
-                          ? supportPassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
-                          : <span style={{ color: '#5a5260', fontSize: '0.5625rem' }}>-</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-              {Object.values(deckSlots).filter(Boolean).length === 0 && (
-                <p className="text-center py-4" style={{ color: '#555570', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
-              )}
-            </div>
-            )
-          })()}
-        </div>
-
-        {/* ── 활성 가능 EGO 기프트 패널 (거던 유형만) ─────────────────────── */}
-        {['거던5층', '거던10층', '거던15층'].includes(contentType) && (
-        <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-          <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-            <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>E.G.O 기프트</span>
-            {activatableGifts.length > 0 && (
-              <span style={{ color: '#555570', fontSize: '0.5625rem' }}>
-                <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{activatableGifts.filter(g => g.met).length}</span>
-                <span> 활성</span>
-              </span>
-            )}
-            <div className="flex-1" />
-            <button
-              onClick={() => setShowGiftPanel(v => !v)}
-              className="text-xs px-2.5 py-1 rounded transition-all"
-              style={{ color: showGiftPanel ? 'var(--gold)' : '#6a6a80', border: `1px solid ${showGiftPanel ? 'var(--gold)' : 'var(--border)'}`, background: showGiftPanel ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
-            >
-              상세보기 {showGiftPanel ? '▲' : '▼'}
-            </button>
-          </div>
-
-          {showGiftPanel && (() => {
-            const GIFT_KW_TABS = ['전체', '화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통'] as const
-            const filtered = giftTabKw === '전체'
-              ? activatableGifts
-              : activatableGifts.filter(g => g.keyword === giftTabKw)
-            // 탭별 활성 개수
-            const metByKw: Record<string, number> = {}
-            for (const g of activatableGifts) {
-              if (g.met) metByKw[g.keyword] = (metByKw[g.keyword] ?? 0) + 1
-            }
-
-            return (
-            <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
-              {/* 키워드 탭 */}
-              <div className="flex flex-wrap gap-1 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                {GIFT_KW_TABS.map(kw => {
-                  const isActive = giftTabKw === kw
-                  const kwIcon = kw !== '전체' ? (getKeywordIconUrl(kw) ?? ATK_TYPE_ICON_MAP[kw] ?? null) : null
-                  const metCount = kw === '전체' ? activatableGifts.filter(g => g.met).length : (metByKw[kw] ?? 0)
-                  const totalCount = kw === '전체' ? activatableGifts.length : activatableGifts.filter(g => g.keyword === kw).length
-                  if (kw !== '전체' && totalCount === 0) return null
-                  return (
-                    <button
-                      key={kw}
-                      onClick={() => setGiftTabKw(kw)}
-                      className="flex items-center gap-1 px-2 py-1 rounded transition-all"
-                      style={{
-                        fontSize: '0.625rem', fontWeight: isActive ? 700 : 400,
-                        color: isActive ? 'var(--gold)' : '#555',
-                        background: isActive ? 'rgba(200,144,10,0.1)' : 'transparent',
-                        border: `1px solid ${isActive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.04)'}`,
-                      }}
-                    >
-                      {kwIcon && (
-                        <Image src={kwIcon} alt="" width={11} height={11} />
-                      )}
-                      {kw}
-                      {metCount > 0 && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>{metCount}</span>}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* 기프트 목록 */}
-              <div style={{ padding: '6px 8px', maxHeight: '320px', overflowY: 'auto' }}>
-                {Object.values(deckSlots).filter(Boolean).length === 0 ? (
-                  <p className="text-center py-4" style={{ color: '#555570', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
-                ) : filtered.length === 0 ? (
-                  <p className="text-center py-3" style={{ color: '#555570', fontSize: '0.6875rem' }}>해당하는 기프트가 없습니다</p>
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    {filtered.map(g => {
-                      const c = g.condition
-                      const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
-                        : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
-                        : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
-                        : `${c.count}인`
-                      const pct = Math.min(g.current / c.count, 1)
-                      const kwIcon = getKeywordIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null
-
-                      return (
-                        <div
-                          key={g.name}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded"
-                          style={{
-                            background: g.met ? 'rgba(200,144,10,0.06)' : 'rgba(255,255,255,0.01)',
-                            border: `1px solid ${g.met ? 'rgba(200,144,10,0.2)' : 'rgba(255,255,255,0.03)'}`,
-                            opacity: g.met ? 1 : 0.6,
-                          }}
-                        >
-                          {g.image_url ? (
-                            <Image src={g.image_url} alt="" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)' }} />
-                          ) : (
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1510', flexShrink: 0 }} />
-                          )}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="flex items-center gap-1.5">
-                              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: g.met ? 'var(--gold)' : '#777', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
-                              <span style={{ fontSize: '0.5625rem', color: '#444', flexShrink: 0 }}>{g.grade}</span>
-                            </div>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {kwIcon && (
-                                <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0 }} />
-                              )}
-                              <span style={{ fontSize: '0.5625rem', color: g.met ? '#88a830' : '#666' }}>
-                                {condLabel} ({g.current}/{c.count})
-                              </span>
-                              <div style={{ width: 40, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, flexShrink: 0, marginLeft: 4 }}>
-                                <div style={{ width: `${pct * 100}%`, height: '100%', background: g.met ? 'var(--gold)' : '#555', borderRadius: 2, transition: 'width 0.3s' }} />
-                              </div>
-                            </div>
-                          </div>
-                          {g.met && (
-                            <span style={{ fontSize: '0.5625rem', color: 'var(--gold)', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>ON</span>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-            )
-          })()}
-        </div>
+        {/* 정보 패널 (note 탭 제외) */}
+        {tab !== 'note' && (
+          <DeckPreviewPanel
+            sinners={sinners}
+            deckSlots={deckSlots}
+            egoSlots={egoSlots}
+            skillsByIdentityId={skillsByIdentityId}
+            passivesByIdentityId={passivesByIdentityId}
+            sinCostTotals={sinCostTotals}
+            atkTypeTotals={atkTypeTotals}
+            activatableGifts={activatableGifts}
+            contentType={contentType}
+            showCostDetail={showCostDetail}
+            setShowCostDetail={setShowCostDetail}
+            showIdentityDetail={showIdentityDetail}
+            setShowIdentityDetail={setShowIdentityDetail}
+            showPassiveDetail={showPassiveDetail}
+            setShowPassiveDetail={setShowPassiveDetail}
+            showGiftPanel={showGiftPanel}
+            setShowGiftPanel={setShowGiftPanel}
+            giftTabKw={giftTabKw}
+            setGiftTabKw={setGiftTabKw}
+          />
         )}
 
-        </>)}
-
-        {/* ── 덱 노트 ───────────────────────────────────────── */}
-        {tab === 'note' && (<div style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-          {/* 헤더 */}
-          <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>덱 노트</span>
-            <button
-              onClick={() => setDescPreview(v => !v)}
-              className="text-xs px-2 py-0.5 rounded transition-all"
-              style={{ color: descPreview ? 'var(--gold)' : '#6a6a80', border: `1px solid ${descPreview ? 'var(--gold)' : 'var(--border)'}`, background: descPreview ? 'rgba(200,144,10,0.08)' : 'transparent' }}
-            >
-              {descPreview ? '편집' : '미리보기'}
-            </button>
-          </div>
-
-          {/* 인서트 도구모음 */}
-          {!descPreview && (
-            <div style={{ background: 'rgba(5,4,2,0.6)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              {Object.values(deckSlots).filter(Boolean).length === 0 ? (
-                <div className="px-4 py-3">
-                  <span style={{ color: '#252530', fontSize: '0.5625rem' }}>인격을 편성하면 스킬·패시브·E.G.O를 삽입할 수 있습니다</span>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {/* ── 스킬 ── */}
-                  <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '4px', minWidth: '36px', flexShrink: 0 }}>스킬</span>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1.5 flex-1">
-                      {Object.values(deckSlots).filter((id): id is Identity => !!id).map(identity => {
-                        const idSkills = skillsByIdentityId[identity.id] ?? []
-                        if (idSkills.length === 0) return null
-                        const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-                        const noteSkillImgIdx = computeSkillImageIndices(idSkills)
-                        return (
-                          <div key={identity.id} className="flex items-center gap-1.5">
-                            <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.3, flexShrink: 0 }} />
-                            <div className="flex items-center gap-1">
-                              {idSkills.map(sk => {
-                                const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx[sk.id] ?? sk.skill_order)
-                                return (
-                                  <button
-                                    key={sk.id}
-                                    onClick={() => noteAc.insertToken(`[s:${sinnerName}:${sk.skill_order}]`)}
-                                    title={`${identity.name_kr} 스킬 ${sk.skill_order}`}
-                                    style={{ width: 24, height: 24, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#0d0a06', cursor: 'pointer', flexShrink: 0, padding: 0 }}
-                                  >
-                                    {iconUrl && <Image src={iconUrl} alt="" width={24} height={24} />}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* ── 서포트 패시브 ── */}
-                  {(() => {
-                    const items = Object.values(deckSlots).filter((id): id is Identity => !!id).flatMap(identity =>
-                      (passivesByIdentityId[identity.id] ?? []).filter(p => p.passive_type === 'support')
-                    )
-                    if (items.length === 0) return null
-                    return (
-                      <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>패시브</span>
-                        <div className="flex flex-wrap gap-1.5 flex-1">
-                          {items.map(p => {
-                            const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
-                            const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
-                            return (
-                              <button
-                                key={p.id}
-                                onClick={() => noteAc.insertToken(`[p:${p.name}]`)}
-                                title={p.name}
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}35`, cursor: 'pointer' }}
-                              >
-                                {sinType && (
-                                  <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} />
-                                )}
-                                <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })()}
-
-                  {/* ── E.G.O ── */}
-                  {(() => {
-                    const items = Object.values(deckSlots).filter((id): id is Identity => !!id).flatMap(identity => {
-                      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-                      return Object.values(egoSlots[identity.sinner_id] ?? {}).map(ego => ({ ego, sinnerName }))
-                    })
-                    if (items.length === 0) return null
-                    return (
-                      <div className="flex items-start gap-3 px-4 py-2.5">
-                        <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>E.G.O</span>
-                        <div className="flex flex-wrap gap-1.5 flex-1">
-                          {items.map(({ ego, sinnerName }) => {
-                            const gradeColor = GRADE_COLORS[ego.grade ?? ''] ?? '#667788'
-                            return (
-                              <button
-                                key={ego.id}
-                                onClick={() => noteAc.insertToken(`[e:${sinnerName}:${ego.name_kr || ego.name}]`)}
-                                title={`${ego.name_kr || ego.name}`}
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{ background: `${gradeColor}18`, border: `1px solid ${gradeColor}35`, cursor: 'pointer' }}
-                              >
-                                {ego.image_url && (
-                                  <Image src={ego.image_url} alt="" width={14} height={14} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                                )}
-                                <span style={{ color: gradeColor, fontSize: '0.5625rem', fontWeight: 600 }}>{ego.name_kr || ego.name}</span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </div>
-              )}
-
-            </div>
-          )}
-
-          {/* 편집 / 미리보기 영역 */}
-          {descPreview ? (
-            <div className="px-4 py-3" style={{ background: 'rgba(5,4,2,0.3)', minHeight: '80px' }}>
-              <NoteRenderer
-                text={description}
-                skillLookup={skillTokenLookup}
-                passiveLookup={passiveTokenLookup}
-                egoLookup={egoTokenLookup}
-                egoGiftLookup={egoGiftLookup}
-              />
-            </div>
-          ) : (
-            <div style={{ position: 'relative' }}>
-              <NoteAutocompleteDropdown
-                suggestions={noteAc.suggestions}
-                selectedIdx={noteAc.selectedIdx}
-                onSelect={noteAc.select}
-                onHover={noteAc.setSelectedIdx}
-              />
-              <textarea
-                ref={textareaRef}
-                placeholder="덱 운용 메모... 키워드/스킬/에고를 입력하면 자동완성됩니다"
-                value={description}
-                onChange={e => {
-                  setDescription(e.target.value)
-                  noteAc.onTextChange(e)
-                }}
-                onSelect={noteAc.onTextSelect}
-                onKeyDown={noteAc.handleKeyDown}
-                className="w-full px-4 py-4 text-sm outline-none resize-none"
-                style={{ background: 'rgba(5,4,2,0.3)', color: '#c8c0b0', border: 'none', fontFamily: 'var(--font-body)', lineHeight: 1.8, display: 'block', minHeight: '220px' }}
-                onFocus={e => (e.target.style.background = 'rgba(8,6,3,0.5)')}
-                onBlur={e => {
-                  e.target.style.background = 'rgba(5,4,2,0.3)'
-                  setTimeout(() => noteAc.closeDropdown(), 150)
-                }}
-              />
-            </div>
-          )}
-        </div>)}
-
+        {/* 덱 노트 */}
+        {tab === 'note' && (
+          <DeckNoteEditor
+            sinners={sinners}
+            deckSlots={deckSlots}
+            egoSlots={egoSlots}
+            skillsByIdentityId={skillsByIdentityId}
+            passivesByIdentityId={passivesByIdentityId}
+            description={description}
+            setDescription={setDescription}
+            descPreview={descPreview}
+            setDescPreview={setDescPreview}
+            textareaRef={textareaRef}
+            noteAc={noteAc}
+            skillTokenLookup={skillTokenLookup}
+            passiveTokenLookup={passiveTokenLookup}
+            egoTokenLookup={egoTokenLookup}
+            egoGiftLookup={egoGiftLookup}
+          />
+        )}
       </div>
 
       {/* ── 인격 선택 모달 ──────────────────────────────── */}

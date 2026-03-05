@@ -156,6 +156,8 @@ export function useNoteAutocomplete({
   }
 }
 
+export type ReturnedNoteAc = ReturnType<typeof useNoteAutocomplete>
+
 // ── 자동완성 드롭다운 UI ─────────────────────────────────────────────────
 export function NoteAutocompleteDropdown({
   suggestions,
