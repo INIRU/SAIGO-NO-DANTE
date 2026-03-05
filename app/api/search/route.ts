@@ -27,13 +27,25 @@ export async function GET(request: NextRequest) {
       .ilike('name_kr', pattern)
       .limit(6)
       .then(r => r.data ?? []),
-    supabase
-      .schema('limbus')
-      .from('sinners')
-      .select('id, name_kr, name_en, sinner_id')
-      .or(`name_kr.ilike.${pattern},name_en.ilike.${pattern}`)
-      .limit(4)
-      .then(r => r.data ?? []),
+    Promise.all([
+      supabase
+        .schema('limbus')
+        .from('sinners')
+        .select('id, name, name_kr, order_num')
+        .ilike('name_kr', pattern)
+        .limit(4),
+      supabase
+        .schema('limbus')
+        .from('sinners')
+        .select('id, name, name_kr, order_num')
+        .ilike('name', pattern)
+        .limit(4),
+    ]).then(([a, b]) => {
+      const map = new Map<string, typeof a.data extends (infer T)[] | null ? T : never>()
+      for (const s of a.data ?? []) map.set(s.id, s)
+      for (const s of b.data ?? []) map.set(s.id, s)
+      return [...map.values()]
+    }),
     supabase
       .schema('limbus')
       .from('keyword_meta')
