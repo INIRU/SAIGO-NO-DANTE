@@ -23,12 +23,15 @@ const GRADE_ICONS: Record<string, string> = {
   WAW: `${STORAGE_BASE}/icons/grade/WAW.webp`,
 }
 
+type IdentityResult = { id: string; name_kr: string; rarity: number; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }
+
 interface SearchResult {
-  identities: { id: string; name_kr: string; rarity: number; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }[]
+  identities: IdentityResult[]
   ego: { id: string; name_kr: string; grade: string; image_url: string | null; sinners: { id: string; name_kr: string } }[]
   sinners: { id: string; name_kr: string; name_en: string; sinner_id: number }[]
   keywords: { name: string; description: string | null; icon_slug: string | null }[]
   egoGifts: { name: string; keyword: string | null; grade: string | null; image_url: string | null }[]
+  suggestions?: IdentityResult[]
 }
 
 type FlatItem = {
@@ -135,6 +138,7 @@ export default function SearchModal({ open, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<FlatItem[]>([])
+  const [suggestions, setSuggestions] = useState<FlatItem[]>([])
   const [loading, setLoading] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
@@ -145,6 +149,7 @@ export default function SearchModal({ open, onClose }: Props) {
     if (open) {
       setQuery('')
       setResults([])
+      setSuggestions([])
       setActiveIndex(0)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
@@ -154,15 +159,34 @@ export default function SearchModal({ open, onClose }: Props) {
   const search = useCallback(async (q: string) => {
     if (q.length < 1) {
       setResults([])
+      setSuggestions([])
       return
     }
     setLoading(true)
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
       if (res.ok) {
-        const data: SearchResult = await res.json()
-        setResults(flatten(data))
+        const data: SearchResult & { suggestions?: IdentityResult[] } = await res.json()
+        const flat = flatten(data)
+        setResults(flat)
         setActiveIndex(0)
+        // 결과 없으면 suggestions를 FlatItem으로 변환
+        if (flat.length === 0 && data.suggestions?.length) {
+          const sugItems: FlatItem[] = data.suggestions.map(i => {
+            const sinner = Array.isArray(i.sinners) ? i.sinners[0] : i.sinners
+            return {
+              type: 'identity' as const,
+              label: i.name_kr,
+              sublabel: sinner?.name_kr ?? '',
+              href: `/sinners/${sinner?.id}/identities/${i.id}`,
+              icon: `${STORAGE_BASE}/sinners/${i.sinner_id}/identities/${i.folder_name}/${i.game_id}_normal.webp`,
+              rarity: i.rarity,
+            }
+          })
+          setSuggestions(sugItems)
+        } else {
+          setSuggestions([])
+        }
       }
     } catch { /* ignore */ }
     setLoading(false)
@@ -178,17 +202,19 @@ export default function SearchModal({ open, onClose }: Props) {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [query, search])
 
+  const displayItems = results.length > 0 ? results : suggestions
+
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIndex(i => Math.min(i + 1, results.length - 1))
+      setActiveIndex(i => Math.min(i + 1, displayItems.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIndex(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter' && results[activeIndex]) {
+    } else if (e.key === 'Enter' && displayItems[activeIndex]) {
       e.preventDefault()
-      navigate(results[activeIndex].href)
+      navigate(displayItems[activeIndex].href)
     } else if (e.key === 'Escape') {
       onClose()
     }
@@ -275,13 +301,21 @@ export default function SearchModal({ open, onClose }: Props) {
             </div>
           )}
 
-          {!loading && query.trim() && results.length === 0 && (
+          {!loading && query.trim() && results.length === 0 && suggestions.length === 0 && (
             <div className="py-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
               검색 결과가 없습니다
             </div>
           )}
 
-          {results.map((item, idx) => {
+          {!loading && results.length === 0 && suggestions.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1" style={{ color: '#5a4838', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
+                이런 결과를 찾으셨나요?
+              </div>
+            </div>
+          )}
+
+          {displayItems.map((item, idx) => {
             const Icon = TYPE_ICON[item.type]
             const color = TYPE_COLOR[item.type]
             const isActive = idx === activeIndex
@@ -388,12 +422,12 @@ export default function SearchModal({ open, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        {results.length > 0 && (
+        {displayItems.length > 0 && (
           <div
             className="flex items-center justify-between px-4 py-2"
             style={{ borderTop: '1px solid var(--border)', color: '#444', fontSize: '0.625rem' }}
           >
-            <span>{results.length}개 결과</span>
+            <span>{results.length > 0 ? `${results.length}개 결과` : `${suggestions.length}개 추천`}</span>
             <span>
               <span style={{ fontFamily: 'var(--font-mono)' }}>↑↓</span>
               {' '}이동{' '}
