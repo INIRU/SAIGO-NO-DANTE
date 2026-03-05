@@ -16,8 +16,8 @@ interface IdentityCardProps {
 
 export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
   const sinColor = getIdentitySinColor(identity)
-  const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS['1성']
-  const rarityNum = identity.rarity === '3성' ? 3 : identity.rarity === '2성' ? 2 : 1
+  const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS[1]
+  const rarityNum = identity.rarity
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
   const [imgSrc, setImgSrc] = useState(infoUrl)
@@ -118,8 +118,8 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           {RARITY_ICON_MAP[identity.rarity] ? (
             <Image
               src={RARITY_ICON_MAP[identity.rarity]}
-              alt={identity.rarity}
-              width={identity.rarity === '1성' ? 20 : identity.rarity === '2성' ? 34 : 46}
+              alt={`${identity.rarity}성`}
+              width={identity.rarity === 1 ? 20 : identity.rarity === 2 ? 34 : 46}
               height={14}
              
               style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}
@@ -136,7 +136,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                 border: `1px solid ${rarity.border}40`,
               }}
             >
-              {identity.rarity}
+              {identity.rarity}성
             </span>
           )}
         </div>

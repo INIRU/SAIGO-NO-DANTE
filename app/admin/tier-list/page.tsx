@@ -383,7 +383,7 @@ function MiniIdentityCard({
       {rarityIcon && (
         <Image
           src={rarityIcon}
-          alt={identity.rarity}
+          alt={`${identity.rarity}성`}
           width={14}
           height={14}
           unoptimized

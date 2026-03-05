@@ -29,22 +29,22 @@ export const GRADE_COLORS: Record<string, string> = {
 }
 
 // ── 등급 아이콘/프레임/색상 ─────────────────────────────────────────────────
-export const RARITY_ICON_MAP: Record<string, string> = {
-  '1성': `${STORAGE_BASE}/icons/Rarity/1star.webp`,
-  '2성': `${STORAGE_BASE}/icons/Rarity/2star.webp`,
-  '3성': `${STORAGE_BASE}/icons/Rarity/3star.webp`,
+export const RARITY_ICON_MAP: Record<number, string> = {
+  1: `${STORAGE_BASE}/icons/Rarity/1star.webp`,
+  2: `${STORAGE_BASE}/icons/Rarity/2star.webp`,
+  3: `${STORAGE_BASE}/icons/Rarity/3star.webp`,
 }
 
-export const RARITY_FRAME_MAP: Record<string, string> = {
-  '1성': `${STORAGE_BASE}/icons/Rarity/0_frame.webp`,
-  '2성': `${STORAGE_BASE}/icons/Rarity/00_frame.webp`,
-  '3성': `${STORAGE_BASE}/icons/Rarity/000_frame.webp`,
+export const RARITY_FRAME_MAP: Record<number, string> = {
+  1: `${STORAGE_BASE}/icons/Rarity/0_frame.webp`,
+  2: `${STORAGE_BASE}/icons/Rarity/00_frame.webp`,
+  3: `${STORAGE_BASE}/icons/Rarity/000_frame.webp`,
 }
 
-export const RARITY_COLORS: Record<string, { border: string; glow: string }> = {
-  '1성': { border: '#556677', glow: 'rgba(85,102,119,0.3)' },
-  '2성': { border: '#5588bb', glow: 'rgba(85,136,187,0.3)' },
-  '3성': { border: '#c8900a', glow: 'rgba(200,144,10,0.4)' },
+export const RARITY_COLORS: Record<number, { border: string; glow: string }> = {
+  1: { border: '#556677', glow: 'rgba(85,102,119,0.3)' },
+  2: { border: '#5588bb', glow: 'rgba(85,136,187,0.3)' },
+  3: { border: '#c8900a', glow: 'rgba(200,144,10,0.4)' },
 }
 
 // ── 공격 타입 아이콘/라벨 ───────────────────────────────────────────────────

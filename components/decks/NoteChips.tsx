@@ -46,7 +46,7 @@ export type NoteEgoEntry = {
 
 export type NoteIdentityEntry = {
   name: string
-  rarity: string
+  rarity: number
   imageUrl?: string
   sinnerName: string
   keywords?: string[]
@@ -246,7 +246,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
           borderRadius: 4, padding: '8px 10px', minWidth: '180px', maxWidth: '280px', whiteSpace: 'normal',
         }}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
-            {entry.sinnerName} · {entry.rarity}
+            {entry.sinnerName} <span style={{ fontFamily: 'sans-serif' }}>·</span> {entry.rarity}성
           </div>
           <div style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 4 }}>
             {entry.name}

@@ -22,7 +22,7 @@ export type Identity = {
   speed_max: number
   def_level: number
   keywords: string[]
-  rarity: string
+  rarity: number
   affiliation?: string
   quote?: string
   slash_res?: string

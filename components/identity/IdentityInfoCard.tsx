@@ -38,7 +38,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
             <Image
               src={RARITY_ICON_MAP[identity.rarity]}
               alt=""
-              width={identity.rarity === '1성' ? 16 : identity.rarity === '2성' ? 28 : 40}
+              width={identity.rarity === 1 ? 16 : identity.rarity === 2 ? 28 : 40}
               height={16}
               style={{ width: 'auto', height: 'auto', filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
             />

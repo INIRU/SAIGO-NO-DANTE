@@ -52,7 +52,7 @@ export type IdentityDetail = {
   keywords: string[] | null
   name_kr: string
   tier: number
-  rarity: string
+  rarity: number
   hp: number | null
   speed_min: number | null
   speed_max: number | null
@@ -234,10 +234,10 @@ export default function DeckIdentityCard({
               <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-bold text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{id_.name_kr}</Link>
             </div>
             {RARITY_ICON_MAP[id_.rarity] ? (
-              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={id_.rarity} width={id_.rarity === '1성' ? 16 : id_.rarity === '2성' ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={`${id_.rarity}성`} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9 }} />
             ) : (
               <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.5625rem' }}>
-                {id_.rarity}
+                {id_.rarity}성
               </span>
             )}
           </div>

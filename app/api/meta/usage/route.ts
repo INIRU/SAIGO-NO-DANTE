@@ -32,7 +32,7 @@ export async function GET() {
 
   // ① 인격 채용률 집계
   const identityMap = new Map<string, {
-    sinner_id: string; name_kr: string; keywords: string[]; rarity: string;
+    sinner_id: string; name_kr: string; keywords: string[]; rarity: number;
     folder_name: string | null; game_id: string | null; count: number
   }>()
   const usageBySinner: Record<string, number> = {}

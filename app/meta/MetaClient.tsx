@@ -16,7 +16,7 @@ interface IdentityStat {
   sinner_id: string
   name_kr: string
   keywords: string[]
-  rarity: string
+  rarity: number
   folder_name: string | null
   game_id: string | null
   count: number
@@ -341,7 +341,7 @@ function IdentityTab({
             const color = mainKeywordColor(stat.keywords)
             const sName = sinnerMap.get(stat.sinner_id)?.name_kr ?? ''
             const kws = mainKeywords(stat.keywords)
-            const rarityWidth = stat.rarity === '3성' ? 36 : stat.rarity === '2성' ? 26 : 16
+            const rarityWidth = stat.rarity === 3 ? 36 : stat.rarity === 2 ? 26 : 16
 
             return (
               <div
@@ -385,7 +385,7 @@ function IdentityTab({
                       {RARITY_ICON_MAP[stat.rarity] && (
                         <Image
                           src={RARITY_ICON_MAP[stat.rarity]}
-                          alt={stat.rarity}
+                          alt={`${stat.rarity}성`}
                           width={rarityWidth}
                           height={14}
                          

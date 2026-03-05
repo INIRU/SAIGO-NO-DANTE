@@ -25,7 +25,7 @@ interface Identity {
   id: string
   name: string
   name_kr: string
-  rarity: string
+  rarity: number
   tier: number
 }
 
@@ -126,10 +126,7 @@ export default function AdminDataPage() {
     }
   }
 
-  const rarityLabel = (rarity: string) => {
-    const map: Record<string, string> = { '1': '1성', '2': '2성', '3': '3성', one: '1성', two: '2성', three: '3성' }
-    return map[rarity] ?? rarity
-  }
+  const rarityLabel = (rarity: number) => `${rarity}성`
 
   const gradeLabel = (grade: string) => {
     const map: Record<string, string> = { ZAYIN: 'ZAYIN', TETH: 'TETH', HE: 'HE', WAW: 'WAW', ALEPH: 'ALEPH' }

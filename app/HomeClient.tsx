@@ -68,10 +68,10 @@ function formatDate(d: string) {
   return `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')}`
 }
 
-function RarityIcon({ rarity }: { rarity: string }) {
+function RarityIcon({ rarity }: { rarity: number }) {
   const src = RARITY_ICON_MAP[rarity]
   if (!src) return null
-  return <Image src={src} alt={rarity} width={48} height={16} unoptimized style={{ objectFit: 'contain', height: '12px', width: 'auto' }} />
+  return <Image src={src} alt={`${rarity}성`} width={48} height={16} unoptimized style={{ objectFit: 'contain', height: '12px', width: 'auto' }} />
 }
 
 // ── 히어로 글리치 슬라이더 ───────────────────────────────────────────────
@@ -685,7 +685,7 @@ export default function HomeClient({
                       </div>
                       {rarityIconSrc && (
                         <div className="absolute top-2 right-2 z-10">
-                          <Image src={rarityIconSrc} alt={identity.rarity} width={48} height={16} unoptimized style={{ height: '11px', width: 'auto', objectFit: 'contain' }} />
+                          <Image src={rarityIconSrc} alt={`${identity.rarity}성`} width={48} height={16} unoptimized style={{ height: '11px', width: 'auto', objectFit: 'contain' }} />
                         </div>
                       )}
                       <div className="absolute bottom-0 left-0 right-0 z-10" style={{ height: '60%', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }} />
