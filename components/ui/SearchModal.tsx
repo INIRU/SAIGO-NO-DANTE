@@ -53,7 +53,7 @@ function flatten(data: SearchResult): FlatItem[] {
       label: s.name_kr,
       sublabel: s.name,
       href: `/sinners/${s.id}`,
-      icon: `${STORAGE_BASE}/icons/Sinners/${s.order_num}.webp`,
+      icon: `${STORAGE_BASE}/icons/Sinners/${s.id}.webp`,
     })
   }
 
