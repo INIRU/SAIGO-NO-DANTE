@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Search, X, FlaskConical } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import { getKeywordIconUrl, ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
-import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 
 /** 키워드 아이콘 URL (상태이상 + 참격/관통/타격 통합) */
 function getGiftKeywordIcon(keyword: string): string | null {
@@ -655,6 +655,7 @@ function GiftModal({
 
 /* ── 효과 블록 ── */
 function EffectBlock({ label, text, color }: { label: string; text: string; color: string }) {
+  const formatSkillDesc = useFormatSkillDesc()
   // "- " 구분자 또는 기존 줄바꿈 기준으로만 분리
   const lines = text
     .replace(/(?<=.)- /g, '\n- ')

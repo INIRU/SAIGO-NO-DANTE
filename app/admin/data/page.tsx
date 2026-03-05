@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import { AdminButton, AdminIconButton, AdminInput } from '@/components/admin'
 
 interface SinnerData {
   id: string
@@ -52,6 +53,7 @@ export default function AdminDataPage() {
   const [loadingSinner, setLoadingSinner] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [identitySearch, setIdentitySearch] = useState('')
 
   const fetchStats = useCallback(() => {
     return fetch('/api/admin/data')
@@ -134,39 +136,21 @@ export default function AdminDataPage() {
     return map[grade] ?? grade
   }
 
-  const iconBtnStyle: React.CSSProperties = {
-    width: 28,
-    height: 28,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '1px solid rgba(58,42,21,0.4)',
-    borderRadius: 4,
-    background: 'transparent',
-    cursor: 'pointer',
-    flexShrink: 0,
-  }
-
-  const addBtnStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '4px 10px',
-    border: '1px solid rgba(200,144,10,0.4)',
-    borderRadius: 4,
-    background: 'transparent',
-    color: '#c8900a',
-    fontSize: 11,
-    cursor: 'pointer',
-    flexShrink: 0,
-  }
-
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>데이터 관리</h1>
         <p style={{ color: '#555566', fontSize: '0.8125rem' }}>게임 데이터 현황을 확인하고 관리합니다.</p>
+      </div>
+
+      {/* Identity search */}
+      <div style={{ marginBottom: '16px', maxWidth: 320 }}>
+        <AdminInput
+          value={identitySearch}
+          onChange={setIdentitySearch}
+          placeholder="인격 이름 검색..."
+        />
       </div>
 
       {loading ? (
@@ -196,14 +180,19 @@ export default function AdminDataPage() {
             {data.sinners.map((sinner, idx) => {
               const isExpanded = expandedSinner === sinner.id
               const isLast = idx === data.sinners.length - 1
-              const identities = sinnerIdentities[sinner.id] ?? []
+              const allIdentities = sinnerIdentities[sinner.id] ?? []
               const egos = sinnerEgo[sinner.id] ?? []
+              const searchLower = identitySearch.toLowerCase()
+              const identities = identitySearch
+                ? allIdentities.filter(i => (i.name_kr || i.name).toLowerCase().includes(searchLower))
+                : allIdentities
 
               return (
                 <div key={sinner.id}>
                   {/* Accordion row */}
                   <div
                     onClick={() => handleToggle(sinner.id)}
+                    className="hover:bg-[rgba(200,144,10,0.05)]"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -246,30 +235,22 @@ export default function AdminDataPage() {
                         {'  |  '}
                         EGO <span className="font-mono" style={{ color: '#7a6845' }}>{sinner.ego_count}</span>
                       </span>
-                      <button
-                        style={addBtnStyle}
-                        onClick={e => {
-                          e.stopPropagation()
-                          router.push(`/admin/data/identities/new?sinner=${sinner.id}`)
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      <AdminButton
+                        size="sm"
+                        variant="gold"
+                        onClick={() => router.push(`/admin/data/identities/new?sinner=${sinner.id}`)}
                       >
                         <Plus size={10} />
                         인격 추가
-                      </button>
-                      <button
-                        style={addBtnStyle}
-                        onClick={e => {
-                          e.stopPropagation()
-                          router.push(`/admin/data/ego/new?sinner=${sinner.id}`)
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      </AdminButton>
+                      <AdminButton
+                        size="sm"
+                        variant="gold"
+                        onClick={() => router.push(`/admin/data/ego/new?sinner=${sinner.id}`)}
                       >
                         <Plus size={10} />
                         EGO 추가
-                      </button>
+                      </AdminButton>
                     </div>
                   </div>
 
@@ -296,7 +277,9 @@ export default function AdminDataPage() {
                             인격
                           </h4>
                           {identities.length === 0 ? (
-                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0 10px' }}>등록된 인격이 없습니다.</p>
+                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0 10px' }}>
+                              {identitySearch ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
+                            </p>
                           ) : (
                             <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {identities.map(identity => (
@@ -326,42 +309,25 @@ export default function AdminDataPage() {
                                     >
                                       {rarityLabel(identity.rarity)}
                                     </span>
-                                    <button
-                                      style={{ ...iconBtnStyle, color: '#7a6845' }}
+                                    <AdminIconButton
                                       title="편집"
                                       onClick={e => {
                                         e.stopPropagation()
                                         router.push(`/admin/data/identities/${identity.id}`)
                                       }}
-                                      onMouseEnter={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(200,144,10,0.6)'
-                                        e.currentTarget.style.color = '#c8a450'
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(58,42,21,0.4)'
-                                        e.currentTarget.style.color = '#7a6845'
-                                      }}
                                     >
                                       <Pencil size={12} />
-                                    </button>
-                                    <button
-                                      style={{ ...iconBtnStyle, color: '#664444' }}
+                                    </AdminIconButton>
+                                    <AdminIconButton
+                                      variant="danger"
                                       title="삭제"
                                       onClick={e => {
                                         e.stopPropagation()
                                         setDeleteTarget({ type: 'identity', id: identity.id, name: identity.name_kr || identity.name, sinnerId: sinner.id })
                                       }}
-                                      onMouseEnter={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(170,68,68,0.6)'
-                                        e.currentTarget.style.color = '#ee6666'
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(58,42,21,0.4)'
-                                        e.currentTarget.style.color = '#664444'
-                                      }}
                                     >
                                       <Trash2 size={12} />
-                                    </button>
+                                    </AdminIconButton>
                                   </div>
                                 </div>
                               ))}
@@ -406,42 +372,25 @@ export default function AdminDataPage() {
                                     >
                                       {gradeLabel(ego.grade)}
                                     </span>
-                                    <button
-                                      style={{ ...iconBtnStyle, color: '#7a6845' }}
+                                    <AdminIconButton
                                       title="편집"
                                       onClick={e => {
                                         e.stopPropagation()
                                         router.push(`/admin/data/ego/${ego.id}`)
                                       }}
-                                      onMouseEnter={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(200,144,10,0.6)'
-                                        e.currentTarget.style.color = '#c8a450'
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(58,42,21,0.4)'
-                                        e.currentTarget.style.color = '#7a6845'
-                                      }}
                                     >
                                       <Pencil size={12} />
-                                    </button>
-                                    <button
-                                      style={{ ...iconBtnStyle, color: '#664444' }}
+                                    </AdminIconButton>
+                                    <AdminIconButton
+                                      variant="danger"
                                       title="삭제"
                                       onClick={e => {
                                         e.stopPropagation()
                                         setDeleteTarget({ type: 'ego', id: ego.id, name: ego.name_kr || ego.name, sinnerId: sinner.id })
                                       }}
-                                      onMouseEnter={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(170,68,68,0.6)'
-                                        e.currentTarget.style.color = '#ee6666'
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(58,42,21,0.4)'
-                                        e.currentTarget.style.color = '#664444'
-                                      }}
                                     >
                                       <Trash2 size={12} />
-                                    </button>
+                                    </AdminIconButton>
                                   </div>
                                 </div>
                               ))}

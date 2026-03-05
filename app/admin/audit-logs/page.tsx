@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import {
+  AdminSelect, AdminButton, AdminTable,
+  useToast, AdminToastContainer,
+} from '@/components/admin'
 
 interface AuditLog {
   id: string
@@ -45,18 +49,24 @@ const FILTER_OPTIONS = [
   { value: 'deck_delete', label: '덱 삭제' },
 ]
 
+const PAGE_SIZE = 50
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [page, setPage] = useState(0)
+  const { toasts, showToast, dismissToast } = useToast()
 
   useEffect(() => {
     setLoading(true)
-    const params = new URLSearchParams({ limit: '100' })
+    setPage(0)
+    const params = new URLSearchParams({ limit: '200' })
     if (filter) params.set('action', filter)
     fetch(`/api/admin/audit-logs?${params}`)
       .then(r => r.json())
       .then(data => setLogs(Array.isArray(data) ? data : []))
+      .catch(() => showToast('감사 로그를 불러오지 못했습니다.', 'error'))
       .finally(() => setLoading(false))
   }, [filter])
 
@@ -70,6 +80,66 @@ export default function AuditLogsPage() {
     return parts.join(' · ') || null
   }
 
+  const totalPages = Math.ceil(logs.length / PAGE_SIZE)
+  const pageLogs = logs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  const columns = [
+    {
+      key: 'created_at' as const,
+      header: '시각',
+      render: (log: AuditLog) => (
+        <span style={{ color: '#555566', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+          {new Date(log.created_at).toLocaleString('ko-KR', {
+            month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit',
+          })}
+        </span>
+      ),
+    },
+    {
+      key: 'actor_name' as const,
+      header: '수행자',
+      render: (log: AuditLog) => (
+        <span style={{ color: '#8a7a5a', fontSize: '0.75rem' }}>{log.actor_name}</span>
+      ),
+    },
+    {
+      key: 'action' as const,
+      header: '활동',
+      render: (log: AuditLog) => (
+        <span style={{
+          padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
+          background: `${ACTION_COLORS[log.action] ?? '#888'}20`,
+          color: ACTION_COLORS[log.action] ?? '#888',
+          border: `1px solid ${ACTION_COLORS[log.action] ?? '#888'}40`,
+        }}>
+          {ACTION_LABELS[log.action] ?? log.action}
+        </span>
+      ),
+    },
+    {
+      key: 'target' as const,
+      header: '대상',
+      render: (log: AuditLog) => (
+        <span style={{ color: '#7a6845', fontSize: '0.75rem' }}>
+          {log.target_type && (
+            <span style={{ color: '#555', fontSize: '0.625rem', marginRight: 4 }}>{log.target_type}</span>
+          )}
+          {log.target_id ? log.target_id.slice(0, 8) + '...' : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'details' as const,
+      header: '세부 정보',
+      render: (log: AuditLog) => (
+        <span style={{ color: '#666', fontSize: '0.6875rem' }}>
+          {formatDetails(log) || '-'}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div>
       <div className="mb-6">
@@ -77,24 +147,14 @@ export default function AuditLogsPage() {
         <p style={{ color: '#555566', fontSize: '0.8125rem' }}>관리자 및 완장 활동 기록을 조회합니다.</p>
       </div>
 
-      {/* 필터 */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-3">
         <span style={{ color: '#555566', fontSize: '0.75rem' }}>필터:</span>
-        <div className="flex gap-1 flex-wrap">
-          {FILTER_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
-              className="px-2.5 py-1 rounded text-xs font-medium transition-all"
-              style={{
-                background: filter === opt.value ? 'rgba(200,144,10,0.15)' : 'rgba(100,100,120,0.08)',
-                color: filter === opt.value ? 'var(--gold)' : '#666677',
-                border: `1px solid ${filter === opt.value ? 'var(--gold-dim)' : '#555570'}`,
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div style={{ width: 160 }}>
+          <AdminSelect
+            value={filter}
+            onChange={setFilter}
+            options={FILTER_OPTIONS}
+          />
         </div>
       </div>
 
@@ -102,60 +162,44 @@ export default function AuditLogsPage() {
         <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
-      ) : logs.length === 0 ? (
-        <div className="card p-8 text-center" style={{ color: '#555566' }}>
-          <p className="text-sm italic">기록이 없습니다.</p>
-        </div>
       ) : (
-        <div className="card overflow-x-auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '650px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['시각', '수행자', '활동', '대상', '세부 정보'].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map(log => {
-                const details = formatDetails(log)
-                return (
-                  <tr key={log.id} style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-                    <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
-                      {new Date(log.created_at).toLocaleString('ko-KR', {
-                        month: '2-digit', day: '2-digit',
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#8a7a5a', fontSize: '0.75rem' }}>
-                      {log.actor_name}
-                    </td>
-                    <td style={{ padding: '10px 14px' }}>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 600,
-                        background: `${ACTION_COLORS[log.action] ?? '#888'}20`,
-                        color: ACTION_COLORS[log.action] ?? '#888',
-                        border: `1px solid ${ACTION_COLORS[log.action] ?? '#888'}40`,
-                      }}>
-                        {ACTION_LABELS[log.action] ?? log.action}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
-                      {log.target_type && (
-                        <span style={{ color: '#555', fontSize: '0.625rem', marginRight: 4 }}>{log.target_type}</span>
-                      )}
-                      {log.target_id ? log.target_id.slice(0, 8) + '...' : '-'}
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#666', fontSize: '0.6875rem' }}>
-                      {details || '-'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <AdminTable
+            columns={columns}
+            data={pageLogs}
+            keyExtractor={log => log.id}
+            emptyMessage="기록이 없습니다."
+          />
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, logs.length)} / {logs.length}건
+              </span>
+              <div className="flex gap-2">
+                <AdminButton
+                  onClick={() => setPage(p => p - 1)}
+                  disabled={page === 0}
+                  variant="ghost"
+                  size="sm"
+                >
+                  이전
+                </AdminButton>
+                <AdminButton
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= totalPages - 1}
+                  variant="ghost"
+                  size="sm"
+                >
+                  다음
+                </AdminButton>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

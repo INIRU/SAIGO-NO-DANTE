@@ -404,6 +404,11 @@ export const KEYWORD_ICON_MAP: Record<string, string> = {
   '채찍으로 살점을 만 갈래 떼어내야 할 때는…': 'whip-flesh',
   '낫으로… 누군가처럼 공간을 따라 베어내야 할 때는…': 'scythe-cut-space',
   '당연한 믿음': 'natural-faith',
+  // 잔향 료슈 / 호넷 뫼르소 등
+  '고독': 'solitude', '탄환-고독': 'ammo-solitude', '잔향': 'reverberation',
+  '꽃잎': 'petal', '리듬': 'rhythm',
+  '포자': 'spore', '포자탄[기본]': 'spore-ammo-basic', '포자탄[산탄]': 'spore-ammo-shotgun',
+  '충성 페로몬': 'loyalty-pheromone', '재장전[포자보충]': 'reload-spore-resupply',
 }
 
 export function getKeywordIconUrl(keyword: string): string | null {

@@ -1,8 +1,13 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Search, Trash2, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Trash2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import {
+  AdminInput, AdminIconButton,
+  AdminTable, useToast, AdminToastContainer,
+} from '@/components/admin'
 
 interface Deck {
   id: string
@@ -18,16 +23,24 @@ export default function AdminDecksPage() {
   const [decks, setDecks] = useState<Deck[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+
   const [deleting, setDeleting] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Deck | null>(null)
+  const { toasts, showToast, dismissToast } = useToast()
 
   const fetchDecks = async (q = '') => {
     setLoading(true)
-    const params = q ? `?search=${encodeURIComponent(q)}` : ''
-    const res = await fetch(`/api/admin/decks${params}`)
-    const data = await res.json()
-    setDecks(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const params = q ? `?search=${encodeURIComponent(q)}` : ''
+      const res = await fetch(`/api/admin/decks${params}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setDecks(Array.isArray(data) ? data : [])
+    } catch {
+      showToast('덱 목록을 불러오지 못했습니다.', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchDecks() }, [])
@@ -40,12 +53,79 @@ export default function AdminDecksPage() {
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
     const id = deleteTarget.id
+    const title = deleteTarget.title
     setDeleteTarget(null)
     setDeleting(id)
-    await fetch(`/api/admin/decks/${id}`, { method: 'DELETE' })
-    setDecks(prev => prev.filter(d => d.id !== id))
-    setDeleting(null)
+    try {
+      const res = await fetch(`/api/admin/decks/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      setDecks(prev => prev.filter(d => d.id !== id))
+      showToast(`"${title}" 덱이 삭제되었습니다.`, 'success')
+    } catch {
+      showToast('덱 삭제 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setDeleting(null)
+    }
   }, [deleteTarget])
+
+  const columns = [
+    {
+      key: 'title' as const,
+      header: '제목',
+      render: (deck: Deck) => (
+        <Link
+          href={`/decks/${deck.id}`}
+          style={{ color: '#c8a450', fontSize: '0.8125rem', textDecoration: 'none' }}
+          className="hover:underline"
+        >
+          {deck.title}
+        </Link>
+      ),
+    },
+    {
+      key: 'author' as const,
+      header: '작성자',
+      render: (deck: Deck) => (
+        <span style={{ color: '#7a6845', fontSize: '0.75rem' }}>{deck.profiles?.username ?? '-'}</span>
+      ),
+    },
+    {
+      key: 'created_at' as const,
+      header: '날짜',
+      render: (deck: Deck) => (
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+          {new Date(deck.created_at).toLocaleDateString('ko-KR')}
+        </span>
+      ),
+    },
+    {
+      key: 'view_count' as const,
+      header: '조회',
+      render: (deck: Deck) => (
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{deck.view_count}</span>
+      ),
+    },
+    {
+      key: 'vote_count' as const,
+      header: '추천',
+      render: (deck: Deck) => (
+        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{deck.vote_count}</span>
+      ),
+    },
+    {
+      key: 'actions' as const,
+      header: '',
+      render: (deck: Deck) => (
+        <AdminIconButton
+          onClick={() => setDeleteTarget(deck)}
+          variant="danger"
+          title="삭제"
+        >
+          <Trash2 size={14} />
+        </AdminIconButton>
+      ),
+    },
+  ]
 
   return (
     <div>
@@ -55,17 +135,11 @@ export default function AdminDecksPage() {
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-        <div className="relative flex-1">
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#555566' }} />
-          <input
+        <div className="flex-1">
+          <AdminInput
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={setSearch}
             placeholder="제목으로 검색..."
-            className="w-full"
-            style={{
-              padding: '8px 12px 8px 34px', background: '#0d0b08', border: '1px solid var(--border)',
-              borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none',
-            }}
           />
         </div>
         <button type="submit" style={{
@@ -77,55 +151,14 @@ export default function AdminDecksPage() {
       </form>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
-          <Loader2 size={14} className="animate-spin" /> 로딩 중...
-        </div>
+        <div style={{ color: '#555566', fontSize: '0.8125rem' }}>로딩 중...</div>
       ) : (
-        <div className="card overflow-x-auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['제목', '작성자', '날짜', '조회', '추천', ''].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#555566', fontSize: '0.6875rem', fontWeight: 600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {decks.map(deck => (
-                <tr key={deck.id} style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-                  <td style={{ padding: '10px 14px', color: '#c8a450', fontSize: '0.8125rem', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {deck.title}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#7a6845', fontSize: '0.75rem' }}>
-                    {deck.profiles?.username ?? '-'}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>
-                    {new Date(deck.created_at).toLocaleDateString('ko-KR')}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>{deck.view_count}</td>
-                  <td style={{ padding: '10px 14px', color: '#555566', fontSize: '0.75rem' }}>{deck.vote_count}</td>
-                  <td style={{ padding: '10px 14px' }}>
-                    <button
-                      onClick={() => setDeleteTarget(deck)}
-                      disabled={deleting === deck.id}
-                      className="transition-opacity hover:opacity-70"
-                      style={{ color: '#aa4444', cursor: 'pointer', opacity: deleting === deck.id ? 0.5 : 1 }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {decks.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}>
-                    덱이 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable
+          columns={columns}
+          data={decks}
+          keyExtractor={d => d.id}
+          emptyMessage="덱이 없습니다."
+        />
       )}
 
       <ConfirmModal
@@ -137,6 +170,8 @@ export default function AdminDecksPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

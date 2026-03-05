@@ -3,6 +3,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Trash2, Pin, Pencil, X, Loader2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import {
+  AdminCard, AdminInput, AdminTextarea, AdminCheckbox,
+  AdminButton, AdminIconButton,
+  useToast, AdminToastContainer,
+} from '@/components/admin'
 
 interface Announcement {
   id: string
@@ -21,7 +26,7 @@ export default function AdminAnnouncementsPage() {
   const [form, setForm] = useState({ title: '', content: '', pinned: false })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { toasts, showToast, dismissToast } = useToast()
 
   const fetchItems = async () => {
     setLoading(true)
@@ -43,11 +48,12 @@ export default function AdminAnnouncementsPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        setError(`공지 작성 실패: ${err.error ?? res.statusText}`)
+        showToast(`공지 작성 실패: ${err.error ?? res.statusText}`, 'error')
         return
       }
       setCreating(false)
       setForm({ title: '', content: '', pinned: false })
+      showToast('공지가 작성되었습니다.', 'success')
       fetchItems()
     } finally {
       setSaving(false)
@@ -65,11 +71,12 @@ export default function AdminAnnouncementsPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        setError(`공지 수정 실패: ${err.error ?? res.statusText}`)
+        showToast(`공지 수정 실패: ${err.error ?? res.statusText}`, 'error')
         return
       }
       setEditing(null)
       setForm({ title: '', content: '', pinned: false })
+      showToast('공지가 수정되었습니다.', 'success')
       fetchItems()
     } finally {
       setSaving(false)
@@ -82,6 +89,7 @@ export default function AdminAnnouncementsPage() {
     setDeleteTarget(null)
     await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
     setItems(prev => prev.filter(a => a.id !== id))
+    showToast('공지가 삭제되었습니다.', 'success')
   }, [deleteTarget])
 
   const startEdit = (a: Announcement) => {
@@ -112,97 +120,58 @@ export default function AdminAnnouncementsPage() {
           <p style={{ color: '#555566', fontSize: '0.8125rem' }}>공지사항을 작성하고 관리합니다.</p>
         </div>
         {!showForm && (
-          <button
-            onClick={startCreate}
-            className="flex items-center gap-2 transition-colors hover:opacity-80"
-            style={{
-              padding: '8px 16px', background: 'rgba(200,144,10,0.15)', border: '1px solid var(--border)',
-              borderRadius: '4px', color: 'var(--gold)', fontSize: '0.8125rem', cursor: 'pointer',
-            }}
-          >
+          <AdminButton onClick={startCreate} variant="gold" size="sm">
             <Plus size={14} /> 새 공지
-          </button>
+          </AdminButton>
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: '10px 14px',
-            marginBottom: 16,
-            background: 'rgba(170,68,68,0.1)',
-            border: '1px solid rgba(170,68,68,0.3)',
-            borderRadius: 4,
-            color: '#ee6666',
-            fontSize: '0.8125rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <span>{error}</span>
-          <button onClick={() => setError(null)} style={{ color: '#ee6666', cursor: 'pointer', background: 'none', border: 'none' }}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
       {showForm && (
-        <div className="card p-5 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '0.9375rem' }}>
-              {creating ? '새 공지 작성' : '공지 수정'}
-            </h3>
-            <button onClick={cancelForm} style={{ color: '#555566', cursor: 'pointer' }}><X size={16} /></button>
-          </div>
-          <div className="space-y-3">
-            <input
-              value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="제목"
-              style={{
-                width: '100%', padding: '8px 12px', background: '#0d0b08', border: '1px solid var(--border)',
-                borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none',
-              }}
-            />
-            <textarea
-              value={form.content}
-              onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-              placeholder="내용"
-              rows={5}
-              style={{
-                width: '100%', padding: '8px 12px', background: '#0d0b08', border: '1px solid var(--border)',
-                borderRadius: '4px', color: '#c8a450', fontSize: '0.8125rem', outline: 'none', resize: 'vertical',
-              }}
-            />
-            <label className="flex items-center gap-2" style={{ color: '#7a6845', fontSize: '0.8125rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={form.pinned}
-                onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
+        <div className="mb-6">
+          <AdminCard
+            title={creating ? '새 공지 작성' : '공지 수정'}
+            headerRight={
+              <button onClick={cancelForm} style={{ color: '#555566', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <X size={16} />
+              </button>
+            }
+          >
+            <div className="space-y-3">
+              <AdminInput
+                label="제목"
+                value={form.title}
+                onChange={title => setForm(f => ({ ...f, title }))}
+                placeholder="제목"
+                required
               />
-              상단 고정
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={creating ? handleCreate : handleUpdate}
-                disabled={saving || !form.title.trim()}
-                style={{
-                  padding: '8px 20px', background: 'rgba(200,144,10,0.2)', border: '1px solid var(--gold-dim)',
-                  borderRadius: '4px', color: 'var(--gold)', fontSize: '0.8125rem', cursor: 'pointer',
-                  opacity: saving || !form.title.trim() ? 0.5 : 1,
-                }}
-              >
-                {saving ? '저장 중...' : (creating ? '작성' : '수정')}
-              </button>
-              <button onClick={cancelForm} style={{
-                padding: '8px 16px', border: '1px solid var(--border)', borderRadius: '4px',
-                color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
-              }}>
-                취소
-              </button>
+              <AdminTextarea
+                label="내용"
+                value={form.content}
+                onChange={content => setForm(f => ({ ...f, content }))}
+                placeholder="내용"
+                rows={5}
+              />
+              <AdminCheckbox
+                label="상단 고정"
+                checked={form.pinned}
+                onChange={pinned => setForm(f => ({ ...f, pinned }))}
+              />
+              <div className="flex gap-2">
+                <AdminButton
+                  onClick={creating ? handleCreate : handleUpdate}
+                  variant="gold"
+                  size="sm"
+                  loading={saving}
+                  disabled={saving || !form.title.trim()}
+                >
+                  {creating ? '작성' : '수정'}
+                </AdminButton>
+                <AdminButton onClick={cancelForm} variant="ghost" size="sm">
+                  취소
+                </AdminButton>
+              </div>
             </div>
-          </div>
+          </AdminCard>
         </div>
       )}
 
@@ -233,12 +202,12 @@ export default function AdminAnnouncementsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => startEdit(a)} className="transition-opacity hover:opacity-70" style={{ color: '#7a6845', cursor: 'pointer' }}>
+                <AdminIconButton onClick={() => startEdit(a)} title="수정">
                   <Pencil size={14} />
-                </button>
-                <button onClick={() => setDeleteTarget(a)} className="transition-opacity hover:opacity-70" style={{ color: '#aa4444', cursor: 'pointer' }}>
+                </AdminIconButton>
+                <AdminIconButton onClick={() => setDeleteTarget(a)} variant="danger" title="삭제">
                   <Trash2 size={14} />
-                </button>
+                </AdminIconButton>
               </div>
             </div>
           ))}
@@ -254,6 +223,8 @@ export default function AdminAnnouncementsPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

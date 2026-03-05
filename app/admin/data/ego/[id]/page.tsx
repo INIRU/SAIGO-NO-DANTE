@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2, Save, ArrowLeft } from 'lucide-react'
+import { Loader2, Save, ArrowLeft, Plus, Trash2, Pencil } from 'lucide-react'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import {
+  AdminInput, AdminSelect, AdminTextarea,
+  AdminButton, AdminIconButton,
+  AdminCard,
+  AdminFormSection,
+  useToast, AdminToastContainer,
+} from '@/components/admin'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Sinner {
   id: string
@@ -20,34 +30,154 @@ interface EGO {
   corrosion_risk: string | null
   folder_name: string | null
   image_url: string | null
+  ego_skills?: EgoSkill[]
 }
+
+interface EgoSkill {
+  id: string
+  ego_id: string
+  name: string
+  skill_type: string
+  sin_affinity: string | null
+  base_power: number | null
+  coin_power: number | null
+  coins: number | null
+  atk_weight: number | null
+  skill_order: number | null
+  offense_level: number | null
+  description: string | null
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 const SINS = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
+const SKILL_TYPES = ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter']
+const CORROSION_OPTIONS = ['낮음', '보통', '높음', '매우 높음']
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  background: 'rgba(0,0,0,0.3)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-  color: '#c8a450',
-  fontSize: '0.8125rem',
+// ─── Blank EGO skill ──────────────────────────────────────────────────────────
+
+function blankEgoSkill(ego_id: string): Omit<EgoSkill, 'id'> {
+  return {
+    ego_id,
+    name: '',
+    skill_type: 'slash',
+    sin_affinity: null,
+    base_power: null,
+    coin_power: null,
+    coins: null,
+    atk_weight: null,
+    skill_order: null,
+    offense_level: null,
+    description: null,
+  }
 }
 
-const labelStyle: React.CSSProperties = {
-  color: '#555566',
-  fontSize: '0.6875rem',
-  marginBottom: '4px',
-  display: 'block',
+// ─── EgoSkill form ────────────────────────────────────────────────────────────
+
+function EgoSkillForm({
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  value: Partial<EgoSkill>
+  onChange: (v: Partial<EgoSkill>) => void
+  onSave: () => void
+  onCancel: () => void
+  saving: boolean
+}) {
+  const set = (k: keyof EgoSkill, v: string | number | null) => onChange({ ...value, [k]: v })
+  const num = (v: string) => v === '' ? null : Number(v)
+
+  return (
+    <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '16px', marginTop: '8px' }}>
+      <AdminFormSection columns={3}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <AdminInput
+            label="이름"
+            value={value.name ?? ''}
+            onChange={v => set('name', v)}
+          />
+        </div>
+        <AdminSelect
+          label="스킬 타입"
+          value={value.skill_type ?? 'slash'}
+          onChange={v => set('skill_type', v)}
+          options={SKILL_TYPES.map(t => ({ value: t, label: t }))}
+        />
+        <AdminSelect
+          label="죄악 속성"
+          value={value.sin_affinity ?? ''}
+          onChange={v => set('sin_affinity', v || null)}
+          options={SINS.map(s => ({ value: s, label: s }))}
+          placeholder="없음"
+        />
+        <AdminInput
+          label="코인 수"
+          type="number"
+          value={value.coins ?? ''}
+          onChange={v => set('coins', num(v))}
+        />
+        <AdminInput
+          label="기본 위력"
+          type="number"
+          value={value.base_power ?? ''}
+          onChange={v => set('base_power', num(v))}
+        />
+        <AdminInput
+          label="코인 위력"
+          type="number"
+          value={value.coin_power ?? ''}
+          onChange={v => set('coin_power', num(v))}
+        />
+        <AdminInput
+          label="스킬 순서"
+          type="number"
+          value={value.skill_order ?? ''}
+          onChange={v => set('skill_order', num(v))}
+        />
+        <AdminInput
+          label="공격 레벨"
+          type="number"
+          value={value.offense_level ?? ''}
+          onChange={v => set('offense_level', num(v))}
+        />
+        <AdminInput
+          label="공격 가중치"
+          type="number"
+          value={value.atk_weight ?? ''}
+          onChange={v => set('atk_weight', num(v))}
+        />
+        <div style={{ gridColumn: '1 / -1' }}>
+          <AdminTextarea
+            label="설명"
+            value={value.description ?? ''}
+            onChange={v => set('description', v || null)}
+            rows={3}
+          />
+        </div>
+      </AdminFormSection>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <AdminButton onClick={onSave} loading={saving}>
+          <Save size={13} /> 저장
+        </AdminButton>
+        <AdminButton variant="ghost" onClick={onCancel}>취소</AdminButton>
+      </div>
+    </div>
+  )
 }
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function EditEGOPage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
+  const { toasts, showToast, dismissToast } = useToast()
 
-  const [form, setForm] = useState<Omit<EGO, 'id'>>({
+  const [form, setForm] = useState<Omit<EGO, 'id' | 'ego_skills'>>({
     sinner_id: '',
     name: '',
     name_kr: '',
@@ -61,7 +191,17 @@ export default function EditEGOPage() {
   const [sinners, setSinners] = useState<Sinner[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+
+  // EGO skills
+  const [egoSkills, setEgoSkills] = useState<EgoSkill[]>([])
+  const [editingEgoSkill, setEditingEgoSkill] = useState<EgoSkill | null>(null)
+  const [editingEgoSkillDraft, setEditingEgoSkillDraft] = useState<Partial<EgoSkill>>({})
+  const [newEgoSkill, setNewEgoSkill] = useState(false)
+  const [newEgoSkillDraft, setNewEgoSkillDraft] = useState<Partial<EgoSkill>>({})
+  const [egoSkillSaving, setEgoSkillSaving] = useState(false)
+
+  // Delete modal
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,6 +225,7 @@ export default function EditEGOPage() {
           folder_name: ego.folder_name ?? '',
           image_url: ego.image_url ?? '',
         })
+        setEgoSkills(ego.ego_skills ?? [])
       }
 
       if (Array.isArray(dataJson.sinners)) {
@@ -99,23 +240,100 @@ export default function EditEGOPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const body = {
-      ...form,
-      sin_affinity: form.sin_affinity || null,
-      name_kr: form.name_kr || null,
-      description: form.description || null,
-      corrosion_risk: form.corrosion_risk || null,
-      folder_name: form.folder_name || null,
-      image_url: form.image_url || null,
+    try {
+      const body = {
+        ...form,
+        sin_affinity: form.sin_affinity || null,
+        name_kr: form.name_kr || null,
+        description: form.description || null,
+        corrosion_risk: form.corrosion_risk || null,
+        folder_name: form.folder_name || null,
+        image_url: form.image_url || null,
+      }
+      const res = await fetch(`/api/admin/ego/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        showToast(d.error ?? '저장 실패', 'error')
+      } else {
+        showToast('저장됨', 'success')
+      }
+    } catch {
+      showToast('네트워크 오류', 'error')
+    } finally {
+      setSaving(false)
     }
-    await fetch(`/api/admin/ego/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  }
+
+  // ── EGO skill handlers ──
+
+  const handleStartEditEgoSkill = (skill: EgoSkill) => {
+    setNewEgoSkill(false)
+    setEditingEgoSkill(skill)
+    setEditingEgoSkillDraft({ ...skill })
+  }
+
+  const handleSaveEgoSkill = async () => {
+    setEgoSkillSaving(true)
+    try {
+      const res = await fetch(`/api/admin/ego-skills/${editingEgoSkill!.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingEgoSkillDraft),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setEgoSkills(prev => prev.map(s => s.id === updated.id ? updated : s))
+        setEditingEgoSkill(null)
+        showToast('EGO 스킬 저장됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? 'EGO 스킬 저장 실패', 'error')
+      }
+    } catch {
+      showToast('네트워크 오류', 'error')
+    } finally {
+      setEgoSkillSaving(false)
+    }
+  }
+
+  const handleAddEgoSkill = async () => {
+    setEgoSkillSaving(true)
+    try {
+      const res = await fetch('/api/admin/ego-skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newEgoSkillDraft, ego_id: id }),
+      })
+      if (res.ok) {
+        const created = await res.json()
+        setEgoSkills(prev => [...prev, created])
+        setNewEgoSkill(false)
+        setNewEgoSkillDraft({})
+        showToast('EGO 스킬 추가됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? 'EGO 스킬 추가 실패', 'error')
+      }
+    } catch {
+      showToast('네트워크 오류', 'error')
+    } finally {
+      setEgoSkillSaving(false)
+    }
+  }
+
+  const handleDeleteEgoSkill = async () => {
+    if (!deleteTarget) return
+    try {
+      await fetch(`/api/admin/ego-skills/${deleteTarget.id}`, { method: 'DELETE' })
+      setEgoSkills(prev => prev.filter(s => s.id !== deleteTarget.id))
+      setDeleteTarget(null)
+    } catch {
+      showToast('삭제 실패', 'error')
+    }
   }
 
   if (loading) {
@@ -142,156 +360,162 @@ export default function EditEGOPage() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 24 }}>
-        <h2 className="font-serif font-bold" style={{ color: '#c8a450', fontSize: '0.9375rem', marginBottom: 16 }}>
-          기본 정보
-        </h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div>
-            <label style={labelStyle}>수감자</label>
-            <select
-              value={form.sinner_id}
-              onChange={e => setForm(f => ({ ...f, sinner_id: e.target.value }))}
-              style={inputStyle}
-            >
-              <option value="">-- 선택 --</option>
-              {sinners.map(s => (
-                <option key={s.id} value={s.id}>{s.name_kr}</option>
-              ))}
-            </select>
+      <AdminCard
+        title="기본 정보"
+        headerRight={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <AdminButton variant="ghost" onClick={() => router.push('/admin/data')}>돌아가기</AdminButton>
+            <AdminButton onClick={handleSave} loading={saving} disabled={!form.name.trim()}>
+              <Save size={14} /> 저장
+            </AdminButton>
           </div>
-
-          <div>
-            <label style={labelStyle}>이름 (영문) *</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              style={inputStyle}
-              placeholder="e.g. Sunshower"
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>이름 (한글)</label>
-            <input
-              type="text"
-              value={form.name_kr ?? ''}
-              onChange={e => setForm(f => ({ ...f, name_kr: e.target.value }))}
-              style={inputStyle}
-              placeholder="e.g. 햇빛 소나기"
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>등급 *</label>
-            <select
-              value={form.grade}
-              onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
-              style={inputStyle}
-            >
-              {GRADES.map(g => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle}>죄악 친화도</label>
-            <select
-              value={form.sin_affinity ?? ''}
-              onChange={e => setForm(f => ({ ...f, sin_affinity: e.target.value }))}
-              style={inputStyle}
-            >
-              <option value="">-- 없음 --</option>
-              {SINS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle}>부식 위험도</label>
-            <input
-              type="text"
-              value={form.corrosion_risk ?? ''}
-              onChange={e => setForm(f => ({ ...f, corrosion_risk: e.target.value }))}
-              style={inputStyle}
-              placeholder="e.g. Low"
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>폴더명</label>
-            <input
-              type="text"
-              value={form.folder_name ?? ''}
-              onChange={e => setForm(f => ({ ...f, folder_name: e.target.value }))}
-              style={inputStyle}
-              placeholder="e.g. yi-sang-sunshower"
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>이미지 URL</label>
-            <input
-              type="text"
-              value={form.image_url ?? ''}
-              onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-              style={inputStyle}
-              placeholder="https://..."
-            />
-          </div>
-
+        }
+      >
+        <AdminFormSection columns={2}>
+          <AdminSelect
+            label="수감자"
+            value={form.sinner_id}
+            onChange={v => setForm(f => ({ ...f, sinner_id: v }))}
+            options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
+            placeholder="-- 선택 --"
+          />
+          <AdminInput
+            label="이름 (영문)"
+            required
+            value={form.name}
+            onChange={v => setForm(f => ({ ...f, name: v }))}
+            placeholder="e.g. Sunshower"
+          />
+          <AdminInput
+            label="이름 (한글)"
+            value={form.name_kr ?? ''}
+            onChange={v => setForm(f => ({ ...f, name_kr: v }))}
+            placeholder="e.g. 햇빛 소나기"
+          />
+          <AdminSelect
+            label="등급"
+            required
+            value={form.grade}
+            onChange={v => setForm(f => ({ ...f, grade: v }))}
+            options={GRADES.map(g => ({ value: g, label: g }))}
+          />
+          <AdminSelect
+            label="죄악 친화도"
+            value={form.sin_affinity ?? ''}
+            onChange={v => setForm(f => ({ ...f, sin_affinity: v }))}
+            options={SINS.map(s => ({ value: s, label: s }))}
+            placeholder="-- 없음 --"
+          />
+          <AdminSelect
+            label="부식 위험도"
+            value={form.corrosion_risk ?? ''}
+            onChange={v => setForm(f => ({ ...f, corrosion_risk: v }))}
+            options={CORROSION_OPTIONS.map(o => ({ value: o, label: o }))}
+            placeholder="-- 선택 --"
+          />
+          <AdminInput
+            label="폴더명"
+            value={form.folder_name ?? ''}
+            onChange={v => setForm(f => ({ ...f, folder_name: v }))}
+            placeholder="e.g. yi-sang-sunshower"
+          />
+          <AdminInput
+            label="이미지 URL"
+            value={form.image_url ?? ''}
+            onChange={v => setForm(f => ({ ...f, image_url: v }))}
+            placeholder="https://..."
+          />
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={labelStyle}>설명</label>
-            <textarea
+            <AdminTextarea
+              label="설명"
               value={form.description ?? ''}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              onChange={v => setForm(f => ({ ...f, description: v }))}
               rows={4}
-              style={{ ...inputStyle, resize: 'vertical' }}
               placeholder="E.G.O 설명..."
             />
           </div>
-        </div>
+        </AdminFormSection>
+      </AdminCard>
 
-        <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => router.push('/admin/data')}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              color: '#555566',
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              background: 'transparent',
-            }}
-            className="transition-colors hover:bg-white/5"
-          >
-            돌아가기
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !form.name.trim()}
-            className="flex items-center gap-2 transition-colors hover:opacity-80"
-            style={{
-              padding: '8px 20px',
-              background: 'rgba(200,144,10,0.2)',
-              border: '1px solid var(--gold-dim)',
-              borderRadius: '4px',
-              color: saved ? '#44aa44' : 'var(--gold)',
-              fontSize: '0.8125rem',
-              cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer',
-              opacity: saving || !form.name.trim() ? 0.5 : 1,
+      {/* EGO Skills Card */}
+      <AdminCard
+        title="EGO 스킬"
+        headerRight={
+          <AdminButton
+            size="sm"
+            onClick={() => {
+              setEditingEgoSkill(null)
+              setNewEgoSkillDraft(blankEgoSkill(id))
+              setNewEgoSkill(true)
             }}
           >
-            <Save size={14} />
-            {saving ? '저장 중...' : saved ? '저장됨' : '저장'}
-          </button>
-        </div>
-      </div>
+            <Plus size={13} /> 추가
+          </AdminButton>
+        }
+      >
+        {egoSkills.length === 0 && !newEgoSkill && (
+          <p style={{ color: '#555566', fontSize: '0.75rem' }}>EGO 스킬이 없습니다.</p>
+        )}
+
+        {egoSkills.map(skill => (
+          <div key={skill.id}>
+            {editingEgoSkill?.id === skill.id ? (
+              <EgoSkillForm
+                value={editingEgoSkillDraft}
+                onChange={setEditingEgoSkillDraft}
+                onSave={handleSaveEgoSkill}
+                onCancel={() => setEditingEgoSkill(null)}
+                saving={egoSkillSaving}
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{skill.name}</span>
+                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type}{skill.sin_affinity ? ` · ${skill.sin_affinity}` : ''}</span>
+                  {skill.coins != null && (
+                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
+                  )}
+                </div>
+                <AdminIconButton
+                  title="편집"
+                  onClick={() => handleStartEditEgoSkill(skill)}
+                >
+                  <Pencil size={12} />
+                </AdminIconButton>
+                <AdminIconButton
+                  variant="danger"
+                  title="삭제"
+                  onClick={() => setDeleteTarget({ id: skill.id, name: skill.name })}
+                >
+                  <Trash2 size={12} />
+                </AdminIconButton>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {newEgoSkill && (
+          <EgoSkillForm
+            value={newEgoSkillDraft}
+            onChange={setNewEgoSkillDraft}
+            onSave={handleAddEgoSkill}
+            onCancel={() => { setNewEgoSkill(false); setNewEgoSkillDraft({}) }}
+            saving={egoSkillSaving}
+          />
+        )}
+      </AdminCard>
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="삭제 확인"
+        message={deleteTarget ? `"${deleteTarget.name}"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.` : ''}
+        confirmLabel="삭제"
+        variant="danger"
+        onConfirm={handleDeleteEgoSkill}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

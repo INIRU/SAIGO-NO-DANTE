@@ -21,7 +21,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   if (error || !ego) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  return NextResponse.json({ data: ego })
+  const { data: egoSkills } = await supabase
+    .schema('limbus')
+    .from('ego_skills')
+    .select('*')
+    .eq('ego_id', id)
+    .order('skill_order')
+
+  return NextResponse.json({ data: { ...ego, ego_skills: egoSkills ?? [] } })
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

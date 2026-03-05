@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { LegalDoc, LegalSection } from '@/lib/data/legal'
+import { adminInputStyle, AdminButton, useToast, AdminToastContainer } from '@/components/admin'
 
 function SectionEditor({
   section, index, total,
@@ -25,11 +26,7 @@ function SectionEditor({
     onChange({ ...section, items })
   }
 
-  const inputStyle = {
-    background: '#0d0b08', border: '1px solid #2a2520', borderRadius: '4px',
-    padding: '6px 10px', color: '#e8dcc8', fontSize: '0.8125rem', width: '100%',
-    outline: 'none',
-  }
+  const inputStyle = adminInputStyle
 
   return (
     <div style={{ background: '#1a1510', border: '1px solid #2a2520', borderRadius: '6px', padding: '16px' }}>
@@ -110,8 +107,7 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
   const router = useRouter()
   const [doc, setDoc] = useState<LegalDoc>(initial)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+  const { toasts, showToast, dismissToast } = useToast()
 
   const updateSection = (i: number, s: LegalSection) => {
     const sections = doc.sections.map((sec, j) => j === i ? s : sec)
@@ -137,7 +133,6 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
 
   const save = async () => {
     setSaving(true)
-    setError('')
     try {
       const res = await fetch('/api/admin/legal', {
         method: 'PUT',
@@ -146,14 +141,13 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
       })
       if (!res.ok) {
         const data = await res.json()
-        setError(data.error ?? '저장 실패')
+        showToast(data.error ?? '저장 실패', 'error')
       } else {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2000)
+        showToast('저장되었습니다.', 'success')
         router.refresh()
       }
     } catch {
-      setError('네트워크 오류')
+      showToast('네트워크 오류', 'error')
     } finally {
       setSaving(false)
     }
@@ -185,23 +179,9 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
             }}
           />
         </div>
-        <div className="flex items-center gap-2">
-          {error && <span style={{ color: '#cc4444', fontSize: '0.75rem' }}>{error}</span>}
-          {saved && <span style={{ color: '#44aa66', fontSize: '0.75rem' }}>✓ 저장됨</span>}
-          <button
-            onClick={save}
-            disabled={saving}
-            style={{
-              padding: '8px 20px', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 600,
-              background: saving ? '#2a2520' : 'var(--gold)',
-              color: saving ? '#666' : '#0d0b08',
-              border: 'none', cursor: saving ? 'default' : 'pointer',
-              transition: 'all 200ms',
-            }}
-          >
-            {saving ? '저장 중...' : '저장'}
-          </button>
-        </div>
+        <AdminButton onClick={save} variant="gold" size="sm" loading={saving} disabled={saving}>
+          {saving ? '저장 중...' : '저장'}
+        </AdminButton>
       </div>
 
       {/* 섹션 목록 */}
@@ -231,6 +211,8 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
       >
         + 섹션 추가
       </button>
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

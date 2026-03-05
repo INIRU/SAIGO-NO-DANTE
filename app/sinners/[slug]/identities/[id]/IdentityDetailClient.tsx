@@ -24,8 +24,8 @@ import {
   computeSkillImageIndices,
   getSinIconUrl,
 } from '@/lib/data/sinners'
-import { KeywordWithTooltip, formatSkillDesc } from '@/components/sinners/KeywordTooltip'
-import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { KeywordWithTooltip, useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry, type NotePassiveEntry } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, NoteAutocompleteDropdown, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import IdentityDecksTab from '@/components/sinners/IdentityDecksTab'
 
@@ -52,6 +52,7 @@ interface Props {
 }
 
 export default function IdentityDetailClient({ sinner, identity, skills, passives, guides: initialGuides, allSinners, allIdentities, allEgos, egoGifts = [], canEditGuide, currentSeason = 7 }: Props) {
+  const formatSkillDesc = useFormatSkillDesc()
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [showArtTip, setShowArtTip] = useState(false)
@@ -201,6 +202,23 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     return map
   }, [egoGifts])
 
+  // 패시브 룩업 (NoteRenderer용)
+  const passiveLookup = useMemo(() => {
+    const map: Record<string, NotePassiveEntry> = {}
+    for (const ps of filteredPassives) {
+      const sinEn = ps.sin_affinity ? (SIN_KR_TO_EN[ps.sin_affinity] ?? ps.sin_affinity) : null
+      map[ps.name] = {
+        name: ps.name,
+        sin_affinity: sinEn,
+        sin_count: ps.sin_count ?? null,
+        active_cond: ps.active_cond ?? null,
+        description: ps.description ?? null,
+        sinnerName: sinner.name_kr,
+      }
+    }
+    return map
+  }, [filteredPassives, sinner.name_kr])
+
   // 자동완성 풀 (키워드 + 스킬 + 인격 + 에고)
   // 스킬만 현재 인격 한정, 인격/에고/키워드는 전체
   const acPool = useMemo((): AutocompleteSuggestion[] => {
@@ -223,6 +241,19 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
         label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
         token,
+      })
+    }
+    // 패시브 — 현재 인격의 패시브
+    for (const ps of filteredPassives) {
+      const sinEn = ps.sin_affinity ? (SIN_KR_TO_EN[ps.sin_affinity] ?? ps.sin_affinity) : null
+      const sc = sinEn ? (SIN_COLORS[sinEn] ?? '#88a830') : '#88a830'
+      pool.push({
+        label: ps.name,
+        type: 'passive' as const,
+        typeLabel: ps.passive_type === 'battle' ? '배틀' : '서포트',
+        color: sc,
+        iconUrl: sinEn ? getSinIconUrl(sinEn) : undefined,
+        token: `[p:${ps.name}]`,
       })
     }
     // 인격 — 전체 수감자
@@ -253,7 +284,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
     // EGO 기프트
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
-  }, [filteredSkills, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap, egoGifts])
+  }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap, egoGifts])
 
   const ac = useNoteAutocomplete({
     text: guideContent,
@@ -415,8 +446,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                 alt=""
                 width={28}
                 height={28}
-               
-                style={{ filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
+
+                style={{ width: 'auto', height: 'auto', filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
               />
               <div className="flex-1 min-w-0">
                 <h1
@@ -458,33 +489,52 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
             </div>
 
             {/* 인격 정보 이미지 (클릭하면 풀 일러스트) */}
-            {infoSrc && (
-              <div style={{ position: 'relative' }}>
-                <div
-                  className={`game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
-                  onClick={() => {
+            <div style={{ position: 'relative' }}>
+              <div
+                className={`game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
+                onClick={() => {
+                  if (infoSrc) {
                     setShowFullArt(true)
                     if (showArtTip) {
                       setShowArtTip(false)
                       localStorage.setItem('art-tip-seen', '1')
                     }
-                  }}
-                  title="클릭하면 풀 일러스트 보기"
-                >
+                  }
+                }}
+                title={infoSrc ? '클릭하면 풀 일러스트 보기' : undefined}
+              >
+                {infoSrc ? (
                   <Image
                     src={infoSrc}
                     alt="인격 정보"
                     width={480}
                     height={320}
-                   
+
                     className="w-full h-auto max-w-[320px] mx-auto"
                     onError={() => {
                       if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
                         setInfoSrc(fallbackInfoUrl)
+                      } else {
+                        setInfoSrc('')
                       }
                     }}
                   />
-                </div>
+                ) : (
+                  <div
+                    className="w-full flex items-center justify-center"
+                    style={{
+                      maxWidth: '320px',
+                      margin: '0 auto',
+                      aspectRatio: '3/2',
+                      background: `linear-gradient(160deg, #1e1810, #0d0a06)`,
+                    }}
+                  >
+                    <span className="font-serif font-bold" style={{ fontSize: '4rem', color: `${sinColor}18`, lineHeight: 1 }}>
+                      {(identity.name_kr || identity.name)[0]}
+                    </span>
+                  </div>
+                )}
+              </div>
 
                 {/* 첫 방문 툴팁: 풀 일러스트 안내 */}
                 {showArtTip && (
@@ -531,8 +581,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* 인격 대사 */}
             {identity.quote && (
@@ -618,8 +667,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                       alt=""
                       width={identity.rarity === '1성' ? 16 : identity.rarity === '2성' ? 28 : 40}
                       height={16}
-                     
-                      style={{ filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
+
+                      style={{ width: 'auto', height: 'auto', filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
                     />
                   )}
                 </div>
@@ -667,7 +716,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           alt=""
                           width={14}
                           height={14}
-                         
+                          style={{ width: 'auto', height: 'auto' }}
                         />
                         <span style={{ color: resColor, fontSize: '0.6875rem', fontWeight: 600 }}>
                           {res}
@@ -872,7 +921,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
                   >
                     <div className="flex justify-center mb-1">
-                      <Image src={iconUrl} alt="" width={20} height={20} />
+                      <Image src={iconUrl} alt="" width={20} height={20} style={{ width: 'auto', height: 'auto' }} />
                     </div>
                     <div
                       className="font-mono font-bold"
@@ -965,7 +1014,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                     <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                       <div style={{ color: '#555', fontSize: '0.625rem', marginBottom: '6px' }}>미리보기</div>
                       <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                        <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
+                        <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} passiveLookup={passiveLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                       </div>
                     </div>
                   )}
@@ -1083,7 +1132,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                   <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                                     <div style={{ color: '#555', fontSize: '0.625rem', marginBottom: '6px' }}>미리보기</div>
                                     <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                                      <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
+                                      <NoteRenderer text={guideContent} skillLookup={skillTokenLookup} passiveLookup={passiveLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                     </div>
                                   </div>
                                 )}
@@ -1110,7 +1159,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             ) : (
                               <div className="pt-3">
                                 <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                                  <NoteRenderer text={g.content} skillLookup={skillTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
+                                  <NoteRenderer text={g.content} skillLookup={skillTokenLookup} passiveLookup={passiveLookup} egoLookup={egoTokenLookup} identityLookup={identityTokenLookup} egoGiftLookup={egoGiftLookup} />
                                 </div>
                                 {canEditGuide && editingGuideId === null && (
                                   <div className="flex items-center gap-2 mt-5 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
@@ -1293,18 +1342,12 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 min-w-0">
                               {/* 스킬 아이콘 */}
-                              {skillIconUrl && (
-                                <Image
-                                  src={skillIconUrl}
-                                  alt=""
-                                  width={28}
-                                  height={28}
-                                 
-                                  className="rounded shrink-0"
-                                  style={{ border: `1px solid ${skillSinColor}40` }}
-                                  onError={skillIconFallback ? (e) => { (e.target as HTMLImageElement).src = skillIconFallback } : undefined}
-                                />
-                              )}
+                              <SkillIcon
+                                url={skillIconUrl}
+                                fallbackUrl={skillIconFallback}
+                                sinColor={skillSinColor}
+                                label={skillLabel}
+                              />
                               <span
                                 className="font-mono text-xs px-1.5 py-0.5 rounded shrink-0"
                                 style={{
@@ -1328,7 +1371,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                     alt=""
                                     width={14}
                                     height={14}
-                                   
+                                    style={{ width: 'auto', height: 'auto' }}
                                   />
                                 )}
                                 <span style={{ color: '#666', fontSize: '0.6875rem' }}>
@@ -1410,8 +1453,8 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                                 alt={isUnbreakable ? '파괴 불가 코인' : '코인'}
                                 width={18}
                                 height={18}
-                               
-                                style={{ filter: `drop-shadow(0 0 2px ${skillSinColor}60)` }}
+
+                                style={{ width: 'auto', height: 'auto', filter: `drop-shadow(0 0 2px ${skillSinColor}60)` }}
                               />
                             )
                           })}
@@ -1464,7 +1507,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
               const renderPassive = (p: Passive) => {
                 // sin_affinity가 한국어 → SinType 변환, 복수면 첫 번째만 아이콘용
                 const sinNames = p.sin_affinity ? p.sin_affinity.split(', ').map(s => s.trim()) : []
-                const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean)
+                const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s] ?? (SIN_COLORS[s as keyof typeof SIN_COLORS] ? s : null)).filter(Boolean)
                 const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : sinColor
 
                 return (
@@ -1496,7 +1539,7 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
                             style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st]}60)` }}
                           />
                         ))}
-                        {p.sin_count && (
+                        {p.sin_count != null && p.sin_count > 0 && (
                           <span className="font-mono font-bold" style={{ color: primaryColor, fontSize: '0.875rem' }}>
                             x{p.sin_count}
                           </span>
@@ -1713,5 +1756,49 @@ export default function IdentityDetailClient({ sinner, identity, skills, passive
         </div>
       </div>
     </div>
+  )
+}
+
+function SkillIcon({ url, fallbackUrl, sinColor, label }: { url: string; fallbackUrl?: string; sinColor: string; label: string }) {
+  const [src, setSrc] = useState(url)
+  const [failed, setFailed] = useState(false)
+
+  // url이 바뀌면 리셋
+  const [prevUrl, setPrevUrl] = useState(url)
+  if (prevUrl !== url) {
+    setPrevUrl(url)
+    setSrc(url)
+    setFailed(false)
+  }
+
+  if (!src || failed) {
+    return (
+      <div
+        className="rounded shrink-0 flex items-center justify-center"
+        style={{ width: 28, height: 28, background: `${sinColor}18`, border: `1px solid ${sinColor}40` }}
+      >
+        <span className="font-mono font-bold" style={{ fontSize: '0.625rem', color: `${sinColor}60` }}>
+          {label}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={28}
+      height={28}
+      className="rounded shrink-0"
+      style={{ border: `1px solid ${sinColor}40` }}
+      onError={() => {
+        if (fallbackUrl && src !== fallbackUrl) {
+          setSrc(fallbackUrl)
+        } else {
+          setFailed(true)
+        }
+      }}
+    />
   )
 }

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, MessageCircle, Trash2 } from 'lucide-react'
 import { STORAGE_BASE, getKeywordIconUrl, getSinnerLogoUrl, GRADE_COLORS, RARITY_ICON_MAP, computeSkillImageIndices, ATK_TYPE_ICON_MAP, type ActivationCondition } from '@/lib/data/sinners'
-import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -302,6 +302,7 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
 
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
 function PassiveBadgeDetail({ p, deckSinCounts }: { p: PassiveDetail; deckSinCounts: Record<string, number> }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const [hover, setHover] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const [tipPos, setTipPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
@@ -392,6 +393,7 @@ function Skeleton() {
 type EgoEntry = { grade: string; ego: NonNullable<EgoSlot['ego']> }
 
 function IdentityCard({ slot, egos, keywordMeta }: { slot: IdentitySlot; egos?: EgoEntry[]; keywordMeta?: Record<string, { description: string }> }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const id_ = slot.identities!
   const [activeTab, setActiveTab] = useState<'skills' | 'passives' | 'ego'>('skills')
 

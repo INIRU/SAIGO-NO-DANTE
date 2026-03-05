@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, Save, ArrowLeft, Plus, Trash2, Pencil } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import {
+  AdminInput, AdminSelect, AdminTextarea,
+  AdminButton, AdminIconButton,
+  AdminCard,
+  AdminFormSection,
+  useToast, AdminToastContainer,
+} from '@/components/admin'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,64 +78,15 @@ const SIN_OPTIONS = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'en
 const SKILL_TYPES = ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter']
 const RES_OPTIONS = ['내성', '취약', '보통']
 const ACTIVE_COND_OPTIONS = ['공명', '보유', '없음']
-
-// ─── Style helpers ────────────────────────────────────────────────────────────
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  background: 'rgba(0,0,0,0.3)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-  color: '#c8a450',
-  fontSize: '0.8125rem',
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#555566',
-  fontSize: '0.6875rem',
-  marginBottom: '4px',
-  display: 'block',
-}
-
-const btnGold: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  padding: '8px 16px',
-  background: 'rgba(200,144,10,0.15)',
-  border: '1px solid var(--gold)',
-  borderRadius: '4px',
-  color: 'var(--gold)',
-  fontSize: '0.8125rem',
-  cursor: 'pointer',
-}
-
-const btnSmall: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '5px 10px',
-  background: 'rgba(200,144,10,0.1)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-  color: '#c8a450',
-  fontSize: '0.75rem',
-  cursor: 'pointer',
-}
-
-const btnDanger: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '5px 10px',
-  background: 'rgba(170,68,68,0.1)',
-  border: '1px solid rgba(170,68,68,0.4)',
-  borderRadius: '4px',
-  color: '#ee6666',
-  fontSize: '0.75rem',
-  cursor: 'pointer',
-}
+const KR_SIN_OPTIONS = [
+  { value: '분노', label: '분노' },
+  { value: '색욕', label: '색욕' },
+  { value: '나태', label: '나태' },
+  { value: '탐식', label: '탐식' },
+  { value: '우울', label: '우울' },
+  { value: '오만', label: '오만' },
+  { value: '질투', label: '질투' },
+]
 
 // ─── Blank templates ──────────────────────────────────────────────────────────
 
@@ -181,57 +139,76 @@ function SkillForm({
 
   return (
     <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '16px', marginTop: '8px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
+      <AdminFormSection columns={3}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={labelStyle}>이름</label>
-          <input style={inputStyle} value={value.name ?? ''} onChange={e => set('name', e.target.value)} />
+          <AdminInput
+            label="이름"
+            value={value.name ?? ''}
+            onChange={v => set('name', v)}
+          />
         </div>
-        <div>
-          <label style={labelStyle}>스킬 타입</label>
-          <select style={inputStyle} value={value.skill_type ?? 'slash'} onChange={e => set('skill_type', e.target.value)}>
-            {SKILL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>죄악 속성</label>
-          <select style={inputStyle} value={value.sin_affinity ?? 'wrath'} onChange={e => set('sin_affinity', e.target.value)}>
-            {SIN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>코인 수</label>
-          <input style={inputStyle} type="number" value={value.coins ?? ''} onChange={e => set('coins', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>기본 위력</label>
-          <input style={inputStyle} type="number" value={value.base_power ?? ''} onChange={e => set('base_power', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>코인 위력</label>
-          <input style={inputStyle} type="number" value={value.coin_power ?? ''} onChange={e => set('coin_power', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>스킬 순서</label>
-          <input style={inputStyle} type="number" value={value.skill_order ?? ''} onChange={e => set('skill_order', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>공격 레벨</label>
-          <input style={inputStyle} type="number" value={value.offense_level ?? ''} onChange={e => set('offense_level', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>공격 가중치</label>
-          <input style={inputStyle} type="number" value={value.atk_weight ?? ''} onChange={e => set('atk_weight', num(e.target.value))} />
-        </div>
+        <AdminSelect
+          label="스킬 타입"
+          value={value.skill_type ?? 'slash'}
+          onChange={v => set('skill_type', v)}
+          options={SKILL_TYPES.map(t => ({ value: t, label: t }))}
+        />
+        <AdminSelect
+          label="죄악 속성"
+          value={value.sin_affinity ?? 'wrath'}
+          onChange={v => set('sin_affinity', v)}
+          options={SIN_OPTIONS.map(s => ({ value: s, label: s }))}
+        />
+        <AdminInput
+          label="코인 수"
+          type="number"
+          value={value.coins ?? ''}
+          onChange={v => set('coins', num(v))}
+        />
+        <AdminInput
+          label="기본 위력"
+          type="number"
+          value={value.base_power ?? ''}
+          onChange={v => set('base_power', num(v))}
+        />
+        <AdminInput
+          label="코인 위력"
+          type="number"
+          value={value.coin_power ?? ''}
+          onChange={v => set('coin_power', num(v))}
+        />
+        <AdminInput
+          label="스킬 순서"
+          type="number"
+          value={value.skill_order ?? ''}
+          onChange={v => set('skill_order', num(v))}
+        />
+        <AdminInput
+          label="공격 레벨"
+          type="number"
+          value={value.offense_level ?? ''}
+          onChange={v => set('offense_level', num(v))}
+        />
+        <AdminInput
+          label="공격 가중치"
+          type="number"
+          value={value.atk_weight ?? ''}
+          onChange={v => set('atk_weight', num(v))}
+        />
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={labelStyle}>설명</label>
-          <textarea style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: '1.6' }} rows={3} value={value.description ?? ''} onChange={e => set('description', e.target.value || null)} />
+          <AdminTextarea
+            label="설명"
+            value={value.description ?? ''}
+            onChange={v => set('description', v || null)}
+            rows={3}
+          />
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button style={btnGold} onClick={onSave} disabled={saving}>
-          {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} 저장
-        </button>
-        <button style={{ ...btnSmall, color: '#555566' }} onClick={onCancel}>취소</button>
+      </AdminFormSection>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <AdminButton onClick={onSave} loading={saving}>
+          <Save size={13} /> 저장
+        </AdminButton>
+        <AdminButton variant="ghost" onClick={onCancel}>취소</AdminButton>
       </div>
     </div>
   )
@@ -257,46 +234,62 @@ function PassiveForm({
 
   return (
     <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '16px', marginTop: '8px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
+      <AdminFormSection columns={3}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={labelStyle}>이름</label>
-          <input style={inputStyle} value={value.name ?? ''} onChange={e => set('name', e.target.value)} />
+          <AdminInput
+            label="이름"
+            value={value.name ?? ''}
+            onChange={v => set('name', v)}
+          />
         </div>
-        <div>
-          <label style={labelStyle}>패시브 타입</label>
-          <select style={inputStyle} value={value.passive_type ?? 'battle'} onChange={e => set('passive_type', e.target.value)}>
-            <option value="battle">battle</option>
-            <option value="support">support</option>
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>죄악 속성</label>
-          <input style={inputStyle} value={value.sin_affinity ?? ''} onChange={e => set('sin_affinity', e.target.value || null)} placeholder="예: 분노" />
-        </div>
-        <div>
-          <label style={labelStyle}>죄악 수</label>
-          <input style={inputStyle} type="number" value={value.sin_count ?? ''} onChange={e => set('sin_count', num(e.target.value))} />
-        </div>
-        <div>
-          <label style={labelStyle}>발동 조건</label>
-          <select style={inputStyle} value={value.active_cond ?? '공명'} onChange={e => set('active_cond', e.target.value)}>
-            {ACTIVE_COND_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>순서</label>
-          <input style={inputStyle} type="number" value={value.passive_order ?? ''} onChange={e => set('passive_order', num(e.target.value))} />
-        </div>
+        <AdminSelect
+          label="패시브 타입"
+          value={value.passive_type ?? 'battle'}
+          onChange={v => set('passive_type', v)}
+          options={[
+            { value: 'battle', label: 'battle' },
+            { value: 'support', label: 'support' },
+          ]}
+        />
+        <AdminSelect
+          label="죄악 속성"
+          value={value.sin_affinity ?? ''}
+          onChange={v => set('sin_affinity', v || null)}
+          options={KR_SIN_OPTIONS}
+          placeholder="없음"
+        />
+        <AdminInput
+          label="죄악 수"
+          type="number"
+          value={value.sin_count ?? ''}
+          onChange={v => set('sin_count', num(v))}
+        />
+        <AdminSelect
+          label="발동 조건"
+          value={value.active_cond ?? '공명'}
+          onChange={v => set('active_cond', v)}
+          options={ACTIVE_COND_OPTIONS.map(o => ({ value: o, label: o }))}
+        />
+        <AdminInput
+          label="순서"
+          type="number"
+          value={value.passive_order ?? ''}
+          onChange={v => set('passive_order', num(v))}
+        />
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={labelStyle}>설명</label>
-          <textarea style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: '1.6' }} rows={3} value={value.description ?? ''} onChange={e => set('description', e.target.value || null)} />
+          <AdminTextarea
+            label="설명"
+            value={value.description ?? ''}
+            onChange={v => set('description', v || null)}
+            rows={3}
+          />
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button style={btnGold} onClick={onSave} disabled={saving}>
-          {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} 저장
-        </button>
-        <button style={{ ...btnSmall, color: '#555566' }} onClick={onCancel}>취소</button>
+      </AdminFormSection>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <AdminButton onClick={onSave} loading={saving}>
+          <Save size={13} /> 저장
+        </AdminButton>
+        <AdminButton variant="ghost" onClick={onCancel}>취소</AdminButton>
       </div>
     </div>
   )
@@ -308,6 +301,7 @@ export default function EditIdentityPage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
+  const { toasts, showToast, dismissToast } = useToast()
 
   // Identity form state
   const [identity, setIdentity] = useState<Identity | null>(null)
@@ -315,7 +309,6 @@ export default function EditIdentityPage() {
   const [sinners, setSinners] = useState<SinnerOption[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState('')
 
   // Skills
   const [skills, setSkills] = useState<Skill[]>([])
@@ -353,7 +346,6 @@ export default function EditIdentityPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    setSaveMsg('')
     try {
       const { skills: _s, passives: _p, id: _id, ...body } = form as Identity
       const res = await fetch(`/api/admin/identities/${id}`, {
@@ -363,13 +355,12 @@ export default function EditIdentityPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        setSaveMsg(d.error ?? '저장 실패')
+        showToast(d.error ?? '저장 실패', 'error')
       } else {
-        setSaveMsg('저장됨')
-        setTimeout(() => setSaveMsg(''), 2000)
+        showToast('저장됨', 'success')
       }
     } catch {
-      setSaveMsg('네트워크 오류')
+      showToast('네트워크 오류', 'error')
     } finally {
       setSaving(false)
     }
@@ -395,7 +386,13 @@ export default function EditIdentityPage() {
         const updated = await res.json()
         setSkills(prev => prev.map(s => s.id === updated.id ? updated : s))
         setEditingSkill(null)
+        showToast('스킬 저장됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? '스킬 저장 실패', 'error')
       }
+    } catch {
+      showToast('네트워크 오류', 'error')
     } finally {
       setSkillSaving(false)
     }
@@ -414,7 +411,13 @@ export default function EditIdentityPage() {
         setSkills(prev => [...prev, created])
         setNewSkill(false)
         setNewSkillDraft({})
+        showToast('스킬 추가됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? '스킬 추가 실패', 'error')
       }
+    } catch {
+      showToast('네트워크 오류', 'error')
     } finally {
       setSkillSaving(false)
     }
@@ -447,7 +450,13 @@ export default function EditIdentityPage() {
         const updated = await res.json()
         setPassives(prev => prev.map(p => p.id === updated.id ? updated : p))
         setEditingPassive(null)
+        showToast('패시브 저장됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? '패시브 저장 실패', 'error')
       }
+    } catch {
+      showToast('네트워크 오류', 'error')
     } finally {
       setPassiveSaving(false)
     }
@@ -466,7 +475,13 @@ export default function EditIdentityPage() {
         setPassives(prev => [...prev, created])
         setNewPassive(false)
         setNewPassiveDraft({})
+        showToast('패시브 추가됨', 'success')
+      } else {
+        const d = await res.json()
+        showToast(d.error ?? '패시브 추가 실패', 'error')
       }
+    } catch {
+      showToast('네트워크 오류', 'error')
     } finally {
       setPassiveSaving(false)
     }
@@ -516,174 +531,150 @@ export default function EditIdentityPage() {
       </div>
 
       {/* Basic Info Card */}
-      <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <h2 className="font-serif" style={{ color: '#c8a450', marginBottom: '16px', fontSize: '0.9375rem', fontWeight: 'bold' }}>기본 정보</h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '16px' }}>
-          {/* sinner_id */}
-          <div>
-            <label style={labelStyle}>수감자</label>
-            <select style={inputStyle} value={f('sinner_id')} onChange={e => setF('sinner_id', e.target.value)}>
-              <option value="">선택</option>
-              {sinners.map(s => <option key={s.id} value={s.id}>{s.name_kr}</option>)}
-            </select>
-          </div>
-
-          {/* rarity */}
-          <div>
-            <label style={labelStyle}>등급</label>
-            <select style={inputStyle} value={f('rarity')} onChange={e => setF('rarity', numF(e.target.value))}>
-              <option value="">선택</option>
-              <option value="1">1성</option>
-              <option value="2">2성</option>
-              <option value="3">3성</option>
-            </select>
-          </div>
-
-          {/* name */}
-          <div>
-            <label style={labelStyle}>이름 (영문)</label>
-            <input style={inputStyle} value={f('name')} onChange={e => setF('name', e.target.value)} />
-          </div>
-
-          {/* name_kr */}
-          <div>
-            <label style={labelStyle}>이름 (한글)</label>
-            <input style={inputStyle} value={f('name_kr')} onChange={e => setF('name_kr', e.target.value)} />
-          </div>
-
-          {/* tier */}
-          <div>
-            <label style={labelStyle}>동기화 단계 (1–4)</label>
-            <input style={inputStyle} type="number" min={1} max={4} value={f('tier')} onChange={e => setF('tier', numF(e.target.value))} />
-          </div>
-
-          {/* hp */}
-          <div>
-            <label style={labelStyle}>HP</label>
-            <input style={inputStyle} type="number" value={f('hp')} onChange={e => setF('hp', numF(e.target.value))} />
-          </div>
-
-          {/* speed_min */}
-          <div>
-            <label style={labelStyle}>속도 최소</label>
-            <input style={inputStyle} type="number" value={f('speed_min')} onChange={e => setF('speed_min', numF(e.target.value))} />
-          </div>
-
-          {/* speed_max */}
-          <div>
-            <label style={labelStyle}>속도 최대</label>
-            <input style={inputStyle} type="number" value={f('speed_max')} onChange={e => setF('speed_max', numF(e.target.value))} />
-          </div>
-
-          {/* def_level */}
-          <div>
-            <label style={labelStyle}>방어 레벨</label>
-            <input style={inputStyle} type="number" value={f('def_level')} onChange={e => setF('def_level', numF(e.target.value))} />
-          </div>
-
-          {/* sin_affinity */}
-          <div>
-            <label style={labelStyle}>죄악 속성</label>
-            <select style={inputStyle} value={f('sin_affinity')} onChange={e => setF('sin_affinity', e.target.value || null)}>
-              <option value="">선택</option>
-              {SIN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-
-          {/* slash_res */}
-          <div>
-            <label style={labelStyle}>참격 내성</label>
-            <select style={inputStyle} value={f('slash_res')} onChange={e => setF('slash_res', e.target.value || null)}>
-              <option value="">선택</option>
-              {RES_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
-          {/* pierce_res */}
-          <div>
-            <label style={labelStyle}>관통 내성</label>
-            <select style={inputStyle} value={f('pierce_res')} onChange={e => setF('pierce_res', e.target.value || null)}>
-              <option value="">선택</option>
-              {RES_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
-          {/* blunt_res */}
-          <div>
-            <label style={labelStyle}>타격 내성</label>
-            <select style={inputStyle} value={f('blunt_res')} onChange={e => setF('blunt_res', e.target.value || null)}>
-              <option value="">선택</option>
-              {RES_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
-          {/* game_id */}
-          <div>
-            <label style={labelStyle}>게임 ID</label>
-            <input style={inputStyle} value={f('game_id')} onChange={e => setF('game_id', e.target.value || null)} />
-          </div>
-
-          {/* folder_name */}
-          <div>
-            <label style={labelStyle}>폴더명</label>
-            <input style={inputStyle} value={f('folder_name')} onChange={e => setF('folder_name', e.target.value || null)} />
-          </div>
-
-          {/* affiliation */}
-          <div>
-            <label style={labelStyle}>소속</label>
-            <input style={inputStyle} value={f('affiliation')} onChange={e => setF('affiliation', e.target.value || null)} />
-          </div>
-
-          {/* keywords */}
-          <div>
-            <label style={labelStyle}>키워드 (쉼표 구분)</label>
-            <input style={inputStyle} value={f('keywords')} onChange={e => setF('keywords', e.target.value || null)} />
-          </div>
-
-          {/* release_date */}
-          <div>
-            <label style={labelStyle}>출시일</label>
-            <input style={inputStyle} value={f('release_date')} onChange={e => setF('release_date', e.target.value || null)} />
-          </div>
-
-          {/* acquisition */}
-          <div>
-            <label style={labelStyle}>획득 방법</label>
-            <input style={inputStyle} value={f('acquisition')} onChange={e => setF('acquisition', e.target.value || null)} />
-          </div>
-
-          {/* quote */}
+      <AdminCard
+        title="기본 정보"
+        headerRight={
+          <AdminButton onClick={handleSave} loading={saving}>
+            <Save size={13} /> 저장
+          </AdminButton>
+        }
+      >
+        <AdminFormSection columns={2}>
+          <AdminSelect
+            label="수감자"
+            value={f('sinner_id')}
+            onChange={v => setF('sinner_id', v)}
+            options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
+            placeholder="선택"
+          />
+          <AdminSelect
+            label="등급"
+            value={f('rarity')}
+            onChange={v => setF('rarity', numF(v))}
+            options={[
+              { value: '1', label: '1성' },
+              { value: '2', label: '2성' },
+              { value: '3', label: '3성' },
+            ]}
+            placeholder="선택"
+          />
+          <AdminInput
+            label="이름 (영문)"
+            value={f('name')}
+            onChange={v => setF('name', v)}
+          />
+          <AdminInput
+            label="이름 (한글)"
+            value={f('name_kr')}
+            onChange={v => setF('name_kr', v)}
+          />
+          <AdminInput
+            label="동기화 단계 (1–4)"
+            type="number"
+            min={1}
+            max={4}
+            value={f('tier')}
+            onChange={v => setF('tier', numF(v))}
+          />
+          <AdminInput
+            label="HP"
+            type="number"
+            value={f('hp')}
+            onChange={v => setF('hp', numF(v))}
+          />
+          <AdminInput
+            label="속도 최소"
+            type="number"
+            value={f('speed_min')}
+            onChange={v => setF('speed_min', numF(v))}
+          />
+          <AdminInput
+            label="속도 최대"
+            type="number"
+            value={f('speed_max')}
+            onChange={v => setF('speed_max', numF(v))}
+          />
+          <AdminInput
+            label="방어 레벨"
+            type="number"
+            value={f('def_level')}
+            onChange={v => setF('def_level', numF(v))}
+          />
+          <AdminSelect
+            label="죄악 속성"
+            value={f('sin_affinity')}
+            onChange={v => setF('sin_affinity', v || null)}
+            options={SIN_OPTIONS.map(s => ({ value: s, label: s }))}
+            placeholder="선택"
+          />
+          <AdminSelect
+            label="참격 내성"
+            value={f('slash_res')}
+            onChange={v => setF('slash_res', v || null)}
+            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+            placeholder="선택"
+          />
+          <AdminSelect
+            label="관통 내성"
+            value={f('pierce_res')}
+            onChange={v => setF('pierce_res', v || null)}
+            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+            placeholder="선택"
+          />
+          <AdminSelect
+            label="타격 내성"
+            value={f('blunt_res')}
+            onChange={v => setF('blunt_res', v || null)}
+            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+            placeholder="선택"
+          />
+          <AdminInput
+            label="게임 ID"
+            value={f('game_id')}
+            onChange={v => setF('game_id', v || null)}
+          />
+          <AdminInput
+            label="폴더명"
+            value={f('folder_name')}
+            onChange={v => setF('folder_name', v || null)}
+          />
+          <AdminInput
+            label="소속"
+            value={f('affiliation')}
+            onChange={v => setF('affiliation', v || null)}
+          />
+          <AdminInput
+            label="키워드 (쉼표 구분)"
+            value={f('keywords')}
+            onChange={v => setF('keywords', v || null)}
+          />
+          <AdminInput
+            label="출시일"
+            value={f('release_date')}
+            onChange={v => setF('release_date', v || null)}
+          />
+          <AdminInput
+            label="획득 방법"
+            value={f('acquisition')}
+            onChange={v => setF('acquisition', v || null)}
+          />
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={labelStyle}>대사</label>
-            <textarea
-              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: '1.6' }}
-              rows={3}
+            <AdminTextarea
+              label="대사"
               value={f('quote')}
-              onChange={e => setF('quote', e.target.value || null)}
+              onChange={v => setF('quote', v || null)}
+              rows={3}
             />
           </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button style={btnGold} onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} 저장
-          </button>
-          {saveMsg && (
-            <span style={{ fontSize: '0.75rem', color: saveMsg === '저장됨' ? '#44aa66' : '#ee6666' }}>
-              {saveMsg === '저장됨' ? '✓ ' : ''}{saveMsg}
-            </span>
-          )}
-        </div>
-      </div>
+        </AdminFormSection>
+      </AdminCard>
 
       {/* Skills Card */}
-      <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 'bold' }}>스킬</h2>
-          <button
-            style={btnSmall}
+      <AdminCard
+        title="스킬"
+        headerRight={
+          <AdminButton
+            size="sm"
             onClick={() => {
               setEditingSkill(null)
               setNewSkillDraft(blankSkill(id))
@@ -691,9 +682,9 @@ export default function EditIdentityPage() {
             }}
           >
             <Plus size={13} /> 추가
-          </button>
-        </div>
-
+          </AdminButton>
+        }
+      >
         {skills.length === 0 && !newSkill && (
           <p style={{ color: '#555566', fontSize: '0.75rem' }}>스킬이 없습니다.</p>
         )}
@@ -717,12 +708,12 @@ export default function EditIdentityPage() {
                     <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
                   )}
                 </div>
-                <button style={btnSmall} onClick={() => handleStartEditSkill(skill)}>
+                <AdminButton size="sm" variant="ghost" onClick={() => handleStartEditSkill(skill)}>
                   <Pencil size={12} />
-                </button>
-                <button style={btnDanger} onClick={() => setDeleteTarget({ type: 'skill', id: skill.id, name: skill.name })}>
+                </AdminButton>
+                <AdminButton size="sm" variant="danger" onClick={() => setDeleteTarget({ type: 'skill', id: skill.id, name: skill.name })}>
                   <Trash2 size={12} />
-                </button>
+                </AdminButton>
               </div>
             )}
           </div>
@@ -737,14 +728,14 @@ export default function EditIdentityPage() {
             saving={skillSaving}
           />
         )}
-      </div>
+      </AdminCard>
 
       {/* Passives Card */}
-      <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 'bold' }}>패시브</h2>
-          <button
-            style={btnSmall}
+      <AdminCard
+        title="패시브"
+        headerRight={
+          <AdminButton
+            size="sm"
             onClick={() => {
               setEditingPassive(null)
               setNewPassiveDraft(blankPassive(id))
@@ -752,9 +743,9 @@ export default function EditIdentityPage() {
             }}
           >
             <Plus size={13} /> 추가
-          </button>
-        </div>
-
+          </AdminButton>
+        }
+      >
         {passives.length === 0 && !newPassive && (
           <p style={{ color: '#555566', fontSize: '0.75rem' }}>패시브가 없습니다.</p>
         )}
@@ -778,12 +769,12 @@ export default function EditIdentityPage() {
                     <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.sin_affinity} {passive.sin_count ?? ''} {passive.active_cond ?? ''}</span>
                   )}
                 </div>
-                <button style={btnSmall} onClick={() => handleStartEditPassive(passive)}>
+                <AdminButton size="sm" variant="ghost" onClick={() => handleStartEditPassive(passive)}>
                   <Pencil size={12} />
-                </button>
-                <button style={btnDanger} onClick={() => setDeleteTarget({ type: 'passive', id: passive.id, name: passive.name })}>
+                </AdminButton>
+                <AdminButton size="sm" variant="danger" onClick={() => setDeleteTarget({ type: 'passive', id: passive.id, name: passive.name })}>
                   <Trash2 size={12} />
-                </button>
+                </AdminButton>
               </div>
             )}
           </div>
@@ -798,7 +789,7 @@ export default function EditIdentityPage() {
             saving={passiveSaving}
           />
         )}
-      </div>
+      </AdminCard>
 
       {/* Delete confirmation modal */}
       <ConfirmModal
@@ -813,6 +804,8 @@ export default function EditIdentityPage() {
         }}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

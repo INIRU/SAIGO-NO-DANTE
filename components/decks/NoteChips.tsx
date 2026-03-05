@@ -2,14 +2,13 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { formatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc, useKeywords } from '@/components/sinners/KeywordTooltip'
 import {
-  SIN_COLORS, type SinType,
+  SIN_COLORS,
   GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
   SKILL_TYPE_LABELS, SIN_LABELS_KR,
   normalizeSin, getKeywordIconUrl, KEYWORD_SIN_MAP,
 } from '@/lib/data/sinners'
-import { KEYWORD_DESCRIPTIONS } from '@/lib/data/keyword-descriptions'
 
 function sinColorOf(sin: string | null): string {
   const en = normalizeSin(sin)
@@ -63,6 +62,7 @@ export type NoteEgoGiftEntry = {
 
 // ── SkillChip ───────────────────────────────────────────────────────────
 export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
@@ -122,6 +122,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
 
 // ── PassiveChip ─────────────────────────────────────────────────────────
 export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const sinEn = normalizeSin(entry.sin_affinity)
@@ -269,12 +270,13 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 
 // ── KeywordChip ──────────────────────────────────────────────────────────
 export function KeywordChip({ keyword }: { keyword: string }) {
+  const keywords = useKeywords()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const iconUrl = getKeywordIconUrl(keyword)
   const sinType = KEYWORD_SIN_MAP[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
-  const info = KEYWORD_DESCRIPTIONS[keyword]
+  const info = keywords[keyword]
   return (
     <span
       ref={ref}
@@ -323,6 +325,7 @@ const EGO_GIFT_KW_COLORS: Record<string, string> = {
 }
 
 export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const sc = EGO_GIFT_KW_COLORS[entry.keyword] ?? '#888'
@@ -412,6 +415,7 @@ export function NoteRenderer({
   egoGiftLookup?: Record<string, NoteEgoGiftEntry>
   inline?: boolean
 }) {
+  const formatSkillDesc = useFormatSkillDesc()
   if (!text.trim()) return (
     <p style={{ color: '#2a2535', fontSize: '0.75rem', fontStyle: 'italic' }}>내용이 없습니다.</p>
   )

@@ -87,6 +87,8 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               onError={() => {
                 if (fallbackUrl && imgSrc !== fallbackUrl) {
                   setImgSrc(fallbackUrl)
+                } else {
+                  setImgSrc('')
                 }
               }}
             />

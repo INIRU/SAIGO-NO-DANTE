@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Library, Users, Database, Megaphone, FileText, Loader2 } from 'lucide-react'
+import { AdminCard } from '@/components/admin'
 
 interface Stats {
   totalDecks: number
@@ -51,10 +52,9 @@ export default function AdminDashboard() {
             { label: '오늘 생성 덱', value: stats.todayDecks },
             { label: '총 조회수', value: stats.totalViews.toLocaleString() },
           ].map(card => (
-            <div key={card.label} className="card p-5">
-              <p style={{ color: '#555566', fontSize: '0.6875rem', marginBottom: '4px' }}>{card.label}</p>
+            <AdminCard key={card.label} title={card.label}>
               <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>{card.value}</p>
-            </div>
+            </AdminCard>
           ))}
         </div>
       )}

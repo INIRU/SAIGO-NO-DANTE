@@ -9,7 +9,7 @@ import {
   GRADE_COLORS, SIN_KR_TO_EN, ATK_TYPE_ICON_MAP,
   getSinIconUrl,
 } from '@/lib/data/sinners'
-import { KeywordWithTooltip, formatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { KeywordWithTooltip, useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 const SIN_ORDER: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
@@ -29,6 +29,7 @@ function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
 
 // ─── EGO 스킬 패널 ────────────────────────────────────────────────────
 function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor: string; isCor: boolean }) {
+  const formatSkillDesc = useFormatSkillDesc()
   const accentColor = isCor ? '#cc4444' : gradeColor
   const resourceSin = SIN_KR_TO_EN[skill.resource]
   const resourceColor = resourceSin ? SIN_COLORS[resourceSin] : '#888'
@@ -181,14 +182,16 @@ interface Props {
 }
 
 export default function EGODetailClient({ sinner, ego }: Props) {
+  const formatSkillDesc = useFormatSkillDesc()
   const [skillLevel, setSkillLevel] = useState<3 | 4>(4)
   const [corSkillLevel, setCorSkillLevel] = useState<3 | 4>(4)
 
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
-  const normalSkillList = ego.ego_skills ?? []
-  const corSkillList = ego.ego_cor_skills ?? []
+  // ego_skills가 단일 객체(JSONB)인 경우 배열로 정규화
+  const normalSkillList = Array.isArray(ego.ego_skills) ? ego.ego_skills : ego.ego_skills ? [ego.ego_skills] : []
+  const corSkillList = Array.isArray(ego.ego_cor_skills) ? ego.ego_cor_skills : ego.ego_cor_skills ? [ego.ego_cor_skills] : []
   const hasCor = corSkillList.length > 0
 
   // 이름별 그룹화 후 선택된 해석 레벨 스킬 추출 (다중 스킬 EGO 대응)

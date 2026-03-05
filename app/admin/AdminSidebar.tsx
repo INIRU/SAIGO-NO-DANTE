@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Library, Users, Database, Megaphone, FileText, ScrollText, Trophy, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Library, Users, Database, Megaphone, FileText, ScrollText, Trophy, Tags, Menu, X } from 'lucide-react'
 
 const menuItems = [
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
@@ -11,6 +11,7 @@ const menuItems = [
   { href: '/admin/decks', icon: Library, label: '덱 관리' },
   { href: '/admin/users', icon: Users, label: '유저 관리' },
   { href: '/admin/data', icon: Database, label: '데이터 관리' },
+  { href: '/admin/keywords', icon: Tags, label: '키워드' },
   { href: '/admin/announcements', icon: Megaphone, label: '공지' },
   { href: '/admin/legal', icon: FileText, label: '법률문서' },
   { href: '/admin/audit-logs', icon: ScrollText, label: '감사 로그' },
