@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X, ChevronDown, Search } from 'lucide-react'
+import SearchModal from '@/components/ui/SearchModal'
 
 type NavGroup = {
   label: string
@@ -43,6 +44,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const lastScrollY = useRef(0)
   const pathname = usePathname()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -84,7 +86,20 @@ export default function Navbar() {
   // 경로 변경 시 모바일 메뉴 닫기
   useEffect(() => {
     setMobileMenuOpen(false)
+    setSearchOpen(false)
   }, [pathname])
+
+  // Cmd+K / Ctrl+K 검색 단축키
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(v => !v)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
 
   const [avatarError, setAvatarError] = useState(false)
   const user = session?.user
@@ -105,8 +120,8 @@ export default function Navbar() {
         className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300"
         style={{
           transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)',
-          background: 'linear-gradient(to bottom, rgba(13,11,8,0.97), rgba(13,11,8,0))',
-          backdropFilter: 'blur(12px)',
+          background: 'linear-gradient(to bottom, rgba(10,8,5,0.98), rgba(10,8,5,0.85))',
+          backdropFilter: 'blur(16px)',
           borderBottom: '1px solid rgba(58,42,21,0.7)',
         }}
       >
@@ -216,6 +231,35 @@ export default function Navbar() {
               )
             })}
 
+            {/* 검색 버튼 */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded transition-colors hover:bg-white/5"
+              style={{
+                cursor: 'pointer',
+                color: '#7a6845',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)',
+              }}
+              title="검색 (Ctrl+K)"
+            >
+              <Search size={13} />
+              <kbd style={{
+                marginLeft: 6,
+                padding: '1px 6px',
+                fontSize: '0.5625rem',
+                fontFamily: 'var(--font-mono)',
+                color: '#666',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 4,
+                boxShadow: '0 1px 0 rgba(255,255,255,0.05)',
+                lineHeight: '1.4',
+              }}>
+                {typeof navigator !== 'undefined' && /Mac|iPhone/.test(navigator.userAgent) ? '⌘ K' : 'Ctrl K'}
+              </kbd>
+            </button>
+
             {/* 데스크탑 로그인 / 유저 메뉴 */}
             {user ? (
               <div ref={menuRef} style={{ position: 'relative' }}>
@@ -307,6 +351,15 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* 모바일 검색 + 햄버거 */}
+          <button
+            className="md:hidden flex items-center justify-center"
+            onClick={() => setSearchOpen(true)}
+            style={{ color: '#7a6845', cursor: 'pointer', padding: '4px', marginRight: 4 }}
+            aria-label="검색"
+          >
+            <Search size={20} />
+          </button>
           {/* 모바일 햄버거 버튼 */}
           <button
             className="md:hidden flex items-center justify-center"
@@ -432,6 +485,9 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* 전역 검색 모달 */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }
