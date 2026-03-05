@@ -227,6 +227,20 @@ async function extractAllData(page) {
         }
       }
 
+      // ── 대사(quote) 추출: IDENTITY 감지 직후 leaf div의 "..." 패턴 ──
+      if (current && !current.quote && !isEgo && node.tagName === 'DIV' && node.children.length === 0) {
+        const qt = node.textContent?.trim() || ''
+        if (qt.length > 5 && qt.length < 300 && /^[""\u201C]/.test(qt) && /[""\u201D]$/.test(qt)) {
+          // "획득 대사가 출력됩니다." 무시
+          if (!qt.includes('획득 대사가 출력됩니다')) {
+            const cleaned = qt.replace(/^[""\u201C]+/, '').replace(/[""\u201D]+$/, '').trim()
+            if (cleaned.length > 3) {
+              current.quote = cleaned
+            }
+          }
+        }
+      }
+
       if (node.tagName !== 'STRONG') continue
       const text = node.textContent.trim()
 
@@ -263,28 +277,7 @@ async function extractAllData(page) {
           egoCost: null,       // [7] 분노/색욕/나태/탐식/우울/오만/질투 순
         }
 
-        // 대사(quote) 추출: 인격 STRONG 바로 근처의 따옴표 텍스트
-        if (!isEgo) {
-          // STRONG의 부모 컨테이너에서 인용문 찾기
-          let container = node.parentElement
-          if (container) {
-            // 인접 형제에서 "..." 또는 "..." 패턴 찾기
-            const siblings = container.parentElement?.children
-            if (siblings) {
-              for (let si = 0; si < siblings.length; si++) {
-                const sib = siblings[si]
-                if (sib === container || sib.contains(node)) continue
-                const sibText = sib.textContent?.trim() || ''
-                // 이탤릭 태그 내의 따옴표 텍스트 or 직접 따옴표
-                const quoteMatch = sibText.match(/[""「](.+?)[""」]/)
-                if (quoteMatch && quoteMatch[1].length > 5 && quoteMatch[1].length < 200) {
-                  current.quote = quoteMatch[1]
-                  break
-                }
-              }
-            }
-          }
-        }
+        // 대사는 TreeWalker 순회 중 다음 leaf div에서 추출 (아래 참조)
         continue
       }
 
