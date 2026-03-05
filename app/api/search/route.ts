@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient()
   const pattern = `%${q}%`
 
-  const [identities, ego, sinners, keywords] = await Promise.all([
+  const [identities, ego, sinners, keywords, egoGifts] = await Promise.all([
     supabase
       .schema('limbus')
       .from('identities')
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     supabase
       .schema('limbus')
       .from('ego')
-      .select('id, name_kr, grade, folder_name, sinner_id, sinners(id, name_kr)')
+      .select('id, name_kr, grade, image_url, sinners(id, name_kr)')
       .ilike('name_kr', pattern)
       .limit(6)
       .then(r => r.data ?? []),
@@ -41,7 +41,14 @@ export async function GET(request: NextRequest) {
       .ilike('name', pattern)
       .limit(6)
       .then(r => r.data ?? []),
+    supabase
+      .schema('limbus')
+      .from('ego_gifts')
+      .select('name, keyword, grade, image_url')
+      .ilike('name', pattern)
+      .limit(6)
+      .then(r => r.data ?? []),
   ])
 
-  return NextResponse.json({ identities, ego, sinners, keywords })
+  return NextResponse.json({ identities, ego, sinners, keywords, egoGifts })
 }

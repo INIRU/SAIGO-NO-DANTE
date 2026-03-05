@@ -3,14 +3,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Search, X, User, Swords, Brain, Tags } from 'lucide-react'
+import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
+const RARITY_ICONS: Record<string, string> = {
+  '1성': `${STORAGE_BASE}/icons/Rarity/1star.webp`,
+  '2성': `${STORAGE_BASE}/icons/Rarity/2star.webp`,
+  '3성': `${STORAGE_BASE}/icons/Rarity/3star.webp`,
+}
+
+const GRADE_COLORS: Record<string, string> = {
+  ZAYIN: '#667788', TETH: '#4898b0', HE: '#88a830', WAW: '#c8900a', ALEPH: '#c83040',
+}
+
+const GRADE_ICONS: Record<string, string> = {
+  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
+  TETH: `${STORAGE_BASE}/icons/grade/TETH.webp`,
+  HE: `${STORAGE_BASE}/icons/grade/HE.webp`,
+  WAW: `${STORAGE_BASE}/icons/grade/WAW.webp`,
+}
+
 interface SearchResult {
-  identities: { id: string; name_kr: string; rarity: number; game_id: string; folder_name: string; sinner_id: number; sinners: { id: string; name_kr: string } }[]
-  ego: { id: string; name_kr: string; grade: string; folder_name: string; sinner_id: number; sinners: { id: string; name_kr: string } }[]
+  identities: { id: string; name_kr: string; rarity: string; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }[]
+  ego: { id: string; name_kr: string; grade: string; image_url: string | null; sinners: { id: string; name_kr: string } }[]
   sinners: { id: string; name_kr: string; name_en: string; sinner_id: number }[]
   keywords: { name: string; description: string | null; icon_slug: string | null }[]
+  egoGifts: { name: string; keyword: string | null; grade: string | null; image_url: string | null }[]
 }
 
 type FlatItem = {
@@ -19,6 +37,8 @@ type FlatItem = {
   sublabel: string
   href: string
   icon?: string
+  rarity?: string
+  grade?: string
 }
 
 function flatten(data: SearchResult): FlatItem[] {
@@ -39,9 +59,10 @@ function flatten(data: SearchResult): FlatItem[] {
     items.push({
       type: 'identity',
       label: i.name_kr,
-      sublabel: `${sinner?.name_kr ?? ''} · ${'★'.repeat(i.rarity)}`,
+      sublabel: sinner?.name_kr ?? '',
       href: `/sinners/${sinner?.id}/identities/${i.id}`,
       icon: `${STORAGE_BASE}/sinners/${i.sinner_id}/identities/${i.folder_name}/${i.game_id}_normal.webp`,
+      rarity: i.rarity,
     })
   }
 
@@ -50,9 +71,10 @@ function flatten(data: SearchResult): FlatItem[] {
     items.push({
       type: 'ego',
       label: e.name_kr,
-      sublabel: `${sinner?.name_kr ?? ''} · ${e.grade}`,
+      sublabel: sinner?.name_kr ?? '',
       href: `/sinners/${sinner?.id}/ego/${e.id}`,
-      icon: `${STORAGE_BASE}/sinners/${e.sinner_id}/ego/${e.folder_name}/profile.webp`,
+      icon: e.image_url ?? undefined,
+      grade: e.grade,
     })
   }
 
@@ -66,6 +88,16 @@ function flatten(data: SearchResult): FlatItem[] {
     })
   }
 
+  for (const g of (data.egoGifts ?? [])) {
+    items.push({
+      type: 'keyword',
+      label: g.name,
+      sublabel: g.keyword ? `EGO 기프트 - ${g.keyword}` : 'EGO 기프트',
+      href: `/mirror-dungeon?q=${encodeURIComponent(g.name)}`,
+      icon: g.image_url ?? undefined,
+    })
+  }
+
   return items
 }
 
@@ -74,6 +106,7 @@ const TYPE_ICON = {
   identity: Swords,
   ego: Brain,
   keyword: Tags,
+  egoGift: Gift,
 } as const
 
 const TYPE_LABEL = {
@@ -81,6 +114,7 @@ const TYPE_LABEL = {
   identity: '인격',
   ego: 'E.G.O',
   keyword: '키워드',
+  egoGift: '기프트',
 } as const
 
 const TYPE_COLOR = {
@@ -88,6 +122,7 @@ const TYPE_COLOR = {
   identity: '#4ade80',
   ego: '#a78bfa',
   keyword: '#60a5fa',
+  egoGift: '#f59e0b',
 } as const
 
 interface Props {
@@ -197,7 +232,7 @@ export default function SearchModal({ open, onClose }: Props) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="인격, EGO, 수감자, 키워드 검색..."
+            placeholder="인격, EGO, 수감자, 키워드, 기프트 검색..."
             className="flex-1 py-3.5 text-sm outline-none"
             style={{
               background: 'transparent',
@@ -288,6 +323,24 @@ export default function SearchModal({ open, onClose }: Props) {
                     <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 500 }}>
                       {item.label}
                     </span>
+                    {item.rarity && RARITY_ICONS[item.rarity] && (
+                      <Image src={RARITY_ICONS[item.rarity]} alt={item.rarity} width={20} height={20} unoptimized style={{ height: '16px', width: 'auto' }} />
+                    )}
+                    {item.grade && (
+                      GRADE_ICONS[item.grade]
+                        ? <Image src={GRADE_ICONS[item.grade]} alt={item.grade} width={36} height={16} unoptimized style={{ height: '16px', width: 'auto' }} />
+                        : <span style={{
+                            fontSize: '0.5625rem',
+                            fontWeight: 700,
+                            color: GRADE_COLORS[item.grade] ?? '#888',
+                            padding: '0 4px',
+                            border: `1px solid ${(GRADE_COLORS[item.grade] ?? '#888')}40`,
+                            borderRadius: 3,
+                            lineHeight: '1.5',
+                          }}>
+                            {item.grade}
+                          </span>
+                    )}
                     <span style={{
                       color,
                       fontSize: '0.5625rem',
@@ -341,7 +394,14 @@ export default function SearchModal({ open, onClose }: Props) {
             style={{ borderTop: '1px solid var(--border)', color: '#444', fontSize: '0.625rem' }}
           >
             <span>{results.length}개 결과</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>↑↓ 이동 · Enter 선택</span>
+            <span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>↑↓</span>
+              {' '}이동{' '}
+              <span style={{ fontFamily: 'sans-serif' }}>·</span>
+              {' '}
+              <span style={{ fontFamily: 'var(--font-mono)' }}>Enter</span>
+              {' '}선택
+            </span>
           </div>
         )}
       </div>
