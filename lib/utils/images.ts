@@ -1,6 +1,9 @@
 import type { Identity } from '@/lib/types'
 import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
 
+/** Tiny 4x4 warm-dark blur placeholder for remote images */
+export const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFklEQVQIW2M4c+bMfwYGBgYmBgoBAAPOBAUFVsBzAAAAAElFTkSuQmCC'
+
 export function getSinnerLogoUrl(sinnerId: string): string {
   return `${STORAGE_BASE}/icons/Sinners/${sinnerId}.webp`
 }

@@ -8,6 +8,7 @@ import {
   getIdentityInfoUrl,
   getIdentityProfileUrl,
   getSinnerLogoUrl,
+  BLUR_PLACEHOLDER,
 } from '@/lib/data/sinners'
 
 interface IdentityPortraitSectionProps {
@@ -150,6 +151,8 @@ export default function IdentityPortraitSection({
                 alt="인격 정보"
                 width={480}
                 height={320}
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
                 className="w-full h-auto max-w-[320px] mx-auto"
                 onError={() => {
                   if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
