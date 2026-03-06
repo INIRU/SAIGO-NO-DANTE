@@ -91,6 +91,20 @@ function isHangul(ch: string | undefined): boolean {
   return (code >= 0xAC00 && code <= 0xD7A3) || (code >= 0x3131 && code <= 0x318E)
 }
 
+/** 키워드 뒤에 올 수 있는 한국어 조사 — 이 글자가 오면 경계로 취급하지 않음 */
+const PARTICLES = new Set([
+  '이', '가', '을', '를', '의', '에', '은', '는',
+  '과', '와', '도', '로', '만', '야', '라', '며',
+  '든', '인', '및', '나', '란',
+])
+
+/** 키워드 뒤에 조사가 오는지 확인 — 조사면 경계가 아님 (키워드 매칭 허용) */
+function isParticleAfter(text: string, kwLen: number): boolean {
+  const nextCh = text[kwLen]
+  if (!nextCh) return false
+  return PARTICLES.has(nextCh)
+}
+
 function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLeave }: {
   rect: DOMRect; iconUrl: string | null; keyword: string; info: KeywordInfo
   onMouseEnter: () => void; onMouseLeave: () => void
@@ -274,10 +288,11 @@ function formatSkillDescInner(
       continue
     }
 
-    // 2. 상태이상 키워드 (짧은 키워드 앞뒤에 한글이 이어지면 무시)
+    // 2. 상태이상 키워드 (짧은 키워드 앞뒤에 한글이 이어지면 무시, 단 조사는 허용)
     let foundKeyword = false
     for (const kw of allKeywords) {
-      const afterBoundary = kw.length <= 2 && isHangul(remaining[kw.length])
+      const afterHangul = kw.length <= 2 && isHangul(remaining[kw.length])
+      const afterBoundary = afterHangul && !isParticleAfter(remaining, kw.length)
       const beforeBoundary = kw.length <= 2 && isHangul(prevChar)
       if (remaining.startsWith(kw) && !afterBoundary && !beforeBoundary) {
         parts.push({ text: kw, type: 'keyword' })
@@ -317,7 +332,8 @@ function formatSkillDescInner(
       while (searchFrom < remaining.length) {
         const kwIdx = remaining.indexOf(kw, searchFrom)
         if (kwIdx < 0) break
-        const afterBound = kw.length <= 2 && isHangul(remaining[kwIdx + kw.length])
+        const afterH = kw.length <= 2 && isHangul(remaining[kwIdx + kw.length])
+        const afterBound = afterH && !isParticleAfter(remaining.slice(kwIdx), kw.length)
         const beforeBound = kw.length <= 2 && kwIdx > 0 && isHangul(remaining[kwIdx - 1])
         if (kwIdx > 0 && !afterBound && !beforeBound) { nextIdx = Math.min(nextIdx, kwIdx); break }
         searchFrom = kwIdx + 1
