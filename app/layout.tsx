@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
+import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import { createClient } from '@/lib/supabase/server'
 
 const songMyung = Song_Myung({
@@ -62,6 +63,18 @@ export const metadata: Metadata = {
   verification: {
     google: 'Aj4bgbiMwETOsd8qKciqA6u8AyX7str5bylMewPSfxw',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '최애의 관리자',
+  },
+  icons: {
+    icon: '/icons/icon-192x192.png',
+    apple: '/icons/icon-192x192.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 }
 
 export default async function RootLayout({
@@ -108,6 +121,7 @@ export default async function RootLayout({
           </KeywordProvider>
         </SessionProvider>
         <Analytics />
+        <ServiceWorkerRegister />
       </body>
     </html>
   )
