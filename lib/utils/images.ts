@@ -37,7 +37,7 @@ export function getIdentityInfoUrl(identity: Identity, gacksung = false): string
 
 export function getSkillIconUrl(identity: Identity, imageIndex: number): string {
   if (!identity.game_id) return ''
-  return `${STORAGE_BASE}/icons/skills/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
+  return `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
 }
 
 /** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산.

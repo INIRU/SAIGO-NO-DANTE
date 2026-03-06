@@ -136,7 +136,7 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
         ? `${sName}:${sk.skill_order}`
         : `${sName}:${sk.skill_order}:${subIdx}`
       const iconUrl = id_.game_id
-        ? `${STORAGE_BASE}/icons/skills/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
+        ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
         : undefined
       skillLookup[key] = {
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity,
@@ -778,7 +778,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                                 const sk4b = rawSk2.filter(s => (s.uptie_level ?? 3) === 4)
                                 const filtSk2 = sk4b.length > 0 ? sk4b : rawSk2.filter(s => (s.uptie_level ?? 3) === 3)
                                 const sortedSk = [...filtSk2].sort((a, b) => a.skill_order - b.skill_order)
-                                const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.game_id}` : ''
+                                const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
                                 return (
                                   <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
                                     <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
@@ -974,7 +974,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
             const renderAvatar = (comment: Comment, size: number) =>
               comment.avatar_url ? (
-                <Image src={comment.avatar_url} alt="" width={size} height={size} style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }} />
+                <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }}>
+                  <Image src={comment.avatar_url} alt="" fill sizes={`${size}px`} style={{ objectFit: 'cover' }} />
+                </div>
               ) : (
                 <div style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(200,144,10,0.12)', border: '1px solid rgba(58,40,18,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-dim)', fontSize: size < 28 ? '0.575rem' : '0.6875rem', fontWeight: 'bold', flexShrink: 0 }}>
                   {(comment.username ?? '?')[0]?.toUpperCase()}

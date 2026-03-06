@@ -68,7 +68,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   // GSAP 카드 등장 애니메이션
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.sinner-info-card',
         { opacity: 0, y: 20 },
