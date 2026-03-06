@@ -368,7 +368,7 @@ export default function HomeClient({
         {/* 텍스트 콘텐츠 */}
         <div className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl" style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh' }}>
           <div className="flex items-center gap-3 md:gap-4 mb-2">
-            <Image src="/images/logo.webp" alt="" width={41} height={60} className="w-[30px] md:w-[41px] h-auto" style={{ flexShrink: 0 }} />
+            <Image src="/images/logo-hero.webp" alt="" width={66} height={82} className="w-[28px] sm:w-[38px] md:w-[66px] h-auto" style={{ flexShrink: 0 }} />
             <GlitchText
               text="SAIGO NO DANTE"
               tag="h1"
