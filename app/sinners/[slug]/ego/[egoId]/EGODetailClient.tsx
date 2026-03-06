@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -208,7 +208,10 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.ego-detail-header',
         { opacity: 0, y: -20 },

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Pin, ChevronDown, ArrowLeft } from 'lucide-react'
 
@@ -17,12 +17,15 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  const animRef = useRef(false)
   useEffect(() => {
     fetch('/api/announcements')
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
       .finally(() => {
         setLoading(false)
+        if (animRef.current) return
+        animRef.current = true
         import('gsap').then(({ gsap }) => {
           gsap.fromTo('.announcements-header',
             { opacity: 0, y: -20 },

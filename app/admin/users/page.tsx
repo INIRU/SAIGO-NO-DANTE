@@ -147,8 +147,9 @@ export default function AdminUsersPage() {
       render: (user: User) => (
         <div className="flex items-center gap-3">
           {user.avatar_url ? (
-            <Image src={user.avatar_url} alt="" width={28} height={28} unoptimized
-              style={{ borderRadius: '50%', border: '1px solid var(--border)' }} />
+            <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1px solid var(--border)' }}>
+              <Image src={user.avatar_url} alt="" fill sizes="28px" style={{ objectFit: 'cover' }} />
+            </div>
           ) : (
             <div style={{
               width: 28, height: 28, borderRadius: '50%',

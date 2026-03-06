@@ -68,7 +68,7 @@ export async function GET() {
     .filter(Boolean)
 
   return NextResponse.json({
-    profile: profileRes.data ?? { username: session.user.name, bio: null, avatar_url: session.user.image, created_at: null, collection_code: null },
+    profile: profileRes.data ?? { username: session.user.name, bio: null, avatar_url: null, created_at: null, collection_code: null },
     decks: decksRes.data ?? [],
     bookmarkedDecks,
     email: session.user.email,
@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { username, bio, collection_code } = body as { username?: string; bio?: string; collection_code?: string }
+  const { username, bio, collection_code, avatar_url } = body as { username?: string; bio?: string; collection_code?: string; avatar_url?: string | null }
 
   // username 유효성 검사
   if (username !== undefined) {
@@ -98,6 +98,14 @@ export async function PATCH(request: NextRequest) {
   // bio 유효성 검사
   if (bio !== undefined && bio.length > 300) {
     return NextResponse.json({ error: '소개는 최대 300자까지 입력할 수 있습니다.' }, { status: 400 })
+  }
+
+  // avatar_url 유효성 검사
+  if (avatar_url !== undefined && avatar_url !== null) {
+    const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+    if (!avatar_url.startsWith(STORAGE_BASE)) {
+      return NextResponse.json({ error: '유효하지 않은 이미지 URL입니다.' }, { status: 400 })
+    }
   }
 
   const admin = createAdminClient()
@@ -130,6 +138,7 @@ export async function PATCH(request: NextRequest) {
   if (username !== undefined) updates.username = username.trim()
   if (bio !== undefined) updates.bio = bio
   if (collection_code !== undefined) updates.collection_code = collection_code || null
+  if (avatar_url !== undefined) updates.avatar_url = avatar_url
 
   const { error } = await admin
     .schema('limbus')

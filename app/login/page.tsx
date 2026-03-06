@@ -2,7 +2,7 @@
 
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -43,8 +43,10 @@ export default function LoginPage() {
     if (status === 'authenticated') router.replace('/')
   }, [status, router])
 
+  const animRef = useRef(false)
   useEffect(() => {
-    if (status !== 'loading' && !session) {
+    if (status !== 'loading' && !session && !animRef.current) {
+      animRef.current = true
       import('gsap').then(({ gsap }) => {
         gsap.fromTo('.login-logo',
           { opacity: 0, y: -20 },

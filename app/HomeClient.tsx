@@ -126,9 +126,11 @@ function HeroGlitchSlider({
   }, [currentIdx, slides, onSlideChange])
 
   // 최초 fade-in
+  const sliderAnimRef = useRef(false)
   useEffect(() => {
     const el = sliderRef.current
-    if (!el) return
+    if (!el || sliderAnimRef.current) return
+    sliderAnimRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.9, delay: 0.4, ease: 'power2.out' })
     })
@@ -284,7 +286,10 @@ export default function HomeClient({
     setHeroIdentity(identity)
   }, [])
 
+  const scrollAnimRef = useRef(false)
   useEffect(() => {
+    if (scrollAnimRef.current) return
+    scrollAnimRef.current = true
     const init = async () => {
       const { gsap } = await import('gsap')
       const { ScrollTrigger } = await import('gsap/ScrollTrigger')
