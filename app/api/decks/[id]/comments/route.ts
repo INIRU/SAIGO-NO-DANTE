@@ -18,9 +18,9 @@ export async function GET(
     const { data, error } = await admin
       .schema('limbus')
       .from('deck_comments')
-      .select('id, content, created_at, user_id, profiles(username, avatar_url, role)')
+      .select('id, content, created_at, user_id, parent_id, profiles(username, avatar_url, role)')
       .eq('deck_id', id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -33,6 +33,7 @@ export async function GET(
         content: c.content,
         created_at: c.created_at,
         user_id: c.user_id,
+        parent_id: c.parent_id ?? null,
         username: (profile as Record<string, unknown> | null)?.username ?? null,
         avatar_url: (profile as Record<string, unknown> | null)?.avatar_url ?? null,
         role: (profile as Record<string, unknown> | null)?.role ?? 'user',
@@ -57,6 +58,7 @@ export async function POST(
 
   const body = await request.json()
   const content = (body.content as string ?? '').trim()
+  const parentId = (body.parent_id as string) || null
   if (!content || content.length > 500) {
     return NextResponse.json({ error: '댓글은 1~500자여야 합니다.' }, { status: 400 })
   }
@@ -75,8 +77,8 @@ export async function POST(
   const { data, error } = await admin
     .schema('limbus')
     .from('deck_comments')
-    .insert({ deck_id: id, user_id: userId, content })
-    .select('id, content, created_at, user_id')
+    .insert({ deck_id: id, user_id: userId, content, parent_id: parentId })
+    .select('id, content, created_at, user_id, parent_id')
     .single()
 
   if (error) {
@@ -141,6 +143,13 @@ export async function DELETE(
     return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
   }
 
+  // 답글 수 조회 (CASCADE 삭제 전)
+  const { count: replyCount } = await admin
+    .schema('limbus')
+    .from('deck_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('parent_id', commentId)
+
   const { error } = await admin
     .schema('limbus')
     .from('deck_comments')
@@ -151,7 +160,11 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
+  // 본 댓글 + 답글 수만큼 감소
+  const totalToDecrement = 1 + (replyCount ?? 0)
+  for (let i = 0; i < totalToDecrement; i++) {
+    await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
+  }
 
   writeAuditLog({ actorId: userId, action: 'comment_delete', targetType: 'comment', targetId: commentId, details: { deck_id: id } })
 
