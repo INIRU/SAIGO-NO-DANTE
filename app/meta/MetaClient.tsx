@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import {
   Sinner, SinType, SIN_COLORS, GRADE_COLORS,
-  RARITY_ICON_MAP, getSinnerLogoUrl, getKeywordIconUrl, STORAGE_BASE,
+  RARITY_ICON_MAP, getSinnerLogoUrl, STORAGE_BASE,
 } from '@/lib/data/sinners'
 import SinBadge from '@/components/ui/SinBadge'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -110,10 +110,10 @@ function mainKeywords(keywords: string[], sinMap: Record<string, string>): strin
 
 // ── 키워드 배지 (IdentityCard 스타일) ─────────────────────────
 function KeywordBadge({ keyword }: { keyword: string }) {
-  const { sinMap: kwSinMap } = useKeywordData()
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const sin = kwSinMap[keyword]
   const color = sin ? SIN_COLORS[sin] : '#888'
-  const iconUrl = getKeywordIconUrl(keyword)
+  const iconUrl = getIconUrl(keyword)
 
   return (
     <span
@@ -295,7 +295,7 @@ function IdentityTab({
   setSinnerFilter: (v: string | null) => void
   filteredStats: IdentityStat[]
 }) {
-  const { sinMap: kwSinMap } = useKeywordData()
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const maxCount = filteredStats[0]?.count || 1
   const { visible, sentinelRef } = useProgressiveRender(filteredStats.length)
 
@@ -460,7 +460,7 @@ function IdentityTab({
               const pct = (kw.count / maxKw) * 100
               const sin = kwSinMap[kw.keyword]
               const color = sin ? SIN_COLORS[sin] : '#888'
-              const iconUrl = getKeywordIconUrl(kw.keyword)
+              const iconUrl = getIconUrl(kw.keyword)
               return (
                 <div key={kw.keyword}>
                   <div className="flex items-center gap-2 mb-1.5">
@@ -495,7 +495,7 @@ function IdentityTab({
 // ② 키워드 트렌드
 // ══════════════════════════════════════════════════════════════
 function KeywordTab({ data }: { data: MetaData }) {
-  const { sinMap: kwSinMap } = useKeywordData()
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const keywords = data.keywordUsage.filter(kw => MAIN_KEYWORDS.has(kw.keyword)).slice(0, 15)
   const maxCount = keywords[0]?.count || 1
 
@@ -512,7 +512,7 @@ function KeywordTab({ data }: { data: MetaData }) {
           const pct = (kw.count / maxCount) * 100
           const sin = kwSinMap[kw.keyword]
           const color = sin ? SIN_COLORS[sin] : '#888888'
-          const iconUrl = getKeywordIconUrl(kw.keyword)
+          const iconUrl = getIconUrl(kw.keyword)
 
           return (
             <div

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
@@ -99,7 +99,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [showUnowned, setShowUnowned] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const { sinMap: kwSinMap } = useKeywordData()
+  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const downloadRef = useRef<HTMLDivElement>(null)
 
   // 데이터 로드
@@ -465,10 +465,10 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                     cursor: 'pointer',
                   }}
                 >
-                  {getKeywordIconUrl(keyword) && (
+                  {getIconUrl(keyword) && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={getKeywordIconUrl(keyword)!}
+                      src={getIconUrl(keyword)!}
                       alt={keyword}
                       style={{
                         width: '14px', height: '14px',
