@@ -1000,9 +1000,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                   const replies = repliesMap.get(comment.id) ?? []
                   const hasReplies = replies.length > 0 || replyingTo?.rootId === comment.id
                   return (
-                    <div key={comment.id} className="rounded-lg" style={{ background: '#120e09', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                    <div key={comment.id}>
                       {/* 루트 댓글 */}
-                      <div className="p-4">
+                      <div className="rounded-lg p-4" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
                         <div className="flex items-start gap-3">
                           {renderAvatar(comment, 28)}
                           <div className="flex-1 min-w-0">
@@ -1046,9 +1046,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
                       {/* 답글 영역 */}
                       {hasReplies && (
-                        <div style={{ borderTop: '1px solid rgba(58,40,18,0.25)', background: '#0e0b07' }}>
+                        <div className="mt-1 rounded-lg" style={{ background: '#0e0b07', border: '1px solid rgba(58,40,18,0.25)', overflow: 'hidden', marginLeft: 16 }}>
                           {replies.map((reply, ri) => (
-                            <div key={reply.id} className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 20, borderLeft: '2px solid rgba(200,144,10,0.1)', ...(ri < replies.length - 1 ? { borderBottom: '1px solid rgba(58,40,18,0.15)' } : {}) }}>
+                            <div key={reply.id} className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 0, borderLeft: '2px solid rgba(200,144,10,0.1)', ...(ri < replies.length - 1 ? { borderBottom: '1px solid rgba(58,40,18,0.15)' } : {}) }}>
                               {renderAvatar(reply, 22)}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
@@ -1084,7 +1084,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
                           {/* 답글 입력 */}
                           {replyingTo?.rootId === comment.id && (
-                            <div className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 20, borderLeft: '2px solid rgba(200,144,10,0.2)', borderTop: replies.length > 0 ? '1px solid rgba(58,40,18,0.15)' : 'none' }}>
+                            <div className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 0, borderLeft: '2px solid rgba(200,144,10,0.2)', borderTop: replies.length > 0 ? '1px solid rgba(58,40,18,0.15)' : 'none' }}>
                               <Reply size={14} style={{ color: 'rgba(200,144,10,0.3)', marginTop: 4, flexShrink: 0 }} />
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1.5">
