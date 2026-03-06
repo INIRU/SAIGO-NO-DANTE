@@ -155,7 +155,10 @@ export default function DecksPage() {
   const [codeError, setCodeError] = useState(false)
 
   // GSAP 진입 애니메이션
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.decks-header',
         { opacity: 0, y: -20 },

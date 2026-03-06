@@ -32,6 +32,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import IdentityCard from '@/components/sinners/IdentityCard'
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { useToast, Toast } from '@/components/ui/Toast'
 import { IdentityTab, EgoTab, OrderTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
 import DeckNoteEditor from '@/components/deck-builder/DeckNoteEditor'
@@ -130,6 +131,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [contentType, setContentType] = useState<string>(editMode?.content_type && editMode.content_type !== '없음' ? editMode.content_type : '')
   const [description, setDescription] = useState(editMode?.description ?? '')
   const [saving, setSaving] = useState(false)
+  const { toast, showToast } = useToast()
   const [showCostDetail, setShowCostDetail] = useState(false)
   const [showIdentityDetail, setShowIdentityDetail] = useState(false)
   const [descPreview, setDescPreview] = useState(false)
@@ -466,7 +468,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       body: JSON.stringify({ title, description, tags: [], content_type: contentType, identitySlots, egoSlots: egoRows }),
     })
     setSaving(false)
-    if (res.ok) router.push(editMode ? `/decks/${editMode.deckId}` : '/decks')
+    if (res.ok) {
+      router.push(editMode ? `/decks/${editMode.deckId}` : '/decks')
+    } else {
+      const data = await res.json().catch(() => null)
+      showToast(data?.error ?? (editMode ? '덱 수정에 실패했습니다.' : '덱 저장에 실패했습니다.'))
+    }
   }
 
   const handleSaveDraft = () => {
@@ -899,6 +906,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           </div>
         )
       })()}
+      <Toast toast={toast} />
     </div>
   )
 }

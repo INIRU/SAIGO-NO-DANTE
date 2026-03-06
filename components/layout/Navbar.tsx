@@ -107,9 +107,29 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  const [avatarError, setAvatarError] = useState(false)
   const user = session?.user
-  const avatarUrl = !avatarError ? (user?.image ?? undefined) : undefined
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
+  const userEmail = user?.email
+
+  // 프로필 아바타 가져오기
+  useEffect(() => {
+    if (!userEmail) { setProfileAvatar(null); return }
+    fetch('/api/profile/avatar')
+      .then(r => r.json())
+      .then(d => setProfileAvatar(d.avatar_url))
+      .catch(() => {})
+  }, [userEmail])
+
+  // 마이페이지에서 아바타 변경 시 동기화
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setProfileAvatar((e as CustomEvent).detail)
+    }
+    window.addEventListener('avatar-changed', handler)
+    return () => window.removeEventListener('avatar-changed', handler)
+  }, [])
+
+  const avatarUrl = profileAvatar ?? undefined
   const displayName = user?.name ?? user?.email ?? ''
 
   const mobileLinkStyle = (href: string) => ({
@@ -304,9 +324,9 @@ export default function Navbar() {
                   style={{ cursor: 'pointer' }}
                 >
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt="" width={30} height={30} unoptimized
-                      onError={() => setAvatarError(true)}
-                      style={{ borderRadius: '50%', border: '1.5px solid var(--gold-dim)' }} />
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
+                      <Image src={avatarUrl} alt="" fill sizes="30px" style={{ objectFit: 'cover' }} />
+                    </div>
                   ) : (
                     <div style={{
                       width: 30, height: 30, borderRadius: '50%',
@@ -456,9 +476,9 @@ export default function Navbar() {
                 {/* 유저 정보 */}
                 <div className="flex items-center gap-3 py-4" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt="" width={36} height={36} unoptimized
-                      onError={() => setAvatarError(true)}
-                      style={{ borderRadius: '50%', border: '1.5px solid var(--gold-dim)' }} />
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
+                      <Image src={avatarUrl} alt="" fill sizes="36px" style={{ objectFit: 'cover' }} />
+                    </div>
                   ) : (
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',

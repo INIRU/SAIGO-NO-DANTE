@@ -192,7 +192,7 @@ export default function DeckIdentityCard({
   const primaryColor = s1 ? sinColor(s1.sin_affinity) : rarityColor
 
   const skillIconUrl = (order: number) =>
-    id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.game_id}${String(order).padStart(2, '0')}.webp` : ''
+    id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(order).padStart(2, '0')}.webp` : ''
 
   return (
     <div

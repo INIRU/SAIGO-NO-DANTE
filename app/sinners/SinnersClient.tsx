@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Sinner } from '@/lib/data/sinners'
 import SinnerCard from '@/components/sinners/SinnerCard'
 
 export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
 
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     const initGSAP = async () => {
       const { gsap } = await import('gsap')
       const { ScrollTrigger } = await import('gsap/ScrollTrigger')

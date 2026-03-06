@@ -1,13 +1,15 @@
 'use client'
 
-import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import CollectionSection from '@/components/mypage/CollectionSection'
+import AvatarPicker, { AvatarEditOverlay } from '@/components/mypage/AvatarPicker'
 import { Pencil, Trash2, Calendar, X, Check, Plus, LogOut, Bookmark } from 'lucide-react'
+import { useToast, Toast } from '@/components/ui/Toast'
 
 type Profile = {
   username: string | null
@@ -42,7 +44,7 @@ export default function MyPage() {
   const [bioSaving, setBioSaving] = useState(false)
 
   // 토스트
-  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
+  const { toast, showToast } = useToast()
 
   // 삭제 확인
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -51,10 +53,49 @@ export default function MyPage() {
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [withdrawing, setWithdrawing] = useState(false)
 
-  const showToast = useCallback((message: string, type: 'error' | 'success' = 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }, [])
+  // 아바타 피커
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
+
+  const handleAvatarSelect = async (url: string) => {
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: url }),
+      })
+      if (!res.ok) {
+        showToast('프로필 사진 변경에 실패했습니다.')
+        return
+      }
+      setData(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: url } } : prev)
+      setAvatarPickerOpen(false)
+      showToast('프로필 사진이 변경되었습니다.', 'success')
+      window.dispatchEvent(new CustomEvent('avatar-changed', { detail: url }))
+    } catch {
+      showToast('프로필 사진 변경에 실패했습니다.')
+    }
+  }
+
+  const handleAvatarReset = async () => {
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: null }),
+      })
+      if (!res.ok) {
+        showToast('프로필 사진 초기화에 실패했습니다.')
+        return
+      }
+      setData(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: null } } : prev)
+      setAvatarPickerOpen(false)
+      showToast('프로필 사진이 초기화되었습니다.', 'success')
+      window.dispatchEvent(new CustomEvent('avatar-changed', { detail: null }))
+    } catch {
+      showToast('프로필 사진 초기화에 실패했습니다.')
+    }
+  }
+
 
   // 미인증 리다이렉트
   useEffect(() => {
@@ -74,24 +115,29 @@ export default function MyPage() {
         setBioValue(d.profile.bio ?? '')
       })
       .catch(() => showToast('프로필을 불러올 수 없습니다.'))
-      .finally(() => {
-        setLoading(false)
-        import('gsap').then(({ gsap }) => {
-          gsap.fromTo('.mypage-header',
-            { opacity: 0, y: -20 },
-            { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-          )
-          gsap.fromTo('.mypage-sidebar',
-            { opacity: 0, x: -20 },
-            { opacity: 1, x: 0, duration: 0.5, delay: 0.15, ease: 'power2.out' }
-          )
-          gsap.fromTo('.mypage-content',
-            { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.5, delay: 0.25, ease: 'power2.out' }
-          )
-        })
-      })
+      .finally(() => setLoading(false))
   }, [status, showToast])
+
+  // GSAP 입장 애니메이션 (DOM 렌더 후 1회만 실행)
+  const animPlayed = useRef(false)
+  useEffect(() => {
+    if (loading || !data || animPlayed.current) return
+    animPlayed.current = true
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.mypage-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
+      gsap.fromTo('.mypage-sidebar',
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.5, delay: 0.15, ease: 'power2.out' }
+      )
+      gsap.fromTo('.mypage-content',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.25, ease: 'power2.out' }
+      )
+    })
+  }, [loading, data])
 
   // 닉네임 저장
   const saveName = async () => {
@@ -231,7 +277,7 @@ export default function MyPage() {
 
   const { profile, decks, email } = data
   const displayName = profile.username ?? session.user.name ?? email
-  const avatarUrl = session.user.image
+  const avatarUrl = profile.avatar_url
   const joinDate = profile.created_at
     ? new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
@@ -275,38 +321,37 @@ export default function MyPage() {
               }} />
               <div className="flex flex-col items-center gap-3">
                 {/* 아바타 */}
-                {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt=""
-                    width={80}
-                    height={80}
-                    style={{
-                      borderRadius: '50%',
+                <div style={{ position: 'relative', width: 80, height: 80 }}>
+                  {avatarUrl ? (
+                    <div style={{
+                      width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', position: 'relative',
                       border: '2px solid var(--gold-dim)',
                       boxShadow: '0 0 16px rgba(200,144,10,0.35)',
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: '50%',
-                      background: 'rgba(200,144,10,0.15)',
-                      border: '2px solid var(--gold-dim)',
-                      boxShadow: '0 0 16px rgba(200,144,10,0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--gold)',
-                      fontSize: '1.75rem',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {displayName[0]?.toUpperCase()}
-                  </div>
-                )}
+                    }}>
+                      <Image src={avatarUrl} alt="" fill sizes="80px" style={{ objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        background: 'rgba(200,144,10,0.15)',
+                        border: '2px solid var(--gold-dim)',
+                        boxShadow: '0 0 16px rgba(200,144,10,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--gold)',
+                        fontSize: '1.75rem',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {displayName[0]?.toUpperCase()}
+                    </div>
+                  )}
+                  <AvatarEditOverlay onClick={() => setAvatarPickerOpen(true)} />
+                </div>
 
                 {/* 닉네임 */}
                 {editingName ? (
@@ -745,24 +790,16 @@ export default function MyPage() {
         </div>
       </div>
 
-      {/* 토스트 */}
-      {toast && (
-        <div
-          className="fixed top-24 right-6 z-50 px-4 py-3 rounded text-sm shadow-xl toast-slide-in"
-          style={{
-            background: toast.type === 'error' ? 'rgba(100,18,18,0.97)' : 'rgba(18,70,18,0.97)',
-            color: toast.type === 'error' ? '#ff8080' : '#80e880',
-            border: `1px solid ${toast.type === 'error' ? 'rgba(180,40,40,0.5)' : 'rgba(40,160,40,0.4)'}`,
-            fontFamily: 'var(--font-body)',
-            maxWidth: '280px',
-            boxShadow: toast.type === 'error'
-              ? '0 4px 24px rgba(139,26,26,0.3)'
-              : '0 4px 24px rgba(26,100,26,0.3)',
-          }}
-        >
-          {toast.message}
-        </div>
-      )}
+      {/* 아바타 피커 */}
+      <AvatarPicker
+        open={avatarPickerOpen}
+        currentUrl={profile.avatar_url}
+        onSelect={handleAvatarSelect}
+        onReset={handleAvatarReset}
+        onClose={() => setAvatarPickerOpen(false)}
+      />
+
+      <Toast toast={toast} />
     </div>
   )
 }

@@ -906,6 +906,17 @@ function compareSkills(wikiSkills, dbSkills) {
       fields.push({ field: 'offense_level', wiki: ws.offense_level, db: dbSkill.offense_level })
     }
 
+    // 스킬 설명(코인 효과) 비교
+    if (ws.description && dbSkill.description) {
+      const wikiDesc = ws.description.trim()
+      const dbDesc = dbSkill.description.trim()
+      if (wikiDesc !== dbDesc) {
+        fieldDiffs.push({ field: 'description', wiki: wikiDesc, db: dbDesc })
+      }
+    } else if (ws.description && !dbSkill.description) {
+      fieldDiffs.push({ field: 'description', wiki: ws.description.trim(), db: '(없음)' })
+    }
+
     for (const f of fields) {
       if (f.wiki != null && f.db != null && String(f.wiki) !== String(f.db)) {
         fieldDiffs.push(f)
