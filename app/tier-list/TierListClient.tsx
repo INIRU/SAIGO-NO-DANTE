@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Calculator, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { getIdentityInfoUrl, RARITY_ICON_MAP, type Identity } from '@/lib/data/sinners'
@@ -112,7 +112,10 @@ export default function TierListClient({
   const [calcOpen, setCalcOpen] = useState(false)
   const [qnaOpen, setQnaOpen] = useState(false)
 
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.tier-header',
         { opacity: 0, y: -20 },

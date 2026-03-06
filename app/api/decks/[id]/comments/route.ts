@@ -98,7 +98,7 @@ export async function POST(
   return NextResponse.json({
     ...data,
     username: profile?.username ?? session.user.name,
-    avatar_url: profile?.avatar_url ?? session.user.image,
+    avatar_url: profile?.avatar_url ?? null,
     role: profile?.role ?? 'user',
   })
 }

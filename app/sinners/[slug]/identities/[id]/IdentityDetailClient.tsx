@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { Settings } from 'lucide-react'
 import {
@@ -84,7 +84,10 @@ export default function IdentityDetailClient({
   }, [])
 
   // GSAP 입장 애니메이션
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.identity-detail-portrait',
         { opacity: 0, x: -30 },

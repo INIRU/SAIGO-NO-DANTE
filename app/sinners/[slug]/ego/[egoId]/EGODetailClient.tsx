@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -174,6 +174,97 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
   )
 }
 
+// ─── 입수 방법 배지 ───────────────────────────────────────────────────
+function EgoAcquisitionBadges({ text }: { text: string }) {
+  const parts = text.split(/\s*\/\s*/)
+
+  const badges: { label: string; color: string; bg: string }[] = []
+  let fragmentInfo: string | null = null
+
+  for (const part of parts) {
+    const p = part.trim()
+
+    if (p === '기본') {
+      badges.push({ label: '기본', color: '#8a8a8a', bg: 'rgba(138,138,138,0.12)' })
+    } else if (/^추출\s*\(상시\)$/.test(p)) {
+      badges.push({ label: '추출(상시)', color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' })
+    } else if (/^추출\s*\(시즌\s*(\d+)\s*이후\)$/.test(p)) {
+      const m = p.match(/시즌\s*(\d+)/)
+      badges.push({ label: `추출(시즌 ${m?.[1]}~)`, color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' })
+    } else if (/이벤트\s*추출/.test(p)) {
+      const m = p.match(/시즌\s*(\d+)/)
+      badges.push({ label: m ? `이벤트 추출(S${m[1]})` : '이벤트 추출', color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' })
+    } else if (/발푸르기스의\s*밤/.test(p)) {
+      if (/추출/.test(p)) {
+        badges.push({ label: '발푸르기스 추출', color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' })
+      } else {
+        const m = p.match(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+/)
+        badges.push({ label: m ? `발푸르기스 ${m[0]}` : '발푸르기스', color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' })
+      }
+    } else if (/특정\s*추출/.test(p)) {
+      const m = p.match(/(.+?)\s*특정\s*추출/)
+      badges.push({ label: m ? `${m[1].trim()} 특정 추출` : '특정 추출', color: '#ffa502', bg: 'rgba(255,165,2,0.12)' })
+    } else if (/배틀\s*패스/.test(p)) {
+      const season = p.match(/시즌\s*(\d+)/)
+      const level = p.match(/(\d+)\s*레벨/)
+      const paid = /유료/.test(p)
+      const label = `${paid ? '유료' : '무료'} 패스${season ? ` S${season[1]}` : ''}${level ? ` Lv.${level[1]}` : ''}`
+      badges.push({ label, color: '#a29bfe', bg: 'rgba(162,155,254,0.12)' })
+    } else if (/선의의\s*순례/.test(p)) {
+      if (/추출/.test(p)) {
+        badges.push({ label: '선의의 순례 추출', color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' })
+      } else {
+        badges.push({ label: '선의의 순례 보상', color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' })
+      }
+    } else if (/이벤트.*보상|이벤트.*교환/.test(p) || /\d+개\s*(보상|획득)/.test(p)) {
+      badges.push({ label: p.replace(/\s*\/.*$/, '').trim(), color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' })
+    } else if (/자아\s*파편/.test(p)) {
+      // 파편 교환 — 별도 줄로 표시
+      const cost = p.match(/(\d+)\s*(개\s*)?교환/)
+      const allSeasons = [...p.matchAll(/시즌\s*(\d+)/g)].map(m => m[1])
+      if (cost) {
+        let detail = `자아 파편 ${cost[1]}`
+        if (allSeasons.length > 0) {
+          detail += ` (S${allSeasons.join(', S')}~)`
+        } else if (/상시/.test(p)) {
+          detail += ' (상시)'
+        }
+        fragmentInfo = detail
+      }
+    } else {
+      // 기타 — 그대로 표시
+      badges.push({ label: p, color: '#7a6a5a', bg: 'rgba(122,106,90,0.12)' })
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {badges.map((b, i) => (
+          <span
+            key={i}
+            style={{
+              fontSize: '0.625rem', fontWeight: 600,
+              padding: '2px 8px', borderRadius: '3px',
+              color: b.color,
+              background: b.bg,
+              border: `1px solid ${b.color}30`,
+            }}
+          >
+            {b.label}
+          </span>
+        ))}
+      </div>
+      {fragmentInfo && (
+        <div className="flex items-center gap-2">
+          <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '48px' }}>파편 교환</span>
+          <span style={{ fontSize: '0.625rem', color: '#aaa' }}>{fragmentInfo}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────────
 interface Props {
   sinner: Sinner
@@ -208,7 +299,10 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
+  const animRef = useRef(false)
   useEffect(() => {
+    if (animRef.current) return
+    animRef.current = true
     import('gsap').then(({ gsap }) => {
       gsap.fromTo('.ego-detail-header',
         { opacity: 0, y: -20 },
@@ -338,7 +432,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               {ego.obtaining_method && (
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
                   <p style={{ color: '#666', fontSize: '0.625rem', marginBottom: '6px', letterSpacing: '0.1em' }}>입수 방법</p>
-                  <p style={{ fontSize: '0.6875rem', color: '#7a6a5a', lineHeight: '1.6' }}>{ego.obtaining_method}</p>
+                  <EgoAcquisitionBadges text={ego.obtaining_method} />
                 </div>
               )}
             </div>
