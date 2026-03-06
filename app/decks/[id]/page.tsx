@@ -211,7 +211,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const [commentSubmitting, setCommentSubmitting] = useState(false)
-  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<{ rootId: string; targetName: string } | null>(null)
   const [replyText, setReplyText] = useState('')
 
   const [shared, setShared] = useState(false)
@@ -367,14 +367,14 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, [commentText, commentSubmitting, authStatus, id])
 
-  const handleReplySubmit = useCallback(async (parentId: string) => {
-    if (!replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
+  const handleReplySubmit = useCallback(async () => {
+    if (!replyingTo || !replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
     setCommentSubmitting(true)
     try {
       const res = await fetch(`/api/decks/${id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: replyText.trim(), parent_id: parentId }),
+        body: JSON.stringify({ content: replyText.trim(), parent_id: replyingTo.rootId }),
       })
       if (res.ok) {
         const comment: Comment = await res.json()
@@ -385,7 +385,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     } finally {
       setCommentSubmitting(false)
     }
-  }, [replyText, commentSubmitting, authStatus, id])
+  }, [replyingTo, replyText, commentSubmitting, authStatus, id])
 
   const handleCommentDelete = useCallback(async (commentId: string) => {
     try {
@@ -972,122 +972,168 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               }
             }
 
-            const renderComment = (comment: Comment, isReply = false) => {
-              const commentDate = new Date(comment.created_at).toLocaleDateString('ko-KR', {
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-              })
-              return (
-                <div key={comment.id} className={`rounded-lg p-4 ${isReply ? 'ml-8' : ''}`} style={{ background: isReply ? '#0e0b07' : '#120e09', border: '1px solid var(--border)' }}>
-                  <div className="flex items-start gap-3">
-                    {comment.avatar_url ? (
-                      <Image src={comment.avatar_url} alt="" width={isReply ? 24 : 28} height={isReply ? 24 : 28} style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: isReply ? 24 : 28, height: isReply ? 24 : 28, borderRadius: '50%', background: 'rgba(200,144,10,0.12)', border: '1px solid rgba(58,40,18,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-dim)', fontSize: isReply ? '0.625rem' : '0.6875rem', fontWeight: 'bold', flexShrink: 0 }}>
-                        {(comment.username ?? '?')[0]?.toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span style={{ color: '#9a8a70', fontSize: '0.75rem', fontWeight: 600 }}>
-                          {comment.username ?? '익명'}
-                        </span>
-                        {comment.role === 'admin' && (
-                          <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e84040', background: 'rgba(232,64,64,0.12)', border: '1px solid rgba(232,64,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
-                            ADMIN
-                          </span>
-                        )}
-                        {comment.role === 'wanjang' && (
-                          <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e89040', background: 'rgba(232,144,64,0.12)', border: '1px solid rgba(232,144,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>
-                            완장
-                          </span>
-                        )}
-                        <span style={{ color: '#5a5065', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                          {commentDate}
-                        </span>
-                      </div>
-                      <p style={{ color: '#7a7060', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                        {comment.content}
-                      </p>
-                      {/* 답글 버튼 — 루트 댓글에만, 로그인한 경우 */}
-                      {!isReply && authStatus === 'authenticated' && (
-                        <button
-                          onClick={() => { setReplyingTo(prev => prev === comment.id ? null : comment.id); setReplyText('') }}
-                          className="flex items-center gap-1 mt-1.5 transition-opacity hover:opacity-80"
-                          style={{ color: '#5a5065', fontSize: '0.6875rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                        >
-                          <Reply size={11} />
-                          {replyingTo === comment.id ? '취소' : '답글'}
-                        </button>
-                      )}
-                    </div>
-                    {authStatus === 'authenticated' && (
-                      <button
-                        onClick={() => handleCommentDelete(comment.id)}
-                        className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70"
-                        style={{ color: '#3a2020', cursor: 'pointer' }}
-                        title="댓글 삭제"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
+            const renderAvatar = (comment: Comment, size: number) =>
+              comment.avatar_url ? (
+                <Image src={comment.avatar_url} alt="" width={size} height={size} style={{ borderRadius: '50%', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(200,144,10,0.12)', border: '1px solid rgba(58,40,18,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-dim)', fontSize: size < 28 ? '0.575rem' : '0.6875rem', fontWeight: 'bold', flexShrink: 0 }}>
+                  {(comment.username ?? '?')[0]?.toUpperCase()}
                 </div>
               )
-            }
+
+            const renderBadge = (role?: string) => (
+              <>
+                {role === 'admin' && (
+                  <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e84040', background: 'rgba(232,64,64,0.12)', border: '1px solid rgba(232,64,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>ADMIN</span>
+                )}
+                {role === 'wanjang' && (
+                  <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e89040', background: 'rgba(232,144,64,0.12)', border: '1px solid rgba(232,144,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>완장</span>
+                )}
+              </>
+            )
+
+            const formatDate = (d: string) => new Date(d).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
             return rootComments.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {rootComments.map(comment => (
-                  <div key={comment.id}>
-                    {renderComment(comment)}
-                    {/* 답글 입력 */}
-                    {replyingTo === comment.id && (
-                      <div className="ml-8 mt-2 rounded-lg p-3" style={{ background: '#0e0b07', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Reply size={11} style={{ color: '#5a5065' }} />
-                          <span style={{ color: '#5a5065', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}>
-                            <b style={{ color: '#9a8a70' }}>{comment.username ?? '익명'}</b>에게 답글
-                          </span>
-                          <button onClick={() => setReplyingTo(null)} style={{ color: '#5a5065', cursor: 'pointer', marginLeft: 'auto' }}>
-                            <X size={12} />
-                          </button>
-                        </div>
-                        <textarea
-                          value={replyText}
-                          onChange={e => setReplyText(e.target.value)}
-                          maxLength={500}
-                          rows={2}
-                          placeholder="답글을 작성하세요..."
-                          className="w-full px-3 py-2 text-sm outline-none resize-none"
-                          style={{ background: '#0a0806', border: '1px solid rgba(58,40,18,0.5)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
-                          autoFocus
-                        />
-                        <div className="flex items-center justify-between mt-2">
-                          <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                            {replyText.length}/500
-                          </span>
-                          <button
-                            onClick={() => handleReplySubmit(comment.id)}
-                            disabled={commentSubmitting || !replyText.trim()}
-                            className="px-3 py-1 text-xs font-medium transition-all duration-150 hover:brightness-110"
-                            style={{
-                              background: replyText.trim() ? 'var(--gold)' : 'rgba(44,28,12,0.5)',
-                              color: replyText.trim() ? 'var(--bg-deep)' : '#5a5070',
-                              borderRadius: '4px',
-                              cursor: replyText.trim() ? 'pointer' : 'default',
-                              fontFamily: 'var(--font-heading)',
-                              opacity: commentSubmitting ? 0.5 : 1,
-                            }}
-                          >
-                            {commentSubmitting ? '등록 중...' : '답글 등록'}
-                          </button>
+              <div className="flex flex-col gap-3">
+                {rootComments.map(comment => {
+                  const replies = repliesMap.get(comment.id) ?? []
+                  const hasReplies = replies.length > 0 || replyingTo?.rootId === comment.id
+                  return (
+                    <div key={comment.id} className="rounded-lg" style={{ background: '#120e09', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                      {/* 루트 댓글 */}
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          {renderAvatar(comment, 28)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span style={{ color: '#9a8a70', fontSize: '0.75rem', fontWeight: 600 }}>{comment.username ?? '익명'}</span>
+                              {renderBadge(comment.role)}
+                              <span style={{ color: '#5a5065', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{formatDate(comment.created_at)}</span>
+                            </div>
+                            <p style={{ color: '#7a7060', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                              {comment.content}
+                            </p>
+                            <div className="flex items-center gap-3 mt-2">
+                              {authStatus === 'authenticated' && (
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo(prev => prev?.rootId === comment.id && prev?.targetName === (comment.username ?? '익명') ? null : { rootId: comment.id, targetName: comment.username ?? '익명' })
+                                    setReplyText('')
+                                  }}
+                                  className="flex items-center gap-1 transition-colors hover:text-yellow-600"
+                                  style={{ color: replyingTo?.rootId === comment.id ? 'var(--gold-dim)' : '#4a4055', fontSize: '0.6875rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                                >
+                                  <Reply size={11} />
+                                  답글{replies.length > 0 ? ` ${replies.length}` : ''}
+                                </button>
+                              )}
+                              {authStatus !== 'authenticated' && replies.length > 0 && (
+                                <span className="flex items-center gap-1" style={{ color: '#4a4055', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}>
+                                  <Reply size={11} />
+                                  답글 {replies.length}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {authStatus === 'authenticated' && (
+                            <button onClick={() => handleCommentDelete(comment.id)} className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70" style={{ color: '#3a2020', cursor: 'pointer' }} title="댓글 삭제">
+                              <Trash2 size={12} />
+                            </button>
+                          )}
                         </div>
                       </div>
-                    )}
-                    {/* 답글 목록 */}
-                    {(repliesMap.get(comment.id) ?? []).map(reply => renderComment(reply, true))}
-                  </div>
-                ))}
+
+                      {/* 답글 영역 */}
+                      {hasReplies && (
+                        <div style={{ borderTop: '1px solid rgba(58,40,18,0.25)', background: '#0e0b07' }}>
+                          {replies.map((reply, ri) => (
+                            <div key={reply.id} className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 20, borderLeft: '2px solid rgba(200,144,10,0.1)', ...(ri < replies.length - 1 ? { borderBottom: '1px solid rgba(58,40,18,0.15)' } : {}) }}>
+                              {renderAvatar(reply, 22)}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span style={{ color: '#8a7a60', fontSize: '0.6875rem', fontWeight: 600 }}>{reply.username ?? '익명'}</span>
+                                  {renderBadge(reply.role)}
+                                  <span style={{ color: '#4a4555', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{formatDate(reply.created_at)}</span>
+                                </div>
+                                <p style={{ color: '#6a6050', fontSize: '0.8rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                  {reply.content}
+                                </p>
+                                {/* 답글에 답글 버튼 */}
+                                {authStatus === 'authenticated' && (
+                                  <button
+                                    onClick={() => {
+                                      setReplyingTo({ rootId: comment.id, targetName: reply.username ?? '익명' })
+                                      setReplyText(`@${reply.username ?? '익명'} `)
+                                    }}
+                                    className="flex items-center gap-1 mt-1 transition-colors hover:text-yellow-600"
+                                    style={{ color: '#4a4055', fontSize: '0.625rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                                  >
+                                    <Reply size={10} />
+                                    답글
+                                  </button>
+                                )}
+                              </div>
+                              {authStatus === 'authenticated' && (
+                                <button onClick={() => handleCommentDelete(reply.id)} className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70" style={{ color: '#3a2020', cursor: 'pointer' }} title="답글 삭제">
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* 답글 입력 */}
+                          {replyingTo?.rootId === comment.id && (
+                            <div className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 20, borderLeft: '2px solid rgba(200,144,10,0.2)', borderTop: replies.length > 0 ? '1px solid rgba(58,40,18,0.15)' : 'none' }}>
+                              <Reply size={14} style={{ color: 'rgba(200,144,10,0.3)', marginTop: 4, flexShrink: 0 }} />
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span style={{ color: '#5a5065', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}>
+                                    <b style={{ color: '#9a8a70' }}>{replyingTo.targetName}</b>에게 답글
+                                  </span>
+                                  <button onClick={() => setReplyingTo(null)} className="transition-opacity hover:opacity-70" style={{ color: '#5a5065', cursor: 'pointer' }}>
+                                    <X size={13} />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={replyText}
+                                  onChange={e => setReplyText(e.target.value)}
+                                  maxLength={500}
+                                  rows={2}
+                                  placeholder="답글을 작성하세요..."
+                                  className="w-full px-3 py-2 text-sm outline-none resize-none"
+                                  style={{ background: '#0a0806', border: '1px solid rgba(200,144,10,0.12)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)', fontSize: '0.8rem' }}
+                                  autoFocus
+                                />
+                                <div className="flex items-center justify-between mt-1.5">
+                                  <span style={{ color: '#4a4555', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+                                    {replyText.length}/500
+                                  </span>
+                                  <button
+                                    onClick={() => handleReplySubmit()}
+                                    disabled={commentSubmitting || !replyText.trim()}
+                                    className="px-3 py-1 text-xs font-medium transition-all duration-150 hover:brightness-110"
+                                    style={{
+                                      background: replyText.trim() ? 'var(--gold)' : 'rgba(44,28,12,0.5)',
+                                      color: replyText.trim() ? 'var(--bg-deep)' : '#5a5070',
+                                      borderRadius: '4px',
+                                      cursor: replyText.trim() ? 'pointer' : 'default',
+                                      fontFamily: 'var(--font-heading)',
+                                      opacity: commentSubmitting ? 0.5 : 1,
+                                      fontSize: '0.6875rem',
+                                    }}
+                                  >
+                                    {commentSubmitting ? '등록 중...' : '답글 등록'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-8" style={{ color: '#5a5065', fontSize: '0.8125rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>
