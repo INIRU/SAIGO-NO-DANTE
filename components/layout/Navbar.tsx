@@ -123,6 +123,7 @@ export default function Navbar() {
   return (
     <>
       <nav
+        aria-label="메인 내비게이션"
         className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300"
         style={{
           transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)',
@@ -159,6 +160,8 @@ export default function Navbar() {
                   }}
                 >
                   <button
+                    aria-expanded={openGroup === group.label}
+                    aria-haspopup="true"
                     className="flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
@@ -179,7 +182,7 @@ export default function Navbar() {
                   </button>
 
                   {openGroup === group.label && (
-                    <div style={{
+                    <div role="menu" aria-label={`${group.label} 메뉴`} style={{
                       position: 'absolute',
                       top: 'calc(100% + 12px)',
                       left: '50%',
@@ -240,6 +243,7 @@ export default function Navbar() {
             {/* 검색 버튼 */}
             <button
               onClick={() => setSearchOpen(true)}
+              aria-label="검색 열기 (Ctrl+K)"
               className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
               style={{
                 cursor: 'pointer',

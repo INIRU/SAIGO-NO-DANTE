@@ -8,6 +8,8 @@ import SessionProvider from '@/components/providers/SessionProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
+import SkipNav from '@/components/a11y/SkipNav'
+import JsonLd, { websiteJsonLd, organizationJsonLd } from '@/components/seo/JsonLd'
 import { createClient } from '@/lib/supabase/server'
 
 const songMyung = Song_Myung({
@@ -111,11 +113,16 @@ export default async function RootLayout({
 
   return (
     <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable}`}>
+      <head>
+        <JsonLd data={websiteJsonLd(SITE_URL)} />
+        <JsonLd data={organizationJsonLd(SITE_URL)} />
+      </head>
       <body className="antialiased">
+        <SkipNav />
         <SessionProvider>
           <KeywordProvider keywords={keywords}>
             <Navbar />
-            <main>{children}</main>
+            <main id="main-content">{children}</main>
             <Footer />
             <FloatingFontControl />
           </KeywordProvider>
