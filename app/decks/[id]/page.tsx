@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Trash2, Reply, X } from 'lucide-react'
+import { useToast, Toast } from '@/components/ui/Toast'
 import { STORAGE_BASE, getSinnerLogoUrl, GRADE_COLORS, computeSkillImageIndices, SIN_COLORS, SIN_KR_TO_EN, type ActivationCondition } from '@/lib/data/sinners'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
@@ -194,6 +195,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
 
   const [deck, setDeck] = useState<DeckDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const { toast, showToast } = useToast()
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [voting, setVoting] = useState(false)
@@ -302,7 +304,11 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       if (res.ok) {
         setVoted(data.voted)
         setVoteCount(c => data.voted ? c + 1 : c - 1)
+      } else {
+        showToast('추천에 실패했습니다.')
       }
+    } catch {
+      showToast('추천에 실패했습니다.')
     } finally {
       setVoting(false)
     }
@@ -321,7 +327,14 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/decks/${id}/bookmark`, { method: 'POST' })
       const data = await res.json()
-      if (res.ok) setBookmarked(data.bookmarked)
+      if (res.ok) {
+        setBookmarked(data.bookmarked)
+        showToast(data.bookmarked ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.', 'success')
+      } else {
+        showToast('북마크에 실패했습니다.')
+      }
+    } catch {
+      showToast('북마크에 실패했습니다.')
     } finally {
       setBookmarking(false)
     }
@@ -361,11 +374,15 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         const comment: Comment = await res.json()
         setComments(prev => [...prev, comment])
         setCommentText('')
+      } else {
+        showToast('댓글 작성에 실패했습니다.')
       }
+    } catch {
+      showToast('댓글 작성에 실패했습니다.')
     } finally {
       setCommentSubmitting(false)
     }
-  }, [commentText, commentSubmitting, authStatus, id])
+  }, [commentText, commentSubmitting, authStatus, id, showToast])
 
   const handleReplySubmit = useCallback(async () => {
     if (!replyingTo || !replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
@@ -381,21 +398,29 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         setComments(prev => [...prev, comment])
         setReplyText('')
         setReplyingTo(null)
+      } else {
+        showToast('답글 작성에 실패했습니다.')
       }
+    } catch {
+      showToast('답글 작성에 실패했습니다.')
     } finally {
       setCommentSubmitting(false)
     }
-  }, [replyingTo, replyText, commentSubmitting, authStatus, id])
+  }, [replyingTo, replyText, commentSubmitting, authStatus, id, showToast])
 
   const handleCommentDelete = useCallback(async (commentId: string) => {
     try {
       const res = await fetch(`/api/decks/${id}/comments?commentId=${commentId}`, { method: 'DELETE' })
       if (res.ok) {
-        // 답글도 함께 제거
         setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
+        showToast('댓글이 삭제되었습니다.', 'success')
+      } else {
+        showToast('댓글 삭제에 실패했습니다.')
       }
-    } catch { /* ignore */ }
-  }, [id])
+    } catch {
+      showToast('댓글 삭제에 실패했습니다.')
+    }
+  }, [id, showToast])
 
   if (loading) return <Skeleton />
 
@@ -1146,6 +1171,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
+      <Toast toast={toast} />
     </div>
   )
 }

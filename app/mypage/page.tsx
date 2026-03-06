@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useRef, useState, useCallback } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -9,6 +9,7 @@ import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import CollectionSection from '@/components/mypage/CollectionSection'
 import AvatarPicker, { AvatarEditOverlay } from '@/components/mypage/AvatarPicker'
 import { Pencil, Trash2, Calendar, X, Check, Plus, LogOut, Bookmark } from 'lucide-react'
+import { useToast, Toast } from '@/components/ui/Toast'
 
 type Profile = {
   username: string | null
@@ -43,7 +44,7 @@ export default function MyPage() {
   const [bioSaving, setBioSaving] = useState(false)
 
   // 토스트
-  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
+  const { toast, showToast } = useToast()
 
   // 삭제 확인
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -95,10 +96,6 @@ export default function MyPage() {
     }
   }
 
-  const showToast = useCallback((message: string, type: 'error' | 'success' = 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }, [])
 
   // 미인증 리다이렉트
   useEffect(() => {
@@ -802,24 +799,7 @@ export default function MyPage() {
         onClose={() => setAvatarPickerOpen(false)}
       />
 
-      {/* 토스트 */}
-      {toast && (
-        <div
-          className="fixed top-24 right-6 z-50 px-4 py-3 rounded text-sm shadow-xl toast-slide-in"
-          style={{
-            background: toast.type === 'error' ? 'rgba(100,18,18,0.97)' : 'rgba(18,70,18,0.97)',
-            color: toast.type === 'error' ? '#ff8080' : '#80e880',
-            border: `1px solid ${toast.type === 'error' ? 'rgba(180,40,40,0.5)' : 'rgba(40,160,40,0.4)'}`,
-            fontFamily: 'var(--font-body)',
-            maxWidth: '280px',
-            boxShadow: toast.type === 'error'
-              ? '0 4px 24px rgba(139,26,26,0.3)'
-              : '0 4px 24px rgba(26,100,26,0.3)',
-          }}
-        >
-          {toast.message}
-        </div>
-      )}
+      <Toast toast={toast} />
     </div>
   )
 }
