@@ -1,16 +1,46 @@
-# 최애의 관리자 (SAIGO NO DANTE)
+<div align="center">
+
+# 최애의 관리자
+
+**SAIGO NO DANTE**
 
 Limbus Company 팬 아카이브 — 수감자 DB, 덱 빌더, 덱 공유를 한 곳에서.
 
+[saigonodante.com](https://saigonodante.com)
+
+---
+
+`Next.js 16` · `TypeScript` · `Tailwind CSS 4` · `Supabase` · `GSAP`
+
+</div>
+
+## Features
+
+| 기능 | 설명 |
+|------|------|
+| 수감자 도감 | 12인 수감자 인격 · EGO 데이터베이스 (스킬, 패시브, 스탯) |
+| 거울 던전 | EGO 기프트 도감 408종 (키워드/등급 필터, 조합 레시피) |
+| 덱 빌더 | 인격 + EGO 기프트 조합, 커뮤니티 공유 · 추천 · 댓글 |
+| 보유 현황 | 인격/EGO 체크리스트, URL 공유 |
+| 티어 리스트 | 리세마라 티어표 (커뮤니티 투표) |
+| 추출 시뮬 | 뽑기 시뮬레이션 |
+| 메타 분석 | 인격/EGO 사용 통계 + 차트 |
+| 전역 검색 | `Ctrl+K` — 인격, EGO, 수감자, 키워드, EGO 기프트 통합 검색 |
+| 관리자 패널 | 데이터 CRUD, 사용자/덱 관리, 감사 로그 |
+| PWA | 모바일 홈 화면 설치 지원 |
+
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 4 + GSAP (애니메이션)
-- **Database**: Supabase (PostgreSQL, `limbus` 스키마)
-- **Auth**: NextAuth.js (Google OAuth)
-- **Icons**: Lucide React
-- **Fonts**: KotraBold, PerfectDOS, SCDream, Pretendard (로컬)
+| 영역 | 기술 |
+|------|------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 + GSAP |
+| Database | Supabase (PostgreSQL, `limbus` 스키마) |
+| Auth | NextAuth.js (Google OAuth) |
+| Icons | Lucide React |
+| Testing | Playwright (E2E) |
+| Deploy | Vercel |
 
 ## Getting Started
 
@@ -25,27 +55,16 @@ npm install
 `.env.local` 파일을 프로젝트 루트에 생성:
 
 ```env
-# Site URL (SEO: canonical, sitemap, OG image)
 NEXT_PUBLIC_SITE_URL=https://saigonodante.com
-
-# YouTube (Project Moon 공식 채널)
-YOUTUBE_CHANNEL_ID=UCpqyr6h4RCXCEswHlkSjykA
-
-# NextAuth
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=           # openssl rand -base64 32
-
-# Google OAuth (Google Cloud Console)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-
-# 관리자 이메일 (콤마 구분)
-ADMIN_EMAILS=admin@example.com
-
-# Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=     # 시드 스크립트 전용
+SUPABASE_SERVICE_ROLE_KEY=
+
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=              # openssl rand -base64 32
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+ADMIN_EMAILS=admin@example.com
 ```
 
 ### 3. Supabase 설정
@@ -61,8 +80,6 @@ SUPABASE_SERVICE_ROLE_KEY=     # 시드 스크립트 전용
 npm run dev
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인.
-
 ## Scripts
 
 ```bash
@@ -72,87 +89,59 @@ npm run start        # 프로덕션 서버
 npx tsc --noEmit     # 타입 체크
 ```
 
-### 시드 스크립트
-
-게임 데이터를 DB에 동기화합니다. `SUPABASE_SERVICE_ROLE_KEY` 필요.
+### 데이터 동기화
 
 ```bash
-node --env-file=.env.local scripts/{name}.mjs
+node --env-file=.env.local scripts/sync-wiki-namu.mjs --dry-run   # 전체 확인
+node --env-file=.env.local scripts/sync-wiki-namu.mjs --fix        # DB 반영
 ```
-
-| 스크립트 | 설명 |
-|----------|------|
-| `seed-sinners.mjs` | 12 수감자 기본 데이터 |
-| `seed-yi-sang.mjs` | 이상 인격 + EGO |
-| `seed-passives.mjs` | 패시브 데이터 (단빵숲 API) |
-| `sync-ego-from-baslimbus.mjs` | EGO 동기화 |
-| `sync-ego-skills-from-baslimbus.mjs` | EGO 스킬 동기화 |
-| `upload-assets.mjs` | 이미지 에셋 업로드 |
-| `upload-keyword-icons.mjs` | 키워드 아이콘 업로드 |
 
 ## Project Structure
 
 ```
 app/
   page.tsx                          # 홈 (GSAP 히어로 + 최신 인격)
-  sinners/page.tsx                  # 12 수감자 그리드
-  sinners/[slug]/                   # 수감자 상세 (인격 + EGO)
-  sinners/[slug]/identities/[id]/   # 인격 상세 (스킬, 패시브, 스탯)
-  sinners/[slug]/ego/[egoId]/       # EGO 상세
-  decks/page.tsx                    # 덱 게시판
-  decks/new/                        # 덱 빌더
-  decks/[id]/                       # 덱 상세
-  collection/page.tsx               # 내 수집 현황
-  admin/                            # 관리자 (대시보드, 유저, 덱, 데이터, 감사로그)
+  sinners/                          # 수감자 도감
+  decks/                            # 덱 게시판 + 빌더
+  mirror-dungeon/                   # 거울 던전 EGO 기프트
+  collection/                       # 보유 현황
+  tier-list/                        # 티어 리스트
+  extraction/                       # 추출 시뮬
+  meta/                             # 메타 분석
+  admin/                            # 관리자 패널
   api/                              # API 라우트
-  opengraph-image.tsx               # 동적 OG 이미지
-  sitemap.ts                        # sitemap.xml
-  robots.ts                         # robots.txt
+
 components/
   layout/                           # Navbar, Footer
   sinners/                          # SinnerCard, IdentityCard
   decks/                            # DeckCard
-  ui/                               # GlitchText, ConfirmModal, SinBadge 등
+  ui/                               # GlitchText, ConfirmModal, SearchModal 등
+  providers/                        # SessionProvider, KeywordProvider
+
 lib/
-  supabase/                         # client.ts, server.ts, admin.ts
-  data/sinners.ts                   # 타입 + 데이터 헬퍼
-  auth.ts                           # NextAuth 설정
+  supabase/                         # client, server, admin
+  types/                            # 타입 정의
+  constants/                        # 죄악, 게임, 키워드 상수
+  utils/                            # 이미지 URL 헬퍼
 ```
 
 ## Design System
 
 | 요소 | 값 |
 |------|-----|
-| 배경 | `#0d0b08` (warm dark brown) |
-| 카드 | `#1a1510` |
-| 골드 | `#c8900a` / light `#e8b030` / dim `#8a6010` |
-| 7대 죄악 | Tailwind `sin.*` + CSS vars |
-
-## Data Source
-
-게임 데이터는 [단빵숲 (baslimbus)](https://baslimbus.store) 팬 위키 API에서 수집합니다.
-
-```
-GET https://baslimbus.store/dictionary/identity/{id}
-```
+| Background | `#0d0b08` |
+| Card | `#1a1510` |
+| Gold | `#c8900a` / `#e8b030` / `#8a6010` |
+| Fonts | KotraBold · PerfectDOS · SCDream · Pretendard |
+| Sin Colors | Tailwind `sin.*` + CSS vars |
 
 ## SEO
 
-- `app/opengraph-image.tsx` — 동적 OG 이미지 (1200x630)
-- `app/sitemap.ts` — 자동 생성 sitemap
-- `app/robots.ts` — 크롤링 규칙 (`/admin/`, `/api/`, `/mypage` 차단)
-- `app/icon.png` + `app/apple-icon.png` — favicon
-- 수감자 상세 페이지별 동적 메타데이터 (`generateMetadata`)
-
-## Deploy
-
-Vercel 권장. 환경변수를 Vercel 대시보드에 설정하세요.
-
-```bash
-vercel --prod
-```
-
-`NEXT_PUBLIC_SITE_URL`을 배포 도메인으로 변경하는 것을 잊지 마세요.
+- 동적 OG 이미지 (1200x630)
+- 자동 생성 sitemap + robots.txt
+- JSON-LD 구조화 데이터 (WebSite, Organization)
+- 페이지별 동적 메타데이터
+- Skip Navigation + ARIA 접근성
 
 ## License
 
