@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, getKeywordIconUrl, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
@@ -145,6 +145,7 @@ function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
   keywordFilter: string | null
   setKeywordFilter: (v: string | null) => void
 }) {
+  const { getIconUrl } = useKeywordData()
   return (
     <div className="flex items-center gap-1.5 flex-wrap mb-4 pb-3" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
       <button
@@ -172,10 +173,10 @@ function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
               color: isActive ? color : '#6a6080',
             }}
           >
-            {getKeywordIconUrl(keyword) && (
+            {getIconUrl(keyword) && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={getKeywordIconUrl(keyword)!}
+                src={getIconUrl(keyword)!}
                 alt={keyword}
                 style={{
                   width: '14px', height: '14px',
