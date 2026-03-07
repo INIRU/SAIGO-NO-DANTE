@@ -131,7 +131,7 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
       const ex = skBest.get(key)
       if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(key, s)
     }
-    const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
+    const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
     const imgIdx = computeSkillImageIndices(sortedSkills)
     const atkSkills = sortedSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
     const orderCount: Record<number, number> = {}
