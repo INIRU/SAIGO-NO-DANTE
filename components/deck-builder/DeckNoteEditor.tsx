@@ -88,17 +88,25 @@ export default function DeckNoteEditor({
                     if (idSkills.length === 0) return null
                     const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
                     const noteSkillImgIdx = computeSkillImageIndices(idSkills)
+                    const atkSkills = idSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
+                    const btnOrderCount: Record<number, number> = {}
                     return (
                       <div key={identity.id} className="flex items-center gap-1.5">
                         <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.3, flexShrink: 0 }} />
                         <div className="flex items-center gap-1">
-                          {idSkills.map(sk => {
+                          {atkSkills.map(sk => {
+                            const subIdx = btnOrderCount[sk.skill_order] || 0
+                            btnOrderCount[sk.skill_order] = subIdx + 1
+                            const token = subIdx === 0
+                              ? `[s:${sinnerName}:${sk.skill_order}]`
+                              : `[s:${sinnerName}:${sk.skill_order}:${subIdx}]`
+                            const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
                             const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx[sk.id] ?? sk.skill_order)
                             return (
                               <button
                                 key={sk.id}
-                                onClick={() => noteAc.insertToken(`[s:${sinnerName}:${sk.skill_order}]`)}
-                                title={`${identity.name_kr} 스킬 ${sk.skill_order}`}
+                                onClick={() => noteAc.insertToken(token)}
+                                title={`${identity.name_kr} ${orderLabel} ${sk.name}`}
                                 style={{ width: 24, height: 24, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#0d0a06', cursor: 'pointer', flexShrink: 0, padding: 0 }}
                               >
                                 {iconUrl && <Image src={iconUrl} alt="" width={24} height={24} />}
