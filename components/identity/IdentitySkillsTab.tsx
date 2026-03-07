@@ -15,7 +15,6 @@ import SkillIcon from '@/components/identity/SkillIcon'
 interface IdentitySkillsTabProps {
   identity: Identity
   filteredSkills: Skill[]
-  sinColor: string
   skillNameColors: Record<string, string>
   skillImgIdxMap: Record<string, number>
   variantMap: Record<string, { baseOrder: number; idx: number; total: number }>
@@ -24,7 +23,6 @@ interface IdentitySkillsTabProps {
 export default function IdentitySkillsTab({
   identity,
   filteredSkills,
-  sinColor,
   skillNameColors,
   skillImgIdxMap,
   variantMap,
@@ -55,7 +53,7 @@ export default function IdentitySkillsTab({
 
       <div className="space-y-4">
         {filteredSkills.map(skill => {
-          const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
+          const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#cccccc'
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
           const skillIconUrl = getSkillIconUrl(identity, imgIdx)
           const v = variantMap[skill.id]

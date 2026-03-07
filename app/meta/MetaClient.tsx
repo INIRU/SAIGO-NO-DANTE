@@ -410,7 +410,7 @@ function IdentityTab({
                       data-target={stat.count}
                       style={{ color, minWidth: '24px', textAlign: 'right' }}
                     >
-                      0
+                      {stat.count}
                     </span>
                   </div>
                 </div>
@@ -556,7 +556,7 @@ function KeywordTab({ data }: { data: MetaData }) {
                     data-target={kw.count}
                     style={{ color }}
                   >
-                    0
+                    {kw.count}
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
@@ -635,7 +635,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                       data-target={syn.count}
                       style={{ color: 'var(--gold)' }}
                     >
-                      0
+                      {syn.count}
                     </span>
                     <span className="text-[0.625rem]" style={{ color: '#555566' }}>덱</span>
                   </div>
@@ -864,7 +864,7 @@ function EGOTab({
                   data-target={ego.count}
                   style={{ color: gradeColor }}
                 >
-                  0
+                  {ego.count}
                 </span>
               </div>
 

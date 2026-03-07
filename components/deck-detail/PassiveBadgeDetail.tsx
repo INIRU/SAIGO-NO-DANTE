@@ -35,7 +35,7 @@ export default function PassiveBadgeDetail({
 
   const sinNames = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
   const sinTypeList = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
-  const pc = sinTypeList[0] ? (SIN_COLORS[sinTypeList[0]] ?? '#888') : '#888'
+  const pc = sinTypeList[0] ? (SIN_COLORS[sinTypeList[0]] ?? '#cccccc') : '#cccccc'
   const current = sinTypeList.reduce((sum, st) => sum + (deckSinCounts[st] ?? 0), 0)
   const required = p.sin_count ?? 1
 
@@ -64,9 +64,9 @@ export default function PassiveBadgeDetail({
             <Image key={i} src={sinIconUrl(st)} alt="" width={16} height={16} />
           ))}
           <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
-          {p.active_cond && <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', opacity: 0.8, marginLeft: '1px' }}>{p.active_cond}</span>}
         </div>
       )}
+      {p.active_cond && <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', opacity: 0.8, flexShrink: 0 }}>{p.active_cond}</span>}
       <span style={{ color: pc, fontSize: '0.6875rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.name}</span>
 
       {hover && tipPos && p.description && (

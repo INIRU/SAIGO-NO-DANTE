@@ -55,11 +55,13 @@ type ContentType = typeof CONTENT_TYPES[number]
 
 const CONTENT_TYPE_BTN_COLORS: Record<ContentType, { bg: string; color: string; border: string }> = {
   '스토리':   { bg: 'rgba(80,120,200,0.2)', color: '#6090d0', border: 'rgba(80,120,200,0.5)' },
-  '거던5층':  { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
+  '거던5층':  { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
   '거던10층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거던15층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
+  '거던15층': { bg: 'rgba(60,160,100,0.25)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
   '거굴철':   { bg: 'rgba(200,70,70,0.2)', color: '#d06060', border: 'rgba(200,70,70,0.5)' },
 }
+
+const isGeodun = (ct: string) => ct.startsWith('거던')
 
 interface Props {
   sinners: Sinner[]
@@ -153,20 +155,45 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     setHasDraft(!!localStorage.getItem('limbus-deck-draft'))
   }, [])
 
+  // 거던 아닐 때 스킬 편성 탭이면 인격 탭으로 이동
+  useEffect(() => {
+    if (!isGeodun(contentType) && tab === 'skillset') setTab('identity')
+  }, [contentType, tab])
+
   const skillsByIdentityId = useMemo(() => {
-    const map: Record<string, Skill[]> = {}
+    const raw: Record<string, Skill[]> = {}
     for (const s of skills) {
-      if (!map[s.identity_id]) map[s.identity_id] = []
-      map[s.identity_id].push(s)
+      ;(raw[s.identity_id] ??= []).push(s)
+    }
+    // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
+    const map: Record<string, Skill[]> = {}
+    for (const [id, list] of Object.entries(raw)) {
+      const best = new Map<string, Skill>()
+      for (const s of list) {
+        const key = `${s.skill_order}:${s.variant_order ?? 0}`
+        const ex = best.get(key)
+        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, s)
+      }
+      map[id] = [...best.values()].sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
     }
     return map
   }, [skills])
 
   const passivesByIdentityId = useMemo(() => {
-    const map: Record<string, Passive[]> = {}
+    const raw: Record<string, Passive[]> = {}
     for (const p of passives) {
-      if (!map[p.identity_id]) map[p.identity_id] = []
-      map[p.identity_id].push(p)
+      ;(raw[p.identity_id] ??= []).push(p)
+    }
+    // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
+    const map: Record<string, Passive[]> = {}
+    for (const [id, list] of Object.entries(raw)) {
+      const best = new Map<string, Passive>()
+      for (const p of list) {
+        const key = `${p.passive_type}:${p.passive_order}`
+        const ex = best.get(key)
+        if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, p)
+      }
+      map[id] = [...best.values()].sort((a, b) => a.passive_order - b.passive_order)
     }
     return map
   }, [passives])
@@ -560,7 +587,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const TABS: { key: Tab; label: string; badge?: number }[] = [
     { key: 'identity', label: '인격 편성', badge: identityCount || undefined },
     { key: 'ego',      label: '에고 편성', badge: egoCount || undefined },
-    { key: 'skillset', label: '스킬 편성', badge: skillsetCustomCount || undefined },
+    ...(isGeodun(contentType) ? [{ key: 'skillset' as Tab, label: '스킬 편성', badge: skillsetCustomCount || undefined }] : []),
     { key: 'order',    label: '편성 순서', badge: formationOrder.length || undefined },
     { key: 'note',     label: '덱 노트' },
   ]
@@ -582,29 +609,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
           onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />
-        <div className="flex gap-1.5 flex-wrap">
-          {CONTENT_TYPES.map(ct => {
-            const active = contentType === ct
-            const colors = CONTENT_TYPE_BTN_COLORS[ct]
-            return (
-              <button
-                key={ct}
-                type="button"
-                onClick={() => setContentType(active ? '' : ct)}
-                className="px-2.5 py-1 rounded text-xs transition-all duration-150"
-                style={{
-                  background: active ? colors.bg : 'transparent',
-                  color: active ? colors.color : '#555566',
-                  border: `1px solid ${active ? colors.border : 'var(--border)'}`,
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.6875rem',
-                }}
-              >
-                {ct}
-              </button>
-            )
-          })}
-        </div>
         {hasDraft && (
           <button
             onClick={handleLoadDraft}
@@ -671,6 +675,39 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           >
             {codeCopied ? '✓ 복사됨' : '코드 복사'}
           </button>
+        </div>
+
+        {/* 콘텐츠 유형 선택 */}
+        <div className="flex items-center gap-2 mb-4">
+          <span style={{ color: '#555570', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', flexShrink: 0 }}>콘텐츠</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {CONTENT_TYPES.map(ct => {
+              const active = contentType === ct
+              const colors = CONTENT_TYPE_BTN_COLORS[ct]
+              return (
+                <button
+                  key={ct}
+                  type="button"
+                  onClick={() => setContentType(active ? '' : ct)}
+                  className="px-3 py-1.5 rounded transition-all duration-150"
+                  style={{
+                    background: active ? colors.bg : 'transparent',
+                    color: active ? colors.color : '#555566',
+                    border: `1px solid ${active ? colors.border : 'var(--border)'}`,
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: '0.75rem',
+                    fontWeight: active ? 700 : 500,
+                    boxShadow: active ? `0 0 8px ${colors.color}25` : 'none',
+                  }}
+                >
+                  {ct}
+                </button>
+              )
+            })}
+          </div>
+          {!contentType && (
+            <span style={{ color: '#cc8844', fontSize: '0.625rem', opacity: 0.7 }}>* 필수</span>
+          )}
         </div>
 
         {/* 탭 바 */}
