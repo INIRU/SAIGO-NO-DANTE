@@ -33,7 +33,7 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
             style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
           >
             <div className="flex justify-center mb-1">
-              <Image src={iconUrl} alt="" width={20} height={20} style={{ width: 'auto', height: 'auto' }} />
+              <Image src={iconUrl} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem' }} />
             </div>
             <div
               className="font-mono font-bold"

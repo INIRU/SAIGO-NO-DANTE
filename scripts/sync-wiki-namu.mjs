@@ -787,14 +787,22 @@ async function extractAllData(page) {
         // 패시브 파싱: 이름, 죄악 아이콘, "N 공명/보유", 설명
         // 구조가 다양할 수 있으므로 텍스트 기반으로 추출
 
-        // 죄악 아이콘 (패시브는 한국어로 저장)
-        let sinAffinity = null
-        const sinImgs = dataDiv.querySelectorAll('img')
-        for (const img of sinImgs) {
-          const alt = img.getAttribute('alt') || ''
-          const sin = parseSinAffinity(alt)
-          if (sin) { sinAffinity = SIN_EN_TO_KR_ARG[sin] || sin; break }
+        // 죄악 아이콘 (패시브는 한국어로 저장, 복수 죄악 지원)
+        // dataDiv.children[1]에 죄악 아이콘이 위치 (children[4],[5]는 별도 UI 요소)
+        const sins = []
+        const sinContainer = dataDiv.children[1]
+        if (sinContainer) {
+          const sinImgs = sinContainer.querySelectorAll('img')
+          for (const img of sinImgs) {
+            const alt = img.getAttribute('alt') || ''
+            const sin = parseSinAffinity(alt)
+            if (sin) {
+              const kr = SIN_EN_TO_KR_ARG[sin] || sin
+              if (!sins.includes(kr)) sins.push(kr)
+            }
+          }
         }
+        const sinAffinity = sins.length > 0 ? sins.join(', ') : null
 
         // 전체 텍스트에서 패시브명, 조건, 설명 추출
         const fullText = getTextWithoutImgs(dataDiv)
@@ -805,7 +813,7 @@ async function extractAllData(page) {
         if (condMatch) {
           current.passives.push({
             passive_type: passiveType,
-            name: condMatch[1].trim(),
+            name: condMatch[1].trim().replace(/(\s+\d+)+$/, '').trim(),
             sin_affinity: sinAffinity,
             sin_count: parseInt(condMatch[2]),
             active_cond: condMatch[3],

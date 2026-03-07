@@ -63,16 +63,22 @@ export async function getIdentityById(id: string): Promise<Identity | null> {
 }
 
 export async function getAllSkills(): Promise<Skill[]> {
-  const { data, error } = await supabase()
-    .schema('limbus')
-    .from('skills')
-    .select('*')
-    .order('skill_order')
-    .order('variant_order')
-    .order('id')
-    .limit(3000)
-  if (error) return []
-  return data ?? []
+  const all: Skill[] = []
+  const BATCH = 1000
+  for (let offset = 0; ; offset += BATCH) {
+    const { data, error } = await supabase()
+      .schema('limbus')
+      .from('skills')
+      .select('*')
+      .order('skill_order')
+      .order('variant_order')
+      .order('id')
+      .range(offset, offset + BATCH - 1)
+    if (error || !data || data.length === 0) break
+    all.push(...data)
+    if (data.length < BATCH) break
+  }
+  return all
 }
 
 export async function getSkills(identityId: string): Promise<Skill[]> {
@@ -90,14 +96,20 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
 }
 
 export async function getAllPassives(): Promise<Passive[]> {
-  const { data, error } = await supabase()
-    .schema('limbus')
-    .from('passives')
-    .select('*')
-    .order('passive_order')
-    .limit(2000)
-  if (error) return []
-  return data ?? []
+  const all: Passive[] = []
+  const BATCH = 1000
+  for (let offset = 0; ; offset += BATCH) {
+    const { data, error } = await supabase()
+      .schema('limbus')
+      .from('passives')
+      .select('*')
+      .order('passive_order')
+      .range(offset, offset + BATCH - 1)
+    if (error || !data || data.length === 0) break
+    all.push(...data)
+    if (data.length < BATCH) break
+  }
+  return all
 }
 
 export async function getPassives(identityId: string): Promise<Passive[]> {

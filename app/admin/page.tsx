@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Library, Users, Database, Megaphone, FileText, Loader2 } from 'lucide-react'
+import { Library, Users, Database, Megaphone, FileText, Loader2, Construction } from 'lucide-react'
 import { AdminCard } from '@/components/admin'
 
 interface Stats {
@@ -16,6 +16,7 @@ const quickLinks = [
   { href: '/admin/decks', icon: Library, label: '덱 관리', desc: '전체 덱 조회 및 관리' },
   { href: '/admin/users', icon: Users, label: '유저 관리', desc: '유저 목록 조회' },
   { href: '/admin/data', icon: Database, label: '데이터 관리', desc: '게임 데이터 현황' },
+  { href: '/admin/maintenance', icon: Construction, label: '점검 관리', desc: '페이지별 점검 모드' },
   { href: '/admin/announcements', icon: Megaphone, label: '공지', desc: '공지 작성 및 관리' },
   { href: '/admin/legal', icon: FileText, label: '법률문서', desc: '약관/개인정보처리방침' },
 ]

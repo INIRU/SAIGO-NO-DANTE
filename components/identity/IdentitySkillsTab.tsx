@@ -120,7 +120,7 @@ export default function IdentitySkillsTab({
                           alt=""
                           width={14}
                           height={14}
-                          style={{ width: 'auto', height: 'auto' }}
+                          style={{ width: '0.875rem', height: '0.875rem' }}
                         />
                       )}
                       <span style={{ color: '#666', fontSize: '0.6875rem' }}>
