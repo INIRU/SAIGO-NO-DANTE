@@ -429,6 +429,10 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, [id, showToast])
 
+  const handleFork = useCallback(() => {
+    window.location.href = `/decks/new?fork=${id}`
+  }, [id])
+
   if (loading) return <Skeleton />
 
   if (!deck) {
@@ -541,6 +545,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
     onBookmark: handleBookmark,
     onShare: handleShare,
     onCopyCode: handleCopyCode,
+    onFork: handleFork,
   }
 
   return (

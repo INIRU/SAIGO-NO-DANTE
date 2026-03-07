@@ -50,6 +50,8 @@ interface EditMode {
   egoSlotIds: Record<string, Record<string, string>>
 }
 
+type ForkMode = Omit<EditMode, 'deckId'> & { forkedFrom: string }
+
 const CONTENT_TYPES = ['스토리', '거던5층', '거던10층', '거던15층', '거굴철'] as const
 type ContentType = typeof CONTENT_TYPES[number]
 
@@ -71,6 +73,7 @@ interface Props {
   passives: Passive[]
   egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]
   editMode?: EditMode
+  forkMode?: ForkMode
 }
 
 type Tab = 'identity' | 'ego' | 'skillset' | 'order' | 'note'
@@ -88,14 +91,15 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
   '그레고르': '어느날 갑자기',
 }
 
-export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode }: Props) {
+export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode, forkMode }: Props) {
   const { keywords: kwContext } = useKeywordData()
   const router = useRouter()
+  const initData = editMode ?? forkMode
   const [tab, setTab] = useState<Tab>('identity')
   const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
-    if (editMode?.identitySlotIds) {
+    if (initData?.identitySlotIds) {
       const slots: Record<string, Identity | undefined> = {}
-      for (const [sinnerId, identityId] of Object.entries(editMode.identitySlotIds)) {
+      for (const [sinnerId, identityId] of Object.entries(initData.identitySlotIds)) {
         slots[sinnerId] = identities.find(i => i.id === identityId)
       }
       return slots
@@ -104,9 +108,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   })
   // egoSlots: sinnerId → { grade → EGO } (등급별 1개), 기본값 = ZAYIN EGO
   const [egoSlots, setEgoSlots] = useState<Record<string, Record<string, EGO>>>(() => {
-    if (editMode?.egoSlotIds) {
+    if (initData?.egoSlotIds) {
       const slots: Record<string, Record<string, EGO>> = {}
-      for (const [sinnerId, gradeMap] of Object.entries(editMode.egoSlotIds)) {
+      for (const [sinnerId, gradeMap] of Object.entries(initData.egoSlotIds)) {
         slots[sinnerId] = {}
         for (const [grade, egoId] of Object.entries(gradeMap)) {
           const ego = egos.find(e => e.id === egoId)
@@ -126,19 +130,19 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     return initial
   })
-  const [formationOrder, setFormationOrder] = useState<string[]>(editMode?.formationOrder ?? [])
+  const [formationOrder, setFormationOrder] = useState<string[]>(initData?.formationOrder ?? [])
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
   const [modalGrade, setModalGrade] = useState<string | null>(null)
-  const [title, setTitle] = useState(editMode?.title ?? '')
-  const [contentType, setContentType] = useState<string>(editMode?.content_type && editMode.content_type !== '없음' ? editMode.content_type : '')
-  const [description, setDescription] = useState(editMode?.description ?? '')
+  const [title, setTitle] = useState(forkMode ? `${forkMode.title} (포크)` : editMode?.title ?? '')
+  const [contentType, setContentType] = useState<string>(initData?.content_type && initData.content_type !== '없음' ? initData.content_type : '')
+  const [description, setDescription] = useState(initData?.description ?? '')
   const [saving, setSaving] = useState(false)
   const { toast, showToast } = useToast()
   const [showCostDetail, setShowCostDetail] = useState(false)
   const [showIdentityDetail, setShowIdentityDetail] = useState(false)
   const [descPreview, setDescPreview] = useState(false)
-  const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(editMode?.gacksungSlots ?? {})
-  const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(editMode?.skillDistribution ?? {})
+  const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
+  const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(initData?.skillDistribution ?? {})
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [codeInput, setCodeInput] = useState('')
   const [codeCopied, setCodeCopied] = useState(false)
