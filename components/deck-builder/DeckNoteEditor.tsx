@@ -112,6 +112,37 @@ export default function DeckNoteEditor({
                 </div>
               </div>
 
+              {/* ── 배틀 패시브 ── */}
+              {(() => {
+                const items = Object.values(deckSlots).filter((id): id is Identity => !!id).flatMap(identity =>
+                  (passivesByIdentityId[identity.id] ?? []).filter(p => p.passive_type === 'battle')
+                )
+                if (items.length === 0) return null
+                return (
+                  <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>배틀</span>
+                    <div className="flex flex-wrap gap-1.5 flex-1">
+                      {items.map(p => {
+                        const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
+                        const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => noteAc.insertToken(`[p:${p.name}]`)}
+                            title={p.name}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded"
+                            style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}35`, cursor: 'pointer' }}
+                          >
+                            {sinType && <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} />}
+                            <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* ── 서포트 패시브 ── */}
               {(() => {
                 const items = Object.values(deckSlots).filter((id): id is Identity => !!id).flatMap(identity =>
@@ -120,7 +151,7 @@ export default function DeckNoteEditor({
                 if (items.length === 0) return null
                 return (
                   <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>패시브</span>
+                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>서포트</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(p => {
                         const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]

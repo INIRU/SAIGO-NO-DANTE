@@ -141,7 +141,7 @@ function sinIconUrl(sin: string): string {
 }
 
 function sinColor(sin: string): string {
-  return SIN_COLORS[sin as SinType] ?? '#888888'
+  return SIN_COLORS[sin as SinType] ?? '#cccccc'
 }
 
 export function portraitUrl(
@@ -176,15 +176,24 @@ export default function DeckIdentityCard({
   const normalUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
   const themeKws = (id_.keywords ?? []).filter(kw => THEME_KEYWORDS.has(kw))
 
+  // 4동기화 우선: 같은 skill_order에서 최고 uptie_level만 유지
   const rawSkills = id_.skills ?? []
-  const skills4 = rawSkills.filter(s => (s.uptie_level ?? 3) === 4)
-  const filteredSkills = skills4.length > 0 ? skills4 : rawSkills.filter(s => (s.uptie_level ?? 3) === 3)
-  const sortedSkills = [...filteredSkills].sort((a, b) => a.skill_order - b.skill_order)
+  const skillBest = new Map<number, typeof rawSkills[0]>()
+  for (const s of rawSkills) {
+    const ex = skillBest.get(s.skill_order)
+    if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skillBest.set(s.skill_order, s)
+  }
+  const sortedSkills = [...skillBest.values()].sort((a, b) => a.skill_order - b.skill_order)
 
+  // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
   const rawPassives = id_.passives ?? []
-  const passives4 = rawPassives.filter(p => (p.uptie_level ?? 3) === 4)
-  const filteredPassives = passives4.length > 0 ? passives4 : rawPassives.filter(p => (p.uptie_level ?? 3) === 3)
-  const sortedPassives = [...filteredPassives].sort((a, b) => a.passive_order - b.passive_order)
+  const passiveBest = new Map<string, typeof rawPassives[0]>()
+  for (const p of rawPassives) {
+    const key = `${p.passive_type}:${p.passive_order}`
+    const ex = passiveBest.get(key)
+    if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) passiveBest.set(key, p)
+  }
+  const sortedPassives = [...passiveBest.values()].sort((a, b) => a.passive_order - b.passive_order)
 
   const skillImageIdx = computeSkillImageIndices(sortedSkills)
 
@@ -420,7 +429,7 @@ export default function DeckIdentityCard({
             const isBattle = passive.passive_type === 'battle'
             const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
             const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
-            const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#888888') : '#888888'
+            const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
             return (
               <div key={idx} className="p-3 rounded" style={{ background: `${pc}08`, border: `1px solid ${pc}25` }}>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -438,12 +447,14 @@ export default function DeckIdentityCard({
                   <span className="font-semibold" style={{ color: pc, fontSize: '0.8125rem' }}>{passive.name}</span>
                 </div>
 
-                {sinTypes.length > 0 && passive.sin_count != null && (
+                {(sinTypes.length > 0 || passive.active_cond) && (
                   <div className="flex items-center gap-1.5 mb-2">
                     {sinTypes.map((st, i) => (
                       <Image key={i} src={sinIconUrl(st)} alt="" width={20} height={20} style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st] ?? pc}60)` }} />
                     ))}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
+                    {sinTypes.length > 0 && passive.sin_count != null && (
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
+                    )}
                     {passive.active_cond && (
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${pc}18`, color: pc, border: `1px solid ${pc}35` }}>
                         {passive.active_cond}

@@ -91,6 +91,12 @@ const SIN_KR_MAP = {
   '우울': 'gloom', '오만': 'pride', '질투': 'envy',
 }
 
+// ── 죄악 영문 → 한글 (패시브 sin_affinity용) ──
+const SIN_EN_TO_KR = {
+  wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식',
+  gloom: '우울', pride: '오만', envy: '질투',
+}
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 // ── 이름 정규화 (위키 ↔ DB 매칭용) ──
@@ -138,7 +144,7 @@ async function supaUpsert(table, data) {
 //  DOM 추출 함수 (page.evaluate 내부에서 실행됨)
 // ══════════════════════════════════════════════════════════════════════
 async function extractAllData(page) {
-  return await page.evaluate(({ SIN_ALT_MAP_ARG }) => {
+  return await page.evaluate(({ SIN_ALT_MAP_ARG, SIN_EN_TO_KR_ARG }) => {
     // ── 헬퍼 ──
     function getTextWithoutImgs(el) {
       if (!el) return ''
@@ -781,13 +787,13 @@ async function extractAllData(page) {
         // 패시브 파싱: 이름, 죄악 아이콘, "N 공명/보유", 설명
         // 구조가 다양할 수 있으므로 텍스트 기반으로 추출
 
-        // 죄악 아이콘
+        // 죄악 아이콘 (패시브는 한국어로 저장)
         let sinAffinity = null
         const sinImgs = dataDiv.querySelectorAll('img')
         for (const img of sinImgs) {
           const alt = img.getAttribute('alt') || ''
           const sin = parseSinAffinity(alt)
-          if (sin) { sinAffinity = sin; break }
+          if (sin) { sinAffinity = SIN_EN_TO_KR_ARG[sin] || sin; break }
         }
 
         // 전체 텍스트에서 패시브명, 조건, 설명 추출
@@ -856,7 +862,7 @@ async function extractAllData(page) {
     }
 
     return { identities, egos }
-  }, { SIN_ALT_MAP_ARG: SIN_ALT_MAP })
+  }, { SIN_ALT_MAP_ARG: SIN_ALT_MAP, SIN_EN_TO_KR_ARG: SIN_EN_TO_KR })
 }
 
 // ══════════════════════════════════════════════════════════════════════
