@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import SearchModal from '@/components/ui/SearchModal'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 
 type NavGroup = {
   label: string
@@ -129,7 +130,7 @@ export default function Navbar() {
     return () => window.removeEventListener('avatar-changed', handler)
   }, [])
 
-  const avatarUrl = profileAvatar ?? undefined
+  const avatarUrl = profileAvatar || DEFAULT_AVATAR_URL
   const displayName = user?.name ?? user?.email ?? ''
 
   const mobileLinkStyle = (href: string) => ({

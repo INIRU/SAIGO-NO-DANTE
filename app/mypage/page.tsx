@@ -10,6 +10,7 @@ import CollectionSection from '@/components/mypage/CollectionSection'
 import AvatarPicker, { AvatarEditOverlay } from '@/components/mypage/AvatarPicker'
 import { Pencil, Trash2, Calendar, X, Check, Plus, LogOut, Bookmark } from 'lucide-react'
 import { useToast, Toast } from '@/components/ui/Toast'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 
 type Profile = {
   username: string | null
@@ -81,13 +82,13 @@ export default function MyPage() {
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: null }),
+        body: JSON.stringify({ avatar_url: DEFAULT_AVATAR_URL }),
       })
       if (!res.ok) {
         showToast('프로필 사진 초기화에 실패했습니다.')
         return
       }
-      setData(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: null } } : prev)
+      setData(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: DEFAULT_AVATAR_URL } } : prev)
       setAvatarPickerOpen(false)
       showToast('프로필 사진이 초기화되었습니다.', 'success')
       window.dispatchEvent(new CustomEvent('avatar-changed', { detail: null }))
@@ -277,7 +278,7 @@ export default function MyPage() {
 
   const { profile, decks, email } = data
   const displayName = profile.username ?? session.user.name ?? email
-  const avatarUrl = profile.avatar_url
+  const avatarUrl = profile.avatar_url || DEFAULT_AVATAR_URL
   const joinDate = profile.created_at
     ? new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
