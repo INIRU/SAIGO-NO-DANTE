@@ -151,7 +151,7 @@ export default function IdentityDetailClient({
   // 스킬 이름 → 죄악 속성 색상 맵
   const skillNameColors: Record<string, string> = {}
   for (const s of filteredSkills) {
-    skillNameColors[s.name] = SIN_COLORS[s.sin_affinity] || sinColor
+    skillNameColors[s.name] = SIN_COLORS[s.sin_affinity] || '#cccccc'
   }
 
   // sinner_id → name_kr 매핑
@@ -239,7 +239,7 @@ export default function IdentityDetailClient({
   const acPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []
     for (const sk of filteredSkills) {
-      const sc = SIN_COLORS[sk.sin_affinity] || sinColor
+      const sc = SIN_COLORS[sk.sin_affinity] || '#cccccc'
       const v = variantMap[sk.id]
       const base = v?.baseOrder ?? (sk.skill_order >= 5 ? 3 : sk.skill_order)
       const isDefense = base === 4
@@ -470,7 +470,6 @@ export default function IdentityDetailClient({
                   <IdentitySkillsTab
                     identity={identity}
                     filteredSkills={filteredSkills}
-                    sinColor={sinColor}
                     skillNameColors={skillNameColors}
                     skillImgIdxMap={skillImgIdxMap}
                     variantMap={variantMap}

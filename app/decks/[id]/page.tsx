@@ -125,9 +125,12 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
     const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
 
     const rawSk = id_.skills ?? []
-    const sk4 = rawSk.filter(s => (s.uptie_level ?? 3) === 4)
-    const filtSk = sk4.length > 0 ? sk4 : rawSk.filter(s => (s.uptie_level ?? 3) === 3)
-    const sortedSkills = [...filtSk].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
+    const skBest = new Map<number, typeof rawSk[0]>()
+    for (const s of rawSk) {
+      const ex = skBest.get(s.skill_order)
+      if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(s.skill_order, s)
+    }
+    const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
     const imgIdx = computeSkillImageIndices(sortedSkills)
     const orderCount: Record<number, number> = {}
     for (const sk of sortedSkills) {
@@ -146,9 +149,13 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
       }
     }
     const rawPa = id_.passives ?? []
-    const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
-    const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
-    for (const pa of filtPa) {
+    const paBest = new Map<string, typeof rawPa[0]>()
+    for (const p of rawPa) {
+      const key = `${p.passive_type}:${p.passive_order}`
+      const ex = paBest.get(key)
+      if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) paBest.set(key, p)
+    }
+    for (const pa of paBest.values()) {
       passiveLookup[pa.name] = {
         name: pa.name, sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
@@ -800,9 +807,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                                 const id_ = slot.identities!
                                 const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
                                 const rawSk2 = id_.skills ?? []
-                                const sk4b = rawSk2.filter(s => (s.uptie_level ?? 3) === 4)
-                                const filtSk2 = sk4b.length > 0 ? sk4b : rawSk2.filter(s => (s.uptie_level ?? 3) === 3)
-                                const sortedSk = [...filtSk2].sort((a, b) => a.skill_order - b.skill_order)
+                                const skBest2 = new Map<number, typeof rawSk2[0]>()
+                                for (const s of rawSk2) {
+                                  const ex = skBest2.get(s.skill_order)
+                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(s.skill_order, s)
+                                }
+                                const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
                                 const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
                                 return (
                                   <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
@@ -859,9 +869,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                     for (const slot of filledSlots) {
                       const id__ = slot.identities!
                       const rawSk__ = id__.skills ?? []
-                      const sk4__ = rawSk__.filter(s => (s.uptie_level ?? 3) === 4)
-                      const filtSk__ = sk4__.length > 0 ? sk4__ : rawSk__.filter(s => (s.uptie_level ?? 3) === 3)
-                      for (const sk of filtSk__) {
+                      const skBest__ = new Map<number, typeof rawSk__[0]>()
+                      for (const s of rawSk__) {
+                        const ex = skBest__.get(s.skill_order)
+                        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest__.set(s.skill_order, s)
+                      }
+                      for (const sk of skBest__.values()) {
                         if (sk.sin_affinity) {
                           const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
                           deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
@@ -873,10 +886,15 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                         {filledSlots.map((slot, idx) => {
                           const id_ = slot.identities!
                           const rawPa = id_.passives ?? []
-                          const pa4 = rawPa.filter(p => (p.uptie_level ?? 3) === 4)
-                          const filtPa = pa4.length > 0 ? pa4 : rawPa.filter(p => (p.uptie_level ?? 3) === 3)
-                          const battlePassives = filtPa.filter(p => p.passive_type === 'battle' && p.sin_affinity)
-                          const supportPassives = filtPa.filter(p => p.passive_type === 'support' && p.sin_affinity)
+                          const paBest = new Map<string, typeof rawPa[0]>()
+                          for (const p of rawPa) {
+                            const key = `${p.passive_type}:${p.passive_order}`
+                            const ex = paBest.get(key)
+                            if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) paBest.set(key, p)
+                          }
+                          const filtPa = [...paBest.values()]
+                          const battlePassives = filtPa.filter(p => p.passive_type === 'battle')
+                          const supportPassives = filtPa.filter(p => p.passive_type === 'support')
                           return (
                             <div
                               key={idx}

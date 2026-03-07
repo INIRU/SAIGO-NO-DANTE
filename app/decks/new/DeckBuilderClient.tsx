@@ -154,19 +154,39 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }, [])
 
   const skillsByIdentityId = useMemo(() => {
-    const map: Record<string, Skill[]> = {}
+    const raw: Record<string, Skill[]> = {}
     for (const s of skills) {
-      if (!map[s.identity_id]) map[s.identity_id] = []
-      map[s.identity_id].push(s)
+      ;(raw[s.identity_id] ??= []).push(s)
+    }
+    // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
+    const map: Record<string, Skill[]> = {}
+    for (const [id, list] of Object.entries(raw)) {
+      const best = new Map<string, Skill>()
+      for (const s of list) {
+        const key = `${s.skill_order}:${s.variant_order ?? 0}`
+        const ex = best.get(key)
+        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, s)
+      }
+      map[id] = [...best.values()].sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
     }
     return map
   }, [skills])
 
   const passivesByIdentityId = useMemo(() => {
-    const map: Record<string, Passive[]> = {}
+    const raw: Record<string, Passive[]> = {}
     for (const p of passives) {
-      if (!map[p.identity_id]) map[p.identity_id] = []
-      map[p.identity_id].push(p)
+      ;(raw[p.identity_id] ??= []).push(p)
+    }
+    // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
+    const map: Record<string, Passive[]> = {}
+    for (const [id, list] of Object.entries(raw)) {
+      const best = new Map<string, Passive>()
+      for (const p of list) {
+        const key = `${p.passive_type}:${p.passive_order}`
+        const ex = best.get(key)
+        if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, p)
+      }
+      map[id] = [...best.values()].sort((a, b) => a.passive_order - b.passive_order)
     }
     return map
   }, [passives])
