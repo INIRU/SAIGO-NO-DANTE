@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, Copy, Check, Pencil, Bookmark, Share2 } from 'lucide-react'
+import { Heart, Copy, Check, Pencil, Bookmark, Share2, GitFork } from 'lucide-react'
 import { STORAGE_BASE, SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 
@@ -44,6 +44,7 @@ export type DeckHeaderProps = {
   onBookmark: () => void
   onShare: () => void
   onCopyCode: () => void
+  onFork: () => void
 }
 
 export function DeckSidebarPanel({
@@ -69,6 +70,7 @@ export function DeckSidebarPanel({
   onBookmark,
   onShare,
   onCopyCode,
+  onFork,
 }: DeckHeaderProps) {
   const { getIconUrl } = useKeywordData()
   return (
@@ -127,6 +129,23 @@ export function DeckSidebarPanel({
           EDIT DECK
         </Link>
       )}
+
+      {/* 포크 */}
+      <button
+        onClick={onFork}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150 hover:brightness-125"
+        style={{
+          background: 'rgba(72,120,160,0.1)',
+          border: '1px solid rgba(72,120,160,0.3)',
+          color: '#4898b0',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '0.625rem',
+          letterSpacing: '0.1em',
+        }}
+      >
+        <GitFork size={11} />
+        FORK DECK
+      </button>
 
       {/* 편성코드 */}
       {deckCode && (
@@ -289,6 +308,7 @@ export function DeckMobileActionBar({
   onBookmark,
   onShare,
   onCopyCode,
+  onFork,
 }: DeckHeaderProps) {
   return (
     <div className="flex lg:hidden flex-wrap items-center gap-2.5 mb-5 rounded-lg px-4 py-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
@@ -361,6 +381,24 @@ export function DeckMobileActionBar({
           }}
         >
           <Share2 size={14} style={{ color: shareGenerating ? 'var(--gold)' : '#5a5070' }} />
+        </div>
+      </button>
+
+      {/* 포크 */}
+      <button
+        onClick={onFork}
+        className="inline-flex items-center justify-center transition-all duration-200"
+        title="덱 포크"
+      >
+        <div
+          className="flex items-center justify-center rounded-full transition-all duration-300"
+          style={{
+            width: 32, height: 32,
+            background: 'rgba(72,120,160,0.14)',
+            border: '1px solid rgba(72,120,160,0.35)',
+          }}
+        >
+          <GitFork size={14} style={{ color: '#4898b0' }} />
         </div>
       </button>
 
