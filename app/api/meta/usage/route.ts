@@ -9,7 +9,7 @@ export async function GET() {
     supabase
       .schema('limbus')
       .from('deck_identities')
-      .select('deck_id, identity_id, identities(sinner_id, name_kr, keywords, rarity, folder_name, game_id)')
+      .select('deck_id, identity_id, slot_order, identities(sinner_id, name_kr, keywords, rarity, folder_name, game_id)')
       .limit(5000),
     supabase
       .schema('limbus')
@@ -40,11 +40,13 @@ export async function GET() {
     if (km.sin_affinity) keywordSinMap[km.name] = km.sin_affinity
   }
 
-  // ① 인격 채용률 집계
-  const identityMap = new Map<string, {
+  // ① 인격 채용률 집계 (배틀/서포트 분리)
+  type IdentityEntry = {
     sinner_id: string; name_kr: string; keywords: string[]; rarity: number;
     folder_name: string | null; game_id: string | null; count: number
-  }>()
+  }
+  const battleIdentityMap = new Map<string, IdentityEntry>()
+  const supportIdentityMap = new Map<string, IdentityEntry>()
   const usageBySinner: Record<string, number> = {}
   const usageBySin: Record<string, number> = {}
 
@@ -52,24 +54,41 @@ export async function GET() {
   const deckIdentities = new Map<string, string[]>()
   const deckKeywords = new Map<string, Set<string>>()
 
+  // EGO 필터링용: 덱별 배틀 수감자
+  const deckBattleSinners = new Map<string, Set<string>>()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const row of rows as any[]) {
     const identity = Array.isArray(row.identities) ? row.identities[0] : row.identities
     if (!row.identity_id || !identity) continue
 
-    const existing = identityMap.get(row.identity_id)
-    if (existing) {
-      existing.count++
-    } else {
-      identityMap.set(row.identity_id, {
-        sinner_id: identity.sinner_id,
-        name_kr: identity.name_kr,
-        keywords: identity.keywords || [],
-        rarity: identity.rarity,
-        folder_name: identity.folder_name ?? null,
-        game_id: identity.game_id ?? null,
-        count: 1,
-      })
+    const slotOrder = row.slot_order ?? 99
+    const isBattle = slotOrder !== 99
+    const isSupport = slotOrder === 99
+
+    // 배틀 수감자 추적 (EGO 필터용)
+    if (isBattle) {
+      if (!deckBattleSinners.has(row.deck_id)) deckBattleSinners.set(row.deck_id, new Set())
+      deckBattleSinners.get(row.deck_id)!.add(identity.sinner_id)
+    }
+
+    // 배틀/서포트 인격 맵
+    const targetMap = isBattle ? battleIdentityMap : isSupport ? supportIdentityMap : null
+    if (targetMap) {
+      const existing = targetMap.get(row.identity_id)
+      if (existing) {
+        existing.count++
+      } else {
+        targetMap.set(row.identity_id, {
+          sinner_id: identity.sinner_id,
+          name_kr: identity.name_kr,
+          keywords: identity.keywords || [],
+          rarity: identity.rarity,
+          folder_name: identity.folder_name ?? null,
+          game_id: identity.game_id ?? null,
+          count: 1,
+        })
+      }
     }
 
     usageBySinner[identity.sinner_id] = (usageBySinner[identity.sinner_id] || 0) + 1
@@ -89,7 +108,11 @@ export async function GET() {
     }
   }
 
-  const identityStats = [...identityMap.entries()]
+  const battleIdentityStats = [...battleIdentityMap.entries()]
+    .map(([id, d]) => ({ identity_id: id, ...d }))
+    .sort((a, b) => b.count - a.count)
+
+  const supportIdentityStats = [...supportIdentityMap.entries()]
     .map(([id, d]) => ({ identity_id: id, ...d }))
     .sort((a, b) => b.count - a.count)
 
@@ -119,8 +142,8 @@ export async function GET() {
     .slice(0, 20)
     .map(([key, count]) => {
       const [aId, bId] = key.split('|')
-      const aData = identityMap.get(aId)
-      const bData = identityMap.get(bId)
+      const aData = battleIdentityMap.get(aId) ?? supportIdentityMap.get(aId)
+      const bData = battleIdentityMap.get(bId) ?? supportIdentityMap.get(bId)
       return {
         a_id: aId, a_name: aData?.name_kr ?? '',
         a_sinner_id: aData?.sinner_id ?? '', a_folder: aData?.folder_name ?? null, a_game_id: aData?.game_id ?? null,
@@ -130,7 +153,7 @@ export async function GET() {
       }
     })
 
-  // ④ EGO 채용률
+  // ④ EGO 채용률 (편성된 인격의 EGO만)
   const egoMap = new Map<string, {
     sinner_id: string; name_kr: string; grade: string; sin_affinity: string | null; image_url: string | null; count: number
   }>()
@@ -138,6 +161,11 @@ export async function GET() {
   for (const row of egoRows as any[]) {
     const ego = Array.isArray(row.ego) ? row.ego[0] : row.ego
     if (!row.ego_id || !ego) continue
+
+    // 편성된(배틀) 인격의 EGO만 카운트
+    const battleSinners = deckBattleSinners.get(row.deck_id)
+    if (!battleSinners || !battleSinners.has(ego.sinner_id)) continue
+
     const existing = egoMap.get(row.ego_id)
     if (existing) {
       existing.count++
@@ -158,7 +186,8 @@ export async function GET() {
 
   return NextResponse.json({
     totalDecks,
-    identityStats,
+    battleIdentityStats,
+    supportIdentityStats,
     usageBySinner,
     usageBySin,
     keywordUsage,
