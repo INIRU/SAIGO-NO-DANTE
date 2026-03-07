@@ -157,8 +157,8 @@ export default function Navbar() {
           {/* 로고 — 모바일 축소 */}
           <Link
             href="/"
-            className="flex items-center gap-0 font-display tracking-wider transition-colors hover:text-yellow-300 text-[17px] md:text-[20px]"
-            style={{ color: 'var(--gold)' }}
+            className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[17px] md:text-[20px]"
+            style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
           >
             <Image src="/images/logo.webp" alt="" width={42} height={42} className="w-[34px] md:w-[42px] h-auto -ml-2" />
             최애의 관리자
