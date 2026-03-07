@@ -9,11 +9,13 @@ export async function GET() {
     supabase
       .schema('limbus')
       .from('deck_identities')
-      .select('deck_id, identity_id, identities(sinner_id, name_kr, keywords, rarity, folder_name, game_id)'),
+      .select('deck_id, identity_id, identities(sinner_id, name_kr, keywords, rarity, folder_name, game_id)')
+      .limit(5000),
     supabase
       .schema('limbus')
       .from('deck_egos')
-      .select('deck_id, ego_id, ego(sinner_id, name_kr, grade, sin_affinity, image_url)'),
+      .select('deck_id, ego_id, ego(sinner_id, name_kr, grade, sin_affinity, image_url)')
+      .limit(5000),
     supabase
       .schema('limbus')
       .from('decks')

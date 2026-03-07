@@ -32,7 +32,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
   const renderPassive = (p: Passive) => {
     const sinNames = p.sin_affinity ? p.sin_affinity.split(', ').map(s => s.trim()) : []
     const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s] ?? (SIN_COLORS[s as keyof typeof SIN_COLORS] ? s : null)).filter(Boolean) as Array<keyof typeof SIN_COLORS>
-    const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : sinColor
+    const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : '#cccccc'
 
     return (
       <div
