@@ -11,6 +11,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Tab = 'identity' | 'keyword' | 'synergy' | 'ego'
+type IdentitySubTab = 'battle' | 'support'
 
 interface IdentityStat {
   identity_id: string
@@ -43,7 +44,8 @@ interface EGOStat {
 
 interface MetaData {
   totalDecks: number
-  identityStats: IdentityStat[]
+  battleIdentityStats: IdentityStat[]
+  supportIdentityStats: IdentityStat[]
   usageBySinner: Record<string, number>
   usageBySin: Record<string, number>
   keywordUsage: KeywordStat[]
@@ -141,6 +143,7 @@ interface Props { sinners: Sinner[] }
 
 export default function MetaClient({ sinners }: Props) {
   const [tab, setTab] = useState<Tab>('identity')
+  const [identitySubTab, setIdentitySubTab] = useState<IdentitySubTab>('battle')
   const [data, setData] = useState<MetaData | null>(null)
   const [loading, setLoading] = useState(true)
   const [sinnerFilter, setSinnerFilter] = useState<string | null>(null)
@@ -190,11 +193,19 @@ export default function MetaClient({ sinners }: Props) {
   }, [loading, data, tab, sinnerFilter, runAnimations])
 
   // ── 파생 ────────────────────────────────────────────────────
-  const filteredIdentityStats = useMemo(() => {
+  const filteredBattleStats = useMemo(() => {
     if (!data) return []
     const stats = sinnerFilter
-      ? data.identityStats.filter(s => s.sinner_id === sinnerFilter)
-      : data.identityStats
+      ? data.battleIdentityStats.filter(s => s.sinner_id === sinnerFilter)
+      : data.battleIdentityStats
+    return stats.slice(0, 20)
+  }, [data, sinnerFilter])
+
+  const filteredSupportStats = useMemo(() => {
+    if (!data) return []
+    const stats = sinnerFilter
+      ? data.supportIdentityStats.filter(s => s.sinner_id === sinnerFilter)
+      : data.supportIdentityStats
     return stats.slice(0, 20)
   }, [data, sinnerFilter])
 
@@ -271,7 +282,10 @@ export default function MetaClient({ sinners }: Props) {
           sinnerMap={sinnerMap}
           sinnerFilter={sinnerFilter}
           setSinnerFilter={setSinnerFilter}
-          filteredStats={filteredIdentityStats}
+          filteredStats={identitySubTab === 'battle' ? filteredBattleStats : filteredSupportStats}
+          label={identitySubTab === 'battle' ? '배틀 채용률' : '서포트 채용률'}
+          subTab={identitySubTab}
+          setSubTab={setIdentitySubTab}
         />
       )}
       {tab === 'keyword' && <KeywordTab data={data} />}
@@ -285,7 +299,7 @@ export default function MetaClient({ sinners }: Props) {
 // ① 인격 채용률
 // ══════════════════════════════════════════════════════════════
 function IdentityTab({
-  data, totalDecks, sinners, sinnerMap, sinnerFilter, setSinnerFilter, filteredStats,
+  data, totalDecks, sinners, sinnerMap, sinnerFilter, setSinnerFilter, filteredStats, label, subTab, setSubTab,
 }: {
   data: MetaData
   totalDecks: number
@@ -294,6 +308,9 @@ function IdentityTab({
   sinnerFilter: string | null
   setSinnerFilter: (v: string | null) => void
   filteredStats: IdentityStat[]
+  label: string
+  subTab: IdentitySubTab
+  setSubTab: (v: IdentitySubTab) => void
 }) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const maxCount = filteredStats[0]?.count || 1
@@ -303,6 +320,33 @@ function IdentityTab({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* 좌: 랭킹 */}
       <div className="lg:col-span-2">
+        {/* 배틀/서포트 서브탭 */}
+        <div className="flex gap-2 mb-4">
+          {([
+            { key: 'battle' as IdentitySubTab, label: '배틀' },
+            { key: 'support' as IdentitySubTab, label: '서포트' },
+          ]).map(t => (
+            <button
+              key={t.key}
+              onClick={() => setSubTab(t.key)}
+              className="px-4 py-1.5 rounded text-xs font-medium transition-all"
+              style={{
+                background: subTab === t.key
+                  ? (t.key === 'battle' ? 'rgba(200,48,64,0.15)' : 'rgba(72,120,160,0.15)')
+                  : 'rgba(255,255,255,0.05)',
+                color: subTab === t.key
+                  ? (t.key === 'battle' ? '#e05060' : '#4898b0')
+                  : '#666688',
+                border: `1px solid ${subTab === t.key
+                  ? (t.key === 'battle' ? 'rgba(200,48,64,0.4)' : 'rgba(72,120,160,0.4)')
+                  : 'transparent'}`,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         {/* 수감자 필터 */}
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           <button
@@ -333,8 +377,8 @@ function IdentityTab({
 
         <h2 className="font-serif text-xl font-semibold mb-5" style={{ color: 'var(--gold-light)' }}>
           {sinnerFilter
-            ? `${sinnerMap.get(sinnerFilter)?.name_kr ?? ''} 인격 채용률`
-            : '인격 채용률 TOP 20'}
+            ? `${sinnerMap.get(sinnerFilter)?.name_kr ?? ''} ${label}`
+            : `${label} TOP 20`}
         </h2>
 
         <div className="usage-chart space-y-2">
