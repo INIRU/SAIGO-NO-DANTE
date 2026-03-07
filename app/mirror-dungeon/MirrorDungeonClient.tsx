@@ -33,6 +33,7 @@ interface EgoGift {
   first_appearance: string | null
   related: string | null
   image_url: string | null
+  acquisition: string | null
 }
 
 interface Recipe {
@@ -468,6 +469,7 @@ function GiftModal({
 }) {
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
+  const isEX = gift.grade === 'EX'
 
   return (
     <div
@@ -496,24 +498,62 @@ function GiftModal({
           <X size={18} />
         </button>
 
-        {/* 헤더 */}
+        {/* 헤더: 카드 프레임 + 정보 */}
         <div className="flex items-start gap-4 p-5 pb-3">
-          {/* 이미지 */}
-          <div className="w-20 h-20 relative flex-shrink-0">
-            {gift.image_url ? (
-              <Image
-                src={gift.image_url}
-                alt={gift.name}
-                fill
-                className="object-contain drop-shadow-xl"
-                sizes="80px"
-               
-              />
-            ) : (
-              <div className="w-full h-full rounded-lg bg-white/5 flex items-center justify-center">
-                <FlaskConical size={32} style={{ color: '#444' }} />
-              </div>
-            )}
+          {/* 카드 스타일 이미지 프레임 */}
+          <div
+            className="relative flex-shrink-0 overflow-hidden"
+            style={{
+              width: '5.5rem',
+              height: '5.5rem',
+              backgroundImage: 'url(/images/ego-gift-bg.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* 등급 라벨 */}
+            <span
+              className="absolute top-[4%] left-[5%] z-10 pointer-events-none"
+              style={{
+                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                fontWeight: 700,
+                fontSize: '1.75rem',
+                lineHeight: 1,
+                color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+                textShadow: isEX
+                  ? '0 0 10px rgb(251,255,8), 0 0 4px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
+                  : '0 0 6px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
+              }}
+            >
+              {gradeLabel}
+            </span>
+
+            {/* 키워드 아이콘 */}
+            <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
+              {(() => {
+                const iconUrl = getGiftKeywordIcon(gift.keyword)
+                return iconUrl ? (
+                  <Image src={iconUrl} alt={gift.keyword} fill sizes="28px" className="object-contain" />
+                ) : null
+              })()}
+            </div>
+
+            {/* 기프트 이미지 */}
+            <div className="absolute inset-[13%] flex items-center justify-center">
+              {gift.image_url ? (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={gift.image_url}
+                    alt={gift.name}
+                    fill
+                    className="object-contain drop-shadow-lg"
+                    sizes="80px"
+                  />
+                </div>
+              ) : (
+                <FlaskConical size="1.75rem" style={{ color: '#444' }} />
+              )}
+            </div>
           </div>
 
           <div className="flex-1 min-w-0 pt-1">
@@ -533,16 +573,6 @@ function GiftModal({
                   return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
                 })()}
                 {gift.keyword}
-              </span>
-              <span
-                className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  color: gift.grade === 'EX' ? '#e8b030' : '#999',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
-                {gradeLabel}
               </span>
               {gift.enhancement && (
                 <span
@@ -613,6 +643,24 @@ function GiftModal({
               <MetaItem label="관련" value={gift.related} />
             )}
           </div>
+
+          {/* 획득 방법 */}
+          {gift.acquisition && (
+            <div
+              className="pt-2"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <p
+                className="font-bold mb-1"
+                style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}
+              >
+                획득 방법
+              </p>
+              <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
+                {gift.acquisition}
+              </p>
+            </div>
+          )}
 
           {/* 레시피 */}
           {recipe && (

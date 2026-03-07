@@ -21,6 +21,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 
 // ── .env.local 로드 ──
 const ROOT = process.cwd()
@@ -253,7 +254,7 @@ async function scrapeWiki() {
 
       // 획득 조건 추출 — "이벤트에서...획득" 문장 추출
       gift.acquisition = null
-      const acqText = afterText.replace(/\n/g, '')
+      const acqText = afterText.replace(/\n/g, '').replace(/\[\d+\]/g, '')
       const evtIdx = acqText.lastIndexOf('이벤트에서')
       if (evtIdx > 0) {
         const acqEnd = acqText.indexOf('획득', evtIdx)
@@ -432,6 +433,48 @@ async function uploadKeywordIcon(name, iconUrl) {
   return slug
 }
 
+// ── 기프트 이미지 다운로드 + Storage 업로드 ──
+async function uploadGiftImage(name, wikiImageUrl) {
+  if (!wikiImageUrl) return null
+
+  const hash = createHash('md5').update(name).digest('hex').slice(0, 8)
+  const storagePath = `limbus-assets/ego-gifts/ego-gift-${hash}.webp`
+
+  // 이미 존재하는지 확인
+  const checkRes = await fetch(`${STORAGE_BASE}/public/${storagePath}`, { method: 'HEAD' })
+  if (checkRes.ok) {
+    if (verbose) console.log(`  기프트 이미지 이미 존재: ${name} (${hash})`)
+    return `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`
+  }
+
+  // 다운로드
+  const imgRes = await fetch(wikiImageUrl)
+  if (!imgRes.ok) {
+    console.error(`  기프트 이미지 다운로드 실패: ${name}`)
+    return null
+  }
+  const imgBuffer = await imgRes.arrayBuffer()
+
+  // 업로드
+  const uploadRes = await fetch(`${STORAGE_BASE}/${storagePath}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'image/webp',
+      'x-upsert': 'true',
+    },
+    body: imgBuffer,
+  })
+
+  if (!uploadRes.ok) {
+    console.error(`  기프트 이미지 업로드 실패: ${name}`, await uploadRes.text())
+    return null
+  }
+
+  console.log(`  기프트 이미지 업로드: ${name} (${hash}.webp)`)
+  return `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`
+}
+
 // ── 비교 + 동기화 ──
 async function sync(scraped) {
   const { gifts: wikiGifts, keywords: wikiKeywords } = scraped
@@ -539,25 +582,29 @@ async function sync(scraped) {
         }
       }
 
-      // 2) 새 기프트 INSERT
+      // 2) 새 기프트 INSERT (이미지 업로드 포함)
       if (newGifts.length > 0) {
-        const rows = newGifts.map(g => ({
-          name: g.name,
-          keyword: g.keyword,
-          grade: g.grade,
-          enhancement: g.enhancement,
-          price: g.price,
-          sell_price: null,
-          buy_disabled: g.buy_disabled || false,
-          effect_base: g.effect_base,
-          effect_plus: g.effect_plus,
-          effect_plusplus: g.effect_plusplus,
-          is_synthesis: g.is_synthesis,
-          first_appearance: g.first_appearance,
-          related: g.related,
-          acquisition: g.acquisition,
-          image_url: null, // 이미지는 별도 처리 필요
-        }))
+        const rows = []
+        for (const g of newGifts) {
+          const imageUrl = await uploadGiftImage(g.name, g.wiki_image_url)
+          rows.push({
+            name: g.name,
+            keyword: g.keyword,
+            grade: g.grade,
+            enhancement: g.enhancement,
+            price: g.price,
+            sell_price: null,
+            buy_disabled: g.buy_disabled || false,
+            effect_base: g.effect_base,
+            effect_plus: g.effect_plus,
+            effect_plusplus: g.effect_plusplus,
+            is_synthesis: g.is_synthesis,
+            first_appearance: g.first_appearance,
+            related: g.related,
+            acquisition: g.acquisition,
+            image_url: imageUrl,
+          })
+        }
         const cnt = await upsertDB('ego_gifts', rows, 'name')
         console.log(`  새 기프트 ${cnt}개 추가`)
       }
@@ -581,6 +628,29 @@ async function sync(scraped) {
           else if (verbose) console.log(`  업데이트: ${ug.name}`)
         }
         console.log(`  기프트 ${updatedGifts.length}개 업데이트`)
+      }
+
+      // 4) 이미지 없는 기프트에 위키 이미지 업로드
+      const wikiGiftMap = new Map(wikiGifts.map(g => [g.name, g]))
+      const missingImageGifts = dbGifts.filter(g => !g.image_url && wikiGiftMap.get(g.name)?.wiki_image_url)
+      if (missingImageGifts.length > 0) {
+        console.log(`\n  이미지 누락 기프트 ${missingImageGifts.length}개 업로드 중...`)
+        for (const g of missingImageGifts) {
+          const wg = wikiGiftMap.get(g.name)
+          const imageUrl = await uploadGiftImage(g.name, wg.wiki_image_url)
+          if (imageUrl) {
+            const res = await fetch(
+              `${SUPABASE_URL}/rest/v1/ego_gifts?id=eq.${g.id}`,
+              {
+                method: 'PATCH',
+                headers: { ...headers, Prefer: 'return=minimal' },
+                body: JSON.stringify({ image_url: imageUrl }),
+              }
+            )
+            if (!res.ok) console.error(`  이미지 업데이트 실패: ${g.name}`, await res.text())
+            else console.log(`  이미지 업데이트: ${g.name}`)
+          }
+        }
       }
     } else {
       console.log('\n(dry-run 모드 — --fix 옵션으로 DB에 반영)')

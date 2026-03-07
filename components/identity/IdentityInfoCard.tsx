@@ -90,7 +90,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   alt=""
                   width={14}
                   height={14}
-                  style={{ width: 'auto', height: 'auto' }}
+                  style={{ width: '0.875rem', height: '0.875rem' }}
                 />
                 <span style={{ color: resColor, fontSize: '0.6875rem', fontWeight: 600 }}>
                   {res}
