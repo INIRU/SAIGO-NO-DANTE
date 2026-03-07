@@ -14,14 +14,22 @@ const CHARON_LINES = [
   '그래서 카론이 안전벨트 잘 하라고 했잖아.',
 ]
 
+function formatEndTime(iso: string) {
+  const d = new Date(iso)
+  const month = d.getMonth() + 1
+  const day = d.getDate()
+  const hour = d.getHours().toString().padStart(2, '0')
+  const min = d.getMinutes().toString().padStart(2, '0')
+  return `${month}월 ${day}일 ${hour}:${min}`
+}
+
 export default async function MaintenancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; message?: string }>
+  searchParams: Promise<{ from?: string; message?: string; reason?: string; ends_at?: string }>
 }) {
-  const { from, message } = await searchParams
+  const { from, message, reason, ends_at } = await searchParams
 
-  // 랜덤 대사 (빌드 시 결정)
   const randomLine = CHARON_LINES[Math.floor(Math.random() * CHARON_LINES.length)]
 
   return (
@@ -95,18 +103,30 @@ export default async function MaintenancePage({
         {/* 커스텀 점검 메시지 */}
         {message && (
           <p
-            className="mb-4"
+            className="mb-3"
             style={{ color: '#a89070', fontSize: '0.875rem', lineHeight: 1.6 }}
           >
             {message}
           </p>
         )}
 
-        {from && (
-          <p className="mb-6" style={{ color: '#3a3530', fontSize: '0.75rem' }}>
-            <code style={{ color: '#555566' }}>{from}</code>
+        {/* 점검 정보 */}
+        <div className="mb-6 space-y-1.5">
+          {reason && (
+            <p style={{ color: '#7a6845', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#555566' }}>사유: </span>{reason}
+            </p>
+          )}
+          <p style={{ color: '#7a6845', fontSize: '0.8125rem' }}>
+            <span style={{ color: '#555566' }}>예상 종료: </span>
+            {ends_at ? formatEndTime(ends_at) : '미정'}
           </p>
-        )}
+          {from && (
+            <p style={{ color: '#3a3530', fontSize: '0.75rem' }}>
+              <code style={{ color: '#555566' }}>{from}</code>
+            </p>
+          )}
+        </div>
 
         <Link
           href="/"

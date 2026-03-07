@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
   if (!MAINTENANCE_SKIP.some(p => pathname.startsWith(p)) && pathname !== '/favicon.ico') {
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message`,
+        `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message,reason,ends_at`,
         {
           headers: {
             apikey: SUPABASE_KEY,
@@ -33,10 +33,13 @@ export async function proxy(request: NextRequest) {
       )
 
       if (res.ok) {
-        const entries: { path: string; message: string }[] = await res.json()
-        const matched = entries.find(
-          e => pathname === e.path || pathname.startsWith(e.path + '/'),
-        )
+        const now = new Date()
+        const entries: { path: string; message: string; reason: string; ends_at: string | null }[] = await res.json()
+        const matched = entries.find(e => {
+          // 종료 시간이 지난 항목은 무시
+          if (e.ends_at && new Date(e.ends_at) < now) return false
+          return pathname === e.path || pathname.startsWith(e.path + '/')
+        })
 
         if (matched) {
           // 관리자는 점검 우회
@@ -45,7 +48,9 @@ export async function proxy(request: NextRequest) {
             const url = request.nextUrl.clone()
             url.pathname = '/maintenance'
             url.searchParams.set('from', pathname)
-            url.searchParams.set('message', matched.message || '')
+            if (matched.message) url.searchParams.set('message', matched.message)
+            if (matched.reason) url.searchParams.set('reason', matched.reason)
+            if (matched.ends_at) url.searchParams.set('ends_at', matched.ends_at)
             return NextResponse.rewrite(url)
           }
         }
