@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { id, is_active, message } = body
+  const { id, is_active, message, reason, ends_at } = body
 
   if (typeof id !== 'number') {
     return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (typeof is_active === 'boolean') update.is_active = is_active
   if (typeof message === 'string') update.message = message
+  if (typeof reason === 'string') update.reason = reason
+  if (ends_at !== undefined) update.ends_at = ends_at
 
   const { error } = await supabase
     .schema('limbus')
