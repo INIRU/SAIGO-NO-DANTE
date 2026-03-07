@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { Search, X, FlaskConical } from 'lucide-react'
-import Dropdown from '@/components/ui/Dropdown'
+import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
 
@@ -34,6 +33,7 @@ interface EgoGift {
   first_appearance: string | null
   related: string | null
   image_url: string | null
+  acquisition: string | null
 }
 
 interface Recipe {
@@ -96,12 +96,30 @@ export default function MirrorDungeonClient({
   const { getIconUrl } = useKeywordData()
   const getGiftKeywordIcon = (keyword: string) => getIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null
 
-  const [keyword, setKeyword] = useState('전체')
-  const [grade, setGrade] = useState('전체')
+  const [keywords, setKeywords] = useState<Set<string>>(new Set())
+  const [grades, setGrades] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'grade'>('default')
   const [sortDesc, setSortDesc] = useState(false)
+
+  const toggleKeyword = (key: string) => {
+    setKeywords(prev => {
+      if (key === '전체') return new Set()
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
+
+  const toggleGrade = (g: string) => {
+    setGrades(prev => {
+      if (g === '전체') return new Set()
+      const next = new Set(prev)
+      if (next.has(g)) next.delete(g); else next.add(g)
+      return next
+    })
+  }
 
   // 레시피 맵: result_name → Recipe
   const recipeMap = useMemo(() => {
@@ -123,8 +141,8 @@ export default function MirrorDungeonClient({
   // 필터링 + 정렬
   const filtered = useMemo(() => {
     const result = gifts.filter(g => {
-      if (keyword !== '전체' && g.keyword !== keyword) return false
-      if (grade !== '전체' && g.grade !== grade) return false
+      if (keywords.size > 0 && !keywords.has(g.keyword)) return false
+      if (grades.size > 0 && !grades.has(g.grade)) return false
       if (search && !g.name.includes(search)) return false
       return true
     })
@@ -138,7 +156,7 @@ export default function MirrorDungeonClient({
     if (sortDesc) result.reverse()
 
     return result
-  }, [gifts, keyword, grade, search, sortBy, sortDesc])
+  }, [gifts, keywords, grades, search, sortBy, sortDesc])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
@@ -173,6 +191,20 @@ export default function MirrorDungeonClient({
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+      <style>{`
+        .gift-grid {
+          grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+        }
+        @media (min-width: 768px) {
+          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }
+        }
+        .gift-card {
+          container-type: inline-size;
+        }
+        .gift-card:hover .gift-frame {
+          filter: brightness(1.2) drop-shadow(0 2px 8px rgba(200,144,10,0.4));
+        }
+      `}</style>
       {/* 헤더 */}
       <div className="mb-8 text-center">
         <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
@@ -188,19 +220,21 @@ export default function MirrorDungeonClient({
         {/* 키워드 필터 */}
         <div className="flex flex-wrap gap-2 justify-center">
           {KEYWORDS.map(kw => {
-            const iconUrl = kw.key !== '전체' ? getGiftKeywordIcon(kw.key) : null
+            const isAll = kw.key === '전체'
+            const active = isAll ? keywords.size === 0 : keywords.has(kw.key)
+            const iconUrl = !isAll ? getGiftKeywordIcon(kw.key) : null
             return (
               <button
                 key={kw.key}
-                onClick={() => setKeyword(kw.key)}
+                onClick={() => toggleKeyword(kw.key)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
                 style={{
                   cursor: 'pointer',
-                  background: keyword === kw.key
-                    ? (kw.key === '전체' ? 'var(--gold)' : KEYWORD_COLORS[kw.key] ?? '#666')
+                  background: active
+                    ? (isAll ? 'var(--gold)' : KEYWORD_COLORS[kw.key] ?? '#666')
                     : 'rgba(255,255,255,0.05)',
-                  color: keyword === kw.key ? '#0d0b08' : '#777',
-                  border: `1px solid ${keyword === kw.key
+                  color: active ? '#0d0b08' : '#777',
+                  border: `1px solid ${active
                     ? 'transparent'
                     : 'rgba(255,255,255,0.08)'}`,
                   fontFamily: 'var(--font-heading)',
@@ -212,8 +246,7 @@ export default function MirrorDungeonClient({
                     alt={kw.label}
                     width={14}
                     height={14}
-                   
-                    style={{ opacity: keyword === kw.key ? 0.9 : 0.5 }}
+                    style={{ opacity: active ? 0.9 : 0.5 }}
                   />
                 )}
                 {kw.label}
@@ -224,14 +257,8 @@ export default function MirrorDungeonClient({
 
         {/* 등급 + 검색 */}
         <div className="flex gap-3 justify-center items-center flex-wrap">
-          {/* 등급 드롭다운 */}
-          <Dropdown
-            value={grade}
-            options={GRADES.map(g => ({ value: g, label: g === '전체' ? '전체' : GRADE_LABELS[g] ?? g }))}
-            onChange={setGrade}
-            prefix="등급:"
-            defaultValue="전체"
-          />
+          {/* 등급 멀티 드롭다운 */}
+          <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
 
           {/* 정렬 버튼 */}
           <div className="flex items-center gap-1">
@@ -313,7 +340,7 @@ export default function MirrorDungeonClient({
           <p className="text-sm">필터를 변경해 보세요.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+        <div className="gift-grid" style={{ display: 'grid', gap: '0.625rem' }}>
           {filtered.map(gift => (
             <GiftCard
               key={gift.id}
@@ -341,93 +368,87 @@ export default function MirrorDungeonClient({
 
 /* ── 기프트 카드 ── */
 function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClick: () => void; getGiftKeywordIcon: (keyword: string) => string | null }) {
-  const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
+  const isEX = gift.grade === 'EX'
 
   return (
     <button
       onClick={onClick}
-      className="gift-card group relative flex flex-col items-center rounded-lg p-2 transition-all duration-200 hover:scale-[1.04] hover:z-10"
-      style={{
-        cursor: 'pointer',
-        opacity: 0,
-        background: 'rgba(26,21,16,0.8)',
-        border: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className="gift-card group relative flex flex-col items-center transition-all duration-200 hover:scale-[1.06] hover:z-10"
+      style={{ cursor: 'pointer', opacity: 0 }}
     >
-      {/* 등급 배지 */}
+      {/* 카드 프레임 */}
       <div
-        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[0.5625rem] font-bold"
+        className="gift-frame relative w-full aspect-square overflow-hidden"
         style={{
-          background: 'rgba(0,0,0,0.5)',
-          color: gift.grade === 'EX' ? '#e8b030' : kwColor,
-          fontFamily: 'var(--font-mono)',
+          backgroundImage: 'url(/images/ego-gift-bg.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transition: 'filter 0.3s, box-shadow 0.3s',
         }}
       >
-        {gradeLabel}
-      </div>
+        {/* 등급 — 왼쪽 위, Bebas Neue 스타일 */}
+        <span
+          className="absolute top-[4%] left-[3%] z-10 pointer-events-none"
+          style={{
+            fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+            fontWeight: 700,
+            fontSize: 'clamp(20px, 42cqw, 48px)',
+            lineHeight: 1,
+            letterSpacing: '0.02em',
+            color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+            textShadow: isEX
+              ? '0 0 14px rgb(251,255,8), 0 0 6px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
+              : '0 0 8px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
+            filter: isEX ? 'brightness(1.1) drop-shadow(0 0 3px rgb(12,90,0))' : undefined,
+          }}
+        >
+          {gradeLabel}
+        </span>
 
-      {/* 이미지 */}
-      <div className="w-14 h-14 md:w-16 md:h-16 relative my-1 flex-shrink-0">
-        {gift.image_url ? (
-          <Image
-            src={gift.image_url}
-            alt={gift.name}
-            fill
-            className="object-contain drop-shadow-lg"
-            sizes="64px"
-           
-          />
-        ) : (
-          <div className="w-full h-full rounded bg-white/5 flex items-center justify-center">
-            <FlaskConical size={20} style={{ color: '#444' }} />
-          </div>
-        )}
+        {/* 키워드 아이콘 — 오른쪽 아래 */}
+        <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
+          {(() => {
+            const iconUrl = getGiftKeywordIcon(gift.keyword)
+            return iconUrl ? (
+              <Image src={iconUrl} alt={gift.keyword} fill sizes="40px" className="object-contain" />
+            ) : null
+          })()}
+        </div>
+
+        {/* 기프트 이미지 — 중앙 74% */}
+        <div className="absolute inset-[13%] flex items-center justify-center">
+          {gift.image_url ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={gift.image_url}
+                alt={gift.name}
+                fill
+                className="object-contain drop-shadow-lg"
+                sizes="120px"
+              />
+            </div>
+          ) : (
+            <FlaskConical size={28} style={{ color: '#444' }} />
+          )}
+        </div>
+
+        {/* 호버 글로우 (CSS에서 .gift-card:hover .gift-frame으로 처리) */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(251,183,46,0.15) 0%, transparent 50%)',
+          }}
+        />
       </div>
 
       {/* 이름 */}
       <p
-        className="text-[0.625rem] md:text-[0.6875rem] leading-tight text-center mt-1 line-clamp-2"
+        className="text-[0.625rem] md:text-[0.6875rem] leading-tight text-center mt-1.5 line-clamp-2 w-full"
         style={{ color: '#aaa', fontFamily: 'var(--font-heading)' }}
       >
         {gift.name}
       </p>
-
-      {/* 가격 */}
-      {gift.price != null ? (
-        <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#8a7a50', fontFamily: 'var(--font-mono)' }}>
-          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} />
-          {gift.price}
-        </p>
-      ) : gift.sell_price != null ? (
-        <p className="flex items-center gap-0.5 text-[0.5625rem] mt-1" style={{ color: '#665540', fontFamily: 'var(--font-mono)' }}>
-          <Image src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" alt="" width={10} height={10} style={{ opacity: 0.6 }} />
-          {gift.sell_price}
-        </p>
-      ) : (
-        <div className="mt-1" />
-      )}
-
-      {/* 키워드 아이콘 */}
-      {(() => {
-        const iconUrl = getGiftKeywordIcon(gift.keyword)
-        return iconUrl ? (
-          <Image src={iconUrl} alt={gift.keyword} width={14} height={14}
-            className="mt-0.5 mb-0.5" style={{ opacity: 0.6 }} />
-        ) : (
-          <div className="w-1.5 h-1.5 rounded-full mt-0.5 mb-0.5" style={{ background: kwColor }} />
-        )
-      })()}
-
-      {/* 호버 글로우 */}
-      <div
-        className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        style={{
-          boxShadow: `inset 0 0 20px ${kwColor}15, 0 0 12px ${kwColor}10`,
-          border: `1px solid ${kwColor}30`,
-          borderRadius: '8px',
-        }}
-      />
     </button>
   )
 }
@@ -448,6 +469,7 @@ function GiftModal({
 }) {
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
+  const isEX = gift.grade === 'EX'
 
   return (
     <div
@@ -476,24 +498,62 @@ function GiftModal({
           <X size={18} />
         </button>
 
-        {/* 헤더 */}
+        {/* 헤더: 카드 프레임 + 정보 */}
         <div className="flex items-start gap-4 p-5 pb-3">
-          {/* 이미지 */}
-          <div className="w-20 h-20 relative flex-shrink-0">
-            {gift.image_url ? (
-              <Image
-                src={gift.image_url}
-                alt={gift.name}
-                fill
-                className="object-contain drop-shadow-xl"
-                sizes="80px"
-               
-              />
-            ) : (
-              <div className="w-full h-full rounded-lg bg-white/5 flex items-center justify-center">
-                <FlaskConical size={32} style={{ color: '#444' }} />
-              </div>
-            )}
+          {/* 카드 스타일 이미지 프레임 */}
+          <div
+            className="relative flex-shrink-0 overflow-hidden"
+            style={{
+              width: '5.5rem',
+              height: '5.5rem',
+              backgroundImage: 'url(/images/ego-gift-bg.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* 등급 라벨 */}
+            <span
+              className="absolute top-[4%] left-[5%] z-10 pointer-events-none"
+              style={{
+                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                fontWeight: 700,
+                fontSize: '1.75rem',
+                lineHeight: 1,
+                color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+                textShadow: isEX
+                  ? '0 0 10px rgb(251,255,8), 0 0 4px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
+                  : '0 0 6px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
+              }}
+            >
+              {gradeLabel}
+            </span>
+
+            {/* 키워드 아이콘 */}
+            <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
+              {(() => {
+                const iconUrl = getGiftKeywordIcon(gift.keyword)
+                return iconUrl ? (
+                  <Image src={iconUrl} alt={gift.keyword} fill sizes="28px" className="object-contain" />
+                ) : null
+              })()}
+            </div>
+
+            {/* 기프트 이미지 */}
+            <div className="absolute inset-[13%] flex items-center justify-center">
+              {gift.image_url ? (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={gift.image_url}
+                    alt={gift.name}
+                    fill
+                    className="object-contain drop-shadow-lg"
+                    sizes="80px"
+                  />
+                </div>
+              ) : (
+                <FlaskConical size="1.75rem" style={{ color: '#444' }} />
+              )}
+            </div>
           </div>
 
           <div className="flex-1 min-w-0 pt-1">
@@ -513,16 +573,6 @@ function GiftModal({
                   return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
                 })()}
                 {gift.keyword}
-              </span>
-              <span
-                className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  color: gift.grade === 'EX' ? '#e8b030' : '#999',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
-                {gradeLabel}
               </span>
               {gift.enhancement && (
                 <span
@@ -593,6 +643,24 @@ function GiftModal({
               <MetaItem label="관련" value={gift.related} />
             )}
           </div>
+
+          {/* 획득 방법 */}
+          {gift.acquisition && (
+            <div
+              className="pt-2"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <p
+                className="font-bold mb-1"
+                style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}
+              >
+                획득 방법
+              </p>
+              <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
+                {gift.acquisition}
+              </p>
+            </div>
+          )}
 
           {/* 레시피 */}
           {recipe && (
@@ -703,6 +771,94 @@ function MetaItem({
       <span className="text-[0.6875rem]" style={{ color: valueColor }}>
         {value}
       </span>
+    </div>
+  )
+}
+
+/* ── 등급 멀티 드롭다운 ── */
+function GradeMultiDropdown({ grades, toggleGrade }: { grades: Set<string>; toggleGrade: (g: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const isActive = grades.size > 0
+  const label = !isActive ? '전체' : `${grades.size}개 선택`
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
+        style={{
+          cursor: 'pointer',
+          background: 'rgba(255,255,255,0.05)',
+          border: `1px solid ${isActive ? 'var(--gold-dim)' : 'rgba(255,255,255,0.1)'}`,
+          color: isActive ? 'var(--gold)' : '#777',
+          fontFamily: 'var(--font-heading)',
+          minWidth: 100,
+        }}
+      >
+        등급: {label}
+        <ChevronDown
+          size={14}
+          style={{
+            opacity: 0.5,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          className="absolute top-full mt-1 left-0 z-30 rounded overflow-hidden"
+          style={{
+            background: '#1a1510',
+            border: '1px solid var(--border)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            minWidth: 120,
+          }}
+        >
+          {GRADES.map(g => {
+            const isAll = g === '전체'
+            const checked = isAll ? grades.size === 0 : grades.has(g)
+            return (
+              <button
+                key={g}
+                onClick={() => toggleGrade(g)}
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/5"
+                style={{
+                  cursor: 'pointer',
+                  color: checked ? 'var(--gold)' : '#777',
+                  fontFamily: 'var(--font-heading)',
+                }}
+              >
+                <span
+                  className="inline-block w-3 h-3 rounded-sm border shrink-0"
+                  style={{
+                    borderColor: checked ? 'var(--gold)' : '#555',
+                    background: checked ? 'var(--gold)' : 'transparent',
+                  }}
+                >
+                  {checked && (
+                    <svg viewBox="0 0 12 12" fill="none" style={{ width: '100%', height: '100%' }}>
+                      <path d="M3 6l2 2 4-4" stroke="#0d0b08" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                {isAll ? '전체' : GRADE_LABELS[g] ?? g}
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

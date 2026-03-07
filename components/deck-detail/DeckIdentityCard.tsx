@@ -9,7 +9,6 @@ import {
   GRADE_COLORS,
   RARITY_ICON_MAP,
   computeSkillImageIndices,
-  ATK_TYPE_ICON_MAP,
   SIN_COLORS,
   SIN_KR_TO_EN,
   type SinType,
@@ -101,12 +100,6 @@ const GRADE_ICON_URL: Record<string, string> = {
   WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
 }
 
-const SKILL_TYPE_KR: Record<string, string> = {
-  'evade': '회피',
-  'defense': '수비',
-  'counter': '반격',
-}
-
 const ATK_ICON_URL: Record<string, string> = {
   'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
   'pierce': `${STORAGE_BASE}/icons/stats/pierce.webp`,
@@ -176,14 +169,15 @@ export default function DeckIdentityCard({
   const normalUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
   const themeKws = (id_.keywords ?? []).filter(kw => THEME_KEYWORDS.has(kw))
 
-  // 4동기화 우선: 같은 skill_order에서 최고 uptie_level만 유지
+  // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
   const rawSkills = id_.skills ?? []
-  const skillBest = new Map<number, typeof rawSkills[0]>()
+  const skillBest = new Map<string, typeof rawSkills[0]>()
   for (const s of rawSkills) {
-    const ex = skillBest.get(s.skill_order)
-    if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skillBest.set(s.skill_order, s)
+    const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+    const ex = skillBest.get(key)
+    if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skillBest.set(key, s)
   }
-  const sortedSkills = [...skillBest.values()].sort((a, b) => a.skill_order - b.skill_order)
+  const sortedSkills = [...skillBest.values()].sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
 
   // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
   const rawPassives = id_.passives ?? []
@@ -344,16 +338,25 @@ export default function DeckIdentityCard({
         <div className="flex flex-col gap-2 p-3">
           {sortedSkills.length === 0 ? (
             <p style={{ color: '#5a5065', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
-          ) : sortedSkills.filter(s => s.skill_order >= 1 && s.skill_order <= 3).filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i).map((skill, idx) => {
+          ) : (() => {
+            const atkSkills = sortedSkills.filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))
+            const labelCount: Record<number, number> = {}
+            // 각 skill_order에 몇 개의 변형이 있는지 카운트
+            for (const sk of atkSkills) labelCount[sk.skill_order] = (labelCount[sk.skill_order] ?? 0) + 1
+            const labelIdx: Record<number, number> = {}
+            return atkSkills.map(skill => {
+            const varIdx = labelIdx[skill.skill_order] ?? 0
+            labelIdx[skill.skill_order] = varIdx + 1
+            const hasVariants = (labelCount[skill.skill_order] ?? 1) > 1
             const sc = sinColor(skill.sin_affinity)
             const maxPower = skill.base_power + skill.coins * skill.coin_power
             const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
-            const skillLabel = skill.skill_order <= 3 ? `S${skill.skill_order}` : (SKILL_TYPE_KR[skill.skill_type] ?? skill.skill_type)
-            const imgIdx = skillImageIdx[skill.id] ?? idx + 1
+            const skillLabel = hasVariants ? `S${skill.skill_order}-${varIdx + 1}` : `S${skill.skill_order}`
+            const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
             const iconUrl = skillIconUrl(imgIdx)
             const iconFallback = imgIdx >= 5 ? skillIconUrl(3) : undefined
             return (
-              <div key={idx} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
+              <div key={skill.id} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -416,7 +419,8 @@ export default function DeckIdentityCard({
                 )}
               </div>
             )
-          })}
+          })
+          })()}
         </div>
       )}
 
