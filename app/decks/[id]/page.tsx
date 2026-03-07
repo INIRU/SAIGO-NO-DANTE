@@ -125,15 +125,17 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
     const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
 
     const rawSk = id_.skills ?? []
-    const skBest = new Map<number, typeof rawSk[0]>()
+    const skBest = new Map<string, typeof rawSk[0]>()
     for (const s of rawSk) {
-      const ex = skBest.get(s.skill_order)
-      if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(s.skill_order, s)
+      const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+      const ex = skBest.get(key)
+      if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(key, s)
     }
     const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || a.id.localeCompare(b.id))
     const imgIdx = computeSkillImageIndices(sortedSkills)
+    const atkSkills = sortedSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
     const orderCount: Record<number, number> = {}
-    for (const sk of sortedSkills) {
+    for (const sk of atkSkills) {
       const subIdx = orderCount[sk.skill_order] || 0
       orderCount[sk.skill_order] = subIdx + 1
       const key = subIdx === 0
@@ -812,10 +814,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                                 const id_ = slot.identities!
                                 const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
                                 const rawSk2 = id_.skills ?? []
-                                const skBest2 = new Map<number, typeof rawSk2[0]>()
+                                const skBest2 = new Map<string, typeof rawSk2[0]>()
                                 for (const s of rawSk2) {
-                                  const ex = skBest2.get(s.skill_order)
-                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(s.skill_order, s)
+                                  if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
+                                  const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+                                  const ex = skBest2.get(key)
+                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
                                 }
                                 const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
                                 const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
@@ -874,10 +878,12 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                     for (const slot of filledSlots) {
                       const id__ = slot.identities!
                       const rawSk__ = id__.skills ?? []
-                      const skBest__ = new Map<number, typeof rawSk__[0]>()
+                      const skBest__ = new Map<string, typeof rawSk__[0]>()
                       for (const s of rawSk__) {
-                        const ex = skBest__.get(s.skill_order)
-                        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest__.set(s.skill_order, s)
+                        if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
+                        const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+                        const ex = skBest__.get(key)
+                        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest__.set(key, s)
                       }
                       for (const sk of skBest__.values()) {
                         if (sk.sin_affinity) {

@@ -232,8 +232,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
       const idSkills = skillsByIdentityId[identity.id] ?? []
       const imgIdx = computeSkillImageIndices(idSkills)
+      const atkSkills = idSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
       const orderCount: Record<number, number> = {}
-      for (const sk of idSkills) {
+      for (const sk of atkSkills) {
         const subIdx = orderCount[sk.skill_order] || 0
         orderCount[sk.skill_order] = subIdx + 1
         const key = subIdx === 0
@@ -361,8 +362,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
       const idSkills = skillsByIdentityId[identity.id] ?? []
       const imgIdx = computeSkillImageIndices(idSkills)
+      const acAtkSkills = idSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
       const acOrderCount: Record<number, number> = {}
-      for (const sk of idSkills) {
+      for (const sk of acAtkSkills) {
         const subIdx = acOrderCount[sk.skill_order] || 0
         acOrderCount[sk.skill_order] = subIdx + 1
         const sc = SIN_COLORS[sk.sin_affinity] || '#888'
