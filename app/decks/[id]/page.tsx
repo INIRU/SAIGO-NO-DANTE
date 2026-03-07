@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Trash2, Reply, X } from 'lucide-react'
 import { useToast, Toast } from '@/components/ui/Toast'
-import { STORAGE_BASE, getSinnerLogoUrl, GRADE_COLORS, computeSkillImageIndices, SIN_COLORS, SIN_KR_TO_EN, type ActivationCondition } from '@/lib/data/sinners'
+import { STORAGE_BASE, getSinnerLogoUrl, GRADE_COLORS, computeSkillImageIndices, SIN_COLORS, SIN_KR_TO_EN, type ActivationCondition, DEFAULT_AVATAR_URL } from '@/lib/data/sinners'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
 import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
@@ -997,14 +997,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
               }
             }
 
-            const renderAvatar = (comment: Comment, size: number) =>
-              comment.avatar_url ? (
+            const renderAvatar = (comment: Comment, size: number) => (
                 <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }}>
-                  <Image src={comment.avatar_url} alt="" fill sizes={`${size}px`} style={{ objectFit: 'cover' }} />
-                </div>
-              ) : (
-                <div style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(200,144,10,0.12)', border: '1px solid rgba(58,40,18,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-dim)', fontSize: size < 28 ? '0.575rem' : '0.6875rem', fontWeight: 'bold', flexShrink: 0 }}>
-                  {(comment.username ?? '?')[0]?.toUpperCase()}
+                  <Image src={comment.avatar_url || DEFAULT_AVATAR_URL} alt="" fill sizes={`${size}px`} style={{ objectFit: 'cover' }} />
                 </div>
               )
 

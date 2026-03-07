@@ -1,6 +1,9 @@
 // ── Supabase Storage 기본 URL ─────────────────────────────────────────────
 export const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
+// ── 기본 아바타 (LCB 이상 각성 프로필) ────────────────────────────────────────
+export const DEFAULT_AVATAR_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/LCB%20Sinner/10101_gacksung_profile.webp`
+
 // ── 12인 수감자 슬러그 (generateStaticParams용 — DB 불필요) ──────────────────
 export const SINNER_SLUGS = [
   'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault',

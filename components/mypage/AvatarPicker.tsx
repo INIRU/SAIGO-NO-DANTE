@@ -27,7 +27,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
   const [sinners, setSinners] = useState<Sinner[]>([])
   const [identities, setIdentities] = useState<AvatarIdentity[]>([])
   const [selectedSinner, setSelectedSinner] = useState<string>('')
-  const [gacksung, setGacksung] = useState(false)
+  const [gacksung, setGacksung] = useState(true)
   const [loading, setLoading] = useState(true)
   const [failedGacksung, setFailedGacksung] = useState<Set<string>>(new Set())
   const [failedProfile, setFailedProfile] = useState<Set<string>>(new Set())
