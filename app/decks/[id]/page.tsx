@@ -136,18 +136,24 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
     const atkSkills = sortedSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
     const orderCount: Record<number, number> = {}
     for (const sk of atkSkills) {
-      const subIdx = orderCount[sk.skill_order] || 0
-      orderCount[sk.skill_order] = subIdx + 1
+      const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
+      const subIdx = orderCount[baseOrder] || 0
+      orderCount[baseOrder] = subIdx + 1
       const key = subIdx === 0
-        ? `${sName}:${sk.skill_order}`
-        : `${sName}:${sk.skill_order}:${subIdx}`
+        ? `${sName}:${baseOrder}`
+        : `${sName}:${baseOrder}:${subIdx}`
       const iconUrl = id_.game_id
         ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
         : undefined
-      skillLookup[key] = {
+      const entry = {
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity,
         skill_order: sk.skill_order, description: sk.description,
         iconUrl, identityName: id_.name_kr, sinnerName: sName,
+      }
+      skillLookup[key] = entry
+      // 이전 형식 호환: skill_order >= 5 였던 토큰도 인식
+      if (sk.skill_order >= 5) {
+        skillLookup[`${sName}:${sk.skill_order}`] = entry
       }
     }
     const rawPa = id_.passives ?? []
