@@ -136,7 +136,7 @@ export default function Navbar() {
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
     fontSize: '17px',
-    color: pathname === href ? 'var(--gold)' : '#7a6845',
+    color: pathname === href ? 'var(--gold)' : '#a08a60',
     padding: '14px 0',
     borderBottom: '1px solid rgba(58,42,21,0.3)',
   })
@@ -187,7 +187,7 @@ export default function Navbar() {
                     style={{
                       fontFamily: 'var(--font-heading)',
                       fontSize: '14px',
-                      color: isActive ? 'var(--gold)' : '#7a6845',
+                      color: isActive ? 'var(--gold)' : '#a08a60',
                       cursor: 'pointer',
                       background: 'none',
                       border: 'none',
@@ -268,7 +268,7 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
               style={{
                 cursor: 'pointer',
-                color: '#7a6845',
+                color: '#a08a60',
                 border: '1px solid rgba(200,144,10,0.12)',
                 background: 'rgba(200,144,10,0.04)',
               }}
@@ -354,7 +354,7 @@ export default function Navbar() {
                         {displayName}
                       </p>
                       {user.email && (
-                        <p style={{ color: '#555566', fontSize: '11px', marginTop: '2px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ color: '#999', fontSize: '11px', marginTop: '2px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {user.email}
                         </p>
                       )}
@@ -494,7 +494,7 @@ export default function Navbar() {
                   <div>
                     <p style={{ color: '#c8a450', fontSize: '15px', fontWeight: 600 }}>{displayName}</p>
                     {user.email && (
-                      <p style={{ color: '#555566', fontSize: '12px', marginTop: '1px' }}>{user.email}</p>
+                      <p style={{ color: '#999', fontSize: '12px', marginTop: '1px' }}>{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -521,7 +521,7 @@ export default function Navbar() {
                   style={{
                     fontFamily: 'var(--font-heading)',
                     fontSize: '17px',
-                    color: '#7a6845',
+                    color: '#a08a60',
                     padding: '14px 0',
                     cursor: 'pointer',
                   }}

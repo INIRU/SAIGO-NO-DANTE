@@ -182,8 +182,8 @@ export function NoteAutocompleteDropdown({
         display: 'flex', alignItems: 'center', gap: 4,
         padding: '0 6px 4px', borderBottom: '1px solid rgba(200,144,10,0.08)', marginBottom: 4,
       }}>
-        <span style={{ color: '#555570', fontSize: '0.5rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
-        <span style={{ color: '#252530', fontSize: '0.5rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
+        <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
+        <span style={{ color: '#6a6a78', fontSize: '0.75rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {suggestions.map((sugg, i) => {
@@ -205,7 +205,7 @@ export function NoteAutocompleteDropdown({
               ) : sugg.iconUrl ? (
                 <Image src={sugg.iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
               ) : sugg.typeLabel ? (
-                <span style={{ fontSize: '0.5625rem', color: '#555', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
+                <span style={{ fontSize: '0.75rem', color: '#999', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
               ) : (
                 <span style={{ width: 14, flexShrink: 0 }} />
               )}
@@ -213,7 +213,7 @@ export function NoteAutocompleteDropdown({
               <span style={{ color: sugg.color, fontSize: '0.6875rem', fontWeight: 600, flex: 1 }}>{sugg.label}</span>
               {/* 타입 표시 (아이콘이 있을 때만 우측에) */}
               {sugg.typeLabel && (sugg.imageUrl || sugg.iconUrl) && (
-                <span style={{ color: '#333', fontSize: '0.5625rem', flexShrink: 0 }}>{sugg.typeLabel}</span>
+                <span style={{ color: '#999', fontSize: '0.75rem', flexShrink: 0 }}>{sugg.typeLabel}</span>
               )}
             </button>
           )

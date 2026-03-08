@@ -104,7 +104,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
       {/* 소속 */}
       {identity.affiliation && (
         <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-          <div style={{ color: '#666', fontSize: '0.625rem', marginBottom: '6px' }}>소속</div>
+          <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>소속</div>
           <span
             className="px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1"
             style={{
@@ -123,8 +123,8 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
         <div className="mt-5 space-y-2">
           {identity.release_date && (
             <div className="flex items-center gap-2">
-              <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>출시시기</span>
-              <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{identity.release_date}</span>
+              <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>출시시기</span>
+              <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{identity.release_date}</span>
             </div>
           )}
           {(() => {
@@ -142,7 +142,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               always:   { label: '상시 추출',   color: '#6bbbff' },
               seasonal: { label: '시즌 한정',   color: '#ffa502' },
               walpurgis:{ label: '발푸밤 한정', color: '#7bed9f' },
-              none:     { label: '추출 불가',   color: '#666' },
+              none:     { label: '추출 불가',   color: '#999' },
             }
 
             const typeInfo = TYPE_LABELS[info.type] ?? TYPE_LABELS.standard
@@ -152,12 +152,12 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               <div className="space-y-2">
                 {/* 타입 + 시즌 배지 */}
                 <div className="flex items-center gap-2">
-                  <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>획득 방법</span>
+                  <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>획득 방법</span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {/* 타입 배지 */}
                     <span
                       style={{
-                        fontSize: '0.625rem', fontWeight: 600,
+                        fontSize: '0.75rem', fontWeight: 600,
                         padding: '2px 8px', borderRadius: '3px',
                         color: typeInfo.color,
                         background: typeInfo.bg,
@@ -171,7 +171,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                     {info.release_season > 0 && (
                       <span
                         style={{
-                          fontSize: '0.625rem', fontWeight: 500,
+                          fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
                           color: '#c8900a',
                           background: 'rgba(200,144,10,0.1)',
@@ -186,7 +186,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                     {info.walpurgis_edition && (
                       <span
                         style={{
-                          fontSize: '0.625rem', fontWeight: 500,
+                          fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
                           color: '#7bed9f',
                           background: 'rgba(123,237,159,0.08)',
@@ -201,7 +201,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                     {info.event_name && (
                       <span
                         style={{
-                          fontSize: '0.625rem', fontWeight: 500,
+                          fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
                           color: '#ff9f43',
                           background: 'rgba(255,159,67,0.08)',
@@ -217,14 +217,14 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                 {/* 추출 상태 */}
                 {info.type !== 'default' && (
                   <div className="flex items-center gap-2">
-                    <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>추출</span>
+                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>추출</span>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span style={{ fontSize: '0.625rem', color: gachaInfo.color }}>
+                      <span style={{ fontSize: '0.75rem', color: gachaInfo.color }}>
                         {gachaInfo.label}
                         {info.gacha === 'seasonal' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
                       </span>
                       {info.target_sinner && (
-                        <span style={{ fontSize: '0.625rem', color: '#ffa502' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#ffa502' }}>
                           · {info.target_sinner} 특정 추출
                         </span>
                       )}
@@ -239,8 +239,8 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   const available = diff !== 1
                   return (
                     <div className="flex items-center gap-2">
-                      <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>자판기</span>
-                      <span style={{ fontSize: '0.625rem', color: available ? '#7bed9f' : '#ff6b6b' }}>
+                      <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>자판기</span>
+                      <span style={{ fontSize: '0.75rem', color: available ? '#7bed9f' : '#ff6b6b' }}>
                         {available ? '교환 가능' : '교환 불가 (다음 시즌부터 가능)'}
                       </span>
                     </div>
@@ -250,8 +250,8 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                 {/* 파편 교환 */}
                 {info.fragment_cost && (
                   <div className="flex items-center gap-2">
-                    <span style={{ color: '#666', fontSize: '0.625rem', minWidth: '52px' }}>파편 교환</span>
-                    <span style={{ fontSize: '0.625rem', color: '#aaa' }}>
+                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>파편 교환</span>
+                    <span style={{ fontSize: '0.75rem', color: '#bbb' }}>
                       자아 파편 {info.fragment_cost}
                       {info.exchange_from_season
                         ? ` (S${info.exchange_from_season}~ 상시)`

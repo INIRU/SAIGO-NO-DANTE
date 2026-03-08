@@ -15,7 +15,7 @@ export default function Footer() {
       {/* 장식선 */}
       <div className="flex items-center gap-4 px-8 pt-10 max-w-6xl mx-auto">
         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, var(--border))' }} />
-        <span style={{ color: 'rgba(200,144,10,0.3)', fontSize: '0.625rem', letterSpacing: '0.3em' }}>◆</span>
+        <span style={{ color: 'rgba(200,144,10,0.5)', fontSize: '0.75rem', letterSpacing: '0.3em' }}>◆</span>
         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, var(--border))' }} />
       </div>
 
@@ -37,9 +37,9 @@ export default function Footer() {
               key={href}
               href={href}
               className="text-xs tracking-widest transition-colors duration-200"
-              style={{ color: '#6a6a80' }}
+              style={{ color: '#9a9ab0' }}
               onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--gold-dim)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.color = '#6a6a80' }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.color = '#9a9ab0' }}
             >
               {label}
             </Link>
@@ -61,23 +61,23 @@ export default function Footer() {
         <div className="flex items-center gap-4">
           <Link href="/terms"
             className="transition-colors hover:text-yellow-300"
-            style={{ color: '#555570', fontSize: '0.6875rem' }}>
+            style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>
             이용약관
           </Link>
-          <span style={{ color: '#222233' }}>·</span>
+          <span style={{ color: '#6a6a78' }}>·</span>
           <Link href="/privacy"
             className="transition-colors hover:text-yellow-300"
-            style={{ color: '#555570', fontSize: '0.6875rem' }}>
+            style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>
             개인정보 처리방침
           </Link>
         </div>
 
         {/* 디스클레이머 */}
         <div className="text-center space-y-1">
-          <p style={{ color: '#555570', fontSize: '0.6875rem', letterSpacing: '0.05em' }}>
+          <p style={{ color: '#8a8a9a', fontSize: '0.6875rem', letterSpacing: '0.05em' }}>
             팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.
           </p>
-          <p style={{ color: '#2a2a38', fontSize: '0.625rem' }}>
+          <p style={{ color: '#6a6a78', fontSize: '0.75rem' }}>
             This is a fan site and is not affiliated with Project Moon.
           </p>
         </div>
