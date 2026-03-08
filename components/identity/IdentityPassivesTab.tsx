@@ -17,7 +17,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
     return (
       <div
         className="card p-8 text-center"
-        style={{ color: '#555566', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
+        style={{ color: '#999', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
       >
         <p className="font-serif text-lg italic">
           패시브 정보는 준비 중입니다.
@@ -84,7 +84,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
 
         {/* 설명 */}
         {p.description && (
-          <div style={{ color: '#888', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+          <div style={{ color: '#aaa', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
             {formatSkillDesc(p.description, primaryColor, skillNameColors)}
           </div>
         )}

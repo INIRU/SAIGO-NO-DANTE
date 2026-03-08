@@ -53,7 +53,7 @@ export default function Dropdown<T extends string = string>({
           cursor: 'pointer',
           background: 'rgba(255,255,255,0.05)',
           border: `1px solid ${isActive ? 'var(--gold-dim)' : 'rgba(255,255,255,0.1)'}`,
-          color: isActive ? 'var(--gold)' : '#777',
+          color: isActive ? 'var(--gold)' : '#aaa',
           fontFamily: 'var(--font-heading)',
         }}
       >
@@ -84,7 +84,7 @@ export default function Dropdown<T extends string = string>({
               className="block w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/5"
               style={{
                 cursor: 'pointer',
-                color: value === opt.value ? 'var(--gold)' : '#777',
+                color: value === opt.value ? 'var(--gold)' : '#aaa',
                 fontFamily: 'var(--font-heading)',
               }}
             >

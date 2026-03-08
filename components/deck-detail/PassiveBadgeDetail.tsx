@@ -63,10 +63,10 @@ export default function PassiveBadgeDetail({
           {sinTypeList.map((st, i) => (
             <Image key={i} src={sinIconUrl(st)} alt="" width={16} height={16} />
           ))}
-          <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
+          <span style={{ color: pc, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
         </div>
       )}
-      {p.active_cond && <span style={{ color: pc, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', opacity: 0.8, flexShrink: 0 }}>{p.active_cond}</span>}
+      {p.active_cond && <span style={{ color: pc, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', opacity: 0.8, flexShrink: 0 }}>{p.active_cond}</span>}
       <span style={{ color: pc, fontSize: '0.6875rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.name}</span>
 
       {hover && tipPos && p.description && (

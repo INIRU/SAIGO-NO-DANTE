@@ -33,7 +33,7 @@ export default function IdentitySkillsTab({
     return (
       <div
         className="card p-8 text-center"
-        style={{ color: '#555566', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
+        style={{ color: '#999', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
       >
         <p className="font-serif text-lg italic">
           스킬 정보는 준비 중입니다.
@@ -123,7 +123,7 @@ export default function IdentitySkillsTab({
                           style={{ width: '0.875rem', height: '0.875rem' }}
                         />
                       )}
-                      <span style={{ color: '#666', fontSize: '0.6875rem' }}>
+                      <span style={{ color: '#999', fontSize: '0.8125rem' }}>
                         {SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}
                       </span>
                     </div>
@@ -133,7 +133,7 @@ export default function IdentitySkillsTab({
                   {/* 가중치 */}
                   {isAttackSkill && (
                     <div className="flex items-center gap-1">
-                      <span style={{ color: '#666', fontSize: '0.625rem' }}>가중치</span>
+                      <span style={{ color: '#999', fontSize: '0.75rem' }}>가중치</span>
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
                           <div
@@ -151,7 +151,7 @@ export default function IdentitySkillsTab({
                   {/* 공격/방어 레벨 */}
                   {skill.offense_level != null && (
                     <div className="flex items-center gap-1">
-                      <span style={{ color: '#666', fontSize: '0.625rem' }}>
+                      <span style={{ color: '#999', fontSize: '0.75rem' }}>
                         {isAttackSkill ? '공격 레벨' : '방어 레벨'}
                       </span>
                       <span className="font-mono text-xs font-bold" style={{ color: '#aaa' }}>
@@ -165,26 +165,26 @@ export default function IdentitySkillsTab({
               {/* 코인 정보 */}
               <div className="flex items-center gap-4 mb-2">
                 <div className="flex items-center gap-1">
-                  <span style={{ color: '#888', fontSize: '0.6875rem' }}>위력</span>
+                  <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>위력</span>
                   <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
                     {skill.base_power}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인</span>
+                  <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>코인</span>
                   <span className="font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '0.8125rem' }}>
                     {skill.coins}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span style={{ color: '#888', fontSize: '0.6875rem' }}>코인 위력</span>
+                  <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>코인 위력</span>
                   <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
                     +{skill.coin_power}
                   </span>
                 </div>
                 {/* 최종 위력 */}
                 <div className="flex items-center gap-1 ml-auto">
-                  <span style={{ color: '#888', fontSize: '0.6875rem' }}>최대</span>
+                  <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>최대</span>
                   <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>
                     {skill.base_power + skill.coins * skill.coin_power}
                   </span>
@@ -209,7 +209,7 @@ export default function IdentitySkillsTab({
               </div>
 
               {skill.description && (
-                <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                <div style={{ color: '#aaa', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                   {skill.description.split('\n').map((line, li) => {
                     const isCoinStart = /^\[코인\s?\d/.test(line)
                     const prevIsDifferentSection = li > 0 && isCoinStart

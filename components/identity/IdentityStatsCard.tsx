@@ -41,7 +41,7 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
             >
               {value}
             </div>
-            <div style={{ color: '#555', fontSize: '0.625rem', marginTop: '2px' }}>{label}</div>
+            <div style={{ color: '#999', fontSize: '0.75rem', marginTop: '2px' }}>{label}</div>
           </div>
         ))}
       </div>

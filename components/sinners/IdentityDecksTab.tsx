@@ -167,7 +167,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -191,7 +191,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -209,8 +209,8 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               }}
             >
-              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
-                키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
+              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#999', fontSize: '0.75rem', fontWeight: 600 }}>
+                키워드 <span style={{ color: '#999', fontWeight: 400 }}>Tab으로 선택</span>
               </div>
               {suggestions.map((kw, i) => {
                 const iconUrl = getIconUrl(kw)
@@ -251,7 +251,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
               className="px-4 py-2.5 rounded text-sm font-medium transition-all duration-200"
               style={{
                 background: sort === s ? 'var(--gold)' : 'transparent',
-                color: sort === s ? 'var(--bg-deep)' : '#888899',
+                color: sort === s ? 'var(--bg-deep)' : '#aaaabb',
                 border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
                 fontFamily: 'var(--font-heading)',
                 fontSize: '0.75rem',
@@ -265,7 +265,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
 
       {/* 결과 수 */}
       {!loading && (
-        <p className="text-xs" style={{ color: '#555570', fontFamily: 'var(--font-mono)' }}>
+        <p className="text-xs" style={{ color: '#8a8a9a', fontFamily: 'var(--font-mono)' }}>
           {filtered.length}개의 덱{hasMore && '+'}
           {search.trim() && ' (필터 적용됨)'}
         </p>
@@ -286,8 +286,8 @@ export default function IdentityDecksTab({ identityId }: Props) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: '#555570' }}>
+          <div style={{ color: '#8a8095', fontSize: '3rem' }}>⊘</div>
+          <p className="font-serif text-base italic" style={{ color: '#8a8a9a' }}>
             {search.trim() ? '검색 결과가 없습니다.' : '이 인격이 사용된 덱이 아직 없습니다.'}
           </p>
         </div>
@@ -303,7 +303,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
       {!loading && hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-8">
           {loadingMore && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: '#555566' }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#999' }}>
               <div
                 className="w-4 h-4 rounded-full animate-spin"
                 style={{ border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}

@@ -359,7 +359,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     <section>
       <div className="flex items-center justify-between mb-5">
         <h2 className="flex items-center gap-2">
-          <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
+          <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
             MY COLLECTION
           </span>
           <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
@@ -368,7 +368,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         </h2>
         <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#6a6080' }}>
           <span>인격 <span style={{ color: 'var(--gold)' }}>{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
-          <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
+          <span style={{ color: '#8a8095', fontFamily: 'sans-serif' }}>·</span>
           <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
         </div>
       </div>
@@ -424,7 +424,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   {s.name_kr}
                 </span>
                 <span style={{
-                  fontSize: '0.5625rem',
+                  fontSize: '0.75rem',
                   fontFamily: 'var(--font-mono)',
                   color: ownCount === totalCount ? 'var(--gold)' : '#5a5070',
                 }}>
@@ -487,7 +487,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             <button
               onClick={selectAll}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
+              style={{ color: '#a08a60', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
             >
               <CheckSquare size={11} />
               전체 선택
@@ -495,7 +495,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             <button
               onClick={deselectAll}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#7a6845', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
+              style={{ color: '#a08a60', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
             >
               <Square size={11} />
               전체 해제
@@ -593,8 +593,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {/* 인격 섹션 */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
-              <span style={{ color: '#5a5070', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
-              <span style={{ color: '#5a5070', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
+              <span style={{ color: '#8a80a0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                 {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
               </span>
             </div>
@@ -670,7 +670,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               })}
             </div>
             ) : (
-              <p className="text-center py-6" style={{ color: '#5a5070', fontSize: '0.75rem' }}>
+              <p className="text-center py-6" style={{ color: '#8a80a0', fontSize: '0.75rem' }}>
                 해당 키워드의 인격이 없습니다
               </p>
             )}
@@ -680,8 +680,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {Object.keys(egosByGrade).length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span style={{ color: '#5a5070', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-                <span style={{ color: '#5a5070', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
+                <span style={{ color: '#8a80a0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                   {currentEgos.filter(e => owned.has(e.id)).length}/{currentEgos.length}
                 </span>
               </div>
@@ -747,7 +747,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                             }}
                           >
                             <p style={{
-                              fontSize: '0.625rem',
+                              fontSize: '0.75rem',
                               color: isOwned ? '#c8a450' : '#6a6080',
                               textAlign: 'center',
                               fontFamily: 'var(--font-heading)',
@@ -786,7 +786,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         >
           {/* 헤더 */}
           <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
-            <p style={{ color: '#5a5070', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>
+            <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>
               SAIGO NO DANTE
             </p>
             <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
@@ -834,7 +834,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                 {/* 인격 그리드 */}
                 {ids.length > 0 && (
                   <div style={{ marginBottom: '12px' }}>
-                    <p style={{ color: '#5a5070', fontSize: '0.625rem', marginBottom: '6px' }}>인격</p>
+                    <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '6px' }}>인격</p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
                       {ids.map(identity => {
                         const url = identityProfileUrl(identity)
@@ -868,7 +868,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                               )}
                             </div>
                             <p style={{
-                              fontSize: '0.625rem',
+                              fontSize: '0.75rem',
                               color: '#c8a450',
                               textAlign: 'center',
                               lineHeight: 1.3,
@@ -887,7 +887,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                 {/* EGO 그리드 */}
                 {egoList.length > 0 && (
                   <div>
-                    <p style={{ color: '#5a5070', fontSize: '0.625rem', marginBottom: '6px' }}>E.G.O</p>
+                    <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '6px' }}>E.G.O</p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
                       {egoList.map(ego => {
                         const sinType = normalizeSin(ego.sin_affinity)
@@ -921,7 +921,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                               )}
                             </div>
                             <p style={{
-                              fontSize: '0.5625rem',
+                              fontSize: '0.75rem',
                               color: '#c8a450',
                               textAlign: 'center',
                               lineHeight: 1.3,
@@ -942,7 +942,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
           {/* 푸터 */}
           <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
-            <p style={{ color: '#5a5070', fontFamily: 'PerfectDOS, monospace', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+            <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
               saigono-dante.vercel.app
             </p>
           </div>
