@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
-import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
+import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/data/sinners'
 import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
 
 /* ── 타입 ── */
@@ -381,7 +381,7 @@ function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClic
       <div
         className="gift-frame relative w-full aspect-square overflow-hidden"
         style={{
-          backgroundImage: 'url(/images/ego-gift-bg.webp)',
+          backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           transition: 'filter 0.3s, box-shadow 0.3s',
@@ -506,7 +506,7 @@ function GiftModal({
             style={{
               width: '5.5rem',
               height: '5.5rem',
-              backgroundImage: 'url(/images/ego-gift-bg.webp)',
+              backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
