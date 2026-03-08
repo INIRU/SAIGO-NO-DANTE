@@ -67,7 +67,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
     const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
     return (
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
-        <span className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#c8900a30' }}>{initial}</span>
+        <span className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#c8900a80' }}>{initial}</span>
       </div>
     )
   }
@@ -206,7 +206,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
                   color: CONTENT_TYPE_COLORS[deck.content_type!].color,
                   border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '0.625rem',
+                  fontSize: '0.75rem',
                   letterSpacing: '0.03em',
                 }}
               >
@@ -224,7 +224,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     color: '#c8a450',
                     border: '1px solid rgba(136,88,40,0.3)',
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '0.625rem',
+                    fontSize: '0.75rem',
                     letterSpacing: '0.03em',
                   }}
                 >
@@ -270,27 +270,27 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
           style={{ borderTop: '1px solid rgba(58,42,21,0.5)' }}
         >
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
               <Heart size={10} fill="currentColor" stroke="none" />
               {deck.vote_count}
             </span>
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
               <Eye size={10} />
               {deck.view_count}
             </span>
             {(deck.comment_count ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#5a5070' }}>
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
                 <MessageCircle size={10} />
                 {deck.comment_count}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs" style={{ color: '#5a5070' }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: '#8a80a0' }}>
             {deck.username && (
               <>
                 <span style={{ color: '#6a6080' }}>{deck.username}</span>
-                <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
+                <span style={{ color: '#8a8095', fontFamily: 'sans-serif' }}>·</span>
               </>
             )}
             <span>{date}</span>

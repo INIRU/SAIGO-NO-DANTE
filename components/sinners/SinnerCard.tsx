@@ -116,7 +116,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
             </div>
             <div
               className="font-title"
-              style={{ color: '#7a6845', fontSize: '0.625rem', fontFamily: 'var(--font-title)' }}
+              style={{ color: '#a08a60', fontSize: '0.75rem', fontFamily: 'var(--font-title)' }}
             >
               {sinner.name}
             </div>
@@ -133,7 +133,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
         >
           <p
             className="italic truncate"
-            style={{ color: '#7a6840', fontSize: '0.5625rem' }}
+            style={{ color: '#a08a60', fontSize: '0.75rem' }}
           >
             {sinner.literary_source}
           </p>

@@ -110,7 +110,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
               {positiveCount}
             </span>
           </div>
-          <span className="text-xs" style={{ color: '#666' }}>
+          <span className="text-xs" style={{ color: '#999' }}>
             {loading ? '...' : `${total}명 참여`}
           </span>
           <div className="flex items-center gap-1.5">
@@ -168,7 +168,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                 <button
                   onClick={() => { setShowForm(true); setSelectedVote(myReview.is_positive) }}
                   className="text-xs px-2 py-1 rounded transition-colors"
-                  style={{ color: '#888', background: '#ffffff08' }}
+                  style={{ color: '#aaa', background: '#ffffff08' }}
                 >
                   수정
                 </button>
@@ -176,7 +176,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   onClick={handleDelete}
                   disabled={submitting}
                   className="transition-colors"
-                  style={{ color: '#666' }}
+                  style={{ color: '#999' }}
                 >
                   <Trash2 size={13} />
                 </button>
@@ -280,7 +280,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                 <button
                   onClick={() => { setShowForm(false); if (!myReview) { setSelectedVote(null); setContent('') } }}
                   className="text-xs"
-                  style={{ color: '#666' }}
+                  style={{ color: '#999' }}
                 >
                   취소
                 </button>
@@ -294,7 +294,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
       {!session?.user && !loading && (
         <div
           className="text-center py-3 mb-4 rounded text-xs"
-          style={{ color: '#666', background: '#ffffff05', border: '1px solid #ffffff08' }}
+          style={{ color: '#999', background: '#ffffff05', border: '1px solid #ffffff08' }}
         >
           로그인하면 평가에 참여할 수 있습니다
         </div>
@@ -303,7 +303,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
       {/* 한줄평 목록 */}
       {(reviewData?.reviews?.length ?? 0) > 0 && (
         <div className="space-y-0">
-          <div className="text-xs font-semibold mb-2" style={{ color: '#888' }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: '#aaa' }}>
             한줄평
           </div>
           {reviewData!.reviews.slice(0, 20).map(review => (

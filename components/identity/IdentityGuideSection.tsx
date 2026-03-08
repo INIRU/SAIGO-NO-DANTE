@@ -200,7 +200,7 @@ export default function IdentityGuideSection({
 
   const previewBlock = (
     <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-      <div style={{ color: '#555', fontSize: '0.625rem', marginBottom: '6px' }}>미리보기</div>
+      <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>미리보기</div>
       <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
         <NoteRenderer
           text={guideContent}
@@ -228,7 +228,7 @@ export default function IdentityGuideSection({
       <button
         onClick={cancelEdit}
         className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition-all hover:opacity-80"
-        style={{ background: 'transparent', border: '1px solid var(--border)', color: '#888' }}
+        style={{ background: 'transparent', border: '1px solid var(--border)', color: '#aaa' }}
       >
         <X size={12} />
         취소
@@ -264,7 +264,7 @@ export default function IdentityGuideSection({
             운영법
           </h2>
           {guides.length > 0 && (
-            <span style={{ color: '#555', fontSize: '0.6875rem' }}>({guides.length})</span>
+            <span style={{ color: '#999', fontSize: '0.6875rem' }}>({guides.length})</span>
           )}
         </div>
         {canEditGuide && editingGuideId === null && (
@@ -323,12 +323,12 @@ export default function IdentityGuideSection({
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                     {g.author_name && (
-                      <span style={{ color: '#555', fontSize: '0.625rem' }}>
+                      <span style={{ color: '#999', fontSize: '0.75rem' }}>
                         {g.author_name}
                       </span>
                     )}
                     {g.updated_at && (
-                      <span style={{ color: '#444', fontSize: '0.625rem' }}>
+                      <span style={{ color: '#999', fontSize: '0.75rem' }}>
                         {new Date(g.updated_at).toLocaleDateString('ko-KR')}
                       </span>
                     )}
@@ -386,7 +386,7 @@ export default function IdentityGuideSection({
           })}
         </div>
       ) : editingGuideId !== 'new' && (
-        <div className="text-center py-6" style={{ color: '#555566' }}>
+        <div className="text-center py-6" style={{ color: '#999' }}>
           <p className="text-sm italic">아직 운영법이 작성되지 않았습니다.</p>
           <a
             href="https://discord.com/users/340124004599988234"

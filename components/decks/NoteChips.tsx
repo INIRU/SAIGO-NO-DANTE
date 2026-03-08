@@ -214,7 +214,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
             </div>
           )}
           {entry.description && (
-            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.7 }}>
+            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.7 }}>
               {entry.description.split('\n').map((line, li) => {
                 const isCoinStart = /^\[코인\s?\d/.test(line)
                 return (
@@ -268,7 +268,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
             </div>
           )}
           {entry.description && (
-            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
               {formatSkillDesc(entry.description, sc)}
             </div>
           )}
@@ -397,10 +397,10 @@ export function KeywordChip({ keyword }: { keyword: string }) {
             <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{keyword}</span>
           </div>
           {info && (
-            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.55 }}>
+            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
               {info.desc}
               {info.maxStack != null && (
-                <span style={{ display: 'block', marginTop: 2, color: '#666', fontSize: '0.8125rem' }}>
+                <span style={{ display: 'block', marginTop: 2, color: '#999', fontSize: '0.8125rem' }}>
                   최대 {info.maxStack}
                 </span>
               )}
@@ -448,7 +448,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
             <span style={{ color: '#555', fontSize: '0.8125rem' }}>{entry.keyword} {entry.grade}</span>
           </div>
           {entry.effect_base && (
-            <div style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.55 }}>
+            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
               {formatSkillDesc(entry.effect_base, sc)}
             </div>
           )}

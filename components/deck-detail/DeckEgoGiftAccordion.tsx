@@ -83,10 +83,10 @@ export default function DeckEgoGiftAccordion({
         style={{ background: open ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: open ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
       >
         <div className="flex items-center gap-2">
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: open ? '#8a7040' : '#5a5070', letterSpacing: '0.12em' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: open ? '#8a7040' : '#8a80a0', letterSpacing: '0.12em' }}>
             EGO GIFTS
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: '#c8900a' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8900a' }}>
             {activated.length}
           </span>
         </div>
@@ -105,7 +105,7 @@ export default function DeckEgoGiftAccordion({
                 {getIconUrl(kw) && (
                   <Image src={getIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
                 )}
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a7040', letterSpacing: '0.05em' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#8a7040', letterSpacing: '0.05em' }}>
                   {kw} ({grouped[kw].length})
                 </span>
               </div>
@@ -123,9 +123,9 @@ export default function DeckEgoGiftAccordion({
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ fontSize: '0.6875rem', color: '#c8a450', fontWeight: 600 }}>{g.name}</span>
-                        <span style={{ fontSize: '0.5625rem', color: '#5a5040', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#8a8060', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
                       </div>
-                      <span style={{ fontSize: '0.5rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ON</span>
+                      <span style={{ fontSize: '0.75rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ON</span>
                     </div>
                   )
                 })}

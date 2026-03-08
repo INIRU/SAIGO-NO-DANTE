@@ -60,11 +60,11 @@ export default function DeckNoteEditor({
     <div style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
       {/* 헤더 */}
       <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ color: '#6a6a80', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>덱 노트</span>
+        <span style={{ color: '#9a9ab0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>덱 노트</span>
         <button
           onClick={() => setDescPreview(v => !v)}
           className="text-xs px-2 py-0.5 rounded transition-all"
-          style={{ color: descPreview ? 'var(--gold)' : '#6a6a80', border: `1px solid ${descPreview ? 'var(--gold)' : 'var(--border)'}`, background: descPreview ? 'rgba(200,144,10,0.08)' : 'transparent' }}
+          style={{ color: descPreview ? 'var(--gold)' : '#9a9ab0', border: `1px solid ${descPreview ? 'var(--gold)' : 'var(--border)'}`, background: descPreview ? 'rgba(200,144,10,0.08)' : 'transparent' }}
         >
           {descPreview ? '편집' : '미리보기'}
         </button>
@@ -75,13 +75,13 @@ export default function DeckNoteEditor({
         <div style={{ background: 'rgba(5,4,2,0.6)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           {Object.values(deckSlots).filter(Boolean).length === 0 ? (
             <div className="px-4 py-3">
-              <span style={{ color: '#252530', fontSize: '0.5625rem' }}>인격을 편성하면 스킬·패시브·E.G.O를 삽입할 수 있습니다</span>
+              <span style={{ color: '#252530', fontSize: '0.75rem' }}>인격을 편성하면 스킬·패시브·E.G.O를 삽입할 수 있습니다</span>
             </div>
           ) : (
             <div className="flex flex-col">
               {/* ── 스킬 ── */}
               <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '4px', minWidth: '36px', flexShrink: 0 }}>스킬</span>
+                <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '4px', minWidth: '36px', flexShrink: 0 }}>스킬</span>
                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 flex-1">
                   {Object.values(deckSlots).filter((id): id is Identity => !!id).map(identity => {
                     const idSkills = skillsByIdentityId[identity.id] ?? []
@@ -127,7 +127,7 @@ export default function DeckNoteEditor({
                 if (items.length === 0) return null
                 return (
                   <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>배틀</span>
+                    <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>배틀</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(p => {
                         const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
@@ -158,7 +158,7 @@ export default function DeckNoteEditor({
                 if (items.length === 0) return null
                 return (
                   <div className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>서포트</span>
+                    <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>서포트</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(p => {
                         const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
@@ -190,7 +190,7 @@ export default function DeckNoteEditor({
                 if (items.length === 0) return null
                 return (
                   <div className="flex items-start gap-3 px-4 py-2.5">
-                    <span style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>E.G.O</span>
+                    <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>E.G.O</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(({ ego, sinnerName }) => {
                         const gradeColor = GRADE_COLORS[ego.grade ?? ''] ?? '#667788'
@@ -205,7 +205,7 @@ export default function DeckNoteEditor({
                             {ego.image_url && (
                               <Image src={ego.image_url} alt="" width={14} height={14} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                             )}
-                            <span style={{ color: gradeColor, fontSize: '0.5625rem', fontWeight: 600 }}>{ego.name_kr || ego.name}</span>
+                            <span style={{ color: gradeColor, fontSize: '0.75rem', fontWeight: 600 }}>{ego.name_kr || ego.name}</span>
                           </button>
                         )
                       })}
