@@ -107,7 +107,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                 onClick={onReset}
                 className="text-xs px-3 py-1.5 rounded transition-colors"
                 style={{
-                  color: '#666',
+                  color: '#999',
                   border: '1px solid var(--border)',
                   cursor: 'pointer',
                 }}
@@ -115,7 +115,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                 기본으로
               </button>
             )}
-            <button onClick={onClose} style={{ color: '#666', cursor: 'pointer' }}>
+            <button onClick={onClose} style={{ color: '#999', cursor: 'pointer' }}>
               <X size={18} />
             </button>
           </div>
@@ -170,7 +170,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12" style={{ color: '#5a5070', fontSize: '0.8125rem' }}>
+            <div className="text-center py-12" style={{ color: '#8a80a0', fontSize: '0.8125rem' }}>
               인격이 없습니다.
             </div>
           ) : (
@@ -227,7 +227,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                         className="text-center"
                         style={{
                           color: '#e8dcc8',
-                          fontSize: '0.5625rem',
+                          fontSize: '0.75rem',
                           lineHeight: 1.3,
                         }}
                       >

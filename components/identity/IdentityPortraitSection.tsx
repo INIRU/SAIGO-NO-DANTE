@@ -98,7 +98,7 @@ export default function IdentityPortraitSection({
             >
               {identity.name_kr || identity.name}
             </h1>
-            <p className="truncate" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>
+            <p className="truncate" style={{ color: '#a08a60', fontSize: '0.6875rem' }}>
               {identity.name}
             </p>
           </div>

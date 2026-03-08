@@ -239,7 +239,7 @@ export default function DeckIdentityCard({
             {RARITY_ICON_MAP[id_.rarity] ? (
               <Image src={RARITY_ICON_MAP[id_.rarity]} alt={`${id_.rarity}성`} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9 }} />
             ) : (
-              <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.5625rem' }}>
+              <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                 {id_.rarity}성
               </span>
             )}
@@ -252,7 +252,7 @@ export default function DeckIdentityCard({
                 const iconUrl = getIconUrl(kw)
                 const desc = keywordMeta?.[kw]?.description
                 return (
-                  <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.625rem', cursor: desc ? 'help' : 'default' }}>
+                  <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', cursor: desc ? 'help' : 'default' }}>
                     {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
                     {kw}
                   </span>
@@ -293,7 +293,7 @@ export default function DeckIdentityCard({
               if (!val) return null
               const st = RES_STYLE[val] ?? { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' }
               return (
-                <span key={label} className="inline-flex items-center gap-0.5 px-1.5 py-px rounded" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontFamily: 'var(--font-mono)', fontSize: '0.5625rem' }}>
+                <span key={label} className="inline-flex items-center gap-0.5 px-1.5 py-px rounded" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                   <Image src={RES_ATK_ICON[label]} alt={label} width={12} height={12} style={{ opacity: 0.75 }} />
                   {val}
                 </span>
@@ -325,7 +325,7 @@ export default function DeckIdentityCard({
               }}
             >
               {tab.label}
-              <span className="ml-2" style={{ color: isActive ? primaryColor : '#5a5065', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', opacity: 0.8 }}>
+              <span className="ml-2" style={{ color: isActive ? primaryColor : '#5a5065', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', opacity: 0.8 }}>
                 {tab.count}
               </span>
             </button>
@@ -337,7 +337,7 @@ export default function DeckIdentityCard({
       {activeTab === 'skills' && (
         <div className="flex flex-col gap-2 p-3">
           {sortedSkills.length === 0 ? (
-            <p style={{ color: '#5a5065', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
+            <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
           ) : (() => {
             const atkSkills = sortedSkills.filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))
             const labelCount: Record<number, number> = {}
@@ -378,7 +378,7 @@ export default function DeckIdentityCard({
                       </div>
                     )}
                     {skill.offense_level != null && (
-                      <span style={{ color: '#555566', fontFamily: 'var(--font-mono)', fontSize: '0.625rem' }}>ATK Lv.{skill.offense_level}</span>
+                      <span style={{ color: '#999', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>ATK Lv.{skill.offense_level}</span>
                     )}
                     {ATK_ICON_URL[skill.skill_type] && (
                       <Image src={ATK_ICON_URL[skill.skill_type]} alt={skill.skill_type} width={16} height={16} style={{ opacity: 0.65 }} />
@@ -388,10 +388,10 @@ export default function DeckIdentityCard({
 
                 {/* 위력 수치 */}
                 <div className="flex items-center gap-3 mb-2">
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.base_power}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>코인 <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.coins}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566' }}>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{coinPowerStr}</strong></span>
-                  <span style={{ fontSize: '0.625rem', color: '#555566', marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong></span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.base_power}</strong></span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>코인 <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.coins}</strong></span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{coinPowerStr}</strong></span>
+                  <span style={{ fontSize: '0.75rem', color: '#999', marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong></span>
                 </div>
 
                 {/* 코인 시각화 */}
@@ -428,7 +428,7 @@ export default function DeckIdentityCard({
       {activeTab === 'passives' && (
         <div className="flex flex-col gap-2 p-3">
           {sortedPassives.length === 0 ? (
-            <p style={{ color: '#5a5065', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>패시브 정보 없음</p>
+            <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>패시브 정보 없음</p>
           ) : sortedPassives.map((passive, idx) => {
             const isBattle = passive.passive_type === 'battle'
             const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
@@ -501,13 +501,13 @@ export default function DeckIdentityCard({
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="px-1.5 py-px rounded" style={{ background: `${gc}18`, color: gc, border: `1px solid ${gc}38`, fontFamily: 'var(--font-mono)', fontSize: '0.5rem' }}>
+                    <span className="px-1.5 py-px rounded" style={{ background: `${gc}18`, color: gc, border: `1px solid ${gc}38`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       E.G.O
                     </span>
                     {GRADE_ICON_URL[grade] ? (
                       <Image src={GRADE_ICON_URL[grade]} alt={grade} width={32} height={12} style={{ opacity: 0.9 }} />
                     ) : (
-                      <span style={{ color: gc, fontFamily: 'var(--font-mono)', fontSize: '0.5rem' }}>{grade}</span>
+                      <span style={{ color: gc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{grade}</span>
                     )}
                     {sinEn && (
                       <Image src={sinIconUrl(sinEn)} alt="" width={12} height={12} style={{ opacity: 0.8 }} />

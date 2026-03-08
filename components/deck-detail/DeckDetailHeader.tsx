@@ -102,10 +102,10 @@ export function DeckSidebarPanel({
               style={{ color: voted ? '#e05060' : '#5a5070' }}
             />
           </div>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#6a6a80' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#9a9ab0' }}>
             {voteCount}
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5rem', letterSpacing: '0.12em', color: voted ? '#c84050' : (authStatus !== 'authenticated' ? '#222233' : '#555570') }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: voted ? '#c84050' : (authStatus !== 'authenticated' ? '#222233' : '#8a8a9a') }}>
             {authStatus !== 'authenticated' ? 'LOGIN TO VOTE' : voted ? 'LIKED' : 'LIKE'}
           </span>
         </button>
@@ -121,7 +121,7 @@ export function DeckSidebarPanel({
             border: '1px solid rgba(200,144,10,0.3)',
             color: 'var(--gold)',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
           }}
         >
@@ -139,7 +139,7 @@ export function DeckSidebarPanel({
           border: '1px solid rgba(72,120,160,0.3)',
           color: '#4898b0',
           fontFamily: 'var(--font-mono)',
-          fontSize: '0.625rem',
+          fontSize: '0.75rem',
           letterSpacing: '0.1em',
         }}
       >
@@ -155,9 +155,9 @@ export function DeckSidebarPanel({
           style={{
             background: copied ? 'rgba(88,136,40,0.12)' : '#120e09',
             border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
-            color: copied ? '#88a830' : '#484858',
+            color: copied ? '#88a830' : '#8a8a9a',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
           }}
         >
@@ -175,9 +175,9 @@ export function DeckSidebarPanel({
           style={{
             background: bookmarked ? 'rgba(200,144,10,0.12)' : '#120e09',
             border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.4)' : 'var(--border)'}`,
-            color: bookmarked ? 'var(--gold)' : '#484858',
+            color: bookmarked ? 'var(--gold)' : '#8a8a9a',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
             opacity: bookmarking ? 0.5 : 1,
             cursor: authStatus !== 'authenticated' ? 'default' : 'pointer',
@@ -194,9 +194,9 @@ export function DeckSidebarPanel({
           style={{
             background: shared ? 'rgba(88,136,40,0.12)' : '#120e09',
             border: `1px solid ${shared ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
-            color: shared ? '#88a830' : '#484858',
+            color: shared ? '#88a830' : '#8a8a9a',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
             opacity: shareGenerating ? 0.5 : 1,
           }}
@@ -248,7 +248,7 @@ export function DeckSidebarPanel({
       {filledSlotsCount > 0 && (
         <div className="rounded-lg p-3 flex flex-col gap-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
           <div>
-            <div style={{ color: '#6a6a80', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>죄악 자원</div>
+            <div style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>죄악 자원</div>
             <div className="flex items-center gap-2 flex-wrap">
               {SIN_ORDER.map(sin => {
                 const count = sinAffinityTotals[sin] ?? 0
@@ -266,7 +266,7 @@ export function DeckSidebarPanel({
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} />
 
           <div>
-            <div style={{ color: '#6a6a80', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>공격 유형</div>
+            <div style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>공격 유형</div>
             <div className="flex items-center gap-3">
               {(['slash', 'pierce', 'blunt'] as const).map(type => {
                 const count = atkTypeTotals[type]
@@ -335,7 +335,7 @@ export function DeckMobileActionBar({
             style={{ color: voted ? '#e05060' : '#5a5070' }}
           />
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#6a6a80' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, lineHeight: 1, color: voted ? '#e05060' : '#9a9ab0' }}>
           {voteCount}
         </span>
       </button>
@@ -414,7 +414,7 @@ export function DeckMobileActionBar({
             border: '1px solid rgba(200,144,10,0.3)',
             color: 'var(--gold)',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
           }}
         >
@@ -431,9 +431,9 @@ export function DeckMobileActionBar({
           style={{
             background: copied ? 'rgba(88,136,40,0.12)' : 'rgba(44,28,12,0.3)',
             border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'rgba(58,40,18,0.5)'}`,
-            color: copied ? '#88a830' : '#484858',
+            color: copied ? '#88a830' : '#8a8a9a',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             letterSpacing: '0.1em',
           }}
         >

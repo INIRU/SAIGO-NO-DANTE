@@ -252,7 +252,7 @@ export default function SearchModal({ open, onClose }: Props) {
       >
         {/* Input */}
         <div className="flex items-center gap-3 px-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <Search size={16} style={{ color: '#666', flexShrink: 0 }} />
+          <Search size={16} style={{ color: '#999', flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
@@ -282,7 +282,7 @@ export default function SearchModal({ open, onClose }: Props) {
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 4,
               color: '#555',
-              fontSize: '0.625rem',
+              fontSize: '0.75rem',
               fontFamily: 'var(--font-mono)',
             }}
           >
@@ -364,7 +364,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       GRADE_ICONS[item.grade]
                         ? <Image src={GRADE_ICONS[item.grade]} alt={item.grade} width={36} height={16} unoptimized style={{ height: '16px', width: 'auto' }} />
                         : <span style={{
-                            fontSize: '0.5625rem',
+                            fontSize: '0.75rem',
                             fontWeight: 700,
                             color: GRADE_COLORS[item.grade] ?? '#888',
                             padding: '0 4px',
@@ -377,7 +377,7 @@ export default function SearchModal({ open, onClose }: Props) {
                     )}
                     <span style={{
                       color,
-                      fontSize: '0.5625rem',
+                      fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                       letterSpacing: '0.05em',
                       opacity: 0.7,
@@ -387,7 +387,7 @@ export default function SearchModal({ open, onClose }: Props) {
                   </div>
                   {item.sublabel && (
                     <p style={{
-                      color: '#666',
+                      color: '#999',
                       fontSize: '0.6875rem',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -408,7 +408,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: 3,
                       color: '#555',
-                      fontSize: '0.5625rem',
+                      fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                       flexShrink: 0,
                     }}
@@ -425,7 +425,7 @@ export default function SearchModal({ open, onClose }: Props) {
         {displayItems.length > 0 && (
           <div
             className="flex items-center justify-between px-4 py-2"
-            style={{ borderTop: '1px solid var(--border)', color: '#444', fontSize: '0.625rem' }}
+            style={{ borderTop: '1px solid var(--border)', color: '#999', fontSize: '0.75rem' }}
           >
             <span>{results.length > 0 ? `${results.length}개 결과` : `${suggestions.length}개 추천`}</span>
             <span>

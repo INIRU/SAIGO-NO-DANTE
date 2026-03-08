@@ -46,7 +46,7 @@ export default function IdentitySanitySection({ identity }: IdentitySanitySectio
               </span>
             </div>
             {identity.panic_description && (
-              <p style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.6, paddingLeft: '26px' }}>
+              <p style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.6, paddingLeft: '26px' }}>
                 {identity.panic_description}
               </p>
             )}
@@ -83,7 +83,7 @@ export default function IdentitySanitySection({ identity }: IdentitySanitySectio
                 정신력 증가 조건
               </span>
             </div>
-            <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+            <div style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
               {identity.sanity_increase}
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function IdentitySanitySection({ identity }: IdentitySanitySectio
                 정신력 감소 조건
               </span>
             </div>
-            <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
+            <div style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
               {identity.sanity_decrease}
             </div>
           </div>
