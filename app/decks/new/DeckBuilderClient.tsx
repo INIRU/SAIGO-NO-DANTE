@@ -19,6 +19,7 @@ import {
   SIN_COLORS,
   SinType,
   GRADE_COLORS,
+  getSkillOrderLabel,
   type ActivationCondition,
 } from '@/lib/data/sinners'
 import {
@@ -234,17 +235,21 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       const imgIdx = computeSkillImageIndices(idSkills)
       const orderCount: Record<number, number> = {}
       for (const sk of idSkills) {
-        const subIdx = orderCount[sk.skill_order] || 0
-        orderCount[sk.skill_order] = subIdx + 1
+        const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
+        const subIdx = orderCount[baseOrder] || 0
+        orderCount[baseOrder] = subIdx + 1
         const key = subIdx === 0
-          ? `${sinnerName}:${sk.skill_order}`
-          : `${sinnerName}:${sk.skill_order}:${subIdx}`
-        map[key] = {
+          ? `${sinnerName}:${baseOrder}`
+          : `${sinnerName}:${baseOrder}:${subIdx}`
+        const entry = {
           name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
           skill_order: sk.skill_order, description: sk.description,
           iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
           identityName: identity.name_kr, sinnerName,
         }
+        map[key] = entry
+        // 이전 형식 호환
+        if (sk.skill_order >= 5) map[`${sinnerName}:${sk.skill_order}`] = entry
       }
     }
     return map
@@ -363,13 +368,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       const imgIdx = computeSkillImageIndices(idSkills)
       const acOrderCount: Record<number, number> = {}
       for (const sk of idSkills) {
-        const subIdx = acOrderCount[sk.skill_order] || 0
-        acOrderCount[sk.skill_order] = subIdx + 1
+        const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
+        const subIdx = acOrderCount[baseOrder] || 0
+        acOrderCount[baseOrder] = subIdx + 1
         const sc = SIN_COLORS[sk.sin_affinity] || '#888'
-        const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
+        const orderLabel = subIdx === 0 ? getSkillOrderLabel(baseOrder, sk.skill_type) : `${getSkillOrderLabel(baseOrder, sk.skill_type)}-${subIdx + 1}`
         const token = subIdx === 0
-          ? `[s:${sinnerName}:${sk.skill_order}]`
-          : `[s:${sinnerName}:${sk.skill_order}:${subIdx}]`
+          ? `[s:${sinnerName}:${baseOrder}]`
+          : `[s:${sinnerName}:${baseOrder}:${subIdx}]`
         pool.push({
           label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
           iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),

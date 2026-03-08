@@ -14,6 +14,7 @@ import {
   SinType,
   GRADE_COLORS,
   SIN_ICON_MAP,
+  getSkillOrderLabel,
 } from '@/lib/data/sinners'
 import {
   NoteRenderer,
@@ -94,12 +95,13 @@ export default function DeckNoteEditor({
                         <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ opacity: 0.3, flexShrink: 0 }} />
                         <div className="flex items-center gap-1">
                           {idSkills.map(sk => {
-                            const subIdx = btnOrderCount[sk.skill_order] || 0
-                            btnOrderCount[sk.skill_order] = subIdx + 1
+                            const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
+                            const subIdx = btnOrderCount[baseOrder] || 0
+                            btnOrderCount[baseOrder] = subIdx + 1
                             const token = subIdx === 0
-                              ? `[s:${sinnerName}:${sk.skill_order}]`
-                              : `[s:${sinnerName}:${sk.skill_order}:${subIdx}]`
-                            const orderLabel = subIdx === 0 ? `S${sk.skill_order}` : `S${sk.skill_order}-${subIdx + 1}`
+                              ? `[s:${sinnerName}:${baseOrder}]`
+                              : `[s:${sinnerName}:${baseOrder}:${subIdx}]`
+                            const orderLabel = subIdx === 0 ? getSkillOrderLabel(baseOrder, sk.skill_type) : `${getSkillOrderLabel(baseOrder, sk.skill_type)}-${subIdx + 1}`
                             const iconUrl = getSkillIconUrl(identity, noteSkillImgIdx[sk.id] ?? sk.skill_order)
                             return (
                               <button
@@ -130,8 +132,9 @@ export default function DeckNoteEditor({
                     <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>배틀</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(p => {
-                        const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
-                        const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
+                        const sinNames = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
+                        const sinTypeList = sinNames.map(s => SIN_KR_TO_TYPE[s]).filter(Boolean) as SinType[]
+                        const sinColor = sinTypeList[0] ? SIN_COLORS[sinTypeList[0]] : '#667788'
                         return (
                           <button
                             key={p.id}
@@ -140,7 +143,7 @@ export default function DeckNoteEditor({
                             className="flex items-center gap-1 px-2 py-0.5 rounded"
                             style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}35`, cursor: 'pointer' }}
                           >
-                            {sinType && <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} />}
+                            {sinTypeList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={10} height={10} />)}
                             <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
                           </button>
                         )
@@ -161,8 +164,9 @@ export default function DeckNoteEditor({
                     <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', paddingTop: '3px', minWidth: '36px', flexShrink: 0 }}>서포트</span>
                     <div className="flex flex-wrap gap-1.5 flex-1">
                       {items.map(p => {
-                        const sinType = SIN_KR_TO_TYPE[p.sin_affinity!]
-                        const sinColor = sinType ? SIN_COLORS[sinType] : '#667788'
+                        const sinNames = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
+                        const sinTypeList = sinNames.map(s => SIN_KR_TO_TYPE[s]).filter(Boolean) as SinType[]
+                        const sinColor = sinTypeList[0] ? SIN_COLORS[sinTypeList[0]] : '#667788'
                         return (
                           <button
                             key={p.id}
@@ -171,7 +175,7 @@ export default function DeckNoteEditor({
                             className="flex items-center gap-1 px-2 py-0.5 rounded"
                             style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}35`, cursor: 'pointer' }}
                           >
-                            {sinType && <Image src={SIN_ICON_MAP[sinType]} alt="" width={10} height={10} />}
+                            {sinTypeList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={10} height={10} />)}
                             <span style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 600 }}>{p.name}</span>
                           </button>
                         )

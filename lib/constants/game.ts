@@ -64,3 +64,13 @@ export const SKILL_TYPE_LABELS: Record<string, string> = {
   slash: '참격', pierce: '관통', blunt: '타격',
   defense: '방어', counter: '반격', evade: '회피',
 }
+
+const DEFENSE_TYPES = new Set(['evade', 'defense', 'counter'])
+
+/** 스킬 순서 → 표시 라벨 (S1, S2, S3, 수비, S3-2 등) */
+export function getSkillOrderLabel(skillOrder: number, skillType?: string): string {
+  if (skillType && DEFENSE_TYPES.has(skillType)) return '수비'
+  if (skillOrder === 4) return '수비'
+  if (skillOrder >= 5) return `S3-${skillOrder - 3}`
+  return `S${skillOrder}`
+}

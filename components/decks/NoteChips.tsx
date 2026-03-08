@@ -8,7 +8,8 @@ import {
   SIN_COLORS,
   GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
   SKILL_TYPE_LABELS, SIN_LABELS_KR,
-  normalizeSin,
+  normalizeSin, getSkillOrderLabel,
+  type SinType,
 } from '@/lib/data/sinners'
 
 function sinColorOf(sin: string | null): string {
@@ -205,7 +206,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       {rect && createPortal(
         <TooltipPopup rect={rect} minWidth={220} maxWidth={340} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>
-            {entry.sinnerName} · {entry.identityName} · 스킬 {entry.skill_order}
+            {entry.sinnerName} · {entry.identityName} · {getSkillOrderLabel(entry.skill_order, entry.skill_type)}
           </div>
           {atkIcon && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
@@ -240,8 +241,10 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
-  const sinEn = normalizeSin(entry.sin_affinity)
-  const sc = sinColorOf(entry.sin_affinity)
+  const sinList = entry.sin_affinity
+    ? entry.sin_affinity.split(',').map(s => normalizeSin(s.trim())).filter(Boolean) as SinType[]
+    : []
+  const sc = sinList[0] ? (SIN_COLORS[sinList[0]] ?? '#888888') : '#888888'
   return (
     <span
       ref={ref}
@@ -253,15 +256,15 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
       {entry.imageUrl && (
         <Image src={entry.imageUrl} alt="" width={12} height={18} quality={20} style={{ borderRadius: 2, objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
       )}
-      {sinEn && <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />}
+      {sinList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={14} height={14} />)}
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && createPortal(
         <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
-          {sinEn && entry.sin_count && (
+          {sinList.length > 0 && entry.sin_count && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
-              <Image src={SIN_ICON_MAP[sinEn]} alt="" width={14} height={14} />
+              {sinList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={14} height={14} />)}
               <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
                 {entry.sin_count} {entry.active_cond}
               </span>
@@ -470,9 +473,11 @@ const FALLBACK_STYLE: Record<string, { color: string; bg: string; border: string
 function FallbackChip({ type, tokenKey }: { type: string; tokenKey: string }) {
   const s = FALLBACK_STYLE[type] ?? FALLBACK_STYLE.s
   const parts = tokenKey.split(':')
-  // s → "수감자 S{order}", p → "패시브명", e → "수감자 EGO명"
+  // s → "수감자 S{order}[-variant]", p → "패시브명", e → "수감자 EGO명"
   const display = type === 's' && parts.length >= 2
-    ? `${parts[0]} S${parts[1]}`
+    ? `${parts[0]} ${parts.length >= 3
+        ? `${getSkillOrderLabel(Number(parts[1]))}-${Number(parts[2]) + 1}`
+        : getSkillOrderLabel(Number(parts[1]))}`
     : type === 'e' && parts.length >= 2
       ? `${parts[0]} ${parts[1]}`
       : tokenKey
