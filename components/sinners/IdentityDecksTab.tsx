@@ -52,7 +52,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
       return a.length - b.length
     })
     return matches.slice(0, 8)
-  }, [search])
+  }, [search, ALL_KEYWORDS])
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
@@ -110,6 +110,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
+      .catch((e) => console.error('덱 목록 로드 실패:', e))
       .finally(() => setLoading(false))
   }, [identityId, sort])
 
@@ -127,6 +128,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => [...prev, ...data.map(mapDeck)])
       })
+      .catch((e) => console.error('덱 추가 로드 실패:', e))
       .finally(() => setLoadingMore(false))
   }, [identityId, sort, decks.length, loadingMore, hasMore])
 
@@ -167,7 +169,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -191,7 +193,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -275,11 +277,11 @@ export default function IdentityDecksTab({ identityId }: Props) {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '160px', opacity: 0.4 + i * 0.1 }}>
-              <div style={{ padding: '20px' }}>
-                <div style={{ width: '60%', height: '14px', background: '#2a2015', borderRadius: 2, marginBottom: 10 }} />
-                <div style={{ width: '90%', height: '10px', background: '#2a2015', borderRadius: 2, marginBottom: 6 }} />
-                <div style={{ width: '70%', height: '10px', background: '#2a2015', borderRadius: 2 }} />
+            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.1 }}>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ width: '60%', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.625rem' }} />
+                <div style={{ width: '90%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.375rem' }} />
+                <div style={{ width: '70%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem' }} />
               </div>
             </div>
           ))}

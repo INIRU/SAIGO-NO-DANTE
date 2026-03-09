@@ -55,8 +55,8 @@ export default function ConfirmModal({
       <div
         style={{
           background: '#1a1510', border: '1px solid var(--border)',
-          borderRadius: '8px', padding: '24px', maxWidth: 400, width: '90%',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+          borderRadius: '0.5rem', padding: '1.5rem', maxWidth: '25rem', width: '90%',
+          boxShadow: '0 1rem 3rem rgba(0,0,0,0.5)',
         }}
       >
         {title && (
@@ -67,14 +67,14 @@ export default function ConfirmModal({
             </h3>
           </div>
         )}
-        <p style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: 1.6, marginBottom: '20px' }}>
+        <p style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
           {message}
         </p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
             style={{
-              padding: '7px 16px', border: '1px solid var(--border)', borderRadius: '4px',
+              padding: '0.4375rem 1rem', border: '1px solid var(--border)', borderRadius: '0.25rem',
               color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
               background: 'transparent',
             }}
@@ -85,7 +85,7 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             style={{
-              padding: '7px 16px', borderRadius: '4px', fontSize: '0.8125rem', cursor: 'pointer',
+              padding: '0.4375rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', cursor: 'pointer',
               background: variant === 'danger' ? 'rgba(170,68,68,0.2)' : 'rgba(200,144,10,0.2)',
               border: `1px solid ${variant === 'danger' ? '#aa4444' : 'var(--gold-dim)'}`,
               color: variant === 'danger' ? '#ee6666' : 'var(--gold)',
