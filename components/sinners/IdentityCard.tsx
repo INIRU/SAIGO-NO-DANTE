@@ -26,6 +26,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
   const [imgKey, setImgKey] = useState(infoUrl)
   const cardRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLImageElement>(null)
+  const gsapRef = useRef<typeof import('gsap')['default'] | null>(null)
 
   // gacksung prop이 바뀌면 이미지 URL 갱신
   if (imgKey !== infoUrl) {
@@ -33,9 +34,17 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
     setImgKey(infoUrl)
   }
 
+  // GSAP 모듈 캐싱 로드
+  const getGsap = useCallback(async () => {
+    if (!gsapRef.current) {
+      const mod = await import('gsap')
+      gsapRef.current = mod.default
+    }
+    return gsapRef.current
+  }, [])
+
   const handleMouseEnter = useCallback(async () => {
-    const gsapModule = await import('gsap')
-    const gsap = gsapModule.default
+    const gsap = await getGsap()
     if (cardRef.current) {
       gsap.to(cardRef.current, { scale: 1.04, duration: 0.3, ease: 'power2.out' })
     }
@@ -46,11 +55,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
         ease: 'power2.out',
       })
     }
-  }, [rarity.glow])
+  }, [rarity.glow, getGsap])
 
   const handleMouseLeave = useCallback(async () => {
-    const gsapModule = await import('gsap')
-    const gsap = gsapModule.default
+    const gsap = await getGsap()
     if (cardRef.current) {
       gsap.to(cardRef.current, { scale: 1, duration: 0.25, ease: 'power2.inOut' })
     }
@@ -61,7 +69,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
         ease: 'power2.inOut',
       })
     }
-  }, [])
+  }, [getGsap])
 
   return (
     <div
@@ -134,8 +142,8 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                 color: rarity.border,
                 fontSize: '0.625rem',
                 background: 'rgba(13,11,8,0.85)',
-                padding: '1px 5px',
-                borderRadius: '2px',
+                padding: '0.0625rem 0.3125rem',
+                borderRadius: '0.125rem',
                 border: `1px solid ${rarity.border}40`,
               }}
             >
@@ -198,7 +206,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                       border: `1px solid ${kwColor}35`,
                       borderRadius: '2px',
                       fontSize: '0.5rem',
-                      padding: '1px 3px',
+                      padding: '0.0625rem 0.1875rem',
                     }}
                   >
                     {iconUrl && (
@@ -221,7 +229,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                   border: `1px solid ${sinColor}40`,
                   borderRadius: '2px',
                   fontSize: '0.5rem',
-                  padding: '0px 4px',
+                  padding: '0 0.25rem',
                 }}
               >
                 {identity.affiliation}

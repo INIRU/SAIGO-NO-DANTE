@@ -260,6 +260,7 @@ function CollectionViewer() {
           setOwned(decoded)
         }
       })
+      .catch((e) => console.error('컬렉션 로드 실패:', e))
       .finally(() => {
         setLoading(false)
         if (!animatedRef.current) {
