@@ -87,7 +87,7 @@ export default function DecksPage() {
       return a.length - b.length
     })
     return matches.slice(0, 8)
-  }, [search])
+  }, [search, ALL_KEYWORDS])
 
   // 검색어 변경 시 자동완성 첫 항목 선택
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
@@ -184,6 +184,7 @@ export default function DecksPage() {
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
+      .catch((e) => console.error('덱 목록 로드 실패:', e))
       .finally(() => setLoading(false))
   }, [sort])
 
@@ -201,6 +202,7 @@ export default function DecksPage() {
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => [...prev, ...data.map(mapDeck)])
       })
+      .catch((e) => console.error('덱 추가 로드 실패:', e))
       .finally(() => setLoadingMore(false))
   }, [sort, decks.length, loadingMore, hasMore])
 
@@ -388,7 +390,7 @@ export default function DecksPage() {
       {/* ── 헤더 ── */}
       <div className="decks-header flex items-end justify-between mb-10" style={{ opacity: 0 }}>
         <div>
-          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
+          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             DECK ARCHIVE
           </p>
           <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
@@ -416,7 +418,7 @@ export default function DecksPage() {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -440,7 +442,7 @@ export default function DecksPage() {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -715,7 +717,7 @@ export default function DecksPage() {
                 outline: 'none',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.6875rem',
-                maxWidth: '400px',
+                maxWidth: '25rem',
               }}
             />
             <button
@@ -754,11 +756,11 @@ export default function DecksPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '160px', opacity: 0.4 + i * 0.05 }}>
-              <div style={{ padding: '20px' }}>
-                <div style={{ width: '60%', height: '14px', background: '#2a2015', borderRadius: 2, marginBottom: 10 }} />
-                <div style={{ width: '90%', height: '10px', background: '#2a2015', borderRadius: 2, marginBottom: 6 }} />
-                <div style={{ width: '70%', height: '10px', background: '#2a2015', borderRadius: 2 }} />
+            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.05 }}>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ width: '60%', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.625rem' }} />
+                <div style={{ width: '90%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.375rem' }} />
+                <div style={{ width: '70%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem' }} />
               </div>
             </div>
           ))}
