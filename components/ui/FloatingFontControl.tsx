@@ -164,7 +164,7 @@ export default function FloatingFontControl() {
       ref={wrapRef}
       style={{
         position: 'fixed',
-        bottom: isMobile ? 'calc(20px + env(safe-area-inset-bottom, 0px))' : '24px',
+        bottom: isMobile ? 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' : '1.5rem',
         left: '50%',
         zIndex: 45,
         visibility: 'hidden',
@@ -195,7 +195,7 @@ export default function FloatingFontControl() {
           height: circleSize,
         }}
       >
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: isMobile ? '17px' : '15px' }}>Aa</span>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: isMobile ? '1.0625rem' : '0.9375rem' }}>Aa</span>
       </div>
 
       {/* 펼쳐진 상태: 컨트롤 */}
@@ -204,8 +204,8 @@ export default function FloatingFontControl() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? '13px' : '9px',
-          padding: isMobile ? '8px 17px' : '8px 13px',
+          gap: isMobile ? '0.8125rem' : '0.5625rem',
+          padding: isMobile ? '0.5rem 1.0625rem' : '0.5rem 0.8125rem',
         }}
       >
         <button
@@ -230,9 +230,9 @@ export default function FloatingFontControl() {
           onClick={collapse}
           style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: isMobile ? '15px' : '13px',
+            fontSize: isMobile ? '0.9375rem' : '0.8125rem',
             color: 'var(--gold-light)',
-            minWidth: isMobile ? '43px' : '34px',
+            minWidth: isMobile ? '2.6875rem' : '2.125rem',
             textAlign: 'center',
             userSelect: 'none',
             cursor: 'pointer',

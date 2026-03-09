@@ -15,6 +15,7 @@ interface Announcement {
 export default function AnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const animRef = useRef(false)
@@ -22,6 +23,7 @@ export default function AnnouncementsPage() {
     fetch('/api/announcements')
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
+      .catch(() => setError(true))
       .finally(() => {
         setLoading(false)
         if (animRef.current) return
@@ -55,7 +57,7 @@ export default function AnnouncementsPage() {
           <h1 className="font-serif text-3xl font-bold" style={{ color: 'var(--gold)' }}>
             공지사항
           </h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem', marginTop: 4 }}>
+          <p style={{ color: '#555566', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
             사이트 업데이트 및 안내사항을 확인하세요.
           </p>
         </div>
@@ -66,15 +68,38 @@ export default function AnnouncementsPage() {
           <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
             <Loader2 size={14} className="animate-spin" /> 로딩 중...
           </div>
+        ) : error ? (
+          <div
+            className="card"
+            style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}
+          >
+            <p style={{ color: '#aa6644', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
+              공지사항을 불러오는 데 실패했습니다.
+            </p>
+            <button
+              onClick={() => { setError(false); setLoading(true); fetch('/api/announcements').then(r => r.json()).then(res => setItems(res.data ?? [])).catch(() => setError(true)).finally(() => setLoading(false)) }}
+              style={{
+                padding: '0.4375rem 1rem',
+                borderRadius: '0.25rem',
+                border: '1px solid var(--gold-dim)',
+                background: 'rgba(200,144,10,0.1)',
+                color: 'var(--gold)',
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+              }}
+            >
+              다시 시도
+            </button>
+          </div>
         ) : items.length === 0 ? (
           <div
             className="card"
-            style={{ padding: '40px 24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}
+            style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}
           >
             등록된 공지가 없습니다.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {items.map(item => {
               const isExpanded = expandedId === item.id
               return (
@@ -92,8 +117,8 @@ export default function AnnouncementsPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 10,
-                      padding: '14px 18px',
+                      gap: '0.625rem',
+                      padding: '0.875rem 1.125rem',
                       cursor: 'pointer',
                       userSelect: 'none',
                       transition: 'background 0.15s',
@@ -132,13 +157,13 @@ export default function AnnouncementsPage() {
                   {isExpanded && item.content && (
                     <div
                       style={{
-                        padding: '0 18px 16px 18px',
-                        marginLeft: item.pinned ? 22 : 0,
+                        padding: '0 1.125rem 1rem 1.125rem',
+                        marginLeft: item.pinned ? '1.375rem' : 0,
                         color: '#7a6845',
                         fontSize: '0.8125rem',
                         lineHeight: 1.8,
                         borderTop: '1px solid rgba(200,144,10,0.08)',
-                        paddingTop: 14,
+                        paddingTop: '0.875rem',
                         whiteSpace: 'pre-wrap',
                       }}
                     >
