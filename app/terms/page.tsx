@@ -46,9 +46,11 @@ export default async function TermsPage() {
             <span>›</span>
             <span style={{ color: 'var(--gold)' }}>{title}</span>
           </div>
+          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>TERMS OF SERVICE</p>
           <h1 className="font-serif text-3xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
             {title}
           </h1>
+          <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '0.75rem', marginBottom: '1.5rem' }} />
           <p style={{ color: '#555566', fontSize: '0.8125rem' }}>최종 수정일: {lastUpdated}</p>
         </div>
 

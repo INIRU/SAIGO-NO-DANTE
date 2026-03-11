@@ -333,7 +333,7 @@ function CollectionViewer() {
       <div className="min-h-screen pt-24 pb-16 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-6">
-            <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
+            <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
               MY COLLECTION
             </p>
             <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
@@ -342,6 +342,7 @@ function CollectionViewer() {
             <p className="mt-2" style={{ color: '#6a6080', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
               로그인 없이 보유 인격/EGO를 설정하고 공유 링크를 만들 수 있습니다.
             </p>
+            <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
           </div>
           <CollectionSection persistMode="local" />
         </div>
@@ -365,12 +366,24 @@ function CollectionViewer() {
   const currentEgos = showUnowned ? filteredEgos : filteredEgos.filter(e => owned.has(e.id))
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6">
+    <div className="min-h-screen pt-24 pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Background atmospheric glow */}
+      <div style={{
+        position: 'fixed',
+        top: '-10rem',
+        right: '-5rem',
+        width: '35rem',
+        height: '35rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
         <div className="collection-header mb-6" style={{ opacity: 0 }}>
-          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
-            SHARED COLLECTION
+          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
+            MY COLLECTION
           </p>
           <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
             보유 현황
@@ -380,6 +393,7 @@ function CollectionViewer() {
             <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
             <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
           </div>
+          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
         </div>
 
         {/* 보기 모드 토글 */}
