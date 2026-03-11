@@ -328,21 +328,38 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   return (
-    <div className="min-h-screen pt-20 sm:pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-16 relative">
+      {/* 배경 글로우 */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <div style={{
+          position: 'absolute',
+          top: '5%',
+          right: '10%',
+          width: '35rem',
+          height: '35rem',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,144,10,0.03) 0%, transparent 60%)',
+        }} />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative" style={{ zIndex: 1 }}>
         {/* 브레드크럼 */}
         <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             수감자 목록
           </Link>
-          <span>›</span>
+          <span style={{ color: '#333344' }}>&rsaquo;</span>
           <span style={{ color: 'var(--gold)' }}>{sinner.name_kr}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <div className="sinner-info-card lg:sticky lg:top-24 lg:self-start" style={{ opacity: 0 }}>
-            <div className="card p-4 sm:p-6">
+            <div className="card p-4 sm:p-6" style={{
+              background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
+              border: '0.0625rem solid rgba(200,144,10,0.12)',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+            }}>
               <div className="flex gap-4 sm:block">
               {/* 프로필 이미지 */}
               <div
@@ -409,10 +426,11 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 문학 출처 */}
               <div
-                className="text-[0.625rem] sm:text-xs italic px-2 sm:px-3 py-1.5 sm:py-2 rounded"
+                className="text-[0.625rem] sm:text-xs italic px-2 sm:px-3 py-1.5 sm:py-2"
                 style={{
-                  background: 'rgba(200,164,90,0.08)',
-                  borderLeft: '2px solid var(--gold)',
+                  background: 'linear-gradient(135deg, rgba(200,144,10,0.08) 0%, rgba(200,144,10,0.03) 100%)',
+                  borderLeft: '0.125rem solid var(--gold)',
+                  borderRadius: '0 0.25rem 0.25rem 0',
                   color: 'rgba(200,164,90,0.7)',
                 }}
               >
@@ -427,20 +445,37 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           <div className="sinner-content-area lg:col-span-2" style={{ opacity: 0 }}>
             {/* 탭 */}
             <div
-              className="flex gap-0 mb-4 rounded overflow-hidden"
-              style={{ border: '1px solid var(--border)' }}
+              className="flex gap-0 mb-4 overflow-hidden"
+              style={{
+                border: '0.0625rem solid var(--border)',
+                borderRadius: '0.375rem',
+              }}
             >
               {(['identities', 'ego'] as Tab[]).map(t => (
                 <button
                   key={t}
                   onClick={() => changeTab(t)}
-                  className="flex-1 py-3 text-sm font-medium transition-all duration-200"
+                  className="flex-1 py-3 text-sm font-medium transition-all duration-200 relative"
                   style={{
-                    background: tab === t ? 'var(--gold)' : 'transparent',
-                    color: tab === t ? 'var(--bg-deep)' : '#666688',
+                    background: tab === t
+                      ? 'linear-gradient(180deg, rgba(200,144,10,0.2) 0%, rgba(200,144,10,0.08) 100%)'
+                      : 'transparent',
+                    color: tab === t ? 'var(--gold-light)' : '#555566',
+                    borderBottom: tab === t ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
+                    letterSpacing: '0.1em',
                   }}
                 >
                   {t === 'identities' ? '인격' : 'EGO'}
+                  {tab === t && (
+                    <span style={{
+                      marginLeft: '0.375rem',
+                      fontSize: '0.625rem',
+                      color: 'var(--gold-dim)',
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      {t === 'identities' ? filteredIdentities.length : filteredEgos.length}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

@@ -203,7 +203,19 @@ export default function MirrorDungeonClient({
   }, [filtered])
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Background atmospheric glow */}
+      <div style={{
+        position: 'fixed',
+        top: '-10rem',
+        right: '-5rem',
+        width: '35rem',
+        height: '35rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
       <style>{`
         .gift-grid {
           grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
@@ -220,12 +232,14 @@ export default function MirrorDungeonClient({
       `}</style>
       {/* 헤더 */}
       <div className="mb-8 text-center">
+        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>E.G.O GIFT ARCHIVE</p>
         <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
           거울 던전
         </h1>
         <p style={{ color: '#666688', fontSize: '0.875rem' }}>
           E.G.O 기프트 도감 — {gifts.length}종
         </p>
+        <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', marginLeft: 'auto', marginRight: 'auto' }} />
       </div>
 
       {/* 필터 영역 */}
