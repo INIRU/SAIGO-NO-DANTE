@@ -20,18 +20,20 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
           animationDelay: `${index * 60}ms`,
           animationFillMode: 'both',
           background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-          border: '1px solid var(--border)',
-          borderRadius: '4px',
+          border: '0.0625rem solid var(--border)',
+          borderRadius: '0.375rem',
           overflow: 'hidden',
-          transition: 'all 0.25s ease',
+          transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
         }}
         onMouseEnter={e => {
-          e.currentTarget.style.borderColor = 'var(--gold-dim)'
-          e.currentTarget.style.boxShadow = '0 0 20px rgba(200,144,10,0.25), inset 0 0 20px rgba(200,144,10,0.05)'
+          e.currentTarget.style.borderColor = 'rgba(200,144,10,0.4)'
+          e.currentTarget.style.boxShadow = '0 0.5rem 2rem rgba(200,144,10,0.15), 0 0 1.5rem rgba(200,144,10,0.08), inset 0 0 1.25rem rgba(200,144,10,0.04)'
+          e.currentTarget.style.transform = 'translateY(-0.125rem)'
         }}
         onMouseLeave={e => {
           e.currentTarget.style.borderColor = 'var(--border)'
           e.currentTarget.style.boxShadow = 'none'
+          e.currentTarget.style.transform = 'translateY(0)'
         }}
       >
         {/* 포트레이트 영역 */}
@@ -45,9 +47,8 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               src={profileUrl}
               alt={sinner.name}
               fill
-             
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
-              className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+              className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
               style={{ objectPosition: '50% 15%' }}
             />
           ) : (
@@ -70,6 +71,15 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
             </div>
           )}
 
+          {/* 호버 시 상단 골드 라인 */}
+          <div
+            className="absolute top-0 left-0 right-0 z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+            style={{
+              height: '0.125rem',
+              background: 'linear-gradient(90deg, transparent, var(--gold), transparent)',
+            }}
+          />
+
           {/* 로고 아이콘 (좌상단) */}
           <div className="absolute top-2 left-2 z-10">
             <Image
@@ -77,11 +87,12 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               alt=""
               width={28}
               height={28}
-             
               style={{
-                filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))',
+                filter: 'drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.8))',
                 opacity: 0.85,
+                transition: 'opacity 0.3s ease',
               }}
+              className="group-hover:opacity-100"
             />
           </div>
 
@@ -92,7 +103,6 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               alt={`#${String(sinner.order_num).padStart(2, '0')}`}
               width={389}
               height={1023}
-             
               className="w-full h-auto"
             />
           </div>
@@ -101,21 +111,21 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
           <div
             className="absolute bottom-0 left-0 right-0 z-10"
             style={{
-              height: '60%',
-              background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.3) 75%, transparent 100%)',
+              height: '65%',
+              background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.9) 35%, rgba(13,11,8,0.3) 70%, transparent 100%)',
             }}
           />
 
           {/* 이름 오버레이 */}
           <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-20">
             <div
-              className="font-serif font-bold leading-tight mb-0.5 group-hover:text-yellow-300 transition-colors"
+              className="font-serif font-bold leading-tight mb-0.5 group-hover:text-yellow-300 transition-colors duration-300"
               style={{ color: 'var(--gold-light)', fontSize: '1.0625rem' }}
             >
               {sinner.name_kr}
             </div>
             <div
-              className="font-title"
+              className="font-title transition-colors duration-300"
               style={{ color: '#a08a60', fontSize: '0.75rem', fontFamily: 'var(--font-title)' }}
             >
               {sinner.name}
@@ -127,13 +137,13 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
         <div
           className="px-3 py-2"
           style={{
-            borderTop: '1px solid var(--border)',
-            background: 'rgba(0,0,0,0.3)',
+            borderTop: '0.0625rem solid var(--border)',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.4) 100%)',
           }}
         >
           <p
             className="italic truncate"
-            style={{ color: '#a08a60', fontSize: '0.75rem' }}
+            style={{ color: '#7a6840', fontSize: '0.6875rem', letterSpacing: '0.02em' }}
           >
             {sinner.literary_source}
           </p>

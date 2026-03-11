@@ -284,17 +284,30 @@ export default function MyPage() {
     : null
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6">
+    <div className="min-h-screen pt-24 pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Background atmospheric glow */}
+      <div style={{
+        position: 'fixed',
+        top: '-10rem',
+        right: '-5rem',
+        width: '35rem',
+        height: '35rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
       <div className="max-w-6xl mx-auto">
 
         {/* 섹션 헤더 */}
         <div className="mypage-header mb-10" style={{ opacity: 0 }}>
-          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '6px' }}>
+          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
             MY PAGE
           </p>
           <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
             마이 페이지
           </h1>
+          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">

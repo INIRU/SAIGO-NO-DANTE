@@ -35,9 +35,21 @@ export default async function MaintenancePage({
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: '#0d0b08' }}
+      style={{ background: '#0d0b08', position: 'relative', overflow: 'hidden' }}
     >
-      <div className="text-center max-w-lg">
+      {/* Atmospheric background glow */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '40rem',
+        height: '40rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 40%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div className="text-center max-w-lg" style={{ position: 'relative', zIndex: 1 }}>
         {/* 카론 아이콘 */}
         <div
           className="mx-auto mb-6 flex items-center justify-center"
@@ -67,6 +79,9 @@ export default async function MaintenancePage({
         >
           MAINTENANCE IN PROGRESS
         </p>
+
+        {/* Decorative line */}
+        <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, var(--gold), transparent)', margin: '0 auto 1.5rem' }} />
 
         {/* 카론 대사 박스 */}
         <div

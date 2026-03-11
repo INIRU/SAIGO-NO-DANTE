@@ -331,7 +331,7 @@ export default function IdentityDetailClient({
           {/* 우측: 스탯 + 스킬 (2/3) */}
           <div className="identity-detail-content lg:col-span-2 space-y-8" style={{ opacity: 0 }}>
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
-            <div className="flex" style={{ borderBottom: '2px solid var(--border)' }}>
+            <div className="flex" style={{ borderBottom: '0.125rem solid var(--border)' }}>
               {([
                 { key: 'info' as const, label: '인격 정보' },
                 { key: 'decks' as const, label: '덱' },
@@ -349,12 +349,13 @@ export default function IdentityDetailClient({
                     }}
                     className="relative px-6 py-3 font-semibold transition-all"
                     style={{
-                      color: isActive ? 'var(--gold)' : '#555',
+                      color: isActive ? 'var(--gold-light)' : '#555',
                       fontSize: '0.875rem',
                       fontFamily: 'var(--font-heading)',
-                      background: 'transparent',
-                      borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
-                      marginBottom: '-2px',
+                      background: isActive ? 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, transparent 100%)' : 'transparent',
+                      borderBottom: isActive ? `0.125rem solid ${sinColor}` : '0.125rem solid transparent',
+                      marginBottom: '-0.125rem',
+                      letterSpacing: '0.08em',
                     }}
                   >
                     {tab.label}
@@ -492,14 +493,23 @@ export default function IdentityDetailClient({
               {/* 수감자 페이지로 돌아가기 */}
               <Link
                 href={`/sinners/${sinner.id}`}
-                className="block text-center py-3 rounded font-medium text-sm transition-all hover:opacity-80"
+                className="block text-center py-3 font-medium text-sm transition-all duration-300 hover:border-opacity-60"
                 style={{
-                  background: 'rgba(200,144,10,0.1)',
-                  border: '1px solid var(--border)',
+                  background: 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)',
+                  border: '0.0625rem solid rgba(200,144,10,0.15)',
+                  borderRadius: '0.375rem',
                   color: 'var(--gold-dim)',
                 }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.04) 100%)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(200,144,10,0.15)'
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)'
+                }}
               >
-                ← {sinner.name_kr}의 인격 목록으로
+                &larr; {sinner.name_kr}의 인격 목록으로
               </Link>
             </>)}
           </div>

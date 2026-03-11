@@ -222,12 +222,26 @@ export default function MetaClient({ sinners }: Props) {
   // ── 로딩 ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto">
+      <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Background atmospheric glow */}
+        <div style={{
+          position: 'fixed',
+          top: '-10rem',
+          right: '-5rem',
+          width: '35rem',
+          height: '35rem',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
         <div className="mb-12">
+          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>USAGE ANALYTICS</p>
           <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
             메타 분석
           </h1>
           <p style={{ color: '#666688' }}>덱 데이터 기반 통계 분석</p>
+          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
         </div>
         <div className="space-y-3">
           {Array.from({ length: 10 }).map((_, i) => (
@@ -246,15 +260,29 @@ export default function MetaClient({ sinners }: Props) {
   const totalDecks = data.totalDecks || 1
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-3 md:px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 pb-16 px-3 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Background atmospheric glow */}
+      <div style={{
+        position: 'fixed',
+        top: '-10rem',
+        right: '-5rem',
+        width: '35rem',
+        height: '35rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
       {/* 헤더 */}
       <div className="mb-6 md:mb-8">
+        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>USAGE ANALYTICS</p>
         <h1 className="font-serif text-3xl md:text-5xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
           메타 분석
         </h1>
         <p className="text-xs md:text-sm" style={{ color: '#666688' }}>
           전체 <span className="font-mono" style={{ color: 'var(--gold)' }}>{totalDecks}</span>개 덱 기반 통계
         </p>
+        <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
       </div>
 
       {/* 탭 */}

@@ -160,13 +160,26 @@ export default function DecksPage() {
     if (animRef.current) return
     animRef.current = true
     import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.decks-header',
+      // 헤더 시퀀스: line → tag → title → filters
+      gsap.fromTo('.decks-header-line',
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
+      )
+      gsap.fromTo('.decks-header-tag',
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+      )
+      gsap.fromTo('.decks-header-title',
         { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
       )
       gsap.fromTo('.decks-filters',
         { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
+      )
+      gsap.fromTo('.decks-divider-bottom',
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' }
       )
     })
   }, [])
@@ -385,15 +398,61 @@ export default function DecksPage() {
   const hasAnyFilter = search || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto relative">
+
+      {/* Background atmospheric glow */}
+      <div style={{
+        position: 'fixed',
+        top: '-10rem',
+        right: '-5rem',
+        width: '35rem',
+        height: '35rem',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
+      {/* 배경 대기감 */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <div style={{
+          position: 'absolute',
+          top: '8%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '50rem',
+          height: '50rem',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, transparent 60%)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '15%',
+          right: '20%',
+          width: '30rem',
+          height: '30rem',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,144,10,0.02) 0%, transparent 60%)',
+        }} />
+      </div>
 
       {/* ── 헤더 ── */}
-      <div className="decks-header flex items-end justify-between mb-10" style={{ opacity: 0 }}>
+      <div className="decks-header flex items-end justify-between mb-10 relative" style={{ zIndex: 1 }}>
         <div>
-          <p style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
+          {/* 상단 장식 라인 */}
+          <div className="decks-header-line" style={{
+            width: '4rem',
+            height: '0.0625rem',
+            background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
+            marginBottom: '1rem',
+            transformOrigin: 'left',
+            transform: 'scaleX(0)',
+          }} />
+
+          <p className="decks-header-tag" style={{ opacity: 0, color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             DECK ARCHIVE
           </p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
+          <h1 className="decks-header-title font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
             덱 게시판
           </h1>
           <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
@@ -743,6 +802,17 @@ export default function DecksPage() {
           </div>
         )}
       </div>
+
+      {/* 하단 장식 디바이더 */}
+      <div className="decks-divider-bottom mx-auto" style={{
+        width: '100%',
+        maxWidth: '16rem',
+        height: '0.0625rem',
+        background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), var(--gold-dim), rgba(200,144,10,0.3), transparent)',
+        marginBottom: '1.5rem',
+        transformOrigin: 'center',
+        transform: 'scaleX(0)',
+      }} />
 
       {/* ── 결과 수 ── */}
       {!loading && (
