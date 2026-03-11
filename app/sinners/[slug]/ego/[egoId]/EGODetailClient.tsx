@@ -325,11 +325,13 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
           />
         )}
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,6,4,0.65)' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%', background: 'linear-gradient(to bottom, transparent, #0d0b08)' }} />
-        <div style={{ position: 'absolute', bottom: '28px', left: '40px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, rgba(8,6,4,0.75) 0%, ${sinColor}08 50%, rgba(8,6,4,0.7) 100%)` }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%', background: 'linear-gradient(to bottom, transparent, #0d0b08)' }} />
+        {/* 상단 장식 라인 */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '0.0625rem', background: `linear-gradient(90deg, transparent, ${sinColor}40, transparent)` }} />
+        <div style={{ position: 'absolute', bottom: '1.75rem', left: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.375rem' }}>
           <GradeImg grade={ego.grade} height={20} />
-          <h1 className="font-serif" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 40px ${sinColor}60` }}>
+          <h1 className="font-serif" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 2.5rem ${sinColor}60` }}>
             {ego.name_kr || ego.name}
           </h1>
           {ego.name_kr && (
@@ -344,10 +346,10 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         {/* 브레드크럼 */}
         <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">수감자 목록</Link>
-          <span>›</span>
+          <span style={{ color: '#333344' }}>&rsaquo;</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors">{sinner.name_kr}</Link>
-          <span>›</span>
-          <span style={{ color: 'var(--gold)' }}>{ego.name_kr || ego.name}</span>
+          <span style={{ color: '#333344' }}>&rsaquo;</span>
+          <span style={{ color: sinColor }}>{ego.name_kr || ego.name}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -382,7 +384,12 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             </div>
 
             {/* 기본 정보 카드 */}
-            <div className="card p-4 space-y-4">
+            <div className="card p-4 space-y-4" style={{
+              background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
+              border: `0.0625rem solid ${sinColor}18`,
+              borderRadius: '0.5rem',
+              boxShadow: `0 0.75rem 2.5rem rgba(0,0,0,0.35), 0 0 1.5rem ${sinColor}08`,
+            }}>
               {/* 죄악 내성 */}
               {ego.resistance && ego.resistance.length === 7 && (
                 <div>
@@ -439,11 +446,24 @@ export default function EGODetailClient({ sinner, ego }: Props) {
 
             {/* 뒤로가기 */}
             <Link
-              href={`/sinners/${sinner.id}`}
-              className="block text-center py-3 rounded font-medium text-sm transition-all hover:opacity-80"
-              style={{ background: 'rgba(200,144,10,0.08)', border: '1px solid var(--border)', color: 'var(--gold-dim)' }}
+              href={`/sinners/${sinner.id}#ego`}
+              className="block text-center py-3 font-medium text-sm transition-all duration-300"
+              style={{
+                background: `linear-gradient(135deg, ${sinColor}08 0%, ${sinColor}03 100%)`,
+                border: `0.0625rem solid ${sinColor}20`,
+                borderRadius: '0.375rem',
+                color: 'var(--gold-dim)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = `${sinColor}45`
+                e.currentTarget.style.background = `linear-gradient(135deg, ${sinColor}12 0%, ${sinColor}06 100%)`
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = `${sinColor}20`
+                e.currentTarget.style.background = `linear-gradient(135deg, ${sinColor}08 0%, ${sinColor}03 100%)`
+              }}
             >
-              ← {sinner.name_kr}의 EGO 목록으로
+              &larr; {sinner.name_kr}의 EGO 목록으로
             </Link>
           </div>
 

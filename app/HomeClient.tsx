@@ -430,9 +430,14 @@ export default function HomeClient({
         </div>
 
         {/* 스크롤 유도 */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce z-10" style={{ color: 'rgba(200,164,90,0.3)' }}>
-          <span className="text-xs tracking-widest font-mono">SCROLL</span>
-          <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10" style={{ color: 'rgba(200,164,90,0.25)' }}>
+          <span className="text-xs tracking-widest font-mono" style={{ letterSpacing: '0.3em', fontSize: '0.5625rem' }}>SCROLL</span>
+          <div style={{
+            width: '0.0625rem',
+            height: '1.5rem',
+            background: 'linear-gradient(to bottom, rgba(200,144,10,0.4), transparent)',
+            animation: 'scrollPulse 2s ease-in-out infinite',
+          }} />
         </div>
       </section>
 
