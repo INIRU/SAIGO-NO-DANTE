@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import { X } from 'lucide-react'
 import {
   Identity,
   Sinner,
@@ -53,32 +55,56 @@ export default function IdentityPortraitSection({
 
   const fullArtSrc = gacksung && !gacksungArtFailed ? fullArtGacksung : fullArtNormal
 
+  // 전체화면 모달: body 스크롤 잠금 + ESC 닫기
+  const closeFullArt = useCallback(() => setShowFullArt(false), [setShowFullArt])
+
+  useEffect(() => {
+    if (!showFullArt) return
+    document.body.style.overflow = 'hidden'
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeFullArt() }
+    window.addEventListener('keydown', handler)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handler)
+    }
+  }, [showFullArt, closeFullArt])
+
   return (
     <>
-      {/* 풀 일러스트 오버레이 */}
-      {showFullArt && fullArtSrc && (
+      {/* 풀 일러스트 오버레이 (GSAP transform 우회를 위해 body에 portal) */}
+      {showFullArt && fullArtSrc && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center cursor-pointer"
-          style={{ background: 'rgba(0,0,0,0.9)' }}
-          onClick={() => setShowFullArt(false)}
+          className="fixed inset-0 z-[110] flex items-center justify-center cursor-pointer"
+          style={{ background: 'rgba(0,0,0,0.92)' }}
+          onClick={closeFullArt}
         >
+          {/* 닫기 버튼 */}
+          <button
+            className="absolute top-4 right-4 z-10 p-2 rounded-full transition-colors hover:bg-white/10"
+            style={{ color: '#aaa', cursor: 'pointer' }}
+            onClick={closeFullArt}
+            aria-label="닫기"
+          >
+            <X size={24} />
+          </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={fullArtSrc}
             src={fullArtSrc}
             alt={identity.name_kr || identity.name}
             className="max-w-full max-h-[90vh] object-contain"
-            style={{ opacity: 0 }}
+            style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
             onLoad={(ev) => { (ev.target as HTMLImageElement).style.opacity = '1' }}
             onError={() => {
               if (gacksung && !gacksungArtFailed) {
                 setGacksungArtFailed(true)
               } else {
-                setShowFullArt(false)
+                closeFullArt()
               }
             }}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
