@@ -177,14 +177,27 @@ export default function MirrorDungeonClient({
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // GSAP 진입 애니메이션
+  // GSAP 진입 애니메이션 (뷰포트 내 카드만, 나머지는 즉시 표시)
   useEffect(() => {
     const initGSAP = async () => {
       const { gsap } = await import('gsap')
-      gsap.fromTo('.gift-card',
-        { opacity: 0, y: 20, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.35, stagger: 0.012, ease: 'power2.out' }
-      )
+      const cards = document.querySelectorAll('.gift-card')
+      const viewportH = window.innerHeight
+      const visibleCards: Element[] = []
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect()
+        if (rect.top < viewportH + 100) {
+          visibleCards.push(card)
+        } else {
+          ;(card as HTMLElement).style.opacity = '1'
+        }
+      })
+      if (visibleCards.length > 0) {
+        gsap.fromTo(visibleCards,
+          { opacity: 0, y: 16, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.008, ease: 'power2.out' }
+        )
+      }
     }
     initGSAP()
   }, [filtered])
