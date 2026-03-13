@@ -19,6 +19,7 @@ export type RandomResult = {
 
 /**
  * Validate whether keyword conditions can be satisfied.
+ * Keywords use AND logic: identities must have ALL selected keywords.
  * Returns null if valid, or an error message string if not.
  */
 export function validateConditions(
@@ -28,32 +29,21 @@ export function validateConditions(
 ): string | null {
   if (conditions.length === 0) return null
 
-  if (conditions.length === 1) {
-    const { keyword, minCount } = conditions[0]
-    let count = 0
-    for (const sinner of sinners) {
-      const ids = identitiesBySinner[sinner.id] ?? []
-      if (ids.some(i => i.keywords?.includes(keyword))) count++
-    }
-    if (count < minCount) return `보유 인격으로는 ${keyword} ${minCount}명 조건을 만족할 수 없습니다`
-    return null
-  }
+  const allKeywords = conditions.map(c => c.keyword)
+  const maxMinCount = Math.max(...conditions.map(c => c.minCount))
 
-  // 2 keywords: partition-based validation
-  const [condA, condB] = conditions
-  let onlyA = 0, onlyB = 0, bothAB = 0
+  const matchesAll = (identity: Identity) =>
+    allKeywords.every(kw => identity.keywords?.includes(kw))
+
+  let count = 0
   for (const sinner of sinners) {
     const ids = identitiesBySinner[sinner.id] ?? []
-    const hasA = ids.some(i => i.keywords?.includes(condA.keyword))
-    const hasB = ids.some(i => i.keywords?.includes(condB.keyword))
-    if (hasA && hasB) bothAB++
-    else if (hasA) onlyA++
-    else if (hasB) onlyB++
+    if (ids.some(matchesAll)) count++
   }
-  const shortfallA = Math.max(0, condA.minCount - onlyA)
-  const shortfallB = Math.max(0, condB.minCount - onlyB)
-  if (shortfallA + shortfallB > bothAB) {
-    return `보유 인격으로는 조건을 만족할 수 없습니다`
+
+  if (count < maxMinCount) {
+    const kwLabel = allKeywords.join('+')
+    return `보유 인격으로는 ${kwLabel} ${maxMinCount}명 조건을 만족할 수 없습니다`
   }
   return null
 }
@@ -102,6 +92,10 @@ export function generateRandom(
   return result
 }
 
+/**
+ * AND-based keyword assignment.
+ * Selected identities must have ALL keywords.
+ */
 function keywordAwareAssign(
   sinners: Sinner[],
   idsBySinner: Record<string, Identity[]>,
@@ -110,62 +104,26 @@ function keywordAwareAssign(
   const result: Record<string, Identity | null> = {}
   const usedSinners = new Set<string>()
 
-  if (conditions.length === 1) {
-    const { keyword, minCount } = conditions[0]
-    const canProvide = sinners.filter(s =>
-      (idsBySinner[s.id] ?? []).some(i => i.keywords?.includes(keyword))
-    )
-    const shuffled = shuffle(canProvide)
-    for (let i = 0; i < Math.min(minCount, shuffled.length); i++) {
-      const s = shuffled[i]
-      const pool = (idsBySinner[s.id] ?? []).filter(id => id.keywords?.includes(keyword))
-      result[s.id] = pool[Math.floor(Math.random() * pool.length)]
-      usedSinners.add(s.id)
-    }
-  } else if (conditions.length === 2) {
-    const [condA, condB] = conditions
-    const onlyA: Sinner[] = [], onlyB: Sinner[] = [], bothAB: Sinner[] = []
-    for (const s of sinners) {
-      const ids = idsBySinner[s.id] ?? []
-      const hasA = ids.some(i => i.keywords?.includes(condA.keyword))
-      const hasB = ids.some(i => i.keywords?.includes(condB.keyword))
-      if (hasA && hasB) bothAB.push(s)
-      else if (hasA) onlyA.push(s)
-      else if (hasB) onlyB.push(s)
-    }
+  const allKeywords = conditions.map(c => c.keyword)
+  const maxMinCount = Math.max(...conditions.map(c => c.minCount))
 
-    let needA = condA.minCount, needB = condB.minCount
-    for (const s of shuffle(onlyA)) {
-      if (needA <= 0) break
-      const pool = (idsBySinner[s.id] ?? []).filter(i => i.keywords?.includes(condA.keyword))
-      result[s.id] = pool[Math.floor(Math.random() * pool.length)]
-      usedSinners.add(s.id)
-      needA--
-    }
-    for (const s of shuffle(onlyB)) {
-      if (needB <= 0) break
-      const pool = (idsBySinner[s.id] ?? []).filter(i => i.keywords?.includes(condB.keyword))
-      result[s.id] = pool[Math.floor(Math.random() * pool.length)]
-      usedSinners.add(s.id)
-      needB--
-    }
-    for (const s of shuffle(bothAB)) {
-      if (needA <= 0 && needB <= 0) break
-      if (usedSinners.has(s.id)) continue
-      if (needA > 0) {
-        const pool = (idsBySinner[s.id] ?? []).filter(i => i.keywords?.includes(condA.keyword))
-        result[s.id] = pool[Math.floor(Math.random() * pool.length)]
-        usedSinners.add(s.id)
-        needA--
-      } else if (needB > 0) {
-        const pool = (idsBySinner[s.id] ?? []).filter(i => i.keywords?.includes(condB.keyword))
-        result[s.id] = pool[Math.floor(Math.random() * pool.length)]
-        usedSinners.add(s.id)
-        needB--
-      }
-    }
+  const matchesAll = (identity: Identity) =>
+    allKeywords.every(kw => identity.keywords?.includes(kw))
+
+  // Find sinners that have at least one identity with ALL keywords
+  const canProvide = sinners.filter(s =>
+    (idsBySinner[s.id] ?? []).some(matchesAll)
+  )
+
+  const shuffled = shuffle(canProvide)
+  for (let i = 0; i < Math.min(maxMinCount, shuffled.length); i++) {
+    const s = shuffled[i]
+    const pool = (idsBySinner[s.id] ?? []).filter(matchesAll)
+    result[s.id] = pool[Math.floor(Math.random() * pool.length)]
+    usedSinners.add(s.id)
   }
 
+  // Fill remaining sinners with random identities
   for (const s of sinners) {
     if (usedSinners.has(s.id)) continue
     const pool = idsBySinner[s.id] ?? []
