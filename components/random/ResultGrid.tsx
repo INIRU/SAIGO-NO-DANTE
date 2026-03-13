@@ -2,9 +2,10 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { getIdentityInfoUrl, getEGOImageUrl } from '@/lib/utils/images'
-import { RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import type { Sinner, Identity } from '@/lib/types'
+import { getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
+import { RARITY_COLORS, GRADE_COLORS, STORAGE_BASE } from '@/lib/constants/game'
+import { SIN_COLORS } from '@/lib/constants/sin'
+import type { Sinner, Identity, SinType } from '@/lib/types'
 import type { RandomResult } from '@/lib/random/engine'
 import { RefreshCw } from 'lucide-react'
 
@@ -175,73 +176,70 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
     )
   }
 
-  // EGO tab — CSS animation, no GSAP needed
+  // EGO tab — deck builder style: sinner card + grade slot list
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[0.75rem]">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[1rem] gap-y-[1rem]">
       {sinners.map((sinner, idx) => {
         const ego = result.egos?.[sinner.id]
-        const gradeColor = ego ? (GRADE_COLORS[ego.grade] ?? '#667788') : '#2a2015'
-
-        if (!ego?.folder_name) {
-          return (
-            <div
-              key={sinner.id}
-              className="animate-fade-in rounded-[0.25rem] overflow-hidden"
-              style={{
-                background: 'linear-gradient(160deg, #16120d 0%, #0d0a06 100%)',
-                border: '1.5px dashed #2a2015',
-                animationDelay: `${idx * 40}ms`,
-                animationFillMode: 'both',
-              }}
-            >
-              <div style={{ aspectRatio: '1' }} className="flex items-center justify-center">
-                <span className="text-[0.75rem] text-[#2a2015]">-</span>
-              </div>
-              <div className="px-[0.5rem] py-[0.375rem]" style={{ borderTop: '1px solid #1a1208' }}>
-                <p className="text-[0.625rem] text-[#3a2a10] truncate">{sinner.name_kr}</p>
-              </div>
-            </div>
-          )
-        }
 
         return (
           <div
             key={sinner.id}
-            className="animate-fade-in rounded-[0.25rem] overflow-hidden transition-shadow duration-300"
+            className="animate-fade-in rounded-[0.25rem] overflow-hidden"
             style={{
-              background: '#16120d',
-              border: `1.5px solid ${gradeColor}40`,
-              boxShadow: `0 0 0.75rem ${gradeColor}20`,
+              background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
+              border: '1px solid #221a0f',
               animationDelay: `${idx * 40}ms`,
               animationFillMode: 'both',
             }}
           >
-            <div className="relative overflow-hidden" style={{ aspectRatio: '1' }}>
-              <Image
-                src={`${getEGOImageUrl(sinner.id, ego.folder_name)}profile.webp`}
-                alt={ego.name_kr ?? ego.name}
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
-                style={{ objectFit: 'cover' }}
-              />
-              {/* Grade badge */}
-              <div
-                className="absolute top-[0.375rem] left-[0.375rem] px-[0.375rem] py-[0.0625rem] rounded-[0.125rem] text-[0.5625rem] font-mono"
-                style={{
-                  background: `${gradeColor}30`,
-                  color: gradeColor,
-                  border: `1px solid ${gradeColor}50`,
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                {ego.grade}
-              </div>
+            {/* Sinner header */}
+            <div className="flex items-center gap-[0.375rem] px-[0.5rem] py-[0.375rem]" style={{ borderBottom: '1px solid #1a1208' }}>
+              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
+              <span className="font-serif font-bold truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
-            <div className="px-[0.5rem] py-[0.375rem]" style={{ borderTop: `1px solid ${gradeColor}20` }}>
-              <p className="text-[0.6875rem] truncate" style={{ color: gradeColor }}>
-                {ego.name_kr ?? ego.name}
-              </p>
-              <p className="text-[0.5rem] text-[#5a5040] truncate">{sinner.name_kr}</p>
+            {/* Grade slots */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '2px' }}>
+              {GRADE_ORDER.map(grade => {
+                const isActive = ego?.grade === grade
+                const gc = GRADE_COLORS[grade] ?? '#667788'
+                const sc = isActive && ego?.sin_affinity ? (SIN_COLORS[ego.sin_affinity as SinType] ?? gc) : gc
+                return (
+                  <div
+                    key={grade}
+                    style={{
+                      background: isActive ? `${sc}1a` : 'rgba(10,8,5,0.7)',
+                      border: `1px solid ${isActive ? sc + '55' : '#18120a'}`,
+                      borderRadius: '2px',
+                      padding: '0.25rem 0.3125rem',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: '0.3125rem',
+                      minHeight: '1.5rem',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {/* Grade icon */}
+                    {grade !== 'ALEPH' ? (
+                      <Image
+                        src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
+                        alt={grade}
+                        width={22}
+                        height={11}
+                        unoptimized
+                        style={{ height: '0.6875rem', width: 'auto', opacity: isActive ? 0.9 : 0.3, flexShrink: 0 }}
+                      />
+                    ) : (
+                      <span style={{ color: isActive ? sc : gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: isActive ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
+                    )}
+                    {isActive && ego
+                      ? <span style={{ color: sc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'keep-all', flex: 1, textAlign: 'left' }}>{ego.name_kr || ego.name}</span>
+                      : <span style={{ color: '#2a1e10', fontSize: '0.75rem', lineHeight: 1 }}>·</span>
+                    }
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
@@ -249,3 +247,5 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
     </div>
   )
 }
+
+const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
