@@ -35,6 +35,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/meta',       label: '분석' },
       { href: '/extraction', label: '추출' },
+      { href: '/random',     label: '랜덤 편성' },
     ],
   },
 ]
