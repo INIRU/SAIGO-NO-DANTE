@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { getIdentityInfoUrl, getEGOImageUrl } from '@/lib/utils/images'
 import { RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -22,15 +22,14 @@ type Props = {
 
 export default function ResultGrid({ sinners, pools, result, activeTab, rollId, rerolledSinnerId, revealed, onRevealDone, onReroll }: Props) {
   const gridRef = useRef<HTMLDivElement>(null)
-  const egoGridRef = useRef<HTMLDivElement>(null)
   const lastRollId = useRef(0)
-  const [egoRevealed, setEgoRevealed] = useState(false)
+  const [rerollingId, setRerollingId] = useState<string | null>(null)
 
   // Full roll stagger animation (only on rollId change)
   useEffect(() => {
     if (rollId === 0 || rollId === lastRollId.current || !result) return
     lastRollId.current = rollId
-    setEgoRevealed(false)
+    setRerollingId(null)
 
     ;(async () => {
       const { gsap } = await import('gsap')
@@ -44,53 +43,46 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
           duration: 0.5,
           stagger: 0.06,
           ease: 'back.out(1.4)',
-          onComplete: () => {
-            onRevealDone()
-            setTimeout(() => setEgoRevealed(true), 200)
-          },
+          onComplete: () => onRevealDone(),
         },
       )
     })()
   }, [rollId, result, onRevealDone])
 
-  // Individual reroll animation (only the specific card)
+  // Individual reroll: immediately hide the card, wait for new image to load
   useEffect(() => {
     if (!rerolledSinnerId || !gridRef.current) return
+    setRerollingId(rerolledSinnerId)
+    const card = gridRef.current.querySelector(`[data-sinner="${rerolledSinnerId}"]`) as HTMLElement | null
+    if (card) {
+      card.style.opacity = '0'
+      card.style.transform = 'scale(0.9)'
+    }
+  }, [rerolledSinnerId, result])
+
+  // Called when the rerolled card's new image finishes loading
+  const handleRerollImageLoad = useCallback((sinnerId: string) => {
+    if (sinnerId !== rerollingId || !gridRef.current) return
+    setRerollingId(null)
 
     ;(async () => {
       const { gsap } = await import('gsap')
-      const card = gridRef.current?.querySelector(`[data-sinner="${rerolledSinnerId}"]`)
+      const card = gridRef.current?.querySelector(`[data-sinner="${sinnerId}"]`)
       if (!card) return
 
       gsap.fromTo(card,
-        { opacity: 0.4, scale: 0.9, rotateY: 90 },
-        { opacity: 1, scale: 1, rotateY: 0, duration: 0.45, ease: 'back.out(1.7)' },
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
       )
     })()
-  }, [rerolledSinnerId, result])
-
-  // EGO grid reveal
-  useEffect(() => {
-    if (!egoRevealed || !egoGridRef.current) return
-
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      const cards = egoGridRef.current?.querySelectorAll('[data-ego]')
-      if (!cards?.length) return
-
-      gsap.fromTo(cards,
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.4, stagger: 0.04, ease: 'power2.out' },
-      )
-    })()
-  }, [egoRevealed])
+  }, [rerollingId])
 
   // No result — ghost cards
   if (!result) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[0.75rem] gap-y-[1rem]">
         {sinners.map(sinner => (
-          <div key={sinner.id} className="flex flex-col items-center">
+          <div key={sinner.id}>
             <div
               className="w-full rounded-[0.25rem] overflow-hidden relative"
               style={{
@@ -138,13 +130,15 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
                 onClick={() => canReroll && onReroll(sinner.id)}
                 title={canReroll ? `${identity.name_kr} — 클릭하여 리롤` : identity.name_kr}
               >
-                {/* Portrait */}
+                {/* Portrait — key forces remount on identity change */}
                 <Image
+                  key={identity.id}
                   src={getIdentityInfoUrl(identity)}
                   alt={identity.name_kr}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
                   style={{ objectFit: 'cover', objectPosition: 'top' }}
+                  onLoad={() => handleRerollImageLoad(sinner.id)}
                 />
 
                 {/* Bottom gradient */}
@@ -181,10 +175,10 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
     )
   }
 
-  // EGO tab
+  // EGO tab — CSS animation, no GSAP needed
   return (
-    <div ref={egoGridRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[0.75rem]">
-      {sinners.map(sinner => {
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[0.75rem]">
+      {sinners.map((sinner, idx) => {
         const ego = result.egos?.[sinner.id]
         const gradeColor = ego ? (GRADE_COLORS[ego.grade] ?? '#667788') : '#2a2015'
 
@@ -192,12 +186,12 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
           return (
             <div
               key={sinner.id}
-              data-ego
-              className="rounded-[0.25rem] overflow-hidden"
+              className="animate-fade-in rounded-[0.25rem] overflow-hidden"
               style={{
                 background: 'linear-gradient(160deg, #16120d 0%, #0d0a06 100%)',
                 border: '1.5px dashed #2a2015',
-                opacity: 0,
+                animationDelay: `${idx * 40}ms`,
+                animationFillMode: 'both',
               }}
             >
               <div style={{ aspectRatio: '1' }} className="flex items-center justify-center">
@@ -213,13 +207,13 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
         return (
           <div
             key={sinner.id}
-            data-ego
-            className="rounded-[0.25rem] overflow-hidden transition-all duration-300"
+            className="animate-fade-in rounded-[0.25rem] overflow-hidden transition-shadow duration-300"
             style={{
               background: '#16120d',
               border: `1.5px solid ${gradeColor}40`,
-              boxShadow: egoRevealed ? `0 0 0.75rem ${gradeColor}20` : 'none',
-              opacity: 0,
+              boxShadow: `0 0 0.75rem ${gradeColor}20`,
+              animationDelay: `${idx * 40}ms`,
+              animationFillMode: 'both',
             }}
           >
             <div className="relative overflow-hidden" style={{ aspectRatio: '1' }}>
