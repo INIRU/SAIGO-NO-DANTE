@@ -10,11 +10,12 @@ export type RandomOptions = {
   egoEnabled: boolean
   keywords: KeywordCondition[]
   ownedIds: Set<string> | null  // null = use all
+  rarityFilter: Set<number> | null  // null = all rarities, e.g. {2, 3} = 2성+3성 only
 }
 
 export type RandomResult = {
   identities: Record<string, Identity | null>  // sinnerId → identity
-  egos: Record<string, EGO | null>             // sinnerId → ego
+  egos: Record<string, EGO[]>                  // sinnerId → ego list (one per grade)
 }
 
 /**
@@ -63,7 +64,10 @@ export function generateRandom(
   const egosBySinner: Record<string, EGO[]> = {}
   for (const sinner of sinners) {
     idsBySinner[sinner.id] = allIdentities
-      .filter(i => i.sinner_id === sinner.id && (options.ownedIds === null || options.ownedIds.has(i.id)))
+      .filter(i => i.sinner_id === sinner.id
+        && (options.ownedIds === null || options.ownedIds.has(i.id))
+        && (options.rarityFilter === null || options.rarityFilter.has(i.rarity))
+      )
     egosBySinner[sinner.id] = allEgos
       .filter(e => e.sinner_id === sinner.id && (options.ownedIds === null || options.ownedIds.has(e.id)))
   }
@@ -85,7 +89,27 @@ export function generateRandom(
   if (options.egoEnabled) {
     for (const sinner of sinners) {
       const pool = egosBySinner[sinner.id]
-      result.egos[sinner.id] = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null
+      const byGrade: Record<string, EGO[]> = {}
+      for (const ego of pool) {
+        if (!byGrade[ego.grade]) byGrade[ego.grade] = []
+        byGrade[ego.grade].push(ego)
+      }
+
+      const picked: EGO[] = []
+
+      // ZAYIN: always pick one
+      if (byGrade['ZAYIN']?.length) {
+        picked.push(byGrade['ZAYIN'][Math.floor(Math.random() * byGrade['ZAYIN'].length)])
+      }
+
+      // Other grades: 50% chance to include
+      for (const grade of ['TETH', 'HE', 'WAW', 'ALEPH']) {
+        if (byGrade[grade]?.length && Math.random() < 0.5) {
+          picked.push(byGrade[grade][Math.floor(Math.random() * byGrade[grade].length)])
+        }
+      }
+
+      result.egos[sinner.id] = picked
     }
   }
 
