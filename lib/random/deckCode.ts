@@ -18,9 +18,13 @@ export async function encodeRandomResult(
   }
 
   const egoSlots: Record<string, Record<string, EGO>> = {}
-  for (const [sinnerId, ego] of Object.entries(result.egos)) {
-    if (!ego) continue
-    egoSlots[sinnerId] = { [ego.grade]: ego }
+  for (const [sinnerId, egoArr] of Object.entries(result.egos)) {
+    if (!egoArr?.length) continue
+    const gradeMap: Record<string, EGO> = {}
+    for (const ego of egoArr) {
+      gradeMap[ego.grade] = ego
+    }
+    egoSlots[sinnerId] = gradeMap
   }
 
   const formationOrder = sinners
