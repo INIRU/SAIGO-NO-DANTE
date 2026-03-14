@@ -1,7 +1,9 @@
-import Link from 'next/link'
-import { Anchor } from 'lucide-react'
+'use client'
 
-export const metadata = { title: '점검 중 | SAIGO NO DANTE' }
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { Construction } from 'lucide-react'
 
 const CHARON_LINES = [
   '카론, 기다리는 거 못해. 100초만 기다려 줄게.',
@@ -23,139 +25,285 @@ function formatEndTime(iso: string) {
   return `${month}월 ${day}일 ${hour}:${min}`
 }
 
-export default async function MaintenancePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ from?: string; message?: string; reason?: string; ends_at?: string }>
-}) {
-  const { from, message, reason, ends_at } = await searchParams
+function MaintenanceContent() {
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from')
+  const message = searchParams.get('message')
+  const reason = searchParams.get('reason')
+  const ends_at = searchParams.get('ends_at')
 
-  const randomLine = CHARON_LINES[Math.floor(Math.random() * CHARON_LINES.length)]
+  const [line] = useState(() => CHARON_LINES[Math.floor(Math.random() * CHARON_LINES.length)])
+  const [typed, setTyped] = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  // Typewriter effect for Charon's quote
+  useEffect(() => {
+    if (!mounted) return
+    let i = 0
+    const interval = setInterval(() => {
+      if (i <= line.length) {
+        setTyped(line.slice(0, i))
+        i++
+      } else {
+        clearInterval(interval)
+      }
+    }, 50)
+    return () => clearInterval(interval)
+  }, [line, mounted])
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: '#0d0b08', position: 'relative', overflow: 'hidden' }}
-    >
-      {/* Atmospheric background glow */}
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#0d0b08', position: 'relative', overflow: 'hidden' }}>
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+        @keyframes float-up {
+          0% { transform: translateY(100vh) scale(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+        @keyframes flicker { 0%, 95%, 100% { opacity: 1; } 96% { opacity: 0.4; } 97% { opacity: 0.9; } 98% { opacity: 0.3; } 99% { opacity: 0.8; } }
+        @keyframes scan-line { 0% { top: -10%; } 100% { top: 110%; } }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes border-glow {
+          0%, 100% { border-color: rgba(200,144,10,0.15); box-shadow: 0 0 1.25rem rgba(200,144,10,0.05); }
+          50% { border-color: rgba(200,144,10,0.35); box-shadow: 0 0 2.5rem rgba(200,144,10,0.12); }
+        }
+        @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .particle {
+          position: absolute;
+          width: 0.125rem;
+          height: 0.125rem;
+          background: rgba(200,144,10,0.3);
+          border-radius: 50%;
+          animation: float-up linear infinite;
+        }
+      `}</style>
+
+      {/* Scan line overlay */}
       <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
+        overflow: 'hidden', opacity: 0.03,
+      }}>
+        <div style={{
+          position: 'absolute', left: 0, right: 0, height: '30%',
+          background: 'linear-gradient(to bottom, transparent, rgba(200,144,10,0.5), transparent)',
+          animation: 'scan-line 4s linear infinite',
+        }} />
+      </div>
+
+      {/* Atmospheric particles */}
+      {mounted && Array.from({ length: 20 }).map((_, i) => (
+        <div
+          key={i}
+          className="particle"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDuration: `${6 + Math.random() * 8}s`,
+            animationDelay: `${Math.random() * 8}s`,
+            opacity: 0.1 + Math.random() * 0.3,
+            width: `${0.0625 + Math.random() * 0.125}rem`,
+            height: `${0.0625 + Math.random() * 0.125}rem`,
+          }}
+        />
+      ))}
+
+      {/* Background radial glow */}
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: '40rem',
-        height: '40rem',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 40%, transparent 70%)',
+        width: '50rem', height: '50rem', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,144,10,0.05) 0%, rgba(200,144,10,0.015) 35%, transparent 65%)',
         pointerEvents: 'none',
       }} />
-      <div className="text-center max-w-lg" style={{ position: 'relative', zIndex: 1 }}>
-        {/* 카론 아이콘 */}
-        <div
-          className="mx-auto mb-6 flex items-center justify-center"
-          style={{
-            width: 88,
-            height: 88,
-            borderRadius: '50%',
-            background: 'rgba(200,144,10,0.08)',
-            border: '2px solid rgba(200,144,10,0.2)',
-            boxShadow: '0 0 40px rgba(200,144,10,0.1)',
-          }}
-        >
-          <Anchor size={38} style={{ color: '#c8900a' }} />
+
+      {/* Outer ornamental ring */}
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '28rem', height: '28rem', borderRadius: '50%',
+        border: '0.0625rem solid rgba(200,144,10,0.06)',
+        animation: 'spin-slow 120s linear infinite',
+        pointerEvents: 'none',
+      }}>
+        {/* Tick marks on the ring */}
+        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
+          <div key={deg} style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: '0.0625rem', height: '0.75rem',
+            background: 'rgba(200,144,10,0.15)',
+            transform: `translate(-50%, -50%) rotate(${deg}deg) translateY(-14rem)`,
+          }} />
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="text-center" style={{
+        position: 'relative', zIndex: 5, maxWidth: '28rem',
+        animation: mounted ? 'fade-in 1s ease-out' : 'none',
+      }}>
+
+        {/* Anchor icon with glow ring */}
+        <div className="mx-auto" style={{
+          width: '6rem', height: '6rem', marginBottom: '2rem',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '0.0625rem solid rgba(200,144,10,0.2)',
+            animation: 'border-glow 3s ease-in-out infinite',
+          }} />
+          <div style={{
+            position: 'absolute', inset: '0.375rem', borderRadius: '50%',
+            background: 'rgba(200,144,10,0.04)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Construction style={{
+              width: '2.25rem', height: '2.25rem', color: '#c8900a',
+              animation: 'pulse-glow 3s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 0.5rem rgba(200,144,10,0.3))',
+            }} />
+          </div>
         </div>
 
-        {/* 메인 안내 */}
-        <h1
-          className="font-serif text-2xl font-bold mb-2"
-          style={{ color: '#c8900a' }}
-        >
-          점검 중
+        {/* Title */}
+        <h1 className="font-serif" style={{
+          fontSize: '1.75rem', fontWeight: 700,
+          color: '#c8900a', letterSpacing: '0.15em',
+          marginBottom: '0.25rem',
+          animation: 'flicker 8s linear infinite',
+          textShadow: '0 0 1.5rem rgba(200,144,10,0.3)',
+        }}>
+          점 검 중
         </h1>
 
-        <p
-          className="mb-6"
-          style={{ color: '#7a6845', fontSize: '0.8125rem' }}
-        >
+        <p className="font-mono" style={{
+          color: '#4a3d2a', fontSize: '0.625rem',
+          letterSpacing: '0.3em', textTransform: 'uppercase',
+          marginBottom: '1.5rem',
+        }}>
           MAINTENANCE IN PROGRESS
         </p>
 
-        {/* Decorative line */}
-        <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, var(--gold), transparent)', margin: '0 auto 1.5rem' }} />
+        {/* Ornamental divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ width: '3rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3))' }} />
+          <div style={{ width: '0.25rem', height: '0.25rem', background: '#c8900a', transform: 'rotate(45deg)', opacity: 0.5 }} />
+          <div style={{ width: '3rem', height: '0.0625rem', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent)' }} />
+        </div>
 
-        {/* 카론 대사 박스 */}
-        <div
-          className="mx-auto mb-6 px-6 py-4 rounded-lg"
-          style={{
-            background: 'rgba(200,144,10,0.06)',
-            border: '1px solid rgba(200,144,10,0.15)',
-            maxWidth: 420,
-          }}
-        >
-          <p
-            style={{
-              color: '#e8b030',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              marginBottom: 6,
-              letterSpacing: '0.05em',
-            }}
-          >
+        {/* Charon quote box */}
+        <div style={{
+          background: 'rgba(26,21,16,0.8)',
+          border: '0.0625rem solid rgba(200,144,10,0.12)',
+          borderRadius: '0.5rem',
+          padding: '1.25rem 1.5rem',
+          marginBottom: '1.5rem',
+          backdropFilter: 'blur(0.5rem)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Corner ornaments */}
+          <div style={{ position: 'absolute', top: '0.375rem', left: '0.375rem', width: '0.5rem', height: '0.5rem', borderTop: '0.0625rem solid rgba(200,144,10,0.25)', borderLeft: '0.0625rem solid rgba(200,144,10,0.25)' }} />
+          <div style={{ position: 'absolute', top: '0.375rem', right: '0.375rem', width: '0.5rem', height: '0.5rem', borderTop: '0.0625rem solid rgba(200,144,10,0.25)', borderRight: '0.0625rem solid rgba(200,144,10,0.25)' }} />
+          <div style={{ position: 'absolute', bottom: '0.375rem', left: '0.375rem', width: '0.5rem', height: '0.5rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.25)', borderLeft: '0.0625rem solid rgba(200,144,10,0.25)' }} />
+          <div style={{ position: 'absolute', bottom: '0.375rem', right: '0.375rem', width: '0.5rem', height: '0.5rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.25)', borderRight: '0.0625rem solid rgba(200,144,10,0.25)' }} />
+
+          <p style={{
+            color: '#e8b030', fontSize: '0.6875rem', fontWeight: 600,
+            letterSpacing: '0.08em', marginBottom: '0.5rem',
+            fontFamily: 'var(--font-heading)',
+          }}>
             — 카론
           </p>
-          <p
-            style={{
-              color: '#a89070',
-              fontSize: '0.9375rem',
-              lineHeight: 1.7,
-              fontStyle: 'italic',
-            }}
-          >
-            &ldquo;{randomLine}&rdquo;
+          <p style={{
+            color: '#a89070', fontSize: '0.9375rem', lineHeight: 1.8,
+            fontStyle: 'italic', minHeight: '1.75rem',
+          }}>
+            &ldquo;{typed}&rdquo;
+            <span style={{ animation: 'cursor-blink 1s step-end infinite', color: '#c8900a' }}>▎</span>
           </p>
         </div>
 
-        {/* 커스텀 점검 메시지 */}
-        {message && (
-          <p
-            className="mb-3"
-            style={{ color: '#a89070', fontSize: '0.875rem', lineHeight: 1.6 }}
-          >
-            {message}
-          </p>
-        )}
+        {/* Maintenance info panel */}
+        <div style={{
+          background: 'rgba(13,11,8,0.6)',
+          border: '0.0625rem solid rgba(200,144,10,0.08)',
+          borderRadius: '0.375rem',
+          padding: '1rem 1.25rem',
+          marginBottom: '1.5rem',
+          textAlign: 'left',
+        }}>
+          {message && (
+            <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
+              <p style={{ color: '#a89070', fontSize: '0.8125rem', lineHeight: 1.6 }}>{message}</p>
+            </div>
+          )}
 
-        {/* 점검 정보 */}
-        <div className="mb-6 space-y-1.5">
-          {reason && (
-            <p style={{ color: '#7a6845', fontSize: '0.8125rem' }}>
-              <span style={{ color: '#555566' }}>사유: </span>{reason}
-            </p>
-          )}
-          <p style={{ color: '#7a6845', fontSize: '0.8125rem' }}>
-            <span style={{ color: '#555566' }}>예상 종료: </span>
-            {ends_at ? formatEndTime(ends_at) : '미정'}
-          </p>
-          {from && (
-            <p style={{ color: '#3a3530', fontSize: '0.75rem' }}>
-              <code style={{ color: '#555566' }}>{from}</code>
-            </p>
-          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.375rem 1rem', fontSize: '0.75rem' }}>
+            {reason && (
+              <>
+                <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>사유</span>
+                <span style={{ color: '#7a6845' }}>{reason}</span>
+              </>
+            )}
+            <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>종료</span>
+            <span style={{ color: ends_at ? '#e8b030' : '#555566' }}>
+              {ends_at ? formatEndTime(ends_at) : '미정'}
+            </span>
+            {from && (
+              <>
+                <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>경로</span>
+                <code style={{ color: '#555566', fontSize: '0.6875rem' }}>{from}</code>
+              </>
+            )}
+          </div>
         </div>
 
+        {/* Return button */}
         <Link
           href="/"
-          className="inline-block px-5 py-2 rounded transition-colors hover:bg-[rgba(200,144,10,0.25)]"
+          className="inline-flex items-center gap-2 transition-all"
           style={{
-            background: 'rgba(200,144,10,0.12)',
+            padding: '0.625rem 1.5rem',
+            background: 'rgba(200,144,10,0.08)',
             color: '#c8900a',
-            border: '1px solid rgba(200,144,10,0.25)',
+            border: '0.0625rem solid rgba(200,144,10,0.2)',
+            borderRadius: '0.375rem',
             fontSize: '0.8125rem',
+            letterSpacing: '0.03em',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(200,144,10,0.15)'
+            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.4)'
+            e.currentTarget.style.boxShadow = '0 0 1.5rem rgba(200,144,10,0.1)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(200,144,10,0.08)'
+            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.2)'
+            e.currentTarget.style.boxShadow = 'none'
           }}
         >
           카론이 데려다줄게. 돌아가자.
         </Link>
       </div>
+    </div>
+  )
+}
+
+export default function MaintenancePage() {
+  return (
+    <div>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d0b08' }}>
+          <Construction style={{ width: '2rem', height: '2rem', color: '#c8900a', opacity: 0.3 }} />
+        </div>
+      }>
+        <MaintenanceContent />
+      </Suspense>
     </div>
   )
 }

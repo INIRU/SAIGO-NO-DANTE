@@ -753,9 +753,8 @@ function GiftModal({
 /* ── 효과 블록 ── */
 function EffectBlock({ label, text, color }: { label: string; text: string; color: string }) {
   const formatSkillDesc = useFormatSkillDesc()
-  // "- " 구분자 또는 기존 줄바꿈 기준으로만 분리
+  // DB 줄바꿈 기준 분리 — "키워드 - 숫자", "진동 - 분배" 등 게임 용어 보존
   const lines = text
-    .replace(/(?<=.)- /g, '\n- ')
     .split('\n')
     .map(l => l.trim())
     .filter(Boolean)
@@ -768,10 +767,19 @@ function EffectBlock({ label, text, color }: { label: string; text: string; colo
       >
         효과 {label}
       </p>
-      <div className="text-[0.75rem] leading-[1.7] space-y-1" style={{ color }}>
-        {lines.map((line, i) => (
-          <p key={i}>{formatSkillDesc(line, color)}</p>
-        ))}
+      <div className="text-[0.75rem] leading-[1.7]" style={{ color }}>
+        {lines.map((line, i) => {
+          // "- N인 이상" 등 조건부 항목은 들여쓰기
+          const isSub = /^-\s/.test(line)
+          return (
+            <p
+              key={i}
+              style={isSub ? { paddingLeft: '0.75rem', textIndent: '-0.5rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.375rem' : 0 }}
+            >
+              {formatSkillDesc(line, color)}
+            </p>
+          )
+        })}
       </div>
     </div>
   )

@@ -60,6 +60,29 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // ── 계정 정지 체크 ──
+  // 쓰기 API(POST/PUT/PATCH/DELETE) 또는 보호 페이지 접근 시 정지된 사용자 차단
+  const method = request.method
+  const isWriteApi = pathname.startsWith('/api/') && method !== 'GET' && !pathname.startsWith('/api/auth/')
+  const isSuspendedPage = ['/decks/new', '/mypage'].some(p => pathname.startsWith(p))
+
+  if (isWriteApi || isSuspendedPage) {
+    const token = await getToken({ req: request })
+    if ((token as Record<string, unknown>)?.isSuspended) {
+      if (isWriteApi) {
+        return NextResponse.json(
+          { error: '계정이 정지되었습니다. 관리자에게 문의하세요.' },
+          { status: 403 },
+        )
+      }
+      // 페이지 접근 시 정지 안내로 리다이렉트
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('error', 'suspended')
+      return NextResponse.redirect(url)
+    }
+  }
+
   // ── API 프록시 보호 ──
   if (!pathname.startsWith('/api/')) return NextResponse.next()
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
