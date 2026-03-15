@@ -162,24 +162,32 @@ export default function MirrorDungeonClient({
   const PAGE_SIZE = 40
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const loadingRef = useRef(false)
+  const animatedCountRef = useRef(0)
 
-  // 필터 변경 시 visibleCount 리셋
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filtered])
+  // 필터 변경 시 visibleCount + 애니메이션 카운터 리셋
+  useEffect(() => { setVisibleCount(PAGE_SIZE); animatedCountRef.current = 0 }, [filtered])
 
   const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
 
-  // IntersectionObserver로 하단 감지
+  // IntersectionObserver — 디바운스로 연쇄 발동 방지
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
     const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length))
+      if (entry.isIntersecting && !loadingRef.current) {
+        loadingRef.current = true
+        setVisibleCount(prev => {
+          const next = Math.min(prev + PAGE_SIZE, filtered.length)
+          // 300ms 후 재발동 허용 (레이아웃 재계산 대기)
+          setTimeout(() => { loadingRef.current = false }, 300)
+          return next
+        })
       }
     }, { rootMargin: '200px' })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [filtered.length])
+  }, [visibleCount, filtered.length])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
@@ -200,30 +208,28 @@ export default function MirrorDungeonClient({
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // GSAP 진입 애니메이션 (뷰포트 내 카드만, 나머지는 즉시 표시)
+  // GSAP 진입 애니메이션 (새로 추가된 카드에도 적용)
   useEffect(() => {
     const initGSAP = async () => {
       const { gsap } = await import('gsap')
       const cards = document.querySelectorAll('.gift-card')
-      const viewportH = window.innerHeight
-      const visibleCards: Element[] = []
-      cards.forEach(card => {
-        const rect = card.getBoundingClientRect()
-        if (rect.top < viewportH + 100) {
-          visibleCards.push(card)
-        } else {
-          ;(card as HTMLElement).style.opacity = '1'
+      const newCards: Element[] = []
+      cards.forEach((card, i) => {
+        if (i >= animatedCountRef.current) {
+          newCards.push(card)
         }
       })
-      if (visibleCards.length > 0) {
-        gsap.fromTo(visibleCards,
+      if (newCards.length > 0) {
+        gsap.fromTo(newCards,
           { opacity: 0, y: 16, scale: 0.97 },
           { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.008, ease: 'power2.out' }
         )
       }
+      animatedCountRef.current = cards.length
     }
     initGSAP()
-  }, [filtered])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, visibleCount])
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
