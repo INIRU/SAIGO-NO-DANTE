@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
 import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/data/sinners'
@@ -157,6 +157,29 @@ export default function MirrorDungeonClient({
 
     return result
   }, [gifts, keywords, grades, search, sortBy, sortDesc])
+
+  // 무한 스크롤: 한 번에 40개씩 로드
+  const PAGE_SIZE = 40
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // 필터 변경 시 visibleCount 리셋
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filtered])
+
+  const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+
+  // IntersectionObserver로 하단 감지
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length))
+      }
+    }, { rootMargin: '200px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [filtered.length])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
@@ -367,16 +390,24 @@ export default function MirrorDungeonClient({
           <p className="text-sm">필터를 변경해 보세요.</p>
         </div>
       ) : (
-        <div className="gift-grid" style={{ display: 'grid', gap: '0.625rem' }}>
-          {filtered.map(gift => (
-            <GiftCard
-              key={gift.id}
-              gift={gift}
-              onClick={() => setSelected(gift)}
-              getGiftKeywordIcon={getGiftKeywordIcon}
-            />
-          ))}
-        </div>
+        <>
+          <div className="gift-grid" style={{ display: 'grid', gap: '0.625rem' }}>
+            {visibleGifts.map(gift => (
+              <GiftCard
+                key={gift.id}
+                gift={gift}
+                onClick={() => setSelected(gift)}
+                getGiftKeywordIcon={getGiftKeywordIcon}
+              />
+            ))}
+          </div>
+          {/* 무한 스크롤 sentinel */}
+          {visibleCount < filtered.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <span style={{ color: '#555', fontSize: '0.75rem' }}>불러오는 중...</span>
+            </div>
+          )}
+        </>
       )}
 
       {/* 상세 모달 */}
