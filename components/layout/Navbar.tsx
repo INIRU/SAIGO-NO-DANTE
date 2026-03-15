@@ -20,6 +20,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/sinners',        label: '수감자' },
       { href: '/mirror-dungeon', label: '거던' },
+      { href: '/keywords',       label: '키워드' },
     ],
   },
   {
