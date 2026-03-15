@@ -14,7 +14,8 @@ function isAllowedPage(path: string): boolean {
     /^\/sinners\/[^/]+\/(identities|ego)\//.test(path) ||
     /^\/decks\/.+/.test(path) ||
     path === '/collection' ||
-    path === '/mirror-dungeon'
+    path === '/mirror-dungeon' ||
+    path === '/keywords'
   )
 }
 

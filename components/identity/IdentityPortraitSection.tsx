@@ -115,7 +115,7 @@ export default function IdentityPortraitSection({
             alt=""
             width={28}
             height={28}
-            style={{ width: 'auto', height: 'auto', filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
+            style={{ width: '1.75rem', height: '1.75rem', filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
           />
           <div className="flex-1 min-w-0">
             <h1
