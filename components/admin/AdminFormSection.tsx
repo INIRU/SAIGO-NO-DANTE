@@ -31,7 +31,7 @@ export function AdminFormSection({ title, columns = 2, children, collapsible = f
           {collapsible && (
             open
               ? <ChevronDown size={14} style={{ color: '#c8900a' }} />
-              : <ChevronRight size={14} style={{ color: '#555566' }} />
+              : <ChevronRight size={14} style={{ color: '#888888' }} />
           )}
           <h3 style={{ color: '#8a6010', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {title}

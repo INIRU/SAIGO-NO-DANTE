@@ -25,6 +25,7 @@ export default function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const firstButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -34,6 +35,13 @@ export default function ConfirmModal({
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [open, onCancel])
+
+  // Focus first button when modal opens
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => firstButtonRef.current?.focus(), 50)
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -45,6 +53,9 @@ export default function ConfirmModal({
   return (
     <div
       ref={overlayRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
       onClick={e => { if (e.target === overlayRef.current) onCancel() }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
@@ -62,7 +73,7 @@ export default function ConfirmModal({
         {title && (
           <div className="flex items-center gap-2 mb-3">
             {variant === 'danger' && <AlertTriangle size={16} style={{ color: accentColor }} />}
-            <h3 className="font-serif font-bold" style={{ color: accentColor, fontSize: '0.9375rem' }}>
+            <h3 id="confirm-title" className="font-serif font-bold" style={{ color: accentColor, fontSize: '0.9375rem' }}>
               {title}
             </h3>
           </div>
@@ -72,10 +83,11 @@ export default function ConfirmModal({
         </p>
         <div className="flex justify-end gap-2">
           <button
+            ref={firstButtonRef}
             onClick={onCancel}
             style={{
               padding: '0.4375rem 1rem', border: '1px solid var(--border)', borderRadius: '0.25rem',
-              color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
+              color: '#888888', fontSize: '0.8125rem', cursor: 'pointer',
               background: 'transparent',
             }}
             className="transition-colors hover:bg-white/5"

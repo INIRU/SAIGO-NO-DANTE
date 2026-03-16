@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
       key: 'created_at' as const,
       header: '가입일',
       render: (user: User) => (
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>
           {new Date(user.created_at).toLocaleDateString('ko-KR')}
         </span>
       ),
@@ -241,11 +241,11 @@ export default function AdminUsersPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>유저 관리</h1>
-        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>유저 목록 조회, 권한 변경, 계정 정지를 관리합니다.</p>
+        <p style={{ color: '#888888', fontSize: '0.8125rem' }}>유저 목록 조회, 권한 변경, 계정 정지를 관리합니다.</p>
       </div>
 
       <div className="card p-4 mb-6" style={{ borderColor: '#2a2020' }}>
-        <p style={{ color: '#555566', fontSize: '0.75rem', lineHeight: 1.7 }}>
+        <p style={{ color: '#888888', fontSize: '0.75rem', lineHeight: 1.7 }}>
           <span style={{ color: '#c8a450' }}>역할 변경 시</span> 해당 유저가 다시 로그인해야 적용됩니다.
           환경변수 <code style={{ color: '#88cc88', fontSize: '0.6875rem' }}>ADMIN_EMAILS</code>에 등록된 이메일은 항상 관리자입니다.
         </p>
@@ -260,7 +260,7 @@ export default function AdminUsersPage() {
       </div>
 
       {loading ? (
-        <div style={{ color: '#555566', fontSize: '0.8125rem' }}>로딩 중...</div>
+        <div style={{ color: '#888888', fontSize: '0.8125rem' }}>로딩 중...</div>
       ) : (
         <AdminTable
           columns={columns}

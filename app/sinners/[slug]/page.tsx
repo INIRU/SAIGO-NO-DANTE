@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { getSinnerById, getIdentities, getEGOs, SINNER_SLUGS } from '@/lib/data/sinners'
+import { getSinnerById, getIdentities, getEGOs } from '@/lib/db/queries'
+import { SINNER_SLUGS } from '@/lib/constants/game'
 import { notFound } from 'next/navigation'
 import SinnerDetailClient from './SinnerDetailClient'
 
@@ -12,7 +13,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const sinner = await getSinnerById(slug)
-  if (!sinner) return {}
+  if (!sinner) return { title: '수감자를 찾을 수 없습니다', robots: { index: false } }
   return {
     title: `${sinner.name_kr} (${sinner.name})`,
     description: `${sinner.name_kr}의 모든 인격과 EGO — ${sinner.description ?? `Limbus Company ${sinner.name_kr} 수감자 정보`}`,

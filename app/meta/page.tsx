@@ -1,4 +1,4 @@
-import { getSinners } from '@/lib/data/sinners'
+import { getSinners } from '@/lib/db/queries'
 import MetaClient from './MetaClient'
 
 export default async function MetaPage() {

@@ -449,7 +449,7 @@ export default function DecksPage() {
             transform: 'scaleX(0)',
           }} />
 
-          <p className="decks-header-tag" style={{ opacity: 0, color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
+          <p className="decks-header-tag" style={{ opacity: 0, color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             DECK ARCHIVE
           </p>
           <h1 className="decks-header-title font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
@@ -477,7 +477,7 @@ export default function DecksPage() {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -501,7 +501,7 @@ export default function DecksPage() {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#5a5070', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -596,7 +596,7 @@ export default function DecksPage() {
             className="px-3 py-1 rounded text-xs transition-all duration-150"
             style={{
               background: 'transparent',
-              color: '#555566',
+              color: '#888888',
               border: '1px solid var(--border)',
               fontFamily: 'var(--font-body)',
             }}
@@ -615,7 +615,7 @@ export default function DecksPage() {
               className="px-3 py-1 rounded-full text-xs transition-all duration-150"
               style={{
                 background: 'transparent',
-                color: '#555566',
+                color: '#888888',
                 border: '1px solid var(--border)',
                 fontFamily: 'var(--font-body)',
               }}
@@ -653,7 +653,7 @@ export default function DecksPage() {
               className="px-3 py-1 rounded text-xs transition-all duration-150"
               style={{
                 background: 'transparent',
-                color: '#555566',
+                color: '#888888',
                 border: '1px solid var(--border)',
                 fontFamily: 'var(--font-body)',
               }}
@@ -716,7 +716,7 @@ export default function DecksPage() {
       {/* ── 컬렉션 필터 ── */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
         {collectionLoading ? (
-          <span className="text-xs" style={{ color: '#5a5070', fontFamily: 'var(--font-mono)' }}>
+          <span className="text-xs" style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)' }}>
             컬렉션 로딩 중...
           </span>
         ) : hasCollection ? (
@@ -754,14 +754,14 @@ export default function DecksPage() {
             <button
               onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
               className="px-2 py-1.5 rounded text-xs transition-all duration-150"
-              style={{ color: '#555566', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+              style={{ color: '#888888', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
             >
               초기화
             </button>
           </>
         ) : (
           <div className="flex items-center gap-2 w-full">
-            <Link2 size={13} style={{ color: '#555566', flexShrink: 0 }} />
+            <Link2 size={13} style={{ color: '#888888', flexShrink: 0 }} />
             <input
               type="text"
               value={codeInput}
@@ -863,7 +863,7 @@ export default function DecksPage() {
       {!loading && hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-8">
           {loadingMore && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: '#555566' }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#888888' }}>
               <div
                 className="w-4 h-4 rounded-full animate-spin"
                 style={{ border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}

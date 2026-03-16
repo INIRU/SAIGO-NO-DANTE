@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getSinners } from '@/lib/data/sinners'
+import { getSinners } from '@/lib/db/queries'
 import SinnersClient from './SinnersClient'
 
 export const metadata: Metadata = {

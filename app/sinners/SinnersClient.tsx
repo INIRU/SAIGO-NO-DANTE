@@ -108,7 +108,7 @@ export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
         </h1>
 
         {/* 서브텍스트 */}
-        <p className="sinners-header-sub" style={{ color: '#555566', opacity: 0, fontSize: '0.875rem' }}>
+        <p className="sinners-header-sub" style={{ color: '#888888', opacity: 0, fontSize: '0.875rem' }}>
           림버스 컴퍼니의 12인 수감자
         </p>
 

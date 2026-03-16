@@ -31,7 +31,7 @@ export default function Footer() {
         </div>
 
         {/* 네비게이션 */}
-        <nav className="flex items-center gap-6">
+        <nav aria-label="하단 내비게이션" className="flex items-center gap-6">
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}

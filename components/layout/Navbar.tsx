@@ -229,6 +229,7 @@ export default function Navbar() {
                           <Link
                             key={item.href}
                             href={item.href}
+                            role="menuitem"
                             className="block transition-all duration-150"
                             style={{
                               padding: '10px 20px',
@@ -323,6 +324,7 @@ export default function Navbar() {
               <div ref={menuRef} style={{ position: 'relative' }}>
                 <button
                   onClick={() => setMenuOpen(v => !v)}
+                  aria-label="사용자 메뉴 열기"
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                   style={{ cursor: 'pointer' }}
                 >
@@ -443,6 +445,7 @@ export default function Navbar() {
                       else next.add(group.label)
                       return next
                     })}
+                    aria-expanded={isOpen}
                     className="flex items-center justify-between w-full"
                     style={{
                       fontFamily: 'var(--font-heading)',

@@ -233,10 +233,23 @@ export default function SearchModal({ open, onClose }: Props) {
     router.push(href)
   }
 
+  // body scroll lock
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
   if (!open) return null
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="전역 검색"
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]"
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}

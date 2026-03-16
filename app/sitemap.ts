@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { SINNER_SLUGS } from '@/lib/data/sinners'
+import { SINNER_SLUGS } from '@/lib/constants/game'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://saigo-no-dante.com'

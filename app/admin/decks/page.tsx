@@ -93,7 +93,7 @@ export default function AdminDecksPage() {
       key: 'created_at' as const,
       header: '날짜',
       render: (deck: Deck) => (
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>
           {new Date(deck.created_at).toLocaleDateString('ko-KR')}
         </span>
       ),
@@ -102,14 +102,14 @@ export default function AdminDecksPage() {
       key: 'view_count' as const,
       header: '조회',
       render: (deck: Deck) => (
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{deck.view_count}</span>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>{deck.view_count}</span>
       ),
     },
     {
       key: 'vote_count' as const,
       header: '추천',
       render: (deck: Deck) => (
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{deck.vote_count}</span>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>{deck.vote_count}</span>
       ),
     },
     {
@@ -131,7 +131,7 @@ export default function AdminDecksPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>덱 관리</h1>
-        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>전체 덱을 조회하고 관리합니다.</p>
+        <p style={{ color: '#888888', fontSize: '0.8125rem' }}>전체 덱을 조회하고 관리합니다.</p>
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -151,7 +151,7 @@ export default function AdminDecksPage() {
       </form>
 
       {loading ? (
-        <div style={{ color: '#555566', fontSize: '0.8125rem' }}>로딩 중...</div>
+        <div style={{ color: '#888888', fontSize: '0.8125rem' }}>로딩 중...</div>
       ) : (
         <AdminTable
           columns={columns}

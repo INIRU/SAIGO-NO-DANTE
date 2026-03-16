@@ -258,7 +258,7 @@ export default function AdminKeywordsPage() {
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={13} style={{
             position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-            color: '#555566', pointerEvents: 'none',
+            color: '#888888', pointerEvents: 'none',
           }} />
           <input
             value={search}

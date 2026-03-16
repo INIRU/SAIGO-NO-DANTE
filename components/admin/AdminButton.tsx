@@ -20,7 +20,7 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
   ghost: {
     background: 'transparent',
     border: '1px solid var(--border)',
-    color: '#555566',
+    color: '#888888',
   },
   success: {
     background: 'rgba(68,170,102,0.1)',
