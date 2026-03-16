@@ -10,6 +10,7 @@ import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
 import JsonLd, { websiteJsonLd, organizationJsonLd } from '@/components/seo/JsonLd'
+import AprilFools from '@/components/events/AprilFools'
 import { createClient } from '@/lib/supabase/server'
 
 const songMyung = Song_Myung({
@@ -119,6 +120,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <SkipNav />
+        <AprilFools />
         <SessionProvider>
           <KeywordProvider keywords={keywords}>
             <Navbar />
