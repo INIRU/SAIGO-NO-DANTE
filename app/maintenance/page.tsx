@@ -257,7 +257,7 @@ function MaintenanceContent() {
             {from && (
               <>
                 <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>경로</span>
-                <code style={{ color: '#555566', fontSize: '0.6875rem' }}>{from}</code>
+                <code style={{ color: '#888888', fontSize: '0.6875rem' }}>{from}</code>
               </>
             )}
           </div>

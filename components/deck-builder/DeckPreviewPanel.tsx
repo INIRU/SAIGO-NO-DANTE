@@ -131,7 +131,7 @@ export default function DeckPreviewPanel({
                     {/* 일러스트 */}
                     <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06', border: `1px solid ${sc}40` }}>
                       {ego.image_url
-                        ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                        ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="40px" />
                         : <div className="w-full h-full flex items-center justify-center"><span style={{ color: gc, fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>{ego.grade?.[0]}</span></div>
                       }
                     </div>
@@ -222,7 +222,7 @@ export default function DeckPreviewPanel({
                   {/* 일러스트 */}
                   <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#0d0a06' }}>
                     {getIdentityInfoUrl(identity) ? (
-                      <Image src={getIdentityInfoUrl(identity)} alt="" fill className="object-cover object-top" />
+                      <Image src={getIdentityInfoUrl(identity)} alt="" fill className="object-cover object-top" sizes="60px" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span style={{ color: '#6a5e38', fontSize: '0.875rem' }}>{identity.name_kr?.[0]}</span>

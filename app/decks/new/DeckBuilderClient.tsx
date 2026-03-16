@@ -606,7 +606,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     <div className="min-h-screen pt-20 pb-16">
       {/* 헤더 */}
       <div className="px-6 max-w-5xl mx-auto mb-5 flex flex-wrap items-center gap-3 sm:gap-4" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-        <Link href="/decks" className="text-sm transition-colors hover:text-yellow-300" style={{ color: '#555566' }}>← 뒤로</Link>
+        <Link href="/decks" className="text-sm transition-colors hover:text-yellow-300" style={{ color: '#888888' }}>← 뒤로</Link>
         <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>{editMode ? '덱 수정' : '덱 편성'}</h1>
         <div className="flex-1 hidden sm:block" />
         <input
@@ -849,7 +849,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
               <div>
                 <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>{modalSinner?.name_kr}</h2>
-                <p style={{ color: '#555566', fontSize: '0.6875rem', marginTop: '2px' }}>인격을 선택하세요</p>
+                <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '2px' }}>인격을 선택하세요</p>
               </div>
               <div className="flex items-center gap-3">
                 {deckSlots[modalSinnerId] && (
@@ -859,7 +859,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     style={{ color: '#cc4444', border: '1px solid rgba(200,48,32,0.3)' }}
                   >편성 해제</button>
                 )}
-                <button onClick={() => setModalSinnerId(null)} style={{ color: '#555566', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
+                <button onClick={() => setModalSinnerId(null)} style={{ color: '#888888', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
               </div>
             </div>
             <div className="overflow-y-auto px-5 py-5 flex-1">
@@ -912,7 +912,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                       style={{ color: '#cc4444', border: '1px solid rgba(200,48,32,0.3)' }}
                     >해제</button>
                   )}
-                  <button onClick={closeEgoModal} style={{ color: '#555566', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
+                  <button onClick={closeEgoModal} style={{ color: '#888888', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
                 </div>
               </div>
               <div className="overflow-y-auto px-5 py-5 flex-1">
@@ -938,7 +938,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                             background: '#0d0a06', transition: 'all 0.2s',
                           }}>
                             {ego.image_url
-                              ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                              ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="90px" />
                               : <div className="w-full h-full flex items-center justify-center"><span style={{ fontFamily: 'monospace', color: gc, fontSize: '0.75rem' }}>{ego.grade?.[0]}</span></div>
                             }
                           </div>

@@ -15,7 +15,7 @@ export const adminInputStyle: React.CSSProperties = {
 }
 
 export const adminLabelStyle: React.CSSProperties = {
-  color: '#555566',
+  color: '#888888',
   fontSize: '0.6875rem',
   marginBottom: '4px',
   display: 'block',

@@ -343,7 +343,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative" style={{ zIndex: 1 }}>
         {/* 브레드크럼 */}
-        <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+        <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             수감자 목록
           </Link>
@@ -743,7 +743,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 {filteredIdentities.length === 0 ? (
                   <div
                     className="text-center py-16"
-                    style={{ color: '#555566' }}
+                    style={{ color: '#888888' }}
                   >
                     {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
                   </div>
@@ -807,7 +807,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 </div>
 
                 {filteredEgos.length === 0 ? (
-                  <div className="card p-8 text-center" style={{ color: '#555566' }}>
+                  <div className="card p-8 text-center" style={{ color: '#888888' }}>
                     <p className="font-serif text-lg italic">
                       {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 EGO가 없습니다.'}
                     </p>
@@ -838,7 +838,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           }}>
                             {ego.image_url ? (
                               <Image src={ego.image_url} alt="" fill
-                                className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                                className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="80px" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '0.875rem' }}>{ego.grade?.[0]}</span>

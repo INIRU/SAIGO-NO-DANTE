@@ -148,7 +148,7 @@ export default function NewIdentityPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           onClick={() => router.back()}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#888888', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
         >
           <ArrowLeft size={14} /> 뒤로
         </button>
@@ -166,7 +166,7 @@ export default function NewIdentityPage() {
         }
       >
         {loadingSinners && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '0.8125rem', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#888888', fontSize: '0.8125rem', marginBottom: '16px' }}>
             <Loader2 size={13} className="animate-spin" /> 수감자 목록 로딩 중...
           </div>
         )}
@@ -307,7 +307,7 @@ export default function NewIdentityPage() {
           </div>
         </AdminFormSection>
 
-        <p style={{ color: '#555566', fontSize: '0.6875rem', marginTop: '12px' }}>
+        <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '12px' }}>
           * 필수 항목. 생성 후 스킬과 패시브를 추가할 수 있습니다.
         </p>
       </AdminCard>

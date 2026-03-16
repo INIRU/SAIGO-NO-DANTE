@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import Image from 'next/image'
 import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
 import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/data/sinners'
@@ -94,7 +94,10 @@ export default function MirrorDungeonClient({
   recipes: Recipe[]
 }) {
   const { getIconUrl } = useKeywordData()
-  const getGiftKeywordIcon = (keyword: string) => getIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null
+  const getGiftKeywordIcon = useCallback(
+    (keyword: string) => getIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null,
+    [getIconUrl]
+  )
 
   const [keywords, setKeywords] = useState<Set<string>>(new Set())
   const [grades, setGrades] = useState<Set<string>>(new Set())
@@ -431,7 +434,7 @@ export default function MirrorDungeonClient({
 }
 
 /* ── 기프트 카드 ── */
-function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClick: () => void; getGiftKeywordIcon: (keyword: string) => string | null }) {
+const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClick: () => void; getGiftKeywordIcon: (keyword: string) => string | null }) {
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
   const isEX = gift.grade === 'EX'
 
@@ -515,7 +518,7 @@ function GiftCard({ gift, onClick, getGiftKeywordIcon }: { gift: EgoGift; onClic
       </p>
     </button>
   )
-}
+})
 
 /* ── 상세 모달 ── */
 function GiftModal({

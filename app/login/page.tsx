@@ -210,7 +210,7 @@ export default function LoginPage() {
             최애의 관리자
           </h1>
           <p style={{
-            color: '#555566',
+            color: '#888888',
             fontSize: '0.75rem',
             letterSpacing: '0.15em',
             marginTop: '0.5rem',

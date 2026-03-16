@@ -338,7 +338,7 @@ export default function EditEGOPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+      <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
         <Loader2 size={14} className="animate-spin" /> 로딩 중...
       </div>
     )
@@ -350,13 +350,13 @@ export default function EditEGOPage() {
         <button
           onClick={() => router.push('/admin/data')}
           className="transition-opacity hover:opacity-70"
-          style={{ color: '#555566', cursor: 'pointer' }}
+          style={{ color: '#888888', cursor: 'pointer' }}
         >
           <ArrowLeft size={16} />
         </button>
         <div>
           <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>E.G.O 편집</h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>{form.name || '이름 없음'}</p>
+          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>{form.name || '이름 없음'}</p>
         </div>
       </div>
 
@@ -454,7 +454,7 @@ export default function EditEGOPage() {
         }
       >
         {egoSkills.length === 0 && !newEgoSkill && (
-          <p style={{ color: '#555566', fontSize: '0.75rem' }}>EGO 스킬이 없습니다.</p>
+          <p style={{ color: '#888888', fontSize: '0.75rem' }}>EGO 스킬이 없습니다.</p>
         )}
 
         {egoSkills.map(skill => (
@@ -471,9 +471,9 @@ export default function EditEGOPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                 <div style={{ flex: 1 }}>
                   <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{skill.name}</span>
-                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type}{skill.sin_affinity ? ` · ${skill.sin_affinity}` : ''}</span>
+                  <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type}{skill.sin_affinity ? ` · ${skill.sin_affinity}` : ''}</span>
                   {skill.coins != null && (
-                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
+                    <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
                   )}
                 </div>
                 <AdminIconButton

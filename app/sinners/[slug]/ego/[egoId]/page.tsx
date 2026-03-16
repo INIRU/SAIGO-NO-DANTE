@@ -1,8 +1,34 @@
-import { getSinnerById, getEGOById, getEGOs } from '@/lib/data/sinners'
+import type { Metadata } from 'next'
+import { getSinnerById, getEGOById, getEGOs } from '@/lib/db/queries'
 import { notFound } from 'next/navigation'
 import EGODetailClient from './EGODetailClient'
 
 export const revalidate = 60
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; egoId: string }>
+}): Promise<Metadata> {
+  const { slug, egoId } = await params
+  const [sinner, ego] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
+  if (!sinner || !ego) return { title: 'EGO를 찾을 수 없습니다', robots: { index: false } }
+
+  const sinStr = ego.sin_affinity ?? ''
+  const description = `${sinner.name_kr} ${ego.name_kr ?? ego.name} — ${ego.grade} 등급${sinStr ? `, ${sinStr} 속성` : ''} EGO. 스킬, 패시브, 내성 정보.`
+  const canonical = `https://saigo-no-dante.com/sinners/${slug}/ego/${egoId}`
+
+  return {
+    title: `${ego.name_kr ?? ego.name} — ${sinner.name_kr}`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${ego.name_kr ?? ego.name} — ${sinner.name_kr} | 최애의 관리자`,
+      description,
+      ...(ego.image_url ? { images: [{ url: ego.image_url, width: 512, height: 512 }] } : {}),
+    },
+  }
+}
 
 export async function generateStaticParams() {
   const egos = await getEGOs()

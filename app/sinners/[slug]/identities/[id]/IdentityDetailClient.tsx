@@ -149,10 +149,13 @@ export default function IdentityDetailClient({
   const skillImgIdxMap = useMemo(() => computeSkillImageIndices(filteredSkills), [filteredSkills])
 
   // 스킬 이름 → 죄악 속성 색상 맵
-  const skillNameColors: Record<string, string> = {}
-  for (const s of filteredSkills) {
-    skillNameColors[s.name] = SIN_COLORS[s.sin_affinity] || '#cccccc'
-  }
+  const skillNameColors = useMemo(() => {
+    const colors: Record<string, string> = {}
+    for (const s of filteredSkills) {
+      colors[s.name] = SIN_COLORS[s.sin_affinity] || '#cccccc'
+    }
+    return colors
+  }, [filteredSkills])
 
   // sinner_id → name_kr 매핑
   const sinnerNameMap = useMemo(() => {
@@ -293,13 +296,13 @@ export default function IdentityDetailClient({
     pool.push(...buildKeywordPool(kwContext))
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
-  }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, sinColor, skillImgIdxMap, variantMap, egoGifts])
+  }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, skillImgIdxMap, variantMap, egoGifts])
 
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-6xl mx-auto px-6">
         {/* 브레드크럼 */}
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             수감자 목록
           </Link>

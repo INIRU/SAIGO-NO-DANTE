@@ -2,7 +2,9 @@
 
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
+import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
+import type { SinType } from '@/lib/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
@@ -205,8 +207,8 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
     <div>
       {!compact && (
         <div className="flex items-center gap-2 mb-3">
-          <span style={{ color: '#5a5070', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-          <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ color: '#8a80a0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
+          <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
             {egoList.filter(e => owned.has(e.id)).length}/{egoList.length}
           </span>
         </div>
@@ -507,8 +509,8 @@ function CollectionViewer() {
                 {/* 인격 */}
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <span style={{ color: '#5a5070', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>인격</span>
-                    <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: '#8a80a0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>인격</span>
+                    <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                       {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
                     </span>
                   </div>
@@ -519,7 +521,7 @@ function CollectionViewer() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center py-8" style={{ color: '#5a5070', fontSize: '0.75rem' }}>
+                    <p className="text-center py-8" style={{ color: '#8a80a0', fontSize: '0.75rem' }}>
                       해당 키워드의 인격이 없습니다
                     </p>
                   )}
@@ -557,7 +559,7 @@ function CollectionViewer() {
                         <span style={{ color: 'var(--gold-light)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
                           {sinner.name_kr}
                         </span>
-                        <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                           {ownedIdCount + ownedEgoCount}/{ids.length + egoList.length}
                         </span>
                       </div>

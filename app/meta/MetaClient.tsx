@@ -398,7 +398,7 @@ function IdentityTab({
                 opacity: sinnerFilter && sinnerFilter !== s.id ? 0.35 : 1,
               }}
             >
-              <Image src={getSinnerLogoUrl(s.id)} alt={s.name_kr} fill className="object-contain" />
+              <Image src={getSinnerLogoUrl(s.id)} alt={s.name_kr} fill className="object-contain" sizes="60px" />
             </button>
           ))}
         </div>
@@ -467,7 +467,7 @@ function IdentityTab({
                           style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
                         />
                       )}
-                      <span className="text-xs shrink-0" style={{ color: '#555566' }}>{sName}</span>
+                      <span className="text-xs shrink-0" style={{ color: '#888888' }}>{sName}</span>
                     </div>
                     <span className="text-sm font-medium truncate" style={{ color: '#e8e4d8' }}>
                       {stat.name_kr}
@@ -513,7 +513,7 @@ function IdentityTab({
             )
           })}
           {filteredStats.length === 0 && (
-            <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+            <p className="text-center py-12" style={{ color: '#888888' }}>데이터가 없습니다</p>
           )}
           <div ref={sentinelRef} />
         </div>
@@ -576,7 +576,7 @@ function KeywordTab({ data }: { data: MetaData }) {
       <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
         키워드 트렌드 TOP 15
       </h2>
-      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+      <p className="text-xs mb-6" style={{ color: '#888888' }}>
         각 덱에서 등장한 키워드 수 (덱 내 중복 제거)
       </p>
       <div className="usage-chart space-y-2">
@@ -645,7 +645,7 @@ function KeywordTab({ data }: { data: MetaData }) {
           )
         })}
         {keywords.length === 0 && (
-          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+          <p className="text-center py-12" style={{ color: '#888888' }}>데이터가 없습니다</p>
         )}
       </div>
     </div>
@@ -670,7 +670,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
       <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
         동시 편성 TOP 20
       </h2>
-      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+      <p className="text-xs mb-6" style={{ color: '#888888' }}>
         같은 덱에서 함께 편성된 인격 조합
       </p>
       <div className="usage-chart space-y-3">
@@ -709,7 +709,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                     >
                       {syn.count}
                     </span>
-                    <span className="text-[0.625rem]" style={{ color: '#555566' }}>덱</span>
+                    <span className="text-[0.625rem]" style={{ color: '#888888' }}>덱</span>
                   </div>
                 </div>
 
@@ -722,17 +722,17 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                   >
                     {aImg ? (
                       <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Image src={aImg} alt="" fill className="object-cover" />
+                        <Image src={aImg} alt="" fill className="object-cover" sizes="60px" />
                       </div>
                     ) : syn.a_sinner_id && (
                       <div className="relative w-5 h-5 shrink-0">
-                        <Image src={getSinnerLogoUrl(syn.a_sinner_id)} alt="" fill className="object-contain" />
+                        <Image src={getSinnerLogoUrl(syn.a_sinner_id)} alt="" fill className="object-contain" sizes="60px" />
                       </div>
                     )}
                     <div className="min-w-0">
                       <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.a_name}</span>
                       {aSinnerName && (
-                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#555566' }}>{aSinnerName}</span>
+                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#888888' }}>{aSinnerName}</span>
                       )}
                     </div>
                   </div>
@@ -752,17 +752,17 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
                   >
                     {bImg ? (
                       <div className="relative w-9 h-12 md:w-10 md:h-14 shrink-0 rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <Image src={bImg} alt="" fill className="object-cover" />
+                        <Image src={bImg} alt="" fill className="object-cover" sizes="60px" />
                       </div>
                     ) : syn.b_sinner_id && (
                       <div className="relative w-5 h-5 shrink-0">
-                        <Image src={getSinnerLogoUrl(syn.b_sinner_id)} alt="" fill className="object-contain" />
+                        <Image src={getSinnerLogoUrl(syn.b_sinner_id)} alt="" fill className="object-contain" sizes="60px" />
                       </div>
                     )}
                     <div className="min-w-0">
                       <span className="text-xs md:text-sm font-medium truncate block" style={{ color: '#e8e4d8' }}>{syn.b_name}</span>
                       {bSinnerName && (
-                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#555566' }}>{bSinnerName}</span>
+                        <span className="text-[0.625rem] block mt-0.5" style={{ color: '#888888' }}>{bSinnerName}</span>
                       )}
                     </div>
                   </div>
@@ -783,7 +783,7 @@ function SynergyTab({ data, sinnerMap }: { data: MetaData; sinnerMap: Map<string
           )
         })}
         {data.synergies.length === 0 && (
-          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+          <p className="text-center py-12" style={{ color: '#888888' }}>데이터가 없습니다</p>
         )}
         <div ref={sentinelRef} />
       </div>
@@ -819,7 +819,7 @@ function EGOTab({
       <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--gold-light)' }}>
         EGO 채용률
       </h2>
-      <p className="text-xs mb-6" style={{ color: '#555566' }}>
+      <p className="text-xs mb-6" style={{ color: '#888888' }}>
         등급별 EGO 사용 현황
       </p>
 
@@ -854,7 +854,7 @@ function EGOTab({
               ) : (
                 grade
               )}
-              <span className="text-[0.625rem]" style={{ color: '#555566' }}>
+              <span className="text-[0.625rem]" style={{ color: '#888888' }}>
                 {egoByGrade[grade]?.length ?? 0}
               </span>
             </button>
@@ -909,7 +909,7 @@ function EGOTab({
                 {/* EGO 초상화 */}
                 <div className="relative shrink-0 overflow-hidden" style={{ width: 36, height: 36, borderRadius: '50%', border: `1.5px solid ${gradeColor}40`, background: '#0d0b08' }}>
                   {ego.image_url ? (
-                    <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 15%' }} />
+                    <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 15%' }} sizes="60px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} style={{ opacity: 0.5 }} />
@@ -922,7 +922,7 @@ function EGOTab({
                   <span className="text-sm font-medium truncate" style={{ color: '#e8e4d8' }}>
                     {ego.name_kr}
                   </span>
-                  <span className="text-xs shrink-0" style={{ color: '#555566' }}>
+                  <span className="text-xs shrink-0" style={{ color: '#888888' }}>
                     {sName}
                   </span>
                   {ego.sin_affinity && (
@@ -954,7 +954,7 @@ function EGOTab({
           )
         })}
         {displayEgos.length === 0 && (
-          <p className="text-center py-12" style={{ color: '#555566' }}>데이터가 없습니다</p>
+          <p className="text-center py-12" style={{ color: '#888888' }}>데이터가 없습니다</p>
         )}
         <div ref={egoSentinelRef} />
       </div>
