@@ -88,7 +88,7 @@ export default function AuditLogsPage() {
       key: 'created_at' as const,
       header: '시각',
       render: (log: AuditLog) => (
-        <span style={{ color: '#555566', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+        <span style={{ color: '#888888', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
           {new Date(log.created_at).toLocaleString('ko-KR', {
             month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit',
@@ -144,11 +144,11 @@ export default function AuditLogsPage() {
     <div>
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>감사 로그</h1>
-        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>관리자 및 완장 활동 기록을 조회합니다.</p>
+        <p style={{ color: '#888888', fontSize: '0.8125rem' }}>관리자 및 완장 활동 기록을 조회합니다.</p>
       </div>
 
       <div className="mb-4 flex items-center gap-3">
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>필터:</span>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>필터:</span>
         <div style={{ width: 160 }}>
           <AdminSelect
             value={filter}
@@ -159,7 +159,7 @@ export default function AuditLogsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+        <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : (
@@ -173,7 +173,7 @@ export default function AuditLogsPage() {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
-              <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+              <span style={{ color: '#888888', fontSize: '0.75rem' }}>
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, logs.length)} / {logs.length}건
               </span>
               <div className="flex gap-2">

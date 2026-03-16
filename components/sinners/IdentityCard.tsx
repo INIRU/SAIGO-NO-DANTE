@@ -95,6 +95,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
               className="object-cover object-top"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 150px"
               onError={() => {
                 if (fallbackUrl && imgSrc !== fallbackUrl) {
                   setImgSrc(fallbackUrl)

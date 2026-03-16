@@ -1,8 +1,16 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import type { Identity } from '@/lib/data/sinners'
+import type { Identity } from '@/lib/types'
 import TierListClient from './TierListClient'
 
-export const metadata = { title: '리세마라 티어표 | SAIGO NO DANTE' }
+export const metadata: Metadata = {
+  title: '리세마라 티어표 | SAIGO NO DANTE',
+  description: '림버스 컴퍼니 리세마라 추천 인격 티어표 — S+/S/A/B/C/F 등급, 커뮤니티 투표 기반.',
+  openGraph: {
+    title: '리세마라 티어표 | 최애의 관리자',
+    description: '림버스 컴퍼니 리세마라 추천 인격 티어표 — S+/S/A/B/C/F 등급, 커뮤니티 투표 기반.',
+  },
+}
 export const revalidate = 300
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const

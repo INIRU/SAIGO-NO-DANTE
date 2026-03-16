@@ -1,10 +1,42 @@
-import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes } from '@/lib/data/sinners'
+import type { Metadata } from 'next'
+import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { getIdentityInfoUrl } from '@/lib/utils/images'
 import IdentityDetailClient from './IdentityDetailClient'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; id: string }>
+}): Promise<Metadata> {
+  const { slug, id } = await params
+  const [sinner, identity] = await Promise.all([
+    getSinnerById(slug),
+    getIdentityById(id),
+  ])
+  if (!sinner || !identity) return { title: '인격을 찾을 수 없습니다', robots: { index: false } }
+
+  const rarityStr = identity.rarity === 3 ? '000등급' : identity.rarity === 2 ? '00등급' : '0등급'
+  const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
+  const description = `${sinner.name_kr} ${identity.name_kr} — ${rarityStr}${keywordsStr ? `, 키워드: ${keywordsStr}` : ''}. 스킬, 패시브, 스탯 정보.`
+  const imageUrl = getIdentityInfoUrl(identity)
+  const canonical = `https://saigo-no-dante.com/sinners/${slug}/identities/${id}`
+
+  return {
+    title: `${identity.name_kr} — ${sinner.name_kr}`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${identity.name_kr} — ${sinner.name_kr} | 최애의 관리자`,
+      description,
+      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512 }] } : {}),
+    },
+  }
+}
 
 export default async function IdentityPage({
   params,

@@ -118,7 +118,7 @@ export default function KeywordsClient({
       const bCount = (identityCountMap[b.name] || 0) + (egoCountMap[b.name] || 0) + (giftCountMap[b.name] || 0)
       return bCount - aCount
     })
-  }, [keywords, search, identityCountMap, giftCountMap])
+  }, [keywords, search, identityCountMap, egoCountMap, giftCountMap])
 
   // 무한 스크롤
   const PAGE_SIZE = 60
@@ -138,7 +138,8 @@ export default function KeywordsClient({
       if (entry.isIntersecting && !loadingRef.current) {
         loadingRef.current = true
         setVisibleCount(prev => {
-          const next = Math.min(prev + PAGE_SIZE, filtered.length)
+          const len = filtered.length
+          const next = Math.min(prev + PAGE_SIZE, len)
           setTimeout(() => { loadingRef.current = false }, 300)
           return next
         })
@@ -146,7 +147,8 @@ export default function KeywordsClient({
     }, { rootMargin: '200px' })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [visibleCount, filtered.length])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered.length])
 
   // GSAP 진입 애니메이션
   useEffect(() => {
@@ -167,12 +169,13 @@ export default function KeywordsClient({
     }
     init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, visibleCount])
+  }, [visibleCount])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
     if (selected) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
+    return () => { document.body.style.overflow = '' }
   }, [selected])
 
   // 선택된 키워드의 관련 인격/기프트

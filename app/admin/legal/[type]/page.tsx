@@ -32,7 +32,7 @@ export default async function AdminLegalEditorPage({
   return (
     <div>
       <div className="max-w-3xl mx-auto">
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/admin/legal" className="hover:text-yellow-300 transition-colors">
             약관 관리
           </Link>

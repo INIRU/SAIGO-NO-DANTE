@@ -101,7 +101,7 @@ export default function NewEGOPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+      <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
         <Loader2 size={14} className="animate-spin" /> 로딩 중...
       </div>
     )
@@ -113,13 +113,13 @@ export default function NewEGOPage() {
         <button
           onClick={() => router.push('/admin/data')}
           className="transition-opacity hover:opacity-70"
-          style={{ color: '#555566', cursor: 'pointer' }}
+          style={{ color: '#888888', cursor: 'pointer' }}
         >
           <ArrowLeft size={16} />
         </button>
         <div>
           <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>E.G.O 추가</h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>새로운 E.G.O를 등록합니다.</p>
+          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>새로운 E.G.O를 등록합니다.</p>
         </div>
       </div>
 

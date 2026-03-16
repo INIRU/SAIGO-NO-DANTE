@@ -323,6 +323,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         {ego.image_url && (
           <Image src={ego.image_url} alt="" fill
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
+            sizes="(max-width: 768px) 90vw, 200px"
           />
         )}
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, rgba(8,6,4,0.75) 0%, ${sinColor}08 50%, rgba(8,6,4,0.7) 100%)` }} />
@@ -344,7 +345,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
       <div className="ego-detail-content max-w-6xl mx-auto px-6 pt-8" style={{ opacity: 0 }}>
 
         {/* 브레드크럼 */}
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">수감자 목록</Link>
           <span style={{ color: '#333344' }}>&rsaquo;</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors">{sinner.name_kr}</Link>
@@ -365,7 +366,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                 boxShadow: `0 0 0 1px ${sinColor}28, 0 0 40px ${sinColor}40, 0 0 80px ${sinColor}18`,
               }}>
                 {ego.image_url ? (
-                  <Image src={ego.image_url} alt={ego.name_kr || ego.name} fill className="object-cover" style={{ objectPosition: '50% 10%' }} />
+                  <Image src={ego.image_url} alt={ego.name_kr || ego.name} fill className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="(max-width: 768px) 90vw, 200px" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="font-mono text-3xl" style={{ color: gradeColor }}>{ego.grade?.[0]}</span>

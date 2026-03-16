@@ -48,7 +48,7 @@ export default function AdminSidebar() {
         <p className="font-serif" style={{ color: 'var(--gold)', fontSize: '0.9375rem', fontWeight: 700 }}>
           관리자
         </p>
-        <p style={{ color: '#555566', fontSize: '0.6875rem', marginTop: '2px' }}>
+        <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '2px' }}>
           SAIGO NO DANTE Admin
         </p>
       </div>

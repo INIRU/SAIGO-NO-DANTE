@@ -53,6 +53,7 @@ export const metadata: Metadata = {
     siteName: '최애의 관리자',
     title: '최애의 관리자 | 림버스 컴퍼니 정보 사이트',
     description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 덱 빌더, 티어표',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',

@@ -41,7 +41,7 @@ export default async function TermsPage() {
     <div className="min-h-screen pt-28 pb-20">
       <div className="max-w-3xl mx-auto px-6">
         <div className="mb-10">
-          <div className="mb-4 flex items-center gap-2 text-sm" style={{ color: '#555566' }}>
+          <div className="mb-4 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
             <Link href="/" className="hover:text-yellow-300 transition-colors">홈</Link>
             <span>›</span>
             <span style={{ color: 'var(--gold)' }}>{title}</span>
@@ -51,13 +51,13 @@ export default async function TermsPage() {
             {title}
           </h1>
           <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '0.75rem', marginBottom: '1.5rem' }} />
-          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>최종 수정일: {lastUpdated}</p>
+          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>최종 수정일: {lastUpdated}</p>
         </div>
 
         <div className="space-y-8" style={{ fontSize: '0.875rem', lineHeight: '1.9' }}>
           {sections.length > 0
             ? sections.map((s, i) => <SectionBlock key={i} section={s} />)
-            : <div className="card p-8 text-center" style={{ color: '#555566' }}>내용이 없습니다.</div>
+            : <div className="card p-8 text-center" style={{ color: '#888888' }}>내용이 없습니다.</div>
           }
         </div>
 

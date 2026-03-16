@@ -203,10 +203,10 @@ export default function TierListClient({
       >
         리세마라 티어표
       </h1>
-      <p className="text-center mb-1" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+      <p className="text-center mb-1" style={{ color: '#888888', fontSize: '0.8125rem' }}>
         림버스 컴퍼니 리세마라 추천 인격 티어
       </p>
-      <p className="text-center mb-2" style={{ color: '#555566', fontSize: '0.6875rem' }}>
+      <p className="text-center mb-2" style={{ color: '#888888', fontSize: '0.6875rem' }}>
         인격을 눌러 뽑은 인격을 선택하면 이륙 자가진단을 할 수 있습니다
       </p>
       <p className="text-center mb-4" style={{ fontSize: '0.6875rem' }}>
@@ -270,7 +270,7 @@ export default function TierListClient({
 
       {!hasTiers ? (
         <div className="text-center py-20">
-          <p style={{ color: '#555566', fontSize: '0.875rem' }}>
+          <p style={{ color: '#888888', fontSize: '0.875rem' }}>
             아직 티어표가 작성되지 않았습니다.
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function TierListClient({
                     >
                       {tier}
                     </div>
-                    <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#888888', fontSize: '0.75rem' }}>
                       +{TIER_SCORES[tier].toFixed(1)}점
                     </span>
                     <div
@@ -378,14 +378,14 @@ export default function TierListClient({
                   >
                     {calcResult.score.toFixed(1)}점
                   </span>
-                  {calcOpen ? <ChevronDown size={14} style={{ color: '#555566' }} /> : <ChevronUp size={14} style={{ color: '#555566' }} />}
+                  {calcOpen ? <ChevronDown size={14} style={{ color: '#888888' }} /> : <ChevronUp size={14} style={{ color: '#888888' }} />}
                 </button>
                 <button
                   onClick={() => setSelected(new Set())}
                   style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }}
                   title="초기화"
                 >
-                  <RotateCcw size={14} style={{ color: '#555566' }} />
+                  <RotateCcw size={14} style={{ color: '#888888' }} />
                 </button>
               </div>
 
@@ -422,8 +422,8 @@ export default function TierListClient({
                     ))}
                     {calcResult.dupes.map((name, i) => (
                       <div key={`dupe-${i}`} className="flex items-center justify-between" style={{ fontSize: '0.75rem' }}>
-                        <span style={{ color: '#555566', textDecoration: 'line-through' }}>{name}</span>
-                        <span style={{ color: '#555566', fontSize: '0.625rem' }}>중복 무효</span>
+                        <span style={{ color: '#888888', textDecoration: 'line-through' }}>{name}</span>
+                        <span style={{ color: '#888888', fontSize: '0.625rem' }}>중복 무효</span>
                       </div>
                     ))}
                   </div>
@@ -476,7 +476,7 @@ export default function TierListClient({
               <h2 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem', fontWeight: 700 }}>
                 뉴비 Q&A
               </h2>
-              {qnaOpen ? <ChevronUp size={16} style={{ color: '#555566' }} /> : <ChevronDown size={16} style={{ color: '#555566' }} />}
+              {qnaOpen ? <ChevronUp size={16} style={{ color: '#888888' }} /> : <ChevronDown size={16} style={{ color: '#888888' }} />}
             </button>
 
             {qnaOpen && (

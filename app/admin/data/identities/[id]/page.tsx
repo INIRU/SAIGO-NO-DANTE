@@ -504,7 +504,7 @@ export default function EditIdentityPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555566', fontSize: '0.8125rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#888888', fontSize: '0.8125rem' }}>
         <Loader2 size={14} className="animate-spin" /> 로딩 중...
       </div>
     )
@@ -520,14 +520,14 @@ export default function EditIdentityPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           onClick={() => router.back()}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#555566', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#888888', fontSize: '0.8125rem', cursor: 'pointer', padding: 0 }}
         >
           <ArrowLeft size={14} /> 뒤로
         </button>
         <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.25rem', fontWeight: 'bold' }}>
           인격 편집
         </h1>
-        <span style={{ color: '#555566', fontSize: '0.75rem' }}>{identity.name_kr ?? identity.name}</span>
+        <span style={{ color: '#888888', fontSize: '0.75rem' }}>{identity.name_kr ?? identity.name}</span>
       </div>
 
       {/* Basic Info Card */}
@@ -686,7 +686,7 @@ export default function EditIdentityPage() {
         }
       >
         {skills.length === 0 && !newSkill && (
-          <p style={{ color: '#555566', fontSize: '0.75rem' }}>스킬이 없습니다.</p>
+          <p style={{ color: '#888888', fontSize: '0.75rem' }}>스킬이 없습니다.</p>
         )}
 
         {skills.map(skill => (
@@ -703,9 +703,9 @@ export default function EditIdentityPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                 <div style={{ flex: 1 }}>
                   <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{skill.name}</span>
-                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type} · {skill.sin_affinity}</span>
+                  <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>{skill.skill_type} · {skill.sin_affinity}</span>
                   {skill.coins != null && (
-                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
+                    <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>코인:{skill.coins} 위력:{skill.base_power}/{skill.coin_power}</span>
                   )}
                 </div>
                 <AdminButton size="sm" variant="ghost" onClick={() => handleStartEditSkill(skill)}>
@@ -747,7 +747,7 @@ export default function EditIdentityPage() {
         }
       >
         {passives.length === 0 && !newPassive && (
-          <p style={{ color: '#555566', fontSize: '0.75rem' }}>패시브가 없습니다.</p>
+          <p style={{ color: '#888888', fontSize: '0.75rem' }}>패시브가 없습니다.</p>
         )}
 
         {passives.map(passive => (
@@ -764,9 +764,9 @@ export default function EditIdentityPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                 <div style={{ flex: 1 }}>
                   <span style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600 }}>{passive.name}</span>
-                  <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.passive_type}</span>
+                  <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.passive_type}</span>
                   {passive.sin_affinity && (
-                    <span style={{ color: '#555566', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.sin_affinity} {passive.sin_count ?? ''} {passive.active_cond ?? ''}</span>
+                    <span style={{ color: '#888888', fontSize: '0.6875rem', marginLeft: '8px' }}>{passive.sin_affinity} {passive.sin_count ?? ''} {passive.active_cond ?? ''}</span>
                   )}
                 </div>
                 <AdminButton size="sm" variant="ghost" onClick={() => handleStartEditPassive(passive)}>

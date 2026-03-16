@@ -209,18 +209,18 @@ function HeroGlitchSlider({
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" />
+          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" />
         </div>
       )}
       {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" />
+        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" />
         {/* RGB Chromatic Aberration 오버레이 (전환 시 GSAP 제어) */}
         <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" />
         </div>
         <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill className="object-cover object-top" style={{ filter: 'grayscale(1)' }} />
+          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" />
         </div>
       </div>
       {/* 그라디언트 오버레이 — 모바일은 더 진하게 */}
@@ -366,7 +366,7 @@ export default function HomeClient({
               animation: 'heroWatermarkFade 0.6s ease-out',
             }}
           >
-            <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
+            <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill sizes="60px" style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
           </div>
         )}
 
@@ -692,7 +692,8 @@ export default function HomeClient({
                         <Image src={portraitUrl} alt={identity.name_kr} fill
                           placeholder="blur" blurDataURL={BLUR_PLACEHOLDER}
                           className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                          style={{ objectPosition: '50% 10%' }} />
+                          style={{ objectPosition: '50% 10%' }}
+                          sizes="200px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}>
                           <span className="font-serif font-bold" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>

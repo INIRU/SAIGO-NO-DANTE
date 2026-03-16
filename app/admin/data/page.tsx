@@ -138,7 +138,7 @@ export default function AdminDataPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>데이터 관리</h1>
-        <p style={{ color: '#555566', fontSize: '0.8125rem' }}>게임 데이터 현황을 확인하고 관리합니다.</p>
+        <p style={{ color: '#888888', fontSize: '0.8125rem' }}>게임 데이터 현황을 확인하고 관리합니다.</p>
       </div>
 
       {/* Identity search */}
@@ -151,7 +151,7 @@ export default function AdminDataPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+        <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : data && (
@@ -165,7 +165,7 @@ export default function AdminDataPage() {
               { label: '총 패시브', value: data.totalPassives },
             ].map(card => (
               <div key={card.label} className="card p-5">
-                <p style={{ color: '#555566', fontSize: '0.6875rem', marginBottom: '4px' }}>{card.label}</p>
+                <p style={{ color: '#888888', fontSize: '0.6875rem', marginBottom: '4px' }}>{card.label}</p>
                 <p className="font-mono text-2xl font-bold" style={{ color: 'var(--gold)' }}>{card.value}</p>
               </div>
             ))}
@@ -212,7 +212,7 @@ export default function AdminDataPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {isExpanded
                         ? <ChevronDown size={14} style={{ color: '#c8900a', flexShrink: 0 }} />
-                        : <ChevronRight size={14} style={{ color: '#555566', flexShrink: 0 }} />
+                        : <ChevronRight size={14} style={{ color: '#888888', flexShrink: 0 }} />
                       }
                       <span
                         className="font-serif"
@@ -227,7 +227,7 @@ export default function AdminDataPage() {
                       style={{ display: 'flex', alignItems: 'center', gap: 12 }}
                       onClick={e => e.stopPropagation()}
                     >
-                      <span style={{ color: '#555566', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#888888', fontSize: '0.75rem' }}>
                         인격 <span className="font-mono" style={{ color: '#7a6845' }}>{sinner.identity_count}</span>
                         {'  |  '}
                         EGO <span className="font-mono" style={{ color: '#7a6845' }}>{sinner.ego_count}</span>
@@ -261,7 +261,7 @@ export default function AdminDataPage() {
                       }}
                     >
                       {loadingSinner === sinner.id ? (
-                        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.75rem', padding: '8px 0' }}>
+                        <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.75rem', padding: '8px 0' }}>
                           <Loader2 size={12} className="animate-spin" /> 불러오는 중...
                         </div>
                       ) : (
@@ -274,7 +274,7 @@ export default function AdminDataPage() {
                             인격
                           </h4>
                           {identities.length === 0 ? (
-                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0 10px' }}>
+                            <p style={{ color: '#888888', fontSize: '0.75rem', padding: '4px 0 10px' }}>
                               {identitySearch ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
                             </p>
                           ) : (
@@ -339,7 +339,7 @@ export default function AdminDataPage() {
                             E.G.O
                           </h4>
                           {egos.length === 0 ? (
-                            <p style={{ color: '#555566', fontSize: '0.75rem', padding: '4px 0' }}>등록된 E.G.O가 없습니다.</p>
+                            <p style={{ color: '#888888', fontSize: '0.75rem', padding: '4px 0' }}>등록된 E.G.O가 없습니다.</p>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {egos.map(ego => (
