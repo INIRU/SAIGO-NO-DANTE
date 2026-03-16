@@ -1,4 +1,4 @@
-import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/data/sinners'
+import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { createClient } from '@/lib/supabase/server'
 import DeckBuilderClient from './DeckBuilderClient'
 

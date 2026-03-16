@@ -544,7 +544,7 @@ export default function MyPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
-                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     ABOUT ME
                   </span>
                   <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
@@ -581,7 +581,7 @@ export default function MyPage() {
                     }}
                   />
                   <div className="flex items-center justify-between mt-2">
-                    <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                       {bioValue.length}/300
                     </span>
                     <div className="flex gap-2">
@@ -620,7 +620,7 @@ export default function MyPage() {
             <section>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
-                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     MY DECKS
                   </span>
                   <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
@@ -652,7 +652,7 @@ export default function MyPage() {
                   }}
                 >
                   <div style={{ color: '#3a2a18', fontSize: '3.5rem', lineHeight: 1, userSelect: 'none' }}>&#x2741;</div>
-                  <p className="font-serif text-sm italic" style={{ color: '#5a5070', fontFamily: 'var(--font-heading)' }}>
+                  <p className="font-serif text-sm italic" style={{ color: '#8a80a0', fontFamily: 'var(--font-heading)' }}>
                     아직 작성한 덱이 없습니다.
                   </p>
                   <Link
@@ -736,7 +736,7 @@ export default function MyPage() {
             <section className="mt-8">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="flex items-center gap-2" style={{ borderLeft: '3px solid var(--gold)', paddingLeft: '10px' }}>
-                  <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+                  <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     BOOKMARKS
                   </span>
                   <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
@@ -755,7 +755,7 @@ export default function MyPage() {
                   }}
                 >
                   <Bookmark size={22} style={{ color: '#3a3048', strokeWidth: 1.5 }} />
-                  <p className="font-serif text-sm italic" style={{ color: '#5a5070', fontFamily: 'var(--font-heading)' }}>
+                  <p className="font-serif text-sm italic" style={{ color: '#8a80a0', fontFamily: 'var(--font-heading)' }}>
                     아직 저장한 덱이 없습니다.
                   </p>
                   <Link

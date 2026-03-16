@@ -61,7 +61,7 @@ export default function AnnouncementsPage() {
           <Link
             href="/"
             className="flex items-center gap-1.5 mb-4 transition-colors hover:opacity-70"
-            style={{ color: '#555566', fontSize: '0.8125rem' }}
+            style={{ color: '#888888', fontSize: '0.8125rem' }}
           >
             <ArrowLeft size={14} />
             홈으로
@@ -70,7 +70,7 @@ export default function AnnouncementsPage() {
           <h1 className="font-serif text-3xl font-bold" style={{ color: 'var(--gold)' }}>
             공지사항
           </h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#888888', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
             사이트 업데이트 및 안내사항을 확인하세요.
           </p>
           <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
@@ -79,7 +79,7 @@ export default function AnnouncementsPage() {
         <div className="divider-gold mb-8" />
 
         {loading ? (
-          <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+          <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
             <Loader2 size={14} className="animate-spin" /> 로딩 중...
           </div>
         ) : error ? (
@@ -108,7 +108,7 @@ export default function AnnouncementsPage() {
         ) : items.length === 0 ? (
           <div
             className="card"
-            style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}
+            style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}
           >
             등록된 공지가 없습니다.
           </div>
@@ -149,7 +149,7 @@ export default function AnnouncementsPage() {
                     >
                       {item.title}
                     </span>
-                    <span className="font-mono" style={{ color: '#4a3820', fontSize: '0.625rem', flexShrink: 0 }}>
+                    <span className="font-mono" style={{ color: '#7a6845', fontSize: '0.625rem', flexShrink: 0 }}>
                       {new Date(item.created_at).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: '2-digit',

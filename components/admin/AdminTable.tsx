@@ -19,7 +19,7 @@ interface AdminTableProps<T> {
 export function AdminTable<T>({ columns, data, keyExtractor, emptyMessage = '데이터가 없습니다.' }: AdminTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#555566', fontSize: '0.8125rem' }}>
+      <div style={{ padding: '24px', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}>
         {emptyMessage}
       </div>
     )
@@ -36,7 +36,7 @@ export function AdminTable<T>({ columns, data, keyExtractor, emptyMessage = '데
                 style={{
                   textAlign: 'left',
                   padding: '10px 12px',
-                  color: '#555566',
+                  color: '#888888',
                   fontSize: '0.6875rem',
                   fontWeight: 600,
                   textTransform: 'uppercase',

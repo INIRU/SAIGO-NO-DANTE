@@ -1,6 +1,13 @@
-import { getLatestIdentities } from '@/lib/data/sinners'
+import type { Metadata } from 'next'
+import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
+
+export const metadata: Metadata = {
+  title: '최애의 관리자 | SAIGO NO DANTE',
+  description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더, 티어표',
+  alternates: { canonical: 'https://saigo-no-dante.com' },
+}
 
 export type Announcement = {
   id: string

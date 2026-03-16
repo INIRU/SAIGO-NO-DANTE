@@ -6,7 +6,10 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Trash2, Reply, X } from 'lucide-react'
 import { useToast, Toast } from '@/components/ui/Toast'
-import { STORAGE_BASE, getSinnerLogoUrl, GRADE_COLORS, computeSkillImageIndices, SIN_COLORS, SIN_KR_TO_EN, type ActivationCondition, DEFAULT_AVATAR_URL } from '@/lib/data/sinners'
+import { STORAGE_BASE, GRADE_COLORS, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import type { ActivationCondition } from '@/lib/types'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
 import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
@@ -448,7 +451,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
       <div className="min-h-screen pt-24 flex items-center justify-center">
         <div className="text-center">
           <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>덱을 찾을 수 없습니다</p>
-          <Link href="/decks" style={{ color: '#555566' }} className="hover:text-yellow-300 transition-colors">
+          <Link href="/decks" style={{ color: '#888888' }} className="hover:text-yellow-300 transition-colors">
             ← 게시판으로 돌아가기
           </Link>
         </div>
@@ -969,13 +972,13 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         {/* 댓글 섹션 */}
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-4">
-            <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+            <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
               COMMENTS
             </span>
             <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
               댓글
             </span>
-            <span style={{ color: '#5a5070', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
+            <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
               {comments.length}
             </span>
           </div>
@@ -992,7 +995,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                 style={{ background: '#0a0806', border: '1px solid rgba(58,40,18,0.5)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
               />
               <div className="flex items-center justify-between mt-2">
-                <span style={{ color: '#5a5070', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                   {commentText.length}/500
                 </span>
                 <button
@@ -1015,7 +1018,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
           ) : (
             <div
               className="rounded-lg px-4 py-3 mb-4 text-center"
-              style={{ background: '#120e09', border: '1px solid var(--border)', color: '#5a5070', fontSize: '0.8125rem', fontFamily: 'var(--font-body)' }}
+              style={{ background: '#120e09', border: '1px solid var(--border)', color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-body)' }}
             >
               로그인 후 댓글을 작성할 수 있습니다.
             </div>

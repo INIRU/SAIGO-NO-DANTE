@@ -205,7 +205,7 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
         className="w-full mt-4 py-3 transition-colors"
         style={{
           border: '1px dashed #2a2520', borderRadius: '6px',
-          color: '#555566', fontSize: '0.8125rem', cursor: 'pointer',
+          color: '#888888', fontSize: '0.8125rem', cursor: 'pointer',
           background: 'transparent',
         }}
       >

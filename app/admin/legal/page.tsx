@@ -25,7 +25,7 @@ export default async function AdminLegalPage() {
           <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
             약관 관리
           </h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>
+          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>
             이용약관과 개인정보 처리방침을 수정합니다.
           </p>
         </div>
@@ -36,7 +36,7 @@ export default async function AdminLegalPage() {
               <div>
                 <p className="font-serif font-bold" style={{ color: '#c8a450' }}>{label}</p>
                 {doc ? (
-                  <p style={{ color: '#555566', fontSize: '0.75rem', marginTop: '2px' }}>
+                  <p style={{ color: '#888888', fontSize: '0.75rem', marginTop: '2px' }}>
                     최종 수정: {doc.last_updated} · {doc.sections.length}개 섹션
                   </p>
                 ) : (
@@ -61,7 +61,7 @@ export default async function AdminLegalPage() {
         </div>
 
         <div className="mt-8 card p-4" style={{ borderColor: '#2a2020' }}>
-          <p style={{ color: '#555566', fontSize: '0.75rem', lineHeight: 1.7 }}>
+          <p style={{ color: '#888888', fontSize: '0.75rem', lineHeight: 1.7 }}>
             <span style={{ color: '#c8a450' }}>초기 데이터가 없다면</span> 터미널에서 다음 명령을 실행하세요:
           </p>
           <code style={{

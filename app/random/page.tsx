@@ -5,7 +5,11 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '랜덤 편성',
-  description: '랜덤으로 덱을 편성해보세요',
+  description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
+  openGraph: {
+    title: '랜덤 편성 | 최애의 관리자',
+    description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
+  },
 }
 
 export const revalidate = 300

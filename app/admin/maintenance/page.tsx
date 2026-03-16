@@ -125,7 +125,7 @@ export default function MaintenancePage() {
           <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
             점검 관리
           </h1>
-          <p style={{ color: '#555566', fontSize: '0.8125rem' }}>
+          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>
             특정 페이지의 접근을 차단합니다. 하위 경로도 함께 차단됩니다. 관리자는 점검 중에도 접근 가능합니다.
           </p>
         </div>
@@ -159,7 +159,7 @@ export default function MaintenancePage() {
       )}
 
       {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#555566', fontSize: '0.8125rem' }}>
+        <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
           <Loader2 size={14} className="animate-spin" /> 로딩 중...
         </div>
       ) : (
@@ -187,11 +187,11 @@ export default function MaintenancePage() {
                       onClick={() => startEditing(entry)}
                       title="클릭하여 수정"
                     >
-                      <p className="truncate" style={{ color: '#555566', fontSize: '0.75rem' }}>
+                      <p className="truncate" style={{ color: '#888888', fontSize: '0.75rem' }}>
                         {entry.message}
                       </p>
                       {entry.reason && (
-                        <p className="flex items-center gap-1" style={{ color: '#555566', fontSize: '0.7rem' }}>
+                        <p className="flex items-center gap-1" style={{ color: '#888888', fontSize: '0.7rem' }}>
                           <AlertTriangle size={10} /> {entry.reason}
                         </p>
                       )}
@@ -259,7 +259,7 @@ export default function MaintenancePage() {
                         <button
                           onClick={() => setEditingId(null)}
                           className="px-3 py-1 rounded"
-                          style={{ color: '#555566', fontSize: '0.75rem' }}
+                          style={{ color: '#888888', fontSize: '0.75rem' }}
                         >
                           취소
                         </button>
@@ -289,7 +289,7 @@ export default function MaintenancePage() {
                   <button
                     onClick={() => setDeleteTarget(entry)}
                     className="p-1.5 rounded transition-colors hover:bg-white/5"
-                    style={{ color: '#555566' }}
+                    style={{ color: '#888888' }}
                     title="삭제"
                   >
                     <Trash2 size={14} />
@@ -308,7 +308,7 @@ export default function MaintenancePage() {
             <h3 className="font-serif text-lg font-bold mb-4" style={{ color: '#c8a450' }}>
               점검 항목 추가
             </h3>
-            <p className="mb-4" style={{ color: '#555566', fontSize: '0.75rem' }}>
+            <p className="mb-4" style={{ color: '#888888', fontSize: '0.75rem' }}>
               하위 경로도 함께 차단됩니다. 예: /sinners 입력 시 /sinners/yi-sang 등도 차단
             </p>
             <div className="space-y-3">
@@ -337,7 +337,7 @@ export default function MaintenancePage() {
               <button
                 onClick={() => { setShowAdd(false); setNewPath(''); setNewLabel('') }}
                 className="px-4 py-2 rounded"
-                style={{ color: '#555566', fontSize: '0.8125rem' }}
+                style={{ color: '#888888', fontSize: '0.8125rem' }}
               >
                 취소
               </button>

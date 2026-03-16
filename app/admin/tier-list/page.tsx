@@ -5,7 +5,9 @@ import Image from 'next/image'
 import { Save, GripVertical, Search, X } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { AdminButton, useToast, AdminToastContainer } from '@/components/admin'
-import { getIdentityInfoUrl, RARITY_ICON_MAP, type Identity } from '@/lib/data/sinners'
+import { getIdentityInfoUrl } from '@/lib/utils/images'
+import { RARITY_ICON_MAP } from '@/lib/constants/game'
+import type { Identity } from '@/lib/types'
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
 type Tier = typeof TIERS[number]
@@ -151,7 +153,7 @@ export default function AdminTierListPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p style={{ color: '#555566', fontSize: '0.875rem' }}>로딩 중...</p>
+        <p style={{ color: '#888888', fontSize: '0.875rem' }}>로딩 중...</p>
       </div>
     )
   }
@@ -164,7 +166,7 @@ export default function AdminTierListPage() {
           <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.25rem', fontWeight: 700 }}>
             리세마라 티어표
           </h1>
-          <p style={{ color: '#555566', fontSize: '0.75rem', marginTop: '4px' }}>
+          <p style={{ color: '#888888', fontSize: '0.75rem', marginTop: '4px' }}>
             인격을 드래그하여 티어에 배치하세요 ({totalAssigned}개 배정)
           </p>
         </div>
@@ -252,7 +254,7 @@ export default function AdminTierListPage() {
             미배정 ({unassigned.length})
           </h2>
           <div style={{ position: 'relative' }}>
-            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#555566' }} />
+            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#888888' }} />
             <input
               type="text"
               value={searchQuery}
@@ -272,7 +274,7 @@ export default function AdminTierListPage() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: '#555566', cursor: 'pointer', background: 'none', border: 'none' }}
+                style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: '#888888', cursor: 'pointer', background: 'none', border: 'none' }}
               >
                 <X size={12} />
               </button>
