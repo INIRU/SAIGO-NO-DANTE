@@ -42,7 +42,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               alt=""
               width={identity.rarity === 1 ? 16 : identity.rarity === 2 ? 28 : 40}
               height={16}
-              style={{ width: identity.rarity === 1 ? '1rem' : identity.rarity === 2 ? '1.75rem' : '2.5rem', height: '1rem', filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
+              style={{ width: identity.rarity === 1 ? '1rem' : identity.rarity === 2 ? '1.75rem' : '2.5rem', height: 'auto', filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
             />
           )}
         </div>
