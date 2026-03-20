@@ -23,6 +23,7 @@
  *   - 전용 키워드 → keyword_meta 자동 upsert
  *
  * 추출 대상 (EGO):
+ *   - 스킬 (각성/침식: 타입, 죄악, 위력, 코인, 가중치, 공격레벨, 설명) → ego_skills 테이블
  *   - 전용 키워드 → keyword_meta 자동 upsert
  */
 
@@ -54,6 +55,7 @@ const args = process.argv.slice(2)
 const sinnerFilter = args.includes('--sinner') ? args[args.indexOf('--sinner') + 1] : null
 const autoFix = args.includes('--fix')
 const dryRun = !autoFix
+const newOnly = args.includes('--new')
 const identityOnly = args.includes('--identity-only')
 const egoOnly = args.includes('--ego-only')
 const verbose = args.includes('--verbose')
@@ -74,6 +76,13 @@ const WIKI_URLS = {
   'gregor':      'https://namu.wiki/w/그레고르(Project%20Moon%20세계관)/인게임%20정보',
 }
 
+// ── 수감자 slug → 한국어 이름 (EGO 수감자 필터용) ──
+const SINNER_KR = {
+  'yi-sang': '이상', 'faust': '파우스트', 'don-quixote': '돈키호테', 'ryoshu': '료슈',
+  'meursault': '뫼르소', 'hong-lu': '홍루', 'heathcliff': '히스클리프', 'ishmael': '이스마엘',
+  'rodion': '로쟈', 'sinclair': '싱클레어', 'outis': '오티스', 'gregor': '그레고르',
+}
+
 // ── 죄악 img alt → DB값 매핑 ──
 const SIN_ALT_MAP = {
   '림버스분노UI': 'wrath',
@@ -86,7 +95,7 @@ const SIN_ALT_MAP = {
 }
 
 // ── 죄악 한글 → DB값 매핑 ──
-const SIN_KR_MAP = {
+const SIN_KR_MAP = { // eslint-disable-line no-unused-vars
   '분노': 'wrath', '색욕': 'lust', '나태': 'sloth', '탐식': 'gluttony',
   '우울': 'gloom', '오만': 'pride', '질투': 'envy',
 }
@@ -111,6 +120,13 @@ function normalize(s) {
     .toLowerCase()
 }
 
+// 매칭 전용: 한자/대괄호/소괄호 내용을 제거해서 비교
+function normalizeForMatch(s) {
+  return normalize(s)
+    .replace(/\[[^\]]*\]/g, '')    // [漢字] 등 대괄호+내용 제거
+    .replace(/\([^)]*\)/g, '')     // (切磋琢磨) 등 소괄호+내용 제거
+}
+
 // ── Supabase REST 헬퍼 ──
 async function supaGet(table, params = '') {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers })
@@ -125,6 +141,17 @@ async function supaPatch(table, id, data) {
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error(`PATCH ${table}/${id}: ${res.status} ${await res.text()}`)
+}
+
+async function supaInsert(table, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=representation' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(`INSERT ${table}: ${res.status} ${await res.text()}`)
+  const rows = await res.json()
+  return rows[0]  // 삽입된 행 반환 (id 포함)
 }
 
 async function supaUpsert(table, data) {
@@ -143,8 +170,8 @@ async function supaUpsert(table, data) {
 // ══════════════════════════════════════════════════════════════════════
 //  DOM 추출 함수 (page.evaluate 내부에서 실행됨)
 // ══════════════════════════════════════════════════════════════════════
-async function extractAllData(page) {
-  return await page.evaluate(({ SIN_ALT_MAP_ARG, SIN_EN_TO_KR_ARG }) => {
+async function extractAllData(page, { identMaxDepth = 2 } = {}) {
+  return await page.evaluate(({ SIN_ALT_MAP_ARG, SIN_EN_TO_KR_ARG, IDENT_MAX_DEPTH }) => {
     // ── 헬퍼 ──
     function getTextWithoutImgs(el) {
       if (!el) return ''
@@ -175,6 +202,7 @@ async function extractAllData(page) {
       '패닉 유형', '정신력 증가 조건', '정신력 감소 조건', '전용 키워드',
       '추가 패시브', '추가패시브', '코스트', '각성 스킬', '침식 스킬',
       '환상 해석', '기본 정보', '패시브', '공격 레벨', '정신 소모량',
+      '스킬 이름', // 나무위키 템플릿 플레이스홀더
     ])
 
     // 코인 효과 내 무시할 패턴
@@ -489,7 +517,7 @@ async function extractAllData(page) {
       }
 
       // ══════════════════════════════════════════════════════════════
-      //  스킬 추출
+      //  스킬 추출 (인격만 — EGO 스킬은 별도 구현 예정)
       // ══════════════════════════════════════════════════════════════
       // 스킬명 감지: STRONG 이면서 테이블/섹션 라벨이 아닌 것
       // 스킬은 STRONG(이름) → 바로 다음에 TABLE(6행 스탯) → DETAILS(코인효과) 구조
@@ -501,65 +529,35 @@ async function extractAllData(page) {
         const offenseLevel = skillNameMatch ? parseInt(skillNameMatch[2]) : null
 
         // STRONG 이후 형제/후속 요소에서 TABLE 찾기
+        // 인격: IDENT_MAX_DEPTH (기본 2, 재추출 시 3), EGO: 5
+        const maxDepth = isEgo ? 5 : IDENT_MAX_DEPTH
         let tableEl = null
+        let tableFoundDepth = -1
         let searchEl = node.parentElement
-        // STRONG → parent(DIV) → 다음 형제들에서 TABLE 찾기
-        if (searchEl) {
+        for (let level = 0; level < maxDepth && searchEl && !tableEl; level++) {
           let sibling = searchEl.nextElementSibling
-          // 최대 5개 형제까지 탐색
           for (let tries = 0; tries < 5 && sibling; tries++) {
-            if (sibling.tagName === 'TABLE') {
-              tableEl = sibling
-              break
-            }
+            if (sibling.tagName === 'TABLE') { tableEl = sibling; tableFoundDepth = level; break }
             const innerTable = sibling.querySelector('table')
-            if (innerTable) {
-              tableEl = innerTable
-              break
-            }
-            // 다른 STRONG을 만나면 중단
+            if (innerTable) { tableEl = innerTable; tableFoundDepth = level; break }
             if (sibling.querySelector('strong')) break
             sibling = sibling.nextElementSibling
           }
-        }
-        // 부모의 형제에서도 탐색
-        if (!tableEl && searchEl?.parentElement) {
-          let sibling = searchEl.parentElement.nextElementSibling
-          for (let tries = 0; tries < 5 && sibling; tries++) {
-            if (sibling.tagName === 'TABLE') {
-              tableEl = sibling
-              break
-            }
-            const innerTable = sibling.querySelector('table')
-            if (innerTable) {
-              tableEl = innerTable
-              break
-            }
-            if (sibling.querySelector('strong')) break
-            sibling = sibling.nextElementSibling
-          }
+          searchEl = searchEl.parentElement
         }
 
         if (!tableEl) continue
 
-        // 테이블이 스킬 스탯 테이블인지 확인: 첫 행 첫 셀이 "공격 유형" 또는 "수비 유형"
+        // EGO 서브헤더 필터: EGO 이름과 같은 STRONG인데 TABLE이 depth 3+ 에서 발견 → 서브헤더
+        // TABLE이 가까이(depth 0-2) 있으면 실제 스킬 (EGO와 스킬 이름이 같은 경우 대응)
+        if (isEgo && current && text === current.name && tableFoundDepth >= 3) continue
+
         const rows = [...tableEl.querySelectorAll(':scope > tbody > tr, :scope > tr')]
         if (rows.length < 4) continue
-
         const firstCellText = getTextWithoutImgs(rows[0]?.cells?.[0])
         const isDefenseSkill = firstCellText === '수비 유형' || firstCellText === '방어 유형'
         const isAttackSkill = firstCellText === '공격 유형'
         if (!isAttackSkill && !isDefenseSkill) continue
-
-        // 정크 테이블 필터링: 스킬 위력이 0이면 무시
-        const powerRow = rows.find(r => {
-          const label = getTextWithoutImgs(r.cells?.[0])
-          return label === '스킬 위력'
-        })
-        if (powerRow) {
-          const powerVal = parseInt(getTextWithoutImgs(powerRow.cells?.[1]))
-          if (powerVal === 0) continue
-        }
 
         // 스킬 데이터 추출
         const skill = {
@@ -639,21 +637,8 @@ async function extractAllData(page) {
           }
         }
 
-        // 코인 수 추출: 코인 위력 행의 코인 아이콘 수로 카운트
-        const coinPowerRow = rows.find(r => getTextWithoutImgs(r.cells?.[0]) === '코인 위력')
-        if (coinPowerRow) {
-          const coinImgs = coinPowerRow.cells[1].querySelectorAll('img[alt*="코인"]')
-          if (coinImgs.length > 0) {
-            skill.coins = coinImgs.length
-          }
-        }
-        // 코인 수가 아직 null이면 코인 위력 텍스트의 "+" 수로 추정
-        if (!skill.coins) {
-          const cpText = coinPowerRow ? getTextWithoutImgs(coinPowerRow.cells[1]) : ''
-          const plusCount = (cpText.match(/\+/g) || []).length
-          if (plusCount > 0) skill.coins = plusCount
-          else skill.coins = 1
-        }
+        // 코인 수: DETAILS의 "코인값" 이미지 수로 추출 (아래에서 처리)
+        // 위키가 코인 위력 행에서 코인 아이콘을 제거하여 기존 방식 불가
 
         // 공격레벨: 스킬명에서 못 가져왔으면 별도 행이 있을 수 있음
         if (!skill.offense_level) {
@@ -667,22 +652,26 @@ async function extractAllData(page) {
         let descParts = []
         let detailsEl = null
 
-        // 테이블의 형제에서 details 찾기
-        let nextSib = tableEl.nextElementSibling
-        for (let tries = 0; tries < 5 && nextSib; tries++) {
-          if (nextSib.tagName === 'DETAILS') {
-            detailsEl = nextSib
-            break
+        // 테이블에서 위로 올라가며 details 찾기 (위키가 테이블을 div으로 감쌈)
+        let searchFrom = tableEl
+        for (let depth = 0; depth < 4 && searchFrom && !detailsEl; depth++) {
+          let nextSib = searchFrom.nextElementSibling
+          for (let tries = 0; tries < 5 && nextSib; tries++) {
+            if (nextSib.tagName === 'DETAILS') {
+              detailsEl = nextSib
+              break
+            }
+            const innerDetails = nextSib.querySelector('details')
+            if (innerDetails) {
+              detailsEl = innerDetails
+              break
+            }
+            // 다른 STRONG(다음 스킬)을 만나면 중단
+            if (nextSib.querySelector?.('strong')?.textContent?.trim() &&
+                !TABLE_LABELS.has(nextSib.querySelector('strong').textContent.trim())) break
+            nextSib = nextSib.nextElementSibling
           }
-          const innerDetails = nextSib.querySelector('details')
-          if (innerDetails) {
-            detailsEl = innerDetails
-            break
-          }
-          // 다른 STRONG(다음 스킬)을 만나면 중단
-          if (nextSib.querySelector?.('strong')?.textContent?.trim() &&
-              !TABLE_LABELS.has(nextSib.querySelector('strong').textContent.trim())) break
-          nextSib = nextSib.nextElementSibling
+          searchFrom = searchFrom.parentElement
         }
 
         if (detailsEl) {
@@ -693,6 +682,11 @@ async function extractAllData(page) {
           let globalEffectText = []
           let inGlobalSection = false
 
+          // 코인별 효과 파싱: "코인값" + 숫자 이미지 → 다음 텍스트로 실제 코인 vs 네비게이션 구분
+          // 실제 코인: 코인값+N → 효과 텍스트 ([적중시], [앞면 적중시] 등)
+          // 네비게이션: 코인값+N → "[스킬 N] 코인별 스킬 효과"
+          let pendingCoinNum = 0  // 코인값+N 이미지 후 확인 대기 중인 번호
+
           while (dWalker.nextNode()) {
             const dNode = dWalker.currentNode
 
@@ -700,16 +694,12 @@ async function extractAllData(page) {
               if (dNode.tagName === 'SUMMARY') continue
               if (dNode.tagName === 'IMG') {
                 const alt = dNode.getAttribute('alt') || ''
-                // 코인 번호 이미지: "림버스컴퍼니 1", "림버스컴퍼니 2" 등
+                // "림버스컴퍼니 코인값" 이미지: 다음 숫자 이미지가 코인 번호 후보
+                if (alt.includes('코인값')) continue
+                // 숫자 이미지: 코인 번호 후보로 저장 (다음 텍스트로 확인)
                 const coinNumMatch = alt.match(/림버스컴퍼니\s*(\d+)/)
                 if (coinNumMatch) {
-                  // 이전 코인 텍스트 저장
-                  if (coinNum > 0 && currentCoinText.length > 0) {
-                    descParts.push(`[코인 ${coinNum}] ${currentCoinText.join('').trim()}`)
-                  }
-                  coinNum = parseInt(coinNumMatch[1])
-                  currentCoinText = []
-                  inGlobalSection = false
+                  pendingCoinNum = parseInt(coinNumMatch[1])
                   continue
                 }
               }
@@ -718,12 +708,31 @@ async function extractAllData(page) {
             if (dNode.nodeType === 3) { // TEXT
               let t = dNode.textContent.trim()
               if (!t) continue
-              // noscript 내부 제외
               if (dNode.parentElement?.tagName === 'NOSCRIPT') continue
 
-              // "[스킬 N] 코인 전체 효과" / "[스킬 N] 코인별 스킬 효과" 패턴 필터
-              if (/\[스킬\s*\d+\]\s*코인\s*(전체|별\s*스킬)\s*효과/.test(t)) {
-                // 코인 전체 효과는 전역 효과 섹션
+              // "[ 코인별 효과 ]" summary 텍스트 무시
+              if (/^\[?\s*코인별\s*효과\s*\]?$/.test(t)) continue
+
+              // 대기 중인 코인 번호가 있으면 확인
+              if (pendingCoinNum > 0) {
+                // 네비게이션 항목: "[스킬 N] / [수비스킬] / [추가스킬 N] 코인별 스킬 효과" → 무시
+                if (/\[.+?\]\s*코인\s*(전체|별)\s*(스킬\s*)?효과/.test(t)) {
+                  pendingCoinNum = 0
+                  continue
+                }
+                // 실제 코인 지시자 확인됨
+                if (coinNum > 0 && currentCoinText.length > 0) {
+                  descParts.push(`[코인 ${coinNum}] ${currentCoinText.join('').trim()}`)
+                }
+                coinNum = pendingCoinNum
+                currentCoinText = []
+                inGlobalSection = false
+                pendingCoinNum = 0
+                // 아래로 fall-through하여 이 텍스트도 처리
+              }
+
+              // "[스킬 N] 코인 전체 효과" / "[수비스킬] 코인 전체 효과" 패턴
+              if (/\[(스킬\s*\d+|수비스킬)\]\s*코인\s*(전체|별\s*스킬)\s*효과/.test(t)) {
                 if (t.includes('전체')) inGlobalSection = true
                 continue
               }
@@ -736,7 +745,7 @@ async function extractAllData(page) {
 
               if (coinNum > 0) {
                 currentCoinText.push(t)
-              } else if (inGlobalSection) {
+              } else {
                 globalEffectText.push(t)
               }
             }
@@ -751,9 +760,19 @@ async function extractAllData(page) {
           if (globalEffectText.length > 0) {
             descParts.unshift(globalEffectText.join('').trim())
           }
+
+          // DETAILS에서 코인 수 추출: 파싱된 최대 코인 번호
+          if (coinNum > 0) {
+            skill.coins = coinNum
+          }
         }
 
         skill.description = descParts.join('\n') || ''
+
+        // 코인 수 폴백: DETAILS에서 못 구했으면 기본값 1
+        if (!skill.coins) {
+          skill.coins = 1
+        }
 
         // 스킬 순서 결정
         current._skillOrder++
@@ -870,7 +889,7 @@ async function extractAllData(page) {
     }
 
     return { identities, egos }
-  }, { SIN_ALT_MAP_ARG: SIN_ALT_MAP, SIN_EN_TO_KR_ARG: SIN_EN_TO_KR })
+  }, { SIN_ALT_MAP_ARG: SIN_ALT_MAP, SIN_EN_TO_KR_ARG: SIN_EN_TO_KR, IDENT_MAX_DEPTH: identMaxDepth })
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -991,7 +1010,7 @@ async function main() {
   console.log('╔══════════════════════════════════════════════════════╗')
   console.log('║  나무위키 → DB 동기화 (인격 + EGO 통합)               ║')
   console.log('╠══════════════════════════════════════════════════════╣')
-  console.log(`║  모드: ${dryRun ? 'DRY RUN (비교만)' : 'FIX (DB 수정)'}`)
+  console.log(`║  모드: ${newOnly ? (dryRun ? 'NEW DRY RUN (신규 감지만)' : 'NEW FIX (신규 INSERT)') : (dryRun ? 'DRY RUN (비교만)' : 'FIX (DB 수정)')}`)
   console.log(`║  대상: ${identityOnly ? '인격만' : egoOnly ? 'EGO만' : '인격 + EGO'}`)
   if (sinnerFilter) console.log(`║  수감자: ${sinnerFilter}`)
   console.log('╚══════════════════════════════════════════════════════╝\n')
@@ -1007,7 +1026,8 @@ async function main() {
   const sinners = sinnerFilter ? [sinnerFilter] : Object.keys(WIKI_URLS)
   const summary = {
     matched: 0, diffFound: 0, fixed: 0, notFound: 0,
-    kwAdded: 0, skillDiffs: 0, passiveDiffs: 0, egoDiffs: 0,
+    kwAdded: 0, skillDiffs: 0, passiveDiffs: 0, egoDiffs: 0, egoSkillDiffs: 0,
+    newIdentities: 0, newEgos: 0,
   }
   const allDiffs = []
 
@@ -1042,7 +1062,24 @@ async function main() {
       await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true }))
       await sleep(1000)
 
-      const { identities: wikiIdents, egos: wikiEgos } = await extractAllData(page)
+      let { identities: wikiIdents, egos: wikiEgos } = await extractAllData(page)
+
+      // 스킬 0개인 인격이 있으면 depth=3으로 재추출 (깊은 DOM 중첩 대응)
+      const emptyIdents = wikiIdents.filter(id => id.skills.length === 0)
+      if (emptyIdents.length > 0 && !egoOnly) {
+        const { identities: deepIdents } = await extractAllData(page, { identMaxDepth: 3 })
+        // 스킬 0개였던 인격만 deep 결과로 교체
+        const emptyNames = new Set(emptyIdents.map(id => id.name))
+        for (const di of deepIdents) {
+          if (emptyNames.has(di.name) && di.skills.length > 0) {
+            const idx = wikiIdents.findIndex(w => w.name === di.name)
+            if (idx >= 0) {
+              if (verbose) console.log(`  [deep] ${di.name}: depth=3으로 스킬 ${di.skills.length}개 재추출`)
+              wikiIdents[idx] = di
+            }
+          }
+        }
+      }
 
       if (verbose) {
         console.log(`  위키 인격: ${wikiIdents.length}개, EGO: ${wikiEgos.length}개`)
@@ -1072,8 +1109,96 @@ async function main() {
           }
 
           if (!dbIdent) {
-            console.log(`    [!] 매칭 실패: "${wi.name}"`)
-            summary.notFound++
+            if (newOnly) {
+              // --new 모드: 신규 인격 감지
+              console.log(`    [NEW] 신규 인격: "${wi.name}"`)
+              summary.newIdentities++
+
+              if (autoFix) {
+                // 신규 인격 INSERT
+                try {
+                  const identData = {
+                    sinner_id: sinnerId,
+                    name: wi.name,  // 영문 이름 없으면 한글로 임시 입력
+                    name_kr: wi.name,
+                    hp: wi.stats.hp || null,
+                    speed_min: wi.stats.speed_min || null,
+                    speed_max: wi.stats.speed_max || null,
+                    def_level: wi.stats.def_level || null,
+                    slash_res: wi.resistance.slash_res || null,
+                    pierce_res: wi.resistance.pierce_res || null,
+                    blunt_res: wi.resistance.blunt_res || null,
+                    panic_type: wi.panic.panic_type || null,
+                    panic_description: wi.panic.panic_description || null,
+                    sanity_increase: wi.panic.sanity_increase || null,
+                    sanity_decrease: wi.panic.sanity_decrease || null,
+                    quote: wi.quote || null,
+                  }
+                  const newIdent = await supaInsert('identities', identData)
+                  console.log(`        -> 인격 INSERT 완료 (${newIdent.id})`)
+
+                  // 스킬 INSERT
+                  for (const ws of wi.skills) {
+                    const skillData = {
+                      identity_id: newIdent.id,
+                      name: ws.name,
+                      skill_type: ws.skill_type,
+                      sin_affinity: ws.sin_affinity,
+                      base_power: ws.base_power,
+                      coin_power: ws.coin_power,
+                      coins: ws.coins,
+                      atk_weight: ws.atk_weight,
+                      offense_level: ws.offense_level,
+                      description: ws.description || '',
+                      skill_order: ws.skill_order,
+                      uptie_level: 4,
+                    }
+                    await supaInsert('skills', skillData)
+                  }
+                  console.log(`        -> 스킬 ${wi.skills.length}개 INSERT`)
+
+                  // 패시브 INSERT
+                  for (const [idx, wp] of wi.passives.entries()) {
+                    const passiveData = {
+                      identity_id: newIdent.id,
+                      name: wp.name,
+                      passive_type: wp.passive_type === 'battle' ? 'battle' : 'support',
+                      sin_affinity: wp.sin_affinity,
+                      sin_count: wp.sin_count,
+                      active_cond: wp.active_cond,
+                      description: wp.description || '',
+                      passive_order: idx + 1,
+                      uptie_level: 4,
+                    }
+                    await supaInsert('passives', passiveData)
+                  }
+                  console.log(`        -> 패시브 ${wi.passives.length}개 INSERT`)
+
+                  // 키워드 upsert
+                  for (const kw of wi.keywords) {
+                    try {
+                      await supaUpsert('keyword_meta', {
+                        name: kw.name,
+                        description: kw.description,
+                        ...(kw.maxStack != null ? { max_stack: kw.maxStack } : {}),
+                      })
+                      summary.kwAdded++
+                    } catch {}
+                  }
+                } catch (err) {
+                  console.log(`        -> INSERT 실패: ${err.message}`)
+                }
+              }
+            } else {
+              console.log(`    [!] 매칭 실패: "${wi.name}"`)
+              summary.notFound++
+            }
+            continue
+          }
+
+          // --new 모드에서는 기존 데이터 비교/수정 스킵
+          if (newOnly) {
+            summary.matched++
             continue
           }
 
@@ -1137,6 +1262,49 @@ async function main() {
             const skills = dbSkills.length > 0 ? dbSkills : await supaGet('skills',
               `identity_id=eq.${dbIdent.id}&select=id,name,skill_type,sin_affinity,base_power,coin_power,coins,atk_weight,offense_level,skill_order,description&order=skill_order`
             )
+
+            // DB에 스킬이 0개면 전부 INSERT (신규 인격이 스킬 없이 INSERT된 경우)
+            if (skills.length === 0 && autoFix) {
+              for (const ws of wi.skills) {
+                try {
+                  await supaInsert('skills', {
+                    identity_id: dbIdent.id,
+                    name: ws.name,
+                    skill_type: ws.skill_type,
+                    sin_affinity: ws.sin_affinity,
+                    base_power: ws.base_power,
+                    coin_power: ws.coin_power,
+                    coins: ws.coins,
+                    atk_weight: ws.atk_weight,
+                    offense_level: ws.offense_level,
+                    description: ws.description || '',
+                    skill_order: ws.skill_order,
+                    uptie_level: 4,
+                  })
+                } catch (err) {
+                  console.log(`        -> 스킬 INSERT 실패 ${ws.name}: ${err.message}`)
+                }
+              }
+              console.log(`    [+] ${wi.name}: 스킬 ${wi.skills.length}개 INSERT`)
+              // 패시브도 INSERT
+              for (const [idx, wp] of wi.passives.entries()) {
+                try {
+                  await supaInsert('passives', {
+                    identity_id: dbIdent.id,
+                    name: wp.name,
+                    passive_type: wp.passive_type === 'battle' ? 'battle' : 'support',
+                    sin_affinity: wp.sin_affinity,
+                    sin_count: wp.sin_count,
+                    active_cond: wp.active_cond,
+                    description: wp.description || '',
+                    passive_order: idx + 1,
+                    uptie_level: 4,
+                  })
+                } catch {}
+              }
+              if (wi.passives.length > 0) console.log(`        패시브 ${wi.passives.length}개 INSERT`)
+              continue
+            }
 
             const skillDiffs = compareSkills(wi.skills, skills)
             if (skillDiffs.length > 0) {
@@ -1227,14 +1395,72 @@ async function main() {
       // ── EGO 비교 ──
       if (!identityOnly && wikiEgos.length > 0) {
         console.log(`\n  -- EGO (${wikiEgos.length}개 추출) --`)
+        const sinnerKrName = SINNER_KR[sinnerId]
         for (const we of wikiEgos) {
+          // 타 수감자 EGO 스킵: sinnerSuffix에 현재 수감자 이름이 없으면 다른 수감자 EGO
+          if (we.sinnerSuffix && sinnerKrName && !we.sinnerSuffix.includes(sinnerKrName)) {
+            if (verbose) console.log(`    [skip] "${we.name}" — ${we.sinnerSuffix} (≠ ${sinnerKrName})`)
+            continue
+          }
+
           const dbEgo = dbEgos.find(e => e.name_kr === we.name) ||
-            dbEgos.find(e => normalize(e.name_kr) === normalize(we.name))
+            dbEgos.find(e => normalize(e.name_kr) === normalize(we.name)) ||
+            dbEgos.find(e => normalizeForMatch(e.name_kr) === normalizeForMatch(we.name))
 
           if (!dbEgo) {
-            if (verbose) console.log(`    [!] EGO 매칭 실패: "${we.name}"`)
-            summary.notFound++
-            // 키워드만 처리하고 다음으로
+            // sinnerSuffix 필터를 통과했는데 DB에 없음 = 신규 EGO
+            if (newOnly) {
+              console.log(`    [NEW] 신규 EGO: "${we.name}"`)
+              summary.newEgos++
+
+              if (autoFix) {
+                try {
+                  const egoData = {
+                    sinner_id: sinnerId,
+                    name: we.name,  // 영문 이름 없으면 한글로 임시 입력
+                    name_kr: we.name,
+                    grade: we.egoGrade || null,
+                    sin_affinity: we.egoSinAffinity || null,
+                    resistance: we.egoResistance || null,
+                    cost: we.egoCost || null,
+                  }
+                  const newEgo = await supaInsert('ego', egoData)
+                  console.log(`        -> EGO INSERT 완료 (${newEgo.id})`)
+
+                  // EGO 스킬 INSERT
+                  if (we.skills.length > 0) {
+                    for (const ws of we.skills) {
+                      try {
+                        await supaInsert('ego_skills', {
+                          ego_id: newEgo.id,
+                          name: ws.name,
+                          skill_type: ws.skill_type,
+                          sin_affinity: ws.sin_affinity,
+                          base_power: ws.base_power,
+                          coin_power: ws.coin_power,
+                          coins: ws.coins,
+                          atk_weight: ws.atk_weight,
+                          offense_level: ws.offense_level,
+                          description: ws.description || '',
+                          skill_order: ws.skill_order,
+                          category: ws.category || 'awakening',
+                        })
+                      } catch (err) {
+                        console.log(`        -> EGO 스킬 INSERT 실패 ${ws.name}: ${err.message}`)
+                      }
+                    }
+                    console.log(`        -> EGO 스킬 ${we.skills.length}개 INSERT`)
+                  }
+                } catch (err) {
+                  console.log(`        -> EGO INSERT 실패: ${err.message}`)
+                }
+              }
+            } else {
+              if (verbose) console.log(`    [!] 신규 EGO: "${we.name}" — DB에 없음`)
+              summary.notFound++
+            }
+
+            // 키워드 처리 (--new / 기존 모두)
             if (we.keywords.length > 0) {
               for (const kw of we.keywords) {
                 if (verbose) console.log(`    [kw] ${kw.name}: ${kw.description.substring(0, 60)}...`)
@@ -1254,6 +1480,9 @@ async function main() {
             }
             continue
           }
+
+          // --new 모드에서는 기존 EGO 비교 스킵
+          if (newOnly) continue
 
           summary.matched++
 
@@ -1309,6 +1538,90 @@ async function main() {
             if (verbose) console.log(`    [v] EGO: ${we.name}`)
           }
 
+          // ─── EGO 스킬 비교 ───
+          if (we.skills.length > 0) {
+            const dbEgoSkills = await supaGet('ego_skills',
+              `ego_id=eq.${dbEgo.id}&select=id,name,skill_type,sin_affinity,base_power,coin_power,coins,atk_weight,offense_level,skill_order,description&order=skill_order`
+            )
+
+            if (dbEgoSkills.length === 0) {
+              if (autoFix) {
+                for (const ws of we.skills) {
+                  try {
+                    await supaInsert('ego_skills', {
+                      ego_id: dbEgo.id,
+                      name: ws.name,
+                      skill_type: ws.skill_type,
+                      sin_affinity: ws.sin_affinity,
+                      base_power: ws.base_power,
+                      coin_power: ws.coin_power,
+                      coins: ws.coins,
+                      atk_weight: ws.atk_weight,
+                      offense_level: ws.offense_level,
+                      description: ws.description || '',
+                      skill_order: ws.skill_order,
+                      category: ws.category || 'awakening',
+                    })
+                  } catch (err) {
+                    console.log(`        -> EGO 스킬 INSERT 실패 ${ws.name}: ${err.message}`)
+                  }
+                }
+                console.log(`    [+] EGO ${we.name}: 스킬 ${we.skills.length}개 INSERT`)
+              } else {
+                console.log(`    [!] EGO ${we.name}: 스킬 ${we.skills.length}개 추출, DB 비어있음 (--fix로 등록)`)
+              }
+              summary.egoSkillDiffs++
+            } else {
+              const egoSkillDiffs = compareSkills(we.skills, dbEgoSkills)
+              if (egoSkillDiffs.length > 0) {
+                summary.egoSkillDiffs += egoSkillDiffs.length
+                for (const sd of egoSkillDiffs) {
+                  if (sd.type === 'missing') {
+                    console.log(`    [!] EGO 스킬 DB에 없음: S${sd.wiki.skill_order} "${sd.wiki.name}"`)
+                    if (autoFix) {
+                      try {
+                        await supaInsert('ego_skills', {
+                          ego_id: dbEgo.id,
+                          name: sd.wiki.name,
+                          skill_type: sd.wiki.skill_type,
+                          sin_affinity: sd.wiki.sin_affinity,
+                          base_power: sd.wiki.base_power,
+                          coin_power: sd.wiki.coin_power,
+                          coins: sd.wiki.coins,
+                          atk_weight: sd.wiki.atk_weight,
+                          offense_level: sd.wiki.offense_level,
+                          description: sd.wiki.description || '',
+                          skill_order: sd.wiki.skill_order,
+                          category: sd.wiki.category || 'awakening',
+                        })
+                        console.log(`        -> EGO 스킬 INSERT 완료`)
+                      } catch (err) {
+                        console.log(`        -> EGO 스킬 INSERT 실패: ${err.message}`)
+                      }
+                    }
+                  } else {
+                    console.log(`    [x] EGO 스킬 S${sd.order} "${sd.name}":`)
+                    for (const f of sd.fields) {
+                      console.log(`        ${f.field}: ${f.db} -> ${f.wiki}`)
+                    }
+                    if (autoFix) {
+                      const updates = {}
+                      for (const f of sd.fields) updates[f.field] = f.wiki
+                      try {
+                        await supaPatch('ego_skills', sd.dbId, updates)
+                        console.log(`        -> EGO 스킬 수정 완료`)
+                      } catch (err) {
+                        console.log(`        -> EGO 스킬 수정 실패: ${err.message}`)
+                      }
+                    }
+                  }
+                }
+              } else if (verbose) {
+                console.log(`    [v] EGO 스킬 ${we.skills.length}개 일치`)
+              }
+            }
+          }
+
           // 전용 키워드
           if (we.keywords.length > 0) {
             for (const kw of we.keywords) {
@@ -1350,11 +1663,16 @@ async function main() {
   console.log(`  스킬 불일치:   ${summary.skillDiffs}`)
   console.log(`  패시브 불일치: ${summary.passiveDiffs}`)
   console.log(`  EGO 불일치:    ${summary.egoDiffs}`)
+  console.log(`  EGO 스킬:     ${summary.egoSkillDiffs}`)
   if (autoFix) {
     console.log(`  DB 수정:       ${summary.fixed}`)
     console.log(`  키워드 추가:   ${summary.kwAdded}`)
   }
   console.log(`  매칭 실패:     ${summary.notFound}`)
+  if (summary.newIdentities > 0 || summary.newEgos > 0) {
+    console.log(`  신규 인격:     ${summary.newIdentities}`)
+    console.log(`  신규 EGO:      ${summary.newEgos}`)
+  }
 
   if (!autoFix && allDiffs.length > 0) {
     console.log(`\n  -> --fix 플래그로 자동 수정 가능`)
