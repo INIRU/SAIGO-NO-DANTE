@@ -146,12 +146,10 @@ async function main() {
       continue
     }
 
-    // 키워드 결정: keyword 필드 > attributeType
+    // 키워드 결정: keyword 필드만 사용 (attributeType은 시각 카테고리일 뿐)
     let keyword = '공통'
     if (item.keyword && item.keyword !== 'None') {
       keyword = categoryMap[item.keyword] || KEYWORD_EN_TO_KR[item.keyword] || item.keyword
-    } else if (item.attributeType) {
-      keyword = ATTR_TO_KEYWORD[item.attributeType] || '공통'
     }
 
     const gift = {
