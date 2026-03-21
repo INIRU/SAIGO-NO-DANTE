@@ -1,4 +1,5 @@
 import type { Identity, EGO, Sinner } from '@/lib/types'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 
 export type KeywordCondition = {
   keyword: string
@@ -34,7 +35,7 @@ export function validateConditions(
   const maxMinCount = Math.max(...conditions.map(c => c.minCount))
 
   const matchesAll = (identity: Identity) =>
-    allKeywords.every(kw => identity.keywords?.includes(kw))
+    allKeywords.every(kw => identity.keywords?.some(ik => normalizeThemeKeyword(ik) === kw) ?? false)
 
   let count = 0
   for (const sinner of sinners) {
@@ -132,7 +133,7 @@ function keywordAwareAssign(
   const maxMinCount = Math.max(...conditions.map(c => c.minCount))
 
   const matchesAll = (identity: Identity) =>
-    allKeywords.every(kw => identity.keywords?.includes(kw))
+    allKeywords.every(kw => identity.keywords?.some(ik => normalizeThemeKeyword(ik) === kw) ?? false)
 
   // Find sinners that have at least one identity with ALL keywords
   const canProvide = sinners.filter(s =>
