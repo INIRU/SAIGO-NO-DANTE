@@ -307,80 +307,83 @@ export default function MirrorDungeonClient({
           filter: brightness(1.2) drop-shadow(0 2px 8px rgba(200,144,10,0.4));
         }
       `}</style>
-      {/* 헤더 */}
-      <div className="mb-8 text-center">
-        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>E.G.O GIFT ARCHIVE</p>
-        <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
-          거울 던전
-        </h1>
-        <p style={{ color: '#666688', fontSize: '0.875rem' }}>
-          E.G.O 기프트 도감 — {gifts.length}종
-        </p>
-        <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', marginLeft: 'auto', marginRight: 'auto' }} />
-      </div>
-
-      {/* 탭 */}
-      {themes.length > 0 && (
-        <div className="flex justify-center gap-0 mb-6" style={{ borderBottom: '1px solid rgba(138,96,16,0.15)' }}>
-          {(['gifts', 'themes'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="px-5 py-2.5 text-sm transition-all duration-200 relative"
-              style={{
-                fontFamily: 'var(--font-heading)',
-                color: activeTab === tab ? 'var(--gold-light)' : 'var(--text-muted)',
-                background: activeTab === tab ? 'rgba(200,144,10,0.06)' : 'none',
-                borderBottom: activeTab === tab ? '2px solid var(--gold)' : '2px solid transparent',
-              }}
-            >
-              {tab === 'gifts' ? '전체 기프트' : `테마팩 (${themes.length})`}
-            </button>
-          ))}
+      {/* 헤더 + 탭 통합 */}
+      <div className="mb-8">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', letterSpacing: '0.3em', marginBottom: '0.375rem' }}>E.G.O GIFT ARCHIVE</p>
+            <h1 className="font-serif text-2xl md:text-3xl font-medium" style={{ color: 'var(--gold)' }}>
+              거울 던전
+            </h1>
+          </div>
+          {themes.length > 0 && (
+            <div className="flex gap-1">
+              {(['gifts', 'themes'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="px-3 py-1.5 transition-all duration-200"
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: 'var(--text-xs)',
+                    color: activeTab === tab ? 'var(--gold)' : 'var(--text-muted)',
+                    background: activeTab === tab ? 'rgba(200,144,10,0.1)' : 'transparent',
+                    border: `1px solid ${activeTab === tab ? 'rgba(200,144,10,0.25)' : 'transparent'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tab === 'gifts' ? `기프트 ${gifts.length}` : `테마팩 ${themes.length}`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent 60%)' }} />
+      </div>
 
       {/* 테마팩 탭 */}
       {activeTab === 'themes' && themes.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-8">
           {themes.map(theme => {
             const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
             if (themeGifts.length === 0) return null
+            const specificCount = theme.specific_ego_gift_ids.length
             const kwCount: Record<string, number> = {}
             for (const g of themeGifts) {
               kwCount[g.keyword] = (kwCount[g.keyword] || 0) + 1
             }
-            const topKws = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 4)
+            const topKws = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 3)
 
             return (
               <button
                 key={theme.id}
                 onClick={() => setExpandedThemeId(theme.id)}
-                className="text-left px-4 py-3 transition-all duration-200 hover:border-[var(--border-hover)]"
+                className="group text-left px-3 py-2.5 transition-all duration-200"
                 style={{
                   background: 'var(--bg-panel)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'; e.currentTarget.style.background = 'var(--bg-card)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)' }}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-serif font-medium" style={{ color: 'var(--gold-light)', fontSize: 'var(--text-sm)' }}>
-                    {theme.name}
-                  </span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                    {themeGifts.length}종
-                  </span>
+                <div className="font-serif font-medium leading-tight mb-1" style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                  {theme.name}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {topKws.map(([kw, count]) => {
-                    const iconUrl = getGiftKeywordIcon(kw)
-                    return (
-                      <span key={kw} className="flex items-center gap-0.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                        {iconUrl && <Image src={iconUrl} alt={kw} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.7 }} />}
-                        <span>{count}</span>
-                      </span>
-                    )
-                  })}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    {topKws.map(([kw]) => {
+                      const iconUrl = getGiftKeywordIcon(kw)
+                      return iconUrl ? (
+                        <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.6 }} />
+                      ) : null
+                    })}
+                  </div>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                    {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
+                  </span>
                 </div>
               </button>
             )
