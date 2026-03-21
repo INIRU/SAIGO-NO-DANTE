@@ -87,10 +87,10 @@ function cleanDesc(desc) {
   let cleaned = desc
     .replace(/<style="[^"]*">/g, '')
     .replace(/<\/style>/g, '')
-  // 영문 키워드 → 한글 치환 (BattleKeywords 전체 매핑)
+  // 영문 키워드 → 한글 치환 + 대괄호 제거 (키워드 매핑 호환)
   const map = getBattleKeywordMap()
   cleaned = cleaned.replace(/\[([A-Za-z_]+)\]/g, (match, key) => {
-    return map[key] ? `[${map[key]}]` : match
+    return map[key] ? map[key] : match
   })
   return cleaned.trim()
 }
