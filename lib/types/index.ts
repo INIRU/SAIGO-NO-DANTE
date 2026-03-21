@@ -145,3 +145,10 @@ export type EgoGiftNote = {
   effect_base: string | null
   activation_condition: ActivationCondition | null
 }
+
+export type EgoGiftTheme = {
+  id: number
+  name: string
+  dungeon_id: number | null
+  ego_gift_ids: number[]
+}
