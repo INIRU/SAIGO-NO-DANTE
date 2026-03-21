@@ -71,7 +71,8 @@ type Comment = {
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
-const THEME_KEYWORDS = new Set(['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡'])
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const RARITY_COLORS: Record<string, string> = {
   '1성': '#667788',
@@ -93,7 +94,8 @@ function topKeywords(slots: IdentitySlot[]): string[] {
   const freq: Record<string, number> = {}
   for (const slot of formed) {
     for (const kw of slot.identities?.keywords ?? []) {
-      if (THEME_KEYWORDS.has(kw)) freq[kw] = (freq[kw] ?? 0) + 1
+      const nkw = normalizeThemeKeyword(kw)
+      if (THEME_KW_SET.has(nkw)) freq[nkw] = (freq[nkw] ?? 0) + 1
     }
   }
 

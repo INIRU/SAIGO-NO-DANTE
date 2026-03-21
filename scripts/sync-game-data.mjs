@@ -82,7 +82,7 @@ const CONDITION_TAG_MAP = {
   CriticalEnemyTargetKill: '크리티컬 적 처치시',
   WhenUse: '사용시',
   WhenUse_Force: '사용시',
-  BeforeUse: '사용시',
+  BeforeUse: '사용 전',
   WhenUseEvade: '회피 사용시',
   WinDuel: '합 승리시',
   WinDuelAttack: '합 공격 승리시',
@@ -177,10 +177,12 @@ function translateDesc(desc) {
       const needSpaceBefore = before && /[가-힣0-9]/.test(before)
       return (needSpaceBefore ? ' ' : '') + kr
     })
-    // 조건 태그 앞에 줄바꿈 (텍스트 중간에 나오는 경우)
-    .replace(/([^\n])\[(?:적중시|앞면 적중시|뒷면 적중시|사용시|합 승리시|합 패배시|전투 시작시|공격 종료시|공격 시작시|적 처치시|회피 성공시|크리티컬 적중시|사용 전|파괴 불가 코인 적중시|재사용)/g, '$1\n[')
+    // 조건 태그 앞에 줄바꿈 (텍스트 중간에 나오는 경우, "\n- [태그]" 패턴은 제외)
+    .replace(/(?<!^)(?<![\n])(?<!- )\[(?:적중시|앞면 적중시|뒷면 적중시|사용시|합 승리시|합 패배시|전투 시작시|공격 종료시|공격 시작 전|적 처치시|회피 성공시|크리티컬 적중시|사용 전|파괴 불가 코인 적중시|재사용)/gm, '\n[')
     // 조건 태그 뒤에 띄어쓰기 없으면 추가
     .replace(/\]((?:자신|대상|이 |다음|호흡|충전|침잠|출혈|화상|파열|진동|마비|속박|취약|광전|전하침|파괴))/g, '] $1')
+    // 수식 띄어쓰기: (75-카르마/2) → ( 75 - 카르마 / 2 )
+    .replace(/\((\d+)-([가-힣]+)\/(\d+)\)/g, '( $1 - $2 / $3 )')
     // 게임 JSON에 이미 \n- 포함되어 있으므로 별도 불릿 처리 불필요
   return result.trim()
 }
@@ -489,6 +491,157 @@ async function main() {
         await sleep(100)
       }
     }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  패시브 동기화
+  // ══════════════════════════════════════════════════════════
+  console.log(`\n${'═'.repeat(60)}`)
+  console.log('  패시브 동기화')
+  console.log('═'.repeat(60))
+
+  // KR 패시브 텍스트 로드
+  const krPassiveMap = new Map()
+  const krPassiveFiles = readdirSync(resolve(JSON_DIR, 'KR'))
+    .filter(f => /^KR_Passives/i.test(f) || /^KR_Passive[^s]/i.test(f))
+    .map(f => `KR/${f}`)
+  for (const f of krPassiveFiles) {
+    const data = readJson(f)
+    if (!data) continue
+    for (const item of data.dataList || []) {
+      if (item.id && item.name) krPassiveMap.set(item.id, item)
+    }
+  }
+
+  // 패시브 상세 데이터 (공명 조건)
+  const passiveDetailMap = new Map()
+  const passiveFiles = ['passive.json', 'passive-a1c8p1.json', 'passive-a1c8p2.json', 'passive-a1c9p1.json', 'passive-a1c9p2.json', 'passive-extra.json']
+  for (const f of passiveFiles) {
+    const data = readJson(f)
+    if (!data) continue
+    for (const item of data.list || []) {
+      passiveDetailMap.set(item.id, item)
+    }
+  }
+
+  let passiveInserted = 0, passiveDeleted = 0
+
+  for (const sinner of targetSinners) {
+    const pad = String(sinner.id).padStart(2, '0')
+    // 패시브 매핑 로드
+    const passiveMapping = []
+    const pmFiles = [`personality-passive-${pad}.json`, 'personality-passive-a1c8p1.json', 'personality-passive-a1c8p2.json', 'personality-passive-a1c9p1.json', 'personality-passive-a1c9p2.json', 'personality-passive-extra.json']
+    for (const f of pmFiles) {
+      const data = readJson(f)
+      if (!data) continue
+      for (const item of data.list || []) {
+        // personality game_id 앞 2자리로 수감자 필터
+        const sinnerNum = Math.floor((item.personalityID % 10000) / 100)
+        // 실제로는 personalityID / 100의 앞자리가 수감자번호
+        // 10101 → sinner 1, 10215 → sinner 2
+        const sid = Math.floor(item.personalityID / 100) % 100
+        if (sid === sinner.id || Math.floor(item.personalityID / 10000) === sinner.id) {
+          passiveMapping.push(item)
+        }
+      }
+    }
+
+    const dbSinner = await supaGet('sinners', `name=eq.${encodeURIComponent(sinner.name)}&select=id`)
+    if (!dbSinner.length) continue
+    const sinnerId = dbSinner[0].id
+
+    const dbIdentities = await supaGet('identities', `sinner_id=eq.${sinnerId}&select=id,game_id,name`)
+
+    for (const identity of dbIdentities) {
+      const gameId = identity.game_id
+      if (!gameId) continue
+
+      const pm = passiveMapping.find(p => String(p.personalityID) === gameId)
+      if (!pm) continue
+
+      const UPTIE_LEVELS = [3, 4]
+      const newPassives = []
+
+      for (const uptie of UPTIE_LEVELS) {
+        let passiveOrder = 0
+
+        // 배틀 패시브: 해당 uptie 이하에서 가장 높은 level
+        const battleLevel = (pm.battlePassiveList || [])
+          .filter(l => l.level <= uptie)
+          .sort((a, b) => b.level - a.level)[0]
+        if (battleLevel) {
+          for (const pid of battleLevel.passiveIDList) {
+            const kr = krPassiveMap.get(pid)
+            const detail = passiveDetailMap.get(pid)
+            const conds = detail?.attributeStockCondition || detail?.attributeResonanceCondition || []
+            const sinCond = conds[0]
+            const sinAffinity = sinCond ? (SIN_MAP[sinCond.type] || null) : null
+            const sinCount = sinCond?.value || null
+            let desc = kr?.desc || ''
+            desc = translateDesc(desc)
+
+            newPassives.push({
+              identity_id: identity.id,
+              name: kr?.name || `패시브${pid}`,
+              passive_type: 'battle',
+              sin_affinity: sinAffinity,
+              sin_count: sinCount,
+              description: desc,
+              passive_order: ++passiveOrder,
+              uptie_level: uptie,
+            })
+          }
+        }
+
+        // 서포터 패시브
+        const supportLevel = (pm.supporterPassiveList || [])
+          .filter(l => l.level <= uptie)
+          .sort((a, b) => b.level - a.level)[0]
+        if (supportLevel) {
+          for (const pid of supportLevel.passiveIDList) {
+            const kr = krPassiveMap.get(pid)
+            const detail = passiveDetailMap.get(pid)
+            const conds = detail?.attributeStockCondition || detail?.attributeResonanceCondition || []
+            const sinCond = conds[0]
+            const sinAffinity = sinCond ? (SIN_MAP[sinCond.type] || null) : null
+            const sinCount = sinCond?.value || null
+            let desc = kr?.desc || ''
+            desc = translateDesc(desc)
+
+            newPassives.push({
+              identity_id: identity.id,
+              name: kr?.name || `패시브${pid}`,
+              passive_type: 'support',
+              sin_affinity: sinAffinity,
+              sin_count: sinCount,
+              description: desc,
+              passive_order: ++passiveOrder,
+              uptie_level: uptie,
+            })
+          }
+        }
+      }
+
+      if (newPassives.length === 0) continue
+
+      const dbPassives = await supaGet('passives', `identity_id=eq.${identity.id}&select=id&limit=100`)
+
+      if (dryRun) {
+        console.log(`  ${identity.name}: DB ${dbPassives.length}개 → 게임 ${newPassives.length}개`)
+      } else {
+        if (dbPassives.length > 0) {
+          await supaDelete('passives', `identity_id=eq.${identity.id}`)
+          passiveDeleted += dbPassives.length
+        }
+        await supaInsertBatch('passives', newPassives)
+        passiveInserted += newPassives.length
+        await sleep(100)
+      }
+    }
+  }
+
+  if (!dryRun) {
+    console.log(`  패시브 삭제: ${passiveDeleted}개 / 삽입: ${passiveInserted}개`)
   }
 
   // ══════════════════════════════════════════════════════════

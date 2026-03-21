@@ -68,7 +68,8 @@ const GRADE_ICON_URL: Record<string, string> = {
   HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
   WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
 }
-const MAIN_KEYWORDS = new Set(['출혈', '화상', '침잠', '파열', '호흡', '충전', '진동'])
+import { THEME_KEYWORDS, normalizeThemeKeyword, normalizeForStats } from '@/lib/constants/keywords'
+const MAIN_KEYWORDS = new Set<string>(THEME_KEYWORDS)
 
 /** 스크롤에 따라 점진적으로 아이템을 표시하는 훅 */
 function useProgressiveRender(total: number, step = 8) {
@@ -105,9 +106,20 @@ function mainKeywordColor(keywords: string[], sinMap: Record<string, string>): s
   return '#888888'
 }
 
-/** 키워드 중 sinMap에 매칭되는 것만 (최대 3개) */
+/** 키워드 중 sinMap에 매칭되는 것만 (최대 3개), 특수 충전 → 충전 정규화 */
 function mainKeywords(keywords: string[], sinMap: Record<string, string>): string[] {
-  return keywords.filter(kw => sinMap[kw]).slice(0, 3)
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const kw of keywords) {
+    const nkw = normalizeThemeKeyword(kw)
+    const target = sinMap[nkw] ? nkw : sinMap[kw] ? kw : null
+    if (target && !seen.has(target)) {
+      seen.add(target)
+      result.push(target)
+    }
+    if (result.length >= 3) break
+  }
+  return result
 }
 
 // ── 키워드 배지 (IdentityCard 스타일) ─────────────────────────
@@ -526,6 +538,7 @@ function IdentityTab({
         </h2>
         <div className="card p-5 space-y-4">
           {(() => {
+            // 테마 키워드만 필터 (통계에서는 합산하지 않음 — 합산은 필터링에서만)
             const filtered = data.keywordUsage.filter(k => MAIN_KEYWORDS.has(k.keyword))
             const maxKw = filtered[0]?.count || 1
             return filtered.slice(0, 10).map(kw => {
@@ -568,6 +581,7 @@ function IdentityTab({
 // ══════════════════════════════════════════════════════════════
 function KeywordTab({ data }: { data: MetaData }) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
+  // 서버에서 이미 특수 충전 → 충전으로 정규화됨
   const keywords = data.keywordUsage.filter(kw => MAIN_KEYWORDS.has(kw.keyword)).slice(0, 15)
   const maxCount = keywords[0]?.count || 1
 

@@ -44,7 +44,8 @@ type SlotRow = {
   } | null
 }
 
-const THEME_KEYWORDS = new Set(['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡'])
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 export default async function DeckOgImage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -88,7 +89,8 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
   for (const slot of sorted) {
     const id_ = Array.isArray(slot?.identities) ? slot.identities[0] : slot?.identities
     for (const kw of id_?.keywords ?? []) {
-      if (THEME_KEYWORDS.has(kw)) kwFreq[kw] = (kwFreq[kw] ?? 0) + 1
+      const nkw = normalizeThemeKeyword(kw)
+      if (THEME_KW_SET.has(nkw)) kwFreq[nkw] = (kwFreq[nkw] ?? 0) + 1
     }
   }
   const topKeywords = Object.entries(kwFreq)

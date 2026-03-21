@@ -15,16 +15,18 @@ const PAGE_SIZE = 12
 type SortKey = 'latest' | 'popular'
 
 // DeckCard와 동일한 테마 키워드 상수
-const THEME_KEYWORDS = ['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡']
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+
 const KEYWORD_THRESHOLD = 5
 
-// 덱에서 테마 키워드 추출 (DeckCard와 동일 로직)
+// 덱에서 테마 키워드 추출 (특수 충전 → 충전으로 매핑)
 function getDeckThemeKeywords(deck: DeckSummary): string[] {
   const freq: Record<string, number> = {}
   for (const slot of deck.deck_identities ?? []) {
     for (const kw of slot?.identities?.keywords ?? []) {
-      if (THEME_KEYWORDS.includes(kw)) {
-        freq[kw] = (freq[kw] ?? 0) + 1
+      const normalized = normalizeThemeKeyword(kw)
+      if ((THEME_KEYWORDS as readonly string[]).includes(normalized)) {
+        freq[normalized] = (freq[normalized] ?? 0) + 1
       }
     }
   }

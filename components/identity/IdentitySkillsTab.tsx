@@ -9,7 +9,7 @@ import {
   SKILL_TYPE_LABELS,
   getSkillIconUrl,
 } from '@/lib/data/sinners'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import SkillDescription from '@/components/skill/SkillDescription'
 import SkillIcon from '@/components/identity/SkillIcon'
 
 interface IdentitySkillsTabProps {
@@ -27,7 +27,6 @@ export default function IdentitySkillsTab({
   skillImgIdxMap,
   variantMap,
 }: IdentitySkillsTabProps) {
-  const formatSkillDesc = useFormatSkillDesc()
 
   if (filteredSkills.length === 0) {
     return (
@@ -209,25 +208,12 @@ export default function IdentitySkillsTab({
               </div>
 
               {skill.description && (
-                <div style={{ color: '#aaa', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                  {skill.description.split('\n').map((line, li) => {
-                    const isCoinStart = /^\[코인\s?\d/.test(line)
-                    const prevIsDifferentSection = li > 0 && isCoinStart
-                    return (
-                      <div key={li}>
-                        {prevIsDifferentSection && (
-                          <div
-                            style={{
-                              borderTop: `1px solid ${skillSinColor}25`,
-                              margin: '6px 0',
-                            }}
-                          />
-                        )}
-                        {formatSkillDesc(line, skillSinColor, skillNameColors)}
-                      </div>
-                    )
-                  })}
-                </div>
+                <SkillDescription
+                  description={skill.description}
+                  accentColor={skillSinColor}
+                  variant="detail"
+                  skillNameColors={skillNameColors}
+                />
               )}
             </div>
           )

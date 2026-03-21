@@ -11,6 +11,7 @@ import {
   SIN_ORDER,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip, useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import SkillDescription from '@/components/skill/SkillDescription'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 const RESISTANCE_STYLE: Record<string, { color: string; bg: string }> = {
@@ -28,7 +29,6 @@ function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
 
 // ─── EGO 스킬 패널 ────────────────────────────────────────────────────
 function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor: string; isCor: boolean }) {
-  const formatSkillDesc = useFormatSkillDesc()
   const accentColor = isCor ? '#cc4444' : gradeColor
   const resourceSin = SIN_KR_TO_EN[skill.resource]
   const resourceColor = resourceSin ? SIN_COLORS[resourceSin] : '#888'
@@ -125,51 +125,17 @@ function SkillPanel({ skill, gradeColor, isCor }: { skill: EGOSkill; gradeColor:
         ))}
       </div>
 
-      {/* 일반 효과 */}
-      {skill.normalEffect && (
-        <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: '8px' }}>
-          {skill.normalEffect.split('\n').map((line, li) => (
-            <div key={li}>{formatSkillDesc(line, accentColor)}</div>
-          ))}
-        </div>
-      )}
-
-      {/* 코인별 효과 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-        {coinEffects.map((effect, i) => {
-          if (!effect) return null
-          const lines = effect.split('\n')
-          const isUnbreakable = unbreakableCoins.has(i)
-          // "파괴 불가 코인" 첫 줄 제외하고 나머지 렌더
-          const displayLines = isUnbreakable ? lines.slice(1) : lines
-
-          return (
-            <div key={i}>
-              <div style={{ borderTop: `1px solid ${accentColor}18`, margin: '6px 0' }} />
-              <div className="flex items-start gap-2">
-                {/* 코인 번호 */}
-                <div style={{
-                  flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%',
-                  background: isUnbreakable ? `${accentColor}30` : `${accentColor}18`,
-                  border: `1px solid ${accentColor}${isUnbreakable ? '70' : '40'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: accentColor, fontFamily: 'monospace', fontSize: '0.5625rem', fontWeight: 'bold',
-                }}>
-                  {i + 1}
-                </div>
-                <div style={{ color: '#888', fontSize: '0.6875rem', lineHeight: 1.8, flex: 1 }}>
-                  {isUnbreakable && (
-                    <span style={{ color: '#aaa', fontSize: '0.625rem', fontWeight: 600 }}>파괴 불가 코인</span>
-                  )}
-                  {displayLines.map((line, li) => (
-                    <div key={li}>{formatSkillDesc(line, accentColor)}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {/* 스킬 설명 (통합 컴포넌트) */}
+      {(() => {
+        // normalEffect + coinEffects를 하나의 description으로 재조립
+        const descParts: string[] = []
+        if (skill.normalEffect) descParts.push(skill.normalEffect)
+        coinEffects.forEach((effect, i) => {
+          if (effect) descParts.push(`[코인 ${i + 1}] ${effect}`)
+        })
+        const fullDesc = descParts.join('\n')
+        return fullDesc ? <SkillDescription description={fullDesc} accentColor={accentColor} variant="detail" /> : null
+      })()}
     </div>
   )
 }

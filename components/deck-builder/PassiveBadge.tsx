@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import SkillDescription from '@/components/skill/SkillDescription'
 import {
   SIN_COLORS,
   SIN_ICON_MAP,
@@ -20,7 +20,6 @@ export default function PassiveBadge({ p, deckSinCounts }: {
   p: Passive
   deckSinCounts: Record<string, number>
 }) {
-  const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLDivElement>(null)
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null)
 
@@ -85,9 +84,7 @@ export default function PassiveBadge({ p, deckSinCounts }: {
           }}
         >
           <div style={{ color: sinColor, fontSize: '0.6875rem', fontWeight: 700, marginBottom: '4px' }}>{p.name}</div>
-          <div style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5 }}>
-            {formatSkillDesc(p.description, sinColor)}
-          </div>
+          <SkillDescription description={p.description} accentColor={sinColor} variant="tooltip" showCoinBadges={false} />
         </div>
       )}
     </div>
