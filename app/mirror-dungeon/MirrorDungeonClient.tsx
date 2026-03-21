@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import Image from 'next/image'
 import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
+import Dropdown from '@/components/ui/Dropdown'
 import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/data/sinners'
 import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
 
@@ -35,6 +36,7 @@ interface EgoGift {
   image_url: string | null
   acquisition: string | null
   game_id: number | null
+  difficulty: string | null
 }
 
 interface Recipe {
@@ -51,7 +53,25 @@ interface EgoGiftTheme {
   dungeon_id: number | null
   ego_gift_ids: number[]
   specific_ego_gift_ids: number[]
+  image_url: string | null
+  difficulty: string | null
+  floor_info: Record<string, number[] | string> | null
+  boss_image_url: string | null
 }
+
+interface MirrorDungeonEvent {
+  id: number
+  name: string | null
+  desc_text: string | null
+  options: Array<{ message: string; messageDesc?: string; result?: string[] }> | null
+  gift_ids: number[] | null
+  source: string | null
+  image_url: string | null
+  parent_id: number | null
+  option_gifts: number[][] | null
+}
+
+/* ── 난이도 (DB difficulty 컬럼 사용) ── */
 
 /* ── 키워드 설정 ── */
 const KEYWORDS = [
@@ -99,10 +119,12 @@ export default function MirrorDungeonClient({
   gifts,
   recipes,
   themes = [],
+  events = [],
 }: {
   gifts: EgoGift[]
   recipes: Recipe[]
   themes?: EgoGiftTheme[]
+  events?: MirrorDungeonEvent[]
 }) {
   const { getIconUrl } = useKeywordData()
   const getGiftKeywordIcon = useCallback(
@@ -112,13 +134,19 @@ export default function MirrorDungeonClient({
 
   const [keywords, setKeywords] = useState<Set<string>>(new Set())
   const [grades, setGrades] = useState<Set<string>>(new Set())
+  const [tiers, setTiers] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'grade'>('default')
   const [sortDesc, setSortDesc] = useState(false)
-  const [activeTab, setActiveTab] = useState<'gifts' | 'themes'>('gifts')
+  const [activeTab, setActiveTab] = useState<'gifts' | 'themes' | 'events'>('gifts')
   const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
+  const [themeSearch, setThemeSearch] = useState('')
+  const [themeSearchFocused, setThemeSearchFocused] = useState(false)
+  const [themeDiffFilter, setThemeDiffFilter] = useState<string>('전체')
+  const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
+  const [eventSearch, setEventSearch] = useState('')
 
   // game_id → EgoGift 매핑 (테마팩 필터용)
   const giftByGameId = useMemo(() => {
@@ -148,11 +176,71 @@ export default function MirrorDungeonClient({
     return themes.filter(t => t.ego_gift_ids.includes(gift.game_id!))
   }, [themes])
 
+  // 테마팩 검색 필터
+  const filteredThemes = useMemo(() => {
+    let result = themes
+    if (themeDiffFilter !== '전체') {
+      const diffMap: Record<string, string> = { '노말': 'normal', '하드': 'hard', '익스트림': 'extreme' }
+      result = result.filter(t => t.difficulty === diffMap[themeDiffFilter])
+    }
+    if (themeSearch.trim()) {
+      const q = themeSearch.trim().toLowerCase()
+      result = result.filter(t => {
+        if (t.name.toLowerCase().includes(q)) return true
+        // 기프트 이름으로도 검색
+        return t.ego_gift_ids.some(gid => {
+          const g = giftByGameId.get(gid)
+          return g && g.name.toLowerCase().includes(q)
+        })
+      })
+    }
+    return result
+  }, [themes, themeSearch, themeDiffFilter, giftByGameId])
+
+  // 자동완성 후보
+  const themeSearchSuggestions = useMemo(() => {
+    if (!themeSearch.trim() || themeSearch.trim().length < 1) return []
+    const q = themeSearch.trim().toLowerCase()
+    const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
+    // 테마명 매칭
+    for (const t of themes) {
+      if (t.name.toLowerCase().includes(q)) {
+        const diff = t.difficulty === 'hard' ? ' [하드]' : t.difficulty === 'extreme' ? ' [익스트림]' : ''
+        suggestions.push({ type: 'theme', label: t.name, sub: diff })
+      }
+      if (suggestions.length >= 8) break
+    }
+    // 기프트명 매칭 (테마에 속하는 것만)
+    if (suggestions.length < 8) {
+      const seen = new Set<string>()
+      for (const g of gifts) {
+        if (g.name.toLowerCase().includes(q) && !seen.has(g.name)) {
+          seen.add(g.name)
+          const belongThemes = themes.filter(t => g.game_id && t.ego_gift_ids.includes(g.game_id))
+          if (belongThemes.length > 0) {
+            suggestions.push({ type: 'gift', label: g.name, sub: `${belongThemes.length}개 테마팩` })
+          }
+          if (suggestions.length >= 8) break
+        }
+      }
+    }
+    return suggestions
+  }, [themeSearch, themes, gifts])
+
   const toggleKeyword = (key: string) => {
     setKeywords(prev => {
       if (key === '전체') return new Set()
       const next = new Set(prev)
       if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
+
+  const toggleTier = (t: string) => {
+    setTiers(prev => {
+      if (t === '전체') return new Set()
+      const next = new Set(prev)
+      if (next.has(t)) next.delete(t); else next.add(t)
       return next
     })
   }
@@ -185,9 +273,17 @@ export default function MirrorDungeonClient({
 
   // 필터링 + 정렬
   const filtered = useMemo(() => {
+    const DIFF_ORDER = { '노말': 0, '하드': 1, '익스트림': 2 } as const
     const result = gifts.filter(g => {
       if (keywords.size > 0 && !keywords.has(g.keyword)) return false
       if (grades.size > 0 && !grades.has(g.grade)) return false
+      if (tiers.size > 0 && !g.is_synthesis) {
+        const selected = [...tiers][0] as keyof typeof DIFF_ORDER
+        const giftDiff = (g.difficulty || '노말') as keyof typeof DIFF_ORDER
+        const selectedIdx = DIFF_ORDER[selected] ?? 2
+        const giftIdx = DIFF_ORDER[giftDiff] ?? 0
+        if (giftIdx > selectedIdx) return false
+      }
       if (search && !g.name.includes(search)) return false
       if (themeGiftNames && !themeGiftNames.has(g.name)) return false
       return true
@@ -202,7 +298,7 @@ export default function MirrorDungeonClient({
     if (sortDesc) result.reverse()
 
     return result
-  }, [gifts, keywords, grades, search, sortBy, sortDesc, themeGiftNames])
+  }, [gifts, keywords, grades, tiers, search, sortBy, sortDesc, themeGiftNames])
 
   // 무한 스크롤: 한 번에 40개씩 로드
   const PAGE_SIZE = 40
@@ -211,20 +307,24 @@ export default function MirrorDungeonClient({
   const loadingRef = useRef(false)
   const animatedCountRef = useRef(0)
 
-  // 필터/탭 변경 시 visibleCount + 애니메이션 카운터 리셋
-  useEffect(() => { setVisibleCount(PAGE_SIZE); animatedCountRef.current = 0 }, [filtered, activeTab])
+  // 필터/탭 변경 시 visibleCount + 애니메이션 카운터 + loadingRef 리셋
+  useEffect(() => { setVisibleCount(PAGE_SIZE); animatedCountRef.current = 0; loadingRef.current = false }, [filtered, activeTab])
 
   const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
 
-  // IntersectionObserver — 디바운스로 연쇄 발동 방지
+  // IntersectionObserver — 탭/필터 변경 시 재생성
+  const filteredLenRef = useRef(filtered.length)
+  filteredLenRef.current = filtered.length
+
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
+    loadingRef.current = false
     const obs = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !loadingRef.current) {
         loadingRef.current = true
         setVisibleCount(prev => {
-          const next = Math.min(prev + PAGE_SIZE, filtered.length)
+          const next = Math.min(prev + PAGE_SIZE, filteredLenRef.current)
           setTimeout(() => { loadingRef.current = false }, 100)
           return next
         })
@@ -232,7 +332,7 @@ export default function MirrorDungeonClient({
     }, { rootMargin: '600px' })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [visibleCount, filtered.length])
+  }, [visibleCount, filtered.length, activeTab])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
@@ -251,6 +351,18 @@ export default function MirrorDungeonClient({
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  // 헤더 GSAP 진입 애니메이션
+  const headerAnimRef = useRef(false)
+  useEffect(() => {
+    if (headerAnimRef.current) return
+    headerAnimRef.current = true
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.md-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
+      gsap.fromTo('.md-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
+      gsap.fromTo('.md-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
+    })
   }, [])
 
   // GSAP 진입 애니메이션 (새로 추가된 카드에도 적용)
@@ -304,38 +416,81 @@ export default function MirrorDungeonClient({
           opacity: 0;
         }
         .gift-card:hover .gift-frame {
-          filter: brightness(1.2) drop-shadow(0 2px 8px rgba(200,144,10,0.4));
+          filter: brightness(1.15);
         }
       `}</style>
       {/* 헤더 + 탭 통합 */}
-      <div className="mb-8">
-        <div className="flex items-end justify-between mb-6">
+      <div className="mb-10">
+        <div className="flex items-end justify-between mb-6" style={{ position: 'relative', zIndex: 1 }}>
           <div>
-            <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', letterSpacing: '0.3em', marginBottom: '0.375rem' }}>E.G.O GIFT ARCHIVE</p>
-            <h1 className="font-serif text-2xl md:text-3xl font-medium" style={{ color: 'var(--gold)' }}>
+            {/* 장식 라인 */}
+            <div className="md-header-line" style={{
+              width: '4rem',
+              height: '0.0625rem',
+              background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
+              marginBottom: '1rem',
+              transformOrigin: 'left',
+              transform: 'scaleX(0)',
+            }} />
+            <p className="md-header-tag" style={{ opacity: 0, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
+              E.G.O GIFT ARCHIVE
+            </p>
+            <h1 className="md-header-title font-serif text-3xl md:text-4xl font-bold" style={{ opacity: 0, color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
               거울 던전
             </h1>
+            <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
+              E.G.O 기프트 도감 · 테마팩 · 조합 레시피
+            </p>
           </div>
           {themes.length > 0 && (
-            <div className="flex gap-1">
-              {(['gifts', 'themes'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className="px-3 py-1.5 transition-all duration-200"
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'var(--text-xs)',
-                    color: activeTab === tab ? 'var(--gold)' : 'var(--text-muted)',
-                    background: activeTab === tab ? 'rgba(200,144,10,0.1)' : 'transparent',
-                    border: `1px solid ${activeTab === tab ? 'rgba(200,144,10,0.25)' : 'transparent'}`,
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {tab === 'gifts' ? `기프트 ${gifts.length}` : `테마팩 ${themes.length}`}
-                </button>
-              ))}
+            <div
+              className="flex"
+              style={{
+                background: 'rgba(10,8,5,0.7)',
+                border: '1px solid var(--border)',
+                borderRadius: '0.5rem',
+                padding: '0.1875rem',
+                gap: '0.125rem',
+              }}
+            >
+              {(['gifts', 'themes', 'events'] as const).map(t => {
+                const isActive = activeTab === t
+                const label = t === 'gifts' ? '기프트' : t === 'themes' ? '테마팩' : '이벤트'
+                const count = t === 'gifts' ? gifts.length : t === 'themes' ? themes.length : events.length
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className="flex items-center gap-1.5 px-4 py-2 transition-all duration-200"
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '0.8125rem',
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#0d0b08' : '#666660',
+                      background: isActive
+                        ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)'
+                        : 'transparent',
+                      borderRadius: '0.375rem',
+                      boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
+                      cursor: 'pointer',
+                      minWidth: '6rem',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {label}
+                    <span
+                      style={{
+                        fontSize: '0.6875rem',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        opacity: isActive ? 0.7 : 0.5,
+                      }}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
@@ -343,9 +498,75 @@ export default function MirrorDungeonClient({
       </div>
 
       {/* 테마팩 탭 */}
-      {activeTab === 'themes' && themes.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-8">
-          {themes.map(theme => {
+      {activeTab === 'themes' && themes.length > 0 && (<>
+        {/* 테마팩 검색 + 난이도 필터 */}
+        <div className="flex flex-wrap gap-3 items-center mb-4">
+          <div className="relative flex-1 min-w-[12rem] max-w-[20rem]">
+            <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
+            <input
+              type="text"
+              placeholder="테마팩 · 기프트 검색..."
+              value={themeSearch}
+              onChange={e => setThemeSearch(e.target.value)}
+              onFocus={() => setThemeSearchFocused(true)}
+              onBlur={() => setTimeout(() => setThemeSearchFocused(false), 200)}
+              className="w-full pl-8 pr-8 py-1.5 rounded text-xs"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#ccc', outline: 'none', fontFamily: 'var(--font-heading)' }}
+            />
+            {themeSearch && (
+              <button onClick={() => setThemeSearch('')} style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#555', cursor: 'pointer' }}>
+                <X size={12} />
+              </button>
+            )}
+            {/* 자동완성 */}
+            {themeSearchFocused && themeSearchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-50" style={{ background: '#1a1510', border: '1px solid rgba(200,144,10,0.2)', boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)' }}>
+                {themeSearchSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    className="w-full text-left px-3 py-2 flex items-center gap-2 transition-colors hover:bg-white/5"
+                    style={{ cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    onMouseDown={() => setThemeSearch(s.label)}
+                  >
+                    <span style={{ color: s.type === 'theme' ? 'var(--gold)' : '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', width: '2rem' }}>
+                      {s.type === 'theme' ? '테마팩' : '기프트'}
+                    </span>
+                    <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{s.label}</span>
+                    {s.sub && <span style={{ color: '#555', fontSize: '0.625rem', marginLeft: 'auto' }}>{s.sub}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-1">
+            {['전체', '노말', '하드', '익스트림'].map(d => {
+              const colorMap: Record<string, string> = { '익스트림': '#e04040', '하드': '#e89030', '전체': 'var(--gold)', '노말': 'var(--gold)' }
+              const bgMap: Record<string, string> = { '익스트림': 'rgba(224,64,64,0.2)', '하드': 'rgba(232,144,48,0.2)', '전체': 'rgba(200,144,10,0.15)', '노말': 'rgba(200,144,10,0.15)' }
+              const borderMap: Record<string, string> = { '익스트림': 'rgba(224,64,64,0.4)', '하드': 'rgba(232,144,48,0.4)', '전체': 'rgba(200,144,10,0.3)', '노말': 'rgba(200,144,10,0.3)' }
+              return (
+                <button
+                  key={d}
+                  onClick={() => setThemeDiffFilter(d)}
+                  className="px-2.5 py-1.5 rounded text-[0.6875rem] transition-colors"
+                  style={{
+                    cursor: 'pointer',
+                    background: themeDiffFilter === d ? bgMap[d] : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${themeDiffFilter === d ? borderMap[d] : 'rgba(255,255,255,0.08)'}`,
+                    color: themeDiffFilter === d ? colorMap[d] : '#777',
+                    fontFamily: 'var(--font-heading)',
+                  }}
+                >
+                  {d}
+                </button>
+              )
+            })}
+          </div>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
+            {filteredThemes.length}건
+          </span>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 mb-8">
+          {filteredThemes.map(theme => {
             const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
             if (themeGifts.length === 0) return null
             const specificCount = theme.specific_ego_gift_ids.length
@@ -359,7 +580,7 @@ export default function MirrorDungeonClient({
               <button
                 key={theme.id}
                 onClick={() => setExpandedThemeId(theme.id)}
-                className="group text-left px-3 py-2.5 transition-all duration-200"
+                className="group text-left overflow-hidden transition-all duration-200"
                 style={{
                   background: 'var(--bg-panel)',
                   border: '1px solid var(--border)',
@@ -369,27 +590,75 @@ export default function MirrorDungeonClient({
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'; e.currentTarget.style.background = 'var(--bg-card)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)' }}
               >
-                <div className="font-serif font-medium leading-tight mb-1" style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
-                  {theme.name}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    {topKws.map(([kw]) => {
-                      const iconUrl = getGiftKeywordIcon(kw)
-                      return iconUrl ? (
-                        <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.6 }} />
-                      ) : null
-                    })}
+                {theme.image_url && (
+                  <div className="relative w-full overflow-hidden" style={{ aspectRatio: '380/690' }}>
+                    <Image
+                      src={theme.image_url}
+                      alt={theme.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      style={{ opacity: 0.85 }}
+                    />
+                    {theme.boss_image_url && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
+                          <Image
+                            src={theme.boss_image_url}
+                            alt=""
+                            fill
+                            sizes="(max-width: 640px) 33vw, 20vw"
+                            className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, rgba(13,11,8,0.3) 50%, transparent 100%)' }} />
+                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1.5">
+                      <div className="font-serif font-medium leading-tight" style={{ color: '#fff', fontSize: 'var(--text-sm)', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                        {theme.name}
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <div className="flex items-center gap-1">
+                          {topKws.map(([kw]) => {
+                            const iconUrl = getGiftKeywordIcon(kw)
+                            return iconUrl ? (
+                              <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.8 }} />
+                            ) : null
+                          })}
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                          {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                    {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
-                  </span>
-                </div>
+                )}
+                {!theme.image_url && (
+                  <div className="px-3 py-2.5">
+                    <div className="font-serif font-medium leading-tight mb-1" style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                      {theme.name}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        {topKws.map(([kw]) => {
+                          const iconUrl = getGiftKeywordIcon(kw)
+                          return iconUrl ? (
+                            <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.6 }} />
+                          ) : null
+                        })}
+                      </div>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                        {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
+                      </span>
+                    </div>
+                  </div>
+                )}
               </button>
             )
           })}
         </div>
-      )}
+      </>)}
 
       {/* 테마팩 모달 */}
       {expandedThemeId !== null && (() => {
@@ -413,53 +682,134 @@ export default function MirrorDungeonClient({
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={() => setExpandedThemeId(null)}
-            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
           >
             <div
               onClick={e => e.stopPropagation()}
-              className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto"
+              className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl"
               style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.5rem',
-                boxShadow: 'var(--shadow-lg)',
+                background: '#131110',
+                border: '1px solid rgba(200,144,10,0.12)',
+                boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)',
               }}
             >
-              {/* 헤더 */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-serif font-medium text-lg" style={{ color: 'var(--gold-light)' }}>
+              {/* 닫기 */}
+              <button
+                onClick={() => setExpandedThemeId(null)}
+                className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
+                style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* 배너 헤더 */}
+              <div className="relative overflow-hidden" style={{ height: theme.image_url ? '10rem' : '5rem' }}>
+                {theme.image_url && (
+                  <>
+                    <Image src={theme.image_url} alt={theme.name} fill sizes="(max-width: 768px) 100vw, 48rem" className="object-cover object-top" style={{ opacity: 0.4 }} />
+                    {theme.boss_image_url && (
+                      <div className="absolute right-0 bottom-0 z-10" style={{ width: '50%', aspectRatio: '391/432' }}>
+                        <Image src={theme.boss_image_url} alt="" fill sizes="200px" className="object-contain object-bottom drop-shadow-lg" style={{ opacity: 0.6 }} />
+                      </div>
+                    )}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.6) 50%, rgba(19,17,16,0.3) 100%)' }} />
+                  </>
+                )}
+                {!theme.image_url && (
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(200,144,10,0.05) 0%, transparent 100%)' }} />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
+                  <h3 className="font-serif text-xl md:text-2xl font-bold" style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
                     {theme.name}
                   </h3>
-                  <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
-                    {themeGifts.length}종 기프트
-                  </p>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {(() => {
+                      const diff = theme.difficulty || 'normal'
+                      const label = diff === 'extreme' ? '익스트림' : diff === 'hard' ? '하드' : '노말'
+                      const color = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : '#999'
+                      const bg = diff === 'extreme' ? 'rgba(224,64,64,0.2)' : diff === 'hard' ? 'rgba(232,144,48,0.2)' : 'rgba(255,255,255,0.08)'
+                      return (
+                        <span className="px-2.5 py-0.5 rounded-full text-[0.6875rem] font-bold" style={{ background: bg, color, fontFamily: 'var(--font-mono)' }}>
+                          {label}
+                        </span>
+                      )
+                    })()}
+                    <span style={{ color: '#888', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
+                      {themeGifts.length}종
+                    </span>
+                    {exclusiveGifts.length > 0 && (
+                      <span style={{ color: 'var(--gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
+                        ★{exclusiveGifts.length} 전용
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => setExpandedThemeId(null)}
-                  style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
-                >
-                  <X size={18} />
-                </button>
               </div>
 
-              {/* 전용 기프트 */}
-              {exclusiveGifts.length > 0 && (
-                <div className="mb-5">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span style={{ color: 'var(--gold)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>★</span>
-                    <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>전용 기프트</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({exclusiveGifts.length})</span>
+              <div className="px-5 pb-5">
+                {/* 출현 정보 + 키워드 분포 */}
+                <div className="flex flex-wrap gap-4 mt-4 mb-5">
+                  {/* 출현 정보 */}
+                  {theme.floor_info && Object.keys(theme.floor_info).length > 0 && (
+                    <div className="flex-1 min-w-[14rem]">
+                      <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>
+                        출현 정보
+                      </p>
+                      <div className="space-y-1">
+                        {Object.entries(theme.floor_info).map(([dungeon, floors]) => {
+                          const dColor = dungeon === '익스트림' ? '#e04040' : dungeon === '평행중첩' ? '#b478dc' : dungeon === '하드' ? '#e89030' : '#a0a090'
+                          const floorText = floors === '전체' ? '전층' : Array.isArray(floors) ? floors.map(f => `${f}층`).join(', ') : String(floors)
+                          return (
+                            <div key={dungeon} className="flex items-center gap-2">
+                              <span className="inline-block w-16 text-right" style={{ color: dColor, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                                {dungeon}
+                              </span>
+                              <span style={{ color: '#555', fontSize: '0.8125rem' }}>—</span>
+                              <span style={{ color: '#bbb', fontSize: '0.8125rem' }}>{floorText}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {/* 키워드 분포 */}
+                  <div className="flex-1 min-w-[10rem]">
+                    <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>
+                      키워드 분포
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(byKeyword).sort((a, b) => b[1].length - a[1].length).slice(0, 6).map(([kw, kwGifts]) => {
+                        const iconUrl = getGiftKeywordIcon(kw)
+                        return (
+                          <span key={kw} className="inline-flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            {iconUrl && <Image src={iconUrl} alt={kw} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />}
+                            <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{kw}</span>
+                            <span style={{ color: '#555', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{kwGifts.length}</span>
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
-                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
-                    {exclusiveGifts.map(g => (
-                      <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
-                    ))}
-                  </div>
-                  <div className="mt-4" style={{ height: '1px', background: 'linear-gradient(90deg, var(--gold-dim), transparent)' }} />
                 </div>
-              )}
+
+                <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.2), transparent 60%)', marginBottom: '1.25rem' }} />
+
+                {/* 전용 기프트 */}
+                {exclusiveGifts.length > 0 && (
+                  <div className="mb-5">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>★</span>
+                      <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>전용 기프트</span>
+                      <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>({exclusiveGifts.length})</span>
+                    </div>
+                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
+                      {exclusiveGifts.map(g => (
+                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
+                      ))}
+                    </div>
+                    <div className="mt-4" style={{ height: '1px', background: 'linear-gradient(90deg, var(--gold-dim), transparent)' }} />
+                  </div>
+                )}
 
               {/* 키워드별 그룹 */}
               {Object.entries(byKeyword).map(([kw, kwGifts]) => {
@@ -479,10 +829,263 @@ export default function MirrorDungeonClient({
                   </div>
                 )
               })}
+              </div>
             </div>
           </div>
         )
       })()}
+
+      {/* 이벤트 탭 */}
+      {activeTab === 'events' && events.length > 0 && (<>
+        {/* 검색 */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative flex-1 max-w-[20rem]">
+            <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
+            <input
+              type="text"
+              placeholder="이벤트 · 기프트 검색..."
+              value={eventSearch}
+              onChange={e => setEventSearch(e.target.value)}
+              className="w-full pl-8 pr-8 py-1.5 rounded text-xs"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#ccc', outline: 'none', fontFamily: 'var(--font-heading)' }}
+            />
+            {eventSearch && (
+              <button onClick={() => setEventSearch('')} style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#555', cursor: 'pointer' }}>
+                <X size={12} />
+              </button>
+            )}
+          </div>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
+            {(() => {
+              const seenCount = new Set<string>()
+              const rootEvents = events.filter(ev => {
+                if (ev.parent_id) return false
+                const key = ev.desc_text || String(ev.id)
+                if (seenCount.has(key)) return false
+                seenCount.add(key)
+                return true
+              })
+              const q = eventSearch.trim().toLowerCase()
+              if (!q) return `${rootEvents.length}건`
+              return `${rootEvents.filter(ev => {
+                if (ev.name?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
+                if (ev.options?.some(o => o.message?.toLowerCase().includes(q) || o.messageDesc?.toLowerCase().includes(q))) return true
+                if (ev.gift_ids?.some(gid => { const g = giftByGameId.get(gid); return g && g.name.toLowerCase().includes(q) })) return true
+                return false
+              }).length}건`
+            })()}
+          </span>
+        </div>
+
+        {/* 카드 그리드 (루트 이벤트만) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-8">
+          {(() => {
+            // 중복 제거: 같은 desc_text면 첫 번째만
+            const seen = new Set<string>()
+            const rootEvents = events.filter(ev => {
+              if (ev.parent_id) return false
+              const key = ev.desc_text || String(ev.id)
+              if (seen.has(key)) return false
+              seen.add(key)
+              return true
+            })
+            const q = eventSearch.trim().toLowerCase()
+            const filtered = q ? rootEvents.filter(ev => {
+              if (ev.name?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
+              if (ev.options?.some(o => o.message?.toLowerCase().includes(q) || o.messageDesc?.toLowerCase().includes(q))) return true
+              if (ev.gift_ids?.some(gid => { const g = giftByGameId.get(gid); return g && g.name.toLowerCase().includes(q) })) return true
+              return false
+            }) : rootEvents
+            return filtered.map(ev => {
+              const evGifts = (ev.gift_ids || []).map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
+              const childCount = events.filter(c => c.parent_id === ev.id).length
+              return (
+                <button
+                  key={ev.id}
+                  onClick={() => setSelectedEvent(ev)}
+                  className="group text-left overflow-hidden transition-all duration-200"
+                  style={{ background: '#1a1714', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.3)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
+                >
+                  {ev.image_url ? (
+                    <div className="relative w-full aspect-square overflow-hidden">
+                      <Image src={ev.image_url} alt="" fill sizes="(max-width: 640px) 50vw, 20vw" className="object-cover transition-transform duration-300 group-hover:scale-105" style={{ opacity: 0.8 }} />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, transparent 60%)' }} />
+                      <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2">
+                        <p className="font-serif font-medium leading-tight line-clamp-2" style={{ color: '#e8d8c0', fontSize: '0.75rem', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                          {ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `이벤트 #${ev.id}`}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {evGifts.length > 0 && (
+                            <span style={{ color: 'var(--gold)', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+                              {evGifts.length}종
+                            </span>
+                          )}
+                          {ev.options && (
+                            <span style={{ color: '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+                              선택지 {ev.options.length}
+                            </span>
+                          )}
+                          {childCount > 0 && (
+                            <span style={{ color: '#6090d0', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+                              +{childCount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-3">
+                      <p className="font-serif font-medium leading-tight line-clamp-2 mb-1.5" style={{ color: '#ccc', fontSize: '0.75rem' }}>
+                        {ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 40) : `이벤트 #${ev.id}`}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        {evGifts.length > 0 && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{evGifts.length}종</span>}
+                        {ev.options && <span style={{ color: '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>선택지 {ev.options.length}</span>}
+                      </div>
+                    </div>
+                  )}
+                </button>
+              )
+            })
+          })()}
+        </div>
+      </>)}
+
+      {/* 이벤트 모달 */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)} style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
+          <div onClick={e => e.stopPropagation()} className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl" style={{ background: '#131110', border: '1px solid rgba(200,144,10,0.12)', boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)' }}>
+            <button onClick={() => setSelectedEvent(null)} className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
+              <X size={18} />
+            </button>
+
+            {/* 배너 */}
+            <div className="relative overflow-hidden" style={{ height: selectedEvent.image_url ? '12rem' : '4rem' }}>
+              {selectedEvent.image_url && (
+                <>
+                  <Image src={selectedEvent.image_url} alt="" fill sizes="40rem" className="object-cover" style={{ opacity: 0.5 }} />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.4) 60%, rgba(19,17,16,0.2) 100%)' }} />
+                </>
+              )}
+            </div>
+
+            <div className="px-5 pb-5 -mt-4 relative">
+              {/* 설명 */}
+              {selectedEvent.desc_text && (
+                <p className="whitespace-pre-line leading-relaxed mb-4" style={{ color: '#bbb', fontSize: '0.8125rem' }}>
+                  {selectedEvent.desc_text}
+                </p>
+              )}
+
+              {/* 선택지 */}
+              {selectedEvent.options && selectedEvent.options.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-[0.6875rem] font-bold" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>선택지</p>
+                  {selectedEvent.options.map((opt, i) => {
+                    return (
+                      <div key={i} className="rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div className="flex items-start gap-2.5 px-3.5 py-2.5">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5" style={{ background: 'rgba(200,144,10,0.15)', color: 'var(--gold)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                            {i + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p style={{ color: '#e8d8c0', fontSize: '0.875rem' }}>{opt.message}</p>
+                            {opt.messageDesc && (
+                              <p style={{ color: 'var(--gold)', fontSize: '0.75rem', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
+                                {opt.messageDesc}
+                              </p>
+                            )}
+                            {opt.result && opt.result[0] && (
+                              <p className="mt-1.5 whitespace-pre-line" style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.6 }}>
+                                {opt.result[0]}
+                              </p>
+                            )}
+                            {/* 선택지별 기프트 보상 */}
+                            {selectedEvent.option_gifts && selectedEvent.option_gifts[i] && selectedEvent.option_gifts[i].length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {selectedEvent.option_gifts[i].map(gid => {
+                                  const g = giftByGameId.get(gid)
+                                  if (!g) return null
+                                  const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
+                                  return (
+                                    <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
+                                      style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.6875rem' }}>
+                                      {g.image_url && <Image src={g.image_url} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />}
+                                      <span style={{ color: '#ccc' }}>{g.name}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* 자식 이벤트 */}
+              {(() => {
+                const children = events.filter(c => c.parent_id === selectedEvent.id)
+                if (children.length === 0) return null
+                return (
+                  <div className="mb-4">
+                    <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>연계 이벤트</p>
+                    <div className="space-y-2">
+                      {children.map(child => (
+                        <div key={child.id} className="rounded-lg px-3.5 py-2.5" style={{ background: 'rgba(96,144,208,0.06)', border: '1px solid rgba(96,144,208,0.12)' }}>
+                          {child.desc_text && (
+                            <p className="whitespace-pre-line leading-relaxed mb-2" style={{ color: '#aaa', fontSize: '0.75rem' }}>
+                              {child.desc_text.length > 150 ? child.desc_text.slice(0, 150) + '...' : child.desc_text}
+                            </p>
+                          )}
+                          {child.options && child.options.map((opt, i) => (
+                            <div key={i} className="flex items-start gap-2 mt-1.5 ml-2">
+                              <span style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{i + 1}</span>
+                              <div>
+                                <p style={{ color: '#ccc', fontSize: '0.75rem' }}>{opt.message}</p>
+                                {opt.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{opt.messageDesc}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* 획득 가능 기프트 */}
+              {(() => {
+                const allGiftIds = new Set(selectedEvent.gift_ids || [])
+                events.filter(c => c.parent_id === selectedEvent.id).forEach(c => (c.gift_ids || []).forEach(g => allGiftIds.add(g)))
+                const evGifts = [...allGiftIds].map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
+                if (evGifts.length === 0) return null
+                return (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem' }}>
+                    <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>획득 가능 기프트</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {evGifts.map(g => {
+                        const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
+                        return (
+                          <button key={g.id} onClick={() => { setSelectedEvent(null); setSelected(g) }} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors hover:bg-white/10" style={{ cursor: 'pointer', background: `${kw}10`, border: `1px solid ${kw}20` }}>
+                            {g.image_url && <Image src={g.image_url} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem' }} />}
+                            <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{g.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 필터 영역 + 그리드 (전체 기프트 탭) */}
       {activeTab === 'gifts' && (<>
@@ -529,6 +1132,24 @@ export default function MirrorDungeonClient({
         <div className="flex gap-3 justify-center items-center flex-wrap">
           {/* 등급 멀티 드롭다운 */}
           <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
+
+          {/* 난이도 필터 (드롭다운) */}
+          <Dropdown
+            value={tiers.size === 0 ? '전체' : [...tiers][0]}
+            options={[
+              { value: '전체', label: '전체' },
+              { value: '노말', label: '노말' },
+              { value: '하드', label: '하드' },
+              { value: '익스트림', label: '익스트림' },
+            ]}
+            onChange={v => {
+              if (v === '전체') setTiers(new Set())
+              else setTiers(new Set([v]))
+            }}
+            prefix="난이도:"
+            defaultValue="전체"
+            minWidth={120}
+          />
 
           {/* 정렬 버튼 */}
           <div className="flex items-center gap-1">
@@ -639,6 +1260,8 @@ export default function MirrorDungeonClient({
           giftImageMap={giftImageMap}
           onClose={() => setSelected(null)}
           getGiftKeywordIcon={getGiftKeywordIcon}
+          themes={getThemesForGift(selected)}
+          onThemeClick={id => { setSelected(null); setActiveTab('themes'); setExpandedThemeId(id) }}
         />
       )}
     </div>
@@ -663,7 +1286,8 @@ const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: {
           backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          transition: 'filter 0.3s, box-shadow 0.3s',
+          transition: 'filter 0.3s',
+          clipPath: 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)',
         }}
       >
         {/* 등급 — 왼쪽 위, Bebas Neue 스타일 */}
@@ -695,15 +1319,15 @@ const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: {
           })()}
         </div>
 
-        {/* 기프트 이미지 — 중앙 74% */}
-        <div className="absolute inset-[13%] flex items-center justify-center">
+        {/* 기프트 이미지 — 중앙 */}
+        <div className="absolute inset-[15%] flex items-center justify-center">
           {gift.image_url ? (
             <div className="relative w-full h-full">
               <Image
                 src={gift.image_url}
                 alt={gift.name}
                 fill
-                className="object-contain drop-shadow-lg"
+                className="object-contain"
                 sizes="120px"
               />
             </div>
@@ -739,12 +1363,16 @@ function GiftModal({
   giftImageMap,
   onClose,
   getGiftKeywordIcon,
+  themes = [],
+  onThemeClick,
 }: {
   gift: EgoGift
   recipe: Recipe | null
   giftImageMap: Map<string, string>
   onClose: () => void
   getGiftKeywordIcon: (keyword: string) => string | null
+  themes?: EgoGiftTheme[]
+  onThemeClick?: (id: number) => void
 }) {
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
@@ -756,103 +1384,117 @@ function GiftModal({
       onClick={onClose}
     >
       {/* 배경 오버레이 */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
 
       {/* 모달 */}
       <div
         className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl"
         style={{
           background: '#131110',
-          border: `1px solid ${kwColor}40`,
-          boxShadow: `0 0 40px ${kwColor}15, 0 20px 60px rgba(0,0,0,0.6)`,
+          border: `1px solid ${kwColor}30`,
+          boxShadow: `0 0 3rem ${kwColor}10, 0 1.5rem 4rem rgba(0,0,0,0.6)`,
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* 닫기 */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-1.5 rounded-full transition-colors hover:bg-white/10"
-          style={{ cursor: 'pointer', color: '#777' }}
+          className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
+          style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
         >
           <X size={18} />
         </button>
 
-        {/* 헤더: 카드 프레임 + 정보 */}
-        <div className="flex items-start gap-4 p-5 pb-3">
-          {/* 카드 스타일 이미지 프레임 */}
-          <div
-            className="relative flex-shrink-0 overflow-hidden"
-            style={{
-              width: '5.5rem',
-              height: '5.5rem',
-              backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          >
-            {/* 등급 라벨 */}
-            <span
-              className="absolute top-[4%] left-[5%] z-10 pointer-events-none"
+        {/* 배너 헤더 */}
+        <div className="relative overflow-hidden" style={{ height: '7.5rem', background: `linear-gradient(135deg, ${kwColor}15 0%, transparent 60%)` }}>
+          {/* 배경 키워드 아이콘 (장식) */}
+          <div className="absolute -right-4 -top-4 opacity-[0.06]" style={{ width: '10rem', height: '10rem' }}>
+            {(() => {
+              const iconUrl = getGiftKeywordIcon(gift.keyword)
+              return iconUrl ? <Image src={iconUrl} alt="" fill sizes="160px" className="object-contain" /> : null
+            })()}
+          </div>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, transparent 100%)' }} />
+
+          {/* 카드 + 정보 */}
+          <div className="absolute bottom-0 left-0 right-0 flex items-end gap-4 px-5 pb-3">
+            {/* 카드 프레임 */}
+            <div
+              className="relative flex-shrink-0 overflow-hidden"
               style={{
-                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                fontWeight: 700,
-                fontSize: '1.75rem',
-                lineHeight: 1,
-                color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-                textShadow: isEX
-                  ? '0 0 10px rgb(251,255,8), 0 0 4px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
-                  : '0 0 6px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
+                width: '5rem',
+                height: '5rem',
+                backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                clipPath: 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)',
               }}
             >
-              {gradeLabel}
-            </span>
-
-            {/* 키워드 아이콘 */}
-            <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
-              {(() => {
-                const iconUrl = getGiftKeywordIcon(gift.keyword)
-                return iconUrl ? (
-                  <Image src={iconUrl} alt={gift.keyword} fill sizes="28px" className="object-contain" />
-                ) : null
-              })()}
-            </div>
-
-            {/* 기프트 이미지 */}
-            <div className="absolute inset-[13%] flex items-center justify-center">
-              {gift.image_url ? (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={gift.image_url}
-                    alt={gift.name}
-                    fill
-                    className="object-contain drop-shadow-lg"
-                    sizes="80px"
-                  />
-                </div>
-              ) : (
-                <FlaskConical size="1.75rem" style={{ color: '#444' }} />
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0 pt-1">
-            <h2
-              className="font-serif text-lg md:text-xl font-bold leading-tight"
-              style={{ color: '#e8d8c0' }}
-            >
-              {gift.name}
-            </h2>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
-                style={{ background: `${kwColor}25`, color: kwColor, fontFamily: 'var(--font-heading)' }}
+                className="absolute top-[4%] left-[5%] z-10 pointer-events-none"
+                style={{
+                  fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                  fontWeight: 700,
+                  fontSize: '1.5rem',
+                  lineHeight: 1,
+                  color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+                  textShadow: isEX
+                    ? '0 0 10px rgb(251,255,8), 0 0 4px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
+                    : '0 0 6px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
+                }}
               >
+                {gradeLabel}
+              </span>
+              <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
                 {(() => {
                   const iconUrl = getGiftKeywordIcon(gift.keyword)
-                  return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
+                  return iconUrl ? <Image src={iconUrl} alt={gift.keyword} fill sizes="24px" className="object-contain" /> : null
                 })()}
-                {gift.keyword}
-              </span>
+              </div>
+              <div className="absolute inset-[10%] flex items-center justify-center">
+                {gift.image_url ? (
+                  <div className="relative w-full h-full">
+                    <Image src={gift.image_url} alt={gift.name} fill className="object-contain" sizes="70px" />
+                  </div>
+                ) : (
+                  <FlaskConical size="1.5rem" style={{ color: '#444' }} />
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 pb-0.5">
+              <h2 className="font-serif text-lg md:text-xl font-bold leading-tight" style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                {gift.name}
+              </h2>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
+                  style={{ background: `${kwColor}25`, color: kwColor, fontFamily: 'var(--font-heading)' }}
+                >
+                  {(() => {
+                    const iconUrl = getGiftKeywordIcon(gift.keyword)
+                    return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
+                  })()}
+                  {gift.keyword}
+                </span>
+              {(() => {
+                const diff = gift.difficulty || '노말'
+                if (diff === '노말') return null
+                const isHard = diff === '하드'
+                return (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
+                    style={{
+                      background: isHard ? 'rgba(232,144,48,0.15)' : 'rgba(224,64,64,0.15)',
+                      color: isHard ? '#e89030' : '#e04040',
+                      fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {isHard ? 'HARD' : 'EXTREME'}
+                  </span>
+                )
+              })()}
               {gift.enhancement && (
                 <span
                   className="px-2 py-0.5 rounded-full text-[0.625rem]"
@@ -871,6 +1513,7 @@ function GiftModal({
               )}
             </div>
           </div>
+        </div>
         </div>
 
         {/* 효과 */}
@@ -938,6 +1581,42 @@ function GiftModal({
               <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
                 {gift.acquisition}
               </p>
+            </div>
+          )}
+
+          {/* 소속 테마팩 */}
+          {themes.length > 0 && (
+            <div className="pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="font-bold mb-1.5" style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}>
+                소속 테마팩
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {themes.map(t => {
+                  const isExclusive = gift.game_id ? t.specific_ego_gift_ids.includes(gift.game_id) : false
+                  const diff = t.difficulty
+                  const diffColor = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : diff === 'effective' ? '#6090d0' : '#888'
+                  const diffLabel = diff === 'extreme' ? 'EX' : diff === 'hard' ? 'H' : diff === 'effective' ? 'E' : ''
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => onThemeClick?.(t.id)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
+                      style={{
+                        cursor: 'pointer',
+                        background: isExclusive ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${isExclusive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                    >
+                      {isExclusive && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>★</span>}
+                      {t.image_url && <Image src={t.image_url} alt="" width={14} height={25} style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                      <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
+                      {diffLabel && <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                        {diffLabel}
+                      </span>}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 

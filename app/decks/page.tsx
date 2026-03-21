@@ -146,6 +146,11 @@ export default function DecksPage() {
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
 
+  // 접이식 필터 섹션 (기본 열림)
+  const [showTagFilter, setShowTagFilter] = useState(true)
+  const [showKeywordFilter, setShowKeywordFilter] = useState(true)
+  const [showCollectionFilter, setShowCollectionFilter] = useState(true)
+
   // 컬렉션 필터
   const [filterOwnedIdentity, setFilterOwnedIdentity] = useState(false)
   const [filterOwnedEgo, setFilterOwnedEgo] = useState(false)
@@ -473,336 +478,374 @@ export default function DecksPage() {
         </Link>
       </div>
 
-      {/* ── 검색 + 정렬 ── */}
-      <div className="decks-filters flex flex-col sm:flex-row gap-3 mb-5" style={{ opacity: 0 }}>
-        {/* 검색 + 자동완성 (화살표 + Tab) */}
-        <div className="relative flex-1" ref={searchRef}>
-          <svg
-            width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none', zIndex: 1 }}
-          >
-            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="제목, 설명, 태그, 키워드 검색..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
-            onFocus={() => setShowSuggestions(true)}
-            onKeyDown={handleSearchKeyDown}
-            className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
-            style={{
-              background: '#120e09',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              color: '#e8dcc8',
-              fontFamily: 'var(--font-body)',
-            }}
-          />
-          {search && (
-            <button
-              onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', cursor: 'pointer', zIndex: 1 }}
+      {/* ── 필터 패널 ── */}
+      <div
+        className="decks-filters mb-6"
+        style={{
+          opacity: 0,
+          background: 'rgba(10,8,5,0.5)',
+          border: '1px solid var(--border)',
+          borderRadius: '0.375rem',
+          overflow: 'hidden',
+        }}
+      >
+        {/* 검색 + 정렬 */}
+        <div className="flex flex-col sm:flex-row gap-3 px-4 py-3">
+          <div className="relative flex-1" ref={searchRef}>
+            <svg
+              width="14" height="14" viewBox="0 0 16 16" fill="none"
+              style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none', zIndex: 1 }}
             >
-              ✕
-            </button>
-          )}
-          {/* 키워드 자동완성 드롭다운 (화살표 + Tab) */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div
-              className="absolute left-0 right-0 z-50 overflow-hidden"
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="제목, 설명, 태그, 키워드 검색..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
               style={{
-                top: '100%',
-                marginTop: 4,
-                background: '#1a1510',
+                background: 'rgba(0,0,0,0.3)',
                 border: '1px solid var(--border)',
-                borderRadius: '4px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-              }}
-            >
-              <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
-                키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
-              </div>
-              {suggestions.map((kw, i) => {
-                const iconUrl = getIconUrl(kw)
-                const isFocused = acIndex === i
-                return (
-                  <div
-                    key={kw}
-                    className="flex items-center gap-2 px-3 py-2 text-xs"
-                    style={{
-                      color: isFocused ? '#e8b030' : '#c8b890',
-                      fontFamily: 'var(--font-heading)',
-                      background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
-                      borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
-                    }}
-                  >
-                    {iconUrl && (
-                      <Image src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
-                    )}
-                    <span>{kw}</span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* 정렬 */}
-        <div className="flex gap-1.5">
-          {(['latest', 'popular'] as SortKey[]).map(s => (
-            <button
-              key={s}
-              onClick={() => setSort(s)}
-              className="px-4 py-2.5 rounded text-sm font-medium transition-all duration-200"
-              style={{
-                background: sort === s ? 'var(--gold)' : 'transparent',
-                color: sort === s ? 'var(--bg-deep)' : '#888899',
-                border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.75rem',
-              }}
-            >
-              {s === 'latest' ? '최신순' : '인기순'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 콘텐츠 유형 필터 ── */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {CONTENT_TYPES.map(ct => {
-          const active = activeContentType === ct
-          const colors = CONTENT_TYPE_FILTER_COLORS[ct]
-          return (
-            <button
-              key={ct}
-              onClick={() => setActiveContentType(active ? '' : ct)}
-              className="px-3 py-1 rounded text-xs transition-all duration-150"
-              style={{
-                background: active ? colors.bg : 'transparent',
-                color: active ? colors.color : '#555566',
-                border: `1px solid ${active ? colors.border : 'var(--border)'}`,
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.6875rem',
-              }}
-            >
-              {ct}
-            </button>
-          )
-        })}
-        {activeContentType && (
-          <button
-            onClick={() => setActiveContentType('')}
-            className="px-3 py-1 rounded text-xs transition-all duration-150"
-            style={{
-              background: 'transparent',
-              color: '#888888',
-              border: '1px solid var(--border)',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            초기화
-          </button>
-        )}
-      </div>
-
-      {/* ── 태그 필터 (멀티 선택) ── */}
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {activeTags.size > 0 && (
-            <button
-              onClick={() => setActiveTags(new Set())}
-              className="px-3 py-1 rounded-full text-xs transition-all duration-150"
-              style={{
-                background: 'transparent',
-                color: '#888888',
-                border: '1px solid var(--border)',
+                borderRadius: '0.25rem',
+                color: '#e8dcc8',
                 fontFamily: 'var(--font-body)',
               }}
-            >
-              태그 초기화
-            </button>
-          )}
-          {allTags.map(tag => {
-            const isActive = activeTags.has(tag)
-            return (
+            />
+            {search && (
               <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className="px-3 py-1 rounded-full text-xs transition-all duration-150"
+                onClick={() => { setSearch(''); setShowSuggestions(false) }}
+                style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', cursor: 'pointer', zIndex: 1 }}
+              >
+                ✕
+              </button>
+            )}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                className="absolute left-0 right-0 z-50 overflow-hidden"
                 style={{
-                  background: isActive ? 'rgba(200,144,10,0.2)' : 'transparent',
-                  color: isActive ? 'var(--gold)' : '#555566',
-                  border: `1px solid ${isActive ? 'var(--gold-dim)' : 'var(--border)'}`,
-                  fontFamily: 'var(--font-body)',
+                  top: '100%',
+                  marginTop: 4,
+                  background: '#1a1510',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.25rem',
+                  boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)',
                 }}
               >
-                #{tag}
-              </button>
-            )
-          })}
-        </div>
-      )}
+                <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
+                  키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
+                </div>
+                {suggestions.map((kw, i) => {
+                  const iconUrl = getIconUrl(kw)
+                  const isFocused = acIndex === i
+                  return (
+                    <div
+                      key={kw}
+                      className="flex items-center gap-2 px-3 py-2 text-xs"
+                      style={{
+                        color: isFocused ? '#e8b030' : '#c8b890',
+                        fontFamily: 'var(--font-heading)',
+                        background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                        borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
+                      }}
+                    >
+                      {iconUrl && (
+                        <Image src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                      )}
+                      <span>{kw}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
-      {/* ── 키워드 필터 (멀티 선택) ── */}
-      {availableKeywords.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          {activeKeywords.size > 0 && (
-            <button
-              onClick={() => setActiveKeywords(new Set())}
-              className="px-3 py-1 rounded text-xs transition-all duration-150"
-              style={{
-                background: 'transparent',
-                color: '#888888',
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              키워드 초기화
-            </button>
-          )}
-          {availableKeywords.map(kw => {
-            const isActive = activeKeywords.has(kw)
-            const iconUrl = getIconUrl(kw)
+          <div className="flex gap-1.5 flex-shrink-0">
+            {(['latest', 'popular'] as SortKey[]).map(s => (
+              <button
+                key={s}
+                onClick={() => setSort(s)}
+                className="px-4 py-2.5 rounded text-sm font-medium transition-all duration-200"
+                style={{
+                  background: sort === s ? 'var(--gold)' : 'transparent',
+                  color: sort === s ? 'var(--bg-deep)' : '#888899',
+                  border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.75rem',
+                }}
+              >
+                {s === 'latest' ? '최신순' : '인기순'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 콘텐츠 유형 필터 */}
+        <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+          {CONTENT_TYPES.map(ct => {
+            const active = activeContentType === ct
+            const colors = CONTENT_TYPE_FILTER_COLORS[ct]
             return (
               <button
-                key={kw}
-                onClick={() => toggleKeyword(kw)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-all duration-150"
+                key={ct}
+                onClick={() => setActiveContentType(active ? '' : ct)}
+                className="px-3 py-1 rounded text-xs transition-all duration-150"
                 style={{
-                  background: isActive ? 'rgba(136,88,40,0.25)' : 'transparent',
-                  color: isActive ? '#c8a450' : '#555566',
-                  border: `1px solid ${isActive ? 'rgba(136,88,40,0.5)' : 'var(--border)'}`,
+                  background: active ? colors.bg : 'transparent',
+                  color: active ? colors.color : '#555566',
+                  border: `1px solid ${active ? colors.border : 'var(--border)'}`,
                   fontFamily: 'var(--font-heading)',
                   fontSize: '0.6875rem',
                 }}
               >
-                {iconUrl && (
-                  <Image
-                    src={iconUrl}
-                    alt=""
-                    width={13}
-                    height={13}
-                   
-                    style={{ flexShrink: 0, opacity: isActive ? 1 : 0.5 }}
-                  />
-                )}
-                {kw}
+                {ct}
               </button>
             )
           })}
-          {activeKeywords.size >= 2 && (
-            <>
-              <div className="flex-1" />
-              <button
-                onClick={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
-                className="px-2.5 py-1 rounded text-xs transition-all duration-150"
-                style={{
-                  background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
-                  color: keywordMode === 'and' ? '#c8a450' : '#9a9aaa',
-                  border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.12)'}`,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.625rem',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                {keywordMode === 'and' ? 'AND' : 'OR'}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ── 컬렉션 필터 ── */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        {collectionLoading ? (
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-            컬렉션 로딩 중...
-          </span>
-        ) : hasCollection ? (
-          <>
+          {activeContentType && (
             <button
-              onClick={() => setFilterOwnedIdentity(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
-              style={{
-                background: filterOwnedIdentity ? 'rgba(80,160,80,0.15)' : 'transparent',
-                color: filterOwnedIdentity ? '#80c880' : '#555566',
-                border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.6875rem',
-                cursor: 'pointer',
-              }}
-            >
-              <User size={12} />
-              보유 인격 덱
-            </button>
-            <button
-              onClick={() => setFilterOwnedEgo(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
-              style={{
-                background: filterOwnedEgo ? 'rgba(80,160,80,0.15)' : 'transparent',
-                color: filterOwnedEgo ? '#80c880' : '#555566',
-                border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.6875rem',
-                cursor: 'pointer',
-              }}
-            >
-              <PackageOpen size={12} />
-              보유 에고 덱
-            </button>
-            <button
-              onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
-              className="px-2 py-1.5 rounded text-xs transition-all duration-150"
-              style={{ color: '#888888', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+              onClick={() => setActiveContentType('')}
+              className="px-3 py-1 rounded text-xs transition-all duration-150"
+              style={{ background: 'transparent', color: '#888888', border: '1px solid var(--border)' }}
             >
               초기화
             </button>
-          </>
-        ) : (
-          <div className="flex items-center gap-2 w-full">
-            <Link2 size={13} style={{ color: '#888888', flexShrink: 0 }} />
-            <input
-              type="text"
-              value={codeInput}
-              onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-              onKeyDown={e => { if (e.key === 'Enter') applyCollectionCode(codeInput) }}
-              placeholder="보유 현황 URL 또는 코드 붙여넣기..."
-              className="flex-1 px-3 py-1.5 rounded text-xs transition-all"
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: `1px solid ${codeError ? 'rgba(200,80,80,0.5)' : 'var(--border)'}`,
-                color: '#ccc',
-                outline: 'none',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.6875rem',
-                maxWidth: '25rem',
-              }}
-            />
+          )}
+        </div>
+
+        {/* 접이식 필터 섹션들 */}
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          {/* 태그 필터 */}
+          {allTags.length > 0 && (
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <button
+                onClick={() => setShowTagFilter(v => !v)}
+                className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
+                style={{ color: activeTags.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+              >
+                <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showTagFilter ? '▾' : '▸'}</span>
+                태그
+                {activeTags.size > 0 && (
+                  <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {activeTags.size}
+                  </span>
+                )}
+              </button>
+              {showTagFilter && (
+                <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+                  {activeTags.size > 0 && (
+                    <button
+                      onClick={() => setActiveTags(new Set())}
+                      className="px-2.5 py-1 rounded-full text-xs"
+                      style={{ color: '#888', border: '1px solid var(--border)' }}
+                    >
+                      초기화
+                    </button>
+                  )}
+                  {allTags.map(tag => {
+                    const isActive = activeTags.has(tag)
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className="px-3 py-1 rounded-full text-xs transition-all duration-150"
+                        style={{
+                          background: isActive ? 'rgba(200,144,10,0.2)' : 'transparent',
+                          color: isActive ? 'var(--gold)' : '#555566',
+                          border: `1px solid ${isActive ? 'var(--gold-dim)' : 'var(--border)'}`,
+                        }}
+                      >
+                        #{tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 키워드 필터 */}
+          {availableKeywords.length > 0 && (
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <button
+                onClick={() => setShowKeywordFilter(v => !v)}
+                className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
+                style={{ color: activeKeywords.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+              >
+                <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showKeywordFilter ? '▾' : '▸'}</span>
+                키워드
+                {activeKeywords.size > 0 && (
+                  <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {activeKeywords.size}
+                  </span>
+                )}
+                <div className="flex-1" />
+                {activeKeywords.size >= 2 && (
+                  <span
+                    onClick={e => { e.stopPropagation(); setKeywordMode(m => m === 'or' ? 'and' : 'or') }}
+                    className="px-2 py-0.5 rounded transition-all"
+                    style={{
+                      background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
+                      color: keywordMode === 'and' ? '#c8a450' : '#9a9aaa',
+                      border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.12)'}`,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.5625rem',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {keywordMode === 'and' ? 'AND' : 'OR'}
+                  </span>
+                )}
+              </button>
+              {showKeywordFilter && (
+                <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+                  {activeKeywords.size > 0 && (
+                    <button
+                      onClick={() => setActiveKeywords(new Set())}
+                      className="px-2.5 py-1 rounded text-xs"
+                      style={{ color: '#888', border: '1px solid var(--border)' }}
+                    >
+                      초기화
+                    </button>
+                  )}
+                  {availableKeywords.map(kw => {
+                    const isActive = activeKeywords.has(kw)
+                    const iconUrl = getIconUrl(kw)
+                    return (
+                      <button
+                        key={kw}
+                        onClick={() => toggleKeyword(kw)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-all duration-150"
+                        style={{
+                          background: isActive ? 'rgba(136,88,40,0.25)' : 'transparent',
+                          color: isActive ? '#c8a450' : '#555566',
+                          border: `1px solid ${isActive ? 'rgba(136,88,40,0.5)' : 'var(--border)'}`,
+                          fontFamily: 'var(--font-heading)',
+                          fontSize: '0.6875rem',
+                        }}
+                      >
+                        {iconUrl && (
+                          <Image src={iconUrl} alt="" width={13} height={13} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.5 }} />
+                        )}
+                        {kw}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 컬렉션 필터 */}
+          <div>
             <button
-              onClick={() => applyCollectionCode(codeInput)}
-              className="px-3 py-1.5 rounded text-xs transition-all duration-150"
-              style={{
-                background: 'rgba(200,144,10,0.12)',
-                color: 'var(--gold)',
-                border: '1px solid rgba(200,144,10,0.3)',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.6875rem',
-                cursor: 'pointer',
-                flexShrink: 0,
-              }}
+              onClick={() => setShowCollectionFilter(v => !v)}
+              className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
+              style={{ color: (filterOwnedIdentity || filterOwnedEgo) ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
             >
-              적용
+              <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showCollectionFilter ? '▾' : '▸'}</span>
+              보유 필터
+              {(filterOwnedIdentity || filterOwnedEgo) && (
+                <span style={{ background: 'rgba(80,160,80,0.2)', color: '#80c880', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                  {(filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)}
+                </span>
+              )}
             </button>
-            {codeError && (
-              <span className="text-xs" style={{ color: '#c85050', fontFamily: 'var(--font-mono)' }}>
-                잘못된 코드
-              </span>
+            {showCollectionFilter && (
+              <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+                {collectionLoading ? (
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                    컬렉션 로딩 중...
+                  </span>
+                ) : hasCollection ? (
+                  <>
+                    <button
+                      onClick={() => setFilterOwnedIdentity(prev => !prev)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
+                      style={{
+                        background: filterOwnedIdentity ? 'rgba(80,160,80,0.15)' : 'transparent',
+                        color: filterOwnedIdentity ? '#80c880' : '#555566',
+                        border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.6875rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <User size={12} />
+                      보유 인격 덱
+                    </button>
+                    <button
+                      onClick={() => setFilterOwnedEgo(prev => !prev)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
+                      style={{
+                        background: filterOwnedEgo ? 'rgba(80,160,80,0.15)' : 'transparent',
+                        color: filterOwnedEgo ? '#80c880' : '#555566',
+                        border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.6875rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <PackageOpen size={12} />
+                      보유 에고 덱
+                    </button>
+                    <button
+                      onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
+                      className="px-2 py-1.5 rounded text-xs transition-all duration-150"
+                      style={{ color: '#888888', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+                    >
+                      초기화
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 w-full">
+                    <Link2 size={13} style={{ color: '#888888', flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      value={codeInput}
+                      onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+                      onKeyDown={e => { if (e.key === 'Enter') applyCollectionCode(codeInput) }}
+                      placeholder="보유 현황 URL 또는 코드 붙여넣기..."
+                      className="flex-1 px-3 py-1.5 rounded text-xs transition-all"
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        border: `1px solid ${codeError ? 'rgba(200,80,80,0.5)' : 'var(--border)'}`,
+                        color: '#ccc',
+                        outline: 'none',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.6875rem',
+                        maxWidth: '25rem',
+                      }}
+                    />
+                    <button
+                      onClick={() => applyCollectionCode(codeInput)}
+                      className="px-3 py-1.5 rounded text-xs transition-all duration-150"
+                      style={{
+                        background: 'rgba(200,144,10,0.12)',
+                        color: 'var(--gold)',
+                        border: '1px solid rgba(200,144,10,0.3)',
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.6875rem',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      적용
+                    </button>
+                    {codeError && (
+                      <span className="text-xs" style={{ color: '#c85050', fontFamily: 'var(--font-mono)' }}>
+                        잘못된 코드
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* 하단 장식 디바이더 */}
