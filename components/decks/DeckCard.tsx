@@ -9,7 +9,8 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 
 // 덱 테마를 정의하는 핵심 상태이상 키워드만 표시
-const THEME_KEYWORDS = new Set(['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡'])
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 type IdentityPreview = {
   slot_order: number
@@ -120,8 +121,9 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
     const freq: Record<string, number> = {}
     for (const slot of formed) {
       for (const kw of slot!.identities!.keywords ?? []) {
-        if (THEME_KEYWORDS.has(kw)) {
-          freq[kw] = (freq[kw] ?? 0) + 1
+        const normalized = normalizeThemeKeyword(kw)
+        if (THEME_KW_SET.has(normalized)) {
+          freq[normalized] = (freq[normalized] ?? 0) + 1
         }
       }
     }

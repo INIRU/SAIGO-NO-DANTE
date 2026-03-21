@@ -14,6 +14,7 @@ import {
   type SinType,
 } from '@/lib/data/sinners'
 import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
+import SkillDescription from '@/components/skill/SkillDescription'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
@@ -85,7 +86,8 @@ export type EgoEntry = {
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
-const THEME_KEYWORDS = new Set(['침잠', '출혈', '파열', '화상', '진동', '충전', '호흡'])
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const RARITY_COLORS: Record<string, string> = {
   '1성': '#667788',
@@ -167,7 +169,7 @@ export default function DeckIdentityCard({
   const rarityColor = RARITY_COLORS[id_.rarity] ?? '#667788'
   const imgUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot.gacksung)
   const normalUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
-  const themeKws = (id_.keywords ?? []).filter(kw => THEME_KEYWORDS.has(kw))
+  const themeKws = [...new Set((id_.keywords ?? []).map(normalizeThemeKeyword).filter(kw => THEME_KW_SET.has(kw)))]
 
   // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
   const rawSkills = id_.skills ?? []
@@ -403,18 +405,8 @@ export default function DeckIdentityCard({
 
                 {/* 스킬 설명 */}
                 {skill.description && (
-                  <div style={{ fontSize: '0.6875rem', lineHeight: 1.8, marginTop: 8, borderTop: `1px solid ${sc}18`, paddingTop: 8 }}>
-                    {skill.description.split('\n').map((line, li) => {
-                      const isCoinStart = /^\[코인\s?\d/.test(line)
-                      return (
-                        <div key={li}>
-                          {li > 0 && isCoinStart && (
-                            <div style={{ borderTop: `1px solid ${sc}20`, margin: '5px 0' }} />
-                          )}
-                          <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, sc)}</span>
-                        </div>
-                      )
-                    })}
+                  <div style={{ marginTop: 8, borderTop: `1px solid ${sc}18`, paddingTop: 8 }}>
+                    <SkillDescription description={skill.description} accentColor={sc} variant="compact" />
                   </div>
                 )}
               </div>

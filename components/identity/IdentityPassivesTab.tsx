@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import SkillDescription from '@/components/skill/SkillDescription'
 
 interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
@@ -11,7 +12,6 @@ interface IdentityPassivesTabProps {
 }
 
 export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors }: IdentityPassivesTabProps) {
-  const formatSkillDesc = useFormatSkillDesc()
 
   if (filteredPassives.length === 0) {
     return (
@@ -84,9 +84,13 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
 
         {/* 설명 */}
         {p.description && (
-          <div style={{ color: '#aaa', fontSize: '0.8125rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-            {formatSkillDesc(p.description, primaryColor, skillNameColors)}
-          </div>
+          <SkillDescription
+            description={p.description}
+            accentColor={primaryColor}
+            variant="detail"
+            skillNameColors={skillNameColors}
+            showCoinBadges={false}
+          />
         )}
       </div>
     )

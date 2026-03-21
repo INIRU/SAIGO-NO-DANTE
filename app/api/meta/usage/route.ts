@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
@@ -102,9 +103,14 @@ export async function GET() {
     if (!deckIdentities.has(row.deck_id)) deckIdentities.set(row.deck_id, [])
     deckIdentities.get(row.deck_id)!.push(row.identity_id)
 
+    // 키워드 수집: 특수 충전 → 충전 정규화 + 인격당 중복 제거
     if (!deckKeywords.has(row.deck_id)) deckKeywords.set(row.deck_id, new Set())
+    const normalizedKws = new Set<string>()
     for (const kw of keywords) {
-      deckKeywords.get(row.deck_id)!.add(kw)
+      normalizedKws.add(normalizeThemeKeyword(kw))
+    }
+    for (const nkw of normalizedKws) {
+      deckKeywords.get(row.deck_id)!.add(nkw)
     }
   }
 

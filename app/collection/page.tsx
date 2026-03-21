@@ -6,6 +6,7 @@ import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
@@ -299,7 +300,10 @@ function CollectionViewer() {
     if (!keywordFilter) return identities
     const filterSin = kwSinMap[keywordFilter]
     return identities.filter(i =>
-      i.keywords?.some(kw => kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin))
+      i.keywords?.some(kw => {
+        const nkw = normalizeThemeKeyword(kw)
+        return nkw === keywordFilter || kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin)
+      })
     )
   }
 

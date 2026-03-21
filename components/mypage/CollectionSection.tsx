@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef, forwardRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
+import DownloadModal from './DownloadModal'
+import { normalizeThemeKeyword, THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
 import type { SinnerInfo, IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 
@@ -99,6 +101,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [showUnowned, setShowUnowned] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [showDownloadModal, setShowDownloadModal] = useState(false)
+  const [downloadOptions, setDownloadOptions] = useState<{ include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }>({ include: new Set(['identity', 'ego']), groupBy: 'sinner' })
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const downloadRef = useRef<HTMLDivElement>(null)
 
@@ -220,16 +224,28 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     const timer = setTimeout(async () => {
       const code = await encodeCollection(owned, data.sinners, data.identities, data.egos)
       localStorage.setItem(LOCAL_STORAGE_KEY, code)
-      // 로그인 상태면 DB에도 동기화 (fire-and-forget)
-      fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ collection_code: code }),
-      }).catch(() => {})
+      // 로그인 상태면 DB에도 동기화 (await로 결과 확인)
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ collection_code: code }),
+        })
+        if (res.ok) {
+          setAutoSaved(true)
+          setTimeout(() => setAutoSaved(false), 2000)
+        } else {
+          // DB 저장 실패 시에도 로컬은 저장됨
+          setAutoSaved(true)
+          setTimeout(() => setAutoSaved(false), 2000)
+        }
+      } catch {
+        // 비로그인 또는 네트워크 오류 — 로컬 저장만
+        setAutoSaved(true)
+        setTimeout(() => setAutoSaved(false), 2000)
+      }
       setDirty(false)
-      setAutoSaved(true)
-      setTimeout(() => setAutoSaved(false), 2000)
     }, 500)
     return () => clearTimeout(timer)
   }, [persistMode, dirty, data, owned])
@@ -312,7 +328,10 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     if (!keywordFilter) return identities
     const filterSin = kwSinMap[keywordFilter]
     return identities.filter(i =>
-      i.keywords?.some(kw => kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin))
+      i.keywords?.some(kw => {
+        const nkw = normalizeThemeKeyword(kw)
+        return nkw === keywordFilter || kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin)
+      })
     )
   }, [keywordFilter, kwSinMap])
 
@@ -573,7 +592,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               {copied ? '복사 완료!' : '공유 링크 복사'}
             </button>
             <button
-              onClick={generateImage}
+              onClick={() => setShowDownloadModal(true)}
               disabled={generating}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
               style={{
@@ -586,7 +605,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               }}
             >
               <Download size={12} />
-              {generating ? '생성 중...' : '전체 스크롤 다운로드'}
+              {generating ? '생성 중...' : '이미지 다운로드'}
             </button>
           </div>
 
@@ -770,184 +789,177 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
         </div>
       </div>
+      {/* 다운로드 옵션 모달 */}
+      <DownloadModal
+        open={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        generating={generating}
+        onConfirm={(opts) => {
+          setDownloadOptions(opts)
+          setShowDownloadModal(false)
+          // state 업데이트 후 렌더링 대기
+          setTimeout(() => generateImage(), 50)
+        }}
+      />
+
       {/* 전체 스크롤 다운로드용 히든 컨테이너 */}
-      {generating && (
-        <div
-          ref={downloadRef}
-          style={{
-            position: 'fixed',
-            left: '-9999px',
-            top: 0,
-            width: '1200px',
-            background: '#0d0b08',
-            padding: '40px',
-            zIndex: -1,
-          }}
-        >
-          {/* 헤더 */}
-          <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
-            <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>
-              SAIGO NO DANTE
-            </p>
-            <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
-              보유 현황
-            </p>
-            <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.8125rem' }}>
-              인격 {stats.ownedIdentities}/{stats.totalIdentities}
-              <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>
-              EGO {stats.ownedEgos}/{stats.totalEgos}
-            </p>
-          </div>
-
-          {/* 모든 수감자 */}
-          {data.sinners.map(sinner => {
-            const allIds = data.identities[sinner.id] ?? []
-            const allEgos = data.egos[sinner.id] ?? []
-            const ids = allIds.filter(i => owned.has(i.id))
-            const egoList = allEgos.filter(e => owned.has(e.id))
-            const ownedCount = ids.length + egoList.length
-            const totalCount = allIds.length + allEgos.length
-
-            if (ownedCount === 0) return null
-
-            return (
-              <div key={sinner.id} style={{ marginBottom: '28px' }}>
-                {/* 수감자 헤더 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={sinnerLogoUrl(sinner.id)}
-                    alt={sinner.name_kr}
-                    width={28}
-                    height={28}
-                    crossOrigin="anonymous"
-                    style={{ borderRadius: '50%' }}
-                  />
-                  <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>
-                    {sinner.name_kr}
-                  </span>
-                  <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>
-                    {ownedCount}/{totalCount}
-                  </span>
-                </div>
-
-                {/* 인격 그리드 */}
-                {ids.length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '6px' }}>인격</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
-                      {ids.map(identity => {
-                        const url = identityProfileUrl(identity)
-                        return (
-                          <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div
-                              style={{
-                                position: 'relative',
-                                width: '100%',
-                                aspectRatio: '3/4',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                border: '2px solid #8a6010',
-                                background: '#0a0806',
-                              }}
-                            >
-                              {url && (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={url}
-                                  alt={identity.name_kr}
-                                  crossOrigin="anonymous"
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'center top',
-                                    display: 'block',
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <p style={{
-                              fontSize: '0.75rem',
-                              color: '#c8a450',
-                              textAlign: 'center',
-                              lineHeight: 1.3,
-                              marginTop: '4px',
-                              wordBreak: 'keep-all',
-                            }}>
-                              {identity.name_kr}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* EGO 그리드 */}
-                {egoList.length > 0 && (
-                  <div>
-                    <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '6px' }}>E.G.O</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
-                      {egoList.map(ego => {
-                        const sinType = normalizeSin(ego.sin_affinity)
-                        const egoColor = sinType ? SIN_COLORS[sinType] : '#8a6010'
-                        return (
-                          <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div
-                              style={{
-                                position: 'relative',
-                                width: '100%',
-                                aspectRatio: '1',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                border: `2px solid ${egoColor}`,
-                                background: '#0a0806',
-                              }}
-                            >
-                              {ego.image_url && (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={ego.image_url}
-                                  alt={ego.name_kr ?? ''}
-                                  crossOrigin="anonymous"
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    display: 'block',
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <p style={{
-                              fontSize: '0.75rem',
-                              color: '#c8a450',
-                              textAlign: 'center',
-                              lineHeight: 1.3,
-                              marginTop: '3px',
-                              wordBreak: 'keep-all',
-                            }}>
-                              {ego.name_kr}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* 푸터 */}
-          <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
-            <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
-              saigono-dante.vercel.app
-            </p>
-          </div>
-        </div>
-      )}
+      {generating && data && <DownloadContainer
+        ref={downloadRef}
+        data={data}
+        owned={owned}
+        stats={stats}
+        downloadOptions={downloadOptions}
+        sinnerLogoUrl={sinnerLogoUrl}
+        identityProfileUrl={identityProfileUrl}
+      />}
     </section>
   )
 }
+
+// ── 다운로드 이미지용 히든 컨테이너 ──────────────────────────────────
+const DownloadContainer = forwardRef<HTMLDivElement, {
+  data: CollectionData
+  owned: Set<string>
+  stats: { ownedIdentities: number; totalIdentities: number; ownedEgos: number; totalEgos: number }
+  downloadOptions: { include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }
+  sinnerLogoUrl: (sid: string) => string
+  identityProfileUrl: (i: IdentityInfo) => string
+}>(function DownloadContainer({ data, owned, stats, downloadOptions, sinnerLogoUrl, identityProfileUrl }, ref) {
+  const showIdentity = downloadOptions.include.has('identity')
+  const showEgo = downloadOptions.include.has('ego')
+  const groupBy = downloadOptions.groupBy
+
+  // 키워드별 그룹핑
+  const keywordGroups: Record<string, { identities: IdentityInfo[]; egos: EGOInfo[] }> = {}
+  if (groupBy === 'keyword') {
+    const sinKwMap: Record<string, string> = { wrath: '출혈', lust: '화상', gloom: '침잠', gluttony: '파열', pride: '호흡', envy: '충전', sloth: '진동' }
+    for (const sinner of data.sinners) {
+      const ids = (data.identities[sinner.id] ?? []).filter(i => owned.has(i.id))
+      const egoList = (data.egos[sinner.id] ?? []).filter(e => owned.has(e.id))
+      for (const id of ids) {
+        const kws = new Set((id.keywords ?? []).map(normalizeThemeKeyword))
+        let matched = false
+        for (const t of THEME_KEYWORDS) {
+          if (kws.has(t)) {
+            if (!keywordGroups[t]) keywordGroups[t] = { identities: [], egos: [] }
+            keywordGroups[t].identities.push(id)
+            matched = true
+          }
+        }
+        if (!matched) {
+          if (!keywordGroups['기타']) keywordGroups['기타'] = { identities: [], egos: [] }
+          keywordGroups['기타'].identities.push(id)
+        }
+      }
+      for (const ego of egoList) {
+        const sinType = normalizeSin(ego.sin_affinity)
+        const group = (sinType && sinKwMap[sinType]) || '기타'
+        if (!keywordGroups[group]) keywordGroups[group] = { identities: [], egos: [] }
+        keywordGroups[group].egos.push(ego)
+      }
+    }
+  }
+
+  const renderIdentityGrid = (ids: IdentityInfo[]) => (
+    <div style={{ marginBottom: '12px' }}>
+      <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '10px' }}>인격</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
+        {ids.map(identity => {
+          const url = identityProfileUrl(identity)
+          return (
+            <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', border: '2px solid #8a6010', background: '#0a0806' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {url && <img src={url} alt={identity.name_kr} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{identity.name_kr}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  const renderEgoGrid = (egoList: EGOInfo[]) => (
+    <div>
+      <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '10px', marginTop: '4px' }}>E.G.O</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
+        {egoList.map(ego => {
+          const sinType = normalizeSin(ego.sin_affinity)
+          const egoColor = sinType ? SIN_COLORS[sinType] : '#8a6010'
+          return (
+            <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: `2px solid ${egoColor}`, background: '#0a0806' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {ego.image_url && <img src={ego.image_url} alt={ego.name_kr ?? ''} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{ego.name_kr}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  return (
+    <div ref={ref} style={{ position: 'fixed', left: '-9999px', top: 0, width: '1200px', background: '#0d0b08', padding: '40px', zIndex: -1 }}>
+      {/* 헤더 */}
+      <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
+        <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
+        <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
+          보유 현황{showIdentity && !showEgo ? ' — 인격' : !showIdentity && showEgo ? ' — E.G.O' : ''}
+        </p>
+        <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.8125rem' }}>
+          {showIdentity && <>인격 {stats.ownedIdentities}/{stats.totalIdentities}</>}
+          {showIdentity && showEgo && <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>}
+          {showEgo && <>EGO {stats.ownedEgos}/{stats.totalEgos}</>}
+        </p>
+      </div>
+
+      {groupBy === 'sinner' ? (
+        data.sinners.map(sinner => {
+          const allIds = data.identities[sinner.id] ?? []
+          const allEgos = data.egos[sinner.id] ?? []
+          const ids = showIdentity ? allIds.filter(i => owned.has(i.id)) : []
+          const egoList = showEgo ? allEgos.filter(e => owned.has(e.id)) : []
+          if (ids.length === 0 && egoList.length === 0) return null
+          return (
+            <div key={sinner.id} style={{ marginBottom: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sinnerLogoUrl(sinner.id)} alt={sinner.name_kr} width={28} height={28} crossOrigin="anonymous" style={{ borderRadius: '50%' }} />
+                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{sinner.name_kr}</span>
+                <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
+              </div>
+              {ids.length > 0 && renderIdentityGrid(ids)}
+              {egoList.length > 0 && renderEgoGrid(egoList)}
+            </div>
+          )
+        })
+      ) : (
+        [...THEME_KEYWORDS, '기타' as const].map(themeKw => {
+          const group = keywordGroups[themeKw]
+          if (!group) return null
+          const ids = showIdentity ? group.identities : []
+          const egoList = showEgo ? group.egos : []
+          if (ids.length === 0 && egoList.length === 0) return null
+          return (
+            <div key={themeKw} style={{ marginBottom: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
+                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{themeKw}</span>
+                <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
+              </div>
+              {ids.length > 0 && renderIdentityGrid(ids)}
+              {egoList.length > 0 && renderEgoGrid(egoList)}
+            </div>
+          )
+        })
+      )}
+
+      {/* 푸터 */}
+      <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
+        <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>saigo-no-dante.com</p>
+      </div>
+    </div>
+  )
+})
