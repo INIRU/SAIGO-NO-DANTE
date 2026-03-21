@@ -67,7 +67,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
   if (!url || failed) {
     const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
     return (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
+      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
         <span className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#c8900a80' }}>{initial}</span>
       </div>
     )
@@ -88,7 +88,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
         }}
       />
       {slot.gacksung && (
-        <div style={{ position: 'absolute', top: 2, right: 2, width: 4, height: 4, borderRadius: '50%', background: 'var(--gold)', zIndex: 1 }} />
+        <div className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full z-[1]" style={{ background: 'var(--gold)' }} />
       )}
     </>
   )
@@ -139,20 +139,11 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
   return (
     <div
-      className="group relative flex flex-col transition-all duration-200"
+      className="group relative flex flex-col transition-all duration-200 overflow-hidden hover:border-[var(--border-hover)] hover:bg-[var(--bg-card)]"
       style={{
-        background: '#120e09',
+        background: 'var(--bg-panel)',
         border: '1px solid var(--border)',
-        borderRadius: '6px',
-        overflow: 'hidden',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold-dim)'
-        ;(e.currentTarget as HTMLElement).style.background = '#1a1510'
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
-        ;(e.currentTarget as HTMLElement).style.background = '#120e09'
+        borderRadius: 'var(--radius-md)',
       }}
     >
       {/* 상단 골드 라인 */}
@@ -162,7 +153,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
       />
 
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-1">
-        {/* 인격 포트레이트 그리드 (2×6) */}
+        {/* 인격 포트레이트 그리드 (2x6) */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
           {slots.map((slot, i) => (
             <div
@@ -173,7 +164,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
               {slot ? (
                 <PortraitSlot slot={slot} />
               ) : (
-                <div style={{ width: '100%', height: '100%', background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
+                <div className="w-full h-full" style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
               )}
             </div>
           ))}
@@ -183,14 +174,14 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
         {/* 제목 */}
         <h3
           className="font-serif font-bold text-sm mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
-          style={{ color: '#e8e4d8' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           {deck.title}
         </h3>
 
         {/* 설명 */}
         {deck.description ? (
-          <div className="text-xs mb-2 flex-1" style={{ color: '#6a6480', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
+          <div className="text-xs mb-2 flex-1" style={{ color: 'var(--text-tertiary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
             <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
           </div>
         ) : (
@@ -202,13 +193,14 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
           <div className="flex flex-wrap gap-1 mb-2">
             {showContentType && (
               <span
-                className="flex items-center px-2 py-0.5 rounded"
+                className="flex items-center px-2 py-0.5"
                 style={{
                   background: CONTENT_TYPE_COLORS[deck.content_type!].bg,
                   color: CONTENT_TYPE_COLORS[deck.content_type!].color,
                   border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
+                  borderRadius: 'var(--radius-sm)',
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: '0.03em',
                 }}
               >
@@ -220,19 +212,19 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
               return (
                 <span
                   key={kw}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded"
+                  className="flex items-center gap-1 px-2 py-0.5"
                   style={{
                     background: 'rgba(136,88,40,0.15)',
                     color: '#c8a450',
                     border: '1px solid rgba(136,88,40,0.3)',
+                    borderRadius: 'var(--radius-sm)',
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--text-xs)',
                     letterSpacing: '0.03em',
                   }}
                 >
                   {iconUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={iconUrl} alt="" width={11} height={11} style={{ flexShrink: 0 }} />
+                    <Image src={iconUrl} alt="" width={11} height={11} style={{ flexShrink: 0 }} />
                   )}
                   {kw}
                 </span>
@@ -251,11 +243,12 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
                   e.preventDefault()
                   onTagClick?.(tag)
                 }}
-                className="text-xs px-2 py-0.5 rounded-full transition-all duration-150 hover:opacity-80"
+                className="text-xs px-2 py-0.5 transition-all duration-150 hover:opacity-80"
                 style={{
                   background: 'rgba(200,144,10,0.08)',
                   color: 'var(--gold-dim)',
                   border: '1px solid rgba(200,144,10,0.18)',
+                  borderRadius: 'var(--radius-full)',
                   fontFamily: 'var(--font-body)',
                   cursor: onTagClick ? 'pointer' : 'default',
                 }}
@@ -272,27 +265,27 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
           style={{ borderTop: '1px solid rgba(58,42,21,0.5)' }}
         >
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               <Heart size={10} fill="currentColor" stroke="none" />
               {deck.vote_count}
             </span>
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               <Eye size={10} />
               {deck.view_count}
             </span>
             {(deck.comment_count ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#8a80a0' }}>
+              <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                 <MessageCircle size={10} />
                 {deck.comment_count}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs" style={{ color: '#8a80a0' }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
             {deck.username && (
               <>
-                <span style={{ color: '#6a6080' }}>{deck.username}</span>
-                <span style={{ color: '#8a8095', fontFamily: 'sans-serif' }}>·</span>
+                <span style={{ color: 'var(--text-muted)' }}>{deck.username}</span>
+                <span style={{ color: 'var(--text-muted)' }}>·</span>
               </>
             )}
             <span>{date}</span>

@@ -65,9 +65,9 @@ export default function ConfirmModal({
     >
       <div
         style={{
-          background: '#1a1510', border: '1px solid var(--border)',
-          borderRadius: '0.5rem', padding: '1.5rem', maxWidth: '25rem', width: '90%',
-          boxShadow: '0 1rem 3rem rgba(0,0,0,0.5)',
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)', padding: '1.5rem', maxWidth: '25rem', width: '90%',
+          boxShadow: 'var(--shadow-lg)',
         }}
       >
         {title && (
@@ -78,7 +78,7 @@ export default function ConfirmModal({
             </h3>
           </div>
         )}
-        <p style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
           {message}
         </p>
         <div className="flex justify-end gap-2">
@@ -87,7 +87,7 @@ export default function ConfirmModal({
             onClick={onCancel}
             style={{
               padding: '0.4375rem 1rem', border: '1px solid var(--border)', borderRadius: '0.25rem',
-              color: '#888888', fontSize: '0.8125rem', cursor: 'pointer',
+              color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)', cursor: 'pointer',
               background: 'transparent',
             }}
             className="transition-colors hover:bg-white/5"
@@ -97,7 +97,7 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             style={{
-              padding: '0.4375rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', cursor: 'pointer',
+              padding: '0.4375rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-sm)', cursor: 'pointer',
               background: variant === 'danger' ? 'rgba(170,68,68,0.2)' : 'rgba(200,144,10,0.2)',
               border: `1px solid ${variant === 'danger' ? '#aa4444' : 'var(--gold-dim)'}`,
               color: variant === 'danger' ? '#ee6666' : 'var(--gold)',

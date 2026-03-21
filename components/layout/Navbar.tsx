@@ -205,14 +205,14 @@ export default function Navbar() {
                   </button>
 
                   {openGroup === group.label && (
-                    <div role="menu" aria-label={`${group.label} 메뉴`} style={{
+                    <div role="menu" aria-label={`${group.label} 메뉴`} className="animate-dropdown-in" style={{
                       position: 'absolute',
                       top: 'calc(100% + 12px)',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      background: 'linear-gradient(to bottom, #1a1510, #15120d)',
+                      background: 'linear-gradient(to bottom, var(--bg-card), #15120d)',
                       border: '1px solid rgba(200,144,10,0.12)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-md)',
                       minWidth: '130px',
                       boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 1px rgba(200,144,10,0.15)',
                       overflow: 'hidden',
@@ -232,24 +232,24 @@ export default function Navbar() {
                             role="menuitem"
                             className="block transition-all duration-150"
                             style={{
-                              padding: '10px 20px',
+                              padding: '0.625rem 1.25rem',
                               fontFamily: 'var(--font-heading)',
-                              fontSize: '13px',
-                              color: active ? 'var(--gold)' : '#8a7855',
+                              fontSize: 'var(--text-sm)',
+                              color: active ? 'var(--gold)' : 'var(--text-tertiary)',
                               whiteSpace: 'nowrap',
                               background: active ? 'rgba(200,144,10,0.06)' : 'transparent',
                               borderLeft: active ? '2px solid var(--gold)' : '2px solid transparent',
                             }}
                             onMouseEnter={e => {
                               if (!active) {
-                                (e.currentTarget as HTMLElement).style.color = '#c8a050'
-                                ;(e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.04)'
+                                e.currentTarget.style.color = '#c8a050'
+                                e.currentTarget.style.background = 'rgba(200,144,10,0.04)'
                               }
                             }}
                             onMouseLeave={e => {
                               if (!active) {
-                                (e.currentTarget as HTMLElement).style.color = '#8a7855'
-                                ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                                e.currentTarget.style.color = 'var(--text-tertiary)'
+                                e.currentTarget.style.background = 'transparent'
                               }
                             }}
                             onClick={() => setOpenGroup(null)}
@@ -271,17 +271,17 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
               style={{
                 cursor: 'pointer',
-                color: '#a08a60',
+                color: 'var(--text-tertiary)',
                 border: '1px solid rgba(200,144,10,0.12)',
                 background: 'rgba(200,144,10,0.04)',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.08)'
-                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.2)'
+                e.currentTarget.style.background = 'rgba(200,144,10,0.08)'
+                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.2)'
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(200,144,10,0.04)'
-                ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,144,10,0.12)'
+                e.currentTarget.style.background = 'rgba(200,144,10,0.04)'
+                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.12)'
               }}
               title="검색 (Ctrl+K)"
             >
