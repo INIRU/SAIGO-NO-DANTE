@@ -193,9 +193,10 @@ async function main() {
     themes.push({
       id: item.id,
       name,
-      dungeon_id: null, // theme-floor 파일에서 dungeonIdx 추출 가능하면 추후
+      dungeon_id: null,
       unlock_code: item.unlockCondition?.unlockCode || null,
       ego_gift_ids: egoGiftIds,
+      specific_ego_gift_ids: item.specificEgoGiftPool || [],
     })
   }
   console.log(`   테마팩 ${themes.length}종`)

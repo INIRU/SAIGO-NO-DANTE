@@ -19,7 +19,7 @@ export default async function MirrorDungeonPage() {
   const [{ data: gifts }, { data: recipes }, { data: themes }] = await Promise.all([
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids').order('id'),
+    supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids').order('id'),
   ])
 
   return (

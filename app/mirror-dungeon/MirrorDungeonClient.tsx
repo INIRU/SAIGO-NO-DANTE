@@ -50,6 +50,7 @@ interface EgoGiftTheme {
   name: string
   dungeon_id: number | null
   ego_gift_ids: number[]
+  specific_ego_gift_ids: number[]
 }
 
 /* ── 키워드 설정 ── */
@@ -393,14 +394,10 @@ export default function MirrorDungeonClient({
         if (!theme) return null
         const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
 
-        // 전용 기프트: 이 테마에서만 드랍 (다른 테마에는 없음)
-        const exclusiveIds = new Set(
-          theme.ego_gift_ids.filter(gid =>
-            !themes.some(t => t.id !== theme.id && t.ego_gift_ids.includes(gid))
-          )
-        )
-        const exclusiveGifts = themeGifts.filter(g => g.game_id && exclusiveIds.has(g.game_id))
-        const sharedGifts = themeGifts.filter(g => !g.game_id || !exclusiveIds.has(g.game_id))
+        // 전용 기프트: specificEgoGiftPool에 있는 것
+        const specificIds = new Set(theme.specific_ego_gift_ids)
+        const exclusiveGifts = themeGifts.filter(g => g.game_id && specificIds.has(g.game_id))
+        const sharedGifts = themeGifts.filter(g => !g.game_id || !specificIds.has(g.game_id))
 
         // 키워드별 그룹 (공유 기프트만)
         const byKeyword: Record<string, EgoGift[]> = {}

@@ -151,4 +151,5 @@ export type EgoGiftTheme = {
   name: string
   dungeon_id: number | null
   ego_gift_ids: number[]
+  specific_ego_gift_ids: number[]
 }
