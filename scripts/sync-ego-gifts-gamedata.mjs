@@ -60,15 +60,38 @@ function isBuyDisabled(tags) {
   return (tags || []).includes('NO_SALE')
 }
 
+// BattleKeywords 로컬라이즈에서 전체 매핑 로드 (lazy)
+let _battleKeywordMap = null
+function getBattleKeywordMap() {
+  if (_battleKeywordMap) return _battleKeywordMap
+  _battleKeywordMap = { ...KEYWORD_EN_TO_KR }
+  try {
+    const krDir = join(DATA_DIR, 'KR')
+    for (const fn of readdirSync(krDir)) {
+      if (fn.startsWith('KR_BattleKeywords') && fn.endsWith('.json')) {
+        const data = loadJson(join(krDir, fn))
+        for (const item of data.dataList || []) {
+          if (item.id && item.name && !_battleKeywordMap[item.id]) {
+            _battleKeywordMap[item.id] = item.name
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  if (VERBOSE) console.log(`  배틀 키워드 매핑: ${Object.keys(_battleKeywordMap).length}종`)
+  return _battleKeywordMap
+}
+
 function cleanDesc(desc) {
   if (!desc) return null
   let cleaned = desc
     .replace(/<style="[^"]*">/g, '')
     .replace(/<\/style>/g, '')
-  // 영문 키워드 → 한글 치환
-  for (const [en, kr] of Object.entries(KEYWORD_EN_TO_KR)) {
-    cleaned = cleaned.replaceAll(`[${en}]`, `[${kr}]`)
-  }
+  // 영문 키워드 → 한글 치환 (BattleKeywords 전체 매핑)
+  const map = getBattleKeywordMap()
+  cleaned = cleaned.replace(/\[([A-Za-z_]+)\]/g, (match, key) => {
+    return map[key] ? `[${map[key]}]` : match
+  })
   return cleaned.trim()
 }
 
