@@ -25,8 +25,8 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
       style={{
         aspectRatio: '2/3',
         background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-        border: '1.5px dashed #2a2015',
-        borderRadius: '4px',
+        border: '0.09375rem dashed #2a2015',
+        borderRadius: '0.25rem',
         overflow: 'hidden',
       }}
     >
@@ -37,7 +37,7 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
         <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
       </div>
       {children}
-      <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '20px' }}>
+      <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.25rem' }}>
         <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
       </div>
     </div>

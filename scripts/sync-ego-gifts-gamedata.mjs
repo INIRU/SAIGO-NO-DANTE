@@ -128,9 +128,19 @@ async function main() {
     console.warn('⚠ KR_EgoGiftCategory.json 로드 실패, 기본 매핑 사용')
   }
 
-  // 2. 기프트 정의 로드 (모든 mirrordungeon 파일)
+  // 2. 기프트 정의 로드 (mirrordungeon + walpu + story + cultivation 등 모든 ego-gift 파일)
   console.log('📦 기프트 정의 로드...')
-  const giftItems = loadJsonGlob(DATA_DIR, /^ego-gift-mirrordungeon.*\.json$/)
+  const giftItems = loadJsonGlob(DATA_DIR, /^ego-gift-(mirrordungeon|walpu|story-|cultivation).*\.json$/)
+
+  // 히든보스 기프트 ID 수집 (*-hb.json 파일)
+  const hiddenBossIds = new Set()
+  const hbFiles = readdirSync(DATA_DIR).filter(f => f.match(/^ego-gift-.*-hb\.json$/))
+  for (const f of hbFiles) {
+    const data = loadJson(join(DATA_DIR, f))
+    const list = data.list || data.dataList || data
+    if (Array.isArray(list)) list.forEach(g => hiddenBossIds.add(g.id))
+  }
+  if (hiddenBossIds.size > 0) console.log(`   히든보스 기프트: ${hiddenBossIds.size}종 (${hbFiles.join(', ')})`)
 
   const giftMap = new Map()
   for (const item of giftItems) {
@@ -140,7 +150,7 @@ async function main() {
 
   // 3. 로컬라이즈 로드
   console.log('📝 로컬라이즈 로드...')
-  const localizeItems = loadJsonGlob(krDir, /^KR_EGOgift_MirrorDungeon.*\.json$/)
+  const localizeItems = loadJsonGlob(krDir, /^KR_EGOgift_(MirrorDungeon|cultivation|walpu|lcbcheckup).*\.json$/)
   const localizeMap = new Map()
   for (const item of localizeItems) {
     localizeMap.set(item.id, item)
@@ -198,6 +208,39 @@ async function main() {
 
   console.log(`   변환 완료: ${gifts.length}종 (로컬라이즈 누락: ${missingLocalize})`)
 
+  // 4-1. droppool 기반 난이도 설정
+  console.log('\n🎯 난이도 분류...')
+  try {
+    const droppoolFiles = readdirSync(DATA_DIR).filter(f => f.match(/^mirrordungeon-egogift-droppool-\d+\.json$/)).sort()
+    const latestDroppool = droppoolFiles[droppoolFiles.length - 1]
+    if (latestDroppool) {
+      const dpData = loadJson(join(DATA_DIR, latestDroppool))
+      const dpItem = (Array.isArray(dpData) ? dpData : dpData.list || [dpData])[0]
+      const normalExclude = new Set(dpItem.excludeEgoGifts || [])
+      const globalExclude = new Set(dpItem.globalExcludeEgoGifts || [])
+      let normalCount = 0, hardCount = 0, extremeCount = 0
+      for (const gift of gifts) {
+        if (hiddenBossIds.has(gift.game_id)) {
+          gift.difficulty = '익스트림'
+          extremeCount++
+        } else if (normalExclude.has(gift.game_id) || globalExclude.has(gift.game_id)) {
+          gift.difficulty = '하드'
+          hardCount++
+        } else {
+          gift.difficulty = '노말'
+          normalCount++
+        }
+      }
+      console.log(`   ${latestDroppool} 기준: 노말 ${normalCount}, 하드 ${hardCount}, 익스트림 ${extremeCount}`)
+    } else {
+      console.log('   ⚠ droppool 파일 없음, 모두 노말로 설정')
+      for (const gift of gifts) gift.difficulty = '노말'
+    }
+  } catch (e) {
+    console.warn('   ⚠ 난이도 분류 실패:', e.message)
+    for (const gift of gifts) gift.difficulty = '노말'
+  }
+
   // 5. 테마팩 로드
   console.log('\n🃏 테마팩 로드...')
   const themeItems = loadJsonGlob(DATA_DIR, /^mirrordungeon-theme-floor-t\d+\.json$/)
@@ -229,7 +272,7 @@ async function main() {
   const { data: existingGifts } = await supabase
     .schema('limbus')
     .from('ego_gifts')
-    .select('id, name, game_id, keyword, grade, effect_base, effect_plus, effect_plusplus, price, image_url')
+    .select('id, name, game_id, keyword, grade, effect_base, effect_plus, effect_plusplus, price, image_url, difficulty')
 
   const existingByName = new Map()
   const existingByGameId = new Map()
@@ -260,6 +303,7 @@ async function main() {
       if (existing.effect_plusplus !== gift.effect_plusplus) changes.push('effect_plusplus 변경')
       if (existing.price !== gift.price) changes.push(`price: ${existing.price} → ${gift.price}`)
       if (existing.game_id !== gift.game_id) changes.push(`game_id: ${existing.game_id} → ${gift.game_id}`)
+      if (existing.difficulty !== gift.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${gift.difficulty}`)
 
       if (changes.length > 0) {
         updateCount++

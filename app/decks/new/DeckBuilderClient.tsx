@@ -34,8 +34,10 @@ import IdentityCard from '@/components/sinners/IdentityCard'
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { useToast, Toast } from '@/components/ui/Toast'
+import { Users, Sparkles, SlidersHorizontal, ListOrdered, FileText } from 'lucide-react'
 import { IdentityTab, EgoTab, OrderTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
+import EgoGiftModal from '@/components/deck-builder/EgoGiftModal'
 import DeckNoteEditor from '@/components/deck-builder/DeckNoteEditor'
 
 interface EditMode {
@@ -93,7 +95,7 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
 }
 
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode, forkMode }: Props) {
-  const { keywords: kwContext } = useKeywordData()
+  const { keywords: kwContext, getIconUrl: kwGetIconUrl } = useKeywordData()
   const router = useRouter()
   const initData = editMode ?? forkMode
   const [tab, setTab] = useState<Tab>('identity')
@@ -155,6 +157,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [showPassiveDetail, setShowPassiveDetail] = useState(false)
   const [showGiftPanel, setShowGiftPanel] = useState(false)
   const [giftTabKw, setGiftTabKw] = useState('전체')
+  const [giftSearch, setGiftSearch] = useState('')
+  const [giftGradeFilter, setGiftGradeFilter] = useState('전체')
+  const [giftStatusFilter, setGiftStatusFilter] = useState<'all' | 'met' | 'unmet'>('all')
+  const [showGiftModal, setShowGiftModal] = useState(false)
 
   useEffect(() => {
     setHasDraft(!!localStorage.getItem('limbus-deck-draft'))
@@ -594,12 +600,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   const inputStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: '#e8e4d8' } as const
 
-  const TABS: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'identity', label: '인격 편성', badge: identityCount || undefined },
-    { key: 'ego',      label: '에고 편성', badge: egoCount || undefined },
-    ...(isGeodun(contentType) ? [{ key: 'skillset' as Tab, label: '스킬 편성', badge: skillsetCustomCount || undefined }] : []),
-    { key: 'order',    label: '편성 순서', badge: formationOrder.length || undefined },
-    { key: 'note',     label: '덱 노트' },
+  const TABS: { key: Tab; label: string; badge?: number; icon: React.ReactNode }[] = [
+    { key: 'identity', label: '인격 편성', badge: identityCount || undefined, icon: <Users size={14} /> },
+    { key: 'ego',      label: '에고 편성', badge: egoCount || undefined, icon: <Sparkles size={14} /> },
+    ...(isGeodun(contentType) ? [{ key: 'skillset' as Tab, label: '스킬 편성', badge: skillsetCustomCount || undefined, icon: <SlidersHorizontal size={14} /> }] : []),
+    { key: 'order',    label: '편성 순서', badge: formationOrder.length || undefined, icon: <ListOrdered size={14} /> },
+    { key: 'note',     label: '덱 노트', icon: <FileText size={14} /> },
   ]
 
   return (
@@ -720,42 +726,59 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           )}
         </div>
 
-        {/* 탭 바 */}
-        <div className="flex gap-0 mb-7 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-          {TABS.map(({ key, label, badge }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className="relative px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
-              style={{
-                color: tab === key ? 'var(--gold)' : '#555566',
-                borderBottom: tab === key ? '2px solid var(--gold)' : '2px solid transparent',
-                marginBottom: '-1px',
-                background: 'transparent',
-              }}
-            >
-              {label}
-              {badge !== undefined && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '6px',
-                    right: '10px',
-                    background: tab === key ? 'var(--gold)' : '#333322',
-                    color: tab === key ? 'var(--bg-deep)' : '#888866',
-                    fontSize: '0.5625rem',
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    borderRadius: '10px',
-                    padding: '1px 5px',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {badge}
-                </span>
-              )}
-            </button>
-          ))}
+        {/* 탭 바 — 세그먼트 컨트롤 */}
+        <div
+          className="flex mb-7 overflow-x-auto"
+          style={{
+            background: 'rgba(10,8,5,0.6)',
+            border: '1px solid var(--border)',
+            borderRadius: '0.5rem',
+            padding: '0.25rem',
+            gap: '0.125rem',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+          }}
+        >
+          {TABS.map(({ key, label, badge, icon }) => {
+            const isActive = tab === key
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-medium transition-all duration-200 whitespace-nowrap flex-1"
+                style={{
+                  color: isActive ? '#0d0b08' : '#666660',
+                  background: isActive
+                    ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)'
+                    : 'transparent',
+                  borderRadius: '0.375rem',
+                  boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.75rem',
+                  minWidth: 0,
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', opacity: isActive ? 1 : 0.5 }}>{icon}</span>
+                <span className="hidden sm:inline">{label}</span>
+                {badge !== undefined && (
+                  <span
+                    style={{
+                      background: isActive ? 'rgba(13,11,8,0.25)' : '#2a2015',
+                      color: isActive ? '#0d0b08' : '#666655',
+                      fontSize: '0.5625rem',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      borderRadius: '0.375rem',
+                      padding: '0.0625rem 0.3125rem',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* 탭 콘텐츠 */}
@@ -817,6 +840,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             setShowGiftPanel={setShowGiftPanel}
             giftTabKw={giftTabKw}
             setGiftTabKw={setGiftTabKw}
+            giftSearch={giftSearch}
+            setGiftSearch={setGiftSearch}
+            giftGradeFilter={giftGradeFilter}
+            setGiftGradeFilter={setGiftGradeFilter}
+            giftStatusFilter={giftStatusFilter}
+            setGiftStatusFilter={setGiftStatusFilter}
+            onOpenGiftModal={() => setShowGiftModal(true)}
           />
         )}
 
@@ -954,6 +984,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )
       })()}
       <Toast toast={toast} />
+
+      {/* ── 테마팩(EGO 기프트) 모달 ───────────────────── */}
+      <EgoGiftModal
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+        activatableGifts={activatableGifts}
+        getIconUrl={kwGetIconUrl}
+      />
     </div>
   )
 }
