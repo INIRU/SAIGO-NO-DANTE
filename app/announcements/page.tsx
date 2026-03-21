@@ -144,7 +144,7 @@ export default function AnnouncementsPage() {
                       <Pin size={12} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
                     )}
                     <span
-                      className="font-serif font-bold"
+                      className="font-serif font-light"
                       style={{ color: item.pinned ? 'var(--gold-light)' : '#c8a450', fontSize: '0.875rem', flex: 1, minWidth: 0 }}
                     >
                       {item.title}

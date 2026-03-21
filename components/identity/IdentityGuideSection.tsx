@@ -258,7 +258,7 @@ export default function IdentityGuideSection({
         <div className="flex items-center gap-2">
           <Swords size={16} style={{ color: 'var(--gold)' }} />
           <h2
-            className="font-serif font-bold"
+            className="font-serif font-light"
             style={{ color: 'var(--gold)', fontSize: '1rem' }}
           >
             운영법

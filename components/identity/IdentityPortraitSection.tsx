@@ -119,7 +119,7 @@ export default function IdentityPortraitSection({
           />
           <div className="flex-1 min-w-0">
             <h1
-              className="font-serif font-bold truncate"
+              className="font-serif font-light truncate"
               style={{ color: '#e8dcc8', fontSize: '1.125rem', lineHeight: 1.2 }}
             >
               {identity.name_kr || identity.name}
@@ -198,7 +198,7 @@ export default function IdentityPortraitSection({
                   background: `linear-gradient(160deg, #1e1810, #0d0a06)`,
                 }}
               >
-                <span className="font-serif font-bold" style={{ fontSize: '4rem', color: `${sinColor}18`, lineHeight: 1 }}>
+                <span className="font-serif font-light" style={{ fontSize: '4rem', color: `${sinColor}18`, lineHeight: 1 }}>
                   {(identity.name_kr || identity.name)[0]}
                 </span>
               </div>

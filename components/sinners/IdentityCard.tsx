@@ -67,7 +67,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               style={{ background: `linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)` }}
             >
               <span
-                className="font-serif font-bold"
+                className="font-serif font-light"
                 style={{ fontSize: '2.25rem', color: `${sinColor}18`, lineHeight: 1 }}
               >
                 {identity.name[0]}

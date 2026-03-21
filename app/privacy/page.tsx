@@ -7,7 +7,7 @@ export const metadata = { title: '개인정보 처리방침 | 최애의 관리�
 function SectionBlock({ section }: { section: LegalSection }) {
   return (
     <section className="card p-6 space-y-3">
-      <h2 className="font-serif font-bold text-lg mb-3" style={{ color: '#c8a450' }}>
+      <h2 className="font-serif font-light text-lg mb-3" style={{ color: '#c8a450' }}>
         {section.heading}
       </h2>
       {section.body && (

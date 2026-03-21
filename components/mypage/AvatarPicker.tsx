@@ -84,7 +84,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
           className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
-          <h3 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
+          <h3 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
             프로필 사진 선택
           </h3>
           <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Song_Myung, Black_Han_Sans } from 'next/font/google'
+import { Black_Han_Sans, Song_Myung } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'

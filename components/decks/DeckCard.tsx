@@ -68,7 +68,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
     const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
     return (
       <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
-        <span className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#c8900a80' }}>{initial}</span>
+        <span className="font-serif font-light" style={{ fontSize: '1.25rem', color: '#c8900a80' }}>{initial}</span>
       </div>
     )
   }
@@ -173,7 +173,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
         <div className="flex flex-col flex-1 p-4">
         {/* 제목 */}
         <h3
-          className="font-serif font-bold text-sm mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
+          className="font-serif font-light text-sm mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
           style={{ color: 'var(--text-primary)' }}
         >
           {deck.title}

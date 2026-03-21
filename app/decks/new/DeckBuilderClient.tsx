@@ -848,7 +848,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           <div className="card flex flex-col" style={{ width: '600px', maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
               <div>
-                <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>{modalSinner?.name_kr}</h2>
+                <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>{modalSinner?.name_kr}</h2>
                 <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '2px' }}>인격을 선택하세요</p>
               </div>
               <div className="flex items-center gap-3">
@@ -893,7 +893,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: gc, letterSpacing: '0.1em' }}>ALEPH</span>
                   )}
                   <div>
-                    <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.0625rem' }}>{modalSinner?.name_kr}</h2>
+                    <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.0625rem' }}>{modalSinner?.name_kr}</h2>
                     <p style={{ color: gc, fontSize: '0.625rem', marginTop: '1px', fontFamily: 'var(--font-mono)' }}>{modalGrade} E.G.O</p>
                   </div>
                 </div>
@@ -942,7 +942,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                               : <div className="w-full h-full flex items-center justify-center"><span style={{ fontFamily: 'monospace', color: gc, fontSize: '0.75rem' }}>{ego.grade?.[0]}</span></div>
                             }
                           </div>
-                          <p className="font-serif font-bold leading-snug text-center" style={{ color: isSelected ? '#f0d060' : '#c8a450', fontSize: '0.75rem' }}>{ego.name_kr || ego.name}</p>
+                          <p className="font-serif font-light leading-snug text-center" style={{ color: isSelected ? '#f0d060' : '#c8a450', fontSize: '0.75rem' }}>{ego.name_kr || ego.name}</p>
                         </button>
                       )
                     })}

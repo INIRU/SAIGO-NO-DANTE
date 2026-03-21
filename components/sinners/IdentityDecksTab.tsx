@@ -289,7 +289,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div style={{ color: '#8a8095', fontSize: '3rem' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: 'var(--text-tertiary)' }}>
+          <p className="font-serif text-base" style={{ color: 'var(--text-tertiary)' }}>
             {search.trim() ? '검색 결과가 없습니다.' : '이 인격이 사용된 덱이 아직 없습니다.'}
           </p>
         </div>

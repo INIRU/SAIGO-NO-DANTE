@@ -73,7 +73,7 @@ export default function ConfirmModal({
         {title && (
           <div className="flex items-center gap-2 mb-3">
             {variant === 'danger' && <AlertTriangle size={16} style={{ color: accentColor }} />}
-            <h3 id="confirm-title" className="font-serif font-bold" style={{ color: accentColor, fontSize: '0.9375rem' }}>
+            <h3 id="confirm-title" className="font-serif font-light" style={{ color: accentColor, fontSize: '0.9375rem' }}>
               {title}
             </h3>
           </div>

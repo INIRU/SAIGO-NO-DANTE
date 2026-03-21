@@ -42,7 +42,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}
             >
               <span
-                className="font-serif font-bold select-none"
+                className="font-serif font-light select-none"
                 style={{ fontSize: '4rem', color: 'rgba(200,144,10,0.12)', lineHeight: 1 }}
               >
                 {sinner.name[0]}
@@ -91,7 +91,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
           {/* 이름 오버레이 */}
           <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-20">
             <div
-              className="font-serif font-bold leading-tight mb-0.5 transition-colors duration-300 group-hover:text-yellow-300"
+              className="font-serif font-light leading-tight mb-0.5 transition-colors duration-300 group-hover:text-yellow-300"
               style={{ color: 'var(--gold-light)', fontSize: 'var(--text-md)' }}
             >
               {sinner.name_kr}
