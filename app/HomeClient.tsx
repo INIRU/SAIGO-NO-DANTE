@@ -382,8 +382,9 @@ export default function HomeClient({
             />
           </div>
 
-          <p className="hero-subtitle font-serif text-lg italic mb-4" style={{ color: 'rgba(232,196,120,0.5)', opacity: 0 }}>
-            Limbus Company 팬 아카이브
+          <p className="hero-subtitle text-lg mb-4 tracking-wider" style={{ color: 'rgba(232,196,120,0.5)', opacity: 0, fontWeight: 300 }}>
+            <span style={{ fontFamily: "'Song Myung', Georgia, serif", fontStyle: 'italic' }}>Limbus Company</span>{' '}
+            <span className="font-serif">팬 아카이브</span>
           </p>
 
           {/* 현재 슬라이드 인격 정보 */}
@@ -463,7 +464,7 @@ export default function HomeClient({
             >
               <Pin size={13} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
               <span
-                className="font-serif font-bold"
+                className="font-serif font-light"
                 style={{ color: 'var(--gold-light)', fontSize: '0.875rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               >
                 {pinnedAnnouncement.title}
@@ -554,7 +555,7 @@ export default function HomeClient({
                     LATEST VIDEO
                   </span>
                 </div>
-                <h2 className="font-serif text-4xl font-bold tracking-wide" style={{ color: 'var(--gold-light)' }}>
+                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>
                   최신 영상
                 </h2>
               </div>
@@ -600,7 +601,7 @@ export default function HomeClient({
                   href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-serif font-bold text-xl leading-snug hover:text-yellow-300 transition-colors"
+                  className="font-serif font-light text-xl leading-snug hover:text-yellow-300 transition-colors"
                   style={{ color: 'var(--gold-light)' }}
                 >
                   {latestVideo.title}
@@ -657,7 +658,7 @@ export default function HomeClient({
                   <Sparkles size={11} style={{ color: 'var(--gold)' }} />
                   <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '0.625rem', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
                 </div>
-                <h2 className="font-serif text-4xl font-bold tracking-wide" style={{ color: 'var(--gold-light)' }}>최신 인격</h2>
+                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>최신 인격</h2>
               </div>
               {latestDate && (
                 <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -696,7 +697,7 @@ export default function HomeClient({
                           sizes="200px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}>
-                          <span className="font-serif font-bold" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
+                          <span className="font-serif font-light" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
                             {identity.name_kr?.[0] ?? '?'}
                           </span>
                         </div>
@@ -711,7 +712,7 @@ export default function HomeClient({
                       )}
                       <div className="absolute bottom-0 left-0 right-0 z-10" style={{ height: '60%', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }} />
                       <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 z-20">
-                        <div className="font-serif font-bold leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}>
+                        <div className="font-serif font-light leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}>
                           {identity.name_kr}
                         </div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
@@ -839,7 +840,7 @@ export default function HomeClient({
                     </div>
                     {/* 타이틀 */}
                     <div
-                      className="font-serif font-bold"
+                      className="font-serif font-light"
                       style={{
                         fontSize: '1.0625rem',
                         color: isHovered ? 'var(--gold-light)' : 'var(--gold)',
@@ -916,7 +917,7 @@ export default function HomeClient({
                 <Icon size={18} style={{ color }} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-serif font-bold text-sm mb-0.5" style={{ color: 'var(--gold-light)' }}>{label}</div>
+                <div className="font-serif font-light text-sm mb-0.5" style={{ color: 'var(--gold-light)' }}>{label}</div>
                 <div className="truncate font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
               </div>
               <ExternalLink size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: '#3a2a15' }} />

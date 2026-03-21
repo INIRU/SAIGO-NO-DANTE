@@ -440,7 +440,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {/* 패시브 */}
             {ego.passive_name && (
               <div className="card p-6">
-                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>패시브</h2>
+                <h2 className="font-serif font-light mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>패시브</h2>
                 <div className="p-4 rounded" style={{ background: `${sinColor}08`, border: `1px solid ${sinColor}30` }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold" style={{ color: sinColor, fontSize: '0.875rem' }}>{ego.passive_name}</span>
@@ -460,7 +460,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {normalSkillList.length > 0 && (
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h2 className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>EGO 스킬</h2>
+                  <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>EGO 스킬</h2>
                   {/* 3해석 / 4해석 */}
                   <div className="flex rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                     {([3, 4] as const).map(lv => (
@@ -563,7 +563,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             {/* 키워드 */}
             {ego.keywords && ego.keywords.length > 0 && (
               <div className="card p-6">
-                <h2 className="font-serif font-bold mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>키워드</h2>
+                <h2 className="font-serif font-light mb-4" style={{ color: 'var(--gold)', fontSize: '1rem' }}>키워드</h2>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
                   {ego.keywords.map((kw, i) => (
                     <KeywordWithTooltip key={i} keyword={kw}>

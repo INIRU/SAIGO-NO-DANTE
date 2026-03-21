@@ -200,7 +200,7 @@ export default function LoginPage() {
             }}
           />
 
-          <h1 className="font-serif font-bold" style={{
+          <h1 className="font-serif font-light" style={{
             color: '#c8900a',
             fontSize: '1.625rem',
             letterSpacing: '0.2em',
@@ -257,7 +257,7 @@ export default function LoginPage() {
             padding: '2rem 1.75rem',
             boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.5), inset 0 0.0625rem 0 rgba(200,144,10,0.08)',
           }}>
-            <h2 className="font-serif font-bold text-center" style={{
+            <h2 className="font-serif font-light text-center" style={{
               color: '#c8a450',
               fontSize: '1rem',
               letterSpacing: '0.15em',

@@ -38,7 +38,7 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
       </div>
       {children}
       <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '20px' }}>
-        <p className="font-serif font-bold" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
+        <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
       </div>
     </div>
   )
@@ -122,7 +122,7 @@ export function EgoTab({
             {/* 수감자 헤더 */}
             <div className="flex items-center gap-1.5 px-2 py-1.5" style={{ borderBottom: '1px solid #1a1208' }}>
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.5 }} />
-              <span className="font-serif font-bold truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
+              <span className="font-serif font-light truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
             {/* 등급 세로 목록 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '2px' }}>

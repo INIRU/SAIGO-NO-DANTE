@@ -276,7 +276,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
               {/* Accent line at top */}
               <div className="absolute top-0 inset-x-0 h-[0.0625rem]" style={{ background: hasAny ? `linear-gradient(90deg, transparent, ${accentColor}55, transparent)` : 'none' }} />
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: hasAny ? 0.7 : 0.35 }} />
-              <span className="font-serif font-bold truncate" style={{ color: hasAny ? '#6a5530' : '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
+              <span className="font-serif font-light truncate" style={{ color: hasAny ? '#6a5530' : '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
 
             {/* Grade slots */}

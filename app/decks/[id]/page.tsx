@@ -638,7 +638,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                 DECK ARCHIVE
               </Link>
               <h1
-                className="font-serif font-bold mb-2 leading-tight"
+                className="font-serif font-light mb-2 leading-tight"
                 style={{ color: '#f0ece0', fontSize: 'clamp(1.4rem, 3.5vw, 2.1rem)', textShadow: '0 2px 24px rgba(0,0,0,0.9)' }}
               >
                 {deck.title}
@@ -977,7 +977,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
             <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
               COMMENTS
             </span>
-            <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
+            <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
               댓글
             </span>
             <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>

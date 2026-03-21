@@ -34,7 +34,7 @@ export default async function AdminLegalPage() {
           {docs.map(({ type, label, doc }) => (
             <div key={type} className="card p-5 flex items-center justify-between gap-4">
               <div>
-                <p className="font-serif font-bold" style={{ color: '#c8a450' }}>{label}</p>
+                <p className="font-serif font-light" style={{ color: '#c8a450' }}>{label}</p>
                 {doc ? (
                   <p style={{ color: '#888888', fontSize: '0.75rem', marginTop: '2px' }}>
                     최종 수정: {doc.last_updated} · {doc.sections.length}개 섹션

@@ -35,9 +35,34 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Paperlogy';
+  src: url('/fonts/Paperlogy-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Paperlogy';
+  src: url('/fonts/Paperlogy-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Paperlogy';
+  src: url('/fonts/Paperlogy-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 
 @import "tailwindcss";
+
+@theme {
+  --font-serif: 'Paperlogy', 'KotraBold', Georgia, serif;
+}
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
 

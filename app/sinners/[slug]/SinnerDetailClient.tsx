@@ -808,7 +808,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
                 {filteredEgos.length === 0 ? (
                   <div className="card p-8 text-center" style={{ color: '#888888' }}>
-                    <p className="font-serif text-lg italic">
+                    <p className="font-serif text-lg">
                       {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 EGO가 없습니다.'}
                     </p>
                   </div>
@@ -855,7 +855,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             ) : (
                               <span style={{ fontFamily: 'monospace', fontSize: '0.5rem', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
                             )}
-                            <p className="font-serif font-bold text-center leading-snug"
+                            <p className="font-serif font-light text-center leading-snug"
                               style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: '1.35' }}>
                               {ego.name_kr || ego.name}
                             </p>

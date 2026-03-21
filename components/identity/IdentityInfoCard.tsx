@@ -21,7 +21,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
   return (
     <div className="card p-6">
       <h2
-        className="font-serif font-bold mb-4"
+        className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
         기본 정보

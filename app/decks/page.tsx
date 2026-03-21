@@ -840,7 +840,7 @@ export default function DecksPage() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: '#555570' }}>
+          <p className="font-serif text-base" style={{ color: '#555570' }}>
             {hasAnyFilter ? '검색 결과가 없습니다.' : '아직 등록된 덱이 없습니다.'}
           </p>
           {!hasAnyFilter && (

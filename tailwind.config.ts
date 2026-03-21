@@ -53,7 +53,7 @@ const config: Config = {
         'glow-hover': 'var(--shadow-glow-hover)',
       },
       fontFamily: {
-        serif:   ['var(--font-song-myung)', '"KotraBold"', 'Georgia', 'serif'],
+        serif:   ['"Paperlogy"', '"KotraBold"', 'Georgia', 'serif'],
         mono:    ['"PerfectDOS"', '"JetBrains Mono"', 'monospace'],
         sans:    ['"SCDream"', '"Pretendard"', 'sans-serif'],
         logo:    ['"CorporateLogo"', '"BebasKai"', 'sans-serif'],

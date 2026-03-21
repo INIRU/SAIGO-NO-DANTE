@@ -381,7 +381,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
             MY COLLECTION
           </span>
-          <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
+          <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
             보유 현황
           </span>
         </h2>

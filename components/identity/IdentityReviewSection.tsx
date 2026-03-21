@@ -95,7 +95,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
   return (
     <div className="card p-5" style={{ background: '#1a1510', border: '1px solid var(--border)' }}>
       <h2
-        className="font-serif font-bold mb-4"
+        className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
         유저 평가

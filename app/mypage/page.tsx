@@ -406,7 +406,7 @@ export default function MyPage() {
                 ) : (
                   <div className="flex items-center gap-1.5">
                     <span
-                      className="font-serif font-bold text-lg"
+                      className="font-serif font-light text-lg"
                       style={{ color: '#e8dcc8' }}
                     >
                       {displayName}
@@ -547,7 +547,7 @@ export default function MyPage() {
                   <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     ABOUT ME
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
+                  <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     내 소개
                   </span>
                 </h2>
@@ -623,7 +623,7 @@ export default function MyPage() {
                   <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     MY DECKS
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
+                  <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     내 덱 관리
                   </span>
                 </h2>
@@ -652,7 +652,7 @@ export default function MyPage() {
                   }}
                 >
                   <div style={{ color: '#3a2a18', fontSize: '3.5rem', lineHeight: 1, userSelect: 'none' }}>&#x2741;</div>
-                  <p className="font-serif text-sm italic" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
+                  <p className="font-serif text-sm" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
                     아직 작성한 덱이 없습니다.
                   </p>
                   <Link
@@ -739,7 +739,7 @@ export default function MyPage() {
                   <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
                     BOOKMARKS
                   </span>
-                  <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
+                  <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
                     저장한 덱
                   </span>
                 </h2>
@@ -755,7 +755,7 @@ export default function MyPage() {
                   }}
                 >
                   <Bookmark size={22} style={{ color: '#3a3048', strokeWidth: 1.5 }} />
-                  <p className="font-serif text-sm italic" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
+                  <p className="font-serif text-sm" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
                     아직 저장한 덱이 없습니다.
                   </p>
                   <Link

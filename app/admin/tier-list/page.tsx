@@ -333,7 +333,7 @@ function MiniIdentityImage({ imgUrl, nameKr }: { imgUrl: string; nameKr: string 
   if (!imgUrl || failed) {
     return (
       <div style={{ width: 32, height: 32, borderRadius: '2px', background: 'linear-gradient(160deg, #1e1810, #0d0a06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span className="font-serif font-bold" style={{ fontSize: '0.75rem', color: '#c8900a30' }}>{nameKr[0]}</span>
+        <span className="font-serif font-light" style={{ fontSize: '0.75rem', color: '#c8900a30' }}>{nameKr[0]}</span>
       </div>
     )
   }
