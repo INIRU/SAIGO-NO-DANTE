@@ -974,13 +974,13 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
         {/* 댓글 섹션 */}
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-4">
-            <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
+            <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
               COMMENTS
             </span>
             <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
               댓글
             </span>
-            <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
+            <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
               {comments.length}
             </span>
           </div>
@@ -997,7 +997,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
                 style={{ background: '#0a0806', border: '1px solid rgba(58,40,18,0.5)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
               />
               <div className="flex items-center justify-between mt-2">
-                <span style={{ color: '#8a80a0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                   {commentText.length}/500
                 </span>
                 <button
@@ -1020,7 +1020,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ id: strin
           ) : (
             <div
               className="rounded-lg px-4 py-3 mb-4 text-center"
-              style={{ background: '#120e09', border: '1px solid var(--border)', color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-body)' }}
+              style={{ background: '#120e09', border: '1px solid var(--border)', color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-body)' }}
             >
               로그인 후 댓글을 작성할 수 있습니다.
             </div>

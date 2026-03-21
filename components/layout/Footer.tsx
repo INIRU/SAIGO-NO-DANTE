@@ -14,9 +14,9 @@ export default function Footer() {
     <footer className="mt-24" style={{ borderTop: '1px solid var(--border)' }}>
       {/* 장식선 */}
       <div className="flex items-center gap-4 px-8 pt-10 max-w-6xl mx-auto">
-        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, var(--border))' }} />
-        <span style={{ color: 'rgba(200,144,10,0.5)', fontSize: '0.75rem', letterSpacing: '0.3em' }}>◆</span>
-        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, var(--border))' }} />
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border))' }} />
+        <span className="text-xs tracking-[0.3em]" style={{ color: 'rgba(200,144,10,0.5)' }}>◆</span>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, var(--border))' }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-8 py-8 flex flex-col items-center gap-6">
@@ -25,7 +25,7 @@ export default function Footer() {
         <div className="flex flex-col items-center gap-2">
           <Image src="/images/logo.webp" alt="" width={22} height={32}
             style={{ opacity: 0.85, filter: 'drop-shadow(0 0 6px rgba(200,144,10,0.4))' }} />
-          <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: '0.9375rem' }}>
+          <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>
             최애의 관리자
           </p>
         </div>
@@ -36,10 +36,8 @@ export default function Footer() {
             <Link
               key={href}
               href={href}
-              className="text-xs tracking-widest transition-colors duration-200"
-              style={{ color: '#9a9ab0' }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--gold-dim)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.color = '#9a9ab0' }}
+              className="text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
+              style={{ color: 'var(--text-tertiary)' }}
             >
               {label}
             </Link>
@@ -49,10 +47,9 @@ export default function Footer() {
         {/* 구분 점 */}
         <div className="flex items-center gap-2">
           {[0, 1, 2].map(i => (
-            <span key={i} style={{
-              width: '3px', height: '3px', borderRadius: '50%',
+            <span key={i} className="inline-block rounded-full" style={{
+              width: '3px', height: '3px',
               background: i === 1 ? 'rgba(200,144,10,0.4)' : 'rgba(200,144,10,0.15)',
-              display: 'inline-block',
             }} />
           ))}
         </div>
@@ -61,23 +58,23 @@ export default function Footer() {
         <div className="flex items-center gap-4">
           <Link href="/terms"
             className="transition-colors hover:text-yellow-300"
-            style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>
+            style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             이용약관
           </Link>
-          <span style={{ color: '#6a6a78' }}>·</span>
+          <span style={{ color: 'var(--text-muted)' }}>·</span>
           <Link href="/privacy"
             className="transition-colors hover:text-yellow-300"
-            style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>
+            style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             개인정보 처리방침
           </Link>
         </div>
 
         {/* 디스클레이머 */}
         <div className="text-center space-y-1">
-          <p style={{ color: '#8a8a9a', fontSize: '0.6875rem', letterSpacing: '0.05em' }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)', letterSpacing: '0.05em' }}>
             팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.
           </p>
-          <p style={{ color: '#6a6a78', fontSize: '0.75rem' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
             This is a fan site and is not affiliated with Project Moon.
           </p>
         </div>
