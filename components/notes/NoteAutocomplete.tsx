@@ -182,8 +182,8 @@ export function NoteAutocompleteDropdown({
         display: 'flex', alignItems: 'center', gap: 4,
         padding: '0 6px 4px', borderBottom: '1px solid rgba(200,144,10,0.08)', marginBottom: 4,
       }}>
-        <span style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
-        <span style={{ color: '#6a6a78', fontSize: '0.75rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
+        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {suggestions.map((sugg, i) => {

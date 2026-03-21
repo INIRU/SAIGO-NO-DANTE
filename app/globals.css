@@ -69,6 +69,46 @@
   --font-heading: 'KotraBold', 'SCDream', sans-serif;
   --font-body:    'SCDream', sans-serif;
   --font-mono:    'PerfectDOS', monospace;
+
+  /* ── 텍스트 위계 ─────────────────────────────── */
+  --text-primary:   #e8dcc8;
+  --text-secondary: #b0a890;
+  --text-tertiary:  #8a8070;
+  --text-muted:     #6a6058;
+  --text-accent:    var(--gold-light);
+
+  /* ── 상태 색상 ───────────────────────────────── */
+  --success: #4a9868;
+  --warning: #d4a030;
+  --error:   #c84040;
+  --info:    #4898b0;
+
+  /* ── 보더 확장 ───────────────────────────────── */
+  --border-hover:  rgba(200,144,10,0.4);
+  --border-active: rgba(200,144,10,0.6);
+
+  /* ── 그림자 ──────────────────────────────────── */
+  --shadow-sm:   0 0.0625rem 0.25rem rgba(0,0,0,0.3);
+  --shadow-md:   0 0.25rem 1rem rgba(0,0,0,0.4);
+  --shadow-lg:   0 0.5rem 2rem rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 1.5rem rgba(200,144,10,0.15);
+  --shadow-glow-hover: 0 0.5rem 2rem rgba(200,144,10,0.15), 0 0 1.5rem rgba(200,144,10,0.08), inset 0 0 1.25rem rgba(200,144,10,0.04);
+
+  /* ── 라운딩 ──────────────────────────────────── */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.375rem;
+  --radius-lg:   0.5rem;
+  --radius-full: 9999px;
+
+  /* ── 타이포 스케일 (Major Third 4:5) ─────────── */
+  --text-xs:  0.6875rem;
+  --text-sm:  0.8125rem;
+  --text-base: 1rem;
+  --text-md:  1.125rem;
+  --text-lg:  1.375rem;
+  --text-xl:  1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
 }
 
 * {
@@ -112,6 +152,27 @@ body {
   [style*="--font-heading"], .font-serif {
     font-weight: normal;
   }
+}
+
+/* ── 포커스 링 (접근성) ───────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* input/textarea는 골드 outline 대신 기존 border 유지 */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* ── 드롭다운 진입 애니메이션 ─────────────────────────── */
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-0.25rem); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.animate-dropdown-in {
+  animation: dropdown-in 0.2s ease-out;
 }
 
 /* ── 공통 애니메이션 ──────────────────────────────────── */

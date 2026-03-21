@@ -83,7 +83,7 @@ export default function DeckEgoGiftAccordion({
         style={{ background: open ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: open ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
       >
         <div className="flex items-center gap-2">
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: open ? '#8a7040' : '#8a80a0', letterSpacing: '0.12em' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: open ? '#8a7040' : 'var(--text-tertiary)', letterSpacing: '0.12em' }}>
             EGO GIFTS
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8900a' }}>

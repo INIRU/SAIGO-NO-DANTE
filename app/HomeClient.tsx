@@ -394,7 +394,7 @@ export default function HomeClient({
                 <span className="font-serif font-bold" style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}>
                   {heroIdentity.name_kr}
                 </span>
-                <span style={{ color: '#7a6840', fontSize: '0.6875rem', fontFamily: 'var(--font-title)' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem', fontFamily: 'var(--font-title)' }}>
                   — {heroIdentity.sinner?.name_kr}
                 </span>
               </div>
@@ -468,7 +468,7 @@ export default function HomeClient({
               >
                 {pinnedAnnouncement.title}
               </span>
-              <span className="font-mono" style={{ color: '#7a6840', fontSize: '0.625rem', flexShrink: 0 }}>
+              <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem', flexShrink: 0 }}>
                 {new Date(pinnedAnnouncement.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
               </span>
               <Link
@@ -493,7 +493,7 @@ export default function HomeClient({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#7a6840',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                   padding: 4,
                   flexShrink: 0,
@@ -511,7 +511,7 @@ export default function HomeClient({
                 style={{
                   paddingBottom: 14,
                   paddingLeft: 25,
-                  color: '#7a6845',
+                  color: 'var(--text-tertiary)',
                   fontSize: '0.8125rem',
                   lineHeight: 1.7,
                   borderTop: '1px solid rgba(200,144,10,0.1)',
@@ -608,7 +608,7 @@ export default function HomeClient({
 
                 {/* 출판일 */}
                 {latestVideo.publishedAt && (
-                  <div className="flex items-center gap-1.5" style={{ color: '#7a6840' }}>
+                  <div className="flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                     <Calendar size={11} />
                     <span className="font-mono" style={{ fontSize: '0.6875rem' }}>
                       {formatDate(latestVideo.publishedAt.slice(0, 10))}
@@ -631,7 +631,7 @@ export default function HomeClient({
                     <div className="font-serif text-sm font-bold" style={{ color: 'var(--gold-light)' }}>
                       Project Moon
                     </div>
-                    <div className="font-mono" style={{ color: '#7a6840', fontSize: '0.625rem' }}>
+                    <div className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>
                       @projectmoon_official
                     </div>
                   </div>
@@ -660,7 +660,7 @@ export default function HomeClient({
                 <h2 className="font-serif text-4xl font-bold tracking-wide" style={{ color: 'var(--gold-light)' }}>최신 인격</h2>
               </div>
               {latestDate && (
-                <div className="flex items-center gap-1.5 mb-1" style={{ color: '#7a6840' }}>
+                <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
                   <Calendar size={11} />
                   <span className="font-mono" style={{ fontSize: '0.6875rem' }}>{formatDate(latestDate)}</span>
                 </div>
@@ -714,7 +714,7 @@ export default function HomeClient({
                         <div className="font-serif font-bold leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}>
                           {identity.name_kr}
                         </div>
-                        <div style={{ color: '#7a6840', fontSize: '0.5625rem', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
                           {identity.sinner?.name_kr ?? identity.sinner_id}
                         </div>
                       </div>
@@ -917,7 +917,7 @@ export default function HomeClient({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-serif font-bold text-sm mb-0.5" style={{ color: 'var(--gold-light)' }}>{label}</div>
-                <div className="truncate font-mono" style={{ color: '#7a6840', fontSize: '0.625rem' }}>{sub}</div>
+                <div className="truncate font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
               </div>
               <ExternalLink size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: '#3a2a15' }} />
             </a>

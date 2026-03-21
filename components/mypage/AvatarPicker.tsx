@@ -170,7 +170,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12" style={{ color: '#8a80a0', fontSize: '0.8125rem' }}>
+            <div className="text-center py-12" style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem' }}>
               인격이 없습니다.
             </div>
           ) : (
