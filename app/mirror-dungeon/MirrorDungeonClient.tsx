@@ -34,6 +34,7 @@ interface EgoGift {
   related: string | null
   image_url: string | null
   acquisition: string | null
+  game_id: number | null
 }
 
 interface Recipe {
@@ -42,6 +43,13 @@ interface Recipe {
   keyword: string
   ingredients: string[]
   final_result: string | null
+}
+
+interface EgoGiftTheme {
+  id: number
+  name: string
+  dungeon_id: number | null
+  ego_gift_ids: number[]
 }
 
 /* ── 키워드 설정 ── */
@@ -89,9 +97,11 @@ const GRADE_LABELS: Record<string, string> = {
 export default function MirrorDungeonClient({
   gifts,
   recipes,
+  themes = [],
 }: {
   gifts: EgoGift[]
   recipes: Recipe[]
+  themes?: EgoGiftTheme[]
 }) {
   const { getIconUrl } = useKeywordData()
   const getGiftKeywordIcon = useCallback(
@@ -105,6 +115,37 @@ export default function MirrorDungeonClient({
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'grade'>('default')
   const [sortDesc, setSortDesc] = useState(false)
+  const [activeTab, setActiveTab] = useState<'gifts' | 'themes'>('gifts')
+  const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null)
+  const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
+
+  // game_id → EgoGift 매핑 (테마팩 필터용)
+  const giftByGameId = useMemo(() => {
+    const map = new Map<number, EgoGift>()
+    for (const g of gifts) {
+      if (g.game_id) map.set(g.game_id, g)
+    }
+    return map
+  }, [gifts])
+
+  // 테마팩별 기프트 이름 Set (필터용)
+  const themeGiftNames = useMemo(() => {
+    if (!selectedThemeId) return null
+    const theme = themes.find(t => t.id === selectedThemeId)
+    if (!theme) return null
+    const names = new Set<string>()
+    for (const gid of theme.ego_gift_ids) {
+      const g = giftByGameId.get(gid)
+      if (g) names.add(g.name)
+    }
+    return names
+  }, [selectedThemeId, themes, giftByGameId])
+
+  // 기프트가 속한 테마팩 목록 (상세 모달용)
+  const getThemesForGift = useCallback((gift: EgoGift) => {
+    if (!gift.game_id) return []
+    return themes.filter(t => t.ego_gift_ids.includes(gift.game_id!))
+  }, [themes])
 
   const toggleKeyword = (key: string) => {
     setKeywords(prev => {
@@ -147,6 +188,7 @@ export default function MirrorDungeonClient({
       if (keywords.size > 0 && !keywords.has(g.keyword)) return false
       if (grades.size > 0 && !grades.has(g.grade)) return false
       if (search && !g.name.includes(search)) return false
+      if (themeGiftNames && !themeGiftNames.has(g.name)) return false
       return true
     })
 
@@ -159,7 +201,7 @@ export default function MirrorDungeonClient({
     if (sortDesc) result.reverse()
 
     return result
-  }, [gifts, keywords, grades, search, sortBy, sortDesc])
+  }, [gifts, keywords, grades, search, sortBy, sortDesc, themeGiftNames])
 
   // 무한 스크롤: 한 번에 40개씩 로드
   const PAGE_SIZE = 40
@@ -168,8 +210,8 @@ export default function MirrorDungeonClient({
   const loadingRef = useRef(false)
   const animatedCountRef = useRef(0)
 
-  // 필터 변경 시 visibleCount + 애니메이션 카운터 리셋
-  useEffect(() => { setVisibleCount(PAGE_SIZE); animatedCountRef.current = 0 }, [filtered])
+  // 필터/탭 변경 시 visibleCount + 애니메이션 카운터 리셋
+  useEffect(() => { setVisibleCount(PAGE_SIZE); animatedCountRef.current = 0 }, [filtered, activeTab])
 
   const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
 
@@ -215,7 +257,7 @@ export default function MirrorDungeonClient({
   useEffect(() => {
     const initGSAP = async () => {
       const { gsap } = await import('gsap')
-      const cards = document.querySelectorAll('.gift-card')
+      const cards = document.querySelectorAll('.gift-grid .gift-card')
       const newCards: Element[] = []
       cards.forEach((card, i) => {
         if (i >= animatedCountRef.current) {
@@ -232,7 +274,7 @@ export default function MirrorDungeonClient({
     }
     initGSAP()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, visibleCount])
+  }, [filtered, visibleCount, activeTab])
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -258,6 +300,9 @@ export default function MirrorDungeonClient({
         .gift-card {
           container-type: inline-size;
         }
+        .gift-grid .gift-card {
+          opacity: 0;
+        }
         .gift-card:hover .gift-frame {
           filter: brightness(1.2) drop-shadow(0 2px 8px rgba(200,144,10,0.4));
         }
@@ -274,7 +319,174 @@ export default function MirrorDungeonClient({
         <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', marginLeft: 'auto', marginRight: 'auto' }} />
       </div>
 
-      {/* 필터 영역 */}
+      {/* 탭 */}
+      {themes.length > 0 && (
+        <div className="flex justify-center gap-0 mb-6" style={{ borderBottom: '1px solid rgba(138,96,16,0.15)' }}>
+          {(['gifts', 'themes'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-5 py-2.5 text-sm transition-all duration-200 relative"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                color: activeTab === tab ? 'var(--gold-light)' : 'var(--text-muted)',
+                background: activeTab === tab ? 'rgba(200,144,10,0.06)' : 'none',
+                borderBottom: activeTab === tab ? '2px solid var(--gold)' : '2px solid transparent',
+              }}
+            >
+              {tab === 'gifts' ? '전체 기프트' : `테마팩 (${themes.length})`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 테마팩 탭 */}
+      {activeTab === 'themes' && themes.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
+          {themes.map(theme => {
+            const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
+            if (themeGifts.length === 0) return null
+            const kwCount: Record<string, number> = {}
+            for (const g of themeGifts) {
+              kwCount[g.keyword] = (kwCount[g.keyword] || 0) + 1
+            }
+            const topKws = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 4)
+
+            return (
+              <button
+                key={theme.id}
+                onClick={() => setExpandedThemeId(theme.id)}
+                className="text-left px-4 py-3 transition-all duration-200 hover:border-[var(--border-hover)]"
+                style={{
+                  background: 'var(--bg-panel)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-serif font-medium" style={{ color: 'var(--gold-light)', fontSize: 'var(--text-sm)' }}>
+                    {theme.name}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                    {themeGifts.length}종
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {topKws.map(([kw, count]) => {
+                    const iconUrl = getGiftKeywordIcon(kw)
+                    return (
+                      <span key={kw} className="flex items-center gap-0.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                        {iconUrl && <Image src={iconUrl} alt={kw} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.7 }} />}
+                        <span>{count}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 테마팩 모달 */}
+      {expandedThemeId !== null && (() => {
+        const theme = themes.find(t => t.id === expandedThemeId)
+        if (!theme) return null
+        const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
+
+        // 전용 기프트: 이 테마에서만 드랍 (다른 테마에는 없음)
+        const exclusiveIds = new Set(
+          theme.ego_gift_ids.filter(gid =>
+            !themes.some(t => t.id !== theme.id && t.ego_gift_ids.includes(gid))
+          )
+        )
+        const exclusiveGifts = themeGifts.filter(g => g.game_id && exclusiveIds.has(g.game_id))
+        const sharedGifts = themeGifts.filter(g => !g.game_id || !exclusiveIds.has(g.game_id))
+
+        // 키워드별 그룹 (공유 기프트만)
+        const byKeyword: Record<string, EgoGift[]> = {}
+        for (const g of sharedGifts) {
+          if (!byKeyword[g.keyword]) byKeyword[g.keyword] = []
+          byKeyword[g.keyword].push(g)
+        }
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={() => setExpandedThemeId(null)}
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.5rem',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              {/* 헤더 */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-serif font-medium text-lg" style={{ color: 'var(--gold-light)' }}>
+                    {theme.name}
+                  </h3>
+                  <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
+                    {themeGifts.length}종 기프트
+                  </p>
+                </div>
+                <button
+                  onClick={() => setExpandedThemeId(null)}
+                  style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* 전용 기프트 */}
+              {exclusiveGifts.length > 0 && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span style={{ color: 'var(--gold)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>★</span>
+                    <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>전용 기프트</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({exclusiveGifts.length})</span>
+                  </div>
+                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
+                    {exclusiveGifts.map(g => (
+                      <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
+                    ))}
+                  </div>
+                  <div className="mt-4" style={{ height: '1px', background: 'linear-gradient(90deg, var(--gold-dim), transparent)' }} />
+                </div>
+              )}
+
+              {/* 키워드별 그룹 */}
+              {Object.entries(byKeyword).map(([kw, kwGifts]) => {
+                const iconUrl = getGiftKeywordIcon(kw)
+                return (
+                  <div key={kw} className="mb-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      {iconUrl && <Image src={iconUrl} alt={kw} width={16} height={16} style={{ width: '1rem', height: '1rem' }} />}
+                      <span className="font-serif font-medium" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{kw}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({kwGifts.length})</span>
+                    </div>
+                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
+                      {kwGifts.map(g => (
+                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* 필터 영역 + 그리드 (전체 기프트 탭) */}
+      {activeTab === 'gifts' && (<>
       <div className="mb-6 space-y-4">
         {/* 키워드 필터 */}
         <div className="flex flex-wrap gap-2 justify-center">
@@ -418,6 +630,7 @@ export default function MirrorDungeonClient({
           )}
         </>
       )}
+      </>)}
 
       {/* 상세 모달 */}
       {selected && (
@@ -442,7 +655,7 @@ const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: {
     <button
       onClick={onClick}
       className="gift-card group relative flex flex-col items-center transition-all duration-200 hover:scale-[1.06] hover:z-10"
-      style={{ cursor: 'pointer', opacity: 0 }}
+      style={{ cursor: 'pointer' }}
     >
       {/* 카드 프레임 */}
       <div
