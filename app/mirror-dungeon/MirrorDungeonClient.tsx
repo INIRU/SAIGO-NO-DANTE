@@ -224,12 +224,11 @@ export default function MirrorDungeonClient({
         loadingRef.current = true
         setVisibleCount(prev => {
           const next = Math.min(prev + PAGE_SIZE, filtered.length)
-          // 300ms 후 재발동 허용 (레이아웃 재계산 대기)
-          setTimeout(() => { loadingRef.current = false }, 300)
+          setTimeout(() => { loadingRef.current = false }, 100)
           return next
         })
       }
-    }, { rootMargin: '200px' })
+    }, { rootMargin: '600px' })
     obs.observe(el)
     return () => obs.disconnect()
   }, [visibleCount, filtered.length])
