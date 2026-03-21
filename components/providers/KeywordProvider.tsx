@@ -231,11 +231,11 @@ export function KeywordWithTooltip({
   return (
     <span
       ref={ref}
-      className="inline-flex items-center"
+      className="inline"
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ cursor: info ? 'help' : 'default', verticalAlign: 'middle', position: 'relative' }}
+      style={{ cursor: info ? 'help' : 'default', position: 'relative' }}
     >
       {iconUrl && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -245,10 +245,11 @@ export function KeywordWithTooltip({
           width={inline ? 14 : 16}
           height={inline ? 14 : 16}
           style={{
-            display: 'inline-block',
-            verticalAlign: 'middle',
-            marginRight: inline ? '2px' : '4px',
-            flexShrink: 0,
+            display: 'inline',
+            verticalAlign: 'text-bottom',
+            marginRight: inline ? '0.0625rem' : '0.1875rem',
+            width: '1em',
+            height: '1em',
           }}
         />
       )}

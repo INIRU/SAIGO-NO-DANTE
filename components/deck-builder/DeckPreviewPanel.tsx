@@ -62,6 +62,13 @@ interface Props {
   setShowGiftPanel: (v: boolean | ((prev: boolean) => boolean)) => void
   giftTabKw: string
   setGiftTabKw: (kw: string) => void
+  giftSearch: string
+  setGiftSearch: (v: string) => void
+  giftGradeFilter: string
+  setGiftGradeFilter: (v: string) => void
+  giftStatusFilter: 'all' | 'met' | 'unmet'
+  setGiftStatusFilter: (v: 'all' | 'met' | 'unmet') => void
+  onOpenGiftModal: () => void
 }
 
 export default function DeckPreviewPanel({
@@ -73,6 +80,10 @@ export default function DeckPreviewPanel({
   showPassiveDetail, setShowPassiveDetail,
   showGiftPanel, setShowGiftPanel,
   giftTabKw, setGiftTabKw,
+  giftSearch, setGiftSearch,
+  giftGradeFilter, setGiftGradeFilter,
+  giftStatusFilter, setGiftStatusFilter,
+  onOpenGiftModal,
 }: Props) {
   const { getIconUrl } = useKeywordData()
   // 덱 전체 스킬 죄악 합산 (패시브 패널용)
@@ -372,19 +383,47 @@ export default function DeckPreviewPanel({
             )}
             <div className="flex-1" />
             <button
+              onClick={onOpenGiftModal}
+              className="text-xs px-2.5 py-1 rounded transition-all"
+              style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)', background: 'transparent', flexShrink: 0 }}
+            >
+              전체 보기 →
+            </button>
+            <button
               onClick={() => setShowGiftPanel(v => !v)}
               className="text-xs px-2.5 py-1 rounded transition-all"
               style={{ color: showGiftPanel ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showGiftPanel ? 'var(--gold)' : 'var(--border)'}`, background: showGiftPanel ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
             >
-              상세보기 {showGiftPanel ? '▲' : '▼'}
+              {showGiftPanel ? '▲' : '▼'}
             </button>
           </div>
 
           {showGiftPanel && (() => {
             const GIFT_KW_TABS = ['전체', '화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통'] as const
-            const filtered = giftTabKw === '전체'
+            const GIFT_GRADES = ['전체', '열쇠', '갈래', '징표', '화폐', '에고'] as const
+            const STATUS_OPTS = [
+              { value: 'all' as const, label: '전체' },
+              { value: 'met' as const, label: '활성' },
+              { value: 'unmet' as const, label: '미활성' },
+            ]
+            let filtered = giftTabKw === '전체'
               ? activatableGifts
               : activatableGifts.filter(g => g.keyword === giftTabKw)
+            // 텍스트 검색
+            if (giftSearch.trim()) {
+              const q = giftSearch.trim().toLowerCase()
+              filtered = filtered.filter(g => g.name.toLowerCase().includes(q))
+            }
+            // 등급 필터
+            if (giftGradeFilter !== '전체') {
+              filtered = filtered.filter(g => g.grade === giftGradeFilter)
+            }
+            // 활성 상태 필터
+            if (giftStatusFilter === 'met') {
+              filtered = filtered.filter(g => g.met)
+            } else if (giftStatusFilter === 'unmet') {
+              filtered = filtered.filter(g => !g.met)
+            }
             const metByKw: Record<string, number> = {}
             for (const g of activatableGifts) {
               if (g.met) metByKw[g.keyword] = (metByKw[g.keyword] ?? 0) + 1
@@ -392,6 +431,44 @@ export default function DeckPreviewPanel({
 
             return (
               <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
+                {/* 검색 + 필터 바 */}
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="relative flex-1" style={{ minWidth: '7.5rem', maxWidth: '14rem' }}>
+                    <input
+                      type="text"
+                      value={giftSearch}
+                      onChange={e => setGiftSearch(e.target.value)}
+                      placeholder="기프트 검색..."
+                      className="w-full pl-2 pr-2 py-1 rounded text-xs outline-none"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#ccc', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}
+                    />
+                  </div>
+                  <select
+                    value={giftGradeFilter}
+                    onChange={e => setGiftGradeFilter(e.target.value)}
+                    className="rounded text-xs py-1 px-2 outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${giftGradeFilter !== '전체' ? 'rgba(200,144,10,0.4)' : 'rgba(255,255,255,0.08)'}`, color: giftGradeFilter !== '전체' ? 'var(--gold)' : '#888', fontSize: '0.6875rem', cursor: 'pointer' }}
+                  >
+                    {GIFT_GRADES.map(g => <option key={g} value={g}>{g === '전체' ? '등급' : g}</option>)}
+                  </select>
+                  <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {STATUS_OPTS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setGiftStatusFilter(opt.value)}
+                        className="px-2 py-1 text-xs transition-colors"
+                        style={{
+                          background: giftStatusFilter === opt.value ? 'rgba(200,144,10,0.15)' : 'transparent',
+                          color: giftStatusFilter === opt.value ? 'var(--gold)' : '#555',
+                          fontSize: '0.625rem',
+                          fontFamily: 'var(--font-heading)',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {/* 키워드 탭 */}
                 <div className="flex flex-wrap gap-1 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   {GIFT_KW_TABS.map(kw => {
