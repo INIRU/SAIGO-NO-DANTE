@@ -378,7 +378,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     <section>
       <div className="flex items-center justify-between mb-5">
         <h2 className="flex items-center gap-2">
-          <span style={{ color: '#8a80a0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
+          <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
             MY COLLECTION
           </span>
           <span className="font-serif font-bold" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
@@ -612,8 +612,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {/* 인격 섹션 */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
-              <span style={{ color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
-              <span style={{ color: '#8a80a0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                 {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
               </span>
             </div>
@@ -689,7 +689,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               })}
             </div>
             ) : (
-              <p className="text-center py-6" style={{ color: '#8a80a0', fontSize: '0.75rem' }}>
+              <p className="text-center py-6" style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
                 해당 키워드의 인격이 없습니다
               </p>
             )}
@@ -699,8 +699,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           {Object.keys(egosByGrade).length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span style={{ color: '#8a80a0', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-                <span style={{ color: '#8a80a0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                   {currentEgos.filter(e => owned.has(e.id)).length}/{currentEgos.length}
                 </span>
               </div>
@@ -862,7 +862,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
 
   const renderIdentityGrid = (ids: IdentityInfo[]) => (
     <div style={{ marginBottom: '12px' }}>
-      <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '10px' }}>인격</p>
+      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: '10px' }}>인격</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
         {ids.map(identity => {
           const url = identityProfileUrl(identity)
@@ -882,7 +882,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
 
   const renderEgoGrid = (egoList: EGOInfo[]) => (
     <div>
-      <p style={{ color: '#8a80a0', fontSize: '0.75rem', marginBottom: '10px', marginTop: '4px' }}>E.G.O</p>
+      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: '10px', marginTop: '4px' }}>E.G.O</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '6px' }}>
         {egoList.map(ego => {
           const sinType = normalizeSin(ego.sin_affinity)
@@ -905,7 +905,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
     <div ref={ref} style={{ position: 'fixed', left: '-9999px', top: 0, width: '1200px', background: '#0d0b08', padding: '40px', zIndex: -1 }}>
       {/* 헤더 */}
       <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
-        <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
+        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
         <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
           보유 현황{showIdentity && !showEgo ? ' — 인격' : !showIdentity && showEgo ? ' — E.G.O' : ''}
         </p>
@@ -958,7 +958,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
 
       {/* 푸터 */}
       <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
-        <p style={{ color: '#8a80a0', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>saigo-no-dante.com</p>
+        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>saigo-no-dante.com</p>
       </div>
     </div>
   )

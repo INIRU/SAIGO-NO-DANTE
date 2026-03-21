@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -24,9 +24,6 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
   const fallbackUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
   const [imgSrc, setImgSrc] = useState(infoUrl)
   const [imgKey, setImgKey] = useState(infoUrl)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const frameRef = useRef<HTMLImageElement>(null)
-  const gsapRef = useRef<typeof import('gsap')['default'] | null>(null)
 
   // gacksung prop이 바뀌면 이미지 URL 갱신
   if (imgKey !== infoUrl) {
@@ -34,50 +31,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
     setImgKey(infoUrl)
   }
 
-  // GSAP 모듈 캐싱 로드
-  const getGsap = useCallback(async () => {
-    if (!gsapRef.current) {
-      const mod = await import('gsap')
-      gsapRef.current = mod.default
-    }
-    return gsapRef.current
-  }, [])
-
-  const handleMouseEnter = useCallback(async () => {
-    const gsap = await getGsap()
-    if (cardRef.current) {
-      gsap.to(cardRef.current, { scale: 1.04, duration: 0.3, ease: 'power2.out' })
-    }
-    if (frameRef.current) {
-      gsap.to(frameRef.current, {
-        filter: `drop-shadow(0 0 8px ${rarity.glow}) brightness(1.3)`,
-        duration: 0.3,
-        ease: 'power2.out',
-      })
-    }
-  }, [rarity.glow, getGsap])
-
-  const handleMouseLeave = useCallback(async () => {
-    const gsap = await getGsap()
-    if (cardRef.current) {
-      gsap.to(cardRef.current, { scale: 1, duration: 0.25, ease: 'power2.inOut' })
-    }
-    if (frameRef.current) {
-      gsap.to(frameRef.current, {
-        filter: 'drop-shadow(0 0 0px transparent) brightness(1)',
-        duration: 0.25,
-        ease: 'power2.inOut',
-      })
-    }
-  }, [getGsap])
-
   return (
     <div
-      ref={cardRef}
       onClick={onClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`${styles.card} ${selected ? styles.selected : ''}`}
+      className={`${styles.card} ${selected ? styles.selected : ''} group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]`}
       data-rarity={rarityNum}
       data-gacksung={gacksung || undefined}
       style={{ transformOrigin: 'center center' }}
@@ -133,7 +90,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               alt={`${identity.rarity}성`}
               width={identity.rarity === 1 ? 20 : identity.rarity === 2 ? 34 : 46}
               height={14}
-             
+
               style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}
             />
           ) : (
@@ -141,10 +98,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               className="font-mono font-bold"
               style={{
                 color: rarity.border,
-                fontSize: '0.625rem',
+                fontSize: 'var(--text-xs)',
                 background: 'rgba(13,11,8,0.85)',
                 padding: '0.0625rem 0.3125rem',
-                borderRadius: '0.125rem',
+                borderRadius: 'var(--radius-sm)',
                 border: `1px solid ${rarity.border}40`,
               }}
             >
@@ -156,13 +113,12 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
         {/* 등급 프레임 오버레이 */}
         {RARITY_FRAME_MAP[identity.rarity] && (
           <Image
-            ref={frameRef}
             src={RARITY_FRAME_MAP[identity.rarity]}
             alt=""
             width={200}
             height={300}
-           
-            className={styles.frame}
+
+            className={`${styles.frame} transition-[filter] duration-300 group-hover:brightness-130 group-hover:drop-shadow-[0_0_8px_${rarity.glow}]`}
           />
         )}
       </div>
@@ -183,10 +139,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               { label: '방어', value: identity.def_level },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: '0.625rem' }}>
+                <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: 'var(--text-xs)' }}>
                   {value}
                 </div>
-                <div style={{ color: '#7a6840', fontSize: '0.5rem' }}>{label}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.5rem' }}>{label}</div>
               </div>
             ))}
           </div>
@@ -205,7 +161,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                       background: `${kwColor}18`,
                       color: kwColor,
                       border: `1px solid ${kwColor}35`,
-                      borderRadius: '2px',
+                      borderRadius: 'var(--radius-sm)',
                       fontSize: '0.5rem',
                       padding: '0.0625rem 0.1875rem',
                     }}
@@ -228,7 +184,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                   background: `${sinColor}18`,
                   color: sinColor,
                   border: `1px solid ${sinColor}40`,
-                  borderRadius: '2px',
+                  borderRadius: 'var(--radius-sm)',
                   fontSize: '0.5rem',
                   padding: '0 0.25rem',
                 }}

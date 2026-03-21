@@ -24,13 +24,13 @@ type Props = {
 export default function ResultGrid({ sinners, pools, result, activeTab, rollId, rerolledSinnerId, revealed, onRevealDone, onReroll }: Props) {
   const gridRef = useRef<HTMLDivElement>(null)
   const lastRollId = useRef(0)
-  const [rerollingId, setRerollingId] = useState<string | null>(null)
+  const [rerollingIds, setRerollingIds] = useState<Set<string>>(new Set())
 
   // Full roll stagger animation (only on rollId change)
   useEffect(() => {
     if (rollId === 0 || rollId === lastRollId.current || !result) return
     lastRollId.current = rollId
-    setRerollingId(null)
+    setRerollingIds(new Set())
 
     ;(async () => {
       const { gsap } = await import('gsap')
@@ -53,7 +53,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
   // Individual reroll: immediately hide the card, wait for new image to load
   useEffect(() => {
     if (!rerolledSinnerId || !gridRef.current) return
-    setRerollingId(rerolledSinnerId)
+    setRerollingIds(prev => new Set([...prev, rerolledSinnerId]))
     const card = gridRef.current.querySelector(`[data-sinner="${rerolledSinnerId}"]`) as HTMLElement | null
     if (card) {
       card.style.opacity = '0'
@@ -63,8 +63,12 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
 
   // Called when the rerolled card's new image finishes loading
   const handleRerollImageLoad = useCallback((sinnerId: string) => {
-    if (sinnerId !== rerollingId || !gridRef.current) return
-    setRerollingId(null)
+    if (!rerollingIds.has(sinnerId) || !gridRef.current) return
+    setRerollingIds(prev => {
+      const next = new Set(prev)
+      next.delete(sinnerId)
+      return next
+    })
 
     ;(async () => {
       const { gsap } = await import('gsap')
@@ -76,7 +80,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
         { opacity: 1, scale: 1, rotateY: 0, duration: 0.4, ease: 'back.out(1.7)' },
       )
     })()
-  }, [rerollingId])
+  }, [rerollingIds])
 
   // No result — ghost cards
   if (!result) {

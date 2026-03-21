@@ -91,7 +91,7 @@ export default function DeckPreviewPanel({
       <div className="mt-8" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
         {/* 요약 바 */}
         <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-          <span style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>죄악 자원</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>죄악 자원</span>
           <div className="flex items-center gap-4 flex-1 flex-wrap">
             {SIN_ORDER.map((sin, i) => {
               const total = sinCostTotals[i]
@@ -107,7 +107,7 @@ export default function DeckPreviewPanel({
           <button
             onClick={() => setShowCostDetail(v => !v)}
             className="text-xs px-2.5 py-1 rounded transition-all"
-            style={{ color: showCostDetail ? 'var(--gold)' : '#9a9ab0', border: `1px solid ${showCostDetail ? 'var(--gold)' : 'var(--border)'}`, background: showCostDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
+            style={{ color: showCostDetail ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showCostDetail ? 'var(--gold)' : 'var(--border)'}`, background: showCostDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
           >
             상세보기 {showCostDetail ? '▲' : '▼'}
           </button>
@@ -184,7 +184,7 @@ export default function DeckPreviewPanel({
       {/* ── 인격 스킬 유형 패널 ──────────────────────────── */}
       <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
         <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-          <span style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>공격 유형</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>공격 유형</span>
           <div className="flex items-center gap-4 flex-1">
             {(['slash', 'pierce', 'blunt'] as const).map(type => {
               const count = atkTypeTotals[type]
@@ -200,7 +200,7 @@ export default function DeckPreviewPanel({
           <button
             onClick={() => setShowIdentityDetail(v => !v)}
             className="text-xs px-2.5 py-1 rounded transition-all"
-            style={{ color: showIdentityDetail ? 'var(--gold)' : '#9a9ab0', border: `1px solid ${showIdentityDetail ? 'var(--gold)' : 'var(--border)'}`, background: showIdentityDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
+            style={{ color: showIdentityDetail ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showIdentityDetail ? 'var(--gold)' : 'var(--border)'}`, background: showIdentityDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
           >
             상세보기 {showIdentityDetail ? '▲' : '▼'}
           </button>
@@ -257,7 +257,7 @@ export default function DeckPreviewPanel({
                               <Image src={atkIcon} alt="" width={11} height={11} style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
                             )}
                           </div>
-                          <span style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>{label}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>{label}</span>
                         </div>
                       )
                     })}
@@ -281,7 +281,7 @@ export default function DeckPreviewPanel({
               )
             })}
             {Object.values(deckSlots).filter(Boolean).length === 0 && (
-              <p className="text-center py-4" style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
+              <p className="text-center py-4" style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
             )}
           </div>
         )}
@@ -290,12 +290,12 @@ export default function DeckPreviewPanel({
       {/* ── 패시브 패널 ──────────────────────────────────── */}
       <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
         <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-          <span style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>패시브</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>패시브</span>
           <div className="flex-1" />
           <button
             onClick={() => setShowPassiveDetail(v => !v)}
             className="text-xs px-2.5 py-1 rounded transition-all"
-            style={{ color: showPassiveDetail ? 'var(--gold)' : '#9a9ab0', border: `1px solid ${showPassiveDetail ? 'var(--gold)' : 'var(--border)'}`, background: showPassiveDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
+            style={{ color: showPassiveDetail ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showPassiveDetail ? 'var(--gold)' : 'var(--border)'}`, background: showPassiveDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
           >
             상세보기 {showPassiveDetail ? '▲' : '▼'}
           </button>
@@ -327,7 +327,7 @@ export default function DeckPreviewPanel({
 
                   {/* 배틀 패시브 */}
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
+                    <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
                     <div className="flex flex-col gap-1.5">
                       {battlePassives.length > 0
                         ? battlePassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
@@ -341,7 +341,7 @@ export default function DeckPreviewPanel({
 
                   {/* 서포트 패시브 */}
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#8a8a9a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
+                    <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
                     <div className="flex flex-col gap-1.5">
                       {supportPassives.length > 0
                         ? supportPassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
@@ -353,7 +353,7 @@ export default function DeckPreviewPanel({
               )
             })}
             {Object.values(deckSlots).filter(Boolean).length === 0 && (
-              <p className="text-center py-4" style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
+              <p className="text-center py-4" style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
             )}
           </div>
         )}
@@ -363,9 +363,9 @@ export default function DeckPreviewPanel({
       {['거던5층', '거던10층', '거던15층'].includes(contentType) && (
         <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
           <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-            <span style={{ color: '#9a9ab0', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>E.G.O 기프트</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>E.G.O 기프트</span>
             {activatableGifts.length > 0 && (
-              <span style={{ color: '#8a8a9a', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
                 <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{activatableGifts.filter(g => g.met).length}</span>
                 <span> 활성</span>
               </span>
@@ -374,7 +374,7 @@ export default function DeckPreviewPanel({
             <button
               onClick={() => setShowGiftPanel(v => !v)}
               className="text-xs px-2.5 py-1 rounded transition-all"
-              style={{ color: showGiftPanel ? 'var(--gold)' : '#9a9ab0', border: `1px solid ${showGiftPanel ? 'var(--gold)' : 'var(--border)'}`, background: showGiftPanel ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
+              style={{ color: showGiftPanel ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showGiftPanel ? 'var(--gold)' : 'var(--border)'}`, background: showGiftPanel ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
             >
               상세보기 {showGiftPanel ? '▲' : '▼'}
             </button>
@@ -423,9 +423,9 @@ export default function DeckPreviewPanel({
                 {/* 기프트 목록 */}
                 <div style={{ padding: '6px 8px', maxHeight: '320px', overflowY: 'auto' }}>
                   {Object.values(deckSlots).filter(Boolean).length === 0 ? (
-                    <p className="text-center py-4" style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
+                    <p className="text-center py-4" style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
                   ) : filtered.length === 0 ? (
-                    <p className="text-center py-3" style={{ color: '#8a8a9a', fontSize: '0.6875rem' }}>해당하는 기프트가 없습니다</p>
+                    <p className="text-center py-3" style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem' }}>해당하는 기프트가 없습니다</p>
                   ) : (
                     <div className="flex flex-col gap-1">
                       {filtered.map(g => {

@@ -9,15 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'bg-deep':     '#0d0b08',
-        'bg-card':     '#1a1510',
-        'bg-elevated': '#241c12',
-        'bg-panel':    '#120e09',
-        'gold':        '#c8900a',
-        'gold-light':  '#e8b030',
-        'gold-dim':    '#8a6010',
-        'crimson':     '#8b1a1a',
-        'border-dim':  '#3a2a15',
+        'bg-deep':     'var(--bg-deep)',
+        'bg-card':     'var(--bg-card)',
+        'bg-elevated': 'var(--bg-elevated)',
+        'bg-panel':    'var(--bg-panel)',
+        'gold':        'var(--gold)',
+        'gold-light':  'var(--gold-light)',
+        'gold-dim':    'var(--gold-dim)',
+        'crimson':     'var(--crimson)',
+        'border-dim':  'var(--border)',
+        // 텍스트 위계
+        'txt-primary':   'var(--text-primary)',
+        'txt-secondary': 'var(--text-secondary)',
+        'txt-tertiary':  'var(--text-tertiary)',
+        'txt-muted':     'var(--text-muted)',
+        'txt-accent':    'var(--text-accent)',
+        // 상태
+        'success': 'var(--success)',
+        'warning': 'var(--warning)',
+        'error':   'var(--error)',
+        'info':    'var(--info)',
         sin: {
           wrath:    '#c83030',
           lust:     '#d06030',
@@ -27,6 +38,19 @@ const config: Config = {
           pride:    '#3870b0',
           envy:     '#8058a8',
         },
+      },
+      borderRadius: {
+        sm:   'var(--radius-sm)',
+        md:   'var(--radius-md)',
+        lg:   'var(--radius-lg)',
+        full: 'var(--radius-full)',
+      },
+      boxShadow: {
+        sm:         'var(--shadow-sm)',
+        md:         'var(--shadow-md)',
+        lg:         'var(--shadow-lg)',
+        glow:       'var(--shadow-glow)',
+        'glow-hover': 'var(--shadow-glow-hover)',
       },
       fontFamily: {
         serif:   ['var(--font-song-myung)', '"KotraBold"', 'Georgia', 'serif'],

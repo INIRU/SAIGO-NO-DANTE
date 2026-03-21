@@ -169,7 +169,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         <div className="relative flex-1" ref={searchRef}>
           <svg
             width="14" height="14" viewBox="0 0 16 16" fill="none"
-            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', pointerEvents: 'none', zIndex: 1 }}
+            style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none', zIndex: 1 }}
           >
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -193,7 +193,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           {search && (
             <button
               onClick={() => { setSearch(''); setShowSuggestions(false) }}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8a80a0', cursor: 'pointer', zIndex: 1 }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', cursor: 'pointer', zIndex: 1 }}
             >
               ✕
             </button>
@@ -267,7 +267,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
 
       {/* 결과 수 */}
       {!loading && (
-        <p className="text-xs" style={{ color: '#8a8a9a', fontFamily: 'var(--font-mono)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
           {filtered.length}개의 덱{hasMore && '+'}
           {search.trim() && ' (필터 적용됨)'}
         </p>
@@ -289,7 +289,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div style={{ color: '#8a8095', fontSize: '3rem' }}>⊘</div>
-          <p className="font-serif text-base italic" style={{ color: '#8a8a9a' }}>
+          <p className="font-serif text-base italic" style={{ color: 'var(--text-tertiary)' }}>
             {search.trim() ? '검색 결과가 없습니다.' : '이 인격이 사용된 덱이 아직 없습니다.'}
           </p>
         </div>
