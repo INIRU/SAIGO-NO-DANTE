@@ -1,0 +1,269 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import Image from 'next/image'
+import { Search, X } from 'lucide-react'
+import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
+import type { ActivationCondition } from '@/lib/data/sinners'
+
+interface GiftStatus {
+  name: string
+  keyword: string
+  grade: string
+  image_url: string | null
+  effect_base: string | null
+  condition: ActivationCondition
+  current: number
+  met: boolean
+}
+
+interface EgoGiftModalProps {
+  open: boolean
+  onClose: () => void
+  activatableGifts: GiftStatus[]
+  getIconUrl: (kw: string) => string | null
+}
+
+const GIFT_KW_TABS = ['전체', '화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격', '공통'] as const
+const GIFT_GRADES = ['전체', '열쇠', '갈래', '징표', '화폐', '에고'] as const
+
+export default function EgoGiftModal({ open, onClose, activatableGifts, getIconUrl }: EgoGiftModalProps) {
+  const [search, setSearch] = useState('')
+  const [kwFilter, setKwFilter] = useState('전체')
+  const [gradeFilter, setGradeFilter] = useState('전체')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'met' | 'unmet'>('all')
+
+  const filtered = useMemo(() => {
+    let list = activatableGifts
+
+    if (kwFilter !== '전체') {
+      list = list.filter(g => g.keyword === kwFilter)
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter(g => g.name.toLowerCase().includes(q))
+    }
+    if (gradeFilter !== '전체') {
+      list = list.filter(g => g.grade === gradeFilter)
+    }
+    if (statusFilter === 'met') {
+      list = list.filter(g => g.met)
+    } else if (statusFilter === 'unmet') {
+      list = list.filter(g => !g.met)
+    }
+
+    return list
+  }, [activatableGifts, kwFilter, search, gradeFilter, statusFilter])
+
+  const metCount = filtered.filter(g => g.met).length
+  const unmetCount = filtered.length - metCount
+
+  // 키워드별 카운트 (탭에 표시)
+  const kwCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const g of activatableGifts) {
+      counts[g.keyword] = (counts[g.keyword] ?? 0) + 1
+    }
+    return counts
+  }, [activatableGifts])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+      <div
+        className="flex flex-col w-full max-w-2xl mx-4 sm:mx-auto"
+        style={{
+          maxHeight: '85vh',
+          background: 'var(--bg-card, #1a1510)',
+          border: '1px solid var(--border)',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+          <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.0625rem' }}>E.G.O 기프트 도감</span>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
+            {activatableGifts.length}개
+          </span>
+          <div className="flex-1" />
+          <button onClick={onClose} style={{ color: '#888', fontSize: '1.25rem', lineHeight: 1, padding: '0 0.25rem' }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* 검색 + 필터 */}
+        <div className="px-4 py-3 flex flex-col gap-2.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+          {/* 검색 바 */}
+          <div className="relative">
+            <Search size={13} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#555', pointerEvents: 'none' }} />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="기프트 이름 검색..."
+              className="w-full pl-8 pr-3 py-2 rounded text-xs outline-none"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#ccc', fontSize: '0.75rem', fontFamily: 'var(--font-body)' }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#666', cursor: 'pointer' }}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* 키워드 탭 */}
+          <div className="flex flex-wrap gap-1">
+            {GIFT_KW_TABS.map(kw => {
+              const isActive = kwFilter === kw
+              const kwIcon = kw !== '전체' ? (getIconUrl(kw) ?? (ATK_TYPE_ICON_MAP as Record<string, string>)[kw] ?? null) : null
+              const count = kw === '전체' ? activatableGifts.length : (kwCounts[kw] ?? 0)
+              if (kw !== '전체' && count === 0) return null
+              return (
+                <button
+                  key={kw}
+                  onClick={() => setKwFilter(kw)}
+                  className="flex items-center gap-1 px-2 py-1 rounded transition-all"
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: isActive ? 700 : 400,
+                    color: isActive ? 'var(--gold)' : '#555',
+                    background: isActive ? 'rgba(200,144,10,0.1)' : 'transparent',
+                    border: `1px solid ${isActive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.04)'}`,
+                  }}
+                >
+                  {kwIcon && <Image src={kwIcon} alt="" width={11} height={11} style={{ width: '0.6875rem', height: '0.6875rem' }} />}
+                  {kw}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* 등급 + 상태 필터 */}
+          <div className="flex items-center gap-2">
+            <select
+              value={gradeFilter}
+              onChange={e => setGradeFilter(e.target.value)}
+              className="rounded text-xs py-1 px-2 outline-none"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${gradeFilter !== '전체' ? 'rgba(200,144,10,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                color: gradeFilter !== '전체' ? 'var(--gold)' : '#888',
+                fontSize: '0.6875rem',
+                cursor: 'pointer',
+              }}
+            >
+              {GIFT_GRADES.map(g => <option key={g} value={g}>{g === '전체' ? '등급 전체' : g}</option>)}
+            </select>
+
+            <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              {([
+                { value: 'all' as const, label: '전체' },
+                { value: 'met' as const, label: '활성' },
+                { value: 'unmet' as const, label: '미활성' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStatusFilter(opt.value)}
+                  className="px-2.5 py-1 text-xs transition-colors"
+                  style={{
+                    background: statusFilter === opt.value ? 'rgba(200,144,10,0.15)' : 'transparent',
+                    color: statusFilter === opt.value ? 'var(--gold)' : '#555',
+                    fontSize: '0.6875rem',
+                    fontFamily: 'var(--font-heading)',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1" />
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+              {metCount > 0 && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{metCount}</span> 활성</>}
+              {metCount > 0 && unmetCount > 0 && ' / '}
+              {unmetCount > 0 && <><span style={{ color: '#666' }}>{unmetCount}</span> 미활성</>}
+            </span>
+          </div>
+        </div>
+
+        {/* 기프트 목록 */}
+        <div className="overflow-y-auto flex-1 px-4 py-3" style={{ minHeight: 0 }}>
+          {filtered.length === 0 ? (
+            <p className="text-center py-8" style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
+              {activatableGifts.length === 0 ? '인격을 먼저 편성해주세요' : '조건에 맞는 기프트가 없습니다'}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {filtered.map(g => {
+                const c = g.condition
+                const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
+                  : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
+                  : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
+                  : `${c.count}인`
+                const pct = Math.min(g.current / c.count, 1)
+                const kwIcon = getIconUrl(g.keyword) ?? (ATK_TYPE_ICON_MAP as Record<string, string>)[g.keyword] ?? null
+
+                return (
+                  <div
+                    key={g.name}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded"
+                    style={{
+                      background: g.met ? 'rgba(200,144,10,0.06)' : 'rgba(255,255,255,0.01)',
+                      border: `1px solid ${g.met ? 'rgba(200,144,10,0.2)' : 'rgba(255,255,255,0.03)'}`,
+                      opacity: g.met ? 1 : 0.7,
+                    }}
+                  >
+                    {g.image_url ? (
+                      <Image
+                        src={g.image_url}
+                        alt=""
+                        width={32}
+                        height={32}
+                        style={{
+                          width: '2rem', height: '2rem',
+                          borderRadius: '50%', objectFit: 'cover', flexShrink: 0,
+                          border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      />
+                    ) : (
+                      <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: '#1a1510', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: g.met ? 'var(--gold)' : '#777', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
+                        <span style={{ fontSize: '0.625rem', color: '#444', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>{g.grade}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {kwIcon && <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0, width: '0.625rem', height: '0.625rem' }} />}
+                        <span style={{ fontSize: '0.6875rem', color: g.met ? '#88a830' : '#666' }}>
+                          {condLabel} ({g.current}/{c.count})
+                        </span>
+                        <div style={{ width: '2.5rem', height: '0.1875rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.125rem', flexShrink: 0, marginLeft: '0.25rem' }}>
+                          <div style={{ width: `${pct * 100}%`, height: '100%', background: g.met ? 'var(--gold)' : '#555', borderRadius: '0.125rem', transition: 'width 0.3s' }} />
+                        </div>
+                      </div>
+                      {g.effect_base && (
+                        <p style={{ fontSize: '0.625rem', color: '#555', marginTop: '0.1875rem', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {g.effect_base}
+                        </p>
+                      )}
+                    </div>
+                    {g.met && (
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--gold)', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>ON</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
