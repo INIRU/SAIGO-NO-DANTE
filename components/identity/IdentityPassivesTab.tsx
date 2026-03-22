@@ -76,7 +76,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
                   border: `1px solid ${primaryColor}35`,
                 }}
               >
-                {p.active_cond}
+                {p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : p.active_cond}
               </span>
             )}
           </div>

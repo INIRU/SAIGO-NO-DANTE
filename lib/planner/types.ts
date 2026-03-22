@@ -178,3 +178,23 @@ export interface SinnerData {
   name_kr: string
   order_num: number
 }
+
+export interface SkillSummary {
+  identity_id: string
+  sin_affinity: string
+  skill_type: string
+  skill_order: number
+  uptie_level: number | null
+}
+
+export interface PassiveData {
+  id: string
+  name: string
+  identity_id: string
+  passive_type: string  // 'battle' | 'support'
+  sin_affinity: string | null
+  sin_count: number | null
+  active_cond: string | null  // 'resonance' | 'stock' | null
+  description: string | null
+  uptie_level: number | null
+}

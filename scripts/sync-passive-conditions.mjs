@@ -120,18 +120,10 @@ async function main() {
       }
     }
 
-    // 조건 없는 패시브 — sin_affinity/sin_count 기반으로 추론
-    if (!matchedCond) {
-      for (const pid of passiveIds) {
-        const cond = conditionMap.get(pid)
-        if (cond) {
-          matchedCond = cond
-          break
-        }
-      }
-    }
-
     if (!matchedCond) { noMatch++; continue }
+
+    // sin_affinity가 없는 패시브(3동기화 등)에는 조건 설정 안 함
+    if (!passive.sin_affinity || !passive.sin_count) { noMatch++; continue }
 
     const newCond = matchedCond.type // 'resonance' or 'stock'
     if (passive.active_cond === newCond) { skipped++; continue }
