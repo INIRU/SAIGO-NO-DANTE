@@ -715,6 +715,30 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   }
 
   // Observe: grade 1-3, exclude 잔영
+  const filteredFinalSourceGifts = useMemo(() => {
+    return gifts.filter(g => {
+      if (finalFilterGrade && g.grade !== finalFilterGrade) return false
+      if (finalFilterKeyword) {
+        const slug = getKeywordSlug(g.keyword ?? null)
+        if (slug !== finalFilterKeyword) return false
+      }
+      if (finalSearch.trim()) {
+        if (!g.name.includes(finalSearch.trim())) return false
+      }
+      return true
+    })
+  }, [gifts, finalFilterGrade, finalFilterKeyword, finalSearch])
+
+  const finalGradeGroups = useMemo(() => {
+    const groups: Record<string, GiftData[]> = {}
+    for (const g of filteredFinalSourceGifts) {
+      const grade = g.grade ?? '1'
+      if (!groups[grade]) groups[grade] = []
+      groups[grade].push(g)
+    }
+    return groups
+  }, [filteredFinalSourceGifts])
+
   const observeGifts = useMemo(
     () => gifts.filter(g => {
       const grade = parseInt(g.grade ?? '0')
@@ -1035,21 +1059,8 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
       {/* ── Final tab ───────────────────────────────────────────────────── */}
       {subTab === 'final' && (() => {
-        // useState moved to component top level
-
-        const filteredFinalSourceGifts = useMemo(() => {
-          return gifts.filter(g => {
-            if (finalFilterGrade && g.grade !== finalFilterGrade) return false
-            if (finalFilterKeyword) {
-              const slug = getKeywordSlug(g.keyword ?? null)
-              if (slug !== finalFilterKeyword) return false
-            }
-            if (finalSearch.trim()) {
-              if (!g.name.includes(finalSearch.trim())) return false
-            }
-            return true
-          })
-        }, [gifts, finalFilterGrade, finalFilterKeyword, finalSearch])
+        // hooks moved to component top level
+        const gradeGroups = finalGradeGroups
 
         const GRADE_OPTIONS = [
           { value: null, label: '전체' },
@@ -1059,16 +1070,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
           { value: '2', label: 'Ⅱ' },
           { value: '1', label: 'Ⅰ' },
         ]
-
-        const gradeGroups = useMemo(() => {
-          const groups: Record<string, GiftData[]> = {}
-          for (const g of filteredFinalSourceGifts) {
-            const grade = g.grade ?? '1'
-            if (!groups[grade]) groups[grade] = []
-            groups[grade].push(g)
-          }
-          return groups
-        }, [filteredFinalSourceGifts])
 
         const gradeGroupOrder = ['5', '4', '3', '2', '1']
 
