@@ -3,7 +3,7 @@
 import { useReducer, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Star, Layers, Combine, FileText } from 'lucide-react'
-import { plannerReducer, createInitialState, DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type Difficulty } from '@/lib/planner/types'
+import { plannerReducer, createInitialState, DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type Difficulty } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { loadDraftFromLocal } from '@/lib/planner/encoder'
 import DeckTab from '@/components/planner/DeckTab'
@@ -18,6 +18,8 @@ interface Props {
   recipes: RecipeData[]
   identities: IdentityData[]
   sinners: SinnerData[]
+  passives: PassiveData[]
+  skills: SkillSummary[]
 }
 
 const TABS = [
@@ -28,7 +30,7 @@ const TABS = [
   { key: 'summary' as const, label: '요약', icon: FileText },
 ]
 
-export default function PlannerClient({ themes, gifts, recipes, identities, sinners }: Props) {
+export default function PlannerClient({ themes, gifts, recipes, identities, sinners, passives, skills }: Props) {
   const [state, dispatch] = useReducer(plannerReducer, 'hard', createInitialState)
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
@@ -140,7 +142,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
         {/* 탭 콘텐츠 */}
         {state.activeTab === 'deck' && (
-          <DeckTab state={state} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} />
+          <DeckTab state={state} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} />
         )}
         {state.activeTab === 'blessing' && (
           <BlessingTab state={state} dispatch={dispatch} />

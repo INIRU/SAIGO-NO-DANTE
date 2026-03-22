@@ -457,7 +457,7 @@ export default function DeckIdentityCard({
                     )}
                     {passive.active_cond && (
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${pc}18`, color: pc, border: `1px solid ${pc}35` }}>
-                        {passive.active_cond}
+                        {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
                       </span>
                     )}
                   </div>

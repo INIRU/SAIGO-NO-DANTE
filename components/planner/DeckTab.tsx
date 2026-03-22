@@ -3,11 +3,13 @@
 import { useMemo, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
-import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData } from '@/lib/planner/types'
+import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData, type PassiveData, type SkillSummary } from '@/lib/planner/types'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
+import { SIN_COLORS } from '@/lib/constants/sin'
 import KeywordChart from './KeywordChart'
+import SkillDescription from '@/components/skill/SkillDescription'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 
@@ -28,6 +30,8 @@ interface Props {
   themes: ThemeData[]
   gifts: GiftData[]
   giftMap: Map<number, GiftData>
+  passives: PassiveData[]
+  skills: SkillSummary[]
 }
 
 // --- Rarity star images ---
@@ -44,10 +48,11 @@ function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'm
   )
 }
 
-export default function DeckTab({ state, dispatch, identities, sinners }: Props) {
+export default function DeckTab({ state, dispatch, identities, sinners, passives, skills }: Props) {
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>({})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>({})
+  const [passiveSubTab, setPassiveSubTab] = useState<'battle' | 'support'>('battle')
 
   // Modal state
   const [identityModalSinner, setIdentityModalSinner] = useState<string | null>(null)
@@ -84,6 +89,18 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
     for (const ident of identities) map.set(ident.id, ident)
     return map
   }, [identities])
+
+  // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용)
+  const deckSinCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const selectedIds = new Set(state.identitySlots.map(s => s.identity_id))
+    for (const skill of skills) {
+      if (!selectedIds.has(skill.identity_id)) continue
+      if (skill.skill_order > 3) continue // 수비/변형 제외, S1~S3만
+      counts[skill.sin_affinity] = (counts[skill.sin_affinity] ?? 0) + 1
+    }
+    return counts
+  }, [state.identitySlots, skills])
 
   // 인격 이미지 URL (info 이미지)
   const getIdentityInfoImageUrl = useCallback((ident: IdentityData, gacksung: boolean) => {
@@ -843,7 +860,7 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
         </div>
       )}
 
-      {/* ── 하단: 키워드 차트 + 편성 요약 ── */}
+      {/* ── 하단: 키워드 차트 + 패시브 ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8" style={{ borderTop: '1px solid #1a1510', paddingTop: '1.5rem' }}>
         <div>
           <h3 className="font-serif mb-3" style={{ color: '#e8dcc8', fontSize: '1rem' }}>키워드 분포</h3>
@@ -854,23 +871,152 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
           )}
         </div>
         <div>
-          <h3 className="font-serif mb-3" style={{ color: '#e8dcc8', fontSize: '1rem' }}>편성 요약</h3>
-          <div className="rounded-lg" style={{ background: '#1a1510', border: '1px solid #222', padding: '1rem' }}>
-            <div style={{ color: '#888', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
-              선택: {state.identitySlots.length} / 12
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>패시브</h3>
+            <div className="flex gap-1">
+              {(['battle', 'support'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setPassiveSubTab(tab)}
+                  style={{
+                    padding: '0.1875rem 0.625rem',
+                    fontSize: '0.75rem',
+                    borderRadius: '0.25rem',
+                    cursor: 'pointer',
+                    fontWeight: passiveSubTab === tab ? 700 : 400,
+                    background: passiveSubTab === tab ? 'rgba(200,144,10,0.15)' : 'transparent',
+                    border: `1px solid ${passiveSubTab === tab ? '#c8900a' : '#333'}`,
+                    color: passiveSubTab === tab ? '#e8b030' : '#666',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'battle' ? '배틀' : '서포트'}
+                </button>
+              ))}
             </div>
-            {state.identitySlots.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '0.75rem' }}>수감자를 클릭하여 인격을 선택하세요.</p>
-            ) : (
-              <div className="space-y-1">
-                {state.identitySlots.map(s => (
-                  <div key={s.sinner_id} className="flex items-center justify-between" style={{ fontSize: '0.75rem' }}>
-                    <span style={{ color: '#b0a898' }}>{s.name_kr}</span>
-                    <RarityStars rarity={s.rarity} />
-                  </div>
-                ))}
-              </div>
-            )}
+          </div>
+          <div className="rounded-lg" style={{ background: '#1a1510', border: '1px solid #222', padding: '1rem', maxHeight: '20rem', overflowY: 'auto' }}>
+            {(() => {
+              const selectedIds = new Set(state.identitySlots.map(s => s.identity_id))
+              const filtered = passives.filter(
+                p => selectedIds.has(p.identity_id) && p.passive_type === passiveSubTab
+              )
+              if (filtered.length === 0) {
+                return (
+                  <p style={{ color: '#444', fontSize: '0.75rem' }}>
+                    {state.identitySlots.length === 0 ? '인격을 선택하면 패시브가 표시됩니다.' : '해당 패시브가 없습니다.'}
+                  </p>
+                )
+              }
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  {filtered.map(p => {
+                    const slot = state.identitySlots.find(s => s.identity_id === p.identity_id)
+                    const sinTypes = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
+                    const current = sinTypes.reduce((sum, st) => sum + (deckSinCounts[st] ?? 0), 0)
+                    const required = p.sin_count ?? 1
+                    const isMet = current >= required
+                    const isResonance = p.active_cond === 'resonance'
+                    const primarySin = sinTypes[0] ?? null
+                    const sinCap = primarySin ? primarySin.charAt(0).toUpperCase() + primarySin.slice(1) : null
+                    const pc = primarySin ? (SIN_COLORS[primarySin as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+
+                    // S1~S3 스킬 죄악 속성 (해당 인격)
+                    const identSkills = skills
+                      .filter(sk => sk.identity_id === p.identity_id && sk.skill_order <= 3 && sk.skill_order >= 1)
+                      .sort((a, b) => a.skill_order - b.skill_order)
+                    // uptie_level 4 우선, 없으면 3
+                    const s1 = identSkills.filter(sk => sk.skill_order === 1).sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0]
+                    const s2 = identSkills.filter(sk => sk.skill_order === 2).sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0]
+                    const s3 = identSkills.filter(sk => sk.skill_order === 3).sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0]
+                    const skillDots = [s1, s2, s3].filter(Boolean)
+
+                    return (
+                      <div
+                        key={p.id}
+                        style={{
+                          borderBottom: '1px solid #222',
+                          paddingBottom: '0.5rem',
+                          opacity: p.active_cond && !isMet ? 0.6 : 1,
+                          transition: 'opacity 0.15s',
+                        }}
+                      >
+                        {/* 수감자명 + S1/S2/S3 죄악 속성 점 */}
+                        <div className="flex items-center gap-1" style={{ marginBottom: '0.125rem' }}>
+                          <span style={{ color: '#888', fontSize: '0.6875rem' }}>
+                            {slot?.name_kr ?? ''}
+                          </span>
+                          {skillDots.map((sk, i) => {
+                            const dotColor = SIN_COLORS[sk!.sin_affinity as keyof typeof SIN_COLORS] ?? '#555'
+                            const sinCapDot = sk!.sin_affinity.charAt(0).toUpperCase() + sk!.sin_affinity.slice(1)
+                            return (
+                              <Image
+                                key={i}
+                                src={`${STORAGE_BASE}/icons/Sins/transparent/${sinCapDot}.webp`}
+                                alt={sk!.sin_affinity}
+                                width={10}
+                                height={10}
+                                title={`S${sk!.skill_order}: ${sk!.sin_affinity}`}
+                                style={{ width: '0.625rem', height: '0.625rem', opacity: 0.7, filter: `drop-shadow(0 0 0.125rem ${dotColor}88)` }}
+                              />
+                            )
+                          })}
+                        </div>
+                        {/* 패시브명 + 조건 배지 + 죄악 아이콘 + current/required */}
+                        <div className="flex items-center gap-1.5 flex-wrap" style={{ marginBottom: '0.25rem' }}>
+                          <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 700 }}>
+                            {p.name}
+                          </span>
+                          {p.active_cond && (
+                            <span style={{
+                              fontSize: '0.625rem',
+                              fontWeight: 700,
+                              padding: '0.0625rem 0.375rem',
+                              borderRadius: '0.25rem',
+                              background: isResonance ? 'rgba(200,144,10,0.15)' : 'rgba(90,176,208,0.15)',
+                              border: `1px solid ${isResonance ? 'rgba(200,144,10,0.4)' : 'rgba(90,176,208,0.4)'}`,
+                              color: isResonance ? '#c8900a' : '#5ab0d0',
+                              flexShrink: 0,
+                            }}>
+                              {isResonance ? '공명' : '보유'}
+                            </span>
+                          )}
+                          {sinCap && (
+                            <div className="flex items-center gap-0.5" style={{ flexShrink: 0 }}>
+                              <Image
+                                src={`${STORAGE_BASE}/icons/Sins/transparent/${sinCap}.webp`}
+                                alt={sinCap}
+                                width={16}
+                                height={16}
+                                style={{ width: '1rem', height: '1rem' }}
+                              />
+                              {p.active_cond && p.sin_count != null ? (
+                                <span style={{
+                                  fontSize: '0.6875rem',
+                                  fontFamily: 'var(--font-mono)',
+                                  color: isMet ? '#5a8a40' : '#c83030',
+                                  fontWeight: 700,
+                                }}>
+                                  {current}/{required}
+                                </span>
+                              ) : p.sin_count != null ? (
+                                <span style={{ color: '#888', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+                                  {p.sin_count}
+                                </span>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                        {/* 설명 (키워드 툴팁 포함) */}
+                        {p.description && (
+                          <SkillDescription description={p.description} accentColor={pc} variant="detail" showCoinBadges={false} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         </div>
       </div>
