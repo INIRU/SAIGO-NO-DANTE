@@ -79,8 +79,9 @@ export default function IdentityAISection({
       if (!res.ok) throw new Error(data.error || 'AI 생성 실패')
       setSummary(data.summary)
       setCreatedAt(data.created_at)
-    } catch (err: any) {
-      setError(err.message || 'AI 생성 중 오류가 발생했습니다.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message || 'AI 생성 중 오류가 발생했습니다.')
     } finally {
       setGenerating(false)
     }

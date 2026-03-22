@@ -77,52 +77,57 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-  }
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
 
-  const body = await request.json()
-  const isPositive = body.is_positive === true
-  const content = ((body.content as string) ?? '').trim().slice(0, 100)
+    const body = await request.json()
+    const isPositive = body.is_positive === true
+    const content = ((body.content as string) ?? '').trim().slice(0, 100)
 
-  const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(
-    admin, session.user.email, session.user.name, session.user.image,
-  )
-  if (!userId) {
-    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-  }
-
-  // upsert (인격당 1인 1리뷰)
-  const { data, error } = await admin
-    .schema('limbus')
-    .from('identity_reviews')
-    .upsert(
-      { identity_id: id, user_id: userId, is_positive: isPositive, content },
-      { onConflict: 'identity_id,user_id' },
+    const admin = createAdminClient()
+    const userId = await findOrCreateSupabaseUser(
+      admin, session.user.email, session.user.name, session.user.image,
     )
-    .select('id, is_positive, content, created_at, user_id')
-    .single()
+    if (!userId) {
+      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // upsert (인격당 1인 1리뷰)
+    const { data, error } = await admin
+      .schema('limbus')
+      .from('identity_reviews')
+      .upsert(
+        { identity_id: id, user_id: userId, is_positive: isPositive, content },
+        { onConflict: 'identity_id,user_id' },
+      )
+      .select('id, is_positive, content, created_at, user_id')
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const { data: profile } = await admin
+      .schema('limbus')
+      .from('profiles')
+      .select('username, avatar_url, role')
+      .eq('id', userId)
+      .single()
+
+    return NextResponse.json({
+      ...data,
+      username: profile?.username ?? session.user.name,
+      avatar_url: profile?.avatar_url ?? null,
+      role: profile?.role ?? 'user',
+    })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const { data: profile } = await admin
-    .schema('limbus')
-    .from('profiles')
-    .select('username, avatar_url, role')
-    .eq('id', userId)
-    .single()
-
-  return NextResponse.json({
-    ...data,
-    username: profile?.username ?? session.user.name,
-    avatar_url: profile?.avatar_url ?? null,
-    role: profile?.role ?? 'user',
-  })
 }
 
 // DELETE — 리뷰 삭제 (본인만)
@@ -130,30 +135,35 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
+    const admin = createAdminClient()
+    const userId = await findOrCreateSupabaseUser(
+      admin, session.user.email, session.user.name, session.user.image,
+    )
+    if (!userId) {
+      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
+    }
+
+    const { error } = await admin
+      .schema('limbus')
+      .from('identity_reviews')
+      .delete()
+      .eq('identity_id', id)
+      .eq('user_id', userId)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(
-    admin, session.user.email, session.user.name, session.user.image,
-  )
-  if (!userId) {
-    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-  }
-
-  const { error } = await admin
-    .schema('limbus')
-    .from('identity_reviews')
-    .delete()
-    .eq('identity_id', id)
-    .eq('user_id', userId)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true })
 }
