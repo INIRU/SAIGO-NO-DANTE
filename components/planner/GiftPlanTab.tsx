@@ -35,12 +35,6 @@ const KEYWORD_TABS = [
   { label: '공통', slug: 'general' },
 ] as const
 
-const KEYWORD_LABEL_MAP: Record<string, string> = {
-  burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
-  sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
-  pierce: '관통', blunt: '타격', general: '공통',
-}
-
 const SLUG_TO_KEYWORD: Record<string, string> = {
   burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
   sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
@@ -48,6 +42,14 @@ const SLUG_TO_KEYWORD: Record<string, string> = {
 }
 
 const GRADE_ORDER = ['5', '4', '3', '2', '1']
+
+// 참격/관통/타격은 icons/stats/, 나머지는 icons/keywords/, 공통은 null
+const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
+function getKeywordIconUrl(slug: string): string | null {
+  if (slug === 'general') return null
+  if (STATS_SLUGS.has(slug)) return `${STORAGE_BASE}/icons/stats/${slug}.webp`
+  return `${STORAGE_BASE}/icons/keywords/${slug}.webp`
+}
 
 function getKeywordSlug(keyword: string | null): string | null {
   if (!keyword) return 'general'
@@ -102,19 +104,16 @@ function GiftGrid({
   gifts,
   selectedIds,
   onToggle,
-  prefix,
 }: {
   gifts: GiftData[]
   selectedIds: Set<number>
   onToggle: (gift: GiftData) => void
-  prefix: string
 }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<number | null>(null)
 
   const filteredGifts = useMemo(() => {
     if (!activeSlug) return gifts
-    const kw = SLUG_TO_KEYWORD[activeSlug]
     return gifts.filter(g => {
       const slug = getKeywordSlug(g.keyword)
       return slug === activeSlug || (activeSlug === 'general' && (!g.keyword || g.keyword.includes('범용') || g.keyword.includes('공통')))
@@ -158,9 +157,9 @@ function GiftGrid({
                 transition: 'all 0.15s',
               }}
             >
-              {tab.slug && (
+              {tab.slug && getKeywordIconUrl(tab.slug) && (
                 <Image
-                  src={`${STORAGE_BASE}/icons/keywords/${tab.slug}.webp`}
+                  src={getKeywordIconUrl(tab.slug)!}
                   alt={tab.label}
                   width={14}
                   height={14}
@@ -519,31 +518,47 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
       {/* Sub-tab content */}
       {subTab === 'observe' && (
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <GiftGrid
-              gifts={gifts}
-              selectedIds={observeIds}
-              onToggle={gift => toggleGift(gift, 'observe', observeIds)}
-              prefix="observe"
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+              관측 비용: <Image src={`${STORAGE_BASE}/icons/start-buffs/starlight.webp`} alt="별빛" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', display: 'inline', verticalAlign: 'middle' }} />{observeIds.size * 70}
+            </span>
+            <span style={{
+              fontSize: '0.6875rem',
+              color: observeIds.size >= 3 ? '#c83030' : '#c8900a',
+              background: observeIds.size >= 3 ? 'rgba(200,48,48,0.12)' : 'rgba(200,144,10,0.12)',
+              padding: '0.125rem 0.5rem',
+              borderRadius: '0.25rem',
+              border: `1px solid ${observeIds.size >= 3 ? 'rgba(200,48,48,0.3)' : 'rgba(200,144,10,0.3)'}`,
+            }}>
+              선택 {observeIds.size}/3
+            </span>
+            <span style={{ fontSize: '0.6875rem', color: '#555' }}>Ⅰ~Ⅲ 등급만 · 잔영 제외</span>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <GiftGrid
+                gifts={gifts.filter(g => {
+                  const grade = parseInt(g.grade ?? '0')
+                  return grade >= 1 && grade <= 3 && !g.name.includes('잔영')
+                })}
+                selectedIds={observeIds}
+                onToggle={gift => {
+                  const key = `observe_${gift.game_id}`
+                  if (observeIds.has(gift.game_id)) {
+                    dispatch({ type: 'REMOVE_GIFT', giftId: key })
+                  } else if (observeIds.size < 3) {
+                    dispatch({ type: 'ADD_GIFT', giftId: key })
+                  }
+                }}
+              />
+            </div>
+            <SelectedPanel
+              title="관측 기프트"
+              selectedGifts={getGiftsByIds(observeIds)}
+              onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
             />
           </div>
-          <SelectedPanel
-            title="선택한 E.G.O 기프트"
-            selectedGifts={getGiftsByIds(observeIds)}
-            onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
-            badge={
-              <span style={{
-                fontSize: '0.6875rem', color: '#c8900a',
-                background: 'rgba(200,144,10,0.12)',
-                padding: '0.125rem 0.5rem',
-                borderRadius: '0.25rem',
-                border: '1px solid rgba(200,144,10,0.3)',
-              }}>
-                {observeIds.size}개
-              </span>
-            }
-          />
         </div>
       )}
 
@@ -557,11 +572,10 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 const key = `start_${gift.game_id}`
                 if (startIds.has(gift.game_id)) {
                   dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                } else if (startIds.size < 3) {
+                } else if (startIds.size < 1) {
                   dispatch({ type: 'ADD_GIFT', giftId: key })
                 }
               }}
-              prefix="start"
             />
           </div>
           <SelectedPanel
@@ -571,13 +585,13 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
             badge={
               <span style={{
                 fontSize: '0.6875rem',
-                color: startIds.size >= 3 ? '#c83030' : '#c8900a',
-                background: startIds.size >= 3 ? 'rgba(200,48,48,0.12)' : 'rgba(200,144,10,0.12)',
+                color: startIds.size >= 1 ? '#c83030' : '#c8900a',
+                background: startIds.size >= 1 ? 'rgba(200,48,48,0.12)' : 'rgba(200,144,10,0.12)',
                 padding: '0.125rem 0.5rem',
                 borderRadius: '0.25rem',
-                border: `1px solid ${startIds.size >= 3 ? 'rgba(200,48,48,0.3)' : 'rgba(200,144,10,0.3)'}`,
+                border: `1px solid ${startIds.size >= 1 ? 'rgba(200,48,48,0.3)' : 'rgba(200,144,10,0.3)'}`,
               }}>
-                선택 {startIds.size}/3
+                선택 {startIds.size}/1
               </span>
             }
           />
