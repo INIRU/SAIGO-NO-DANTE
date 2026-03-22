@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
+import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { RARITY_COLORS, RARITY_ICON_MAP, GRADE_COLORS, STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS } from '@/lib/constants/sin'
@@ -161,12 +162,13 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
                 title={canReroll ? `${identity.name_kr} — 클릭하여 리롤` : identity.name_kr}
               >
                 {/* Portrait — key forces remount on identity change */}
-                <Image
+                <ImageWithFallback
                   key={identity.id}
                   src={getIdentityInfoUrl(identity)}
                   alt={identity.name_kr}
                   fill
                   unoptimized
+                  fallbackType="identity"
                   className="transition-transform duration-500 group-hover:scale-[1.03]"
                   style={{ objectFit: 'cover', objectPosition: 'top' }}
                   onLoad={() => handleRerollImageLoad(sinner.id)}

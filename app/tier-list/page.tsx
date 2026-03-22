@@ -44,8 +44,8 @@ async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
     'S+': [], 'S': [], 'A': [], 'B': [], 'C': [], 'F': [],
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const row of data as any[]) {
+  type TierRow = { tier: string; sort_order: number; identity: TierIdentity | TierIdentity[] | null }
+  for (const row of data as TierRow[]) {
     const tier = row.tier as Tier
     const ident = Array.isArray(row.identity) ? row.identity[0] : row.identity
     if (tiers[tier] && ident) {

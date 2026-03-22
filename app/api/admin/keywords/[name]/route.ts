@@ -6,47 +6,57 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ name: string }> }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-  const { name } = await params
-  const decodedName = decodeURIComponent(name)
-  const body = await request.json()
+    const { name } = await params
+    const decodedName = decodeURIComponent(name)
+    const body = await request.json()
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .schema('limbus')
-    .from('keyword_meta')
-    .update({
-      description: body.description,
-      max_stack: body.max_stack ?? null,
-      icon_slug: body.icon_slug ?? null,
-      sin_affinity: body.sin_affinity ?? null,
-    })
-    .eq('name', decodedName)
-    .select()
-    .single()
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .update({
+        description: body.description,
+        max_stack: body.max_stack ?? null,
+        icon_slug: body.icon_slug ?? null,
+        sin_affinity: body.sin_affinity ?? null,
+      })
+      .eq('name', decodedName)
+      .select()
+      .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json(data)
+    return NextResponse.json(data)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ name: string }> }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-  const { name } = await params
-  const decodedName = decodeURIComponent(name)
+    const { name } = await params
+    const decodedName = decodeURIComponent(name)
 
-  const supabase = createAdminClient()
-  const { error } = await supabase
-    .schema('limbus')
-    .from('keyword_meta')
-    .delete()
-    .eq('name', decodedName)
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .delete()
+      .eq('name', decodedName)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
