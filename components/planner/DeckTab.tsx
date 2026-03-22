@@ -117,7 +117,7 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
         keywords: ident.keywords ?? [],
         game_id: ident.game_id,
         folder_name: ident.folder_name,
-        slot_order: state.identitySlots.length,
+        slot_order: 99, // 기본 벤치, 하단 클릭으로 편성
       },
     })
     setIdentityModalSinner(null)
@@ -250,11 +250,9 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                     </>
                   )}
 
-                  {/* 편성 순서 오버레이 (편성된 경우 상시 표시) */}
-                  {slot && (() => {
-                    const orderIdx = state.identitySlots.findIndex(s => s.sinner_id === sinner.id)
-                    const n = orderIdx >= 0 ? orderIdx + 1 : null
-                    if (n == null) return null
+                  {/* 편성 순서 오버레이 (편성된 경우 상시 표시, 벤치는 미표시) */}
+                  {slot && slot.slot_order < 99 && (() => {
+                    const n = slot.slot_order + 1
                     const isFormation = n <= 7
                     return (
                       <div
@@ -286,13 +284,30 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                           <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
                         </div>
                         <div
-                          onClick={() => dispatch({ type: 'REMOVE_IDENTITY', sinnerId: sinner.id })}
+                          onClick={() => {
+                            if (slot.slot_order < 99) {
+                              // 편성됨 → 벤치로: slot_order = 99, 나머지 순서 재정렬
+                              const removed = slot.slot_order
+                              const updated = state.identitySlots.map(s => {
+                                if (s.sinner_id === sinner.id) return { ...s, slot_order: 99 }
+                                if (s.slot_order < 99 && s.slot_order > removed) return { ...s, slot_order: s.slot_order - 1 }
+                                return s
+                              })
+                              dispatch({ type: 'LOAD_PLAN', state: { identitySlots: updated } })
+                            } else {
+                              // 벤치 → 편성: 다음 번호 부여
+                              const nextOrder = state.identitySlots.filter(s => s.slot_order < 99).length
+                              dispatch({ type: 'ADD_IDENTITY', slot: { ...slot, slot_order: nextOrder } })
+                            }
+                          }}
                           className="flex items-center justify-center transition-colors"
                           style={{ height: '60%', background: 'rgba(13,11,8,0.5)' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,48,48,0.12)' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = slot.slot_order < 99 ? 'rgba(90,176,208,0.12)' : 'rgba(200,144,10,0.12)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                         >
-                          <span style={{ color: '#c83030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>인격 제거</span>
+                          <span style={{ color: slot.slot_order < 99 ? '#5ab0d0' : '#e8b030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
+                            {slot.slot_order < 99 ? '편성 해제' : '편성하기'}
+                          </span>
                         </div>
                       </>
                     ) : (
