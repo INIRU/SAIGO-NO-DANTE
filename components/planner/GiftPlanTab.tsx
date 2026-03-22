@@ -46,7 +46,6 @@ const SLUG_TO_KEYWORD: Record<string, string> = {
 }
 
 const GRADE_ORDER = ['3', '2', '1']
-const GRADE_ORDER_ALL = ['5', '4', '3', '2', '1']
 
 const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
 
@@ -1012,6 +1011,17 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
           9012, 9202, 9150, // 타격: 오늘의 표정, 포켓 암기 노트, 시간 굴레
         ])
 
+        // 가호에서 시작 기프트 추가 선택 수 계산
+        // baseId 103(쏟아지는 유성우), 109(완전한 가능성)가 ADDITIONAL_START_EGO_GIFT_SELECT +1
+        const BLESSING_START_GIFT_IDS = [103, 109]
+        let maxStartGifts = 1 // 기본 1개
+        for (const inv of state.giftInventory) {
+          if (!inv.startsWith('blessing_')) continue
+          const parts = inv.split('_')
+          const baseId = parseInt(parts[1])
+          if (BLESSING_START_GIFT_IDS.includes(baseId)) maxStartGifts += 1
+        }
+
         const startPool = gifts.filter(g => START_GIFT_IDS.has(g.game_id))
         const KEYWORD_ORDER = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격']
         const grouped = new Map<string, GiftData[]>()
@@ -1062,15 +1072,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                                 const key = `start_${gift.game_id}`
                                 if (isSelected) {
                                   dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                                } else if (startIds.size < 1) {
+                                } else if (startIds.size < maxStartGifts) {
                                   dispatch({ type: 'ADD_GIFT', giftId: key })
                                 }
                               }}
                               className="group"
                               style={{
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
-                                cursor: startIds.size >= 1 && !isSelected ? 'not-allowed' : 'pointer',
-                                opacity: startIds.size >= 1 && !isSelected ? 0.4 : 1,
+                                cursor: startIds.size >= maxStartGifts && !isSelected ? 'not-allowed' : 'pointer',
+                                opacity: startIds.size >= maxStartGifts && !isSelected ? 0.4 : 1,
                                 transition: 'all 0.15s',
                               }}
                             >
@@ -1123,14 +1133,14 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               badge={
                 <span style={{
                   fontSize: '0.5625rem',
-                  color: startIds.size >= 1 ? '#dc2626' : '#c8900a',
-                  background: startIds.size >= 1 ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
+                  color: startIds.size >= maxStartGifts ? '#dc2626' : '#c8900a',
+                  background: startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
                   padding: '0.125rem 0.375rem',
                   borderRadius: '0.25rem',
-                  border: `1px solid ${startIds.size >= 1 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
+                  border: `1px solid ${startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
                   fontWeight: 600,
                 }}>
-                  선택 {startIds.size}/1
+                  선택 {startIds.size}/{maxStartGifts}
                 </span>
               }
             />
