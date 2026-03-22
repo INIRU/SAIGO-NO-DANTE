@@ -30,6 +30,7 @@ import IdentitySkillsTab from '@/components/identity/IdentitySkillsTab'
 import IdentityPassivesTab from '@/components/identity/IdentityPassivesTab'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
 import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
+import IdentityAISection from '@/components/identity/IdentityAISection'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 
 interface Props {
@@ -73,6 +74,13 @@ export default function IdentityDetailClient({
   const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
+  const [guideTab, setGuideTab] = useState<'guide' | 'ai'>('ai')
+
+  // 이 인격의 키워드만 허용 (화력/리듬 등 일반 단어가 키워드로 매칭되는 것 방지)
+  // 스킬 설명의 [대괄호] 키워드는 formatSkillDescInner의 bracket 패턴이 별도 처리
+  const allowedKeywords = useMemo(() => {
+    return new Set<string>(identity.keywords || [])
+  }, [identity.keywords])
 
   // 뒤로가기/앞으로가기 시 탭 상태 동기화
   useEffect(() => {
@@ -376,18 +384,60 @@ export default function IdentityDetailClient({
 
               <IdentityStatsCard identity={identity} sinColor={sinColor} />
 
-              <IdentityGuideSection
-                identityId={identity.id}
-                initialGuides={initialGuides ?? []}
-                canEditGuide={canEditGuide}
-                sinColor={sinColor}
-                skillTokenLookup={skillTokenLookup}
-                passiveLookup={passiveLookup}
-                egoTokenLookup={egoTokenLookup}
-                identityTokenLookup={identityTokenLookup}
-                egoGiftLookup={egoGiftLookup}
-                acPool={acPool}
-              />
+              {/* 운영법 / AI 분석 탭 */}
+              <div>
+                <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
+                  {([
+                    { key: 'ai' as const, label: 'AI 분석' },
+                    { key: 'guide' as const, label: '운영법' },
+                  ]).map(tab => {
+                    const active = guideTab === tab.key
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => setGuideTab(tab.key)}
+                        className="relative px-5 py-2.5 font-semibold transition-all"
+                        style={{
+                          color: active ? '#e8dcc8' : '#555',
+                          fontSize: '0.8125rem',
+                          background: active ? `${sinColor}12` : 'transparent',
+                          borderBottom: active ? `2px solid ${sinColor}` : '2px solid transparent',
+                          marginBottom: '-1px',
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                {guideTab === 'ai' && (
+                  <IdentityAISection
+                    identityId={identity.id}
+                    sinColor={sinColor}
+                    isAdmin={isAdmin}
+                    allowedKeywords={allowedKeywords}
+                    skillLookup={skillTokenLookup}
+                    passiveLookup={passiveLookup}
+                    egoLookup={egoTokenLookup}
+                    identityLookup={identityTokenLookup}
+                    egoGiftLookup={egoGiftLookup}
+                  />
+                )}
+                {guideTab === 'guide' && (
+                  <IdentityGuideSection
+                    identityId={identity.id}
+                    initialGuides={initialGuides ?? []}
+                    canEditGuide={canEditGuide}
+                    sinColor={sinColor}
+                    skillTokenLookup={skillTokenLookup}
+                    passiveLookup={passiveLookup}
+                    egoTokenLookup={egoTokenLookup}
+                    identityTokenLookup={identityTokenLookup}
+                    egoGiftLookup={egoGiftLookup}
+                    acPool={acPool}
+                  />
+                )}
+              </div>
 
               {/* 스킬/패시브 탭 + 컨텐츠 */}
               <div>
@@ -477,6 +527,7 @@ export default function IdentityDetailClient({
                     skillNameColors={skillNameColors}
                     skillImgIdxMap={skillImgIdxMap}
                     variantMap={variantMap}
+                    allowedKeywords={allowedKeywords}
                   />
                 )}
 
@@ -485,6 +536,7 @@ export default function IdentityDetailClient({
                     filteredPassives={filteredPassives}
                     sinColor={sinColor}
                     skillNameColors={skillNameColors}
+                    allowedKeywords={allowedKeywords}
                   />
                 )}
               </div>
