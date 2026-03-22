@@ -341,7 +341,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
-        <Image src={entry.imageUrl} alt="" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover' }} />
+        <Image src={entry.imageUrl} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem', borderRadius: '50%', objectFit: 'cover' }} />
       )}
       <span style={{ color: '#888899', fontSize: '0.75rem' }}>{entry.sinnerName}</span>
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
