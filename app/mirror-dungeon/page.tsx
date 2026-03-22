@@ -7,6 +7,7 @@ export const revalidate = 300
 export const metadata: Metadata = {
   title: '거울 던전 — E.G.O 기프트',
   description: '거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피까지.',
+  alternates: { canonical: 'https://saigo-no-dante.com/mirror-dungeon' },
   openGraph: {
     title: '거울 던전 | 최애의 관리자',
     description: 'Limbus Company 거울 던전 E.G.O 기프트 도감 — 키워드·등급 필터, 효과, 조합 레시피.',

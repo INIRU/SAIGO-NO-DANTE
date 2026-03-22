@@ -5,8 +5,9 @@ import KeywordsClient from './KeywordsClient'
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: '키워드 도감',
+  title: '키워드 도감 — 상태이상·버프·디버프',
   description: '림버스 컴퍼니 키워드 도감 — 415종 키워드별 설명, 관련 인격, E.G.O 기프트 한눈에.',
+  alternates: { canonical: 'https://saigo-no-dante.com/keywords' },
   openGraph: {
     title: '키워드 도감 | 최애의 관리자',
     description: '림버스 컴퍼니 키워드 도감 — 키워드별 관련 인격·기프트 모아보기.',

@@ -6,6 +6,7 @@ import TierListClient from './TierListClient'
 export const metadata: Metadata = {
   title: '리세마라 티어표 | SAIGO NO DANTE',
   description: '림버스 컴퍼니 리세마라 추천 인격 티어표 — S+/S/A/B/C/F 등급, 커뮤니티 투표 기반.',
+  alternates: { canonical: 'https://saigo-no-dante.com/tier-list' },
   openGraph: {
     title: '리세마라 티어표 | 최애의 관리자',
     description: '림버스 컴퍼니 리세마라 추천 인격 티어표 — S+/S/A/B/C/F 등급, 커뮤니티 투표 기반.',
