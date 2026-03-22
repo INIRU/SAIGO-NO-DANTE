@@ -196,6 +196,8 @@ function GiftGrid({
               }}>
                 {gradeGifts.map(gift => {
                   const isSelected = selectedIds.has(gift.game_id)
+                  const kwSlug = getKeywordSlug(gift.keyword ?? null)
+                  const kwIconUrl = kwSlug ? getKeywordIconUrl(kwSlug) : null
                   return (
                     <div
                       key={gift.id}
@@ -205,23 +207,72 @@ function GiftGrid({
                     >
                       <button
                         onClick={() => onToggle(gift)}
-                        title={gift.name}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          gap: '0.125rem',
-                          padding: '0.375rem',
-                          background: isSelected ? 'rgba(200,144,10,0.12)' : '#1a1510',
-                          border: `1px solid ${isSelected ? '#c8900a' : '#2a2520'}`,
-                          borderRadius: '0.375rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          outline: isSelected ? '1px solid #c8900a40' : 'none',
-                          outlineOffset: '1px',
-                        }}
+                        className="group relative flex flex-col items-center transition-all duration-200 hover:scale-[1.06] hover:z-10"
+                        style={{ cursor: 'pointer', width: '4.5rem' }}
                       >
-                        <GiftImage gift={gift} size={2.25} />
-                        <GradeBadge grade={gift.grade} />
+                        {/* 8각형 카드 프레임 */}
+                        <div
+                          className="relative w-full aspect-square overflow-hidden"
+                          style={{
+                            backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            clipPath: 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)',
+                            outline: isSelected ? '2px solid #c8900a' : 'none',
+                            outlineOffset: '2px',
+                          }}
+                        >
+                          {/* 등급 라벨 — 왼쪽 위 */}
+                          <span
+                            className="absolute top-[4%] left-[3%] z-10 pointer-events-none"
+                            style={{
+                              fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                              fontWeight: 700,
+                              fontSize: '1.25rem',
+                              lineHeight: 1,
+                              color: 'rgb(251, 183, 46)',
+                              textShadow: '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
+                            }}
+                          >
+                            {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
+                          </span>
+
+                          {/* 키워드 아이콘 — 오른쪽 아래 */}
+                          {kwIconUrl && (
+                            <div className="absolute bottom-0 right-0 z-10 pointer-events-none" style={{ width: '30%', height: '30%' }}>
+                              <Image src={kwIconUrl} alt="" fill sizes="40px" className="object-contain" />
+                            </div>
+                          )}
+
+                          {/* 기프트 이미지 — 중앙 */}
+                          <div className="absolute flex items-center justify-center" style={{ inset: '15%' }}>
+                            {gift.image_url?.startsWith('http') ? (
+                              <Image src={gift.image_url} alt={gift.name} fill className="object-contain" sizes="80px" />
+                            ) : (
+                              <div style={{ width: '1.75rem', height: '1.75rem', background: '#333', borderRadius: '50%' }} />
+                            )}
+                          </div>
+
+                          {/* 선택 체크 오버레이 */}
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center z-20" style={{ background: 'rgba(200,144,10,0.2)' }}>
+                              <span style={{ color: '#e8b030', fontSize: '1.25rem' }}>✓</span>
+                            </div>
+                          )}
+
+                          {/* 호버 글로우 */}
+                          <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                            style={{ background: 'linear-gradient(135deg, rgba(251,183,46,0.15) 0%, transparent 50%)' }}
+                          />
+                        </div>
+
+                        {/* 이름 */}
+                        <p style={{ fontSize: '0.5625rem', color: '#aaa', textAlign: 'center', marginTop: '0.25rem', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                          {gift.name}
+                        </p>
                       </button>
+
                       {tooltip === gift.game_id && (
                         <div style={{
                           position: 'absolute',
