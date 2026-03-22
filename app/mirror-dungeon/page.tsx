@@ -20,7 +20,7 @@ export default async function MirrorDungeonPage() {
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, boss_image_url').order('id'),
-    supabase.schema('limbus').from('mirror_dungeon_events').select('id, name, desc_text, options, gift_ids, source, image_url, parent_id, option_gifts').order('id'),
+    supabase.schema('limbus').from('mirror_dungeon_events').select('id, name, desc_text, options, gift_ids, source, image_url, parent_id, option_gifts, theme_ids').order('id'),
   ])
 
   return (

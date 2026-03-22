@@ -351,7 +351,8 @@ export default function DeckIdentityCard({
             labelIdx[skill.skill_order] = varIdx + 1
             const hasVariants = (labelCount[skill.skill_order] ?? 1) > 1
             const sc = sinColor(skill.sin_affinity)
-            const maxPower = skill.base_power + skill.coins * skill.coin_power
+            const maxPower = skill.coin_power < 0 ? skill.base_power : skill.base_power + skill.coins * skill.coin_power
+            const minPower = skill.coin_power < 0 ? skill.base_power + skill.coins * skill.coin_power : null
             const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
             const skillLabel = hasVariants ? `S${skill.skill_order}-${varIdx + 1}` : `S${skill.skill_order}`
             const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
@@ -393,7 +394,10 @@ export default function DeckIdentityCard({
                   <span style={{ fontSize: '0.75rem', color: '#999' }}>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.base_power}</strong></span>
                   <span style={{ fontSize: '0.75rem', color: '#999' }}>코인 <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.coins}</strong></span>
                   <span style={{ fontSize: '0.75rem', color: '#999' }}>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{coinPowerStr}</strong></span>
-                  <span style={{ fontSize: '0.75rem', color: '#999', marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong></span>
+                  <span style={{ fontSize: '0.75rem', color: '#999', marginLeft: 'auto' }}>
+                    {minPower != null && <><span style={{ color: '#e04040' }}>최소 <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{minPower}</strong></span> / </>}
+                    최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong>
+                  </span>
                 </div>
 
                 {/* 코인 시각화 */}
