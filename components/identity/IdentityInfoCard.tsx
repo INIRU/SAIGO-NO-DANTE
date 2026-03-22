@@ -312,6 +312,9 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               }}
             />
           </div>
+          <p className="text-center mt-2" style={{ color: '#555', fontSize: '0.625rem' }}>
+            드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화
+          </p>
         </div>
       )}
     </div>
