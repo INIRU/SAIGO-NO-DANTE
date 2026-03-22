@@ -80,14 +80,28 @@ export default function BlessingTab({ state, dispatch }: Props) {
     }
   }
 
+  const allSelectedAtLevel = (level: number) =>
+    BLESSINGS.every(b => selectedBlessings.get(b.baseId) === level)
+
+  const isAnySelected = selectedBlessings.size > 0
+
   const selectAll = (level: number) => {
+    // 이미 전부 해당 레벨이면 → 전체 해제
+    const shouldClear = allSelectedAtLevel(level)
     // 기존 가호 전부 제거
     for (const id of state.giftInventory) {
       if (id.startsWith('blessing_')) dispatch({ type: 'REMOVE_GIFT', giftId: id })
     }
-    // 전부 해당 레벨로 선택
-    for (const b of BLESSINGS) {
-      dispatch({ type: 'ADD_GIFT', giftId: `blessing_${b.baseId}_${level}` })
+    if (!shouldClear) {
+      for (const b of BLESSINGS) {
+        dispatch({ type: 'ADD_GIFT', giftId: `blessing_${b.baseId}_${level}` })
+      }
+    }
+  }
+
+  const clearAll = () => {
+    for (const id of state.giftInventory) {
+      if (id.startsWith('blessing_')) dispatch({ type: 'REMOVE_GIFT', giftId: id })
     }
   }
 
@@ -103,11 +117,19 @@ export default function BlessingTab({ state, dispatch }: Props) {
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => selectAll(1)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: '#c8900a20', color: '#c8900a', border: '1px solid #c8900a40' }}>
-            가호 전체 선택
+          {isAnySelected && (
+            <button onClick={clearAll} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: '#33222220', color: '#888', border: '1px solid #33333340' }}>
+              전체 해제
+            </button>
+          )}
+          <button onClick={() => selectAll(1)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: allSelectedAtLevel(1) ? '#c8900a30' : '#c8900a20', color: '#c8900a', border: '1px solid #c8900a40' }}>
+            {allSelectedAtLevel(1) ? '전체 해제' : '전체 선택'}
           </button>
-          <button onClick={() => selectAll(3)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: '#c8303020', color: '#c83030', border: '1px solid #c8303040' }}>
-            전체 강화
+          <button onClick={() => selectAll(2)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: allSelectedAtLevel(2) ? '#4898b030' : '#4898b020', color: '#4898b0', border: '1px solid #4898b040' }}>
+            {allSelectedAtLevel(2) ? '+ 해제' : '전체 +'}
+          </button>
+          <button onClick={() => selectAll(3)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: allSelectedAtLevel(3) ? '#c8303030' : '#c8303020', color: '#c83030', border: '1px solid #c8303040' }}>
+            {allSelectedAtLevel(3) ? '++ 해제' : '전체 ++'}
           </button>
         </div>
       </div>
@@ -122,7 +144,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
           return (
             <div
               key={blessing.baseId}
-              className="rounded-lg overflow-hidden transition-all"
+              className="rounded-lg overflow-hidden transition-all flex flex-col"
               style={{
                 background: '#1a1510',
                 border: `1px solid ${isSelected ? '#c8900a50' : '#222'}`,
@@ -149,7 +171,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
               </div>
 
               {/* 효과 목록 */}
-              <div className="px-3 pb-2" style={{ minHeight: '4rem' }}>
+              <div className="px-3 pb-2 flex-1">
                 {blessing.effects.map((eff, i) => (
                   <div key={i} style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>
                     • {eff}
