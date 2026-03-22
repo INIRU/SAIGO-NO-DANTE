@@ -459,8 +459,8 @@ function SelectedPanel({
       display: 'flex',
       flexDirection: 'column',
       gap: '0.5rem',
-      minWidth: '12rem',
-      maxWidth: '14rem',
+      minWidth: '16rem',
+      maxWidth: '20rem',
       flexShrink: 0,
     }}>
       {/* Header */}
@@ -512,10 +512,10 @@ function SelectedPanel({
                   transition: 'border-color 0.15s',
                 }}
               >
-                {/* Mini octagon image */}
+                {/* Mini octagon image with grade */}
                 <div style={{
-                  width: '1.75rem',
-                  height: '1.75rem',
+                  width: '2.25rem',
+                  height: '2.25rem',
                   flexShrink: 0,
                   clipPath: OCTAGON_CLIP,
                   backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
@@ -523,12 +523,21 @@ function SelectedPanel({
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
+                  <span style={{
+                    position: 'absolute', top: '2%', left: '4%', zIndex: 10,
+                    fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                    fontWeight: 700, fontSize: '0.75rem', lineHeight: 1,
+                    color: 'rgb(251,183,46)',
+                    textShadow: '0 0 0.25rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
+                  }}>
+                    {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
+                  </span>
                   {gift.image_url?.startsWith('http') && (
                     <Image
                       src={gift.image_url}
                       alt={gift.name}
                       fill
-                      sizes="28px"
+                      sizes="36px"
                       style={{ objectFit: 'contain', padding: '15%' }}
                     />
                   )}
