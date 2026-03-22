@@ -271,28 +271,28 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                     )
                   })()}
 
-                  {/* 호버 오버레이 */}
-                  <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col">
+                  {/* 호버 오버레이 (배경 블러) */}
+                  <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col" style={{ backdropFilter: 'blur(0.375rem) brightness(0.4)', WebkitBackdropFilter: 'blur(0.375rem) brightness(0.4)' }}>
                     {slot ? (
                       <>
-                        {/* 편성된 경우: 상단 40% 변경, 하단 60% 해제 */}
+                        {/* 편성된 경우: 상단 40% 변경, 하단 60% 편성 순서 토글 */}
                         <div
                           onClick={() => setIdentityModalSinner(sinner.id)}
                           className="flex items-center justify-center transition-colors"
-                          style={{ height: '40%', background: 'rgba(13,11,8,0.75)', borderBottom: '1px solid rgba(200,144,10,0.2)' }}
+                          style={{ height: '40%', background: 'rgba(13,11,8,0.6)', borderBottom: '1px solid rgba(200,144,10,0.2)' }}
                           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.15)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.75)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.6)' }}
                         >
                           <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
                         </div>
                         <div
                           onClick={() => dispatch({ type: 'REMOVE_IDENTITY', sinnerId: sinner.id })}
                           className="flex items-center justify-center transition-colors"
-                          style={{ height: '60%', background: 'rgba(13,11,8,0.65)' }}
+                          style={{ height: '60%', background: 'rgba(13,11,8,0.5)' }}
                           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,48,48,0.12)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.65)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                         >
-                          <span style={{ color: '#c83030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성 해제</span>
+                          <span style={{ color: '#c83030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>인격 제거</span>
                         </div>
                       </>
                     ) : (
@@ -300,9 +300,9 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                       <div
                         onClick={() => setIdentityModalSinner(sinner.id)}
                         className="flex items-center justify-center transition-colors"
-                        style={{ height: '100%', background: 'rgba(13,11,8,0.7)' }}
+                        style={{ height: '100%', background: 'rgba(13,11,8,0.5)' }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.12)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.7)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                       >
                         <span style={{ color: '#e8b030', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성</span>
                       </div>
