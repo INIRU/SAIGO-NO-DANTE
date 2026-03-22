@@ -2,16 +2,16 @@
 
 import Image from 'next/image'
 import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import SkillDescription from '@/components/skill/SkillDescription'
 
 interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
   sinColor: string
   skillNameColors: Record<string, string>
+  allowedKeywords?: Set<string>
 }
 
-export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors }: IdentityPassivesTabProps) {
+export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords }: IdentityPassivesTabProps) {
 
   if (filteredPassives.length === 0) {
     return (
@@ -90,6 +90,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             variant="detail"
             skillNameColors={skillNameColors}
             showCoinBadges={false}
+            allowedKeywords={allowedKeywords}
           />
         )}
       </div>

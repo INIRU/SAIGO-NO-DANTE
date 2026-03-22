@@ -38,8 +38,11 @@ export function useFormatSkillDesc() {
     [keywords],
   )
   return useCallback(
-    (text: string, color: string, skillNameColors?: Record<string, string>) => {
-      return formatSkillDescInner(text, color, allKeywords, skillNameColors)
+    (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>) => {
+      const filtered = allowedKeywords
+        ? allKeywords.filter(kw => allowedKeywords.has(kw))
+        : allKeywords
+      return formatSkillDescInner(text, color, filtered, skillNameColors)
     },
     [allKeywords],
   )
