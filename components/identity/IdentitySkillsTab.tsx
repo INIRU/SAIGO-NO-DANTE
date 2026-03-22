@@ -18,6 +18,7 @@ interface IdentitySkillsTabProps {
   skillNameColors: Record<string, string>
   skillImgIdxMap: Record<string, number>
   variantMap: Record<string, { baseOrder: number; idx: number; total: number }>
+  allowedKeywords?: Set<string>
 }
 
 export default function IdentitySkillsTab({
@@ -26,6 +27,7 @@ export default function IdentitySkillsTab({
   skillNameColors,
   skillImgIdxMap,
   variantMap,
+  allowedKeywords,
 }: IdentitySkillsTabProps) {
 
   if (filteredSkills.length === 0) {
@@ -227,6 +229,7 @@ export default function IdentitySkillsTab({
                   accentColor={skillSinColor}
                   variant="detail"
                   skillNameColors={skillNameColors}
+                  allowedKeywords={allowedKeywords}
                 />
               )}
             </div>

@@ -356,11 +356,11 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
           </div>
           {entry.keywords && entry.keywords.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-              {entry.keywords.map(kw => {
+              {entry.keywords.map((kw, idx) => {
                 const kwSin = kwSinMap[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
                 return (
-                  <span key={kw} style={{ color: kwColor, fontSize: '0.75rem', fontWeight: 600 }}>{kw}</span>
+                  <span key={`${kw}-${idx}`} style={{ color: kwColor, fontSize: '0.75rem', fontWeight: 600 }}>{kw}</span>
                 )
               })}
             </div>
@@ -501,6 +501,7 @@ export function NoteRenderer({
   identityLookup = {},
   egoGiftLookup = {},
   inline,
+  allowedKeywords,
 }: {
   text: string
   skillLookup?: Record<string, NoteSkillEntry>
@@ -509,6 +510,7 @@ export function NoteRenderer({
   identityLookup?: Record<string, NoteIdentityEntry>
   egoGiftLookup?: Record<string, NoteEgoGiftEntry>
   inline?: boolean
+  allowedKeywords?: Set<string>
 }) {
   const formatSkillDesc = useFormatSkillDesc()
   if (!text.trim()) return (
@@ -520,7 +522,7 @@ export function NoteRenderer({
   let last = 0
   let m: RegExpExecArray | null
   while ((m = tokenRe.exec(text)) !== null) {
-    if (m.index > last) elements.push(<span key={`t${last}`}>{formatSkillDesc(text.slice(last, m.index), '#b0a898')}</span>)
+    if (m.index > last) elements.push(<span key={`t${last}`}>{formatSkillDesc(text.slice(last, m.index), '#b0a898', undefined, allowedKeywords)}</span>)
     if (m[1]) {
       const e = skillLookup[m[1]]
       elements.push(e
@@ -556,7 +558,7 @@ export function NoteRenderer({
     }
     last = m.index + m[0].length
   }
-  if (last < text.length) elements.push(<span key="tend">{formatSkillDesc(text.slice(last), '#b0a898')}</span>)
+  if (last < text.length) elements.push(<span key="tend">{formatSkillDesc(text.slice(last), '#b0a898', undefined, allowedKeywords)}</span>)
   if (inline) return <span style={{ fontSize: '0.8125rem', color: '#b0a898', lineHeight: 1.6 }}>{elements}</span>
   return <div style={{ fontSize: '0.8125rem', color: '#b0a898', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{elements}</div>
 }
