@@ -74,6 +74,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  try {
   const { id } = await params
   const supabase = await createClient()
 
@@ -201,6 +202,10 @@ export async function GET(
   }))
 
   return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 // ── DELETE ──────────────────────────────────────────────────────────────────
@@ -208,52 +213,57 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
+    const admin = createAdminClient()
+    const userId = await findOrCreateSupabaseUser(
+      admin,
+      session.user.email,
+      session.user.name,
+      session.user.image,
+    )
+    if (!userId) {
+      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
+    }
+
+    // 소유권 확인
+    const { data: deck } = await admin
+      .schema('limbus')
+      .from('decks')
+      .select('user_id')
+      .eq('id', id)
+      .single()
+
+    if (!deck) {
+      return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
+    }
+    if (deck.user_id !== userId) {
+      return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
+    }
+
+    // CASCADE로 deck_identities, deck_votes 자동 삭제
+    const { error } = await admin
+      .schema('limbus')
+      .from('decks')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
+
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(
-    admin,
-    session.user.email,
-    session.user.name,
-    session.user.image,
-  )
-  if (!userId) {
-    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-  }
-
-  // 소유권 확인
-  const { data: deck } = await admin
-    .schema('limbus')
-    .from('decks')
-    .select('user_id')
-    .eq('id', id)
-    .single()
-
-  if (!deck) {
-    return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
-  }
-  if (deck.user_id !== userId) {
-    return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
-  }
-
-  // CASCADE로 deck_identities, deck_votes 자동 삭제
-  const { error } = await admin
-    .schema('limbus')
-    .from('decks')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
-
-  return NextResponse.json({ ok: true })
 }
 
 // ── PATCH ─────────────────────────────────────────────────────────────────
@@ -261,85 +271,90 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { title, description, tags, identitySlots, egoSlots, content_type } = body
+
+    if (!title?.trim()) {
+      return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 })
+    }
+
+    const admin = createAdminClient()
+    const userId = await findOrCreateSupabaseUser(
+      admin,
+      session.user.email,
+      session.user.name,
+      session.user.image,
+    )
+    if (!userId) {
+      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
+    }
+
+    // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
+    const { data: deck } = await admin
+      .schema('limbus')
+      .from('decks')
+      .select('user_id')
+      .eq('id', id)
+      .single()
+
+    if (!deck) {
+      return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
+    }
+    const isOwner = deck.user_id === userId
+    const isAdmin = session.user?.isAdmin === true
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
+    }
+
+    // decks 테이블 UPDATE (소유자는 변경하지 않음)
+    const { error: updateError } = await admin
+      .schema('limbus')
+      .from('decks')
+      .update({ title, description, tags: tags || [], content_type: content_type || '없음' })
+      .eq('id', id)
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+
+    // deck_identities: 기존 삭제 → 새로 삽입
+    await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
+    if (identitySlots?.length > 0) {
+      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number }) => ({
+        deck_id: id,
+        identity_id: slot.identity_id,
+        slot_order: slot.slot_order,
+        gacksung: slot.gacksung ?? false,
+        s1_count: slot.s1_count ?? 3,
+        s2_count: slot.s2_count ?? 2,
+        s3_count: slot.s3_count ?? 1,
+      }))
+      await admin.schema('limbus').from('deck_identities').insert(rows)
+    }
+
+    // deck_egos: 기존 삭제 → 새로 삽입
+    await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
+    if (egoSlots?.length > 0) {
+      const rows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
+        deck_id: id,
+        ego_id: slot.ego_id,
+        grade: slot.grade,
+      }))
+      await admin.schema('limbus').from('deck_egos').insert(rows)
+    }
+
+    writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })
+
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const body = await request.json()
-  const { title, description, tags, identitySlots, egoSlots, content_type } = body
-
-  if (!title?.trim()) {
-    return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 })
-  }
-
-  const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(
-    admin,
-    session.user.email,
-    session.user.name,
-    session.user.image,
-  )
-  if (!userId) {
-    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-  }
-
-  // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
-  const { data: deck } = await admin
-    .schema('limbus')
-    .from('decks')
-    .select('user_id')
-    .eq('id', id)
-    .single()
-
-  if (!deck) {
-    return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
-  }
-  const isOwner = deck.user_id === userId
-  const isAdmin = session.user?.isAdmin === true
-  if (!isOwner && !isAdmin) {
-    return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
-  }
-
-  // decks 테이블 UPDATE (소유자는 변경하지 않음)
-  const { error: updateError } = await admin
-    .schema('limbus')
-    .from('decks')
-    .update({ title, description, tags: tags || [], content_type: content_type || '없음' })
-    .eq('id', id)
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
-  }
-
-  // deck_identities: 기존 삭제 → 새로 삽입
-  await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
-  if (identitySlots?.length > 0) {
-    const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number }) => ({
-      deck_id: id,
-      identity_id: slot.identity_id,
-      slot_order: slot.slot_order,
-      gacksung: slot.gacksung ?? false,
-      s1_count: slot.s1_count ?? 3,
-      s2_count: slot.s2_count ?? 2,
-      s3_count: slot.s3_count ?? 1,
-    }))
-    await admin.schema('limbus').from('deck_identities').insert(rows)
-  }
-
-  // deck_egos: 기존 삭제 → 새로 삽입
-  await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
-  if (egoSlots?.length > 0) {
-    const rows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
-      deck_id: id,
-      ego_id: slot.ego_id,
-      grade: slot.grade,
-    }))
-    await admin.schema('limbus').from('deck_egos').insert(rows)
-  }
-
-  writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })
-
-  return NextResponse.json({ ok: true })
 }

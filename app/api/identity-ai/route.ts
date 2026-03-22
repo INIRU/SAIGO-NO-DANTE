@@ -45,26 +45,32 @@ const RES_KR: Record<string, string> = {
 
 // GET: 캐시 조회
 export async function GET(req: NextRequest) {
-  const identityId = req.nextUrl.searchParams.get('identity_id')
-  if (!identityId) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
+  try {
+    const identityId = req.nextUrl.searchParams.get('identity_id')
+    if (!identityId) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
 
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .schema('limbus')
-    .from('identity_ai_summaries')
-    .select('summary, model, created_at')
-    .eq('identity_id', identityId)
-    .gte('created_at', new Date(Date.now() - CACHE_DAYS * 86400000).toISOString())
-    .single()
+    const supabase = createAdminClient()
+    const { data } = await supabase
+      .schema('limbus')
+      .from('identity_ai_summaries')
+      .select('summary, model, created_at')
+      .eq('identity_id', identityId)
+      .gte('created_at', new Date(Date.now() - CACHE_DAYS * 86400000).toISOString())
+      .single()
 
-  if (data) {
-    return NextResponse.json({ summary: data.summary, model: data.model, created_at: data.created_at, cached: true })
+    if (data) {
+      return NextResponse.json({ summary: data.summary, model: data.model, created_at: data.created_at, cached: true })
+    }
+    return NextResponse.json({ summary: null, model: null, created_at: null, cached: false })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-  return NextResponse.json({ summary: null, model: null, created_at: null, cached: false })
 }
 
 // POST: AI 요약 생성
 export async function POST(req: NextRequest) {
+  try {
   const body = await req.json()
   const { identity_id } = body
   if (!identity_id) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
@@ -143,7 +149,8 @@ export async function POST(req: NextRequest) {
           .order('slot_order')
 
         // 수감자명 매핑을 위해 sinner_ids 수집
-        const sinnerIds = [...new Set((slots || []).filter((s: any) => s.identities).map((s: any) => (s.identities as any).sinner_id))]
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sinnerIds = [...new Set((slots || []).filter((s: any) => s.identities).map((s: any) => (s.identities as { sinner_id: string }).sinner_id))]
         const { data: sinners } = await supabase
           .schema('limbus')
           .from('sinners')
@@ -153,9 +160,11 @@ export async function POST(req: NextRequest) {
         for (const s of sinners || []) sinnerMap[s.id] = s.name_kr
 
         const composition = (slots || [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .filter((s: any) => s.identities)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((s: any) => {
-            const ident = s.identities as any
+            const ident = s.identities as { name_kr: string; sinner_id: string }
             return `${sinnerMap[ident.sinner_id] || ident.sinner_id}:${ident.name_kr}`
           })
           .join(', ')
@@ -268,7 +277,12 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
     }
 
     return NextResponse.json({ summary, model: AI_MODEL, created_at: new Date().toISOString() })
-  } catch (err: any) {
-    return NextResponse.json({ error: 'AI API request failed', detail: err.message }, { status: 502 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: 'AI API request failed', detail: message }, { status: 502 })
+  }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

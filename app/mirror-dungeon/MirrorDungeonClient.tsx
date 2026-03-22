@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import Image from 'next/image'
+import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { Search, X, FlaskConical, ChevronDown } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/data/sinners'
@@ -602,10 +603,11 @@ export default function MirrorDungeonClient({
               >
                 {theme.image_url && (
                   <div className="relative w-full overflow-hidden" style={{ aspectRatio: '380/690' }}>
-                    <Image
+                    <ImageWithFallback
                       src={theme.image_url}
                       alt={theme.name}
                       fill
+                      fallbackType="theme"
                       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       style={{ opacity: 0.85 }}
@@ -613,10 +615,11 @@ export default function MirrorDungeonClient({
                     {theme.boss_image_url && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
-                          <Image
+                          <ImageWithFallback
                             src={theme.boss_image_url}
                             alt=""
                             fill
+                            fallbackType="default"
                             sizes="(max-width: 640px) 33vw, 20vw"
                             className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
                           />
@@ -716,10 +719,10 @@ export default function MirrorDungeonClient({
               <div className="relative overflow-hidden" style={{ height: theme.image_url ? '10rem' : '5rem' }}>
                 {theme.image_url && (
                   <>
-                    <Image src={theme.image_url} alt={theme.name} fill sizes="(max-width: 768px) 100vw, 48rem" className="object-cover object-top" style={{ opacity: 0.4 }} />
+                    <ImageWithFallback src={theme.image_url} alt={theme.name} fill fallbackType="theme" sizes="(max-width: 768px) 100vw, 48rem" className="object-cover object-top" style={{ opacity: 0.4 }} />
                     {theme.boss_image_url && (
                       <div className="absolute right-0 bottom-0 z-10" style={{ width: '50%', aspectRatio: '391/432' }}>
-                        <Image src={theme.boss_image_url} alt="" fill sizes="200px" className="object-contain object-bottom drop-shadow-lg" style={{ opacity: 0.6 }} />
+                        <ImageWithFallback src={theme.boss_image_url} alt="" fill fallbackType="default" sizes="200px" className="object-contain object-bottom drop-shadow-lg" style={{ opacity: 0.6 }} />
                       </div>
                     )}
                     <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.6) 50%, rgba(19,17,16,0.3) 100%)' }} />
@@ -920,7 +923,7 @@ export default function MirrorDungeonClient({
                 >
                   {ev.image_url ? (
                     <div className="relative w-full aspect-square overflow-hidden">
-                      <Image src={ev.image_url} alt="" fill sizes="(max-width: 640px) 50vw, 20vw" className="object-cover transition-transform duration-300 group-hover:scale-105" style={{ opacity: 0.8 }} />
+                      <ImageWithFallback src={ev.image_url} alt="" fill fallbackType="default" sizes="(max-width: 640px) 50vw, 20vw" className="object-cover transition-transform duration-300 group-hover:scale-105" style={{ opacity: 0.8 }} />
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, transparent 60%)' }} />
                       <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2">
                         <p className="font-serif font-medium leading-tight line-clamp-2" style={{ color: '#e8d8c0', fontSize: '0.75rem', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
@@ -975,7 +978,7 @@ export default function MirrorDungeonClient({
             <div className="relative overflow-hidden" style={{ height: selectedEvent.image_url ? '12rem' : '4rem' }}>
               {selectedEvent.image_url && (
                 <>
-                  <Image src={selectedEvent.image_url} alt="" fill sizes="40rem" className="object-cover" style={{ opacity: 0.5 }} />
+                  <ImageWithFallback src={selectedEvent.image_url} alt="" fill fallbackType="default" sizes="40rem" className="object-cover" style={{ opacity: 0.5 }} />
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.4) 60%, rgba(19,17,16,0.2) 100%)' }} />
                 </>
               )}
@@ -1023,7 +1026,7 @@ export default function MirrorDungeonClient({
                                     <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
                                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
                                       style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.6875rem' }}>
-                                      {g.image_url && <Image src={g.image_url} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />}
+                                      {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
                                       <span style={{ color: '#ccc' }}>{g.name}</span>
                                     </button>
                                   )
@@ -1082,7 +1085,7 @@ export default function MirrorDungeonClient({
                         <button key={tid} onClick={() => { setSelectedEvent(null); setActiveTab('themes'); setExpandedThemeId(tid) }}
                           className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
                           style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          {t.image_url && <Image src={t.image_url} alt="" width={10} height={18} style={{ width: '0.625rem', height: '1.125rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                          {t.image_url && <ImageWithFallback src={t.image_url} alt="" width={10} height={18} fallbackType="theme" style={{ width: '0.625rem', height: '1.125rem', objectFit: 'cover', borderRadius: '1px' }} />}
                           <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
                           <span style={{ color: dColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
                             {t.difficulty === 'extreme' ? 'EX' : t.difficulty === 'hard' ? 'H' : ''}
@@ -1111,7 +1114,7 @@ export default function MirrorDungeonClient({
                         const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
                         return (
                           <button key={g.id} onClick={() => { setSelectedEvent(null); setSelected(g) }} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors hover:bg-white/10" style={{ cursor: 'pointer', background: `${kw}10`, border: `1px solid ${kw}20` }}>
-                            {g.image_url && <Image src={g.image_url} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem' }} />}
+                            {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={18} height={18} fallbackType="gift" style={{ width: '1.125rem', height: '1.125rem' }} />}
                             <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{g.name}</span>
                           </button>
                         )
@@ -1361,10 +1364,11 @@ const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: {
         <div className="absolute inset-[15%] flex items-center justify-center">
           {gift.image_url ? (
             <div className="relative w-full h-full">
-              <Image
+              <ImageWithFallback
                 src={gift.image_url}
                 alt={gift.name}
                 fill
+                fallbackType="gift"
                 className="object-contain"
                 sizes="120px"
               />
@@ -1492,7 +1496,7 @@ function GiftModal({
               <div className="absolute inset-[10%] flex items-center justify-center">
                 {gift.image_url ? (
                   <div className="relative w-full h-full">
-                    <Image src={gift.image_url} alt={gift.name} fill className="object-contain" sizes="70px" />
+                    <ImageWithFallback src={gift.image_url} alt={gift.name} fill fallbackType="gift" className="object-contain" sizes="70px" />
                   </div>
                 ) : (
                   <FlaskConical size="1.5rem" style={{ color: '#444' }} />
@@ -1646,7 +1650,7 @@ function GiftModal({
                       }}
                     >
                       {isExclusive && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>★</span>}
-                      {t.image_url && <Image src={t.image_url} alt="" width={14} height={25} style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                      {t.image_url && <ImageWithFallback src={t.image_url} alt="" width={14} height={25} fallbackType="theme" style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
                       <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
                       {diffLabel && <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
                         {diffLabel}
