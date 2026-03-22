@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, ExternalLink, ChevronDown, Bell, HelpCircle } from 'lucide-react'
-import css from './bot.module.css'
+// 인라인 스타일 — CSS module 프로덕션 이슈 회피
 
 const BOT_AVATAR = '/icons/icon-192x192.png'
 const S = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
@@ -315,15 +315,20 @@ export default function BotClient() {
   }, [current, goTo])
 
   return (
-    <div className={css.page}>
+    <div style={{ background: '#0d0b08', position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', overflow: 'hidden', zIndex: 40 }}>
       {/* 슬라이드들 */}
       {SLIDES.map((slide, i) => {
-        let className = css.section
-        if (i === current) className += ` ${css.sectionActive}`
-        else if (direction === 'down' && i < current) className += ` ${css.sectionExit}`
-        else if (direction === 'up' && i > current) className += ` ${css.sectionExit}`
+        const isActive = i === current
+        const isExit = (direction === 'down' && i < current) || (direction === 'up' && i > current)
         return (
-          <div key={i} className={className}>
+          <div key={i} style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1.5rem',
+            opacity: isActive ? 1 : 0,
+            pointerEvents: isActive ? 'auto' as const : 'none' as const,
+            transform: isActive ? 'translateY(0)' : isExit ? 'translateY(-3rem)' : 'translateY(3rem)',
+            transition: 'opacity 0.6s ease, transform 0.6s ease',
+          }}>
             {slide.content}
           </div>
         )
