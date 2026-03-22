@@ -48,6 +48,7 @@ interface SkillDescriptionProps {
   variant?: SkillDescVariant
   skillNameColors?: Record<string, string>
   showCoinBadges?: boolean
+  allowedKeywords?: Set<string>
 }
 
 export default function SkillDescription({
@@ -56,6 +57,7 @@ export default function SkillDescription({
   variant = 'detail',
   skillNameColors,
   showCoinBadges,
+  allowedKeywords,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
   const styles = SKILL_DESC_STYLES[variant]
@@ -69,7 +71,7 @@ export default function SkillDescription({
     <div style={{ color: styles.color, fontSize: styles.fontSize, lineHeight: styles.lineHeight, whiteSpace: 'pre-line' }}>
       {/* 전체 효과 */}
       {globalEffects.map((line, i) => (
-        <div key={`g-${i}`}>{formatSkillDesc(line, accentColor, skillNameColors)}</div>
+        <div key={`g-${i}`}>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
       ))}
 
       {/* 코인별 효과 */}
@@ -101,7 +103,7 @@ export default function SkillDescription({
                   </span>
                 )}
                 {coin.lines.map((line, li) => (
-                  <div key={li}>{formatSkillDesc(line, accentColor, skillNameColors)}</div>
+                  <div key={li}>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
                 ))}
               </div>
             </div>
@@ -113,7 +115,7 @@ export default function SkillDescription({
                   {coin.isUnbreakable && li === 0 && (
                     <span style={{ fontWeight: 600 }}>파괴 불가 코인 </span>
                   )}
-                  {formatSkillDesc(line, accentColor, skillNameColors)}
+                  {formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}
                 </div>
               ))}
               {coin.lines.length === 0 && coin.isUnbreakable && (
