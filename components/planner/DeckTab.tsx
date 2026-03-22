@@ -32,7 +32,7 @@ interface Props {
 
 // --- Rarity star images ---
 function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'md' | 'lg' }) {
-  const h = size === 'sm' ? 14 : size === 'lg' ? 24 : 18
+  const h = size === 'sm' ? 18 : size === 'lg' ? 32 : 24
   return (
     <Image
       src={`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`}
