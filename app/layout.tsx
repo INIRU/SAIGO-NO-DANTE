@@ -26,7 +26,7 @@ const blackHanSans = Black_Han_Sans({
   display: 'swap',
 })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigonodante.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -120,6 +120,7 @@ export default async function RootLayout({
   return (
     <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable}`}>
       <head>
+        <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
       </head>

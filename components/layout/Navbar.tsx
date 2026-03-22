@@ -137,9 +137,9 @@ export default function Navbar() {
 
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
-    fontSize: '17px',
+    fontSize: '1.0625rem',
     color: pathname === href ? 'var(--gold)' : '#a08a60',
-    padding: '14px 0',
+    padding: '0.875rem 0',
     borderBottom: '1px solid rgba(58,42,21,0.3)',
   })
 
@@ -159,7 +159,7 @@ export default function Navbar() {
           {/* 로고 — 모바일 축소 */}
           <Link
             href="/"
-            className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[17px] md:text-[20px]"
+            className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
             style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
           >
             <Image src="/images/logo.webp" alt="" width={42} height={42} className="w-[34px] md:w-[42px] h-auto -ml-2" />
@@ -188,12 +188,12 @@ export default function Navbar() {
                     className="flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: isActive ? 'var(--gold)' : '#a08a60',
                       cursor: 'pointer',
                       background: 'none',
                       border: 'none',
-                      padding: '4px 0',
+                      padding: '0.25rem 0',
                     }}
                   >
                     {group.label}
@@ -216,7 +216,7 @@ export default function Navbar() {
                       minWidth: '130px',
                       boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 1px rgba(200,144,10,0.15)',
                       overflow: 'hidden',
-                      padding: '4px 0',
+                      padding: '0.25rem 0',
                     }}>
                       {/* 상단 골드 라인 */}
                       <div style={{
@@ -286,11 +286,11 @@ export default function Navbar() {
               title="검색 (Ctrl+K)"
             >
               <Search size={13} style={{ opacity: 0.7 }} />
-              <span style={{ fontSize: '12px', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>검색</span>
-              <div className="flex items-center gap-0.5" style={{ marginLeft: 4 }}>
+              <span style={{ fontSize: '0.75rem', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>검색</span>
+              <div className="flex items-center gap-0.5" style={{ marginLeft: '0.25rem' }}>
                 <kbd style={{
-                  padding: '2px 5px',
-                  fontSize: '11px',
+                  padding: '0.125rem 0.3125rem',
+                  fontSize: '0.6875rem',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   color: '#6a5838',
                   background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
@@ -303,8 +303,8 @@ export default function Navbar() {
                   {isMac ? '⌘' : 'Ctrl'}
                 </kbd>
                 <kbd style={{
-                  padding: '2px 5px',
-                  fontSize: '11px',
+                  padding: '0.125rem 0.3125rem',
+                  fontSize: '0.6875rem',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   color: '#6a5838',
                   background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
@@ -353,12 +353,12 @@ export default function Navbar() {
                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     overflow: 'hidden',
                   }}>
-                    <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                      <p style={{ color: '#c8a450', fontSize: '13px', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid var(--border)' }}>
+                      <p style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {displayName}
                       </p>
                       {user.email && (
-                        <p style={{ color: '#999', fontSize: '11px', marginTop: '2px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ color: '#999', fontSize: '0.6875rem', marginTop: '0.125rem', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {user.email}
                         </p>
                       )}
@@ -367,7 +367,7 @@ export default function Navbar() {
                       href="/mypage"
                       onClick={() => setMenuOpen(false)}
                       className="block w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '10px 14px', color: '#666677', fontSize: '13px' }}
+                      style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem' }}
                     >
                       마이 페이지
                     </Link>
@@ -376,7 +376,7 @@ export default function Navbar() {
                         href="/admin"
                         onClick={() => setMenuOpen(false)}
                         className="block w-full text-left transition-colors hover:bg-white/5"
-                        style={{ padding: '10px 14px', color: '#666677', fontSize: '13px' }}
+                        style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem' }}
                       >
                         관리
                       </Link>
@@ -384,7 +384,7 @@ export default function Navbar() {
                     <button
                       onClick={() => { signOut({ callbackUrl: '/' }); setMenuOpen(false) }}
                       className="w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '10px 14px', color: '#666677', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
+                      style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
                     >
                       로그아웃
                     </button>
@@ -396,7 +396,7 @@ export default function Navbar() {
                 href="/login"
                 className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 hover:opacity-80"
                 style={{
-                  fontSize: '13px', color: '#888899',
+                  fontSize: '0.8125rem', color: '#888899',
                   border: '1px solid #555570', borderRadius: '4px',
                 }}
               >
@@ -415,7 +415,7 @@ export default function Navbar() {
           <button
             className="md:hidden flex items-center justify-center"
             onClick={() => setMobileMenuOpen(v => !v)}
-            style={{ color: 'var(--gold)', cursor: 'pointer', padding: '4px' }}
+            style={{ color: 'var(--gold)', cursor: 'pointer', padding: '0.25rem' }}
             aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -449,10 +449,10 @@ export default function Navbar() {
                     className="flex items-center justify-between w-full"
                     style={{
                       fontFamily: 'var(--font-heading)',
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: isOpen ? '#8a7855' : '#5a4838',
                       letterSpacing: '0.08em',
-                      padding: '14px 0 8px',
+                      padding: '0.875rem 0 0.5rem',
                       cursor: 'pointer',
                     }}
                   >
@@ -491,15 +491,15 @@ export default function Navbar() {
                       background: 'rgba(200,144,10,0.15)',
                       border: '1.5px solid var(--gold-dim)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--gold)', fontSize: '15px', fontWeight: 'bold',
+                      color: 'var(--gold)', fontSize: '0.9375rem', fontWeight: 'bold',
                     }}>
                       {displayName[0]?.toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <p style={{ color: '#c8a450', fontSize: '15px', fontWeight: 600 }}>{displayName}</p>
+                    <p style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 600 }}>{displayName}</p>
                     {user.email && (
-                      <p style={{ color: '#999', fontSize: '12px', marginTop: '1px' }}>{user.email}</p>
+                      <p style={{ color: '#999', fontSize: '0.75rem', marginTop: '0.0625rem' }}>{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -525,9 +525,9 @@ export default function Navbar() {
                   className="text-left transition-colors duration-200 hover:text-yellow-300"
                   style={{
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '17px',
+                    fontSize: '1.0625rem',
                     color: '#a08a60',
-                    padding: '14px 0',
+                    padding: '0.875rem 0',
                     cursor: 'pointer',
                   }}
                 >
@@ -539,7 +539,7 @@ export default function Navbar() {
                 href="/login"
                 className="flex items-center gap-2 mt-4 justify-center py-3 transition-all duration-200 hover:opacity-80"
                 style={{
-                  fontSize: '15px', color: '#888899',
+                  fontSize: '0.9375rem', color: '#888899',
                   border: '1px solid #555570', borderRadius: '6px',
                 }}
               >
