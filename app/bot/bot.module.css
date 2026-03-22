@@ -1,0 +1,95 @@
+.page {
+  background: #0d0b08;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.page::-webkit-scrollbar {
+  display: none;
+}
+
+.section {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(3rem);
+}
+
+.sectionActive {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.sectionExit {
+  opacity: 0;
+  transform: translateY(-3rem);
+}
+
+.heroGlow {
+  position: absolute;
+  width: 28rem;
+  height: 28rem;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #c8900a08 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* 기능 섹션 fade-in (GSAP에서 제어) */
+.featureRow {
+  opacity: 0;
+  transform: translateY(2rem);
+}
+
+.embedSide {
+  opacity: 0;
+  transform: translateX(-1.5rem);
+  flex-shrink: 0;
+}
+
+.descSide {
+  opacity: 0;
+  transform: translateX(1.5rem);
+  flex: 1;
+  min-width: 0;
+}
+
+/* 역방향 (홀수 섹션) */
+.embedSideReverse {
+  opacity: 0;
+  transform: translateX(1.5rem);
+  flex-shrink: 0;
+}
+
+.descSideReverse {
+  opacity: 0;
+  transform: translateX(-1.5rem);
+  flex: 1;
+  min-width: 0;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(-50%); }
+  50% { transform: translateY(-0.375rem) translateX(-50%); }
+}
+
+@media (max-width: 768px) {
+  .embedSide,
+  .embedSideReverse,
+  .descSide,
+  .descSideReverse {
+    transform: translateY(1rem) !important;
+  }
+}
