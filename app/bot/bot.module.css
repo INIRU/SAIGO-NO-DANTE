@@ -1,8 +1,9 @@
 .page {
   background: #0d0b08;
-  height: 100vh;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
-  position: relative;
+  z-index: 40;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
