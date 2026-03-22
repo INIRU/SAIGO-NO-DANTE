@@ -178,15 +178,29 @@ export default function IdentitySkillsTab({
                 <div className="flex items-center gap-1">
                   <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>코인 위력</span>
                   <span className="font-mono font-bold" style={{ color: skillSinColor, fontSize: '0.8125rem' }}>
-                    +{skill.coin_power}
+                    {skill.coin_power >= 0 ? `+${skill.coin_power}` : skill.coin_power}
                   </span>
                 </div>
                 {/* 최종 위력 */}
                 <div className="flex items-center gap-1 ml-auto">
-                  <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>최대</span>
-                  <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>
-                    {skill.base_power + skill.coins * skill.coin_power}
-                  </span>
+                  {skill.coin_power < 0 ? (<>
+                    <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>최소</span>
+                    <span className="font-mono font-bold" style={{ color: '#e04040', fontSize: '0.8125rem' }}>
+                      {skill.base_power + skill.coins * skill.coin_power}
+                    </span>
+                    <span style={{ color: '#555', fontSize: '0.75rem' }}>/</span>
+                    <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>최대</span>
+                    <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>
+                      {skill.base_power}
+                    </span>
+                  </>) : (
+                    <>
+                      <span style={{ color: '#aaa', fontSize: '0.8125rem' }}>최대</span>
+                      <span className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem' }}>
+                        {skill.base_power + skill.coins * skill.coin_power}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 

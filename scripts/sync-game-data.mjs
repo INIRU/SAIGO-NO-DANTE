@@ -427,7 +427,7 @@ async function main() {
           skill_type: isDefense ? (DEF_TYPE_MAP[r.defType] || null) : (ATK_TYPE_MAP[r.atkType] || null),
           sin_affinity: SIN_MAP[r.attributeType] || null,
           base_power: r.defaultValue ?? null,
-          coin_power: coinList.length > 0 ? coinList[0].scale : null,
+          coin_power: coinList.length > 0 ? (coinList[0].operatorType === 'SUB' ? -coinList[0].scale : coinList[0].scale) : null,
           coins: coinList.length || 1,
           offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
           description,
@@ -656,7 +656,7 @@ async function main() {
     const egoList = []
     const egoSkillMap = new Map()
     const egoBaseFiles = [`ego-${sinner.id}.json`, 'ego-a1c5p2.json', 'ego-a1c5p3.json', 'ego-a1c6p2.json', 'ego-a1c8p2.json', 'ego-a1c8p3.json', 'ego-a1c9p2.json', 'ego-a1c9p3.json']
-    const egoSkillFiles = [`ego-skill-${sinner.id}.json`, 'ego-skill-a1c5p2.json', 'ego-skill-a1c5p3.json', 'ego-skill-a1c6p2.json', 'ego-skill-a1c8p2.json', 'ego-skill-a1c8p3.json', 'ego-skill-a1c9p2.json', 'ego-skill-a1c9p3.json']
+    const egoSkillFiles = [`ego-skill-${sinner.id}.json`, 'ego-skill-a1c5p2.json', 'ego-skill-a1c5p3.json', 'ego-skill-a1c6p2.json', 'ego-skill-a1c6p3.json', 'ego-skill-a1c8p2.json', 'ego-skill-a1c8p3.json', 'ego-skill-a1c9p2.json', 'ego-skill-a1c9p3.json']
     const seenEgoIds = new Set()
     for (const f of egoBaseFiles) {
       const data = readJson(f)
@@ -734,7 +734,7 @@ async function main() {
             skill_type: r.defType === 'ATTACK' ? (ATK_TYPE_MAP[r.atkType] || null) : (DEF_TYPE_MAP[r.defType] || null),
             sin_affinity: SIN_MAP[r.attributeType] || null,
             base_power: r.defaultValue ?? null,
-            coin_power: coinList.length > 0 ? coinList[0].scale : null,
+            coin_power: coinList.length > 0 ? (coinList[0].operatorType === 'SUB' ? -coinList[0].scale : coinList[0].scale) : null,
             coins: coinList.length || 1,
             description,
             skill_order: 1,

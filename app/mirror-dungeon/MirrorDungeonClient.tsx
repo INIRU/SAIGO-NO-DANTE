@@ -69,6 +69,7 @@ interface MirrorDungeonEvent {
   image_url: string | null
   parent_id: number | null
   option_gifts: number[][] | null
+  theme_ids: number[] | null
 }
 
 /* ── 난이도 (DB difficulty 컬럼 사용) ── */
@@ -147,6 +148,15 @@ export default function MirrorDungeonClient({
   const [themeDiffFilter, setThemeDiffFilter] = useState<string>('전체')
   const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
   const [eventSearch, setEventSearch] = useState('')
+
+  // 모달 열릴 때 배경 스크롤 잠금
+  useEffect(() => {
+    const isOpen = !!selected || expandedThemeId !== null || !!selectedEvent
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [selected, expandedThemeId, selectedEvent])
 
   // game_id → EgoGift 매핑 (테마팩 필터용)
   const giftByGameId = useMemo(() => {
@@ -1058,6 +1068,34 @@ export default function MirrorDungeonClient({
                   </div>
                 )
               })()}
+
+              {/* 출현 테마팩 */}
+              {selectedEvent.theme_ids && selectedEvent.theme_ids.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>출현 테마팩</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedEvent.theme_ids.slice(0, 20).map(tid => {
+                      const t = themes.find(th => th.id === tid)
+                      if (!t) return null
+                      const dColor = t.difficulty === 'extreme' ? '#e04040' : t.difficulty === 'hard' ? '#e89030' : '#888'
+                      return (
+                        <button key={tid} onClick={() => { setSelectedEvent(null); setActiveTab('themes'); setExpandedThemeId(tid) }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
+                          style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          {t.image_url && <Image src={t.image_url} alt="" width={10} height={18} style={{ width: '0.625rem', height: '1.125rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                          <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
+                          <span style={{ color: dColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                            {t.difficulty === 'extreme' ? 'EX' : t.difficulty === 'hard' ? 'H' : ''}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    {selectedEvent.theme_ids.length > 20 && (
+                      <span style={{ color: '#555', fontSize: '0.6875rem' }}>+{selectedEvent.theme_ids.length - 20}개</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 획득 가능 기프트 */}
               {(() => {

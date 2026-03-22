@@ -32,8 +32,12 @@ export type Identity = {
   acquisition?: string
   game_id?: string | null
   folder_name?: string | null
-  panic_type?: string
+  panic_type?: string | number
   panic_description?: string
+  break_section?: number[]
+  base_hp?: number
+  hp_per_level?: number
+  bg_image_url?: string | null
   sanity_increase?: string
   sanity_decrease?: string
   acquisition_info?: {
