@@ -597,126 +597,7 @@ function SelectedPanel({
 }
 
 // ── Search input for final tab ───────────────────────────────────────────────
-function GiftSearchAdd({ gifts, selectedIds, onAdd }: {
-  gifts: GiftData[]
-  selectedIds: Set<number>
-  onAdd: (gift: GiftData) => void
-}) {
-  const [query, setQuery] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  const suggestions = useMemo(() => {
-    if (!query.trim()) return []
-    return gifts.filter(g => g.name.includes(query) && !selectedIds.has(g.game_id)).slice(0, 8)
-  }, [query, gifts, selectedIds])
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setShowSuggestions(false)
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        background: '#1a1510',
-        border: '1px solid #2a2520',
-        borderRadius: '0.375rem',
-        padding: '0.375rem 0.625rem',
-        transition: 'border-color 0.15s',
-      }}>
-        <Search size={14} color="#6b7280" style={{ flexShrink: 0 }} />
-        <input
-          type="text"
-          placeholder="기프트 검색하여 추가..."
-          value={query}
-          onChange={e => { setQuery(e.target.value); setShowSuggestions(true) }}
-          onFocus={() => setShowSuggestions(true)}
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            fontSize: '0.8125rem',
-            color: '#e5e7eb',
-          }}
-        />
-      </div>
-      {showSuggestions && suggestions.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 0.25rem)',
-          left: 0,
-          right: 0,
-          background: '#151210',
-          border: '1px solid #2a2520',
-          borderRadius: '0.375rem',
-          zIndex: 50,
-          maxHeight: '14rem',
-          overflowY: 'auto',
-          boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)',
-        }}>
-          {suggestions.map(gift => {
-            const gradeColor = GRADE_COLORS[gift.grade ?? '1'] ?? '#888'
-            return (
-              <button
-                key={gift.id}
-                onClick={() => { onAdd(gift); setQuery(''); setShowSuggestions(false) }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 0.625rem',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  color: '#e5e7eb',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.08)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                {/* Mini octagon */}
-                <div style={{
-                  width: '1.75rem',
-                  height: '1.75rem',
-                  flexShrink: 0,
-                  clipPath: OCTAGON_CLIP,
-                  backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-                  backgroundSize: 'cover',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  {gift.image_url?.startsWith('http') && (
-                    <Image src={gift.image_url} alt={gift.name} fill sizes="28px" style={{ objectFit: 'contain', padding: '15%' }} />
-                  )}
-                </div>
-                <span style={{ fontSize: '0.8125rem', flex: 1 }}>{gift.name}</span>
-                <span style={{ fontSize: '0.5625rem', color: gradeColor, fontWeight: 700 }}>
-                  {GRADE_ROMAN[gift.grade ?? '1']}
-                </span>
-                {gift.keyword && (
-                  <span style={{ fontSize: '0.625rem', color: '#8a6010' }}>{gift.keyword}</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
+// GiftSearchAdd removed — final tab uses inline search + drag
 
 // ── Quick-add pills ──────────────────────────────────────────────────────────
 function QuickAddSection({
@@ -1149,132 +1030,372 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
       })()}
 
       {/* ── Final tab ───────────────────────────────────────────────────── */}
-      {subTab === 'final' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {/* Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.5rem 0.625rem',
-            background: 'rgba(26,21,16,0.5)',
-            borderRadius: '0.375rem',
-            border: '1px solid #1f1a14',
-          }}>
-            <span style={{ fontSize: '0.8125rem', color: '#9ca3af' }}>
-              최종 목표 기프트 빌드
-            </span>
-            <span style={{
-              fontSize: '0.6875rem',
-              color: '#c8900a',
-              background: 'rgba(200,144,10,0.12)',
-              padding: '0.125rem 0.5rem',
-              borderRadius: '0.25rem',
-              border: '1px solid rgba(200,144,10,0.2)',
-              fontWeight: 600,
-            }}>
-              {finalIds.size}개
-            </span>
-          </div>
+      {subTab === 'final' && (() => {
+        const [finalDragOver, setFinalDragOver] = useState(false)
+        const [finalSearch, setFinalSearch] = useState('')
+        const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
+        const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
 
-          {/* Search */}
-          <GiftSearchAdd
-            gifts={gifts}
-            selectedIds={finalIds}
-            onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
-          />
+        const filteredFinalSourceGifts = useMemo(() => {
+          return gifts.filter(g => {
+            if (finalFilterGrade && g.grade !== finalFilterGrade) return false
+            if (finalFilterKeyword) {
+              const slug = getKeywordSlug(g.keyword ?? null)
+              if (slug !== finalFilterKeyword) return false
+            }
+            if (finalSearch.trim()) {
+              if (!g.name.includes(finalSearch.trim())) return false
+            }
+            return true
+          })
+        }, [gifts, finalFilterGrade, finalFilterKeyword, finalSearch])
 
-          {/* Quick add from observed/started */}
-          {(observeIds.size > 0 || startIds.size > 0) && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              padding: '0.5rem 0.625rem',
-              background: 'rgba(26,21,16,0.3)',
-              borderRadius: '0.375rem',
-              border: '1px solid #1a1510',
-            }}>
-              <QuickAddSection
-                label="관측 기프트에서 추가"
-                gifts={getGiftsByIds(observeIds)}
-                finalIds={finalIds}
-                onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
-              />
-              <QuickAddSection
-                label="시작 기프트에서 추가"
-                gifts={getGiftsByIds(startIds)}
-                finalIds={finalIds}
-                onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
-              />
+        const GRADE_OPTIONS = [
+          { value: null, label: '전체' },
+          { value: '5', label: 'Ⅴ' },
+          { value: '4', label: 'Ⅳ' },
+          { value: '3', label: 'Ⅲ' },
+          { value: '2', label: 'Ⅱ' },
+          { value: '1', label: 'Ⅰ' },
+        ]
+
+        const gradeGroups = useMemo(() => {
+          const groups: Record<string, GiftData[]> = {}
+          for (const g of filteredFinalSourceGifts) {
+            const grade = g.grade ?? '1'
+            if (!groups[grade]) groups[grade] = []
+            groups[grade].push(g)
+          }
+          return groups
+        }, [filteredFinalSourceGifts])
+
+        const gradeGroupOrder = ['5', '4', '3', '2', '1']
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+            {/* ── Top section: drop zone ──────────────────────────────── */}
+            <div
+              onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setFinalDragOver(true) }}
+              onDragLeave={() => setFinalDragOver(false)}
+              onDrop={e => {
+                e.preventDefault()
+                setFinalDragOver(false)
+                const gameId = e.dataTransfer.getData('text/plain')
+                if (gameId && !finalIds.has(Number(gameId))) {
+                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gameId}` })
+                }
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.625rem',
+                padding: '0.625rem',
+                background: finalDragOver ? 'rgba(200,144,10,0.07)' : 'rgba(26,21,16,0.4)',
+                border: `1px ${finalDragOver ? 'solid' : 'solid'} ${finalDragOver ? '#c8900a' : '#1f1a14'}`,
+                borderRadius: '0.5rem',
+                boxShadow: finalDragOver ? '0 0 0.75rem rgba(200,144,10,0.25)' : 'none',
+                transition: 'all 0.15s',
+                minHeight: '6rem',
+              }}
+            >
+              {/* Drop zone header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>
+                    최종 기프트 빌드
+                  </span>
+                  {finalIds.size > 0 && (
+                    <span style={{
+                      fontSize: '0.5625rem',
+                      color: '#c8900a',
+                      background: 'rgba(200,144,10,0.12)',
+                      padding: '0.0625rem 0.375rem',
+                      borderRadius: '0.25rem',
+                      border: '1px solid rgba(200,144,10,0.2)',
+                      fontWeight: 700,
+                    }}>
+                      {finalIds.size}개
+                    </span>
+                  )}
+                </div>
+                {finalIds.size > 0 && (
+                  <button
+                    onClick={() => {
+                      Array.from(finalIds).forEach(id => {
+                        dispatch({ type: 'REMOVE_GIFT', giftId: `final_${id}` })
+                      })
+                    }}
+                    style={{
+                      fontSize: '0.6875rem',
+                      color: '#dc2626',
+                      background: 'rgba(220,38,38,0.08)',
+                      border: '1px solid rgba(220,38,38,0.2)',
+                      borderRadius: '0.25rem',
+                      padding: '0.125rem 0.5rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.16)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)' }}
+                  >
+                    전체 삭제
+                  </button>
+                )}
+              </div>
+
+              {/* Drop zone content */}
+              {finalIds.size === 0 ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '4rem',
+                  border: '1px dashed rgba(200,144,10,0.2)',
+                  borderRadius: '0.375rem',
+                  color: finalDragOver ? '#c8900a' : '#3f3520',
+                  fontSize: '0.75rem',
+                  transition: 'color 0.15s',
+                }}>
+                  기프트를 아래에서 드래그하거나 클릭하여 추가하세요
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
+                  gap: '0.5rem',
+                }}>
+                  {getGiftsByIds(finalIds).map(gift => (
+                    <div
+                      key={gift.id}
+                      style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    >
+                      <GiftCard
+                        gift={gift}
+                        isSelected={false}
+                        onClick={() => {}}
+                      />
+                      <button
+                        onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: `final_${gift.game_id}` })}
+                        style={{
+                          position: 'absolute',
+                          top: '0.125rem',
+                          right: '0.25rem',
+                          background: 'rgba(220,38,38,0.8)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '1rem',
+                          height: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          padding: 0,
+                          zIndex: 20,
+                          transition: 'background 0.15s',
+                        }}
+                        title="제거"
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,1)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.8)')}
+                      >
+                        <X size={10} color="#fff" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick add pills from observe/start */}
+              {(observeIds.size > 0 || startIds.size > 0) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
+                  <QuickAddSection
+                    label="관측 기프트에서 추가"
+                    gifts={getGiftsByIds(observeIds)}
+                    finalIds={finalIds}
+                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                  />
+                  <QuickAddSection
+                    label="시작 기프트에서 추가"
+                    gifts={getGiftsByIds(startIds)}
+                    finalIds={finalIds}
+                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                  />
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Final gift grid */}
-          {finalIds.size === 0 ? (
-            <div style={{
-              padding: '2.5rem',
-              textAlign: 'center',
-              color: '#3f3520',
-              fontSize: '0.8125rem',
-              border: '1px dashed #1f1a14',
-              borderRadius: '0.5rem',
-            }}>
-              최종 목표 기프트를 추가해주세요
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
-              gap: '0.5rem',
-            }}>
-              {getGiftsByIds(finalIds).map(gift => (
-                <div
-                  key={gift.id}
+            {/* ── Bottom section: full gift list ──────────────────────── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: 600 }}>전체 기프트 목록</span>
+
+              {/* Search input */}
+              <div style={{ position: 'relative' }}>
+                <Search
+                  size={14}
+                  color="#555"
+                  style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                />
+                <input
+                  type="text"
+                  placeholder="기프트 이름 검색..."
+                  value={finalSearch}
+                  onChange={e => setFinalSearch(e.target.value)}
                   style={{
-                    position: 'relative',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
+                    width: '100%',
+                    paddingLeft: '2rem',
+                    paddingRight: '0.75rem',
+                    paddingTop: '0.375rem',
+                    paddingBottom: '0.375rem',
+                    background: '#1a1510',
+                    border: '1px solid #2a2520',
+                    borderRadius: '0.375rem',
+                    color: '#d1d5db',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              {/* Keyword filter tabs + grade dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {/* Scrollable keyword tabs */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0.25rem',
+                  overflowX: 'auto',
+                  flex: 1,
+                  paddingBottom: '0.125rem',
+                  scrollbarWidth: 'none',
+                }}>
+                  {KEYWORD_FILTERS.map(tab => {
+                    const isActive = finalFilterKeyword === tab.slug
+                    const iconUrl = tab.slug ? getKeywordIconUrl(tab.slug) : null
+                    return (
+                      <button
+                        key={tab.slug ?? 'all'}
+                        onClick={() => setFinalFilterKeyword(isActive && tab.slug !== null ? null : tab.slug)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.25rem 0.5rem',
+                          background: isActive ? 'rgba(200,144,10,0.18)' : '#1a1510',
+                          border: `1px solid ${isActive ? '#c8900a60' : '#2a2520'}`,
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          color: isActive ? '#e8b030' : '#888',
+                          fontSize: '0.6875rem',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {iconUrl && (
+                          <Image src={iconUrl} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', objectFit: 'contain' }} />
+                        )}
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Grade dropdown */}
+                <select
+                  value={finalFilterGrade ?? ''}
+                  onChange={e => setFinalFilterGrade(e.target.value || null)}
+                  style={{
+                    background: '#1a1510',
+                    border: '1px solid #2a2520',
+                    borderRadius: '0.375rem',
+                    color: '#d1d5db',
+                    fontSize: '0.6875rem',
+                    padding: '0.25rem 0.375rem',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    outline: 'none',
                   }}
                 >
-                  <GiftCard
-                    gift={gift}
-                    isSelected={false}
-                    onClick={() => {}}
-                  />
-                  {/* Remove button overlay */}
-                  <button
-                    onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: `final_${gift.game_id}` })}
-                    style={{
-                      position: 'absolute',
-                      top: '0.125rem',
-                      right: '0.25rem',
-                      background: 'rgba(220,38,38,0.8)',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '1rem',
-                      height: '1rem',
+                  {GRADE_OPTIONS.map(opt => (
+                    <option key={opt.value ?? 'all'} value={opt.value ?? ''}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Gift grid (grouped by grade) */}
+              <div style={{ maxHeight: '20rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {gradeGroupOrder.filter(g => gradeGroups[g]?.length > 0).map(grade => (
+                  <div key={grade}>
+                    {/* Grade divider */}
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      padding: 0,
-                      zIndex: 20,
-                      transition: 'background 0.15s',
-                    }}
-                    title="제거"
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,1)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.8)')}
-                  >
-                    <X size={10} color="#fff" />
-                  </button>
-                </div>
-              ))}
+                      gap: '0.5rem',
+                      marginBottom: '0.375rem',
+                    }}>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: GRADE_COLORS[grade] ?? '#888',
+                        fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                      }}>
+                        {GRADE_ROMAN[grade]}
+                      </span>
+                      <div style={{ flex: 1, height: '1px', background: `${GRADE_COLORS[grade] ?? '#333'}40` }} />
+                      <span style={{ fontSize: '0.5625rem', color: '#444' }}>{gradeGroups[grade].length}</span>
+                    </div>
+
+                    {/* Cards row */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
+                      gap: '0.5rem',
+                    }}>
+                      {gradeGroups[grade].map(gift => {
+                        const alreadyAdded = finalIds.has(gift.game_id)
+                        return (
+                          <div
+                            key={gift.id}
+                            draggable={!alreadyAdded}
+                            onDragStart={e => {
+                              e.dataTransfer.setData('text/plain', String(gift.game_id))
+                              e.dataTransfer.effectAllowed = 'copy'
+                            }}
+                            style={{ opacity: alreadyAdded ? 0.3 : 1, transition: 'opacity 0.15s' }}
+                          >
+                            <GiftCard
+                              gift={gift}
+                              isSelected={alreadyAdded}
+                              onClick={() => {
+                                if (!alreadyAdded) {
+                                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
+                                }
+                              }}
+                              disabled={alreadyAdded}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {filteredFinalSourceGifts.length === 0 && (
+                  <div style={{ textAlign: 'center', color: '#3f3520', fontSize: '0.75rem', padding: '2rem 0' }}>
+                    검색 결과가 없습니다
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
