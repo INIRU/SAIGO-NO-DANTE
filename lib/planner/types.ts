@@ -179,6 +179,16 @@ export interface SinnerData {
   order_num: number
 }
 
+export interface EgoData {
+  id: string
+  sinner_id: string
+  name: string
+  name_kr: string | null
+  grade: string
+  sin_affinity: string | null
+  image_url: string | null
+}
+
 export interface SkillSummary {
   identity_id: string
   sin_affinity: string

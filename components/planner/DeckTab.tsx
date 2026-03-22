@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
-import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData, type PassiveData, type SkillSummary } from '@/lib/planner/types'
+import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -22,6 +22,18 @@ const SUB_TABS: { key: DeckSubTab; label: string; icon: typeof Users }[] = [
 const SKILL_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
+const DEFAULT_EGO_NAMES: Record<string, string> = {
+  '이상': '오감도',
+  '파우스트': '표사 방출기',
+  '돈키호테': '라 상그레 산초',
+  '료슈': '삼라영삼',
+  '뫼르소': '타인의 사슬',
+  '홍루': '허환경',
+  '이스마엘': '작살박이',
+  '오티스': '토 파토스 마토스',
+  '그레고르': '어느날 갑자기',
+}
+
 interface Props {
   state: PlannerState
   dispatch: React.Dispatch<PlannerAction>
@@ -32,6 +44,7 @@ interface Props {
   giftMap: Map<number, GiftData>
   passives: PassiveData[]
   skills: SkillSummary[]
+  egos: EgoData[]
 }
 
 // --- Rarity star images ---
@@ -48,7 +61,7 @@ function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'm
   )
 }
 
-export default function DeckTab({ state, dispatch, identities, sinners, passives, skills }: Props) {
+export default function DeckTab({ state, dispatch, identities, sinners, passives, skills, egos }: Props) {
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>({})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>({})
@@ -89,6 +102,19 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     for (const ident of identities) map.set(ident.id, ident)
     return map
   }, [identities])
+
+  // EGO grouped by sinner (grade order within each group)
+  const sinnerEgosMap = useMemo(() => {
+    const map = new Map<string, EgoData[]>()
+    for (const ego of egos) {
+      if (!map.has(ego.sinner_id)) map.set(ego.sinner_id, [])
+      map.get(ego.sinner_id)!.push(ego)
+    }
+    for (const [, list] of map) {
+      list.sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade))
+    }
+    return map
+  }, [egos])
 
   // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용)
   const deckSinCounts = useMemo(() => {
@@ -137,6 +163,22 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         slot_order: 99, // 기본 벤치, 하단 클릭으로 편성
       },
     })
+    // 기본 ZAYIN EGO 자동 선택 (이미 있으면 스킵)
+    const hasZayin = state.egoSlots.some(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
+    if (!hasZayin) {
+      const sinnerName = sinners.find(s => s.id === ident.sinner_id)?.name_kr
+      const defaultName = sinnerName ? DEFAULT_EGO_NAMES[sinnerName] : undefined
+      const defaultEgo = defaultName
+        ? egos.find(e => e.sinner_id === ident.sinner_id && (e.name_kr === defaultName || e.name === defaultName))
+          ?? egos.find(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
+        : egos.find(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
+      if (defaultEgo) {
+        dispatch({
+          type: 'ADD_EGO',
+          slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade },
+        })
+      }
+    }
     setIdentityModalSinner(null)
   }
 
@@ -507,19 +549,21 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
           {sinners.map(sinner => {
             const slot = getSelectedIdentity(sinner.id)
-            const sinnerEgos = state.egoSlots.filter(e => e.sinner_id === sinner.id)
+            const selectedEgos = state.egoSlots.filter(e => e.sinner_id === sinner.id)
             const egoByGrade: Record<string, typeof state.egoSlots[0]> = {}
-            for (const e of sinnerEgos) egoByGrade[e.grade] = e
+            for (const e of selectedEgos) egoByGrade[e.grade] = e
 
             return (
               <div
                 key={sinner.id}
+                onClick={() => { if (slot) setEgoModalSinner(sinner.id) }}
                 style={{
                   background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
                   border: `1px solid ${slot ? '#221a0f' : '#18120a'}`,
                   borderRadius: '0.25rem',
                   overflow: 'hidden',
                   opacity: slot ? 1 : 0.5,
+                  cursor: slot ? 'pointer' : 'default',
                 }}
               >
                 {/* 수감자 헤더 */}
@@ -543,7 +587,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     return (
                       <div
                         key={grade}
-                        onClick={() => { if (slot) setEgoModalSinner(sinner.id) }}
                         style={{
                           background: ego ? `${gc}1a` : 'rgba(10,8,5,0.7)',
                           border: `1px solid ${ego ? gc + '55' : '#18120a'}`,
@@ -553,7 +596,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           alignItems: 'center',
                           gap: '0.3125rem',
                           minHeight: '1.5rem',
-                          cursor: slot ? 'pointer' : 'default',
                         }}
                       >
                         {grade !== 'ALEPH' ? (
@@ -598,73 +640,169 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               </div>
             )
           })}
-          {/* EGO 데이터 안내 */}
-          <div className="col-span-full mt-4 text-center" style={{ padding: '1rem', background: '#1a1510', borderRadius: '0.25rem', border: '1px solid #222' }}>
-            <p style={{ color: '#555', fontSize: '0.75rem' }}>
-              EGO 편성 데이터는 page.tsx 쿼리에 추가 필요. 추후 업데이트에서 지원됩니다.
-            </p>
-          </div>
         </div>
       )}
 
-      {/* ── EGO 선택 모달 (placeholder) ── */}
-      {egoModalSinner && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(0.5rem)' }}
-          onClick={() => setEgoModalSinner(null)}
-        >
+      {/* ── EGO 선택 모달 ── */}
+      {egoModalSinner && (() => {
+        const modalSinnerEgo = sinners.find(s => s.id === egoModalSinner)
+        const availableEgos = sinnerEgosMap.get(egoModalSinner) ?? []
+        const selectedEgos = state.egoSlots.filter(e => e.sinner_id === egoModalSinner)
+        const egoByGrade: Record<string, typeof state.egoSlots[0]> = {}
+        for (const e of selectedEgos) egoByGrade[e.grade] = e
+
+        return (
           <div
-            className="relative w-full max-w-2xl mx-4"
-            style={{
-              background: '#1a1510',
-              border: '1px solid #333',
-              borderRadius: '0.5rem',
-              boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)',
-            }}
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)' }}
+            onClick={() => setEgoModalSinner(null)}
           >
-            <div className="flex items-center justify-between" style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #222' }}>
-              <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>
-                {sinners.find(s => s.id === egoModalSinner)?.name_kr} - EGO 선택
-              </span>
-              <button onClick={() => setEgoModalSinner(null)} style={{ color: '#666', cursor: 'pointer', padding: '0.25rem' }}>
-                <X style={{ width: '1.25rem', height: '1.25rem' }} />
-              </button>
-            </div>
-            {/* 등급별 섹션 */}
-            <div style={{ padding: '1.25rem' }}>
-              {GRADE_ORDER.map(grade => {
-                const gc = GRADE_COLORS[grade] ?? '#555'
-                return (
-                  <div key={grade} style={{ marginBottom: '1rem' }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {grade !== 'ALEPH' ? (
-                        <Image
-                          src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
-                          alt={grade}
-                          width={22}
-                          height={11}
-                          unoptimized
-                          style={{ height: '0.75rem', width: 'auto' }}
-                        />
+            <div
+              className="relative w-full max-w-2xl mx-4"
+              style={{
+                background: '#1a1510',
+                border: '1px solid #333',
+                borderRadius: '0.5rem',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+                boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* 모달 헤더 */}
+              <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
+                <div className="flex items-center gap-2">
+                  {modalSinnerEgo && (
+                    <Image
+                      src={getSinnerLogoUrl(modalSinnerEgo.id)}
+                      alt=""
+                      width={20}
+                      height={20}
+                      style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7 }}
+                    />
+                  )}
+                  <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>
+                    {modalSinnerEgo?.name_kr} - EGO 선택
+                  </span>
+                </div>
+                <button onClick={() => setEgoModalSinner(null)} style={{ color: '#666', cursor: 'pointer', padding: '0.25rem' }}>
+                  <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                </button>
+              </div>
+
+              {/* 등급별 섹션 */}
+              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {GRADE_ORDER.map(grade => {
+                  const gc = GRADE_COLORS[grade] ?? '#555'
+                  const gradeEgos = availableEgos.filter(e => e.grade === grade)
+                  const selectedForGrade = egoByGrade[grade]
+
+                  return (
+                    <div key={grade}>
+                      {/* 등급 헤더 */}
+                      <div className="flex items-center gap-2" style={{ marginBottom: '0.5rem' }}>
+                        {grade !== 'ALEPH' ? (
+                          <Image
+                            src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
+                            alt={grade}
+                            width={22}
+                            height={11}
+                            unoptimized
+                            style={{ height: '0.75rem', width: 'auto' }}
+                          />
+                        ) : (
+                          <span style={{ color: gc, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ALEPH</span>
+                        )}
+                        <div style={{ flex: 1, height: '1px', background: gc + '30' }} />
+                        {selectedForGrade && (
+                          <button
+                            onClick={() => dispatch({ type: 'REMOVE_EGO', egoId: selectedForGrade.ego_id })}
+                            style={{ color: '#c83040', fontSize: '0.625rem', cursor: 'pointer', padding: '0.125rem 0.375rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}
+                          >
+                            해제
+                          </button>
+                        )}
+                      </div>
+
+                      {gradeEgos.length === 0 ? (
+                        <div style={{ padding: '0.625rem', background: 'rgba(10,8,5,0.5)', borderRadius: '0.25rem', border: `1px solid ${gc}15`, textAlign: 'center' }}>
+                          <span style={{ color: '#333', fontSize: '0.6875rem' }}>해당 등급 EGO 없음</span>
+                        </div>
                       ) : (
-                        <span style={{ color: gc, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ALEPH</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: '0.5rem' }}>
+                          {gradeEgos.map(ego => {
+                            const isSelected = selectedForGrade?.ego_id === ego.id
+                            return (
+                              <button
+                                key={ego.id}
+                                onClick={() => {
+                                  dispatch({
+                                    type: 'ADD_EGO',
+                                    slot: {
+                                      ego_id: ego.id,
+                                      sinner_id: ego.sinner_id,
+                                      name_kr: ego.name_kr ?? ego.name,
+                                      grade: ego.grade,
+                                    },
+                                  })
+                                }}
+                                className="text-left transition-all"
+                                style={{
+                                  background: isSelected
+                                    ? `linear-gradient(160deg, ${gc}22 0%, ${gc}0d 100%)`
+                                    : 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
+                                  border: `1px solid ${isSelected ? gc + 'aa' : gc + '20'}`,
+                                  borderRadius: '0.375rem',
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  boxShadow: isSelected ? `0 0 0.625rem ${gc}44` : 'none',
+                                }}
+                              >
+                                {/* EGO 이미지 */}
+                                {ego.image_url?.startsWith('http') && (
+                                  <div className="relative w-full" style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#0d0b08' }}>
+                                    <Image
+                                      src={ego.image_url}
+                                      alt={ego.name_kr ?? ego.name}
+                                      fill
+                                      className="object-contain"
+                                      sizes="160px"
+                                    />
+                                  </div>
+                                )}
+                                {/* EGO 정보 */}
+                                <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
+                                  <p className="font-serif truncate" style={{ color: isSelected ? '#e8dcc8' : '#b0a898', fontSize: '0.625rem', lineHeight: 1.3 }}>
+                                    {ego.name_kr ?? ego.name}
+                                  </p>
+                                  <div className="flex items-center gap-1" style={{ marginTop: '0.25rem' }}>
+                                    {ego.sin_affinity && (
+                                      <Image
+                                        src={`${STORAGE_BASE}/icons/Sins/transparent/${ego.sin_affinity.charAt(0).toUpperCase() + ego.sin_affinity.slice(1)}.webp`}
+                                        alt={ego.sin_affinity}
+                                        width={14}
+                                        height={14}
+                                        style={{ width: '0.875rem', height: '0.875rem' }}
+                                      />
+                                    )}
+                                    <span style={{ color: gc, fontSize: '0.5rem', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                      {grade}
+                                    </span>
+                                  </div>
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
                       )}
-                      <div style={{ flex: 1, height: '1px', background: gc + '30' }} />
                     </div>
-                    <div style={{ padding: '0.75rem', background: 'rgba(10,8,5,0.5)', borderRadius: '0.25rem', border: `1px solid ${gc}20` }}>
-                      <p style={{ color: '#444', fontSize: '0.75rem', textAlign: 'center' }}>
-                        EGO 데이터가 아직 로드되지 않았습니다.
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── 스킬셋 탭 ── */}
       {subTab === 'skillset' && (

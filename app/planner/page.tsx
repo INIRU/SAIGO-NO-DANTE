@@ -12,6 +12,7 @@ export default async function PlannerPage() {
   const supabase = await createClient()
   const s = supabase.schema('limbus')
 
+  // 7개까지 Promise.all 튜플 추론 가능
   const [themesRes, giftsRes, recipesRes, identitiesRes, sinnersRes, passivesRes, skillsRes] = await Promise.all([
     s.from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info'),
     s.from('ego_gifts').select('id, game_id, name, keyword, grade, image_url, effect_base, theme_ids'),
@@ -22,6 +23,9 @@ export default async function PlannerPage() {
     s.from('skills').select('identity_id, sin_affinity, skill_type, skill_order, uptie_level').eq('uptie_level', 4),
   ])
 
+  // 별도 쿼리 (튜플 제한 우회)
+  const egosRes = await s.from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url')
+
   return <PlannerClient
     themes={themesRes.data ?? []}
     gifts={giftsRes.data ?? []}
@@ -30,5 +34,6 @@ export default async function PlannerPage() {
     sinners={sinnersRes.data ?? []}
     passives={passivesRes.data ?? []}
     skills={skillsRes.data ?? []}
+    egos={egosRes.data ?? []}
   />
 }
