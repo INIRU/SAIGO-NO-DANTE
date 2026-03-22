@@ -41,7 +41,7 @@ const OFFICIAL_LINKS: Array<{
   { label: '공식 사이트', sub: 'limbuscompany.com',           href: 'https://limbuscompany.com',                       icon: Globe,        color: '#4898b0' },
   { label: 'YouTube',    sub: '공식 채널',                    href: 'https://www.youtube.com/@ProjectMoonOfficial',   icon: Youtube,      color: '#c83030' },
   { label: 'Twitter / X',sub: '@LimbusCompany_B',            href: 'https://x.com/LimbusCompany_B',                  icon: XIcon,        color: '#3870b0' },
-  { label: '팬 디스코드', sub: 'discord.gg/efaGjQwsVB',       href: 'https://discord.gg/efaGjQwsVB',                  icon: DiscordIcon,  color: '#5865f2' },
+  { label: '팬 디스코드', sub: '봇 소개 · 서버 참여',           href: '/bot',                                           icon: DiscordIcon,  color: '#5865f2' },
 ]
 
 const FEATURES = [
@@ -417,16 +417,14 @@ export default function HomeClient({
             >
               덱 게시판
             </Link>
-            <a
-              href="https://discord.gg/efaGjQwsVB"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/bot"
               className="flex items-center gap-2 px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
               style={{ border: '1px solid #5865f2', color: '#7289da', borderRadius: '4px' }}
             >
               <DiscordIcon size={16} />
-              팬 디스코드
-            </a>
+              디스코드 봇
+            </Link>
           </div>
         </div>
 
