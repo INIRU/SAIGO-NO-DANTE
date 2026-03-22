@@ -677,6 +677,10 @@ function QuickAddSection({
 // ── Main component ───────────────────────────────────────────────────────────
 export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) {
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
+  const [finalDragOver, setFinalDragOver] = useState(false)
+  const [finalSearch, setFinalSearch] = useState('')
+  const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
+  const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
 
   // Parse selected IDs by prefix
   const observeIds = useMemo(
@@ -1031,10 +1035,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
       {/* ── Final tab ───────────────────────────────────────────────────── */}
       {subTab === 'final' && (() => {
-        const [finalDragOver, setFinalDragOver] = useState(false)
-        const [finalSearch, setFinalSearch] = useState('')
-        const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
-        const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
+        // useState moved to component top level
 
         const filteredFinalSourceGifts = useMemo(() => {
           return gifts.filter(g => {
