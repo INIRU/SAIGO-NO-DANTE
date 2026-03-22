@@ -32,14 +32,14 @@ interface Props {
 
 // --- Rarity star images ---
 function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'md' | 'lg' }) {
-  const s = size === 'sm' ? 28 : size === 'lg' ? 48 : 36
+  const h = size === 'sm' ? 14 : size === 'lg' ? 24 : 18
   return (
     <Image
       src={`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`}
       alt={`${rarity}성`}
-      width={s}
-      height={s}
-      style={{ width: `${s / 16}rem`, height: `${s / 16}rem`, objectFit: 'contain' }}
+      width={h * rarity}
+      height={h}
+      style={{ height: `${h / 16}rem`, width: 'auto', objectFit: 'contain' }}
     />
   )
 }
@@ -257,12 +257,12 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                     return (
                       <div
                         className="absolute inset-0 flex items-center justify-center z-15 pointer-events-none"
-                        style={{ opacity: 0.85 }}
+                        style={{ background: 'rgba(13,11,8,0.5)' }}
                       >
-                        <span style={{ fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 0.125rem 0.375rem rgba(0,0,0,0.9)` }}>
+                        <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.75rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
                           {isFormation ? '편성' : '대기'}
                         </span>
-                        <span style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.625rem ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 0.125rem 0.375rem rgba(0,0,0,0.9)`, marginLeft: '0.1875rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                           {n}
                         </span>
                       </div>
