@@ -177,8 +177,7 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
             return (
               <div key={sinner.id} className="relative" style={{ overflow: 'visible' }}>
                 <div
-                  onClick={() => setIdentityModalSinner(sinner.id)}
-                  className="cursor-pointer relative w-full"
+                  className="group cursor-pointer relative w-full"
                   style={{
                     aspectRatio: '2/3',
                     background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
@@ -211,7 +210,7 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                           paddingBottom: '0.375rem',
                         }}
                       >
-                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.5625rem', lineHeight: 1.2 }}>
+                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.8125rem', lineHeight: 1.2 }}>
                           {slot.name_kr}
                         </p>
                       </div>
@@ -222,9 +221,9 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                         <Image
                           src={getSinnerLogoUrl(sinner.id)}
                           alt=""
-                          width={24}
-                          height={24}
-                          style={{ width: '1.5rem', height: '1.5rem', opacity: 0.35 }}
+                          width={32}
+                          height={32}
+                          style={{ width: '2rem', height: '2rem', opacity: 0.35 }}
                         />
                       </div>
                       <div className="absolute" style={{ top: 0, right: 0, width: '36%', opacity: 0.15, pointerEvents: 'none' }}>
@@ -244,12 +243,42 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                           paddingBottom: '0.375rem',
                         }}
                       >
-                        <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.5625rem' }}>
+                        <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.75rem' }}>
                           {sinner.name_kr}
                         </p>
                       </div>
                     </>
                   )}
+
+                  {/* 호버 오버레이 — 상단 40% 편성, 하단 60% 순서 */}
+                  <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col">
+                    {/* 상단 40%: 편성 버튼 */}
+                    <div
+                      onClick={() => setIdentityModalSinner(sinner.id)}
+                      className="flex items-center justify-center transition-colors hover:bg-[#c8900a30]"
+                      style={{ height: '40%', background: 'rgba(13,11,8,0.7)', borderBottom: '1px solid #c8900a30' }}
+                    >
+                      <span className="font-serif font-semibold" style={{ color: '#c8900a', fontSize: '0.875rem' }}>
+                        {slot ? '변경' : '편성'}
+                      </span>
+                    </div>
+                    {/* 하단 60%: 편성 순서 */}
+                    <div
+                      className="flex items-center justify-center"
+                      style={{ height: '60%', background: 'rgba(13,11,8,0.6)' }}
+                    >
+                      {slot ? (
+                        <div className="text-center">
+                          <span style={{ color: '#888', fontSize: '0.625rem' }}>편성 순서</span>
+                          <div className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '1.5rem' }}>
+                            {state.identitySlots.findIndex(s => s.sinner_id === sinner.id) + 1 || '-'}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#444', fontSize: '0.75rem' }}>미편성</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* 각성 토글 */}
