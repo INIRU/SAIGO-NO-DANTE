@@ -63,8 +63,14 @@ export function buildGiftMap(gifts: GiftData[]): Map<number, GiftData> {
   return map
 }
 
+// 거울 던전 관련 전투 키워드만 (소속/기타 키워드 제외)
+const COMBAT_KEYWORDS = new Set([
+  '출혈', '화상', '진동', '파열', '침잠', '호흡', '충전',
+  '참격', '관통', '타격', '공통',
+])
+
 /**
- * 키워드 분포 계산 (인격 키워드 기반)
+ * 키워드 분포 계산 (전투 키워드만 필터링)
  */
 export function computeKeywordDistribution(
   keywords: string[][],
@@ -72,6 +78,7 @@ export function computeKeywordDistribution(
   const counts = new Map<string, number>()
   for (const kws of keywords) {
     for (const kw of kws) {
+      if (!COMBAT_KEYWORDS.has(kw)) continue
       counts.set(kw, (counts.get(kw) ?? 0) + 1)
     }
   }
