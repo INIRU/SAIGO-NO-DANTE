@@ -44,7 +44,14 @@ const KEYWORD_EN_TO_KR = {
   Combustion: '화상', Laceration: '출혈', Vibration: '진동',
   Burst: '파열', Sinking: '침잠', Breath: '호흡', Charge: '충전',
   Random: '무작위', Slash: '참격', Penetrate: '관통', Hit: '타격',
-  None: '공통',
+  None: '공통', Common: '공통',
+  // cleanDesc용 합성 키워드
+  Burn: '화상', Bleed: '출혈', Rupture: '파열', Poise: '호흡',
+  VibrationExplosion: '진동 폭발', Switch_Vibration: '진동 전환',
+  FusionVibration: '합성 진동', VibrationDistribution: '진동-분배',
+  Binding: '속박', DefenseDown: '방어 레벨 감소', AttackUp: '공격 레벨 증가',
+  Enhancement: '위력 증가', Vulnerable: '취약', Fragile: '취약',
+  Blunt: '타격', Slash: '참격', Penetrate: '관통',
 }
 
 function parseGrade(tags) {
@@ -128,9 +135,9 @@ async function main() {
     console.warn('⚠ KR_EgoGiftCategory.json 로드 실패, 기본 매핑 사용')
   }
 
-  // 2. 기프트 정의 로드 (mirrordungeon + walpu + story + cultivation 등 모든 ego-gift 파일)
+  // 2. 기프트 정의 로드 (거울 던전 + 왈푸 + 스토리 기프트 + 절차탁춘 등, 스토리 챕터 제외)
   console.log('📦 기프트 정의 로드...')
-  const giftItems = loadJsonGlob(DATA_DIR, /^ego-gift-(mirrordungeon|walpu|story-|cultivation).*\.json$/)
+  const giftItems = loadJsonGlob(DATA_DIR, /^ego-gift-(mirrordungeon|walpu|story-|cultivation|pilgrimage|hellschicken|buff|reuse).*\.json$/)
 
   // 히든보스 기프트 ID 수집 (*-hb.json 파일)
   const hiddenBossIds = new Set()
@@ -150,7 +157,7 @@ async function main() {
 
   // 3. 로컬라이즈 로드
   console.log('📝 로컬라이즈 로드...')
-  const localizeItems = loadJsonGlob(krDir, /^KR_EGOgift_(MirrorDungeon|cultivation|walpu|lcbcheckup).*\.json$/)
+  const localizeItems = loadJsonGlob(krDir, /^KR_EGOgift.*\.json$/)
   const localizeMap = new Map()
   for (const item of localizeItems) {
     localizeMap.set(item.id, item)
@@ -185,6 +192,17 @@ async function main() {
       keyword = categoryMap[item.keyword] || KEYWORD_EN_TO_KR[item.keyword] || item.keyword
     }
 
+    // convert_to (변환 기프트)
+    const convertTo = item.convertDataList?.[0] || null
+
+    // {0} 플레이스홀더 → 변환 기프트 이름으로 치환
+    let effectBase = cleanDesc(baseLoc.desc)
+    if (effectBase && convertTo && effectBase.includes('{0}')) {
+      const convertLoc = localizeMap.get(convertTo)
+      const convertName = convertLoc?.name || `기프트 #${convertTo}`
+      effectBase = effectBase.replace('{0}', `→ [${convertName}]`)
+    }
+
     const gift = {
       game_id: id,
       name: baseLoc.name,
@@ -194,10 +212,11 @@ async function main() {
       sell_price: item.sellPrice || null,
       buy_disabled: isBuyDisabled(item.tag),
       enhancement: upgrades.length > 1,
-      effect_base: cleanDesc(baseLoc.desc),
+      effect_base: effectBase,
       effect_plus: plusLocalizeId ? cleanDesc(localizeMap.get(plusLocalizeId)?.desc) : null,
       effect_plusplus: ppLocalizeId ? cleanDesc(localizeMap.get(ppLocalizeId)?.desc) : null,
       is_synthesis: false,
+      convert_to: convertTo,
     }
 
     // + / ++ 이름에서 is_synthesis 여부 추론 (이름에 '+' 없는 것만 기본)
@@ -272,7 +291,7 @@ async function main() {
   const { data: existingGifts } = await supabase
     .schema('limbus')
     .from('ego_gifts')
-    .select('id, name, game_id, keyword, grade, effect_base, effect_plus, effect_plusplus, price, image_url, difficulty')
+    .select('id, name, game_id, keyword, grade, effect_base, effect_plus, effect_plusplus, price, image_url, difficulty, convert_to')
 
   const existingByName = new Map()
   const existingByGameId = new Map()
