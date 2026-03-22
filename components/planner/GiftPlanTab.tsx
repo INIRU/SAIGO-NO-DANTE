@@ -997,42 +997,146 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
       )}
 
       {/* ── Start tab ───────────────────────────────────────────────────── */}
-      {subTab === 'start' && (
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-          <GiftGridPanel
-            gifts={gifts}
-            selectedIds={startIds}
-            maxSelect={1}
-            gradeOrder={GRADE_ORDER_ALL}
-            onToggle={gift => {
-              const key = `start_${gift.game_id}`
-              if (startIds.has(gift.game_id)) {
-                dispatch({ type: 'REMOVE_GIFT', giftId: key })
-              } else if (startIds.size < 1) {
-                dispatch({ type: 'ADD_GIFT', giftId: key })
+      {subTab === 'start' && (() => {
+        // 시작 기프트 풀 (game_id 기준)
+        const START_GIFT_IDS = new Set([
+          9009, 9001, 9103, // 화상: 작열우모, 지옥나비의 꿈, 울화통
+          9005, 9029, 9108, // 출혈: 상처붙이, 작고 나쁠 인형, 경외심
+          9113, 9086, 9044, // 진동: 시큼한 주향, 잔향, 진동형 팔찌
+          9117, 9169, 9047, // 파열: 유연 화약, 가시오랏줄, 가시 올가미
+          9041, 9054, 9124, // 침잠: 적색 지령, 녹아내린 시계태엽, 장엄
+          9051, 9046, 9129, // 호흡: 돌무덤, 물부리, 낡은 목각 인형
+          9134, 9043, 9052, // 충전: 순찰용 손전등, 사원증, 휴대용 전지 소켓
+          9032, 9194, 9140, // 참격: 꿈을 꾸는 전기양, 짧은 케인 소드, 결의
+          9198, 9145, 9030, // 관통: 증명의 깃털, 찢어진 밴돌리어, 수집하는 해골
+          9012, 9202, 9150, // 타격: 오늘의 표정, 포켓 암기 노트, 시간 굴레
+        ])
+
+        const startPool = gifts.filter(g => START_GIFT_IDS.has(g.game_id))
+        const KEYWORD_ORDER = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격']
+        const grouped = new Map<string, GiftData[]>()
+        for (const kw of KEYWORD_ORDER) grouped.set(kw, [])
+        for (const g of startPool) {
+          const kw = g.keyword ?? '공통'
+          if (!grouped.has(kw)) grouped.set(kw, [])
+          grouped.get(kw)!.push(g)
+        }
+
+        return (
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* 키워드별 카드 그리드 (게임 UI 스타일) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: '0.75rem' }}>
+                {KEYWORD_ORDER.map(kw => {
+                  const kwGifts = grouped.get(kw) ?? []
+                  if (kwGifts.length === 0) return null
+                  const slug = getKeywordSlug(kw)
+                  const iconUrl = slug ? getKeywordIconUrl(slug) : null
+                  return (
+                    <div key={kw} style={{
+                      background: '#1a1510',
+                      border: '1px solid #2a2520',
+                      borderRadius: '0.5rem',
+                      overflow: 'hidden',
+                    }}>
+                      {/* 키워드 헤더 */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '0.375rem',
+                        padding: '0.5rem 0.75rem',
+                        background: '#12100d',
+                        borderBottom: '1px solid #2a2520',
+                      }}>
+                        {iconUrl && (
+                          <Image src={iconUrl} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />
+                        )}
+                        <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600 }}>{kw}</span>
+                      </div>
+                      {/* 기프트 3개 */}
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}>
+                        {kwGifts.map(gift => {
+                          const isSelected = startIds.has(gift.game_id)
+                          return (
+                            <button
+                              key={gift.id}
+                              onClick={() => {
+                                const key = `start_${gift.game_id}`
+                                if (isSelected) {
+                                  dispatch({ type: 'REMOVE_GIFT', giftId: key })
+                                } else if (startIds.size < 1) {
+                                  dispatch({ type: 'ADD_GIFT', giftId: key })
+                                }
+                              }}
+                              className="group"
+                              style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
+                                cursor: startIds.size >= 1 && !isSelected ? 'not-allowed' : 'pointer',
+                                opacity: startIds.size >= 1 && !isSelected ? 0.4 : 1,
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              <div style={{
+                                width: '3.5rem', height: '3.5rem',
+                                clipPath: OCTAGON_CLIP,
+                                backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
+                                backgroundSize: 'cover',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                outline: isSelected ? '2px solid #c8900a' : 'none',
+                                outlineOffset: '2px',
+                              }}>
+                                <span style={{
+                                  position: 'absolute', top: '4%', left: '5%', zIndex: 10,
+                                  fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                                  fontWeight: 700, fontSize: '0.875rem', lineHeight: 1,
+                                  color: 'rgb(251,183,46)',
+                                  textShadow: '0 0 0.375rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
+                                }}>
+                                  {GRADE_ROMAN[gift.grade ?? '1']}
+                                </span>
+                                <div style={{ position: 'absolute', inset: '15%' }}>
+                                  {gift.image_url?.startsWith('http') && (
+                                    <Image src={gift.image_url} alt={gift.name} fill sizes="56px" style={{ objectFit: 'contain' }} />
+                                  )}
+                                </div>
+                                {isSelected && (
+                                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(200,144,10,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
+                                    <span style={{ color: '#e8b030', fontSize: '1.25rem', textShadow: '0 0 0.5rem rgba(0,0,0,0.8)' }}>✓</span>
+                                  </div>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '0.5625rem', color: '#aaa', textAlign: 'center', lineHeight: 1.2, maxWidth: '3.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {gift.name}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <SelectedPanel
+              title="시작 기프트"
+              selectedGifts={getGiftsByIds(startIds)}
+              onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
+              badge={
+                <span style={{
+                  fontSize: '0.5625rem',
+                  color: startIds.size >= 1 ? '#dc2626' : '#c8900a',
+                  background: startIds.size >= 1 ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '0.25rem',
+                  border: `1px solid ${startIds.size >= 1 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
+                  fontWeight: 600,
+                }}>
+                  선택 {startIds.size}/1
+                </span>
               }
-            }}
-          />
-          <SelectedPanel
-            title="시작 기프트"
-            selectedGifts={getGiftsByIds(startIds)}
-            onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
-            badge={
-              <span style={{
-                fontSize: '0.5625rem',
-                color: startIds.size >= 1 ? '#dc2626' : '#c8900a',
-                background: startIds.size >= 1 ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
-                padding: '0.125rem 0.375rem',
-                borderRadius: '0.25rem',
-                border: `1px solid ${startIds.size >= 1 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
-                fontWeight: 600,
-              }}>
-                선택 {startIds.size}/1
-              </span>
-            }
-          />
-        </div>
-      )}
+            />
+          </div>
+        )
+      })()}
 
       {/* ── Final tab ───────────────────────────────────────────────────── */}
       {subTab === 'final' && (
