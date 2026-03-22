@@ -250,34 +250,63 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                     </>
                   )}
 
-                  {/* 호버 오버레이 — 상단 40% 편성, 하단 60% 순서 */}
+                  {/* 편성 순서 오버레이 (편성된 경우 상시 표시) */}
+                  {slot && (() => {
+                    const orderIdx = state.identitySlots.findIndex(s => s.sinner_id === sinner.id)
+                    const n = orderIdx >= 0 ? orderIdx + 1 : null
+                    if (n == null) return null
+                    const isFormation = n <= 7
+                    return (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center z-15 pointer-events-none"
+                        style={{ opacity: 0.85 }}
+                      >
+                        <span style={{ fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 0.125rem 0.375rem rgba(0,0,0,0.9)` }}>
+                          {isFormation ? '편성' : '대기'}
+                        </span>
+                        <span style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.625rem ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 0.125rem 0.375rem rgba(0,0,0,0.9)`, marginLeft: '0.1875rem' }}>
+                          {n}
+                        </span>
+                      </div>
+                    )
+                  })()}
+
+                  {/* 호버 오버레이 */}
                   <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col">
-                    {/* 상단 40%: 편성 버튼 */}
-                    <div
-                      onClick={() => setIdentityModalSinner(sinner.id)}
-                      className="flex items-center justify-center transition-colors hover:bg-[#c8900a30]"
-                      style={{ height: '40%', background: 'rgba(13,11,8,0.7)', borderBottom: '1px solid #c8900a30' }}
-                    >
-                      <span className="font-serif font-semibold" style={{ color: '#c8900a', fontSize: '0.875rem' }}>
-                        {slot ? '변경' : '편성'}
-                      </span>
-                    </div>
-                    {/* 하단 60%: 편성 순서 */}
-                    <div
-                      className="flex items-center justify-center"
-                      style={{ height: '60%', background: 'rgba(13,11,8,0.6)' }}
-                    >
-                      {slot ? (
-                        <div className="text-center">
-                          <span style={{ color: '#888', fontSize: '0.625rem' }}>편성 순서</span>
-                          <div className="font-mono font-bold" style={{ color: '#e8dcc8', fontSize: '1.5rem' }}>
-                            {state.identitySlots.findIndex(s => s.sinner_id === sinner.id) + 1 || '-'}
-                          </div>
+                    {slot ? (
+                      <>
+                        {/* 편성된 경우: 상단 40% 변경, 하단 60% 해제 */}
+                        <div
+                          onClick={() => setIdentityModalSinner(sinner.id)}
+                          className="flex items-center justify-center transition-colors"
+                          style={{ height: '40%', background: 'rgba(13,11,8,0.75)', borderBottom: '1px solid rgba(200,144,10,0.2)' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.15)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.75)' }}
+                        >
+                          <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
                         </div>
-                      ) : (
-                        <span style={{ color: '#444', fontSize: '0.75rem' }}>미편성</span>
-                      )}
-                    </div>
+                        <div
+                          onClick={() => dispatch({ type: 'REMOVE_IDENTITY', sinnerId: sinner.id })}
+                          className="flex items-center justify-center transition-colors"
+                          style={{ height: '60%', background: 'rgba(13,11,8,0.65)' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,48,48,0.12)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.65)' }}
+                        >
+                          <span style={{ color: '#c83030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성 해제</span>
+                        </div>
+                      </>
+                    ) : (
+                      /* 미편성: 전체 클릭 = 편성 모달 */
+                      <div
+                        onClick={() => setIdentityModalSinner(sinner.id)}
+                        className="flex items-center justify-center transition-colors"
+                        style={{ height: '100%', background: 'rgba(13,11,8,0.7)' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.12)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.7)' }}
+                      >
+                        <span style={{ color: '#e8b030', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
