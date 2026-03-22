@@ -1,7 +1,7 @@
 /**
  * 패시브 공명/보유 조건 동기화
  * passive.json의 attributeResonanceCondition/attributeStockCondition을
- * DB passives.active_cond에 'resonance' 또는 'stock'으로 저장
+ * DB passives.active_cond + sin_affinity + sin_count에 반영
  *
  * Usage: node --env-file=.env.local scripts/sync-passive-conditions.mjs [--dry-run|--fix]
  */
@@ -34,11 +34,12 @@ const SIN_MAP = {
 async function main() {
   console.log(`[Mode] ${dryRun ? 'DRY RUN' : 'FIX (DB 업데이트)'}`)
 
-  // 1. passive.json 로드 — 패시브 ID → 조건 타입 매핑
+  // 1. passive.json 로드 — 패시브 ID → 조건 매핑
   const passiveData = JSON.parse(fs.readFileSync(path.join(JSON_DIR, 'passive.json'), 'utf8'))
   const passiveItems = passiveData.list ?? passiveData
 
-  const conditionMap = new Map() // passiveId → { type: 'resonance'|'stock', sin: string, count: number }
+  // passiveId → { type, sin, count }
+  const conditionMap = new Map()
   for (const item of passiveItems) {
     if (item.attributeResonanceCondition) {
       for (const cond of item.attributeResonanceCondition) {
@@ -60,26 +61,26 @@ async function main() {
   }
   console.log(`[Passive] ${conditionMap.size}개 조건 로드 (공명: ${[...conditionMap.values()].filter(v => v.type === 'resonance').length}, 보유: ${[...conditionMap.values()].filter(v => v.type === 'stock').length})`)
 
-  // 2. personality-passive 파일들에서 인격 game_id → 패시브 ID 매핑
+  // 2. personality-passive 파일들에서 인격 game_id → uptie_level별 패시브 ID 매핑
   const personalityPassiveFiles = fs.readdirSync(JSON_DIR)
     .filter(f => f.startsWith('personality-passive') && f.endsWith('.json'))
     .sort()
 
-  // personalityID → { battle: passiveId[], support: passiveId[] }
+  // personalityID → { battle: Map<level, passiveId[]>, support: Map<level, passiveId[]> }
   const identityPassiveMap = new Map()
   for (const fname of personalityPassiveFiles) {
     const data = JSON.parse(fs.readFileSync(path.join(JSON_DIR, fname), 'utf8'))
     const items = data.list ?? data
     for (const item of items) {
-      const battleIds = []
-      const supportIds = []
+      const battleByLevel = new Map()
+      const supportByLevel = new Map()
       for (const bp of item.battlePassiveList ?? []) {
-        battleIds.push(...(bp.passiveIDList ?? []))
+        battleByLevel.set(bp.level, bp.passiveIDList ?? [])
       }
       for (const sp of item.supporterPassiveList ?? []) {
-        supportIds.push(...(sp.passiveIDList ?? []))
+        supportByLevel.set(sp.level, sp.passiveIDList ?? [])
       }
-      identityPassiveMap.set(item.personalityID, { battle: battleIds, support: supportIds })
+      identityPassiveMap.set(item.personalityID, { battle: battleByLevel, support: supportByLevel })
     }
   }
   console.log(`[Personality] ${identityPassiveMap.size}개 인격 패시브 매핑 로드`)
@@ -88,18 +89,12 @@ async function main() {
   const { data: identities } = await limbus().from('identities').select('id, game_id')
   const { data: passives } = await limbus().from('passives').select('id, identity_id, passive_type, sin_affinity, sin_count, active_cond, uptie_level')
 
-  const identityGameIdMap = new Map() // game_id → uuid
-  for (const ident of identities ?? []) {
-    if (ident.game_id) identityGameIdMap.set(parseInt(ident.game_id), ident.id)
-  }
-
   // 4. 매칭 + 업데이트
   let updated = 0
   let skipped = 0
   let noMatch = 0
 
   for (const passive of passives ?? []) {
-    // DB identity uuid → game_id
     const identEntry = (identities ?? []).find(i => i.id === passive.identity_id)
     if (!identEntry?.game_id) { noMatch++; continue }
 
@@ -107,31 +102,49 @@ async function main() {
     const persPassive = identityPassiveMap.get(gameId)
     if (!persPassive) { noMatch++; continue }
 
-    // 해당 패시브 타입(battle/support)의 패시브 ID 목록
-    const passiveIds = passive.passive_type === 'battle' ? persPassive.battle : persPassive.support
+    // uptie_level에 해당하는 패시브 ID 목록 가져오기
+    // personality-passive의 level: 1=uptie3 이전, 2=uptie3(3동기화), 3=uptie4(4동기화) 등
+    // DB uptie_level 3 → game level 1~2, DB uptie_level 4 → game level 3+
+    const levelMap = passive.passive_type === 'battle' ? persPassive.battle : persPassive.support
 
-    // 패시브 ID 중 조건이 있는 것 찾기
+    // 모든 레벨에서 패시브 ID를 찾아서 조건 매칭
     let matchedCond = null
-    for (const pid of passiveIds) {
-      const cond = conditionMap.get(pid)
-      if (cond && cond.sin === passive.sin_affinity && cond.count === passive.sin_count) {
-        matchedCond = cond
-        break
+    for (const [, passiveIds] of levelMap) {
+      for (const pid of passiveIds) {
+        const cond = conditionMap.get(pid)
+        if (cond) {
+          matchedCond = cond
+          break
+        }
       }
+      if (matchedCond) break
     }
 
     if (!matchedCond) { noMatch++; continue }
 
-    // sin_affinity가 없는 패시브(3동기화 등)에는 조건 설정 안 함
-    if (!passive.sin_affinity || !passive.sin_count) { noMatch++; continue }
+    const newCond = matchedCond.type
+    const newSin = matchedCond.sin
+    const newCount = matchedCond.count
 
-    const newCond = matchedCond.type // 'resonance' or 'stock'
-    if (passive.active_cond === newCond) { skipped++; continue }
+    // 변경 사항 확인
+    const sinChanged = passive.sin_affinity !== newSin
+    const countChanged = passive.sin_count !== newCount
+    const condChanged = passive.active_cond !== newCond
+
+    if (!sinChanged && !countChanged && !condChanged) { skipped++; continue }
 
     if (dryRun) {
-      console.log(`[DRY] ${passive.id} (${passive.passive_type}): ${passive.active_cond ?? 'null'} → ${newCond}`)
+      const changes = []
+      if (condChanged) changes.push(`cond: ${passive.active_cond ?? 'null'} → ${newCond}`)
+      if (sinChanged) changes.push(`sin: ${passive.sin_affinity ?? 'null'} → ${newSin}`)
+      if (countChanged) changes.push(`count: ${passive.sin_count ?? 'null'} → ${newCount}`)
+      console.log(`[DRY] ${passive.id} (uptie${passive.uptie_level} ${passive.passive_type}): ${changes.join(', ')}`)
     } else {
-      const { error } = await limbus().from('passives').update({ active_cond: newCond }).eq('id', passive.id)
+      const { error } = await limbus().from('passives').update({
+        active_cond: newCond,
+        sin_affinity: newSin,
+        sin_count: newCount,
+      }).eq('id', passive.id)
       if (error) console.error(`[ERR] ${passive.id}:`, error.message)
     }
     updated++
