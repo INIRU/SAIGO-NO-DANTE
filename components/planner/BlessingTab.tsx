@@ -117,11 +117,6 @@ export default function BlessingTab({ state, dispatch }: Props) {
           </div>
         </div>
         <div className="flex gap-2">
-          {isAnySelected && (
-            <button onClick={clearAll} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: '#33222220', color: '#888', border: '1px solid #33333340' }}>
-              전체 해제
-            </button>
-          )}
           <button onClick={() => selectAll(1)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all hover:brightness-110" style={{ background: allSelectedAtLevel(1) ? '#c8900a30' : '#c8900a20', color: '#c8900a', border: '1px solid #c8900a40' }}>
             {allSelectedAtLevel(1) ? '전체 해제' : '전체 선택'}
           </button>

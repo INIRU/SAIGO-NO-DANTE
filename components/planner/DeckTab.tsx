@@ -32,7 +32,7 @@ interface Props {
 
 // --- Rarity star images ---
 function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'md' | 'lg' }) {
-  const s = size === 'sm' ? 16 : size === 'lg' ? 28 : 20
+  const s = size === 'sm' ? 28 : size === 'lg' ? 48 : 36
   return (
     <Image
       src={`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`}
@@ -628,7 +628,7 @@ export default function DeckTab({ state, dispatch, identities, sinners }: Props)
                           paddingBottom: '0.25rem',
                         }}
                       >
-                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.5rem' }}>{slot.name_kr}</p>
+                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.75rem' }}>{slot.name_kr}</p>
                       </div>
                     </div>
 
