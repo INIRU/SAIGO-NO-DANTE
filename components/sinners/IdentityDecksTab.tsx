@@ -110,7 +110,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
-      .catch((e) => console.error('덱 목록 로드 실패:', e))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }, [identityId, sort])
 
@@ -128,7 +128,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => [...prev, ...data.map(mapDeck)])
       })
-      .catch((e) => console.error('덱 추가 로드 실패:', e))
+      .catch(() => {})
       .finally(() => setLoadingMore(false))
   }, [identityId, sort, decks.length, loadingMore, hasMore])
 

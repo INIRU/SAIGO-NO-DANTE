@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import {
   Sinner,
   Identity,
@@ -310,11 +311,12 @@ export function SkillsetTab({
                 return (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
                     {skill && identity.game_id ? (
-                      <Image
+                      <ImageWithFallback
                         src={getSkillIconUrl(identity, skill.skill_order)}
                         alt={skill.name}
                         width={16}
                         height={16}
+                        fallbackType="skill"
                         style={{ borderRadius: '2px', flexShrink: 0 }}
                       />
                     ) : (
