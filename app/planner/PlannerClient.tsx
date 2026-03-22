@@ -2,7 +2,7 @@
 
 import { useReducer, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, Star, Layers, Combine, FileText } from 'lucide-react'
+import { ArrowLeft, Users, Star, Gift, Layers, Combine, FileText } from 'lucide-react'
 import { plannerReducer, createInitialState, DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { loadDraftFromLocal } from '@/lib/planner/encoder'
@@ -11,6 +11,7 @@ import FloorTab from '@/components/planner/FloorTab'
 import FusionTab from '@/components/planner/FusionTab'
 import SummaryTab from '@/components/planner/SummaryTab'
 import BlessingTab from '@/components/planner/BlessingTab'
+import GiftPlanTab from '@/components/planner/GiftPlanTab'
 
 interface Props {
   themes: ThemeData[]
@@ -26,6 +27,7 @@ interface Props {
 const TABS = [
   { key: 'deck' as const, label: '덱 편성', icon: Users },
   { key: 'blessing' as const, label: '가호', icon: Star },
+  { key: 'gift' as const, label: '기프트', icon: Gift },
   { key: 'floor' as const, label: '층별 계획', icon: Layers },
   { key: 'fusion' as const, label: '조합식', icon: Combine },
   { key: 'summary' as const, label: '요약', icon: FileText },
@@ -147,6 +149,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         )}
         {state.activeTab === 'blessing' && (
           <BlessingTab state={state} dispatch={dispatch} />
+        )}
+        {state.activeTab === 'gift' && (
+          <GiftPlanTab state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} />
         )}
         {state.activeTab === 'floor' && (
           <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} />

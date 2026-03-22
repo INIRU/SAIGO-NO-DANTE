@@ -1,7 +1,7 @@
 // 거울 던전 플래너 상태 타입
 
 export type Difficulty = 'normal' | 'hard' | 'overlap' | 'extreme'
-export type PlannerTab = 'deck' | 'blessing' | 'floor' | 'fusion' | 'summary'
+export type PlannerTab = 'deck' | 'blessing' | 'gift' | 'floor' | 'fusion' | 'summary'
 
 export const DIFFICULTY_CONFIG = {
   normal:  { label: '노말', floors: 5 },
