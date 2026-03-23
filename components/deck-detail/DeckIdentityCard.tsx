@@ -490,11 +490,11 @@ export default function DeckIdentityCard({
             return (
               <div key={ego.id} className="p-3 rounded flex items-center gap-3"
                 onClick={e => { e.stopPropagation(); onEgoClick?.(ego.id) }}
-                style={{ background: `${gc}08`, border: `1px solid ${gc}28`, cursor: onEgoClick ? 'pointer' : 'default' }}>
-                <div style={{ width: 2, alignSelf: 'stretch', background: gc, borderRadius: 1, flexShrink: 0 }} />
+                style={{ background: `${sc}08`, border: `1px solid ${sc}28`, cursor: onEgoClick ? 'pointer' : 'default' }}>
+                <div style={{ width: 2, alignSelf: 'stretch', background: sc, borderRadius: 1, flexShrink: 0 }} />
                 {ego.image_url ? (
                   <Image src={ego.image_url} alt={ego.name_kr ?? ''} width={52} height={52}
-                    style={{ borderRadius: 4, objectFit: 'cover', border: `1px solid ${gc}30`, flexShrink: 0 }} />
+                    style={{ borderRadius: 4, objectFit: 'cover', border: `1px solid ${sc}30`, flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 52, height: 52, borderRadius: 4, background: '#0a0806', border: `1px solid ${gc}20`, flexShrink: 0 }} />
                 )}
