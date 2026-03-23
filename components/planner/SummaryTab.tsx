@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from 'react'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
+import EgoDetailModal from '@/components/ui/EgoDetailModal'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
@@ -114,6 +115,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
+  const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
@@ -410,13 +412,14 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                         const ego = egoByGrade[grade]
                         const gc = GRADE_COLORS[grade] ?? '#555'
                         return (
-                          <div key={grade} style={{
+                          <div key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} style={{
                             background: ego ? `${gc}1a` : 'rgba(10,8,5,0.7)',
                             border: `1px solid ${ego ? gc + '55' : '#18120a'}`,
                             borderRadius: '0.125rem',
                             padding: '0.25rem 0.3125rem',
                             display: 'flex', alignItems: 'center', gap: '0.3125rem',
                             minHeight: '1.5rem',
+                            cursor: ego?.ego_id ? 'pointer' : 'default',
                           }}>
                             {grade !== 'ALEPH' ? (
                               <Image src={`${S}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized
@@ -743,6 +746,9 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
 
     {identityModalId && (
       <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
+    )}
+    {egoModalId && (
+      <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
     )}
   </>)
 }
