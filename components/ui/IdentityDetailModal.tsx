@@ -527,7 +527,8 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
 
   return (
     <div className="p-2.5 rounded" style={{ background: `${pc}08`, border: `1px solid ${pc}20` }}>
-      <div className="flex items-center gap-2 mb-1">
+      {/* 헤더: 타입 + 이름 + 보유/공명 */}
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem',
           borderRadius: '0.1875rem', fontWeight: 600,
@@ -538,28 +539,39 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
           {isBattle ? '배틀' : '서포트'}
         </span>
         <span style={{ color: pc, fontSize: '0.75rem', fontWeight: 600 }}>{passive.name}</span>
+        {passive.active_cond && (() => {
+          const isRes = passive.active_cond === 'resonance'
+          const condLabel = isRes ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond
+          const condColor = isRes ? '#d0a020' : '#40a0d0'
+          return (
+            <span style={{
+              fontSize: '0.6875rem', padding: '0.125rem 0.5rem', borderRadius: '0.1875rem', fontWeight: 700,
+              background: `${condColor}20`, color: condColor, border: `1px solid ${condColor}50`,
+              letterSpacing: '0.05em',
+            }}>
+              {condLabel}
+            </span>
+          )
+        })()}
       </div>
 
       {/* 죄악 조건 */}
-      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-        {sinTypes.map((st, i) => (
-          <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${SIN_COLORS[st]}15`, border: `1px solid ${SIN_COLORS[st]}30` }}>
-            <Image src={sinIconUrl(st)} alt="" width={14} height={14}
-              style={{ width: '0.875rem', height: '0.875rem', filter: `drop-shadow(0 0 2px ${SIN_COLORS[st] ?? pc}60)` }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: SIN_COLORS[st] }}>
-              {SIN_LABELS[st] ?? st}
+      {sinTypes.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+          {sinTypes.map((st, i) => (
+            <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${SIN_COLORS[st]}15`, border: `1px solid ${SIN_COLORS[st]}30` }}>
+              <Image src={sinIconUrl(st)} alt="" width={14} height={14}
+                style={{ width: '0.875rem', height: '0.875rem', filter: `drop-shadow(0 0 2px ${SIN_COLORS[st] ?? pc}60)` }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: SIN_COLORS[st] }}>
+                {SIN_LABELS[st] ?? st}
+              </span>
             </span>
-          </span>
-        ))}
-        {sinTypes.length > 0 && passive.sin_count != null && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
-        )}
-        {passive.active_cond && (
-          <span style={{ fontSize: '0.6875rem', padding: '0.125rem 0.5rem', borderRadius: '0.1875rem', background: `${pc}18`, color: pc, border: `1px solid ${pc}35`, fontWeight: 600 }}>
-            {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
-          </span>
-        )}
-      </div>
+          ))}
+          {passive.sin_count != null && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
+          )}
+        </div>
+      )}
 
       {passive.description && (
         <div style={{ marginTop: '0.25rem', borderTop: `1px solid ${pc}15`, paddingTop: '0.375rem' }}>
