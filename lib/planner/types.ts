@@ -152,6 +152,8 @@ export interface GiftData {
   grade: string | null
   image_url: string | null
   effect_base: string | null
+  effect_plus: string | null
+  effect_plusplus: string | null
   theme_ids: number[] | null
 }
 
