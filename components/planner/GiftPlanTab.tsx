@@ -699,14 +699,36 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
     ),
     [state.giftInventory]
   )
-  const finalIds = useMemo(
-    () => new Set(
-      state.giftInventory
-        .filter(id => id.startsWith('final_'))
-        .map(id => parseInt(id.replace('final_', '')))
-    ),
-    [state.giftInventory]
-  )
+  // finalIds: game_id Set + 강화 상태 Map
+  const finalIds = useMemo(() => {
+    const ids = new Set<number>()
+    for (const id of state.giftInventory) {
+      if (!id.startsWith('final_')) continue
+      const rest = id.replace('final_', '').replace('_plusplus', '').replace('_plus', '')
+      const num = parseInt(rest)
+      if (!isNaN(num)) ids.add(num)
+    }
+    return ids
+  }, [state.giftInventory])
+
+  // 강화 상태: game_id → 0(기본) | 1(+) | 2(++)
+  const finalEnhance = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const id of state.giftInventory) {
+      if (!id.startsWith('final_')) continue
+      if (id.endsWith('_plusplus')) {
+        const gid = parseInt(id.replace('final_', '').replace('_plusplus', ''))
+        if (!isNaN(gid)) map.set(gid, 2)
+      } else if (id.endsWith('_plus')) {
+        const gid = parseInt(id.replace('final_', '').replace('_plus', ''))
+        if (!isNaN(gid)) map.set(gid, 1)
+      } else {
+        const gid = parseInt(id.replace('final_', ''))
+        if (!isNaN(gid) && !map.has(gid)) map.set(gid, 0)
+      }
+    }
+    return map
+  }, [state.giftInventory])
 
   function getGiftsByIds(ids: Set<number>): GiftData[] {
     return Array.from(ids)
@@ -1172,43 +1194,104 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                   gap: '0.5rem',
                 }}>
-                  {getGiftsByIds(finalIds).map(gift => (
-                    <div
-                      key={gift.id}
-                      style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                    >
-                      <GiftCard
-                        gift={gift}
-                        isSelected={false}
-                        onClick={() => {}}
-                      />
-                      <button
-                        onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: `final_${gift.game_id}` })}
-                        style={{
-                          position: 'absolute',
-                          top: '0.125rem',
-                          right: '0.25rem',
-                          background: 'rgba(220,38,38,0.8)',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '1rem',
-                          height: '1rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          padding: 0,
-                          zIndex: 20,
-                          transition: 'background 0.15s',
-                        }}
-                        title="제거"
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,1)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.8)')}
+                  {getGiftsByIds(finalIds).map(gift => {
+                    const enhance = finalEnhance.get(gift.game_id) ?? 0
+                    const canEnhance = !!(gift.effect_plus)
+                    const enhanceLabel = enhance === 2 ? '++' : enhance === 1 ? '+' : ''
+
+                    const cycleEnhance = () => {
+                      if (!canEnhance) return
+                      // 현재 키 제거
+                      const oldKey = enhance === 2 ? `final_${gift.game_id}_plusplus` : enhance === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
+                      dispatch({ type: 'REMOVE_GIFT', giftId: oldKey })
+                      // 다음 단계 추가: 0→1→2→0
+                      const next = (enhance + 1) % (gift.effect_plusplus ? 3 : 2)
+                      const newKey = next === 2 ? `final_${gift.game_id}_plusplus` : next === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
+                      dispatch({ type: 'ADD_GIFT', giftId: newKey })
+                    }
+
+                    const removeGift = () => {
+                      const key = enhance === 2 ? `final_${gift.game_id}_plusplus` : enhance === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
+                      dispatch({ type: 'REMOVE_GIFT', giftId: key })
+                    }
+
+                    return (
+                      <div
+                        key={gift.id}
+                        style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                       >
-                        <X size={10} color="#fff" />
-                      </button>
-                    </div>
-                  ))}
+                        <GiftCard
+                          gift={gift}
+                          isSelected={false}
+                          onClick={canEnhance ? cycleEnhance : () => {}}
+                        />
+                        {/* 강화 배지 — 오른쪽 위 */}
+                        {enhanceLabel && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '0.125rem',
+                            right: canEnhance ? '1.375rem' : '0.25rem',
+                            zIndex: 20,
+                            fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                            fontWeight: 800,
+                            fontSize: enhance === 2 ? '1rem' : '0.875rem',
+                            lineHeight: 1,
+                            color: enhance === 2 ? '#ff8c00' : '#e8b030',
+                            textShadow: enhance === 2
+                              ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0 1rem rgba(255,100,0,0.5), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
+                              : '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)',
+                            pointerEvents: 'none',
+                          }}>
+                            {enhanceLabel}
+                          </div>
+                        )}
+                        {/* 강화 가능 표시 (미강화 시) */}
+                        {canEnhance && !enhanceLabel && (
+                          <div
+                            onClick={cycleEnhance}
+                            style={{
+                              position: 'absolute',
+                              top: '0.125rem',
+                              right: '1.375rem',
+                              zIndex: 20,
+                              fontSize: '0.625rem',
+                              color: '#555',
+                              cursor: 'pointer',
+                            }}
+                            title="클릭하여 강화"
+                          >
+                            +
+                          </div>
+                        )}
+                        {/* 제거 버튼 */}
+                        <button
+                          onClick={removeGift}
+                          style={{
+                            position: 'absolute',
+                            top: '0.125rem',
+                            right: '0.25rem',
+                            background: 'rgba(220,38,38,0.8)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '1rem',
+                            height: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            padding: 0,
+                            zIndex: 20,
+                            transition: 'background 0.15s',
+                          }}
+                          title="제거"
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,1)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.8)')}
+                        >
+                          <X size={10} color="#fff" />
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
