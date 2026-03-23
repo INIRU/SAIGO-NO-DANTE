@@ -14,11 +14,12 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
-import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary, PassiveData } from '@/lib/planner/types'
+import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary } from '@/lib/planner/types'
 import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/constants/sin'
+import type { PassiveData } from '@/lib/planner/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
@@ -114,10 +115,10 @@ interface SummaryTabProps {
 
 export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, skills, passives }: SummaryTabProps) {
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
+  const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
-  const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
@@ -389,7 +390,6 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         {/* 공격 유형 분포 + 패시브 */}
         {deckSubTab === 'identity' && state.identitySlots.length > 0 && (() => {
           const slotIds = new Set(state.identitySlots.map(s => s.identity_id))
-          // 공격 스킬 유형 합산
           const atkCount: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
           const defCount: Record<string, number> = { evade: 0, defense: 0, counter: 0 }
           for (const sk of skills) {
@@ -399,40 +399,33 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           }
           const atkTotal = Object.values(atkCount).reduce((a, b) => a + b, 0) || 1
           const ATK_LABELS: Record<string, string> = { slash: '참격', pierce: '관통', blunt: '타격' }
-          const ATK_COLORS: Record<string, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
+          const ATK_CLR: Record<string, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
           const DEF_LABELS: Record<string, string> = { evade: '회피', defense: '수비', counter: '반격' }
-
-          // 죄악 보유량 계산 (패시브 조건 체크용)
           const deckSinCounts: Record<string, number> = {}
           for (const sk of skills) {
-            if (!slotIds.has(sk.identity_id)) continue
-            if (sk.skill_order > 3) continue
+            if (!slotIds.has(sk.identity_id) || sk.skill_order > 3) continue
             const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
             if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
           }
-
-          // 패시브 조건 충족 여부 체크
-          function isCondMet(p: typeof passives[0]): boolean {
-            if (!p.sin_affinity || !p.sin_count) return true // 조건 없으면 항상 활성
+          const isCondMet = (p: PassiveData) => {
+            if (!p.sin_affinity || !p.sin_count) return true
             const en = SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity
-            const have = deckSinCounts[en] ?? 0
-            return have >= p.sin_count
+            return (deckSinCounts[en] ?? 0) >= p.sin_count
           }
-
           return (
             <div className="flex flex-col md:flex-row gap-4 mt-4">
               {/* 공격 유형 */}
-              <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
+              <div style={{ flex: '0 0 auto', width: '14rem', background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
                 <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginBottom: '0.5rem' }}>공격 유형 분포</p>
                 <div className="flex flex-col gap-1.5">
                   {Object.entries(atkCount).map(([type, count]) => (
                     <div key={type} className="flex items-center gap-2">
                       <Image src={`${S}/icons/stats/${type}.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.8 }} />
-                      <span style={{ color: ATK_COLORS[type], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
+                      <span style={{ color: ATK_CLR[type], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
                       <div style={{ flex: 1, height: '0.375rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.1875rem', overflow: 'hidden' }}>
-                        <div style={{ width: `${(count / atkTotal) * 100}%`, height: '100%', background: ATK_COLORS[type], borderRadius: '0.1875rem', transition: 'width 0.3s' }} />
+                        <div style={{ width: `${(count / atkTotal) * 100}%`, height: '100%', background: ATK_CLR[type], borderRadius: '0.1875rem' }} />
                       </div>
-                      <span style={{ color: ATK_COLORS[type], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', textAlign: 'right' }}>{count}</span>
+                      <span style={{ color: ATK_CLR[type], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', textAlign: 'right' }}>{count}</span>
                     </div>
                   ))}
                 </div>
@@ -444,63 +437,70 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   ))}
                 </div>
               </div>
-
               {/* 패시브 — 배틀/서포트 탭 */}
               <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
-                {/* 탭 헤더 */}
                 <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {(['battle', 'support'] as const).map(tab => {
                     const active = passiveTab === tab
-                    const count = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === tab).length
+                    const cnt = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === tab).length
                     return (
                       <button key={tab} onClick={() => setPassiveTab(tab)} style={{
                         flex: 1, padding: '0.5rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400,
                         color: active ? (tab === 'battle' ? '#c84050' : '#4898b0') : '#555',
                         background: active ? (tab === 'battle' ? 'rgba(200,64,80,0.06)' : 'rgba(72,152,176,0.06)') : 'transparent',
+                        borderTop: 'none', borderLeft: 'none', borderRight: 'none',
                         borderBottom: `2px solid ${active ? (tab === 'battle' ? '#c84050' : '#4898b0') : 'transparent'}`,
-                        cursor: 'pointer', border: 'none', fontFamily: 'var(--font-heading)',
+                        cursor: 'pointer', fontFamily: 'var(--font-heading)',
                       }}>
-                        {tab === 'battle' ? '배틀' : '서포트'} ({count})
+                        {tab === 'battle' ? '배틀' : '서포트'} ({cnt})
                       </button>
                     )
                   })}
                 </div>
-                {/* 수감자별 패시브 목록 */}
-                {state.identitySlots.map((slot, idx) => {
-                  const sinnerName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id
-                  const slotPassives = passives
-                    .filter(p => p.identity_id === slot.identity_id && p.passive_type === passiveTab)
-                    .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
-                  if (slotPassives.length === 0) return null
-                  return (
-                    <div key={idx} className="flex items-start gap-2 px-3 py-2"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                      <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
-                        <div className="flex items-center gap-1">
-                          <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
-                          <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sinnerName}</span>
+                <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
+                  {state.identitySlots.map((slot, idx) => {
+                    const sName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id
+                    const slotP = passives
+                      .filter(p => p.identity_id === slot.identity_id && p.passive_type === passiveTab)
+                      .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
+                    if (slotP.length === 0) return null
+                    return (
+                      <div key={idx} className="flex items-start gap-2 px-3 py-2"
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                        <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
+                          <div className="flex items-center gap-1">
+                            <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
+                            <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
+                          </div>
+                          <p className="truncate" style={{ color: '#c8a450', fontSize: '0.5625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
                         </div>
-                        <p className="truncate" style={{ color: '#c8a450', fontSize: '0.5625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {slotP.map((p, pi) => {
+                            const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                            const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                            const met = isCondMet(p)
+                            return (
+                              <div key={pi} style={{ marginBottom: '0.25rem', opacity: met ? 1 : 0.4 }}>
+                                <div className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
+                                  {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
+                                  {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                                  {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                                  <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
+                                  <span style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
+                                </div>
+                                {p.description && (
+                                  <p style={{ fontSize: '0.5625rem', lineHeight: 1.5, color: met ? '#5a5040' : '#302818', marginLeft: '0.5rem', marginTop: '0.0625rem', whiteSpace: 'pre-wrap' }}>
+                                    {p.description}
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {slotPassives.map((p, pi) => {
-                          const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                          const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                          const met = isCondMet(p)
-                          return (
-                            <div key={pi} className="flex items-center gap-1" style={{ fontSize: '0.625rem', marginBottom: '0.125rem', opacity: met ? 1 : 0.4 }}>
-                              {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
-                              {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
-                              {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
-                              <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                              <span className="truncate" style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )
@@ -1022,4 +1022,3 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
 
   )
 }
-
