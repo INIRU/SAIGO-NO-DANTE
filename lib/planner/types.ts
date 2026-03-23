@@ -1,7 +1,7 @@
 // 거울 던전 플래너 상태 타입
 
 export type Difficulty = 'normal' | 'hard' | 'overlap' | 'extreme'
-export type PlannerTab = 'deck' | 'blessing' | 'gift' | 'floor' | 'fusion' | 'summary'
+export type PlannerTab = 'deck' | 'blessing' | 'gift' | 'floor' | 'summary'
 
 export const DIFFICULTY_CONFIG = {
   normal:  { label: '노말', floors: 5 },
@@ -38,6 +38,8 @@ export interface EgoSlot {
 export interface FloorEntry {
   floor: number
   theme_id: string | null
+  gift_ids: string[]  // 이 층에서 획득할 기프트 game_id
+  memo: string        // 층별 플랜 메모 (마크다운 + chip)
 }
 
 export interface PlannerState {
@@ -59,8 +61,11 @@ export type PlannerAction =
   | { type: 'ADD_IDENTITY'; slot: IdentitySlot }
   | { type: 'REMOVE_IDENTITY'; sinnerId: string }
   | { type: 'SET_FLOOR_THEME'; floor: number; themeId: string | null }
+  | { type: 'SET_FLOOR_GIFTS'; floor: number; giftIds: string[] }
+  | { type: 'SET_FLOOR_MEMO'; floor: number; memo: string }
   | { type: 'ADD_GIFT'; giftId: string }
   | { type: 'REMOVE_GIFT'; giftId: string }
+  | { type: 'REPLACE_GIFT'; oldId: string; newId: string }
   | { type: 'ADD_EGO'; slot: EgoSlot }
   | { type: 'REMOVE_EGO'; egoId: string }
   | { type: 'LOAD_PLAN'; state: Partial<PlannerState> }
@@ -74,7 +79,7 @@ export function createInitialState(difficulty: Difficulty = 'hard'): PlannerStat
     description: '',
     identitySlots: [],
     egoSlots: [],
-    floorPlan: Array.from({ length: floors }, (_, i) => ({ floor: i + 1, theme_id: null })),
+    floorPlan: Array.from({ length: floors }, (_, i) => ({ floor: i + 1, theme_id: null, gift_ids: [], memo: '' })),
     giftInventory: [],
     activeTab: 'deck',
   }
@@ -90,6 +95,8 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         floorPlan: Array.from({ length: floors }, (_, i) => ({
           floor: i + 1,
           theme_id: state.floorPlan[i]?.theme_id ?? null,
+          gift_ids: state.floorPlan[i]?.gift_ids ?? [],
+          memo: state.floorPlan[i]?.memo ?? '',
         })),
       }
     }
@@ -109,13 +116,29 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       return {
         ...state,
         floorPlan: state.floorPlan.map(f =>
-          f.floor === action.floor ? { ...f, theme_id: action.themeId } : f
+          f.floor === action.floor ? { ...f, theme_id: action.themeId, gift_ids: [], memo: f.memo } : f
+        ),
+      }
+    case 'SET_FLOOR_GIFTS':
+      return {
+        ...state,
+        floorPlan: state.floorPlan.map(f =>
+          f.floor === action.floor ? { ...f, gift_ids: action.giftIds } : f
+        ),
+      }
+    case 'SET_FLOOR_MEMO':
+      return {
+        ...state,
+        floorPlan: state.floorPlan.map(f =>
+          f.floor === action.floor ? { ...f, memo: action.memo } : f
         ),
       }
     case 'ADD_GIFT':
       return { ...state, giftInventory: [...state.giftInventory, action.giftId] }
     case 'REMOVE_GIFT':
       return { ...state, giftInventory: state.giftInventory.filter(id => id !== action.giftId) }
+    case 'REPLACE_GIFT':
+      return { ...state, giftInventory: state.giftInventory.map(id => id === action.oldId ? action.newId : id) }
     case 'ADD_EGO': {
       const filtered = state.egoSlots.filter(s => s.sinner_id !== action.slot.sinner_id || s.grade !== action.slot.grade)
       return { ...state, egoSlots: [...filtered, action.slot] }
@@ -144,6 +167,15 @@ export interface ThemeData {
   floor_info: Record<string, number[] | string> | null
 }
 
+export interface GiftActivationCondition {
+  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+  keyword?: string
+  keywords?: string[]
+  affiliation?: string
+  affiliations?: string[]
+  count?: number
+}
+
 export interface GiftData {
   id: string
   game_id: number
@@ -155,14 +187,15 @@ export interface GiftData {
   effect_plus: string | null
   effect_plusplus: string | null
   theme_ids: number[] | null
+  activation_condition: GiftActivationCondition | null
 }
 
 export interface RecipeData {
-  id: number
-  material_1: number | null
-  material_2: number | null
-  material_3: number | null
-  result: number | null
+  id: string
+  result_name: string
+  keyword: string
+  ingredients: string[]
+  final_result: string | null
 }
 
 export interface IdentityData {
@@ -193,6 +226,7 @@ export interface EgoData {
 
 export interface SkillSummary {
   identity_id: string
+  name: string
   sin_affinity: string
   skill_type: string
   skill_order: number
