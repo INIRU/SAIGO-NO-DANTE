@@ -418,6 +418,13 @@ export default function HomeClient({
               덱 게시판
             </Link>
             <Link
+              href="/planner/community"
+              className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
+              style={{ border: '1px solid #4898b0', color: '#4898b0', borderRadius: '4px' }}
+            >
+              거던 플래너
+            </Link>
+            <Link
               href="/bot"
               className="flex items-center gap-2 px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
               style={{ border: '1px solid #5865f2', color: '#7289da', borderRadius: '4px' }}

@@ -24,14 +24,14 @@ export default function PlannerError({ reset }: { error: Error; reset: () => voi
             다시 시도
           </button>
           <Link
-            href="/mirror-dungeon"
+            href="/planner/community"
             style={{
               padding: '0.5rem 1.25rem', background: '#1a1510',
               border: '1px solid #333', borderRadius: '0.5rem',
               color: '#9ca3af', fontSize: '0.875rem',
             }}
           >
-            거울 던전으로
+            커뮤니티로
           </Link>
         </div>
       </div>
