@@ -20,6 +20,7 @@ import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/ut
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/constants/sin'
 import type { PassiveData } from '@/lib/planner/types'
+import SkillDescription from '@/components/skill/SkillDescription'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
@@ -436,6 +437,21 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                     </span>
                   ))}
                 </div>
+                {/* 죄악 자원 분포 */}
+                <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginTop: '0.75rem', marginBottom: '0.375rem' }}>죄악 자원</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'] as const).map(sin => {
+                    const cnt = deckSinCounts[sin] ?? 0
+                    if (cnt === 0) return null
+                    const sc = SIN_COLORS[sin]
+                    return (
+                      <span key={sin} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${sc}15`, border: `1px solid ${sc}30` }}>
+                        <Image src={getSinIconUrl(sin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: sc }}>{cnt}</span>
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
               {/* 패시브 — 배틀/서포트 탭 */}
               <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
@@ -470,9 +486,9 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                         <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
                           <div className="flex items-center gap-1">
                             <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
-                            <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
+                            <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
                           </div>
-                          <p className="truncate" style={{ color: '#c8a450', fontSize: '0.5625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
+                          <p className="truncate" style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {slotP.map((p, pi) => {
@@ -480,18 +496,18 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                             const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
                             const met = isCondMet(p)
                             return (
-                              <div key={pi} style={{ marginBottom: '0.25rem', opacity: met ? 1 : 0.4 }}>
-                                <div className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
-                                  {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
-                                  {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                              <div key={pi} style={{ marginBottom: '0.375rem', opacity: met ? 1 : 0.4 }}>
+                                <div className="flex items-center gap-1.5" style={{ fontSize: '0.75rem' }}>
+                                  {met && <span style={{ color: '#40a060', fontSize: '0.5625rem', flexShrink: 0 }}>●</span>}
+                                  {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
                                   {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
                                   <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                                  <span style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
+                                  <span style={{ color: met ? '#9a8a70' : '#4a4030', fontWeight: 600 }}>{p.name}</span>
                                 </div>
                                 {p.description && (
-                                  <p style={{ fontSize: '0.5625rem', lineHeight: 1.5, color: met ? '#5a5040' : '#302818', marginLeft: '0.5rem', marginTop: '0.0625rem', whiteSpace: 'pre-wrap' }}>
-                                    {p.description}
-                                  </p>
+                                  <div style={{ marginLeft: '0.75rem', marginTop: '0.125rem' }}>
+                                    <SkillDescription description={p.description} accentColor={pc} variant="compact" />
+                                  </div>
                                 )}
                               </div>
                             )
