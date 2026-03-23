@@ -168,9 +168,23 @@ export default function MirrorDungeonClient({
       return !floorKeys.some(k => t.floor_info?.[k])
     })
 
+    // 연속 층 중 테마팩 구성이 동일하면 범위로 병합
     const sorted = [...floorMap.entries()].sort((a, b) => a[0] - b[0])
-    if (unassigned.length > 0) sorted.push([0, unassigned])
-    return sorted.length > 0 ? sorted : null
+    const merged: [number, number, EgoGiftTheme[]][] = [] // [startFloor, endFloor, themes]
+    for (const [floor, themes] of sorted) {
+      const ids = new Set(themes.map(t => t.id))
+      const prev = merged[merged.length - 1]
+      if (prev && floor === prev[1] + 1) {
+        const prevIds = new Set(prev[2].map(t => t.id))
+        if (ids.size === prevIds.size && [...ids].every(id => prevIds.has(id))) {
+          prev[1] = floor // 범위 확장
+          continue
+        }
+      }
+      merged.push([floor, floor, themes])
+    }
+    if (unassigned.length > 0) merged.push([0, 0, unassigned])
+    return merged.length > 0 ? merged : null
   }, [filteredThemes, themeDiffFilter])
 
   // 자동완성 후보
@@ -639,21 +653,21 @@ export default function MirrorDungeonClient({
         {/* 층별 뷰 */}
         {floorGroupedThemes ? (
           <div className="mb-8 space-y-5">
-            {floorGroupedThemes.map(([floor, floorThemes]) => (
-              <div key={floor}>
+            {floorGroupedThemes.map(([startFloor, endFloor, floorThemes]) => (
+              <div key={startFloor}>
                 {/* 층 헤더 바 */}
                 <div className="flex items-center gap-3 mb-2.5">
                   <span
                     className="flex-shrink-0 font-mono font-bold"
                     style={{
-                      color: floor === 0 ? '#888' : 'var(--gold)',
+                      color: startFloor === 0 ? '#888' : 'var(--gold)',
                       fontSize: '0.875rem',
                       letterSpacing: '0.05em',
                     }}
                   >
-                    {floor === 0 ? '기타' : `${floor}층`}
+                    {startFloor === 0 ? '기타' : startFloor === endFloor ? `${startFloor}층` : `${startFloor}~${endFloor}층`}
                   </span>
-                  <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, ${floor === 0 ? 'rgba(136,136,136,0.3)' : 'rgba(200,144,10,0.3)'}, transparent)` }} />
+                  <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, ${startFloor === 0 ? 'rgba(136,136,136,0.3)' : 'rgba(200,144,10,0.3)'}, transparent)` }} />
                   <span style={{ color: '#555', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                     {floorThemes.length}개
                   </span>
