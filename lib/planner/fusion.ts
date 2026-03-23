@@ -93,19 +93,44 @@ export function computeKeywordDistribution(
 }
 
 /**
+ * 층 번호에 해당하는 floor_info 키 + 오프셋 결정
+ * 익스트림(15층): 1-5 노말/하드, 6-10 평행중첩, 11-15 익스트림
+ * 평행중첩(10층): 1-5 노말/하드, 6-10 평행중첩
+ * 하드(5층): 1-5 노말/하드
+ * 노말(5층): 1-5 노말
+ */
+function getFloorKeys(difficultyKey: string, floor: number): Array<{ key: string; offset: number }> {
+  if (difficultyKey === '익스트림' || difficultyKey === '평행중첩') {
+    if (floor <= 5) return [{ key: '노말', offset: 0 }, { key: '하드', offset: 0 }]
+    if (floor <= 10) return [{ key: '평행중첩', offset: 5 }]
+    return [{ key: '익스트림', offset: 10 }]
+  }
+  if (difficultyKey === '하드') {
+    return [{ key: '노말', offset: 0 }, { key: '하드', offset: 0 }]
+  }
+  return [{ key: difficultyKey, offset: 0 }]
+}
+
+/**
  * 테마팩 필터링: 해당 난이도 + 층에 출현 가능한 테마팩
+ * 층 범위에 따라 올바른 floor_info 키를 자동 결정
  */
 export function getAvailableThemes<T extends { floor_info: Record<string, number[] | string> | null }>(
   themes: T[],
   difficultyKey: string,
   floor: number,
 ): T[] {
+  const keys = getFloorKeys(difficultyKey, floor)
+
   return themes.filter(t => {
     if (!t.floor_info) return false
-    const floors = t.floor_info[difficultyKey]
-    if (!floors) return false
-    if (floors === '전체') return true
-    return Array.isArray(floors) && floors.includes(floor)
+    return keys.some(({ key, offset }) => {
+      const floors = t.floor_info![key]
+      if (!floors) return false
+      if (floors === '전체') return true
+      const localFloor = floor - offset
+      return Array.isArray(floors) && floors.includes(localFloor)
+    })
   })
 }
 
