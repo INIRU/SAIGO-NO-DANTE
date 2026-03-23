@@ -175,7 +175,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       if (defaultEgo) {
         dispatch({
           type: 'ADD_EGO',
-          slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade },
+          slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade, sin_affinity: defaultEgo.sin_affinity },
         })
       }
     }
@@ -743,6 +743,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                                       sinner_id: ego.sinner_id,
                                       name_kr: ego.name_kr ?? ego.name,
                                       grade: ego.grade,
+                                      sin_affinity: ego.sin_affinity,
                                     },
                                   })
                                 }}

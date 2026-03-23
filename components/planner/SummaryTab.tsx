@@ -18,6 +18,7 @@ import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, Iden
 import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
@@ -411,10 +412,12 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                       {GRADE_ORDER.map(grade => {
                         const ego = egoByGrade[grade]
                         const gc = GRADE_COLORS[grade] ?? '#555'
+                        const sinEn = ego?.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
+                        const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
                         return (
                           <div key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} style={{
-                            background: ego ? `${gc}1a` : 'rgba(10,8,5,0.7)',
-                            border: `1px solid ${ego ? gc + '55' : '#18120a'}`,
+                            background: ego ? `${ec}1a` : 'rgba(10,8,5,0.7)',
+                            border: `1px solid ${ego ? ec + '55' : '#18120a'}`,
                             borderRadius: '0.125rem',
                             padding: '0.25rem 0.3125rem',
                             display: 'flex', alignItems: 'center', gap: '0.3125rem',

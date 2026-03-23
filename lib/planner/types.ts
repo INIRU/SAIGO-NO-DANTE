@@ -33,6 +33,7 @@ export interface EgoSlot {
   sinner_id: string
   name_kr: string
   grade: string
+  sin_affinity?: string | null
 }
 
 export interface FloorEntry {
