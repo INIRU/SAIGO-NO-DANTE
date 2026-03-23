@@ -126,52 +126,50 @@ export default function MirrorDungeonClient({
     return result
   }, [themes, themeSearch, themeDiffFilter, giftByGameId])
 
-  // 층별 테마팩 그룹핑 (특정 난이도 선택 시)
-  const floorGroupedThemes = useMemo(() => {
-    const isAll = themeDiffFilter === '전체'
-    // '전체'면 모든 난이도의 floor_info를 합침, 아니면 해당 난이도만
-    const floorKeys = isAll ? ['노말', '하드', '익스트림', '평행중첩'] : [themeDiffFilter]
-    const floorMap = new Map<number, EgoGiftTheme[]>()
-    let maxFloor = 0
+  // 던전 층 매핑: 노말/하드 1-5, 평행중첩 6-10, 익스트림 11-15
+  const FLOOR_OFFSET: Record<string, number> = { '노말': 0, '하드': 0, '평행중첩': 5, '익스트림': 10 }
+  const FLOOR_RANGE: Record<string, [number, number]> = { '노말': [1, 5], '하드': [1, 5], '평행중첩': [6, 10], '익스트림': [11, 15] }
 
-    // 1차: 숫자 배열인 테마팩 등록 + maxFloor 계산
+  const floorGroupedThemes = useMemo(() => {
+    const floorKeys: string[] =
+      themeDiffFilter === '전체' ? ['노말', '하드', '평행중첩', '익스트림']
+      : themeDiffFilter === '하드' ? ['하드', '평행중첩']
+      : [themeDiffFilter]
+
+    const floorMap = new Map<number, EgoGiftTheme[]>()
+
+    function addToFloor(floor: number, theme: EgoGiftTheme) {
+      const arr: EgoGiftTheme[] = floorMap.get(floor) ?? []
+      if (!arr.includes(theme)) arr.push(theme)
+      floorMap.set(floor, arr)
+    }
+
     for (const theme of filteredThemes) {
       if (!theme.floor_info) continue
       for (const key of floorKeys) {
         const floors: number[] | string | undefined = theme.floor_info[key]
-        if (!floors || !Array.isArray(floors)) continue
-        for (const f of floors as number[]) {
-          if (f > maxFloor) maxFloor = f
-          const arr: EgoGiftTheme[] = floorMap.get(f) ?? []
-          if (!arr.includes(theme)) arr.push(theme)
-          floorMap.set(f, arr)
-        }
-      }
-    }
-    if (maxFloor === 0) maxFloor = 5 // 기본값
+        if (!floors) continue
+        const offset = FLOOR_OFFSET[key] ?? 0
 
-    // 2차: "전체" 값인 테마팩을 모든 층에 등록
-    for (const theme of filteredThemes) {
-      if (!theme.floor_info) continue
-      for (const key of floorKeys) {
-        if (theme.floor_info[key] === '전체') {
-          for (let f = 1; f <= maxFloor; f++) {
-            const arr = floorMap.get(f) ?? []
-            if (!arr.includes(theme)) arr.push(theme)
-            floorMap.set(f, arr)
+        if (Array.isArray(floors)) {
+          for (const f of floors as number[]) addToFloor(f + offset, theme)
+        } else if (floors === '전체') {
+          const range = FLOOR_RANGE[key]
+          if (range) {
+            for (let f = range[0]; f <= range[1]; f++) addToFloor(f, theme)
           }
         }
       }
     }
 
-    // floor_info가 아예 없는 테마팩은 "기타"로 분류
+    // floor_info가 없는 테마팩은 "기타"
     const unassigned = filteredThemes.filter(t => {
       if (!t.floor_info) return true
       return !floorKeys.some(k => t.floor_info?.[k])
     })
 
     const sorted = [...floorMap.entries()].sort((a, b) => a[0] - b[0])
-    if (unassigned.length > 0) sorted.push([0, unassigned]) // 0층 = 기타
+    if (unassigned.length > 0) sorted.push([0, unassigned])
     return sorted.length > 0 ? sorted : null
   }, [filteredThemes, themeDiffFilter])
 
