@@ -159,7 +159,7 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleBackdrop}
     >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
 
       <div
         className="relative w-full overflow-y-auto rounded-xl"
