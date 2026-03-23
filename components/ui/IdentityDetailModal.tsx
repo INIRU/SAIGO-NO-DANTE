@@ -318,6 +318,28 @@ function ModalContent({ data }: { data: ApiResponse }) {
             )
           })}
         </div>
+
+        {/* 흐트러짐 구간 */}
+        {identity.break_section && identity.break_section.length > 0 && identity.hp != null && (
+          <div style={{ marginTop: '0.625rem' }}>
+            <p style={{ color: '#888', fontSize: '0.6875rem', marginBottom: '0.375rem', fontFamily: 'var(--font-heading)' }}>흐트러짐 구간</p>
+            <div className="relative rounded overflow-hidden" style={{ height: '1.5rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(200,60,60,0.25), rgba(200,144,10,0.1))' }} />
+              {identity.break_section.map((pct: number, i: number) => (
+                <div key={i}>
+                  <div className="absolute top-0 bottom-0" style={{ left: `${100 - pct}%`, width: '0.125rem', background: '#e04040', opacity: 0.8 }} />
+                  <div className="absolute" style={{ left: `${100 - pct}%`, top: '50%', transform: 'translate(-50%, -50%)' }}>
+                    <span style={{ color: '#e04040', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                      {pct}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div className="absolute left-1 top-1/2 -translate-y-1/2" style={{ color: '#cc5050', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', opacity: 0.6 }}>{identity.hp}</div>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2" style={{ color: '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', opacity: 0.5 }}>0</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 스킬 섹션 ────────────────────────────────────────── */}
@@ -352,21 +374,40 @@ function ModalContent({ data }: { data: ApiResponse }) {
       {/* ── 정신력 / 패닉 ─────────────────────────────────────── */}
       {(identity.panic_type || identity.sanity_increase || identity.sanity_decrease) && (
         <Section title="정신력">
-          <div className="flex flex-wrap gap-3" style={{ fontSize: '0.75rem' }}>
+          <div className="flex flex-col gap-2">
             {identity.panic_type && (
-              <span style={{ color: '#c84050' }}>
-                {PANIC_LABELS[String(identity.panic_type)] ?? identity.panic_type}
-              </span>
+              <div className="flex items-center gap-2 p-2 rounded" style={{ background: 'rgba(200,64,80,0.08)', border: '1px solid rgba(200,64,80,0.2)' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(200,64,80,0.15)', color: '#c84050', border: '1px solid rgba(200,64,80,0.3)' }}>
+                  패닉
+                </span>
+                <span style={{ color: '#c84050', fontSize: '0.75rem', fontWeight: 600 }}>
+                  {PANIC_LABELS[String(identity.panic_type)] ?? identity.panic_type}
+                </span>
+              </div>
             )}
             {identity.sanity_increase && (
-              <span style={{ color: '#88a830' }}>
-                회복: <strong style={{ fontFamily: 'var(--font-mono)' }}>{identity.sanity_increase}</strong>
-              </span>
+              <div className="p-2 rounded" style={{ background: 'rgba(136,168,48,0.08)', border: '1px solid rgba(136,168,48,0.2)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(136,168,48,0.15)', color: '#88a830', border: '1px solid rgba(136,168,48,0.3)' }}>
+                    회복
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#88a830', whiteSpace: 'pre-wrap' }}>
+                  {identity.sanity_increase}
+                </div>
+              </div>
             )}
             {identity.sanity_decrease && (
-              <span style={{ color: '#e06070' }}>
-                감소: <strong style={{ fontFamily: 'var(--font-mono)' }}>{identity.sanity_decrease}</strong>
-              </span>
+              <div className="p-2 rounded" style={{ background: 'rgba(224,96,112,0.08)', border: '1px solid rgba(224,96,112,0.2)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(224,96,112,0.15)', color: '#e06070', border: '1px solid rgba(224,96,112,0.3)' }}>
+                    감소
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#e06070', whiteSpace: 'pre-wrap' }}>
+                  {identity.sanity_decrease}
+                </div>
+              </div>
             )}
           </div>
         </Section>
@@ -456,6 +497,9 @@ function SkillCard({
         <span>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)' }}>{skill.base_power}</strong></span>
         <span>코인 <strong style={{ color: '#c8900a', fontFamily: 'var(--font-mono)' }}>{skill.coins}</strong></span>
         <span>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)' }}>{coinPowerStr}</strong></span>
+        {skill.atk_weight != null && skill.atk_weight !== 1 && (
+          <span>가중치 <strong style={{ color: '#d0a020', fontFamily: 'var(--font-mono)' }}>{skill.atk_weight}</strong></span>
+        )}
         <span style={{ marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)' }}>{maxPower}</strong></span>
       </div>
 

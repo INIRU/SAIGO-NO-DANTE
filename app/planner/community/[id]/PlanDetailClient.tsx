@@ -768,7 +768,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           {/* 서브탭 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem' }}>
             {([
-              { key: 'identity' as const, label: `인격 (${deck.length}/12)` },
+              { key: 'identity' as const, label: `인격 (${deck.length}/12)`, hint: '클릭하여 상세 보기' },
               { key: 'ego' as const, label: `EGO (${egoSlots.length})` },
               { key: 'skillset' as const, label: '스킬셋' },
             ]).map(tab => {
@@ -783,6 +783,11 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                   marginBottom: '-1px',
                 }}>
                   {tab.label}
+                  {'hint' in tab && active && (
+                    <span style={{ fontSize: '0.5625rem', color: '#5a5065', marginLeft: '0.375rem', fontWeight: 400 }}>
+                      {(tab as { hint: string }).hint}
+                    </span>
+                  )}
                 </button>
               )
             })}

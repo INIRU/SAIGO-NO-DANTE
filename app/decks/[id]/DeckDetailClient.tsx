@@ -772,6 +772,9 @@ export default function DeckDetailClient({ id }: { id: string }) {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: '#c8900a' }}>
                         {activeSlots.length}
                       </span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5625rem', color: '#5a5065', marginLeft: '0.25rem' }}>
+                        클릭하여 상세 보기
+                      </span>
                     </div>
                     <svg
                       width="12" height="12" viewBox="0 0 16 16" fill="none"
