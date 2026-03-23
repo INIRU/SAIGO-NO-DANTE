@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef } from 'react'
+import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
@@ -112,6 +113,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
+  const [identityModalId, setIdentityModalId] = useState<string | null>(null)
 
   const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
@@ -232,7 +234,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
   }
 
-  return (
+  return (<>
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── 플랜 정보 ── */}
@@ -311,12 +313,15 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
               const n = slot && slot.slot_order < 99 ? slot.slot_order + 1 : null
               return (
                 <div key={sinner.id}>
-                  <div style={{
+                  <div
+                    onClick={() => slot && setIdentityModalId(slot.identity_id)}
+                    style={{
                     position: 'relative', width: '100%', aspectRatio: '2/3',
                     background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
                     border: `0.09375rem ${slot ? 'solid' : 'dashed'} ${slot ? (rc?.border ?? '#2a2015') : '#2a2015'}`,
                     borderRadius: '0.25rem', overflow: 'hidden',
                     boxShadow: slot ? `0 0 0.5rem ${rc?.glow ?? 'transparent'}` : 'none',
+                    cursor: slot ? 'pointer' : 'default',
                   }}>
                     {slot && identData ? (
                       <>
@@ -735,7 +740,11 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         />
       )}
     </div>
-  )
+
+    {identityModalId && (
+      <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
+    )}
+  </>)
 }
 
 // ── 섹션 제목 ──────────────────────────────────────────────────────────────
@@ -879,6 +888,6 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
         )
       })}
     </div>
+
   )
 }
-
