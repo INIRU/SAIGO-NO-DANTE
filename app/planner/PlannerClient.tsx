@@ -158,8 +158,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <Link href="/mirror-dungeon" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.75rem' }}>
-              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 거울 던전
+            <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.75rem' }}>
+              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 커뮤니티
             </Link>
             <h1 className="font-serif" style={{ fontSize: '1.5rem', color: '#e8dcc8' }}>거울 던전 플래너</h1>
           </div>
