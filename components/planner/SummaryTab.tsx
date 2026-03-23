@@ -14,11 +14,11 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
-import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary } from '@/lib/planner/types'
+import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary, PassiveData } from '@/lib/planner/types'
 import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS, ATK_TYPE_ICON_MAP } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN, SIN_ICON_MAP, SIN_LABELS_KR, normalizeSin } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
@@ -109,9 +109,10 @@ interface SummaryTabProps {
   sinners: SinnerData[]
   egos: EgoData[]
   skills: SkillSummary[]
+  passives: PassiveData[]
 }
 
-export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, skills }: SummaryTabProps) {
+export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, skills, passives }: SummaryTabProps) {
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
