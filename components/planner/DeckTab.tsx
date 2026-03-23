@@ -7,7 +7,7 @@ import { type PlannerState, type PlannerAction, type IdentityData, type SinnerDa
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS } from '@/lib/constants/sin'
+import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import KeywordChart from './KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
 
@@ -584,12 +584,14 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                   {GRADE_ORDER.map(grade => {
                     const ego = egoByGrade[grade]
                     const gc = GRADE_COLORS[grade] ?? '#555'
+                    const sinEn = ego?.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
+                    const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
                     return (
                       <div
                         key={grade}
                         style={{
-                          background: ego ? `${gc}1a` : 'rgba(10,8,5,0.7)',
-                          border: `1px solid ${ego ? gc + '55' : '#18120a'}`,
+                          background: ego ? `${ec}1a` : 'rgba(10,8,5,0.7)',
+                          border: `1px solid ${ego ? ec + '55' : '#18120a'}`,
                           borderRadius: '0.125rem',
                           padding: '0.25rem 0.3125rem',
                           display: 'flex',
@@ -732,6 +734,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: '0.5rem' }}>
                           {gradeEgos.map(ego => {
                             const isSelected = selectedForGrade?.ego_id === ego.id
+                            const egoSinEn = ego.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
+                            const egoSc = egoSinEn ? (SIN_COLORS[egoSinEn as keyof typeof SIN_COLORS] ?? gc) : gc
                             return (
                               <button
                                 key={ego.id}
@@ -750,13 +754,13 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                                 className="text-left transition-all"
                                 style={{
                                   background: isSelected
-                                    ? `linear-gradient(160deg, ${gc}22 0%, ${gc}0d 100%)`
+                                    ? `linear-gradient(160deg, ${egoSc}22 0%, ${egoSc}0d 100%)`
                                     : 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
-                                  border: `1px solid ${isSelected ? gc + 'aa' : gc + '20'}`,
+                                  border: `1px solid ${isSelected ? egoSc + 'aa' : egoSc + '20'}`,
                                   borderRadius: '0.375rem',
                                   overflow: 'hidden',
                                   cursor: 'pointer',
-                                  boxShadow: isSelected ? `0 0 0.625rem ${gc}44` : 'none',
+                                  boxShadow: isSelected ? `0 0 0.625rem ${egoSc}44` : 'none',
                                 }}
                               >
                                 {/* EGO 이미지 */}
