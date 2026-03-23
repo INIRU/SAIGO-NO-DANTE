@@ -1197,8 +1197,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   {getGiftsByIds(finalIds).map(gift => {
                     const enhance = finalEnhance.get(gift.game_id) ?? 0
                     const canEnhance = !!(gift.effect_plus)
-                    const enhanceLabel = enhance === 2 ? '++' : enhance === 1 ? '+' : ''
-
                     const cycleEnhance = () => {
                       if (!canEnhance) return
                       // 현재 키 제거
@@ -1225,51 +1223,13 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                           isSelected={false}
                           onClick={canEnhance ? cycleEnhance : () => {}}
                         />
-                        {/* 강화 배지 — 오른쪽 위 */}
-                        {enhanceLabel && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '0.125rem',
-                            right: canEnhance ? '1.375rem' : '0.25rem',
-                            zIndex: 20,
-                            fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                            fontWeight: 800,
-                            fontSize: enhance === 2 ? '1rem' : '0.875rem',
-                            lineHeight: 1,
-                            color: enhance === 2 ? '#ff8c00' : '#e8b030',
-                            textShadow: enhance === 2
-                              ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0 1rem rgba(255,100,0,0.5), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
-                              : '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)',
-                            pointerEvents: 'none',
-                          }}>
-                            {enhanceLabel}
-                          </div>
-                        )}
-                        {/* 강화 가능 표시 (미강화 시) */}
-                        {canEnhance && !enhanceLabel && (
-                          <div
-                            onClick={cycleEnhance}
-                            style={{
-                              position: 'absolute',
-                              top: '0.125rem',
-                              right: '1.375rem',
-                              zIndex: 20,
-                              fontSize: '0.625rem',
-                              color: '#555',
-                              cursor: 'pointer',
-                            }}
-                            title="클릭하여 강화"
-                          >
-                            +
-                          </div>
-                        )}
-                        {/* 제거 버튼 */}
+                        {/* 제거 버튼 — 왼쪽 아래 */}
                         <button
                           onClick={removeGift}
                           style={{
                             position: 'absolute',
-                            top: '0.125rem',
-                            right: '0.25rem',
+                            bottom: '1.25rem',
+                            left: '0.25rem',
                             background: 'rgba(220,38,38,0.8)',
                             border: 'none',
                             borderRadius: '50%',
@@ -1289,6 +1249,48 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                         >
                           <X size={10} color="#fff" />
                         </button>
+                        {/* 강화 배지 — 카드 안 오른쪽 위 (등급 라벨 옆) */}
+                        {canEnhance && (
+                          <div
+                            onClick={cycleEnhance}
+                            style={{
+                              position: 'absolute',
+                              top: '4%',
+                              right: '6%',
+                              zIndex: 20,
+                              cursor: 'pointer',
+                              fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+                              fontWeight: 800,
+                              fontSize: enhance === 2 ? '1.125rem' : '1rem',
+                              lineHeight: 1,
+                              color: enhance === 2 ? '#ff8c00' : enhance === 1 ? '#e8b030' : '#44403c',
+                              textShadow: enhance === 2
+                                ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0 1rem rgba(255,100,0,0.5), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
+                                : enhance === 1
+                                ? '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)'
+                                : 'none',
+                            }}
+                            title={enhance === 0 ? '클릭하여 + 강화' : enhance === 1 ? '클릭하여 ++ 강화' : '클릭하여 강화 해제'}
+                          >
+                            <span style={{
+                              display: 'inline-block',
+                              padding: enhance > 0 ? '0.0625rem 0.25rem' : '0',
+                              borderRadius: '0.1875rem',
+                              background: enhance === 2
+                                ? 'radial-gradient(ellipse, rgba(255,140,0,0.35) 0%, transparent 70%)'
+                                : enhance === 1
+                                ? 'radial-gradient(ellipse, rgba(232,176,48,0.3) 0%, transparent 70%)'
+                                : 'none',
+                              filter: enhance === 2
+                                ? 'drop-shadow(0 0 0.375rem rgba(255,100,0,0.8)) drop-shadow(0 0 0.75rem rgba(255,140,0,0.4))'
+                                : enhance === 1
+                                ? 'drop-shadow(0 0 0.25rem rgba(232,176,48,0.7)) drop-shadow(0 0 0.5rem rgba(200,144,10,0.3))'
+                                : 'none',
+                            }}>
+                              {enhance === 2 ? '++' : enhance === 1 ? '+' : '+'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
