@@ -500,7 +500,10 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                                 <div className="flex items-center gap-1.5" style={{ fontSize: '0.75rem' }}>
                                   {met && <span style={{ color: '#40a060', fontSize: '0.5625rem', flexShrink: 0 }}>●</span>}
                                   {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
-                                  {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                                  {p.sin_count != null && sinEn && (() => {
+                                    const have = deckSinCounts[sinEn] ?? 0
+                                    return <span style={{ color: met ? '#40a060' : pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{have}/{p.sin_count}</span>
+                                  })()}
                                   <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
                                   <span style={{ color: met ? '#9a8a70' : '#4a4030', fontWeight: 600 }}>{p.name}</span>
                                 </div>
