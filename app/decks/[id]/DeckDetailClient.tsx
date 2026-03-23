@@ -16,6 +16,7 @@ import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
 import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
 import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
+import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type EgoSlot = {
@@ -239,6 +240,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
   const [shareGenerating, setShareGenerating] = useState(false)
 
   const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
+  const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
 
   useEffect(() => {
@@ -781,7 +783,9 @@ export default function DeckDetailClient({ id }: { id: string }) {
                   {identitiesOpen && (
                     <div className="flex flex-col gap-2 p-3">
                       {activeSlots.map((slot, i) => (
-                        <DeckIdentityCard key={i} slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} />
+                        <div key={i} onClick={() => slot.identities?.id && setIdentityModalId(slot.identities.id)} style={{ cursor: slot.identities?.id ? 'pointer' : 'default' }}>
+                          <DeckIdentityCard slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -1206,6 +1210,9 @@ export default function DeckDetailClient({ id }: { id: string }) {
       </div>
 
       <Toast toast={toast} />
+      {identityModalId && (
+        <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
+      )}
     </div>
   )
 }

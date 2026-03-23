@@ -13,6 +13,7 @@ import { buildGiftMap } from '@/lib/planner/fusion'
 import { saveDraftToLocal } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import RelativeTime from '@/components/ui/RelativeTime'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
@@ -342,6 +343,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
+  const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const router = useRouter()
 
   const isOwner = session?.user?.email && plan.profiles?.username // 서버에서 비교해야 정확하지만, UI 표시용
@@ -795,7 +797,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 const rc = slot ? (RARITY_COLORS[slot.rarity ?? 1] ?? RARITY_COLORS[1]) : null
                 const n = slot && (slot.slot_order ?? 99) < 99 ? (slot.slot_order ?? 0) + 1 : null
                 return (
-                  <div key={sinner.id}>
+                  <div key={sinner.id} onClick={() => slot?.identity_id && setIdentityModalId(slot.identity_id)} style={{ cursor: slot?.identity_id ? 'pointer' : 'default' }}>
                     <div style={{
                       position: 'relative', width: '100%', aspectRatio: '2/3',
                       background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
@@ -937,7 +939,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                   const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } : null
 
                   return (
-                    <div key={sinner.id}>
+                    <div key={sinner.id} onClick={() => slot.identity_id && setIdentityModalId(slot.identity_id)} style={{ cursor: slot.identity_id ? 'pointer' : 'default' }}>
                       <div style={{
                         position: 'relative', width: '100%', aspectRatio: '2/3',
                         background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
@@ -1385,6 +1387,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteModal(false)}
       />
+      {identityModalId && (
+        <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
+      )}
     </div>
   )
 }
