@@ -17,8 +17,8 @@ import {
 import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary, PassiveData } from '@/lib/planner/types'
 import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS, ATK_TYPE_ICON_MAP } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN, SIN_ICON_MAP, SIN_LABELS_KR, normalizeSin } from '@/lib/constants/sin'
+import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
@@ -384,6 +384,97 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
             })}
           </div>
         )}
+
+        {/* 공격 유형 분포 + 패시브 */}
+        {deckSubTab === 'identity' && state.identitySlots.length > 0 && (() => {
+          const slotIds = new Set(state.identitySlots.map(s => s.identity_id))
+          // 공격 스킬 유형 합산
+          const atkCount: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
+          const defCount: Record<string, number> = { evade: 0, defense: 0, counter: 0 }
+          for (const sk of skills) {
+            if (!slotIds.has(sk.identity_id)) continue
+            if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
+            if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
+          }
+          const atkTotal = Object.values(atkCount).reduce((a, b) => a + b, 0) || 1
+          const ATK_LABELS: Record<string, string> = { slash: '참격', pierce: '관통', blunt: '타격' }
+          const ATK_COLORS: Record<string, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
+          const DEF_LABELS: Record<string, string> = { evade: '회피', defense: '수비', counter: '반격' }
+
+          // 패시브 (편성된 인격만)
+          const battlePassives = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === 'battle')
+          const supportPassives = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === 'support')
+
+          return (
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
+              {/* 공격 유형 */}
+              <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
+                <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginBottom: '0.5rem' }}>공격 유형 분포</p>
+                <div className="flex flex-col gap-1.5">
+                  {Object.entries(atkCount).map(([type, count]) => (
+                    <div key={type} className="flex items-center gap-2">
+                      <Image src={`${S}/icons/stats/${type}.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.8 }} />
+                      <span style={{ color: ATK_COLORS[type], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
+                      <div style={{ flex: 1, height: '0.375rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.1875rem', overflow: 'hidden' }}>
+                        <div style={{ width: `${(count / atkTotal) * 100}%`, height: '100%', background: ATK_COLORS[type], borderRadius: '0.1875rem', transition: 'width 0.3s' }} />
+                      </div>
+                      <span style={{ color: ATK_COLORS[type], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', textAlign: 'right' }}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  {Object.entries(defCount).filter(([, c]) => c > 0).map(([type, count]) => (
+                    <span key={type} style={{ color: '#888', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+                      {DEF_LABELS[type]} <strong style={{ color: '#aaa' }}>{count}</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 패시브 */}
+              <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
+                <div className="flex gap-4">
+                  {/* 배틀 */}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#c84050', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>배틀 ({battlePassives.length})</p>
+                    <div className="flex flex-col gap-1">
+                      {battlePassives.map((p, i) => {
+                        const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                        const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                        return (
+                          <div key={i} className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
+                            {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                            {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                            <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
+                            <span className="truncate" style={{ color: '#8a7a60' }}>{p.name}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  {/* 서포트 */}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#4898b0', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>서포트 ({supportPassives.length})</p>
+                    <div className="flex flex-col gap-1">
+                      {supportPassives.map((p, i) => {
+                        const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                        const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                        return (
+                          <div key={i} className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
+                            {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                            {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                            <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
+                            <span className="truncate" style={{ color: '#8a7a60' }}>{p.name}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* EGO 그리드 (DeckTab 스타일) */}
         {deckSubTab === 'ego' && (
@@ -901,3 +992,4 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
 
   )
 }
+
