@@ -22,7 +22,7 @@ const GRADE_ROMAN: Record<string, string> = {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  '5': '#c8900a', '4': '#7c4fc0', '3': '#2a7fd4', '2': '#2d9e60', '1': '#888',
+  'EX': '#c6ff2e', '5': '#c8900a', '4': '#7c4fc0', '3': '#2a7fd4', '2': '#2d9e60', '1': '#888',
 }
 
 const KEYWORD_FILTERS = [
@@ -1159,6 +1159,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
         const GRADE_OPTIONS = [
           { value: null, label: '전체' },
+          { value: 'EX', label: 'EX' },
           { value: '5', label: 'Ⅴ' },
           { value: '4', label: 'Ⅳ' },
           { value: '3', label: 'Ⅲ' },
@@ -1166,7 +1167,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
           { value: '1', label: 'Ⅰ' },
         ]
 
-        const gradeGroupOrder = ['5', '4', '3', '2', '1']
+        const gradeGroupOrder = ['EX', '5', '4', '3', '2', '1']
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
