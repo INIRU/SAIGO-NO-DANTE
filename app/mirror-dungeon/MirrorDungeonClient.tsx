@@ -128,30 +128,23 @@ export default function MirrorDungeonClient({
 
   // 층별 테마팩 그룹핑 (특정 난이도 선택 시)
   const floorGroupedThemes = useMemo(() => {
-    if (themeDiffFilter === '전체') return null
-    const floorKey = themeDiffFilter // '노말' | '하드' | '익스트림'
-    const floorMap = new Map<number, typeof filteredThemes>()
+    const isAll = themeDiffFilter === '전체'
+    // '전체'면 모든 난이도의 floor_info를 합침, 아니면 해당 난이도만
+    const floorKeys = isAll ? ['노말', '하드', '익스트림', '평행중첩'] : [themeDiffFilter]
+    const floorMap = new Map<number, EgoGiftTheme[]>()
     let maxFloor = 0
 
     // 1차: 숫자 배열인 테마팩 등록 + maxFloor 계산
     for (const theme of filteredThemes) {
-      const floors = theme.floor_info?.[floorKey]
-      if (!floors) continue
-      if (Array.isArray(floors)) {
-        for (const f of floors) {
+      if (!theme.floor_info) continue
+      for (const key of floorKeys) {
+        const floors: number[] | string | undefined = theme.floor_info[key]
+        if (!floors || !Array.isArray(floors)) continue
+        for (const f of floors as number[]) {
           if (f > maxFloor) maxFloor = f
-          const arr = floorMap.get(f) ?? []
-          arr.push(theme)
+          const arr: EgoGiftTheme[] = floorMap.get(f) ?? []
+          if (!arr.includes(theme)) arr.push(theme)
           floorMap.set(f, arr)
-        }
-      }
-    }
-    // maxFloor가 0이면 다른 키도 확인 (평행중첩 등)
-    if (maxFloor === 0) {
-      for (const theme of filteredThemes) {
-        if (!theme.floor_info) continue
-        for (const [, v] of Object.entries(theme.floor_info)) {
-          if (Array.isArray(v)) for (const f of v) { if (f > maxFloor) maxFloor = f }
         }
       }
     }
@@ -159,18 +152,27 @@ export default function MirrorDungeonClient({
 
     // 2차: "전체" 값인 테마팩을 모든 층에 등록
     for (const theme of filteredThemes) {
-      const floors = theme.floor_info?.[floorKey]
-      if (floors === '전체') {
-        for (let f = 1; f <= maxFloor; f++) {
-          const arr = floorMap.get(f) ?? []
-          if (!arr.includes(theme)) arr.push(theme)
-          floorMap.set(f, arr)
+      if (!theme.floor_info) continue
+      for (const key of floorKeys) {
+        if (theme.floor_info[key] === '전체') {
+          for (let f = 1; f <= maxFloor; f++) {
+            const arr = floorMap.get(f) ?? []
+            if (!arr.includes(theme)) arr.push(theme)
+            floorMap.set(f, arr)
+          }
         }
       }
     }
 
-    // 정렬
-    return [...floorMap.entries()].sort((a, b) => a[0] - b[0])
+    // floor_info가 아예 없는 테마팩은 "기타"로 분류
+    const unassigned = filteredThemes.filter(t => {
+      if (!t.floor_info) return true
+      return !floorKeys.some(k => t.floor_info?.[k])
+    })
+
+    const sorted = [...floorMap.entries()].sort((a, b) => a[0] - b[0])
+    if (unassigned.length > 0) sorted.push([0, unassigned]) // 0층 = 기타
+    return sorted.length > 0 ? sorted : null
   }, [filteredThemes, themeDiffFilter])
 
   // 자동완성 후보
@@ -636,7 +638,7 @@ export default function MirrorDungeonClient({
             {filteredThemes.length}건
           </span>
         </div>
-        {/* 층별 뷰 (특정 난이도 선택 시) */}
+        {/* 층별 뷰 */}
         {floorGroupedThemes ? (
           <div className="mb-8 space-y-5">
             {floorGroupedThemes.map(([floor, floorThemes]) => (
@@ -646,14 +648,14 @@ export default function MirrorDungeonClient({
                   <span
                     className="flex-shrink-0 font-mono font-bold"
                     style={{
-                      color: 'var(--gold)',
+                      color: floor === 0 ? '#888' : 'var(--gold)',
                       fontSize: '0.875rem',
                       letterSpacing: '0.05em',
                     }}
                   >
-                    {floor}층
+                    {floor === 0 ? '기타' : `${floor}층`}
                   </span>
-                  <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, rgba(200,144,10,0.3), transparent)' }} />
+                  <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, ${floor === 0 ? 'rgba(136,136,136,0.3)' : 'rgba(200,144,10,0.3)'}, transparent)` }} />
                   <span style={{ color: '#555', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
                     {floorThemes.length}개
                   </span>
@@ -666,7 +668,6 @@ export default function MirrorDungeonClient({
             ))}
           </div>
         ) : (
-          /* 전체 뷰 (난이도 '전체' 선택 시) */
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 mb-8">
             {filteredThemes.map(theme => renderThemeCard(theme))}
           </div>
