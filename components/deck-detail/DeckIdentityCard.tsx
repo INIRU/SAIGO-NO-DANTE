@@ -156,10 +156,12 @@ export default function DeckIdentityCard({
   slot,
   egos,
   keywordMeta,
+  onEgoClick,
 }: {
   slot: IdentitySlot
   egos?: EgoEntry[]
   keywordMeta?: Record<string, { description: string }>
+  onEgoClick?: (egoId: string) => void
 }) {
   const formatSkillDesc = useFormatSkillDesc()
   const { getIconUrl } = useKeywordData()
@@ -487,7 +489,8 @@ export default function DeckIdentityCard({
             const sc = sinEn ? (SIN_COLORS[sinEn as SinType] ?? gc) : gc
             return (
               <div key={ego.id} className="p-3 rounded flex items-center gap-3"
-                style={{ background: `${gc}08`, border: `1px solid ${gc}28` }}>
+                onClick={e => { e.stopPropagation(); onEgoClick?.(ego.id) }}
+                style={{ background: `${gc}08`, border: `1px solid ${gc}28`, cursor: onEgoClick ? 'pointer' : 'default' }}>
                 <div style={{ width: 2, alignSelf: 'stretch', background: gc, borderRadius: 1, flexShrink: 0 }} />
                 {ego.image_url ? (
                   <Image src={ego.image_url} alt={ego.name_kr ?? ''} width={52} height={52}

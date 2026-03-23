@@ -14,6 +14,7 @@ import { saveDraftToLocal } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
+import EgoDetailModal from '@/components/ui/EgoDetailModal'
 import RelativeTime from '@/components/ui/RelativeTime'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
@@ -344,6 +345,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
+  const [egoModalId, setEgoModalId] = useState<string | null>(null)
   const router = useRouter()
 
   const isOwner = session?.user?.email && plan.profiles?.username // 서버에서 비교해야 정확하지만, UI 표시용
@@ -896,12 +898,13 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                           const ego = egoByGrade[grade]
                           const gc = GRADE_COLORS[grade] ?? '#555'
                           return (
-                            <div key={grade} style={{
+                            <div key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} style={{
                               background: ego ? `${gc}1a` : 'rgba(10,8,5,0.7)',
                               border: `1px solid ${ego ? gc + '55' : '#18120a'}`,
                               borderRadius: '0.125rem', padding: '0.25rem 0.3125rem',
                               display: 'flex', alignItems: 'center', gap: '0.3125rem',
                               minHeight: '1.5rem',
+                              cursor: ego?.ego_id ? 'pointer' : 'default',
                             }}>
                               {grade !== 'ALEPH' ? (
                                 <Image src={`${S}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized
@@ -1394,6 +1397,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
       />
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
+      )}
+      {egoModalId && (
+        <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
     </div>
   )
