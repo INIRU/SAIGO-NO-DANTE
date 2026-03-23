@@ -32,7 +32,7 @@ export default function FusionTab({ state, dispatch, recipes, gifts, giftMap }: 
 
   function handleReverseSearch(gift: GiftData) {
     setReverseQuery(gift.name)
-    setReverseResults(findRecipesFor(gift.game_id, recipes, giftMap))
+    setReverseResults(findRecipesFor(gift.name, recipes, giftMap))
     setShowReverseSuggestions(false)
   }
 

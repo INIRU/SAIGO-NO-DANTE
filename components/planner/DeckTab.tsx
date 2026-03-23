@@ -868,7 +868,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                       borderRadius: '0.25rem',
                       padding: '0.375rem',
                     }}>
-                      {[0, 1, 2].map(idx => (
+                      {[0, 1, 2].map(idx => {
+                        const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
+                        return (
                         <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
                           {/* 스킬 아이콘 */}
                           {identForIcon && identForIcon.game_id ? (
@@ -892,7 +894,15 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                               S{idx + 1}
                             </span>
                           )}
-                          <div style={{ flex: 1 }} />
+                          {skillName && (
+                            <span style={{
+                              fontSize: '0.5rem', color: '#8a7a60', flex: 1, minWidth: 0,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
+                              {skillName}
+                            </span>
+                          )}
+                          {!skillName && <div style={{ flex: 1 }} />}
                           <button
                             onClick={() => handleSkillChange(sinner.id, idx, -1)}
                             disabled={dist[idx] <= 0}
@@ -946,7 +956,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                             +
                           </button>
                         </div>
-                      ))}
+                        )
+                      })}
                       {/* 합계 + 프리셋 */}
                       <div style={{
                         borderTop: '1px solid #1a1208',

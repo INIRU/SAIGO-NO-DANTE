@@ -1,4 +1,5 @@
 import type { RecipeData, GiftData } from './types'
+import { normalizeThemeKeyword } from '../constants/keywords'
 
 export interface FusionResult {
   recipe: RecipeData
@@ -16,21 +17,21 @@ export function findAvailableFusions(
   giftMap: Map<number, GiftData>,
 ): FusionResult[] {
   const invSet = new Set(inventory)
+  const nameMap = new Map<string, GiftData>()
+  for (const g of giftMap.values()) nameMap.set(g.name, g)
 
   return recipes
     .map(recipe => {
-      const matIds = [recipe.material_1, recipe.material_2, recipe.material_3].filter(Boolean) as number[]
-      const materials = matIds.map(id => giftMap.get(id)).filter(Boolean) as GiftData[]
-      const result = recipe.result ? giftMap.get(recipe.result) ?? null : null
-      const canCraft = matIds.every(id => {
-        const gift = giftMap.get(id)
+      const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
+      const result = nameMap.get(recipe.result_name) ?? null
+      const canCraft = recipe.ingredients.every(name => {
+        const gift = nameMap.get(name)
         return gift && invSet.has(String(gift.game_id))
       })
 
       return { recipe, materials, result, canCraft }
     })
     .sort((a, b) => {
-      // 조합 가능한 것 먼저
       if (a.canCraft !== b.canCraft) return a.canCraft ? -1 : 1
       return 0
     })
@@ -40,16 +41,18 @@ export function findAvailableFusions(
  * 역방향: 특정 기프트를 만들 수 있는 레시피 찾기
  */
 export function findRecipesFor(
-  targetGameId: number,
+  targetName: string,
   recipes: RecipeData[],
   giftMap: Map<number, GiftData>,
 ): FusionResult[] {
+  const nameMap = new Map<string, GiftData>()
+  for (const g of giftMap.values()) nameMap.set(g.name, g)
+
   return recipes
-    .filter(r => r.result === targetGameId)
+    .filter(r => r.result_name === targetName)
     .map(recipe => {
-      const matIds = [recipe.material_1, recipe.material_2, recipe.material_3].filter(Boolean) as number[]
-      const materials = matIds.map(id => giftMap.get(id)).filter(Boolean) as GiftData[]
-      const result = giftMap.get(targetGameId) ?? null
+      const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
+      const result = nameMap.get(targetName) ?? null
       return { recipe, materials, result, canCraft: false }
     })
 }
@@ -77,7 +80,9 @@ export function computeKeywordDistribution(
 ): { keyword: string; count: number }[] {
   const counts = new Map<string, number>()
   for (const kws of keywords) {
-    for (const kw of kws) {
+    // 인격당 정규화 후 유니크 (중복 카운트 방지)
+    const normalized = new Set(kws.map(normalizeThemeKeyword))
+    for (const kw of normalized) {
       if (!COMBAT_KEYWORDS.has(kw)) continue
       counts.set(kw, (counts.get(kw) ?? 0) + 1)
     }

@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { X, Search, Plus, ChevronRight } from 'lucide-react'
 import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 
 const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
@@ -75,6 +76,7 @@ function GiftCard({
   enhance,
   onEnhance,
   onRemove,
+  conditionStatus,
 }: {
   gift: GiftData
   isSelected: boolean
@@ -83,6 +85,7 @@ function GiftCard({
   enhance?: number       // 0=기본, 1=+, 2=++
   onEnhance?: () => void // 강화 순환 클릭
   onRemove?: () => void  // 제거 클릭
+  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
 }) {
   const [hovered, setHovered] = useState(false)
   const kwSlug = getKeywordSlug(gift.keyword ?? null)
@@ -137,8 +140,10 @@ function GiftCard({
           fontWeight: 700,
           fontSize: '1.25rem',
           lineHeight: 1,
-          color: 'rgb(251, 183, 46)',
-          textShadow: '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
+          color: (gift.grade === 'EX') ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+          textShadow: (gift.grade === 'EX')
+            ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
+            : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
         }}>
           {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
         </span>
@@ -260,6 +265,30 @@ function GiftCard({
           </div>
         )}
 
+        {/* 조건 오버레이 */}
+        {conditionStatus && (
+          <div
+            title={conditionStatus.level === 'unmet'
+              ? `조건 미달: ${conditionStatus.text} — 편성+대기 포함해도 부족`
+              : `조건 주의: ${conditionStatus.text} — 편성(1-7)만으로는 부족, 대기 포함 시 충족`}
+            style={{
+              position: 'absolute', inset: 0, zIndex: 18,
+              background: conditionStatus.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'auto', cursor: 'help',
+            }}
+          >
+            <span style={{
+              fontSize: '0.5rem', fontWeight: 700,
+              color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030',
+              textShadow: '0 0 0.25rem rgba(0,0,0,0.9)',
+              textAlign: 'center', lineHeight: 1.3, padding: '0 0.125rem',
+            }}>
+              {conditionStatus.level === 'unmet' ? '조건 미달' : '조건 주의'}
+            </span>
+          </div>
+        )}
+
         {/* Hover glow gradient */}
         <div style={{
           position: 'absolute',
@@ -274,7 +303,7 @@ function GiftCard({
       {/* Name below card */}
       <p style={{
         fontSize: '0.5625rem',
-        color: isSelected ? '#e8b030' : '#aaa',
+        color: conditionStatus?.level === 'unmet' ? '#ef4444' : conditionStatus?.level === 'warn' ? '#e8b030' : isSelected ? '#e8b030' : '#aaa',
         textAlign: 'center',
         marginTop: '0.25rem',
         lineHeight: 1.2,
@@ -286,6 +315,11 @@ function GiftCard({
       }}>
         {gift.name}
       </p>
+      {conditionStatus && (
+        <p style={{ fontSize: '0.5rem', color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2, marginTop: '0.0625rem' }}>
+          {conditionStatus.text}
+        </p>
+      )}
     </button>
   )
 }
@@ -754,6 +788,46 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   const [finalSearch, setFinalSearch] = useState('')
   const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
   const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
+
+  // 키워드별 인격 수: 편성(1-7) vs 전체(편성+대기) — 특수 충전 등 정규화 적용
+  const { formationKwCounts, allKwCounts } = useMemo(() => {
+    const formation: Record<string, number> = {}
+    const all: Record<string, number> = {}
+    for (const slot of state.identitySlots) {
+      if (slot.slot_order >= 99) continue // 편성 순서 없는 인격(벤치) 제외
+      const isFormation = slot.slot_order < 7  // 0-6 = 편성 1-7
+      // 중복 카운트 방지: 인격당 정규화된 키워드 유니크
+      const normalized = new Set<string>(slot.keywords.map(normalizeThemeKeyword))
+      for (const kw of normalized) {
+        all[kw] = (all[kw] ?? 0) + 1
+        if (isFormation) formation[kw] = (formation[kw] ?? 0) + 1
+      }
+    }
+    return { formationKwCounts: formation, allKwCounts: all }
+  }, [state.identitySlots])
+
+  // 조건 체크: null=충족, {level:'warn',text} = 대기 포함 시 충족, {level:'unmet',text} = 불충족
+  function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
+    const cond = gift.activation_condition
+    if (!cond || !cond.count) return null
+
+    let formationHave = 0, allHave = 0, label = ''
+    if (cond.type === 'keyword' && cond.keyword) {
+      formationHave = formationKwCounts[cond.keyword] ?? 0
+      allHave = allKwCounts[cond.keyword] ?? 0
+      label = cond.keyword
+    } else if (cond.type === 'multi_keyword' && cond.keywords) {
+      formationHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[kw] ?? 0), 0)
+      allHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[kw] ?? 0), 0)
+      label = cond.keywords.join('+')
+    } else {
+      return null
+    }
+
+    if (formationHave >= cond.count) return null // 편성만으로 충족
+    if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formationHave}/${cond.count}` }
+    return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+  }
 
   // Parse selected IDs by prefix
   const observeIds = useMemo(
@@ -1249,6 +1323,12 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               <p style={{ fontSize: '0.625rem', color: '#44403c', marginTop: '-0.25rem' }}>
                 아래 목록에서 드래그하거나 클릭하여 추가 · 강화 가능한 기프트는 클릭하여 +/++ 강화
               </p>
+              {state.identitySlots.length > 0 && finalIds.size > 0 && (
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.125rem', fontSize: '0.5625rem' }}>
+                  <span style={{ color: '#ef4444' }}>● 조건 미달 — 전체 인격으로도 부족</span>
+                  <span style={{ color: '#e8b030' }}>● 조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족</span>
+                </div>
+              )}
 
               {/* Drop zone content */}
               {finalIds.size === 0 ? (
@@ -1277,10 +1357,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                     const cycleEnh = () => {
                       if (!canEnh) return
                       const oldKey = enh === 2 ? `final_${gift.game_id}_plusplus` : enh === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
-                      dispatch({ type: 'REMOVE_GIFT', giftId: oldKey })
                       const next = (enh + 1) % (gift.effect_plusplus ? 3 : 2)
                       const newKey = next === 2 ? `final_${gift.game_id}_plusplus` : next === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
-                      dispatch({ type: 'ADD_GIFT', giftId: newKey })
+                      dispatch({ type: 'REPLACE_GIFT', oldId: oldKey, newId: newKey })
                     }
                     const removeGift = () => {
                       const key = enh === 2 ? `final_${gift.game_id}_plusplus` : enh === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
@@ -1295,6 +1374,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                         enhance={canEnh ? enh : undefined}
                         onEnhance={canEnh ? cycleEnh : undefined}
                         onRemove={removeGift}
+                        conditionStatus={getConditionStatus(gift)}
                       />
                     )
                   })}
@@ -1470,6 +1550,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                                 }
                               }}
                               disabled={alreadyAdded}
+                              conditionStatus={getConditionStatus(gift)}
                             />
                           </div>
                         )

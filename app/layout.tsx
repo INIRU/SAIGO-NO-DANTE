@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -130,7 +131,7 @@ export default async function RootLayout({
         <SessionProvider>
           <KeywordProvider keywords={keywords}>
             <Navbar />
-            <main id="main-content">{children}</main>
+            <Suspense><main id="main-content">{children}</main></Suspense>
             <Footer />
             <FloatingFontControl />
           </KeywordProvider>
