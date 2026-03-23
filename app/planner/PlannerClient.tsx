@@ -262,7 +262,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} />
         )}
         {state.activeTab === 'summary' && (
-          <SummaryTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} />
+          <SummaryTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
         )}
       </div>
 
