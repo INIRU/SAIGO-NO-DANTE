@@ -60,7 +60,7 @@ export default function PassiveBadge({ p, deckSinCounts }: {
             {currentCount}/{requiredCount}
           </span>
           <span style={{ color: sinColor, fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginLeft: '1px', opacity: 0.8 }}>
-            {p.active_cond}
+            {p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : p.active_cond}
           </span>
         </div>
       ) : (

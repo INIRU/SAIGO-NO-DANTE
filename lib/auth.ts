@@ -1,5 +1,7 @@
 import type { NextAuthOptions } from 'next-auth'
+import { getServerSession } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const authOptions: NextAuthOptions = {
@@ -55,4 +57,12 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
+}
+
+export async function requireAdmin() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.isAdmin) {
+    return { error: true as const, response: NextResponse.json({ error: 'Unauthorized' }, { status: 403 }) }
+  }
+  return { error: false as const, session }
 }
