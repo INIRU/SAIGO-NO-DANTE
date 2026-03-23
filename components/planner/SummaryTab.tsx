@@ -401,9 +401,22 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           const ATK_COLORS: Record<string, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
           const DEF_LABELS: Record<string, string> = { evade: '회피', defense: '수비', counter: '반격' }
 
-          // 패시브 (편성된 인격만)
-          const battlePassives = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === 'battle')
-          const supportPassives = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === 'support')
+          // 죄악 보유량 계산 (패시브 조건 체크용)
+          const deckSinCounts: Record<string, number> = {}
+          for (const sk of skills) {
+            if (!slotIds.has(sk.identity_id)) continue
+            if (sk.skill_order > 3) continue
+            const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
+            if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+          }
+
+          // 패시브 조건 충족 여부 체크
+          function isCondMet(p: typeof passives[0]): boolean {
+            if (!p.sin_affinity || !p.sin_count) return true // 조건 없으면 항상 활성
+            const en = SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity
+            const have = deckSinCounts[en] ?? 0
+            return have >= p.sin_count
+          }
 
           return (
             <div className="flex flex-col md:flex-row gap-4 mt-4">
@@ -431,46 +444,66 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                 </div>
               </div>
 
-              {/* 패시브 */}
-              <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
-                <div className="flex gap-4">
-                  {/* 배틀 */}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: '#c84050', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>배틀 ({battlePassives.length})</p>
-                    <div className="flex flex-col gap-1">
-                      {battlePassives.map((p, i) => {
-                        const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                        const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                        return (
-                          <div key={i} className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
-                            {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
-                            {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
-                            <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                            <span className="truncate" style={{ color: '#8a7a60' }}>{p.name}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  {/* 서포트 */}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: '#4898b0', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>서포트 ({supportPassives.length})</p>
-                    <div className="flex flex-col gap-1">
-                      {supportPassives.map((p, i) => {
-                        const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                        const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                        return (
-                          <div key={i} className="flex items-center gap-1" style={{ fontSize: '0.625rem' }}>
-                            {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
-                            {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
-                            <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                            <span className="truncate" style={{ color: '#8a7a60' }}>{p.name}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
+              {/* 패시브 — 수감자별 행 (덱 상세 스타일) */}
+              <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
+                <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)' }}>패시브</span>
                 </div>
+                {state.identitySlots.map((slot, idx) => {
+                  const sinnerName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id
+                  const bp = passives.filter(p => p.identity_id === slot.identity_id && p.passive_type === 'battle')
+                    .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
+                  const sp = passives.filter(p => p.identity_id === slot.identity_id && p.passive_type === 'support')
+                    .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
+                  if (bp.length === 0 && sp.length === 0) return null
+                  return (
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 px-3 py-2"
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                      <div style={{ width: '6rem', minWidth: 0, flexShrink: 0 }}>
+                        <div className="flex items-center gap-1">
+                          <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
+                          <span style={{ color: '#6a5e38', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{sinnerName}</span>
+                        </div>
+                        <p className="truncate" style={{ color: '#c8a450', fontSize: '0.625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginBottom: '0.125rem', letterSpacing: '0.05em' }}>배틀</p>
+                        {bp.length > 0 ? bp.map((p, pi) => {
+                          const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                          const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                          const met = isCondMet(p)
+                          return (
+                            <div key={pi} className="flex items-center gap-1" style={{ fontSize: '0.625rem', marginBottom: '0.125rem', opacity: met ? 1 : 0.4 }}>
+                              {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
+                              {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                              {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                              <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
+                              <span className="truncate" style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
+                            </div>
+                          )
+                        }) : <span style={{ color: '#3a3020', fontSize: '0.5625rem' }}>—</span>}
+                      </div>
+                      <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginBottom: '0.125rem', letterSpacing: '0.05em' }}>서포트</p>
+                        {sp.length > 0 ? sp.map((p, pi) => {
+                          const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
+                          const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                          const met = isCondMet(p)
+                          return (
+                            <div key={pi} className="flex items-center gap-1" style={{ fontSize: '0.625rem', marginBottom: '0.125rem', opacity: met ? 1 : 0.4 }}>
+                              {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
+                              {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                              {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
+                              <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
+                              <span className="truncate" style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
+                            </div>
+                          )
+                        }) : <span style={{ color: '#3a3020', fontSize: '0.5625rem' }}>—</span>}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )
