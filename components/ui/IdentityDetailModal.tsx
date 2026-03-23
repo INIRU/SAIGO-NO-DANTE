@@ -157,7 +157,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleBackdrop}
     >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
 
       <div
         className="relative w-full overflow-y-auto rounded-xl"
@@ -518,7 +518,9 @@ function SkillCard({
 function PassiveCard({ passive }: { passive: PassiveData }) {
   const isBattle = passive.passive_type === 'battle'
   const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
-  const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
+  // DB에 영문(pride) 또는 한글(오만) 둘 다 올 수 있음
+  const ALL_SINS = new Set(['wrath','lust','sloth','gluttony','gloom','pride','envy'])
+  const sinTypes = sinNames.map(s => ALL_SINS.has(s) ? s : SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
   const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
 
   return (
