@@ -117,6 +117,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
+  const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
@@ -444,31 +445,45 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                 </div>
               </div>
 
-              {/* 패시브 — 수감자별 행 (덱 상세 스타일) */}
+              {/* 패시브 — 배틀/서포트 탭 */}
               <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
-                <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)' }}>패시브</span>
+                {/* 탭 헤더 */}
+                <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {(['battle', 'support'] as const).map(tab => {
+                    const active = passiveTab === tab
+                    const count = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === tab).length
+                    return (
+                      <button key={tab} onClick={() => setPassiveTab(tab)} style={{
+                        flex: 1, padding: '0.5rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400,
+                        color: active ? (tab === 'battle' ? '#c84050' : '#4898b0') : '#555',
+                        background: active ? (tab === 'battle' ? 'rgba(200,64,80,0.06)' : 'rgba(72,152,176,0.06)') : 'transparent',
+                        borderBottom: `2px solid ${active ? (tab === 'battle' ? '#c84050' : '#4898b0') : 'transparent'}`,
+                        cursor: 'pointer', border: 'none', fontFamily: 'var(--font-heading)',
+                      }}>
+                        {tab === 'battle' ? '배틀' : '서포트'} ({count})
+                      </button>
+                    )
+                  })}
                 </div>
+                {/* 수감자별 패시브 목록 */}
                 {state.identitySlots.map((slot, idx) => {
                   const sinnerName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id
-                  const bp = passives.filter(p => p.identity_id === slot.identity_id && p.passive_type === 'battle')
+                  const slotPassives = passives
+                    .filter(p => p.identity_id === slot.identity_id && p.passive_type === passiveTab)
                     .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
-                  const sp = passives.filter(p => p.identity_id === slot.identity_id && p.passive_type === 'support')
-                    .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
-                  if (bp.length === 0 && sp.length === 0) return null
+                  if (slotPassives.length === 0) return null
                   return (
-                    <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 px-3 py-2"
+                    <div key={idx} className="flex items-start gap-2 px-3 py-2"
                       style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                      <div style={{ width: '6rem', minWidth: 0, flexShrink: 0 }}>
+                      <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
                         <div className="flex items-center gap-1">
                           <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
-                          <span style={{ color: '#6a5e38', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{sinnerName}</span>
+                          <span style={{ color: '#6a5e38', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{sinnerName}</span>
                         </div>
-                        <p className="truncate" style={{ color: '#c8a450', fontSize: '0.625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
+                        <p className="truncate" style={{ color: '#c8a450', fontSize: '0.5625rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginBottom: '0.125rem', letterSpacing: '0.05em' }}>배틀</p>
-                        {bp.length > 0 ? bp.map((p, pi) => {
+                        {slotPassives.map((p, pi) => {
                           const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
                           const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
                           const met = isCondMet(p)
@@ -481,25 +496,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                               <span className="truncate" style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
                             </div>
                           )
-                        }) : <span style={{ color: '#3a3020', fontSize: '0.5625rem' }}>—</span>}
-                      </div>
-                      <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: '#555570', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginBottom: '0.125rem', letterSpacing: '0.05em' }}>서포트</p>
-                        {sp.length > 0 ? sp.map((p, pi) => {
-                          const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                          const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                          const met = isCondMet(p)
-                          return (
-                            <div key={pi} className="flex items-center gap-1" style={{ fontSize: '0.625rem', marginBottom: '0.125rem', opacity: met ? 1 : 0.4 }}>
-                              {met && <span style={{ color: '#40a060', fontSize: '0.5rem', flexShrink: 0 }}>●</span>}
-                              {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
-                              {p.sin_count != null && <span style={{ color: pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>x{p.sin_count}</span>}
-                              <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                              <span className="truncate" style={{ color: met ? '#8a7a60' : '#4a4030' }}>{p.name}</span>
-                            </div>
-                          )
-                        }) : <span style={{ color: '#3a3020', fontSize: '0.5625rem' }}>—</span>}
+                        })}
                       </div>
                     </div>
                   )
