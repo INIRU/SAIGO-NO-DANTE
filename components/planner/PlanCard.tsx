@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
+import RelativeTime from '@/components/ui/RelativeTime'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { STORAGE_BASE, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -33,19 +34,6 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
 }
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '방금 전'
-  if (mins < 60) return `${mins}분 전`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}시간 전`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}일 전`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}달 전`
-  return `${Math.floor(months / 12)}년 전`
-}
 
 function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] | null ? T : never }) {
   const [failed, setFailed] = useState(false)
@@ -163,7 +151,7 @@ export default function PlanCard({ plan }: { plan: PlanSummary }) {
                 <Image src={avatarUrl} alt={username} width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
               </div>
               <span style={{ fontSize: '0.6875rem', color: '#8a7a60' }}>{username}</span>
-              <span suppressHydrationWarning style={{ fontSize: '0.5625rem', color: '#333' }}>{relativeTime(plan.created_at)}</span>
+              <RelativeTime date={plan.created_at} style={{ fontSize: '0.5625rem', color: '#333' }} />
             </div>
             <div className="flex items-center gap-2.5">
               <span className="flex items-center gap-0.5" style={{ fontSize: '0.625rem', color: plan.vote_count > 0 ? '#c8900a' : '#333' }}>
