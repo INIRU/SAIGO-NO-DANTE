@@ -52,14 +52,17 @@ export default async function PlanDetailPage({ params }: Props) {
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
   ])
 
-  // 그룹 2: 인격/수감자/스킬
-  const [{ data: identities }, { data: sinners }, { data: skills }] = await Promise.all([
+  // 그룹 2: 인격/수감자/스킬/패시브
+  const [{ data: identities }, { data: sinners }, { data: skills }, { data: passives }] = await Promise.all([
     supabase.schema('limbus').from('identities')
       .select('id, sinner_id, name_kr, rarity, keywords, game_id, folder_name')
       .order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     supabase.schema('limbus').from('skills')
       .select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level')
+      .eq('uptie_level', 4),
+    supabase.schema('limbus').from('passives')
+      .select('identity_id, name, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level')
       .eq('uptie_level', 4),
   ])
 
@@ -78,6 +81,7 @@ export default async function PlanDetailPage({ params }: Props) {
       identities={identities ?? []}
       sinners={sinners ?? []}
       skills={skills ?? []}
+      passives={passives ?? []}
       egos={egos ?? []}
     />
   )

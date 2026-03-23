@@ -168,6 +168,17 @@ type SkillSummary = {
   uptie_level: number | null
 }
 
+type PassiveSummary = {
+  identity_id: string
+  name: string
+  passive_type: string
+  sin_affinity: string | null
+  sin_count: number | null
+  active_cond: string | null
+  description: string | null
+  uptie_level: number | null
+}
+
 type Plan = {
   id: string
   title: string
@@ -322,12 +333,13 @@ interface Props {
   identities: IdentityData[]
   sinners: SinnerData[]
   skills: SkillSummary[]
+  passives: PassiveSummary[]
   egos: EgoData[]
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, egos }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos }: Props) {
   const { data: session } = useSession()
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
