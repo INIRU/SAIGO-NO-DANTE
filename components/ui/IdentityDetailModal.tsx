@@ -537,22 +537,15 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
           {isBattle ? '배틀' : '서포트'}
         </span>
         <span style={{ color: pc, fontSize: '0.75rem', fontWeight: 600 }}>{passive.name}</span>
-        {sinTypes.length > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${pc}15`, border: `1px solid ${pc}30` }}>
-            {sinTypes.map((st, i) => (
-              <Image key={i} src={sinIconUrl(st)} alt="" width={14} height={14}
-                style={{ width: '0.875rem', height: '0.875rem', filter: `drop-shadow(0 0 3px ${SIN_COLORS[st]}80)` }} />
-            ))}
-            {passive.sin_count != null && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
-            )}
-          </span>
+        {sinTypes.map((st, i) => (
+          <Image key={i} src={sinIconUrl(st)} alt="" width={14} height={14}
+            style={{ width: '0.875rem', height: '0.875rem', filter: `drop-shadow(0 0 3px ${SIN_COLORS[st]}80)` }} />
+        ))}
+        {sinTypes.length > 0 && passive.sin_count != null && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
         )}
         {passive.active_cond && (
-          <span style={{
-            fontSize: '0.75rem', fontWeight: 700, color: pc,
-            fontFamily: 'var(--font-heading)',
-          }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: pc, fontFamily: 'var(--font-heading)' }}>
             {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
           </span>
         )}

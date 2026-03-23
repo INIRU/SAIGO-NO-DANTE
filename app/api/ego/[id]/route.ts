@@ -11,11 +11,10 @@ export async function GET(
     const { id } = await params
     const supabase = createAdminClient()
 
-    // EGO 기본 정보
     const { data: ego, error: egoErr } = await supabase
       .schema('limbus')
       .from('ego')
-      .select('id, sinner_id, name, name_kr, grade, sin_affinity, folder_name, image_url, passive_name, passive_content, wrath_res, lust_res, sloth_res, gluttony_res, gloom_res, pride_res, envy_res, wrath_cost, lust_cost, sloth_cost, gluttony_cost, gloom_cost, pride_cost, envy_cost')
+      .select('id, sinner_id, name, name_kr, grade, sin_affinity, folder_name, image_url, cor_image_url, passive_name, passive_content, resistance, cost, keywords, description, corrosion_risk')
       .eq('id', id)
       .single()
 
@@ -23,7 +22,6 @@ export async function GET(
       return NextResponse.json({ error: 'EGO not found' }, { status: 404 })
     }
 
-    // 수감자 이름, EGO 스킬 병렬 조회
     const [sinnerRes, skillsRes] = await Promise.all([
       supabase
         .schema('limbus')
@@ -35,12 +33,22 @@ export async function GET(
         .schema('limbus')
         .from('ego_skills')
         .select('id, name, skill_type, sin_affinity, base_power, coins, coin_power, description, category, construe_level, offense_level, atk_weight')
-        .eq('ego_id', id)
-        .order('skill_order'),
+        .eq('ego_id', id),
     ])
 
+    // resistance/cost 배열을 죄악별 객체로 변환
+    const SIN_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
+    const resistances: Record<string, string> = {}
+    const costs: Record<string, number> = {}
+    if (Array.isArray(ego.resistance)) {
+      SIN_ORDER.forEach((sin, i) => { resistances[sin] = ego.resistance[i] ?? '보통' })
+    }
+    if (Array.isArray(ego.cost)) {
+      SIN_ORDER.forEach((sin, i) => { costs[sin] = ego.cost[i] ?? 0 })
+    }
+
     return NextResponse.json({
-      ego,
+      ego: { ...ego, resistances, costs },
       sinner_name: sinnerRes.data?.name_kr ?? null,
       skills: skillsRes.data ?? [],
     })
