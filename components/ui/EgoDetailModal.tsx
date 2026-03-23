@@ -35,20 +35,13 @@ type EgoData = {
   image_url: string | null
   passive_name: string | null
   passive_content: string | null
-  wrath_res: string | null
-  lust_res: string | null
-  sloth_res: string | null
-  gluttony_res: string | null
-  gloom_res: string | null
-  pride_res: string | null
-  envy_res: string | null
-  wrath_cost: number | null
-  lust_cost: number | null
-  sloth_cost: number | null
-  gluttony_cost: number | null
-  gloom_cost: number | null
-  pride_cost: number | null
-  envy_cost: number | null
+  resistance: string[] | null
+  cost: number[] | null
+  resistances: Record<string, string>
+  costs: Record<string, number>
+  keywords: string[] | null
+  description: string | null
+  corrosion_risk: string | null
 }
 
 type ApiResponse = {
@@ -73,25 +66,6 @@ const RES_STYLE: Record<string, { color: string; label: string }> = {
   'immune': { color: '#40c060', label: '무효' },
 }
 
-const RES_KEYS: { sin: SinType; key: keyof EgoData }[] = [
-  { sin: 'wrath', key: 'wrath_res' },
-  { sin: 'lust', key: 'lust_res' },
-  { sin: 'sloth', key: 'sloth_res' },
-  { sin: 'gluttony', key: 'gluttony_res' },
-  { sin: 'gloom', key: 'gloom_res' },
-  { sin: 'pride', key: 'pride_res' },
-  { sin: 'envy', key: 'envy_res' },
-]
-
-const COST_KEYS: { sin: SinType; key: keyof EgoData }[] = [
-  { sin: 'wrath', key: 'wrath_cost' },
-  { sin: 'lust', key: 'lust_cost' },
-  { sin: 'sloth', key: 'sloth_cost' },
-  { sin: 'gluttony', key: 'gluttony_cost' },
-  { sin: 'gloom', key: 'gloom_cost' },
-  { sin: 'pride', key: 'pride_cost' },
-  { sin: 'envy', key: 'envy_cost' },
-]
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 function sinColor(sin: string): string {
@@ -222,15 +196,15 @@ function ModalContent({ data }: { data: ApiResponse }) {
   const awakening = bestConstrue(skills.filter(s => s.category === 'awakening'))
   const corrosion = bestConstrue(skills.filter(s => s.category === 'corrosion'))
 
-  // 내성 배열
-  const resistances = RES_KEYS.map(({ sin, key }) => ({
+  // 내성 배열 (API에서 resistances 객체로 변환됨)
+  const resistances = SIN_ORDER.map(sin => ({
     sin,
-    value: (ego[key] as string | null) ?? '보통',
+    value: ego.resistances?.[sin] ?? '보통',
   }))
 
   // 코스트 배열 (0이 아닌 것만)
-  const costs = COST_KEYS
-    .map(({ sin, key }) => ({ sin, amount: (ego[key] as number | null) ?? 0 }))
+  const costs = SIN_ORDER
+    .map(sin => ({ sin, amount: ego.costs?.[sin] ?? 0 }))
     .filter(c => c.amount > 0)
 
   return (
