@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp, X, Plus, Package } from 'lucide-react'
+import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import type { PlannerState, PlannerAction, ThemeData, GiftData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
 import { getAvailableThemes, computeKeywordDistribution } from '@/lib/planner/fusion'
@@ -123,8 +124,16 @@ interface FloorTabProps {
 
 export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: FloorTabProps) {
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
-  const [themeDropdownFloor, setThemeDropdownFloor] = useState<number | null>(null)
+  const [themeModalFloor, setThemeModalFloor] = useState<number | null>(null)
   const [giftPickerFloor, setGiftPickerFloor] = useState<number | null>(null)
+
+  // 모달 열릴 때 body 스크롤 잠금
+  useEffect(() => {
+    if (themeModalFloor !== null) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [themeModalFloor])
 
   const diffKey = DIFFICULTY_FLOOR_KEY[state.difficulty]
 
@@ -181,13 +190,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
 
   const toggleFloor = useCallback((floor: number) => {
     setExpandedFloor(prev => prev === floor ? null : floor)
-    setThemeDropdownFloor(null)
+    setThemeModalFloor(null)
     setGiftPickerFloor(null)
   }, [])
 
   const selectTheme = useCallback((floor: number, themeId: string | null) => {
     dispatch({ type: 'SET_FLOOR_THEME', floor, themeId })
-    setThemeDropdownFloor(null)
+    setThemeModalFloor(null)
   }, [dispatch])
 
   const toggleGiftId = useCallback((floor: number, giftGameId: string, currentIds: string[]) => {
@@ -354,7 +363,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                       </div>
                       <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
                         <button
-                          onClick={() => setThemeDropdownFloor(themeDropdownFloor === entry.floor ? null : entry.floor)}
+                          onClick={() => setThemeModalFloor(entry.floor)}
                           style={{
                             background: 'rgba(255,255,255,0.06)',
                             border: '1px solid #333',
@@ -384,7 +393,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                     </div>
                   ) : (
                     <button
-                      onClick={() => setThemeDropdownFloor(themeDropdownFloor === entry.floor ? null : entry.floor)}
+                      onClick={() => setThemeModalFloor(entry.floor)}
                       style={{
                         width: '100%',
                         padding: '0.5rem 0.75rem',
@@ -407,75 +416,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                     </button>
                   )}
 
-                  {/* Theme dropdown */}
-                  {themeDropdownFloor === entry.floor && availableThemes.length > 0 && (
-                    <div style={{
-                      marginTop: '0.375rem',
-                      background: '#151210',
-                      border: '1px solid #333',
-                      borderRadius: '0.375rem',
-                      maxHeight: '16rem',
-                      overflowY: 'auto',
-                    }}>
-                      {availableThemes.map(theme => {
-                        const isSelected = entry.theme_id === theme.id
-                        const tGiftCount = (theme.ego_gift_ids?.length ?? 0) + (theme.specific_ego_gift_ids?.length ?? 0)
-                        return (
-                          <button
-                            key={theme.id}
-                            onClick={() => selectTheme(entry.floor, theme.id)}
-                            style={{
-                              width: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.625rem',
-                              padding: '0.5rem 0.75rem',
-                              background: isSelected ? 'rgba(200,144,10,0.12)' : 'transparent',
-                              border: 'none',
-                              borderBottom: '1px solid rgba(255,255,255,0.04)',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              color: '#e5e7eb',
-                              transition: 'background 0.15s',
-                            }}
-                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
-                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
-                          >
-                            {theme.image_url ? (
-                              <Image
-                                src={theme.image_url}
-                                alt={theme.name}
-                                width={24}
-                                height={42}
-                                style={{ width: '1.5rem', height: '2.625rem', objectFit: 'cover', borderRadius: '0.125rem', flexShrink: 0 }}
-                              />
-                            ) : (
-                              <div style={{ width: '1.5rem', height: '2.625rem', background: '#222', borderRadius: '0.125rem', flexShrink: 0 }} />
-                            )}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {theme.name}
-                              </div>
-                              {tGiftCount > 0 && (
-                                <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.0625rem' }}>
-                                  기프트 {tGiftCount}종
-                                </div>
-                              )}
-                            </div>
-                            {theme.boss_image_url && (
-                              <Image
-                                src={theme.boss_image_url}
-                                alt="보스"
-                                width={28}
-                                height={32}
-                                style={{ width: '1.75rem', height: '2rem', objectFit: 'contain', flexShrink: 0, opacity: 0.7 }}
-                              />
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
                 </div>
 
                 {/* ===== 획득 기프트 선택 ===== */}
@@ -762,6 +702,226 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
           </div>
         </div>
       )}
+
+      {/* ===== 테마팩 선택 모달 ===== */}
+      {themeModalFloor !== null && (() => {
+        const modalEntry = state.floorPlan.find(e => e.floor === themeModalFloor)
+        if (!modalEntry) return null
+        const modalAvailable = getAvailableThemes(themes, diffKey, themeModalFloor)
+        // 다른 층에서 이미 선택된 테마 제외
+        const usedThemeIds = new Set(
+          state.floorPlan
+            .filter(f => f.floor !== themeModalFloor && f.theme_id)
+            .map(f => f.theme_id!)
+        )
+        const filteredThemes = modalAvailable.filter(t => !usedThemeIds.has(t.id))
+
+        return (
+          <div
+            onClick={() => setThemeModalFloor(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0,0,0,0.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: '#131110',
+                border: '1px solid #333',
+                borderRadius: '0.75rem',
+                width: '100%',
+                maxWidth: '52rem',
+                maxHeight: '85vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.875rem 1rem',
+                borderBottom: '1px solid #222',
+                flexShrink: 0,
+              }}>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: '#e8b030',
+                  margin: 0,
+                  fontFamily: 'var(--font-title), sans-serif',
+                }}>
+                  {themeModalFloor}층 테마팩 선택
+                </h3>
+                <button
+                  onClick={() => setThemeModalFloor(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    padding: '0.25rem',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Grid */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1rem',
+              }}>
+                {filteredThemes.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#4b5563', fontSize: '0.875rem' }}>
+                    사용 가능한 테마팩이 없습니다
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(9rem, 1fr))',
+                    gap: '0.75rem',
+                  }}>
+                    {filteredThemes.map(theme => {
+                      const isSelected = modalEntry.theme_id === theme.id
+                      const tGiftCount = (theme.ego_gift_ids?.length ?? 0) + (theme.specific_ego_gift_ids?.length ?? 0)
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => selectTheme(themeModalFloor, theme.id)}
+                          style={{
+                            background: isSelected ? 'rgba(200,144,10,0.12)' : '#1a1510',
+                            border: isSelected ? '2px solid #c8900a' : '1px solid #222',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            textAlign: 'left',
+                            padding: 0,
+                            transition: 'border-color 0.2s, background 0.2s',
+                          }}
+                          onMouseEnter={e => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
+                              e.currentTarget.style.background = '#1f1a13'
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = '#222'
+                              e.currentTarget.style.background = '#1a1510'
+                            }
+                          }}
+                        >
+                          {/* Theme image with boss overlay */}
+                          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '380/690' }}>
+                            {theme.image_url ? (
+                              <ImageWithFallback
+                                src={theme.image_url}
+                                alt={theme.name}
+                                fill
+                                fallbackType="theme"
+                                sizes="(max-width: 640px) 50vw, 25vw"
+                                style={{ objectFit: 'cover', opacity: 0.85 }}
+                              />
+                            ) : (
+                              <div style={{ position: 'absolute', inset: 0, background: '#222' }} />
+                            )}
+                            {theme.boss_image_url && (
+                              <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                pointerEvents: 'none',
+                              }}>
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '391/432' }}>
+                                  <ImageWithFallback
+                                    src={theme.boss_image_url}
+                                    alt=""
+                                    fill
+                                    fallbackType="default"
+                                    sizes="(max-width: 640px) 33vw, 20vw"
+                                    style={{ objectFit: 'contain', filter: 'drop-shadow(0 0.125rem 0.25rem rgba(0,0,0,0.5))' }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {/* Gradient overlay */}
+                            <div style={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, rgba(13,11,8,0.3) 50%, transparent 100%)',
+                            }} />
+                            {/* Bottom info */}
+                            <div style={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              padding: '0 0.5rem 0.375rem',
+                            }}>
+                              <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: '#fff',
+                                lineHeight: 1.3,
+                                textShadow: '0 0.0625rem 0.1875rem rgba(0,0,0,0.8)',
+                                fontFamily: 'var(--font-title), sans-serif',
+                              }}>
+                                {theme.name}
+                              </div>
+                              <div style={{
+                                fontSize: '0.625rem',
+                                color: 'rgba(255,255,255,0.6)',
+                                marginTop: '0.125rem',
+                                fontFamily: 'var(--font-mono), monospace',
+                              }}>
+                                {tGiftCount}종
+                              </div>
+                            </div>
+                            {/* Selected checkmark */}
+                            {isSelected && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '0.375rem',
+                                right: '0.375rem',
+                                width: '1.5rem',
+                                height: '1.5rem',
+                                borderRadius: '50%',
+                                background: '#c8900a',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                color: '#0d0b08',
+                                fontWeight: 700,
+                                boxShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.4)',
+                              }}>
+                                ✓
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
