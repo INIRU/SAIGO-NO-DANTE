@@ -13,6 +13,7 @@ import { buildGiftMap } from '@/lib/planner/fusion'
 import { saveDraftToLocal } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import RelativeTime from '@/components/ui/RelativeTime'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -75,19 +76,6 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#e05050', border: 'rgba(200,48,48,0.35)' },
 }
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '방금 전'
-  if (mins < 60) return `${mins}분 전`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}시간 전`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}일 전`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}달 전`
-  return `${Math.floor(months / 12)}년 전`
-}
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -544,9 +532,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
   }
 
-  // 조회수 증가 (페이지 로드 시 1회)
+  // 조회수 증가 (페이지 로드 시 1회, POST로 분리하여 중복 방지)
   useEffect(() => {
-    fetch(`/api/planner/${plan.id}`, { method: 'GET' }).catch(() => {})
+    fetch(`/api/planner/${plan.id}/view`, { method: 'POST' }).catch(() => {})
   }, [plan.id])
 
   // 추천 상태 확인
@@ -683,7 +671,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             <div>
               <span style={{ fontSize: '0.875rem', color: '#e8dcc8', fontWeight: 600 }}>{username}</span>
               <div className="flex items-center gap-3 mt-0.5">
-                <span suppressHydrationWarning style={{ fontSize: '0.6875rem', color: '#4b5563' }}>{relativeTime(plan.created_at)}</span>
+                <RelativeTime date={plan.created_at} style={{ fontSize: '0.6875rem', color: '#4b5563' }} />
                 <span className="flex items-center gap-1" style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
                   <Eye style={{ width: '0.6875rem', height: '0.6875rem' }} /> {plan.view_count}
                 </span>
@@ -1313,7 +1301,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>{cNickname}</span>
-                          <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{relativeTime(comment.created_at)}</span>
+                          <RelativeTime date={comment.created_at} style={{ fontSize: '0.75rem', color: '#4b5563' }} />
                         </div>
                         <p style={{ fontSize: '0.875rem', color: '#e5e7eb', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>
                           {comment.content}
@@ -1343,7 +1331,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>{rNickname}</span>
-                              <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>{relativeTime(reply.created_at)}</span>
+                              <RelativeTime date={reply.created_at} style={{ fontSize: '0.75rem', color: '#4b5563' }} />
                             </div>
                             <p style={{ fontSize: '0.875rem', color: '#e5e7eb', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>
                               {reply.content}

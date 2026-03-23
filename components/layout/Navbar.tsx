@@ -20,16 +20,16 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/sinners',        label: '수감자' },
       { href: '/mirror-dungeon', label: '거던' },
-      { href: '/planner',        label: '거던 플래너' },
       { href: '/keywords',       label: '키워드' },
     ],
   },
   {
     label: '커뮤니티',
     items: [
-      { href: '/decks',       label: '덱 게시판' },
-      { href: '/tier-list',   label: '티어표' },
-      { href: '/collection',  label: '보유 현황' },
+      { href: '/decks',               label: '덱 게시판' },
+      { href: '/planner/community',   label: '거던 플래너' },
+      { href: '/tier-list',           label: '티어표' },
+      { href: '/collection',          label: '보유 현황' },
     ],
   },
   {
