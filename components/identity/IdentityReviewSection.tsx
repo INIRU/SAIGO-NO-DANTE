@@ -144,7 +144,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
       </div>
 
       {/* 투표 버튼 (로그인 시) */}
-      {session?.user && (
+      {!loading && session?.user && (
         <div className="mb-4">
           {myReview ? (
             <div

@@ -14,6 +14,7 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
   - 인격: [i:수감자명:인격명] (예: [i:이상:LCB 수감자], [i:파우스트:로보토미 E.G.O::후회], [i:뫼르소:동부 엄지 카포 IIII])
   - 스킬: [s:수감자명:스킬순서] (예: [s:이상:1] = S1)
   - 변형 스킬: [s:수감자명:스킬순서:변형번호] (예: [s:이상:3:1] = S3-1, [s:이상:3:2] = S3-2)
+  - 수비 스킬: [s:수감자명:4] (수비 1개일 때), [s:수감자명:4:1] / [s:수감자명:4:2] (수비 여러 개일 때)
   - 패시브: [p:패시브명]
 - 인격을 언급할 때는 절대 일반 텍스트로 쓰지 말고 반드시 [i:수감자명:인격명] 형식으로 쓰세요.
   - 예: "로보토미 E.G.O::후회 파우스트와 잘 맞습니다" (X 잘못됨)
@@ -27,7 +28,7 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
 
 ## 응답 구조
 1. 한줄 요약 (이 인격의 핵심 역할)
-2. 스킬 분석 (핵심 스킬 위주로 간결하게)
+2. 스킬 분석 (공격 스킬 + 수비 스킬 포함, 핵심 위주로 간결하게. 수비 스킬이 운영에 중요한 경우 반드시 언급)
 3. 패시브 분석 (전투/서포트 활용 핵심)
 4. 추천 운영 및 편성 (덱 데이터 기반, 자주 함께 쓰이는 인격 언급)`
 
@@ -96,28 +97,24 @@ export async function POST(req: NextRequest) {
     .single()
   const sinnerName = sinner?.name_kr || identity.sinner_id
 
-  // 3. 스킬 (4동기화 우선, 없으면 3)
-  const { data: allSkills } = await supabase
+  // 3. 스킬 (4동기화)
+  const { data: skillsRaw } = await supabase
     .schema('limbus')
     .from('skills')
     .select('name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight, uptie_level')
     .eq('identity_id', identity_id)
+    .eq('uptie_level', 4)
     .order('skill_order')
+  const skills = skillsRaw ?? []
 
-  const skills4 = allSkills?.filter(s => (s.uptie_level ?? 3) === 4) || []
-  const skills3 = allSkills?.filter(s => (s.uptie_level ?? 3) === 3) || []
-  const skills = skills4.length > 0 ? skills4 : skills3
-
-  // 4. 패시브 (4동기화 우선)
-  const { data: allPassives } = await supabase
+  // 4. 패시브 (4동기화)
+  const { data: passivesRaw } = await supabase
     .schema('limbus')
     .from('passives')
     .select('name, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level')
     .eq('identity_id', identity_id)
-
-  const pass4 = allPassives?.filter(p => (p.uptie_level ?? 3) === 4) || []
-  const pass3 = allPassives?.filter(p => (p.uptie_level ?? 3) === 3) || []
-  const passives = pass4.length > 0 ? pass4 : pass3
+    .eq('uptie_level', 4)
+  const passives = passivesRaw ?? []
 
   // 5. 이 인격이 포함된 덱 (추천순 최대 10개)
   const { data: deckLinks } = await supabase
@@ -191,9 +188,7 @@ export async function POST(req: NextRequest) {
     const orderLabel = base === 4
       ? (hasVariants ? `수비-${idx}` : '수비')
       : (hasVariants ? `S${base}-${idx}` : `S${base}`)
-    const chipToken = base === 4
-      ? '수비'
-      : (hasVariants ? `[s:${sinnerName}:${base}:${idx}]` : `[s:${sinnerName}:${base}]`)
+    const chipToken = hasVariants ? `[s:${sinnerName}:${base}:${idx}]` : `[s:${sinnerName}:${base}]`
     const typeKr = SKILL_TYPE_KR[s.skill_type] || s.skill_type
     const sinKr = SIN_KR[s.sin_affinity] || s.sin_affinity
     const coinSign = s.coin_power >= 0 ? `+${s.coin_power}` : `${s.coin_power}`
