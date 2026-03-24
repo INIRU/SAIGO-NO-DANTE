@@ -185,6 +185,7 @@ export default function IdentityDetailClient({
         name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
         skill_order: sk.skill_order, description: sk.description,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
+        iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
         identityName: identity.name_kr, sinnerName: sinner.name_kr,
       }
     }
@@ -265,6 +266,7 @@ export default function IdentityDetailClient({
       pool.push({
         label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
+        iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
         token,
       })
     }
