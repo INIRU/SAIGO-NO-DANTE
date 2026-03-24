@@ -284,8 +284,8 @@ function formatSkillDescInner(
     : []
 
   while (remaining.length > 0) {
-    // 1. [대괄호] 패턴
-    const bracketMatch = remaining.match(/^\[([^\]]+)\]/)
+    // 1. [대괄호] / 【대괄호】 패턴
+    const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
       parts.push({ text: bracketMatch[0], type: 'bracket' })
       prevChar = bracketMatch[0][bracketMatch[0].length - 1]
@@ -332,6 +332,8 @@ function formatSkillDescInner(
     let nextIdx = remaining.length
     const bracketIdx = remaining.indexOf('[')
     if (bracketIdx > 0) nextIdx = Math.min(nextIdx, bracketIdx)
+    const fwBracketIdx = remaining.indexOf('【')
+    if (fwBracketIdx > 0) nextIdx = Math.min(nextIdx, fwBracketIdx)
     for (const kw of allKeywords) {
       let searchFrom = 0
       while (searchFrom < remaining.length) {
