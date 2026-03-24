@@ -154,14 +154,14 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.75rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 커뮤니티
             </Link>
-            <h1 className="font-serif" style={{ fontSize: '1.5rem', color: '#e8dcc8' }}>거울 던전 플래너</h1>
+            <h1 className="font-serif text-lg sm:text-2xl" style={{ color: '#e8dcc8' }}>거울 던전 플래너</h1>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handleCopyUrl} style={{
@@ -206,7 +206,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
 
         {/* 난이도 선택 */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto">
           {(Object.entries(DIFFICULTY_CONFIG) as [Difficulty, typeof DIFFICULTY_CONFIG[Difficulty]][]).map(([key, config]) => (
             <button
               key={key}
@@ -224,7 +224,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
 
         {/* 탭 바 */}
-        <div className="flex mb-6" style={{ borderBottom: '1px solid #222' }}>
+        <div className="flex mb-6 overflow-x-auto" style={{ borderBottom: '1px solid #222', WebkitOverflowScrolling: 'touch' }}>
           {TABS.map(tab => {
             const active = state.activeTab === tab.key
             const Icon = tab.icon
@@ -232,7 +232,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               <button
                 key={tab.key}
                 onClick={() => dispatch({ type: 'SET_TAB', tab: tab.key })}
-                className="flex items-center gap-1.5 px-5 py-2.5 font-semibold transition-all"
+                className="flex items-center gap-1.5 px-3 sm:px-5 py-2.5 font-semibold transition-all whitespace-nowrap"
                 style={{
                   color: active ? '#e8dcc8' : '#555',
                   fontSize: '0.8125rem',

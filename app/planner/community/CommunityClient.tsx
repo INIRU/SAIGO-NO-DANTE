@@ -230,7 +230,7 @@ export default function CommunityClient() {
 
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6">
 
         {/* ── 헤더 ── */}
         <div className="mb-8">
@@ -238,9 +238,9 @@ export default function CommunityClient() {
           <p style={{ color: '#444', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             MIRROR DUNGEON PLANS
           </p>
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
-              <h1 style={{ fontSize: '2rem', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>
+              <h1 className="text-xl sm:text-[2rem]" style={{ color: '#c8900a', fontFamily: 'var(--font-heading)' }}>
                 커뮤니티 플랜
               </h1>
                 <p className="mt-1" style={{ color: '#555', fontSize: '0.8125rem' }}>
@@ -249,7 +249,7 @@ export default function CommunityClient() {
             </div>
             <Link
               href="/planner"
-              className="flex items-center gap-2 px-5 py-2.5 font-medium text-sm transition-all hover:brightness-110 active:scale-95"
+              className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 font-medium text-sm transition-all hover:brightness-110 active:scale-95 self-start sm:self-auto"
               style={{ background: '#c8900a', color: '#0d0b08', borderRadius: '0.25rem', fontFamily: 'var(--font-heading)', flexShrink: 0 }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
