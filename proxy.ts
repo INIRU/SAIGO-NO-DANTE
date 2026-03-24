@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const ALLOWED_ORIGINS = [
   'https://saigo-no-dante.com',
@@ -15,10 +16,55 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 // 점검 대상에서 제외할 경로 접두사
 const MAINTENANCE_SKIP = ['/api', '/admin', '/maintenance', '/login', '/auth', '/_next', '/icons']
 
+// ── 봇/스캐너 프로빙 차단 패턴 ──
+const BLOCKED_PATHS = [
+  // WordPress
+  '/wp-config.php', '/wp-admin', '/wp-login.php', '/wp-content',
+  '/wp-includes', '/xmlrpc.php', '/wp-json', '/wp-cron.php',
+  // PHP / 서버 설정
+  '/phpMyAdmin', '/phpmyadmin', '/pma', '/.htaccess', '/.htpasswd',
+  '/server-status', '/server-info', '/web.config',
+  // 민감 파일
+  '/.env', '/.git', '/.aws', '/.ssh', '/.DS_Store',
+  '/config.json', '/config.yml', '/config.yaml',
+  // DB 도구
+  '/adminer', '/adminer.php',
+  // 기타 공격 벡터
+  '/cgi-bin', '/backup', '/dump', '/debug', '/console',
+  '/telescope', '/.well-known/security.txt',
+]
+
+// 확장자 기반 차단 (Next.js에 존재하지 않는 확장자)
+const BLOCKED_EXTENSIONS = ['.php', '.asp', '.aspx', '.jsp', '.cgi', '.sql', '.bak', '.swp']
+
+function isBlockedPath(pathname: string): boolean {
+  const lower = pathname.toLowerCase()
+  if (BLOCKED_PATHS.some(p => lower.startsWith(p.toLowerCase()))) return true
+  if (BLOCKED_EXTENSIONS.some(ext => lower.endsWith(ext))) return true
+  return false
+}
+
+// 빈 403 응답 (봇에게 최소 정보 노출)
+const FORBIDDEN_RESPONSE = new Response(null, { status: 403 })
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── 점검 모드 체크 (페이지 요청만) ──
+  // ── 1. 봇/스캐너 프로빙 즉시 차단 ──
+  if (isBlockedPath(pathname)) {
+    return FORBIDDEN_RESPONSE
+  }
+
+  // ── 2. Admin 경로 proxy 레벨 보호 ──
+  if (pathname.startsWith('/admin')) {
+    const token = await getToken({ req: request })
+    if (!(token as Record<string, unknown>)?.isAdmin) {
+      // 비인증 사용자에게 admin 존재 자체를 숨김 (404)
+      return new Response(null, { status: 404 })
+    }
+  }
+
+  // ── 3. 점검 모드 체크 (페이지 요청만) ──
   if (!MAINTENANCE_SKIP.some(p => pathname.startsWith(p)) && pathname !== '/favicon.ico') {
     try {
       const res = await fetch(
@@ -60,7 +106,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── 계정 정지 체크 ──
+  // ── 4. 계정 정지 체크 ──
   // 쓰기 API(POST/PUT/PATCH/DELETE) 또는 보호 페이지 접근 시 정지된 사용자 차단
   const method = request.method
   const isWriteApi = pathname.startsWith('/api/') && method !== 'GET' && !pathname.startsWith('/api/auth/')
@@ -83,7 +129,24 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── API 프록시 보호 ──
+  // ── 5. Rate Limiting (쓰기 API만) ──
+  if (isWriteApi) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      ?? request.headers.get('x-real-ip')
+      ?? 'unknown'
+    const { allowed, retryAfter } = checkRateLimit(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfter) },
+        },
+      )
+    }
+  }
+
+  // ── 6. API 프록시 보호 ──
   if (!pathname.startsWith('/api/')) return NextResponse.next()
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
 
