@@ -1011,11 +1011,14 @@ export default function MirrorDungeonClient({
                 </p>
               )}
 
-              {/* 선택지 */}
-              {selectedEvent.options && selectedEvent.options.length > 0 && (
+              {/* 선택지 + 연계 이벤트 (선택지 내부 아코디언) */}
+              {selectedEvent.options && selectedEvent.options.length > 0 && (() => {
+                const children = events.filter(c => c.parent_id === selectedEvent.id)
+                return (
                 <div className="space-y-2 mb-4">
                   <p className="text-[0.6875rem] font-bold" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>선택지</p>
                   {selectedEvent.options.map((opt, i) => {
+                    const optChildren = children.filter(c => c.option_index === i)
                     return (
                       <div key={i} className="rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div className="flex items-start gap-2.5 px-3.5 py-2.5">
@@ -1052,71 +1055,82 @@ export default function MirrorDungeonClient({
                                 })}
                               </div>
                             )}
+                            {/* 선택지 내부 연계 이벤트 아코디언 */}
+                            {optChildren.length > 0 && optChildren.map(child => (
+                              <details key={child.id} className="rounded-lg overflow-hidden mt-2" style={{ background: 'rgba(96,144,208,0.05)', border: '1px solid rgba(96,144,208,0.12)' }}>
+                                <summary className="flex items-center gap-2 px-3 py-1.5 cursor-pointer list-none" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
+                                  <span style={{ fontSize: '0.5rem', opacity: 0.6 }}>▶</span>
+                                  {child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || '연계 이벤트'}
+                                  {child.gift_ids && child.gift_ids.length > 0 && (
+                                    <span style={{ fontSize: '0.5625rem', color: '#c8900a', marginLeft: 'auto' }}>기프트 {child.gift_ids.length}종</span>
+                                  )}
+                                </summary>
+                                <div className="px-3 pb-2.5 pt-1" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
+                                  {child.desc_text && (
+                                    <p className="whitespace-pre-line leading-relaxed mb-2" style={{ color: '#aaa', fontSize: '0.6875rem' }}>
+                                      {replaceEventPlaceholders(child.desc_text)}
+                                    </p>
+                                  )}
+                                  {child.options && child.options.map((co, ci) => (
+                                    <div key={ci} className="flex items-start gap-2 mt-1 ml-1">
+                                      <span style={{ color: '#6090d0', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{ci + 1}</span>
+                                      <div className="flex-1">
+                                        <p style={{ color: '#ccc', fontSize: '0.6875rem' }}>{replaceEventPlaceholders(co.message)}</p>
+                                        {co.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-heading)' }}>{replaceEventPlaceholders(co.messageDesc)}</p>}
+                                        {co.result && co.result[0] && (
+                                          <p className="mt-0.5 whitespace-pre-line" style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>
+                                            {replaceEventPlaceholders(co.result[0])}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {child.gift_ids && child.gift_ids.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2 pt-1.5" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
+                                      {child.gift_ids.map(gid => {
+                                        const g = giftByGameId.get(gid)
+                                        if (!g) return null
+                                        const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
+                                        return (
+                                          <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
+                                            style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.625rem' }}>
+                                            {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
+                                            <span style={{ color: '#ccc' }}>{g.name}</span>
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </details>
+                            ))}
                           </div>
                         </div>
                       </div>
                     )
                   })}
+                  {/* option_index가 없는 연계 이벤트 (매핑 안 된 것) */}
+                  {children.filter(c => c.option_index == null).length > 0 && (
+                    <div className="mt-2">
+                      {children.filter(c => c.option_index == null).map(child => (
+                        <details key={child.id} className="rounded-lg overflow-hidden mb-2" style={{ background: 'rgba(96,144,208,0.04)', border: '1px solid rgba(96,144,208,0.12)' }}>
+                          <summary className="flex items-center gap-2 px-3.5 py-2 cursor-pointer list-none" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
+                            <span style={{ fontSize: '0.5rem', opacity: 0.6 }}>▶</span>
+                            연계: {child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || `이벤트 #${child.id}`}
+                          </summary>
+                          <div className="px-3.5 pb-3 pt-1" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
+                            {child.desc_text && (
+                              <p className="whitespace-pre-line leading-relaxed" style={{ color: '#aaa', fontSize: '0.6875rem' }}>
+                                {replaceEventPlaceholders(child.desc_text)}
+                              </p>
+                            )}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* 연계 이벤트 — 아코디언 */}
-              {(() => {
-                const children = events.filter(c => c.parent_id === selectedEvent.id)
-                if (children.length === 0) return null
-                return (
-                  <div className="mb-4">
-                    {children.map(child => (
-                      <details key={child.id} className="rounded-lg overflow-hidden mb-2" style={{ background: 'rgba(96,144,208,0.04)', border: '1px solid rgba(96,144,208,0.12)' }}>
-                        <summary className="flex items-center gap-2 px-3.5 py-2 cursor-pointer list-none" style={{ color: '#6090d0', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-                          <span style={{ fontSize: '0.5rem', opacity: 0.6 }}>▶</span>
-                          연계: {child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || `이벤트 #${child.id}`}
-                          {child.gift_ids && child.gift_ids.length > 0 && (
-                            <span style={{ fontSize: '0.5625rem', color: '#c8900a', marginLeft: 'auto' }}>기프트 {child.gift_ids.length}종</span>
-                          )}
-                        </summary>
-                        <div className="px-3.5 pb-3 pt-1" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
-                          {child.desc_text && (
-                            <p className="whitespace-pre-line leading-relaxed mb-2" style={{ color: '#aaa', fontSize: '0.75rem' }}>
-                              {replaceEventPlaceholders(child.desc_text)}
-                            </p>
-                          )}
-                          {child.options && child.options.map((opt, oi) => (
-                            <div key={oi} className="flex items-start gap-2 mt-1.5 ml-2">
-                              <span style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{oi + 1}</span>
-                              <div className="flex-1">
-                                <p style={{ color: '#ccc', fontSize: '0.75rem' }}>{replaceEventPlaceholders(opt.message)}</p>
-                                {opt.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{replaceEventPlaceholders(opt.messageDesc)}</p>}
-                                {opt.result && opt.result[0] && (
-                                  <p className="mt-1 whitespace-pre-line" style={{ color: '#777', fontSize: '0.6875rem', lineHeight: 1.5 }}>
-                                    {replaceEventPlaceholders(opt.result[0])}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                          {/* 연계 이벤트 기프트 */}
-                          {child.gift_ids && child.gift_ids.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
-                              {child.gift_ids.map(gid => {
-                                const g = giftByGameId.get(gid)
-                                if (!g) return null
-                                const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
-                                return (
-                                  <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
-                                    style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.6875rem' }}>
-                                    {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
-                                    <span style={{ color: '#ccc' }}>{g.name}</span>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    ))}
-                  </div>
                 )
               })()}
 
