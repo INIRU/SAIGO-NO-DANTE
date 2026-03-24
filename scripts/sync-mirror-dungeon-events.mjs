@@ -336,6 +336,18 @@ async function main() {
     }
   }
 
+  /* ── 4.5. acquirable-egogifts-in-event 매핑 (fallback) ── */
+  const acquirableGifts = new Map() // eventId -> egoGiftList
+  try {
+    const acqData = loadJson(join(DATA_DIR, 'acquirable-egogifts-in-event-01.json'))
+    for (const item of acqData.list || []) {
+      if (item.eventId && item.egoGiftList?.length > 0) {
+        acquirableGifts.set(item.eventId, item.egoGiftList)
+      }
+    }
+    console.log(`   acquirable 매핑: ${acquirableGifts.size}개 이벤트`)
+  } catch { console.log('   acquirable-egogifts-in-event-01.json 없음 (스킵)') }
+
   console.log(`\n📊 DB 행 구성... (거던 등장 이벤트: ${allowedEvents.size}개)`)
   const rows = []
 
@@ -354,7 +366,7 @@ async function main() {
       name: kr.name,
       desc_text: kr.desc,
       options: kr.options,
-      gift_ids: eventAllGifts.get(eid) || null,
+      gift_ids: eventAllGifts.get(eid) || acquirableGifts.get(eid) || null,
       option_gifts: parentOptionGifts.get(eid) || null,
       source: kr.source,
       parent_id: childToParent.has(eid) && krTexts.has(childToParent.get(eid))
