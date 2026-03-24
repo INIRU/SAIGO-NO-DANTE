@@ -1119,8 +1119,8 @@ export default function MirrorDungeonClient({
                 </div>
               )}
 
-              {/* 획득 가능 기프트 */}
-              {(() => {
+              {/* 획득 가능 기프트 (option_gifts가 있으면 이미 선택지에 표시되므로 생략) */}
+              {!selectedEvent.option_gifts && (() => {
                 const allGiftIds = new Set(selectedEvent.gift_ids || [])
                 events.filter(c => c.parent_id === selectedEvent.id).forEach(c => (c.gift_ids || []).forEach(g => allGiftIds.add(g)))
                 const evGifts = [...allGiftIds].map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
