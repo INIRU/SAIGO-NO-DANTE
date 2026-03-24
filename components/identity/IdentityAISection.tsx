@@ -133,21 +133,22 @@ export default function IdentityAISection({
 
           {/* 푸터 */}
           <div
-            className="flex items-center justify-between pt-3"
+            className="flex items-center justify-between gap-2 pt-3"
             style={{ borderTop: '1px solid var(--border)' }}
           >
-            <span style={{ color: '#555', fontSize: '0.6875rem' }}>
+            <span className="min-w-0" style={{ color: '#555', fontSize: '0.6875rem' }}>
               GPT-5.4가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.
             </span>
             {isAdmin && (
               <button
                 onClick={generate}
                 disabled={generating}
-                className="flex items-center gap-1 transition-colors"
+                className="flex items-center gap-1 shrink-0 transition-colors"
                 style={{
                   color: generating ? '#444' : '#666',
                   fontSize: '0.75rem',
                   cursor: generating ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={e => { if (!generating) (e.currentTarget.style.color = sinColor) }}
                 onMouseLeave={e => { if (!generating) (e.currentTarget.style.color = '#666') }}
