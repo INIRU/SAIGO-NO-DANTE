@@ -298,77 +298,7 @@ export default function DeckPreviewPanel({
         )}
       </div>
 
-      {/* ── 패시브 패널 ──────────────────────────────────── */}
-      <div className="mt-4" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
-        <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(10,8,5,0.5)' }}>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>패시브</span>
-          <div className="flex-1" />
-          <button
-            onClick={() => setShowPassiveDetail(v => !v)}
-            className="text-xs px-2.5 py-1 rounded transition-all"
-            style={{ color: showPassiveDetail ? 'var(--gold)' : 'var(--text-secondary)', border: `1px solid ${showPassiveDetail ? 'var(--gold)' : 'var(--border)'}`, background: showPassiveDetail ? 'rgba(200,144,10,0.08)' : 'transparent', flexShrink: 0 }}
-          >
-            상세보기 {showPassiveDetail ? '▲' : '▼'}
-          </button>
-        </div>
-
-        {showPassiveDetail && (
-          <div style={{ background: 'rgba(5,4,2,0.7)', borderTop: '1px solid var(--border)' }}>
-            {sinners.map((sinner, idx) => {
-              const identity = deckSlots[sinner.id]
-              if (!identity) return null
-              const allPassives = passivesByIdentityId[identity.id] ?? []
-              const battlePassives = allPassives.filter(p => p.passive_type === 'battle' && p.sin_affinity)
-              const supportPassives = allPassives.filter(p => p.passive_type === 'support' && p.sin_affinity)
-
-              return (
-                <div
-                  key={sinner.id}
-                  className="flex items-start gap-4 px-4 py-2.5"
-                  style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                >
-                  {/* 수감자 + 인격명 */}
-                  <div style={{ minWidth: '150px', flexShrink: 0 }}>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
-                      <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
-                    </div>
-                    <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
-                  </div>
-
-                  {/* 배틀 패시브 */}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
-                    <div className="flex flex-col gap-1.5">
-                      {battlePassives.length > 0
-                        ? battlePassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
-                        : <span style={{ color: '#8a8095', fontSize: '0.75rem' }}>-</span>
-                      }
-                    </div>
-                  </div>
-
-                  {/* 구분선 */}
-                  <div style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
-
-                  {/* 서포트 패시브 */}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
-                    <div className="flex flex-col gap-1.5">
-                      {supportPassives.length > 0
-                        ? supportPassives.map(p => <PassiveBadge key={p.id} p={p} deckSinCounts={deckSinCounts} />)
-                        : <span style={{ color: '#8a8095', fontSize: '0.75rem' }}>-</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-            {Object.values(deckSlots).filter(Boolean).length === 0 && (
-              <p className="text-center py-4" style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem' }}>인격을 먼저 편성해주세요</p>
-            )}
-          </div>
-        )}
-      </div>
+      {/* 패시브 패널 → PassivePreview로 이동 */}
 
       {/* ── 활성 가능 EGO 기프트 패널 (거던 유형만) ─────────────────────── */}
       {['거던5층', '거던10층', '거던15층'].includes(contentType) && (

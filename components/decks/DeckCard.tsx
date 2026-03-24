@@ -7,6 +7,7 @@ import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { NoteRenderer } from '@/components/decks/NoteChips'
+import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 
 // 덱 테마를 정의하는 핵심 상태이상 키워드만 표시
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -39,14 +40,6 @@ export type DeckSummary = {
   deck_egos?: { ego_id: string }[]
 }
 
-const CONTENT_TYPE_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  '스토리':   { bg: 'rgba(80,120,200,0.15)', color: '#6090d0', border: 'rgba(80,120,200,0.35)' },
-  '거던5층':  { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
-  '거던10층': { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
-  '거던15층': { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.35)' },
-  '거굴철':   { bg: 'rgba(200,70,70,0.15)', color: '#d06060', border: 'rgba(200,70,70,0.35)' },
-}
-
 interface DeckCardProps {
   deck: DeckSummary
   onTagClick?: (tag: string) => void
@@ -68,7 +61,7 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
     const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
     return (
       <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
-        <span className="font-serif font-light" style={{ fontSize: '1.25rem', color: '#c8900a80' }}>{initial}</span>
+        <span style={{ fontSize: '1.25rem', color: '#c8900a80', fontFamily: 'var(--font-heading)' }}>{initial}</span>
       </div>
     )
   }
@@ -88,7 +81,10 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
         }}
       />
       {slot.gacksung && (
-        <div className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full z-[1]" style={{ background: 'var(--gold)' }} />
+        <div
+          className="absolute top-0.5 right-0.5 z-[1]"
+          style={{ width: '0.3125rem', height: '0.3125rem', borderRadius: '50%', background: 'var(--gold)' }}
+        />
       )}
     </>
   )
@@ -133,27 +129,44 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
     return Object.entries(freq)
       .filter(([, n]) => n >= minCount)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
       .map(([kw]) => kw)
   })()
 
+  // 키워드 최대 3개 + 넘치면 "+N" 뱃지
+  const visibleKeywords = topKeywords.slice(0, 3)
+  const overflowCount = topKeywords.length - visibleKeywords.length
+
   return (
     <div
-      className="group relative flex flex-col transition-all duration-200 overflow-hidden hover:border-[var(--border-hover)] hover:bg-[var(--bg-card)]"
+      className="group relative flex flex-col overflow-hidden"
       style={{
-        background: 'var(--bg-panel)',
+        background: 'var(--bg-card)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--radius-lg)',
+        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget
+        el.style.borderColor = 'var(--border-hover)'
+        el.style.boxShadow = 'var(--shadow-glow-hover)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget
+        el.style.borderColor = 'var(--border)'
+        el.style.boxShadow = 'none'
       }}
     >
-      {/* 상단 골드 라인 */}
+      {/* 상단 골드 라인 — 호버 시 펼쳐짐 */}
       <div
-        className="h-px w-0 group-hover:w-full transition-all duration-300"
-        style={{ background: 'linear-gradient(to right, var(--gold-dim), transparent)' }}
+        className="h-px w-0 group-hover:w-full"
+        style={{
+          background: 'linear-gradient(to right, var(--gold-dim), transparent)',
+          transition: 'width 0.3s ease',
+        }}
       />
 
       <Link href={`/decks/${deck.id}`} className="flex flex-col flex-1">
-        {/* 인격 포트레이트 그리드 (2x6) */}
+        {/* 인격 포트레이트 그리드 (2×6) */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
           {slots.map((slot, i) => (
             <div
@@ -164,133 +177,190 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
               {slot ? (
                 <PortraitSlot slot={slot} />
               ) : (
-                <div className="w-full h-full" style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
+                <div
+                  className="w-full h-full"
+                  style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }}
+                />
               )}
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col flex-1 p-4">
-        {/* 제목 */}
-        <h3
-          className="font-serif font-light text-sm mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {deck.title}
-        </h3>
+        <div className="flex flex-col flex-1" style={{ padding: '0.875rem' }}>
+          {/* 제목 */}
+          <h3
+            className="mb-1.5 leading-snug line-clamp-1"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--text-primary)',
+              transition: 'color 0.2s ease',
+            }}
+          >
+            {deck.title}
+          </h3>
 
-        {/* 설명 */}
-        {deck.description ? (
-          <div className="text-xs mb-2 flex-1" style={{ color: 'var(--text-tertiary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', paddingTop: 2, paddingBottom: 2, minWidth: 0, maxWidth: '100%' }}>
-            <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
-          </div>
-        ) : (
-          <div className="flex-1" />
-        )}
+          {/* 설명 */}
+          {deck.description ? (
+            <div
+              className="flex-1 mb-2"
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-tertiary)',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+                maxWidth: '100%',
+              }}
+            >
+              <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
+            </div>
+          ) : (
+            <div className="flex-1" />
+          )}
 
-        {/* 콘텐츠 유형 + 자동 키워드 (한 줄) */}
-        {(showContentType || topKeywords.length > 0) && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {showContentType && (
-              <span
-                className="flex items-center px-2 py-0.5"
-                style={{
-                  background: CONTENT_TYPE_COLORS[deck.content_type!].bg,
-                  color: CONTENT_TYPE_COLORS[deck.content_type!].color,
-                  border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
-                  borderRadius: 'var(--radius-sm)',
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: 'var(--text-xs)',
-                  letterSpacing: '0.03em',
-                }}
-              >
-                {deck.content_type}
-              </span>
-            )}
-            {topKeywords.map(kw => {
-              const iconUrl = getIconUrl(kw)
-              return (
+          {/* 콘텐츠 유형 + 자동 키워드 (한 줄) */}
+          {(showContentType || visibleKeywords.length > 0) && (
+            <div className="flex flex-wrap items-center mb-2" style={{ gap: '0.25rem' }}>
+              {showContentType && (
                 <span
-                  key={kw}
-                  className="flex items-center gap-1 px-2 py-0.5"
                   style={{
-                    background: 'rgba(136,88,40,0.15)',
-                    color: '#c8a450',
-                    border: '1px solid rgba(136,88,40,0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.125rem 0.5rem',
+                    background: CONTENT_TYPE_COLORS[deck.content_type!].bg,
+                    color: CONTENT_TYPE_COLORS[deck.content_type!].color,
+                    border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
                     borderRadius: 'var(--radius-sm)',
                     fontFamily: 'var(--font-heading)',
                     fontSize: 'var(--text-xs)',
                     letterSpacing: '0.03em',
                   }}
                 >
-                  {iconUrl && (
-                    <Image src={iconUrl} alt="" width={11} height={11} style={{ flexShrink: 0 }} />
-                  )}
-                  {kw}
+                  {deck.content_type}
                 </span>
-              )
-            })}
-          </div>
-        )}
+              )}
+              {visibleKeywords.map(kw => {
+                const iconUrl = getIconUrl(kw)
+                return (
+                  <span
+                    key={kw}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      padding: '0.125rem 0.5rem',
+                      background: 'rgba(136,88,40,0.15)',
+                      color: '#c8a450',
+                      border: '1px solid rgba(136,88,40,0.3)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: 'var(--text-xs)',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    {iconUrl && (
+                      <Image
+                        src={iconUrl}
+                        alt=""
+                        width={11}
+                        height={11}
+                        style={{ width: '0.6875rem', height: '0.6875rem', flexShrink: 0 }}
+                      />
+                    )}
+                    {kw}
+                  </span>
+                )
+              })}
+              {overflowCount > 0 && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.125rem 0.375rem',
+                    background: 'rgba(136,88,40,0.08)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid rgba(136,88,40,0.2)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 'var(--text-xs)',
+                  }}
+                >
+                  +{overflowCount}
+                </span>
+              )}
+            </div>
+          )}
 
-        {/* 태그 */}
-        {deck.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {deck.tags.slice(0, 3).map(tag => (
-              <button
-                key={tag}
-                onClick={e => {
-                  e.preventDefault()
-                  onTagClick?.(tag)
-                }}
-                className="text-xs px-2 py-0.5 transition-all duration-150 hover:opacity-80"
-                style={{
-                  background: 'rgba(200,144,10,0.08)',
-                  color: 'var(--gold-dim)',
-                  border: '1px solid rgba(200,144,10,0.18)',
-                  borderRadius: 'var(--radius-full)',
-                  fontFamily: 'var(--font-body)',
-                  cursor: onTagClick ? 'pointer' : 'default',
-                }}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* 태그 */}
+          {deck.tags.length > 0 && (
+            <div className="flex flex-wrap mb-3" style={{ gap: '0.25rem' }}>
+              {deck.tags.slice(0, 3).map(tag => (
+                <button
+                  key={tag}
+                  onClick={e => {
+                    e.preventDefault()
+                    onTagClick?.(tag)
+                  }}
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    padding: '0.125rem 0.5rem',
+                    background: 'rgba(200,144,10,0.08)',
+                    color: 'var(--gold-dim)',
+                    border: '1px solid rgba(200,144,10,0.18)',
+                    borderRadius: 'var(--radius-full)',
+                    fontFamily: 'var(--font-body)',
+                    cursor: onTagClick ? 'pointer' : 'default',
+                    transition: 'opacity 0.15s ease',
+                  }}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* 하단 메타 */}
-        <div
-          className="flex items-center justify-between pt-2.5"
-          style={{ borderTop: '1px solid rgba(58,42,21,0.5)' }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              <Heart size={10} fill="currentColor" stroke="none" />
-              {deck.vote_count}
-            </span>
-            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              <Eye size={10} />
-              {deck.view_count}
-            </span>
-            {(deck.comment_count ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                <MessageCircle size={10} />
-                {deck.comment_count}
+          {/* 하단 메타 — 왼쪽: user · date / 오른쪽: ♡ N · 👁 N */}
+          <div
+            className="flex items-center justify-between"
+            style={{ borderTop: '1px solid rgba(58,42,21,0.5)', paddingTop: '0.625rem' }}
+          >
+            {/* 왼쪽: 작성자 · 날짜 */}
+            <div
+              className="flex items-center"
+              style={{ gap: '0.25rem', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}
+            >
+              {deck.username && (
+                <>
+                  <span style={{ color: 'var(--text-muted)' }}>{deck.username}</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>·</span>
+                </>
+              )}
+              <span style={{ color: 'var(--text-tertiary)' }}>{date}</span>
+            </div>
+
+            {/* 오른쪽: 투표 · 조회 · 댓글 */}
+            <div
+              className="flex items-center"
+              style={{ gap: '0.625rem', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}
+            >
+              <span className="flex items-center" style={{ gap: '0.25rem' }}>
+                <Heart style={{ width: '0.625rem', height: '0.625rem' }} fill="currentColor" stroke="none" />
+                {deck.vote_count}
               </span>
-            )}
+              <span className="flex items-center" style={{ gap: '0.25rem' }}>
+                <Eye style={{ width: '0.625rem', height: '0.625rem' }} />
+                {deck.view_count}
+              </span>
+              {(deck.comment_count ?? 0) > 0 && (
+                <span className="flex items-center" style={{ gap: '0.25rem' }}>
+                  <MessageCircle style={{ width: '0.625rem', height: '0.625rem' }} />
+                  {deck.comment_count}
+                </span>
+              )}
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {deck.username && (
-              <>
-                <span style={{ color: 'var(--text-muted)' }}>{deck.username}</span>
-                <span style={{ color: 'var(--text-muted)' }}>·</span>
-              </>
-            )}
-            <span>{date}</span>
-          </div>
-        </div>
         </div>
       </Link>
     </div>

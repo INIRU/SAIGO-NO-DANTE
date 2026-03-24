@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
@@ -15,10 +14,7 @@ import {
   getSkillIconUrl,
   getIdentityInfoUrl,
   computeSkillImageIndices,
-  STORAGE_BASE,
   SIN_COLORS,
-  SinType,
-  GRADE_COLORS,
   getSkillOrderLabel,
   type ActivationCondition,
 } from '@/lib/data/sinners'
@@ -30,13 +26,19 @@ import {
 } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import IdentityCard from '@/components/sinners/IdentityCard'
+// IdentityCard → IdentityTab 내부에서 직접 렌더링
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { useToast, Toast } from '@/components/ui/Toast'
-import { Users, Sparkles, SlidersHorizontal, ListOrdered, FileText } from 'lucide-react'
-import { IdentityTab, EgoTab, OrderTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
+import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
+import CompactButton from '@/components/ui/CompactButton'
+import Image from 'next/image'
+import { CONTENT_TYPES, CONTENT_TYPE_COLORS, type ContentType } from '@/lib/constants/deck-tokens'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
+import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
+import PassivePanel from '@/components/deck-builder/PassivePanel'
 import EgoGiftModal from '@/components/deck-builder/EgoGiftModal'
 import DeckNoteEditor from '@/components/deck-builder/DeckNoteEditor'
 
@@ -55,16 +57,7 @@ interface EditMode {
 
 type ForkMode = Omit<EditMode, 'deckId'> & { forkedFrom: string }
 
-const CONTENT_TYPES = ['스토리', '거던5층', '거던10층', '거던15층', '거굴철'] as const
-type ContentType = typeof CONTENT_TYPES[number]
-
-const CONTENT_TYPE_BTN_COLORS: Record<ContentType, { bg: string; color: string; border: string }> = {
-  '스토리':   { bg: 'rgba(80,120,200,0.2)', color: '#6090d0', border: 'rgba(80,120,200,0.5)' },
-  '거던5층':  { bg: 'rgba(60,160,100,0.15)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거던10층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거던15층': { bg: 'rgba(60,160,100,0.25)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거굴철':   { bg: 'rgba(200,70,70,0.2)', color: '#d06060', border: 'rgba(200,70,70,0.5)' },
-}
+// CONTENT_TYPES, ContentType, CONTENT_TYPE_COLORS → deck-tokens.ts에서 import
 
 const isGeodun = (ct: string) => ct.startsWith('거던')
 
@@ -79,7 +72,7 @@ interface Props {
   forkMode?: ForkMode
 }
 
-type Tab = 'identity' | 'ego' | 'skillset' | 'order' | 'note'
+type Tab = 'identity' | 'ego' | 'skillset' | 'note'
 
 // 수감자별 기본 E.G.O (name_kr 기준)
 const DEFAULT_EGO_NAMES: Record<string, string> = {
@@ -134,8 +127,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return initial
   })
   const [formationOrder, setFormationOrder] = useState<string[]>(initData?.formationOrder ?? [])
-  const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
-  const [modalGrade, setModalGrade] = useState<string | null>(null)
   const [title, setTitle] = useState(forkMode ? `${forkMode.title} (포크)` : editMode?.title ?? '')
   const [contentType, setContentType] = useState<string>(initData?.content_type && initData.content_type !== '없음' ? initData.content_type : '')
   const [description, setDescription] = useState(initData?.description ?? '')
@@ -208,6 +199,19 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
     return map
   }, [passives])
+
+  // 죄악 카운트 — 플래너와 동일: S1~S3 모든 스킬 합산 (중복 포함)
+  const deckSinCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const identity of Object.values(deckSlots)) {
+      if (!identity) continue
+      for (const sk of skillsByIdentityId[identity.id] ?? []) {
+        if (sk.skill_order > 3) continue
+        counts[sk.sin_affinity] = (counts[sk.sin_affinity] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [deckSlots, skillsByIdentityId])
 
   const atkTypeTotals = useMemo(() => {
     const totals: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
@@ -433,45 +437,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }).length
   }, [skillDistribution, deckSlots])
 
-  const modalSinner = sinners.find(s => s.id === modalSinnerId)
-  const modalIdentities = modalSinnerId ? identities.filter(i => i.sinner_id === modalSinnerId) : []
-  const modalEgos = modalSinnerId ? egos.filter(e => e.sinner_id === modalSinnerId) : []
-
-  const handleIdentitySelect = (identity: Identity) => {
-    if (!modalSinnerId) return
-    setDeckSlots(prev => {
-      if (prev[modalSinnerId]?.id === identity.id) {
-        const next = { ...prev }; delete next[modalSinnerId]; return next
-      }
-      return { ...prev, [modalSinnerId]: identity }
-    })
-    setModalSinnerId(null)
-  }
-
-  const handleGradeClick = (sinnerId: string, grade: string) => {
-    setModalSinnerId(sinnerId)
-    setModalGrade(grade)
-  }
-
-  const closeEgoModal = () => {
-    setModalSinnerId(null)
-    setModalGrade(null)
-  }
-
-  const handleEgoSelect = (ego: EGO) => {
-    if (!modalSinnerId) return
-    setEgoSlots(prev => {
-      const sinnerSlots: Record<string, EGO> = prev[modalSinnerId] ?? {}
-      if (sinnerSlots[ego.grade]?.id === ego.id) {
-        const next = { ...sinnerSlots }
-        delete next[ego.grade]
-        return { ...prev, [modalSinnerId]: next } as Record<string, Record<string, EGO>>
-      }
-      return { ...prev, [modalSinnerId]: { ...sinnerSlots, [ego.grade]: ego } } as Record<string, Record<string, EGO>>
-    })
-    closeEgoModal()
-  }
-
   const handleGacksungToggle = (sinnerId: string) => {
     setGacksungSlots(prev => ({ ...prev, [sinnerId]: !(prev[sinnerId] ?? false) }))
   }
@@ -598,122 +563,121 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     setTimeout(() => setCodeCopied(false), 2000)
   }
 
-  const inputStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: '#e8e4d8' } as const
-
-  const TABS: { key: Tab; label: string; badge?: number; icon: React.ReactNode }[] = [
-    { key: 'identity', label: '인격 편성', badge: identityCount || undefined, icon: <Users size={14} /> },
-    { key: 'ego',      label: '에고 편성', badge: egoCount || undefined, icon: <Sparkles size={14} /> },
-    ...(isGeodun(contentType) ? [{ key: 'skillset' as Tab, label: '스킬 편성', badge: skillsetCustomCount || undefined, icon: <SlidersHorizontal size={14} /> }] : []),
-    { key: 'order',    label: '편성 순서', badge: formationOrder.length || undefined, icon: <ListOrdered size={14} /> },
-    { key: 'note',     label: '덱 노트', icon: <FileText size={14} /> },
+  const tabItems: TabItem[] = [
+    { key: 'identity', label: '인격 편성', badge: identityCount || undefined, icon: Users },
+    { key: 'ego',      label: '에고 편성', badge: egoCount || undefined, icon: Sparkles },
+    ...(isGeodun(contentType) ? [{ key: 'skillset', label: '스킬 편성', badge: skillsetCustomCount || undefined, icon: SlidersHorizontal }] : []),
+    // 편성 순서는 인격 탭의 40%/60% 호버로 통합
+    { key: 'note',     label: '덱 노트', icon: FileText },
   ]
 
+  // PassivePreview → components/deck-builder/PassivePanel.tsx로 추출됨
+
   return (
-    <div className="min-h-screen pt-20 pb-16">
-      {/* 헤더 */}
-      <div className="px-6 max-w-5xl mx-auto mb-5 flex flex-wrap items-center gap-3 sm:gap-4" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-        <Link href="/decks" className="text-sm transition-colors hover:text-yellow-300" style={{ color: '#888888' }}>← 뒤로</Link>
-        <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>{editMode ? '덱 수정' : '덱 편성'}</h1>
-        <div className="flex-1 hidden sm:block" />
+    <div className="min-h-screen pt-24 pb-16" style={{ background: 'var(--bg-deep)' }}>
+      {/* 헤더 — 플래너식 2단 구조 */}
+      <div className="max-w-5xl mx-auto px-3 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <Link href="/decks" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 덱 게시판
+            </Link>
+            <h1 className="font-serif text-lg sm:text-2xl" style={{ color: 'var(--text-primary)' }}>{editMode ? '덱 수정' : '덱 편성'}</h1>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {hasDraft && (
+              <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
+                초안 불러오기
+              </CompactButton>
+            )}
+            <CompactButton
+              icon={draftSaved ? Check : Save}
+              onClick={handleSaveDraft}
+              disabled={!title.trim()}
+              variant={draftSaved ? 'success' : 'gold'}
+            >
+              {draftSaved ? '저장 완료' : '임시 저장'}
+            </CompactButton>
+            <CompactButton
+              icon={codeCopied ? Check : Copy}
+              onClick={handleCopyCode}
+              disabled={identityCount < 12}
+              variant={codeCopied ? 'success' : 'muted'}
+              title={identityCount < 12 ? '12명 전원 인격을 편성해야 코드를 복사할 수 있습니다' : ''}
+            >
+              {codeCopied ? '복사됨' : '코드 복사'}
+            </CompactButton>
+            {authStatus === 'authenticated' && (
+              <CompactButton
+                icon={Upload}
+                onClick={handleSave}
+                disabled={!title.trim() || identityCount < 12 || !contentType || saving}
+                variant="primary"
+                title={!contentType ? '콘텐츠 유형을 선택해주세요' : identityCount < 12 ? `12명 전원 인격을 편성해야 합니다 (${identityCount}/12)` : ''}
+              >
+                {saving ? '저장 중...' : editMode ? '저장' : '업로드'}
+              </CompactButton>
+            )}
+          </div>
+        </div>
+
+        {/* 제목 입력 */}
         <input
           type="text"
-          placeholder="덱 제목 *"
+          placeholder="덱 제목을 입력하세요 *"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          className="px-3 py-1.5 rounded text-sm outline-none w-full sm:w-auto"
-          style={{ ...inputStyle, maxWidth: '260px' }}
+          className="w-full px-4 py-2.5 rounded outline-none mb-4"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
+            fontSize: 'var(--text-sm)',
+            transition: 'border-color 0.2s',
+          }}
           onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
           onBlur={e => (e.target.style.borderColor = 'var(--border)')}
         />
-        {hasDraft && (
-          <button
-            onClick={handleLoadDraft}
-            className="px-3 py-1.5 rounded text-sm transition-all"
-            style={{ color: '#88aacc', border: '1px solid rgba(136,170,204,0.3)', background: 'rgba(136,170,204,0.08)' }}
-          >
-            초안 불러오기
-          </button>
-        )}
-        <button
-          onClick={handleSaveDraft}
-          disabled={!title.trim()}
-          className="px-5 py-1.5 rounded font-medium text-sm transition-all duration-200 disabled:opacity-40"
-          style={{ background: draftSaved ? 'rgba(136,204,136,0.2)' : 'rgba(200,144,10,0.15)', color: draftSaved ? '#88cc88' : 'var(--gold)', border: `1px solid ${draftSaved ? '#88cc8855' : 'rgba(200,144,10,0.4)'}` }}
-        >
-          {draftSaved ? '✓ 임시 저장됨' : '임시 저장'}
-        </button>
-        {authStatus === 'authenticated' && (
-          <button
-            onClick={handleSave}
-            disabled={!title.trim() || identityCount < 12 || !contentType || saving}
-            title={!contentType ? '콘텐츠 유형을 선택해주세요' : identityCount < 12 ? `12명 전원 인격을 편성해야 합니다 (${identityCount}/12)` : ''}
-            className="px-5 py-1.5 rounded font-medium text-sm transition-all duration-200 disabled:opacity-40 hover:brightness-110"
-            style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
-          >
-            {saving ? '저장 중...' : editMode ? '저장' : '업로드'}
-          </button>
-        )}
-      </div>
 
-      <div className="px-4 sm:px-6 max-w-5xl mx-auto">
-        {/* 편성 코드 바 */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+        {/* 코드바 + 콘텐츠 유형 — 한 줄 통합 */}
+        <div className="flex flex-wrap items-center gap-2 mb-6" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+          {/* 편성 코드 */}
           <input
             type="text"
             value={codeInput}
             onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-            placeholder="편성 코드 붙여넣기..."
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded outline-none flex-1"
-            style={{ ...inputStyle, minWidth: '120px', maxWidth: '420px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+            placeholder="편성 코드..."
+            className="px-3 py-2 rounded outline-none"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', minWidth: '8rem', maxWidth: '16rem', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', flex: '0 1 16rem' }}
             onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
           />
-          <button
-            onClick={handleApplyCode}
-            disabled={!codeInput.trim() || codeApplying}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm font-medium transition-all disabled:opacity-40"
-            style={{ background: 'rgba(200,144,10,0.15)', color: 'var(--gold)', border: '1px solid rgba(200,144,10,0.3)' }}
-          >
+          <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
             {codeApplying ? '...' : '적용'}
-          </button>
-          {codeError && (
-            <span style={{ color: '#cc4444', fontSize: '0.75rem' }}>오류</span>
-          )}
-          <button
-            onClick={handleCopyCode}
-            disabled={identityCount < 12}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm transition-all disabled:opacity-30 ml-auto"
-            style={{
-              color: codeCopied ? '#88cc88' : '#6a6a80',
-              border: `1px solid ${codeCopied ? '#88cc8855' : 'var(--border)'}`,
-              background: codeCopied ? 'rgba(136,204,136,0.08)' : 'transparent',
-            }}
-            title={identityCount < 12 ? '12명 전원 인격을 편성해야 코드를 복사할 수 있습니다' : ''}
-          >
-            {codeCopied ? '✓ 복사됨' : '코드 복사'}
-          </button>
-        </div>
+          </CompactButton>
+          {codeError && <span style={{ color: 'var(--error)', fontSize: 'var(--text-xs)' }}>오류</span>}
 
-        {/* 콘텐츠 유형 선택 */}
-        <div className="flex items-center gap-2 mb-4">
-          <span style={{ color: '#555570', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', flexShrink: 0 }}>콘텐츠</span>
+          {/* 구분선 */}
+          <div style={{ width: '1px', height: '1.25rem', background: 'var(--border)', margin: '0 0.25rem' }} className="hidden sm:block" />
+
+          {/* 콘텐츠 유형 */}
+          <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', flexShrink: 0 }} className="hidden sm:inline">콘텐츠</span>
           <div className="flex gap-1.5 flex-wrap">
             {CONTENT_TYPES.map(ct => {
               const active = contentType === ct
-              const colors = CONTENT_TYPE_BTN_COLORS[ct]
+              const colors = CONTENT_TYPE_COLORS[ct]
               return (
                 <button
                   key={ct}
                   type="button"
                   onClick={() => setContentType(active ? '' : ct)}
-                  className="px-3 py-1.5 rounded transition-all duration-150"
+                  className="px-2.5 py-1 rounded transition-all duration-150"
                   style={{
                     background: active ? colors.bg : 'transparent',
-                    color: active ? colors.color : '#555566',
+                    color: active ? colors.color : 'var(--text-muted)',
                     border: `1px solid ${active ? colors.border : 'var(--border)'}`,
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--text-xs)',
                     fontWeight: active ? 700 : 500,
-                    boxShadow: active ? `0 0 8px ${colors.color}25` : 'none',
                   }}
                 >
                   {ct}
@@ -721,81 +685,55 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               )
             })}
           </div>
-          {!contentType && (
-            <span style={{ color: '#cc8844', fontSize: '0.625rem', opacity: 0.7 }}>* 필수</span>
-          )}
+          {!contentType && <span style={{ color: 'var(--warning)', fontSize: '0.5625rem', opacity: 0.7 }}>* 필수</span>}
         </div>
 
-        {/* 탭 바 — 세그먼트 컨트롤 */}
-        <div
-          className="flex mb-7 overflow-x-auto"
-          style={{
-            background: 'rgba(10,8,5,0.6)',
-            border: '1px solid var(--border)',
-            borderRadius: '0.5rem',
-            padding: '0.25rem',
-            gap: '0.125rem',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {TABS.map(({ key, label, badge, icon }) => {
-            const isActive = tab === key
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-medium transition-all duration-200 whitespace-nowrap flex-1"
-                style={{
-                  color: isActive ? '#0d0b08' : '#666660',
-                  background: isActive
-                    ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)'
-                    : 'transparent',
-                  borderRadius: '0.375rem',
-                  boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
-                  minWidth: 0,
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', opacity: isActive ? 1 : 0.5 }}>{icon}</span>
-                <span className="hidden sm:inline">{label}</span>
-                {badge !== undefined && (
-                  <span
-                    style={{
-                      background: isActive ? 'rgba(13,11,8,0.25)' : '#2a2015',
-                      color: isActive ? '#0d0b08' : '#666655',
-                      fontSize: '0.5625rem',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700,
-                      borderRadius: '0.375rem',
-                      padding: '0.0625rem 0.3125rem',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+        {/* 탭 바 — 밑줄 인디케이터 (플래너 패턴) */}
+        <UnderlineTabBar
+          tabs={tabItems}
+          activeKey={tab}
+          onTabChange={key => setTab(key as Tab)}
+          className="mb-6"
+        />
 
         {/* 탭 콘텐츠 */}
         {tab === 'identity' && (
           <IdentityTab
             sinners={sinners}
+            identities={identities}
             deckSlots={deckSlots}
-            onCardClick={setModalSinnerId}
             gacksungSlots={gacksungSlots}
             onGacksungToggle={handleGacksungToggle}
+            formationOrder={formationOrder}
+            onFormationToggle={handleFormationToggle}
+            onIdentitySelect={identity => {
+              if (!identity) return
+              setDeckSlots(prev => ({ ...prev, [identity.sinner_id]: identity }))
+            }}
+            onIdentityDeselect={sinnerId => {
+              setDeckSlots(prev => { const n = { ...prev }; delete n[sinnerId]; return n })
+              setFormationOrder(prev => prev.filter(id => id !== sinnerId))
+            }}
           />
         )}
         {tab === 'ego' && (
           <EgoTab
             sinners={sinners}
+            egos={egos}
             egoSlots={egoSlots}
-            onGradeClick={handleGradeClick}
+            onEgoSelect={ego => {
+              setEgoSlots(prev => ({
+                ...prev,
+                [ego.sinner_id]: { ...(prev[ego.sinner_id] ?? {}), [ego.grade]: ego }
+              }))
+            }}
+            onEgoDeselect={(sinnerId, grade) => {
+              setEgoSlots(prev => {
+                const s = { ...(prev[sinnerId] ?? {}) }
+                delete s[grade]
+                return { ...prev, [sinnerId]: s }
+              })
+            }}
           />
         )}
         {tab === 'skillset' && (
@@ -809,12 +747,16 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             }
           />
         )}
-        {tab === 'order' && (
-          <OrderTab
-            sinners={sinners}
+        {/* 편성 순서 탭 → 인격 탭 40%/60% 호버로 통합 */}
+
+        {/* ── 패시브 자동 계산 미리보기 ── */}
+        {tab !== 'note' && Object.values(deckSlots).filter(Boolean).length > 0 && (
+          <PassivePanel
             deckSlots={deckSlots}
-            formationOrder={formationOrder}
-            onToggle={handleFormationToggle}
+            sinners={sinners}
+            passivesByIdentityId={passivesByIdentityId}
+            skillsByIdentityId={skillsByIdentityId}
+            deckSinCounts={deckSinCounts}
           />
         )}
 
@@ -872,117 +814,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )}
       </div>
 
-      {/* ── 인격 선택 모달 ──────────────────────────────── */}
-      {modalSinnerId && tab === 'identity' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.82)' }} onClick={() => setModalSinnerId(null)}>
-          <div className="card flex flex-col" style={{ width: '600px', maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>{modalSinner?.name_kr}</h2>
-                <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '2px' }}>인격을 선택하세요</p>
-              </div>
-              <div className="flex items-center gap-3">
-                {deckSlots[modalSinnerId] && (
-                  <button
-                    onClick={() => { setDeckSlots(prev => { const n = { ...prev }; delete n[modalSinnerId]; return n }); setModalSinnerId(null) }}
-                    className="text-xs px-3 py-1.5 rounded transition-all hover:bg-red-900/20"
-                    style={{ color: '#cc4444', border: '1px solid rgba(200,48,32,0.3)' }}
-                  >편성 해제</button>
-                )}
-                <button onClick={() => setModalSinnerId(null)} style={{ color: '#888888', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
-              </div>
-            </div>
-            <div className="overflow-y-auto px-5 py-5 flex-1">
-              {modalIdentities.length === 0 ? (
-                <p className="text-center py-12" style={{ color: '#6a6a80' }}>등록된 인격이 없습니다</p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
-                  {modalIdentities.map(identity => (
-                    <IdentityCard key={identity.id} identity={identity} compact selected={deckSlots[modalSinnerId]?.id === identity.id} onClick={() => handleIdentitySelect(identity)} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 에고 선택 모달 ──────────────────────────────── */}
-      {modalSinnerId && modalGrade && tab === 'ego' && (() => {
-        const gc = GRADE_COLORS[modalGrade] ?? '#667788'
-        const gradeEgos = modalEgos.filter(e => e.grade === modalGrade)
-        const currentEgo = egoSlots[modalSinnerId]?.[modalGrade]
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.82)' }} onClick={closeEgoModal}>
-            <div className="card flex flex-col" style={{ width: '480px', maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-3">
-                  {modalGrade !== 'ALEPH' ? (
-                    <Image src={`${STORAGE_BASE}/icons/grade/${modalGrade}.webp`} alt={modalGrade} width={32} height={16} unoptimized style={{ height: '16px', width: 'auto', opacity: 0.9 }} />
-                  ) : (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: gc, letterSpacing: '0.1em' }}>ALEPH</span>
-                  )}
-                  <div>
-                    <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.0625rem' }}>{modalSinner?.name_kr}</h2>
-                    <p style={{ color: gc, fontSize: '0.625rem', marginTop: '1px', fontFamily: 'var(--font-mono)' }}>{modalGrade} E.G.O</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {currentEgo && (
-                    <button
-                      onClick={() => {
-                        setEgoSlots(prev => {
-                          const s = { ...(prev[modalSinnerId] ?? {}) }
-                          delete s[modalGrade]
-                          return { ...prev, [modalSinnerId]: s } as Record<string, Record<string, EGO>>
-                        })
-                        closeEgoModal()
-                      }}
-                      className="text-xs px-3 py-1.5 rounded transition-all hover:bg-red-900/20"
-                      style={{ color: '#cc4444', border: '1px solid rgba(200,48,32,0.3)' }}
-                    >해제</button>
-                  )}
-                  <button onClick={closeEgoModal} style={{ color: '#888888', fontSize: '1.375rem', lineHeight: 1, padding: '0 4px' }}>✕</button>
-                </div>
-              </div>
-              <div className="overflow-y-auto px-5 py-5 flex-1">
-                {gradeEgos.length === 0 ? (
-                  <p className="text-center py-12" style={{ color: '#6a6a80' }}>이 등급의 E.G.O가 없습니다</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-5">
-                    {gradeEgos.map(ego => {
-                      const sinColor = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity as SinType] ?? gc) : gc
-                      const isSelected = currentEgo?.id === ego.id
-                      return (
-                        <button
-                          key={ego.id}
-                          onClick={() => handleEgoSelect(ego)}
-                          className="flex flex-col items-center gap-2"
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <div style={{
-                            position: 'relative', width: '90px', height: '90px',
-                            borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                            border: `2px solid ${isSelected ? sinColor : sinColor + '55'}`,
-                            boxShadow: isSelected ? `0 0 16px ${sinColor}80` : `0 0 6px ${sinColor}25`,
-                            background: '#0d0a06', transition: 'all 0.2s',
-                          }}>
-                            {ego.image_url
-                              ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="90px" />
-                              : <div className="w-full h-full flex items-center justify-center"><span style={{ fontFamily: 'monospace', color: gc, fontSize: '0.75rem' }}>{ego.grade?.[0]}</span></div>
-                            }
-                          </div>
-                          <p className="font-serif font-light leading-snug text-center" style={{ color: isSelected ? '#f0d060' : '#c8a450', fontSize: '0.75rem' }}>{ego.name_kr || ego.name}</p>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
       <Toast toast={toast} />
 
       {/* ── 테마팩(EGO 기프트) 모달 ───────────────────── */}
