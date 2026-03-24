@@ -160,13 +160,19 @@ function readJson(filename) {
   return JSON.parse(readFileSync(path, 'utf-8'))
 }
 
-// desc 텍스트 정리: 영문 태그 → 한글, <style> 태그 제거
+// desc 텍스트 정리: 영문 태그 → 한글, Unity 마크업 태그 제거
 function translateDesc(desc) {
   if (!desc) return ''
   let result = desc
     // <style="highlight">...</style> 제거 (내용은 유지)
     .replace(/<style="[^"]*">/g, '')
     .replace(/<\/style>/g, '')
+    // Unity 마크업 태그 제거 (noparse, u, color, link, sprite 등)
+    .replace(/<\/?noparse>/g, '')
+    .replace(/<\/?u>/g, '')
+    .replace(/<color=[^>]*>/g, '').replace(/<\/color>/g, '')
+    .replace(/<link=[^>]*>/g, '').replace(/<\/link>/g, '')
+    .replace(/<sprite[^>]*\/?>/g, '')
     // [EnglishTag] → 한글 변환 (키워드는 앞뒤 공백 보장)
     .replace(/\[([A-Za-z_][A-Za-z0-9_]*)\]/g, (match, tag, offset, str) => {
       const kr = TAG_MAP[tag]
