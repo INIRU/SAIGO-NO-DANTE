@@ -144,6 +144,7 @@ export type NoteSkillEntry = {
   skill_order: number
   description?: string | null
   iconUrl?: string
+  iconFallbackUrl?: string
   identityName: string
   sinnerName: string
 }
@@ -189,6 +190,8 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
   const sc = sinColorOf(entry.sin_affinity)
+  const [imgSrc, setImgSrc] = useState(entry.iconUrl)
+  useEffect(() => { setImgSrc(entry.iconUrl) }, [entry.iconUrl])
   return (
     <span
       ref={ref}
@@ -198,7 +201,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
-        {entry.iconUrl && <Image src={entry.iconUrl} alt="" width={20} height={20} style={{ borderRadius: '50%' }} />}
+        {imgSrc && <Image src={imgSrc} alt="" width={20} height={20} style={{ borderRadius: '50%' }} onError={() => { if (entry.iconFallbackUrl && imgSrc !== entry.iconFallbackUrl) setImgSrc(entry.iconFallbackUrl) }} />}
         {atkIcon && <Image src={atkIcon} alt="" width={10} height={10} style={{ position: 'absolute', bottom: -1, right: -1 }} />}
       </span>
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>

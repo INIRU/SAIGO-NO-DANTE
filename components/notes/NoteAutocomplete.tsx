@@ -15,6 +15,7 @@ export type AutocompleteSuggestion = {
   typeLabel?: string
   color: string
   iconUrl?: string
+  iconFallbackUrl?: string
   imageUrl?: string
   token: string
 }
