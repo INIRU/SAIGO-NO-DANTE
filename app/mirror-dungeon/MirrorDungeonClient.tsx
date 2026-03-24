@@ -15,6 +15,12 @@ import GradeMultiDropdown from '@/components/mirror-dungeon/GradeMultiDropdown'
 
 /* ── 타입/상수는 @/components/mirror-dungeon/types.ts에서 import ── */
 
+/** 이벤트 텍스트의 {0}, {1} 등 수감자 플레이스홀더를 치환 */
+function replaceEventPlaceholders(text: string | null | undefined): string {
+  if (!text) return ''
+  return text.replace(/\{(\d+)\}/g, '○○')
+}
+
 /* ── 난이도 (DB difficulty 컬럼 사용) ── */
 
 /* ── 키워드 설정 ── */
@@ -1001,7 +1007,7 @@ export default function MirrorDungeonClient({
               {/* 설명 */}
               {selectedEvent.desc_text && (
                 <p className="whitespace-pre-line leading-relaxed mb-4" style={{ color: '#bbb', fontSize: '0.8125rem' }}>
-                  {selectedEvent.desc_text}
+                  {replaceEventPlaceholders(selectedEvent.desc_text)}
                 </p>
               )}
 
@@ -1017,15 +1023,15 @@ export default function MirrorDungeonClient({
                             {i + 1}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p style={{ color: '#e8d8c0', fontSize: '0.875rem' }}>{opt.message}</p>
+                            <p style={{ color: '#e8d8c0', fontSize: '0.875rem' }}>{replaceEventPlaceholders(opt.message)}</p>
                             {opt.messageDesc && (
                               <p style={{ color: 'var(--gold)', fontSize: '0.75rem', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
-                                {opt.messageDesc}
+                                {replaceEventPlaceholders(opt.messageDesc)}
                               </p>
                             )}
                             {opt.result && opt.result[0] && (
                               <p className="mt-1.5 whitespace-pre-line" style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                {opt.result[0]}
+                                {replaceEventPlaceholders(opt.result[0])}
                               </p>
                             )}
                             {/* 선택지별 기프트 보상 */}
@@ -1066,15 +1072,15 @@ export default function MirrorDungeonClient({
                         <div key={child.id} className="rounded-lg px-3.5 py-2.5" style={{ background: 'rgba(96,144,208,0.06)', border: '1px solid rgba(96,144,208,0.12)' }}>
                           {child.desc_text && (
                             <p className="whitespace-pre-line leading-relaxed mb-2" style={{ color: '#aaa', fontSize: '0.75rem' }}>
-                              {child.desc_text.length > 150 ? child.desc_text.slice(0, 150) + '...' : child.desc_text}
+                              {replaceEventPlaceholders(child.desc_text.length > 150 ? child.desc_text.slice(0, 150) + '...' : child.desc_text)}
                             </p>
                           )}
                           {child.options && child.options.map((opt, i) => (
                             <div key={i} className="flex items-start gap-2 mt-1.5 ml-2">
                               <span style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{i + 1}</span>
                               <div>
-                                <p style={{ color: '#ccc', fontSize: '0.75rem' }}>{opt.message}</p>
-                                {opt.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{opt.messageDesc}</p>}
+                                <p style={{ color: '#ccc', fontSize: '0.75rem' }}>{replaceEventPlaceholders(opt.message)}</p>
+                                {opt.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{replaceEventPlaceholders(opt.messageDesc)}</p>}
                               </div>
                             </div>
                           ))}
