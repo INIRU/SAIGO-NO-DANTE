@@ -59,6 +59,7 @@ export interface MirrorDungeonEvent {
   image_url: string | null
   parent_id: number | null
   option_gifts: number[][] | null
+  option_index: number | null
   theme_ids: number[] | null
 }
 
