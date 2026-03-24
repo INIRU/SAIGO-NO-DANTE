@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { Trash2, Reply, X } from 'lucide-react'
+import { Trash2, Reply, X, ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
 import { useToast, Toast } from '@/components/ui/Toast'
 import { STORAGE_BASE, GRADE_COLORS, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { ActivationCondition } from '@/lib/types'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import CompactButton from '@/components/ui/CompactButton'
+import SectionBlock from '@/components/ui/SectionBlock'
 import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
 import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
 import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
@@ -223,9 +225,6 @@ export default function DeckDetailClient({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
   const [selectedSinner, setSelectedSinner] = useState<string | null>(null)
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
-  const [identitiesOpen, setIdentitiesOpen] = useState(true)
-  const [notesOpen, setNotesOpen] = useState(true)
-  const [passivesOpen, setPassivesOpen] = useState(false)
   const [giftsOpen, setGiftsOpen] = useState(false)
 
   const [bookmarked, setBookmarked] = useState(false)
@@ -627,41 +626,95 @@ export default function DeckDetailClient({ id }: { id: string }) {
             }}
           />
 
-          {/* 타이틀 오버레이 */}
-          <div className="absolute bottom-0 left-0 right-0">
-            <div className="max-w-5xl mx-auto px-4 md:px-6 pb-7">
-              <Link
-                href="/decks"
-                className="inline-flex items-center gap-1.5 mb-3 transition-opacity hover:opacity-70"
-                style={{ color: '#c8a450', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', letterSpacing: '0.1em' }}
+          {/* 파노라마 하단 그라디언트만 유지 — 타이틀은 아래 헤더로 이동 */}
+        </div>
+      </div>
+
+      {/* ── 플래너 스타일 헤더 ── */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* 라인 1: 뒤로가기 + 제목 */}
+        <div className="flex items-center gap-3 mb-2">
+          <Link
+            href="/decks"
+            className="inline-flex items-center gap-1 transition-opacity hover:opacity-70 flex-shrink-0"
+            style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+          >
+            <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
+            덱 게시판
+          </Link>
+          <span style={{ color: 'var(--border)', fontSize: 'var(--text-xs)' }}>/</span>
+          <h1
+            className="font-serif font-light leading-tight truncate"
+            style={{ color: 'var(--text-primary)', fontSize: 'clamp(1.1rem, 2.8vw, 1.5rem)' }}
+          >
+            {deck.title}
+          </h1>
+        </div>
+        {/* 라인 2: 메타 + 액션 버튼 */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* 왼쪽: 작성자 · 날짜 · 조회수 */}
+          <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            {deck.profiles?.username && (
+              <span style={{ color: 'var(--text-secondary)' }}>{deck.profiles.username}</span>
+            )}
+            {deck.profiles?.username && <span style={{ fontFamily: 'sans-serif' }}>·</span>}
+            <span>{date}</span>
+            <span style={{ fontFamily: 'sans-serif' }}>·</span>
+            <span className="flex items-center gap-1">
+              <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+                <ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" strokeWidth="1.4"/>
+                <circle cx="8" cy="8" r="2" fill="currentColor"/>
+              </svg>
+              {deck.view_count}
+            </span>
+          </div>
+          {/* 오른쪽: 액션 버튼 */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <CompactButton
+              icon={voted ? Heart : Heart}
+              onClick={handleVote}
+              disabled={authStatus !== 'authenticated' || voting}
+              variant={voted ? 'gold' : 'muted'}
+              title="추천"
+            >
+              {voteCount}
+            </CompactButton>
+            <CompactButton
+              icon={bookmarked ? Bookmark : Bookmark}
+              onClick={handleBookmark}
+              disabled={authStatus !== 'authenticated' || bookmarking}
+              variant={bookmarked ? 'gold' : 'muted'}
+              title="북마크"
+            >
+              {bookmarked ? '저장됨' : '저장'}
+            </CompactButton>
+            <CompactButton
+              icon={shared ? Check : Share2}
+              onClick={handleShare}
+              disabled={shareGenerating}
+              variant={shared ? 'success' : 'muted'}
+              title="공유"
+            >
+              {shared ? '복사됨' : '공유'}
+            </CompactButton>
+            <CompactButton
+              icon={GitFork}
+              onClick={handleFork}
+              variant="muted"
+              title="포크"
+            >
+              포크
+            </CompactButton>
+            {deck.deck_code && (
+              <CompactButton
+                icon={copied ? Check : Copy}
+                onClick={handleCopyCode}
+                variant={copied ? 'success' : 'muted'}
+                title="덱 코드 복사"
               >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                DECK ARCHIVE
-              </Link>
-              <h1
-                className="font-serif font-light mb-2 leading-tight"
-                style={{ color: '#f0ece0', fontSize: 'clamp(1.4rem, 3.5vw, 2.1rem)', textShadow: '0 2px 24px rgba(0,0,0,0.9)' }}
-              >
-                {deck.title}
-              </h1>
-              <div className="flex items-center gap-2.5" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: '#555570' }}>
-                {deck.profiles?.username && (
-                  <span style={{ color: '#6a6080' }}>{deck.profiles.username}</span>
-                )}
-                {deck.profiles?.username && <span style={{ fontFamily: 'sans-serif' }}>·</span>}
-                <span>{date}</span>
-                <span style={{ fontFamily: 'sans-serif' }}>·</span>
-                <span className="flex items-center gap-1">
-                  <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
-                    <ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" strokeWidth="1.4"/>
-                    <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                  </svg>
-                  {deck.view_count}
-                </span>
-              </div>
-            </div>
+                {copied ? '복사됨' : '코드'}
+              </CompactButton>
+            )}
           </div>
         </div>
       </div>
@@ -760,139 +813,80 @@ export default function DeckDetailClient({ id }: { id: string }) {
                   })}
                 </div>
 
-                {/* 인격 정보 아코디언 */}
-                <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                  <button
-                    onClick={() => setIdentitiesOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
-                    style={{ background: identitiesOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: identitiesOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: identitiesOpen ? '#8a7040' : '#5a5070', letterSpacing: '0.12em' }}>
-                        IDENTITIES
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', color: '#c8900a' }}>
-                        {activeSlots.length}
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5625rem', color: '#5a5065', marginLeft: '0.25rem' }}>
-                        클릭하여 상세 보기
-                      </span>
-                    </div>
-                    <svg
-                      width="12" height="12" viewBox="0 0 16 16" fill="none"
-                      style={{ color: identitiesOpen ? '#8a7040' : '#5a5065', transition: 'transform 0.2s', transform: identitiesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                    >
-                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                  {identitiesOpen && (
-                    <div className="flex flex-col gap-2 p-3">
-                      {activeSlots.map((slot, i) => (
-                        <div key={i} onClick={() => slot.identities?.id && setIdentityModalId(slot.identities.id)} style={{ cursor: slot.identities?.id ? 'pointer' : 'default' }}>
-                          <DeckIdentityCard slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} onEgoClick={setEgoModalId} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* 인격 정보 */}
+                <SectionBlock title="편성 인격" badge={`${activeSlots.length}/12`} defaultOpen={true}>
+                  <div className="flex flex-col gap-2">
+                    {activeSlots.map((slot, i) => (
+                      <div key={i} onClick={() => slot.identities?.id && setIdentityModalId(slot.identities.id)} style={{ cursor: slot.identities?.id ? 'pointer' : 'default' }}>
+                        <DeckIdentityCard slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} onEgoClick={setEgoModalId} />
+                      </div>
+                    ))}
+                  </div>
+                </SectionBlock>
 
-                {/* 덱 노트 아코디언 */}
+                {/* 덱 노트 */}
                 {(deck.description || customSkillSlots.length > 0) && (
-                  <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                    <button
-                      onClick={() => setNotesOpen(v => !v)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
-                      style={{ background: notesOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: notesOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
-                    >
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: notesOpen ? '#8a7040' : '#5a5070', letterSpacing: '0.12em' }}>
-                        DECK NOTES
-                      </span>
-                      <svg
-                        width="12" height="12" viewBox="0 0 16 16" fill="none"
-                        style={{ color: notesOpen ? '#8a7040' : '#5a5065', transition: 'transform 0.2s', transform: notesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                      >
-                        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    {notesOpen && (
-                      <div className="px-4 py-3">
-                        {deck.description && (
-                          <NoteRenderer
-                            text={deck.description}
-                            {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [])}
-                            egoGiftLookup={egoGiftLookup}
-                          />
-                        )}
-                        {customSkillSlots.length > 0 && (
-                          <div style={{ marginTop: deck.description ? '12px' : 0, borderTop: deck.description ? '1px solid rgba(32,20,8,0.5)' : 'none', paddingTop: deck.description ? '12px' : 0 }}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a6010', letterSpacing: '0.08em', fontWeight: 700 }}>SKILL DISTRIBUTION</span>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                              {customSkillSlots.map((slot, i) => {
-                                const id_ = slot.identities!
-                                const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                                const rawSk2 = id_.skills ?? []
-                                const skBest2 = new Map<string, typeof rawSk2[0]>()
-                                for (const s of rawSk2) {
-                                  if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
-                                  const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-                                  const ex = skBest2.get(key)
-                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
-                                }
-                                const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
-                                const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
-                                return (
-                                  <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
-                                    <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
-                                    <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '120px' }}>
-                                      {id_.name_kr}
-                                    </span>
-                                    <div style={{ flex: 1 }} />
-                                    {[0, 1, 2].map(idx => {
-                                      const skill = sortedSk.find(s => s.skill_order === idx + 1)
-                                      const sc = skill ? sinColor(skill.sin_affinity) : '#888'
-                                      const iconUrl = skillIconBase ? `${skillIconBase}${String(idx + 1).padStart(2, '0')}.webp` : ''
-                                      return (
-                                        <div key={idx} className="flex items-center gap-1" style={{ minWidth: '42px' }}>
-                                          {iconUrl && (
-                                            <Image src={iconUrl} alt={`S${idx + 1}`} width={18} height={18} style={{ borderRadius: '3px', border: `1px solid ${sc}40` }} />
-                                          )}
-                                          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: dist[idx] > 0 ? sc : '#2a2015' }}>
-                                            {dist[idx]}
-                                          </span>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )}
+                  <SectionBlock title="덱 노트" defaultOpen={true}>
+                    {deck.description && (
+                      <NoteRenderer
+                        text={deck.description}
+                        {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [])}
+                        egoGiftLookup={egoGiftLookup}
+                      />
+                    )}
+                    {customSkillSlots.length > 0 && (
+                      <div style={{ marginTop: deck.description ? '0.75rem' : 0, borderTop: deck.description ? '1px solid rgba(32,20,8,0.5)' : 'none', paddingTop: deck.description ? '0.75rem' : 0 }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a6010', letterSpacing: '0.08em', fontWeight: 700 }}>SKILL DISTRIBUTION</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {customSkillSlots.map((slot, i) => {
+                            const id_ = slot.identities!
+                            const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
+                            const rawSk2 = id_.skills ?? []
+                            const skBest2 = new Map<string, typeof rawSk2[0]>()
+                            for (const s of rawSk2) {
+                              if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
+                              const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+                              const ex = skBest2.get(key)
+                              if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
+                            }
+                            const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
+                            const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
+                            return (
+                              <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
+                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
+                                <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '120px' }}>
+                                  {id_.name_kr}
+                                </span>
+                                <div style={{ flex: 1 }} />
+                                {[0, 1, 2].map(idx => {
+                                  const skill = sortedSk.find(s => s.skill_order === idx + 1)
+                                  const sc = skill ? sinColor(skill.sin_affinity) : '#888'
+                                  const iconUrl = skillIconBase ? `${skillIconBase}${String(idx + 1).padStart(2, '0')}.webp` : ''
+                                  return (
+                                    <div key={idx} className="flex items-center gap-1" style={{ minWidth: '42px' }}>
+                                      {iconUrl && (
+                                        <Image src={iconUrl} alt={`S${idx + 1}`} width={18} height={18} style={{ borderRadius: '3px', border: `1px solid ${sc}40` }} />
+                                      )}
+                                      <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: dist[idx] > 0 ? sc : '#2a2015' }}>
+                                        {dist[idx]}
+                                      </span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
                     )}
-                  </div>
+                  </SectionBlock>
                 )}
 
                 {/* 패시브 패널 */}
-                <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
-                  <button
-                    onClick={() => setPassivesOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
-                    style={{ background: passivesOpen ? 'rgba(200,144,10,0.04)' : 'transparent', borderBottom: passivesOpen ? '1px solid rgba(32,20,8,0.7)' : 'none' }}
-                  >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: passivesOpen ? '#8a7040' : '#5a5070', letterSpacing: '0.12em' }}>
-                      PASSIVES
-                    </span>
-                    <svg
-                      width="12" height="12" viewBox="0 0 16 16" fill="none"
-                      style={{ color: passivesOpen ? '#8a7040' : '#5a5065', transition: 'transform 0.2s', transform: passivesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                    >
-                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                  {passivesOpen && (() => {
+                <SectionBlock title="패시브" defaultOpen={false}>
+                  {(() => {
                     const deckSinCounts: Record<string, number> = {}
                     for (const slot of filledSlots) {
                       const id__ = slot.identities!
@@ -961,7 +955,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
                       </div>
                     )
                   })()}
-                </div>
+                </SectionBlock>
 
                 {/* EGO 기프트 아코디언 (거던 유형만) */}
                 {isGeodun && (
@@ -981,28 +975,18 @@ export default function DeckDetailClient({ id }: { id: string }) {
 
         {/* 댓글 섹션 */}
         <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>
-              COMMENTS
-            </span>
-            <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
-              댓글
-            </span>
-            <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
-              {comments.length}
-            </span>
-          </div>
+          <SectionBlock title="댓글" badge={comments.length} defaultOpen={true}>
 
           {authStatus === 'authenticated' ? (
-            <div className="rounded-lg p-4 mb-4" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+            <div className="rounded-lg p-4 mb-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <textarea
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 maxLength={500}
                 rows={3}
                 placeholder="덱에 대한 의견을 남겨보세요..."
-                className="w-full px-3 py-2 text-sm outline-none resize-none"
-                style={{ background: '#0a0806', border: '1px solid rgba(58,40,18,0.5)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
+                className="w-full px-3 py-2 outline-none resize-none"
+                style={{ background: 'var(--bg-deep)', border: '1px solid var(--border)', borderRadius: '0.25rem', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}
               />
               <div className="flex items-center justify-between mt-2">
                 <span style={{ color: 'var(--text-tertiary)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
@@ -1028,7 +1012,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
           ) : (
             <div
               className="rounded-lg px-4 py-3 mb-4 text-center"
-              style={{ background: '#120e09', border: '1px solid var(--border)', color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-body)' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-body)' }}
             >
               로그인 후 댓글을 작성할 수 있습니다.
             </div>
@@ -1072,7 +1056,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
                   return (
                     <div key={comment.id}>
                       {/* 루트 댓글 */}
-                      <div className="rounded-lg p-4" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+                      <div className="rounded-lg p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         <div className="flex items-start gap-3">
                           {renderAvatar(comment, 28)}
                           <div className="flex-1 min-w-0">
@@ -1211,6 +1195,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
               </div>
             )
           })()}
+          </SectionBlock>
         </div>
       </div>
 

@@ -47,15 +47,7 @@ function getDeckAllKeywords(deck: DeckSummary): string[] {
   return [...kws]
 }
 
-const CONTENT_TYPES = ['스토리', '거던5층', '거던10층', '거던15층', '거굴철'] as const
-
-const CONTENT_TYPE_FILTER_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  '스토리':   { bg: 'rgba(80,120,200,0.2)', color: '#6090d0', border: 'rgba(80,120,200,0.5)' },
-  '거던5층':  { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거던10층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거던15층': { bg: 'rgba(60,160,100,0.2)', color: '#50b878', border: 'rgba(60,160,100,0.5)' },
-  '거굴철':   { bg: 'rgba(200,70,70,0.2)', color: '#d06060', border: 'rgba(200,70,70,0.5)' },
-}
+import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 
 function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
   return { ...d, username: d.profiles?.username ?? undefined }
@@ -146,7 +138,8 @@ export default function DecksClient() {
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
 
-  // 접이식 필터 섹션 (기본 열림)
+  // 상세 필터 토글 (기본 접힘, 활성 필터 있으면 자동 펼침)
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
   const [showTagFilter, setShowTagFilter] = useState(true)
   const [showKeywordFilter, setShowKeywordFilter] = useState(true)
   const [showCollectionFilter, setShowCollectionFilter] = useState(true)
@@ -587,7 +580,7 @@ export default function DecksClient() {
         <div className="flex flex-wrap gap-1.5 px-4 pb-3">
           {CONTENT_TYPES.map(ct => {
             const active = activeContentType === ct
-            const colors = CONTENT_TYPE_FILTER_COLORS[ct]
+            const colors = CONTENT_TYPE_COLORS[ct]
             return (
               <button
                 key={ct}
@@ -616,8 +609,23 @@ export default function DecksClient() {
           )}
         </div>
 
-        {/* 접이식 필터 섹션들 */}
+        {/* 상세 필터 토글 */}
         <div style={{ borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={() => setShowAdvancedFilter(v => !v)}
+            className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-colors hover:bg-white/[0.02]"
+            style={{ color: (activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo) ? 'var(--gold)' : 'var(--text-muted)', fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xs)' }}
+          >
+            <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showAdvancedFilter ? '▾' : '▸'}</span>
+            상세 필터
+            {(activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)) > 0 && (
+              <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                {activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)}
+              </span>
+            )}
+          </button>
+        </div>
+        <div style={{ borderTop: '1px solid var(--border)', display: showAdvancedFilter ? 'block' : 'none' }}>
           {/* 태그 필터 */}
           {allTags.length > 0 && (
             <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
