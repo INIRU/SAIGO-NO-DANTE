@@ -21,6 +21,9 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
   - 예: "[i:파우스트:로보토미 E.G.O::후회]와 잘 맞습니다" (O 올바름)
 - 덱 편성에 나오는 "수감자명:인격명" 형태는 반드시 [i:수감자명:인격명]으로 변환하세요.
 - 키워드(출혈, 진동 등), EGO, EGO 기프트는 칩 문법 없이 일반 텍스트로 작성하세요.
+- 키워드를 언급할 때는 반드시 "키워드 목록"에 있는 정확한 전체 이름을 사용하세요. 축약하거나 일부만 쓰지 마세요.
+  - 예: "광 3" (X 잘못됨) → "광【光】 3" (O 올바름)
+  - 예: "진동 붕괴" (X 잘못됨) → "진동 - 붕괴" (O 올바름)
 - 칩 문법 외의 대괄호는 사용하지 마세요.
 - 마크다운 헤딩(##)이나 볼드(**)는 사용하지 마세요. 순수 텍스트 + 칩 문법만 사용합니다.
 - 줄바꿈으로 문단을 구분하세요.
@@ -214,8 +217,11 @@ export async function POST(req: NextRequest) {
   const userPrompt = `# 분석 대상
 수감자: ${sinnerName}
 인격: ${identity.name_kr || identity.name} (${identity.rarity}성, 등급 ${identity.tier})
-키워드: ${(identity.keywords || []).join(', ')}
+보유 키워드: ${(identity.keywords || []).join(', ')}
 내성: 참격 ${resSlash} / 관통 ${resPierce} / 타격 ${resBlunt}
+
+# 키워드 목록 (키워드 언급 시 반드시 이 목록의 정확한 이름을 사용하세요)
+${((identity.keywords || []) as string[]).map((kw: string) => `- ${kw}`).join('\n')}
 HP: ${identity.hp} / 속도: ${identity.speed_min}~${identity.speed_max} / 방어레벨: ${identity.def_level}
 
 # 스킬 (4동기화)
