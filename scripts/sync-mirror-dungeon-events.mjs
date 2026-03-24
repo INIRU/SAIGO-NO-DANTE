@@ -336,17 +336,41 @@ async function main() {
     }
   }
 
-  /* ── 4.5. acquirable-egogifts-in-event 매핑 (fallback) ── */
+  /* ── 4.5. acquirable + personality 기프트 매핑 (fallback) ── */
   const acquirableGifts = new Map() // eventId -> egoGiftList
-  try {
-    const acqData = loadJson(join(DATA_DIR, 'acquirable-egogifts-in-event-01.json'))
-    for (const item of acqData.list || []) {
-      if (item.eventId && item.egoGiftList?.length > 0) {
-        acquirableGifts.set(item.eventId, item.egoGiftList)
+
+  // acquirable 파일 3개
+  for (const fname of [
+    'acquirable-egogifts-in-event-01.json',
+    'mirrordungeon-event-acquirable-egogifts-01.json',
+    'hells-chicken-dungeon-event-acquirable-egogifts.json',
+  ]) {
+    try {
+      const acqData = loadJson(join(DATA_DIR, fname))
+      for (const item of acqData.list || []) {
+        if (item.eventId && item.egoGiftList?.length > 0) {
+          const existing = acquirableGifts.get(item.eventId) || []
+          acquirableGifts.set(item.eventId, [...new Set([...existing, ...item.egoGiftList])])
+        }
       }
+    } catch {}
+  }
+
+  // personality-choice-event에서 EGO_GIFT 보상 추출
+  for (const ev of personalityEvents.list) {
+    const str = JSON.stringify(ev)
+    const gifts = []
+    for (const m of str.matchAll(/"type":"EGO_GIFT","rewardId":(\d+)/g)) {
+      const gid = parseInt(m[1])
+      if (gid < 990000) gifts.push(gid)
     }
-    console.log(`   acquirable 매핑: ${acquirableGifts.size}개 이벤트`)
-  } catch { console.log('   acquirable-egogifts-in-event-01.json 없음 (스킵)') }
+    if (gifts.length > 0) {
+      const existing = acquirableGifts.get(ev.id) || []
+      acquirableGifts.set(ev.id, [...new Set([...existing, ...gifts])])
+    }
+  }
+
+  console.log(`   acquirable + personality 매핑: ${acquirableGifts.size}개 이벤트`)
 
   console.log(`\n📊 DB 행 구성... (거던 등장 이벤트: ${allowedEvents.size}개)`)
   const rows = []
