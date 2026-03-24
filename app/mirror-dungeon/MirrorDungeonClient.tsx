@@ -986,142 +986,215 @@ export default function MirrorDungeonClient({
       </>)}
 
       {/* 이벤트 모달 */}
-      {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)} style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
-          <div onClick={e => e.stopPropagation()} className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl" style={{ background: '#131110', border: '1px solid rgba(200,144,10,0.12)', boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)' }}>
-            <button onClick={() => setSelectedEvent(null)} className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
-              <X size={18} />
+      {selectedEvent && (() => {
+        const evThemeNames = (selectedEvent.theme_ids || []).map(tid => themes.find(th => th.id === tid)).filter(Boolean)
+        const children = events.filter(c => c.parent_id === selectedEvent.id)
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)} style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
+          <div onClick={e => e.stopPropagation()} className="relative w-full overflow-hidden" style={{ maxWidth: '36rem', maxHeight: '85vh', borderRadius: '0.75rem', background: '#131110', border: '1px solid rgba(200,144,10,0.12)', boxShadow: '0 0 3rem rgba(200,144,10,0.06), 0 1.5rem 4rem rgba(0,0,0,0.6)' }}>
+            {/* 닫기 버튼 */}
+            <button onClick={() => setSelectedEvent(null)} className="absolute top-3 right-3 z-30 flex items-center justify-center transition-all duration-200" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.4)', width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.08)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#e8d8c0'; e.currentTarget.style.background = 'rgba(200,144,10,0.15)'; e.currentTarget.style.borderColor = 'rgba(200,144,10,0.3)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
+              <X size={16} />
             </button>
 
-            {/* 배너 */}
-            <div className="relative overflow-hidden" style={{ height: selectedEvent.image_url ? '12rem' : '4rem' }}>
-              {selectedEvent.image_url && (
-                <>
-                  <ImageWithFallback src={selectedEvent.image_url} alt="" fill fallbackType="default" sizes="40rem" className="object-cover" style={{ opacity: 0.5 }} />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.4) 60%, rgba(19,17,16,0.2) 100%)' }} />
-                </>
-              )}
-            </div>
+            {/* 스크롤 컨테이너 */}
+            <div style={{ maxHeight: '85vh', overflowY: 'auto' }}>
 
-            <div className="px-5 pb-5 -mt-4 relative">
-              {/* 설명 */}
-              {selectedEvent.desc_text && (
-                <p className="whitespace-pre-line leading-relaxed mb-4" style={{ color: '#bbb', fontSize: '0.8125rem' }}>
-                  {replaceEventPlaceholders(selectedEvent.desc_text)}
-                </p>
-              )}
+            {/* 헤더 배너 */}
+            {selectedEvent.image_url ? (
+              <div className="relative overflow-hidden" style={{ height: '13rem' }}>
+                <ImageWithFallback src={selectedEvent.image_url} alt="" fill fallbackType="default" sizes="36rem" className="object-cover" style={{ opacity: 0.45 }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.5) 50%, rgba(19,17,16,0.25) 100%)' }} />
+                {/* 이벤트 이름 오버레이 */}
+                <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
+                  {evThemeNames.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {evThemeNames.slice(0, 3).map(t => t && (
+                        <span key={t.id} className="inline-flex items-center gap-1 px-2 py-0.5" style={{ fontSize: '0.625rem', fontFamily: 'var(--font-mono)', color: 'rgba(200,144,10,0.8)', background: 'rgba(200,144,10,0.08)', border: '1px solid rgba(200,144,10,0.15)', borderRadius: '0.25rem', letterSpacing: '0.03em' }}>
+                          {t.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <h2 className="font-serif font-bold" style={{ fontSize: '1.375rem', color: '#e8d0a0', textShadow: '0 0.125rem 1rem rgba(200,144,10,0.2), 0 0.0625rem 0.25rem rgba(0,0,0,0.8)', lineHeight: 1.3 }}>
+                    {selectedEvent.name || (selectedEvent.desc_text ? selectedEvent.desc_text.split('\n')[0].slice(0, 50) : `이벤트 #${selectedEvent.id}`)}
+                  </h2>
+                </div>
+              </div>
+            ) : (
+              <div className="relative overflow-hidden px-6 pt-6 pb-5" style={{ background: 'linear-gradient(135deg, rgba(200,144,10,0.04) 0%, transparent 60%)' }}>
+                <div className="absolute top-0 left-0 w-full" style={{ height: '0.125rem', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent 70%)' }} />
+                {evThemeNames.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {evThemeNames.slice(0, 3).map(t => t && (
+                      <span key={t.id} className="inline-flex items-center gap-1 px-2 py-0.5" style={{ fontSize: '0.625rem', fontFamily: 'var(--font-mono)', color: 'rgba(200,144,10,0.8)', background: 'rgba(200,144,10,0.08)', border: '1px solid rgba(200,144,10,0.15)', borderRadius: '0.25rem', letterSpacing: '0.03em' }}>
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <h2 className="font-serif font-bold" style={{ fontSize: '1.25rem', color: '#e8d0a0', lineHeight: 1.3 }}>
+                  {selectedEvent.name || (selectedEvent.desc_text ? selectedEvent.desc_text.split('\n')[0].slice(0, 50) : `이벤트 #${selectedEvent.id}`)}
+                </h2>
+              </div>
+            )}
 
-              {/* 선택지 + 연계 이벤트 (선택지 내부 아코디언) */}
-              {selectedEvent.options && selectedEvent.options.length > 0 && (() => {
-                const children = events.filter(c => c.parent_id === selectedEvent.id)
+            <div className="px-6 pb-6 pt-4 relative">
+              {/* 설명 텍스트 */}
+              {selectedEvent.desc_text && (() => {
+                const paragraphs = replaceEventPlaceholders(selectedEvent.desc_text).split('\n\n')
                 return (
-                <div className="space-y-2 mb-4">
-                  <p className="text-[0.6875rem] font-bold" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>선택지</p>
-                  {selectedEvent.options.map((opt, i) => {
-                    const optChildren = children.filter(c => c.option_index === i)
-                    return (
-                      <div key={i} className="rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div className="flex items-start gap-2.5 px-3.5 py-2.5">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5" style={{ background: 'rgba(200,144,10,0.15)', color: 'var(--gold)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                            {i + 1}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p style={{ color: '#e8d8c0', fontSize: '0.875rem' }}>{replaceEventPlaceholders(opt.message)}</p>
-                            {opt.messageDesc && (
-                              <p style={{ color: 'var(--gold)', fontSize: '0.75rem', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
-                                {replaceEventPlaceholders(opt.messageDesc)}
-                              </p>
-                            )}
-                            {opt.result && opt.result[0] && (
-                              <p className="mt-1.5 whitespace-pre-line" style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                {replaceEventPlaceholders(opt.result[0])}
-                              </p>
-                            )}
-                            {/* 선택지별 기프트 보상 */}
-                            {selectedEvent.option_gifts && selectedEvent.option_gifts[i] && selectedEvent.option_gifts[i].length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {selectedEvent.option_gifts[i].map(gid => {
-                                  const g = giftByGameId.get(gid)
-                                  if (!g) return null
-                                  const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
-                                  return (
-                                    <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
-                                      style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.6875rem' }}>
-                                      {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
-                                      <span style={{ color: '#ccc' }}>{g.name}</span>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            )}
-                            {/* 선택지 내부 연계 이벤트 아코디언 */}
-                            {optChildren.length > 0 && optChildren.map(child => (
-                              <details key={child.id} className="rounded-lg overflow-hidden mt-2" style={{ background: 'rgba(96,144,208,0.05)', border: '1px solid rgba(96,144,208,0.12)' }}>
-                                <summary className="flex items-center gap-2 px-3 py-1.5 cursor-pointer list-none" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
-                                  <span style={{ fontSize: '0.5rem', opacity: 0.6 }}>▶</span>
-                                  {child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || '연계 이벤트'}
-                                  {child.gift_ids && child.gift_ids.length > 0 && (
-                                    <span style={{ fontSize: '0.5625rem', color: '#c8900a', marginLeft: 'auto' }}>기프트 {child.gift_ids.length}종</span>
-                                  )}
-                                </summary>
-                                <div className="px-3 pb-2.5 pt-1" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
-                                  {child.desc_text && (
-                                    <p className="whitespace-pre-line leading-relaxed mb-2" style={{ color: '#aaa', fontSize: '0.6875rem' }}>
-                                      {replaceEventPlaceholders(child.desc_text)}
-                                    </p>
-                                  )}
-                                  {child.options && child.options.map((co, ci) => (
-                                    <div key={ci} className="flex items-start gap-2 mt-1 ml-1">
-                                      <span style={{ color: '#6090d0', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{ci + 1}</span>
-                                      <div className="flex-1">
-                                        <p style={{ color: '#ccc', fontSize: '0.6875rem' }}>{replaceEventPlaceholders(co.message)}</p>
-                                        {co.messageDesc && <p style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-heading)' }}>{replaceEventPlaceholders(co.messageDesc)}</p>}
-                                        {co.result && co.result[0] && (
-                                          <p className="mt-0.5 whitespace-pre-line" style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>
-                                            {replaceEventPlaceholders(co.result[0])}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                  {child.gift_ids && child.gift_ids.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2 pt-1.5" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
-                                      {child.gift_ids.map(gid => {
-                                        const g = giftByGameId.get(gid)
-                                        if (!g) return null
-                                        const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
-                                        return (
-                                          <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
-                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
-                                            style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.625rem' }}>
-                                            {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
-                                            <span style={{ color: '#ccc' }}>{g.name}</span>
-                                          </button>
-                                        )
-                                      })}
-                                    </div>
-                                  )}
+                  <div className="mb-5">
+                    {paragraphs.map((para, pi) => (
+                      <p key={pi} className="whitespace-pre-line" style={{
+                        color: pi === 0 ? '#c8b898' : '#a89878',
+                        fontSize: '0.875rem',
+                        lineHeight: 1.8,
+                        marginBottom: pi < paragraphs.length - 1 ? '0.75rem' : 0,
+                        ...(pi === 0 ? { fontWeight: 500 } : {}),
+                      }}>
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                )
+              })()}
+
+              {/* 선택지 + 연계 이벤트 */}
+              {selectedEvent.options && selectedEvent.options.length > 0 && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div style={{ width: '0.1875rem', height: '0.875rem', background: 'var(--gold)', borderRadius: '0.125rem' }} />
+                    <p style={{ color: '#8a7a60', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>선택지</p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                    {selectedEvent.options.map((opt, i) => {
+                      const optChildren = children.filter(c => c.option_index === i)
+                      // 선택지 색상: messageDesc 기반 힌트
+                      const desc = (opt.messageDesc || '').toLowerCase()
+                      const isJudgment = desc.includes('심판') || desc.includes('판정')
+                      const isBattle = desc.includes('전투') || desc.includes('합동')
+                      const accentColor = isBattle ? '#c04040' : isJudgment ? '#4080d0' : 'rgba(200,144,10,0.5)'
+                      return (
+                        <div key={i} className="overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '0.5rem', borderLeft: `0.1875rem solid ${accentColor}` }}>
+                          <div className="flex items-start gap-3 px-4 py-3">
+                            <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', background: `${accentColor}18`, border: `1px solid ${accentColor}30`, color: accentColor, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700, marginTop: '0.125rem' }}>
+                              {i + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p style={{ color: '#e8dcc8', fontSize: '0.875rem', lineHeight: 1.6 }}>{replaceEventPlaceholders(opt.message)}</p>
+                              {opt.messageDesc && (
+                                <span className="inline-block mt-1.5 px-2 py-0.5" style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', color: accentColor, background: `${accentColor}10`, border: `1px solid ${accentColor}20`, borderRadius: '0.25rem', lineHeight: 1.4 }}>
+                                  {replaceEventPlaceholders(opt.messageDesc)}
+                                </span>
+                              )}
+                              {opt.result && opt.result[0] && (
+                                <div className="mt-2" style={{ paddingLeft: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <p className="whitespace-pre-line" style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}>
+                                    {replaceEventPlaceholders(opt.result[0])}
+                                  </p>
                                 </div>
-                              </details>
-                            ))}
+                              )}
+                              {/* 선택지별 기프트 보상 */}
+                              {selectedEvent.option_gifts && selectedEvent.option_gifts[i] && selectedEvent.option_gifts[i].length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2.5">
+                                  {selectedEvent.option_gifts[i].map(gid => {
+                                    const g = giftByGameId.get(gid)
+                                    if (!g) return null
+                                    const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
+                                    return (
+                                      <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
+                                        style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.6875rem' }}>
+                                        {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
+                                        <span style={{ color: '#ccc' }}>{g.name}</span>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                              {/* 선택지 내부 연계 이벤트 아코디언 */}
+                              {optChildren.length > 0 && optChildren.map(child => (
+                                <details key={child.id} className="overflow-hidden mt-2.5" style={{ borderRadius: '0.375rem', background: 'rgba(96,144,208,0.04)', border: '1px solid rgba(96,144,208,0.1)' }}>
+                                  <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer list-none transition-colors" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', borderLeft: '0.125rem solid rgba(96,144,208,0.3)' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(96,144,208,0.06)' }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                                    <span style={{ fontSize: '0.5rem', opacity: 0.5, transition: 'transform 0.2s' }}>&#9654;</span>
+                                    <span className="flex-1">{child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || '연계 이벤트'}</span>
+                                    {child.gift_ids && child.gift_ids.length > 0 && (
+                                      <span style={{ fontSize: '0.5625rem', color: '#c8900a', fontFamily: 'var(--font-mono)' }}>기프트 {child.gift_ids.length}종</span>
+                                    )}
+                                  </summary>
+                                  <div className="px-3.5 pb-3 pt-2" style={{ borderTop: '1px solid rgba(96,144,208,0.08)', marginLeft: '0.125rem', borderLeft: '0.125rem solid rgba(96,144,208,0.15)' }}>
+                                    {child.desc_text && (
+                                      <p className="whitespace-pre-line mb-2.5" style={{ color: '#9a8a7a', fontSize: '0.75rem', lineHeight: 1.7 }}>
+                                        {replaceEventPlaceholders(child.desc_text)}
+                                      </p>
+                                    )}
+                                    {child.options && child.options.length > 0 && (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                        {child.options.map((co, ci) => (
+                                          <div key={ci} className="flex items-start gap-2" style={{ paddingLeft: '0.5rem', borderLeft: '1px solid rgba(96,144,208,0.12)' }}>
+                                            <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '1.125rem', height: '1.125rem', borderRadius: '50%', background: 'rgba(96,144,208,0.1)', color: '#6090d0', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700, marginTop: '0.0625rem' }}>{ci + 1}</span>
+                                            <div className="flex-1">
+                                              <p style={{ color: '#bbb', fontSize: '0.75rem', lineHeight: 1.5 }}>{replaceEventPlaceholders(co.message)}</p>
+                                              {co.messageDesc && <span className="inline-block mt-0.5 px-1.5 py-0.5" style={{ color: '#6090d0', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', background: 'rgba(96,144,208,0.06)', borderRadius: '0.1875rem', border: '1px solid rgba(96,144,208,0.1)' }}>{replaceEventPlaceholders(co.messageDesc)}</span>}
+                                              {co.result && co.result[0] && (
+                                                <p className="mt-1 whitespace-pre-line" style={{ color: '#706050', fontSize: '0.6875rem', lineHeight: 1.5 }}>
+                                                  {replaceEventPlaceholders(co.result[0])}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {child.gift_ids && child.gift_ids.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2.5 pt-2" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
+                                        {child.gift_ids.map(gid => {
+                                          const g = giftByGameId.get(gid)
+                                          if (!g) return null
+                                          const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
+                                          return (
+                                            <button key={gid} onClick={() => { setSelectedEvent(null); setSelected(g) }}
+                                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
+                                              style={{ cursor: 'pointer', background: `${kw}12`, border: `1px solid ${kw}20`, fontSize: '0.625rem' }}>
+                                              {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={14} height={14} fallbackType="gift" style={{ width: '0.875rem', height: '0.875rem' }} />}
+                                              <span style={{ color: '#ccc' }}>{g.name}</span>
+                                            </button>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </details>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                   {/* option_index가 없는 연계 이벤트 (매핑 안 된 것) */}
                   {children.filter(c => c.option_index == null).length > 0 && (
-                    <div className="mt-2">
+                    <div className="mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div style={{ width: '0.1875rem', height: '0.75rem', background: 'rgba(96,144,208,0.4)', borderRadius: '0.125rem' }} />
+                        <p style={{ color: '#506888', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '0.08em' }}>연계 이벤트</p>
+                      </div>
                       {children.filter(c => c.option_index == null).map(child => (
-                        <details key={child.id} className="rounded-lg overflow-hidden mb-2" style={{ background: 'rgba(96,144,208,0.04)', border: '1px solid rgba(96,144,208,0.12)' }}>
-                          <summary className="flex items-center gap-2 px-3.5 py-2 cursor-pointer list-none" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
-                            <span style={{ fontSize: '0.5rem', opacity: 0.6 }}>▶</span>
-                            연계: {child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || `이벤트 #${child.id}`}
+                        <details key={child.id} className="overflow-hidden mb-2" style={{ borderRadius: '0.375rem', background: 'rgba(96,144,208,0.03)', border: '1px solid rgba(96,144,208,0.1)', borderLeft: '0.125rem solid rgba(96,144,208,0.25)' }}>
+                          <summary className="flex items-center gap-2 px-3.5 py-2 cursor-pointer list-none transition-colors" style={{ color: '#6090d0', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(96,144,208,0.05)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                            <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>&#9654;</span>
+                            <span className="flex-1">{child.name || replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) || `이벤트 #${child.id}`}</span>
                           </summary>
-                          <div className="px-3.5 pb-3 pt-1" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
+                          <div className="px-3.5 pb-3 pt-1.5" style={{ borderTop: '1px solid rgba(96,144,208,0.08)' }}>
                             {child.desc_text && (
-                              <p className="whitespace-pre-line leading-relaxed" style={{ color: '#aaa', fontSize: '0.6875rem' }}>
+                              <p className="whitespace-pre-line" style={{ color: '#9a8a7a', fontSize: '0.75rem', lineHeight: 1.7 }}>
                                 {replaceEventPlaceholders(child.desc_text)}
                               </p>
                             )}
@@ -1131,32 +1204,36 @@ export default function MirrorDungeonClient({
                     </div>
                   )}
                 </div>
-                )
-              })()}
+              )}
 
               {/* 출현 테마팩 */}
               {selectedEvent.theme_ids && selectedEvent.theme_ids.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>출현 테마팩</p>
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <div style={{ width: '0.1875rem', height: '0.75rem', background: 'rgba(200,144,10,0.3)', borderRadius: '0.125rem' }} />
+                    <p style={{ color: '#8a7a60', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '0.1em' }}>출현 테마팩</p>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedEvent.theme_ids.slice(0, 20).map(tid => {
                       const t = themes.find(th => th.id === tid)
                       if (!t) return null
-                      const dColor = t.difficulty === 'extreme' ? '#e04040' : t.difficulty === 'hard' ? '#e89030' : '#888'
+                      const dColor = t.difficulty === 'extreme' ? '#c04040' : t.difficulty === 'hard' ? '#d08030' : '#706050'
                       return (
                         <button key={tid} onClick={() => { setSelectedEvent(null); setActiveTab('themes'); setExpandedThemeId(tid) }}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
-                          style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          className="inline-flex items-center gap-1.5 px-2 py-1 transition-colors"
+                          style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.375rem' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.2)'; e.currentTarget.style.background = 'rgba(200,144,10,0.04)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
                           {t.image_url && <ImageWithFallback src={t.image_url} alt="" width={10} height={18} fallbackType="theme" style={{ width: '0.625rem', height: '1.125rem', objectFit: 'cover', borderRadius: '1px' }} />}
-                          <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
-                          <span style={{ color: dColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                          <span style={{ color: '#b0a088', fontSize: '0.6875rem' }}>{t.name}</span>
+                          <span style={{ color: dColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                             {t.difficulty === 'extreme' ? 'EX' : t.difficulty === 'hard' ? 'H' : ''}
                           </span>
                         </button>
                       )
                     })}
                     {selectedEvent.theme_ids.length > 20 && (
-                      <span style={{ color: '#555', fontSize: '0.6875rem' }}>+{selectedEvent.theme_ids.length - 20}개</span>
+                      <span style={{ color: '#555', fontSize: '0.6875rem', alignSelf: 'center' }}>+{selectedEvent.theme_ids.length - 20}개</span>
                     )}
                   </div>
                 </div>
@@ -1169,13 +1246,18 @@ export default function MirrorDungeonClient({
                 const evGifts = [...allGiftIds].map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
                 if (evGifts.length === 0) return null
                 return (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem' }}>
-                    <p className="text-[0.6875rem] font-bold mb-2" style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}>획득 가능 기프트</p>
+                  <div style={{ borderTop: '1px solid rgba(200,144,10,0.08)', paddingTop: '1rem' }}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <div style={{ width: '0.1875rem', height: '0.75rem', background: 'rgba(200,144,10,0.3)', borderRadius: '0.125rem' }} />
+                      <p style={{ color: '#8a7a60', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '0.1em' }}>획득 가능 기프트</p>
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       {evGifts.map(g => {
                         const kw = KEYWORD_COLORS[g.keyword] ?? '#666'
                         return (
-                          <button key={g.id} onClick={() => { setSelectedEvent(null); setSelected(g) }} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors hover:bg-white/10" style={{ cursor: 'pointer', background: `${kw}10`, border: `1px solid ${kw}20` }}>
+                          <button key={g.id} onClick={() => { setSelectedEvent(null); setSelected(g) }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors hover:bg-white/10"
+                            style={{ cursor: 'pointer', background: `${kw}10`, border: `1px solid ${kw}20` }}>
                             {g.image_url && <ImageWithFallback src={g.image_url} alt="" width={18} height={18} fallbackType="gift" style={{ width: '1.125rem', height: '1.125rem' }} />}
                             <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{g.name}</span>
                           </button>
@@ -1186,9 +1268,12 @@ export default function MirrorDungeonClient({
                 )
               })()}
             </div>
+
+            </div>{/* 스크롤 컨테이너 끝 */}
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {/* 필터 영역 + 그리드 (전체 기프트 탭) */}
       {activeTab === 'gifts' && (<>
