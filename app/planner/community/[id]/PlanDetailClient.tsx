@@ -234,7 +234,7 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
   onGiftClick?: (gift: GiftData, enhance: number) => void
 }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))', gap: '0.5rem', justifyItems: 'center' }}>
       {gifts.map(({ gift, enhance }) => {
         const cond = getCondition?.(gift)
         const kwSlug = getKeywordSlug(gift.keyword ?? null)
@@ -243,7 +243,7 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
           <div
             key={`${gift.game_id}_${enhance}`}
             onClick={() => onGiftClick?.(gift, enhance)}
-            style={{ width: '4.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onGiftClick ? 'pointer' : 'default' }}
+            style={{ width: '100%', maxWidth: '4.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onGiftClick ? 'pointer' : 'default' }}
           >
             <div style={{
               position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden',
@@ -638,7 +638,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6">
 
         {/* 뒤로가기 */}
         <Link
@@ -669,8 +669,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           </div>
 
           {/* 제목 */}
-          <h1 className="leading-tight" style={{
-            fontSize: '2rem', color: '#e8dcc8', marginBottom: '0.75rem',
+          <h1 className="leading-tight text-xl sm:text-2xl md:text-[2rem]" style={{
+            color: '#e8dcc8', marginBottom: '0.75rem',
             fontFamily: 'var(--font-heading)',
           }}>
             {plan.title}
@@ -702,7 +702,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               disabled={voteLoading}
               className="flex items-center gap-1.5 transition-all hover:brightness-110 disabled:opacity-50 ml-auto"
               style={{
-                padding: '0.5rem 1.25rem',
+                padding: '0.375rem 0.75rem',
                 background: voted ? 'rgba(200,144,10,0.2)' : 'transparent',
                 border: `1px solid ${voted ? 'rgba(200,144,10,0.5)' : '#333'}`,
                 borderRadius: '2rem',
@@ -781,7 +781,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         {/* ── 덱 편성 ── */}
         <div style={{ marginBottom: '1.5rem' }}>
           {/* 서브탭 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {([
               { key: 'identity' as const, label: `인격 (${deck.length}/12)`, hint: '클릭하여 상세 보기' },
               { key: 'ego' as const, label: `EGO (${egoSlots.length})` },
@@ -790,7 +790,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               const active = deckSubTab === tab.key
               return (
                 <button key={tab.key} onClick={() => setDeckSubTab(tab.key)} style={{
-                  padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: active ? 700 : 400,
+                  padding: '0.5rem 0.625rem', fontSize: '0.8125rem', fontWeight: active ? 700 : 400, whiteSpace: 'nowrap',
                   color: active ? '#e8dcc8' : '#555', cursor: 'pointer',
                   background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
                   border: 'none',
@@ -810,7 +810,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
           {/* 인격 그리드 */}
           {deckSubTab === 'identity' && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-x-3 gap-y-4">
+            <div className="grid grid-cols-6 gap-x-1.5 sm:gap-x-3 gap-y-3 sm:gap-y-4">
               {sinners.map(sinner => {
                 const slot = slotBySinner[sinner.id]
                 const identData = slot?.identity_id ? identityMap.get(slot.identity_id) : undefined
@@ -844,17 +844,17 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                             background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
                             paddingTop: '1.25rem', paddingBottom: '0.25rem',
                           }}>
-                            <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
+                            <p className="font-serif text-[0.5rem] sm:text-[0.6875rem]" style={{ color: '#e8dcc8', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.name_kr}</p>
                           </div>
                           {n != null && (
                             <div style={{
                               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                               zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
                             }}>
-                              <span style={{ fontSize: '1rem', fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
+                              <span className="text-[0.625rem] sm:text-base" style={{ fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
                                 {n <= 7 ? '편성' : '대기'}
                               </span>
-                              <span style={{ fontSize: '1.5rem', fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
+                              <span className="text-sm sm:text-2xl" style={{ fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
                                 {n}
                               </span>
                             </div>
@@ -874,7 +874,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                             background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
                             paddingTop: '1.25rem', paddingBottom: '0.375rem',
                           }}>
-                            <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.75rem' }}>{sinner.name_kr}</p>
+                            <p className="font-serif font-light text-[0.5rem] sm:text-[0.75rem]" style={{ color: '#3a2a10' }}>{sinner.name_kr}</p>
                           </div>
                         </>
                       )}
@@ -1046,7 +1046,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             )}
           </div>
           {blessings.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
               {blessings.map(b => {
                 const effects = BLESSING_EFFECTS[b.baseId]?.[b.level - 1] ?? []
                 return (
@@ -1054,25 +1054,25 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                     background: '#1a1510', border: '1px solid #c8900a50',
                     boxShadow: '0 0 12px #c8900a15',
                   }}>
-                    <div className="flex items-center gap-2 p-3 pb-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 pb-1.5 sm:pb-2">
                       <Image src={`${S}/icons/start-buffs/${b.baseId}.webp`} alt={b.name} width={32} height={32}
-                        style={{ width: '2rem', height: '2rem', objectFit: 'contain' }} />
+                        style={{ width: '1.5rem', height: '1.5rem', objectFit: 'contain' }} />
                       <div className="flex-1 min-w-0">
-                        <div style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.2 }}>{b.name}</div>
+                        <div className="text-[0.6875rem] sm:text-[0.8125rem]" style={{ color: '#e8dcc8', fontWeight: 600, lineHeight: 1.2 }}>{b.name}</div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />
-                        <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700 }}>{b.cost}</span>
+                      <div className="flex items-center gap-0.5 sm:gap-1">
+                        <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={14} height={14} style={{ width: '0.75rem', height: '0.75rem' }} />
+                        <span style={{ color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>{b.cost}</span>
                       </div>
                     </div>
-                    <div className="px-3 pb-2 flex-1">
+                    <div className="px-2 sm:px-3 pb-1.5 sm:pb-2 flex-1">
                       {effects.map((eff, i) => (
-                        <div key={i} style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>• {eff}</div>
+                        <div key={i} style={{ color: '#777', fontSize: '0.5625rem', lineHeight: 1.5 }}>• {eff}</div>
                       ))}
                     </div>
                     <div style={{
-                      borderTop: '1px solid #222', padding: '0.25rem 0.75rem 0.375rem',
-                      fontSize: '0.6875rem', fontWeight: 700, textAlign: 'center',
+                      borderTop: '1px solid #222', padding: '0.1875rem 0.5rem 0.25rem',
+                      fontSize: '0.625rem', fontWeight: 700, textAlign: 'center',
                       color: b.level === 3 ? '#c83030' : b.level === 2 ? '#4898b0' : '#e8b030',
                     }}>
                       {b.level === 1 ? '기본' : b.level === 2 ? '+' : '++'}
@@ -1230,7 +1230,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <SectionTitle title="최종 기프트" count={`${finalGifts.length}개`} />
           {deck.length > 0 && finalGifts.length > 0 && (
-            <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.5625rem', marginBottom: '0.25rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem', fontSize: '0.5625rem', marginBottom: '0.25rem' }}>
               <span style={{ color: '#ef4444' }}>● 조건 미달 — 전체 인격으로도 부족</span>
               <span style={{ color: '#e8b030' }}>● 조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족</span>
             </div>
