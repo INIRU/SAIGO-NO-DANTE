@@ -14,7 +14,7 @@
     },
     {
       "id": 1,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "어, 어이 잠깐만!",
       "place": null,
@@ -25,7 +25,7 @@
     },
     {
       "id": 2,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "방금까지 싸웠던 사람이 말하긴 그렇지만, 이건 대화로 풀 수 있는…",
       "place": null,
@@ -36,7 +36,7 @@
     },
     {
       "id": 3,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "……!",
       "place": null,
@@ -48,7 +48,7 @@
     },
     {
       "id": 4,
-      "teller": null,
+      "teller": "이상",
       "title": null,
       "content": "이건…",
       "place": null,
@@ -61,7 +61,7 @@
     },
     {
       "id": 5,
-      "teller": null,
+      "teller": "이상",
       "title": null,
       "content": "이상적이지 않소.",
       "place": null,
@@ -74,7 +74,7 @@
     },
     {
       "id": 6,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "하… 처음부터 말이 안 되는 싸움이라고 생각했는데.",
       "place": null,
@@ -87,7 +87,7 @@
     },
     {
       "id": 7,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "…….",
       "place": null,
@@ -101,7 +101,7 @@
     },
     {
       "id": 8,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "다들 장난해? 난 시작도…",
       "place": null,
@@ -116,7 +116,7 @@
     },
     {
       "id": 9,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "…….",
       "place": null,
@@ -148,7 +148,7 @@
     },
     {
       "id": 11,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "이겨준다는 말은 안 했어요.",
       "place": null,
@@ -182,7 +182,7 @@
     },
     {
       "id": 13,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "그리고, 저만 남았네요.",
       "place": null,
@@ -233,7 +233,7 @@
     },
     {
       "id": 16,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "비장의 수… 라기보단, 그저.",
       "place": null,
@@ -250,7 +250,7 @@
     },
     {
       "id": 17,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "별을 따라가는 거죠.",
       "place": null,

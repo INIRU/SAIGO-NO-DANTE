@@ -5,7 +5,7 @@
   "lines": [
     {
       "id": 0,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "길이 열렸어. 하지만 베르, 메피가 달리기만 했어도 길은 뚫렸을 거야.",
       "place": "메피스토펠레스 내부",
@@ -14,7 +14,7 @@
     },
     {
       "id": 1,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<…뭐?>",
       "place": null,
@@ -23,7 +23,7 @@
     },
     {
       "id": 2,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<그럼 내가 한 건 뭐가 되는 거야?>",
       "place": null,
@@ -41,7 +41,7 @@
     },
     {
       "id": 4,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "진정하시지요, 단테.",
       "place": null,
@@ -50,7 +50,7 @@
     },
     {
       "id": 5,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "걸음마도 떼지 못한 아이에게 달리기를 시킬 순 없지 않겠습니까.",
       "place": null,
@@ -59,7 +59,7 @@
     },
     {
       "id": 6,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "걸어볼 기회가 있다면 직접 걷고 나서 달리셔야죠.",
       "place": null,
@@ -68,7 +68,7 @@
     },
     {
       "id": 7,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "그리고… 단테.",
       "place": null,
@@ -77,7 +77,7 @@
     },
     {
       "id": 8,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "당신은 관리자… 저들의 ‘관리’를 하는 게 업무입니다.",
       "place": null,
@@ -86,7 +86,7 @@
     },
     {
       "id": 9,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "나는… 길잡이. 어디를 가고, 어떻게 개척할지는 내가 판단합니다.",
       "place": null,
@@ -95,7 +95,7 @@
     },
     {
       "id": 10,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "알겠습니까?",
       "place": null,
@@ -104,7 +104,7 @@
     },
     {
       "id": 11,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "토 달지 말라고.",
       "place": null,
@@ -113,7 +113,7 @@
     },
     {
       "id": 12,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<…말도 안 통하는 놈의 말을 듣고 순순하게 따르기만 하라는 거야?>",
       "place": null,
@@ -122,7 +122,7 @@
     },
     {
       "id": 13,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "…….",
       "place": null,
@@ -131,7 +131,7 @@
     },
     {
       "id": 14,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "째깍거리긴 하는데, 뭐라고 하는 거지? 파우스트 씨.",
       "place": null,
@@ -140,7 +140,7 @@
     },
     {
       "id": 15,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "별말 없었습니다.",
       "place": null,
@@ -149,7 +149,7 @@
     },
     {
       "id": 16,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "긍정을 성대하게도 하는군. 앞으론 고개만 끄덕여도 좋습니다, 단테.",
       "place": null,
@@ -158,7 +158,7 @@
     },
     {
       "id": 17,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "그럼 메피, 출발하자. 야호.",
       "place": null,
@@ -167,7 +167,7 @@
     },
     {
       "id": 18,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "카론, 기분이 어때?",
       "place": null,
@@ -176,7 +176,7 @@
     },
     {
       "id": 19,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "매우. 신나. 날아갈 것 같습니다, 카론.",
       "place": null,
@@ -185,7 +185,7 @@
     },
     {
       "id": 20,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "…좋아.",
       "place": null,
@@ -194,7 +194,7 @@
     },
     {
       "id": 21,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<그래서 어디로 가는 거야?>",
       "place": null,
@@ -203,7 +203,7 @@
     },
     {
       "id": 22,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "베르길리우스, 그가 목적지를 묻습니다.",
       "place": null,
@@ -212,7 +212,7 @@
     },
     {
       "id": 23,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "하… 말했던 것 같습니다만, 단테.",
       "place": null,
@@ -221,7 +221,7 @@
     },
     {
       "id": 24,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<목적지가 어디냐니까?>",
       "place": null,

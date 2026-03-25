@@ -41,7 +41,7 @@
     },
     {
       "id": 4,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "상쾌한 아침. 나는야 버스 기사. 카론.",
       "place": null,
@@ -77,7 +77,7 @@
     },
     {
       "id": 8,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "저는 베르길리우스라고 합니다… 이 말이 제대로 들린다면 무언가 이해했다는 행동이라도 취하시죠, 단테.",
       "place": null,
@@ -95,7 +95,7 @@
     },
     {
       "id": 10,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "좋아. 듣는 것엔 문제가 없군. 일단 출발하지, 카론.",
       "place": null,
@@ -104,7 +104,7 @@
     },
     {
       "id": 11,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "출발할게. 부릉부릉.",
       "place": null,
@@ -143,7 +143,7 @@
     },
     {
       "id": 15,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "당신이 누구였는지는 기억합니까?",
       "place": null,
@@ -161,7 +161,7 @@
     },
     {
       "id": 17,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "원래 기억을 되찾고 싶겠군. 그렇지 않나?",
       "place": null,
@@ -179,7 +179,7 @@
     },
     {
       "id": 19,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "매끄럽군. 다들 이렇게 몸짓으로만 말하면 안 되는 건가?",
       "place": null,
@@ -188,7 +188,7 @@
     },
     {
       "id": 20,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "어떻게 생각하지? 파우스트 씨.",
       "place": null,
@@ -197,7 +197,7 @@
     },
     {
       "id": 21,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "파우스트는 사양하고 싶어요.",
       "place": null,
@@ -206,7 +206,7 @@
     },
     {
       "id": 22,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "저희가 매끄럽게 몸을 움직일 수 있는 상황이 그렇게 많지는 않을 것 같으니까요.",
       "place": null,
@@ -233,7 +233,7 @@
     },
     {
       "id": 25,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "단테.",
       "place": null,
@@ -260,7 +260,7 @@
     },
     {
       "id": 28,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "단테는 당신의 이름이에요. 이름까지 잊으셨군요.",
       "place": null,
@@ -278,7 +278,7 @@
     },
     {
       "id": 30,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "점차 익숙해질 거랍니다.",
       "place": null,
@@ -305,7 +305,7 @@
     },
     {
       "id": 33,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "파우스트에게는 제대로 된 단어로 들린답니다.",
       "place": null,
@@ -323,7 +323,7 @@
     },
     {
       "id": 35,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "그런 구시대적인 발상은 머리를 바꾸어서 생긴 건가요.",
       "place": null,
@@ -332,7 +332,7 @@
     },
     {
       "id": 36,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "성대나 혀 따위의 발성기관이 있어야만 대화를 할 수 있다는 건,\n시대착오적인 이야기죠.",
       "place": null,
@@ -350,7 +350,7 @@
     },
     {
       "id": 38,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "…당신의 말은 한 사람에게만 보낼 수도 있고, 모두에게 전달할 수도 있답니다.",
       "place": null,
@@ -359,7 +359,7 @@
     },
     {
       "id": 39,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "아, 모두라는 말은 수정해야겠군요. 수감자들에게만 해당하는 이야기예요.",
       "place": null,
@@ -377,7 +377,7 @@
     },
     {
       "id": 41,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "당신의 뒤에 앉아 있는…",
       "place": null,
@@ -386,7 +386,7 @@
     },
     {
       "id": 42,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "방금까지 당신을 대신해서 싸운 사람들을 말하는 겁니다.",
       "place": null,
@@ -422,7 +422,7 @@
     },
     {
       "id": 46,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "다들 닥쳐라. 잡음이 겹치는 것만큼 불쾌한 것도 없으니.",
       "place": null,
@@ -431,7 +431,7 @@
     },
     {
       "id": 47,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "자기소개가 필요한 시점인가 보군.",
       "place": null,
@@ -440,7 +440,7 @@
     },
     {
       "id": 48,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "그럼 가벼운 인사를 나눌 시간을 주겠다. 앞에 앉은 것부터. 시작.",
       "place": null,
@@ -449,7 +449,7 @@
     },
     {
       "id": 49,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "왜 이런 건 항상 앞자리부터인지… 앞에 나서는 건 이제 진절머리가 나는데.",
       "place": null,
@@ -458,7 +458,7 @@
     },
     {
       "id": 50,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "당신이 우리를 이끌… 뭐더라, 관리자라고 하던데.",
       "place": null,
@@ -467,7 +467,7 @@
     },
     {
       "id": 51,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<관리자?>",
       "place": null,
@@ -476,7 +476,7 @@
     },
     {
       "id": 52,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "그래, 그래서 어떤 인물인지 굉장히 궁금했는데 말이야…",
       "place": null,
@@ -485,7 +485,7 @@
     },
     {
       "id": 53,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "어… 음, 쯧. 역시 뭔가 말을 만드는 건 어려워.",
       "place": null,
@@ -494,7 +494,7 @@
     },
     {
       "id": 54,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "머리통은 어디 팔아먹었는지 모르겠지만, 저마다 사정은 있는 법이니까.",
       "place": null,
@@ -503,7 +503,7 @@
     },
     {
       "id": 55,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "나는 그레고르라고 한다. 잘 부탁한다고, 관리자 양반.",
       "place": null,
@@ -512,7 +512,7 @@
     },
     {
       "id": 57,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "그렉! 양반이 뭐야, 양반이~ 이제부터 우리한테 엄청난 돈을 가져다줄 사람한테!",
       "place": null,
@@ -521,7 +521,7 @@
     },
     {
       "id": 58,
-      "teller": null,
+      "teller": "그레고르",
       "title": null,
       "content": "그렉…?",
       "place": null,
@@ -530,7 +530,7 @@
     },
     {
       "id": 59,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<돈? 이건 또 무슨 소리지?>",
       "place": null,
@@ -539,7 +539,7 @@
     },
     {
       "id": 60,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "양반보다는… 단테! 이름으로 부를게. 당신도 나를 로쟈라고 불러~",
       "place": null,
@@ -548,7 +548,7 @@
     },
     {
       "id": 62,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "난 당신이 우리의… 음, 관리자가 된 데에 이유가 있다고 믿어.",
       "place": null,
@@ -557,7 +557,7 @@
     },
     {
       "id": 63,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "분명, 원래는 둥지의 굉장한 사람이었겠지? 그때 버릇을 조금만 내비쳐도 우리한테 돈이 주르륵 들어올 생각을 하니… 후후….",
       "place": null,
@@ -575,7 +575,7 @@
     },
     {
       "id": 65,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "아차, 내 정신 좀 봐. 얘! 다음은 네 차례야!",
       "place": null,
@@ -584,7 +584,7 @@
     },
     {
       "id": 66,
-      "teller": null,
+      "teller": "싱클레어",
       "title": null,
       "content": "안녕하세요…",
       "place": null,
@@ -593,7 +593,7 @@
     },
     {
       "id": 67,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "시시해~ 그게 끝이야?",
       "place": null,
@@ -602,7 +602,7 @@
     },
     {
       "id": 68,
-      "teller": null,
+      "teller": "싱클레어",
       "title": null,
       "content": "아! 싱클레어라고 해요…",
       "place": null,
@@ -620,7 +620,7 @@
     },
     {
       "id": 71,
-      "teller": null,
+      "teller": "싱클레어",
       "title": null,
       "content": "…더, 더 해야 할 말이 있나요? 회사는 처음이라…",
       "place": null,
@@ -629,7 +629,7 @@
     },
     {
       "id": 72,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "뭐, 앞으로 남은 날은 많을 테니까.",
       "place": null,
@@ -638,7 +638,7 @@
     },
     {
       "id": 73,
-      "teller": null,
+      "teller": "로쟈",
       "title": null,
       "content": "그럼 거기 괴짜 친구가 다음 타자하자!",
       "place": null,
@@ -647,7 +647,7 @@
     },
     {
       "id": 74,
-      "teller": null,
+      "teller": "이상",
       "title": null,
       "content": "이상이라 하오.",
       "place": null,
@@ -656,7 +656,7 @@
     },
     {
       "id": 76,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<…끝이야?>",
       "place": null,
@@ -665,7 +665,7 @@
     },
     {
       "id": 77,
-      "teller": null,
+      "teller": "이상",
       "title": null,
       "content": "음. 이상이오.",
       "place": null,
@@ -692,7 +692,7 @@
     },
     {
       "id": 80,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "하아… 답답하네요. 사회생활의 첫걸음은 인사잖아요?",
       "place": null,
@@ -701,7 +701,7 @@
     },
     {
       "id": 81,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "저를, 이스마엘이라고 불러주세요.",
       "place": null,
@@ -710,7 +710,7 @@
     },
     {
       "id": 83,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "당신 덕택에 동강 난 몸이 돌아왔다고 들었어요. 앞으로도 잘 부탁해요.",
       "place": null,
@@ -737,7 +737,7 @@
     },
     {
       "id": 86,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "미안하게 됐네, 나는 사회생활하고는 거리가 좀 멀어서.",
       "place": null,
@@ -746,7 +746,7 @@
     },
     {
       "id": 87,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "히스클리프. 뭐 때려 부수고 깨부수는 일은 전문으로 하고 다녔지.",
       "place": null,
@@ -755,7 +755,7 @@
     },
     {
       "id": 89,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "누가 시켜서가 아니라, 거슬리는 것들에게 하고 다니긴 했지만.",
       "place": null,
@@ -764,7 +764,7 @@
     },
     {
       "id": 90,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "당신도 조심하라고.",
       "place": null,
@@ -773,7 +773,7 @@
     },
     {
       "id": 91,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "나는 윗사람이라고 거들먹거리는 사람한테 알레르기가 있거든.",
       "place": null,
@@ -791,7 +791,7 @@
     },
     {
       "id": 93,
-      "teller": null,
+      "teller": "돈키호테",
       "title": null,
       "content": "드디어 이 몸의 차례인가! 난 돈키호테일세!",
       "place": null,
@@ -800,7 +800,7 @@
     },
     {
       "id": 95,
-      "teller": null,
+      "teller": "돈키호테",
       "title": null,
       "content": "그대와 함께 꿈을 향해 달려갈 해결사지. 잘 부탁하네.",
       "place": null,
@@ -809,7 +809,7 @@
     },
     {
       "id": 96,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<해결사…? 분명히 알고 있었던 단어 같은데…>",
       "place": null,
@@ -818,7 +818,7 @@
     },
     {
       "id": 97,
-      "teller": null,
+      "teller": "돈키호테",
       "title": null,
       "content": "해결사 말인가? 내가 대답해 줄 수 있네! 도시를 수호하는 자들이지!",
       "place": null,
@@ -827,7 +827,7 @@
     },
     {
       "id": 98,
-      "teller": null,
+      "teller": "돈키호테",
       "title": null,
       "content": "아! 도시에 대해서도 제대로 기억하지 못하겠군! 도시는…",
       "place": null,
@@ -836,7 +836,7 @@
     },
     {
       "id": 99,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "나는 가벼운 인사를 나누라고 했던 것 같은데.",
       "place": null,
@@ -845,7 +845,7 @@
     },
     {
       "id": 100,
-      "teller": null,
+      "teller": "돈키호테",
       "title": null,
       "content": "윽…",
       "place": null,
@@ -854,7 +854,7 @@
     },
     {
       "id": 101,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "두 번 말하게 하지 않았으면 좋겠어. 다음.",
       "place": null,
@@ -863,7 +863,7 @@
     },
     {
       "id": 102,
-      "teller": null,
+      "teller": "홍루",
       "title": null,
       "content": "홍루라고 한답니다. 잘해보자고요, 우리.",
       "place": null,
@@ -872,7 +872,7 @@
     },
     {
       "id": 104,
-      "teller": null,
+      "teller": "홍루",
       "title": null,
       "content": "우와~ 당신, 그 머리 근사한데요? 요새 유행하는 모델인가 보죠?",
       "place": null,
@@ -881,7 +881,7 @@
     },
     {
       "id": 105,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<이건 그런 게…>",
       "place": null,
@@ -890,7 +890,7 @@
     },
     {
       "id": 106,
-      "teller": null,
+      "teller": "홍루",
       "title": null,
       "content": "제 취향은 아니지만.",
       "place": null,
@@ -899,7 +899,7 @@
     },
     {
       "id": 107,
-      "teller": null,
+      "teller": "히스클리프",
       "title": null,
       "content": "…저건 무슨 말 싸가지야?",
       "place": null,
@@ -926,7 +926,7 @@
     },
     {
       "id": 110,
-      "teller": null,
+      "teller": "료슈",
       "title": null,
       "content": "료슈.",
       "place": null,
@@ -935,7 +935,7 @@
     },
     {
       "id": 112,
-      "teller": null,
+      "teller": "료슈",
       "title": null,
       "content": "요료슈쿠.",
       "place": null,
@@ -944,7 +944,7 @@
     },
     {
       "id": 113,
-      "teller": null,
+      "teller": "료슈",
       "title": null,
       "content": "…푸훗.",
       "place": null,
@@ -962,7 +962,7 @@
     },
     {
       "id": 115,
-      "teller": null,
+      "teller": "뫼르소",
       "title": null,
       "content": "뫼르소, 그렇게 불러 주시겠습니까.",
       "place": null,
@@ -971,7 +971,7 @@
     },
     {
       "id": 117,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<당신은 깍듯하네.>",
       "place": null,
@@ -980,7 +980,7 @@
     },
     {
       "id": 118,
-      "teller": null,
+      "teller": "뫼르소",
       "title": null,
       "content": "특별한 것이 아닙니다. 그저 보통의 태도입니다.",
       "place": null,
@@ -989,7 +989,7 @@
     },
     {
       "id": 119,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<살짝 감격스러울 정도네. 고마워.>",
       "place": null,
@@ -998,7 +998,7 @@
     },
     {
       "id": 120,
-      "teller": null,
+      "teller": "뫼르소",
       "title": null,
       "content": "네.",
       "place": null,
@@ -1016,7 +1016,7 @@
     },
     {
       "id": 122,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "…….",
       "place": null,
@@ -1034,7 +1034,7 @@
     },
     {
       "id": 124,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "저는…",
       "place": null,
@@ -1052,7 +1052,7 @@
     },
     {
       "id": 126,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "관리자님이 먼저 자세를 굽히려 하다니 당치도 않습니다.",
       "place": null,
@@ -1061,7 +1061,7 @@
     },
     {
       "id": 127,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "본인은 오티스라고 합니다. 이전에 실례했던 부분을 사과드리고 싶습니다.",
       "place": null,
@@ -1070,7 +1070,7 @@
     },
     {
       "id": 129,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<실례… 라니?>",
       "place": null,
@@ -1079,7 +1079,7 @@
     },
     {
       "id": 130,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "하하, 이것 참. 마음마저 이렇게 넓으실 줄이야.",
       "place": null,
@@ -1088,7 +1088,7 @@
     },
     {
       "id": 131,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "역시, 처음부터 저희를 이끄실 분이라는 걸 한눈에 알아봤습니다.",
       "place": null,
@@ -1097,7 +1097,7 @@
     },
     {
       "id": 132,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<…으응? 응?>",
       "place": null,
@@ -1106,7 +1106,7 @@
     },
     {
       "id": 133,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "인간의 대부분은 서로가 맞붙어 소음과 마찰을 이끌어내지만…",
       "place": null,
@@ -1115,7 +1115,7 @@
     },
     {
       "id": 134,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "그중 소수는 맞붙는 것으로 서로에게 이득이 되는 경우가 있다고 합니다.",
       "place": null,
@@ -1124,7 +1124,7 @@
     },
     {
       "id": 135,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "검을 날카롭게 벼리기 위해선 그만큼 강한 숫돌이 필요한 것처럼.",
       "place": null,
@@ -1133,7 +1133,7 @@
     },
     {
       "id": 136,
-      "teller": null,
+      "teller": "오티스",
       "title": null,
       "content": "누구보다 관리자님을 위해 헌신하겠습니다. 편히 써주시기를.",
       "place": null,
@@ -1142,7 +1142,7 @@
     },
     {
       "id": 137,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<드, 듬직하네… 고마워.>",
       "place": null,
@@ -1160,7 +1160,7 @@
     },
     {
       "id": 139,
-      "teller": null,
+      "teller": "이스마엘",
       "title": null,
       "content": "아까 숲에서는 불쌍하게 나뒹군다고 말하더니, 잘도 그런 말을 성대 밖으로 꺼낼 수 있네요.",
       "place": null,
@@ -1178,7 +1178,7 @@
     },
     {
       "id": 141,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "제가 마지막이네요. 파우스트입니다.",
       "place": null,
@@ -1187,7 +1187,7 @@
     },
     {
       "id": 143,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "당신의 인생 중 한 번 만날까 말까 한 천재죠.",
       "place": null,
@@ -1196,7 +1196,7 @@
     },
     {
       "id": 144,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<으음…>",
       "place": null,
@@ -1205,7 +1205,7 @@
     },
     {
       "id": 145,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "납득하지 못한 듯한 반응이군요, 단테.",
       "place": null,
@@ -1214,7 +1214,7 @@
     },
     {
       "id": 146,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "괜찮습니다. 경험을 통해 차차 이해할 수 있을 거예요.",
       "place": null,
@@ -1223,7 +1223,7 @@
     },
     {
       "id": 147,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<무얼…?>",
       "place": null,
@@ -1232,7 +1232,7 @@
     },
     {
       "id": 148,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "파우스트가 진귀한 천재였다는 사실을 말이에요.",
       "place": null,
@@ -1241,7 +1241,7 @@
     },
     {
       "id": 149,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "관측자가 깨닫지 못한다 하여, 사실이 진실이 되는 일은 없으니까요.",
       "place": null,
@@ -1250,7 +1250,7 @@
     },
     {
       "id": 150,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<그래…>",
       "place": null,
@@ -1259,7 +1259,7 @@
     },
     {
       "id": 151,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "소개는 여기까지.",
       "place": null,
@@ -1268,7 +1268,7 @@
     },
     {
       "id": 152,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "단테, 당신의 직무를 알려 드리죠.",
       "place": null,
@@ -1277,7 +1277,7 @@
     },
     {
       "id": 153,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<직무… 관리자를 말하는 거야?>",
       "place": null,
@@ -1286,7 +1286,7 @@
     },
     {
       "id": 154,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "관리자를 말하는 거냐고 묻고 있어요.",
       "place": null,
@@ -1304,7 +1304,7 @@
     },
     {
       "id": 156,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "맞습니다. 관리자 단테.\n당신은 지금 소개받은 이 열둘의 수감자와 함께 지옥을 기행 하게 될 것입니다.",
       "place": null,
@@ -1313,7 +1313,7 @@
     },
     {
       "id": 157,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<지옥…? 내가 왜 지옥으로 가야 하지?>",
       "place": null,
@@ -1322,7 +1322,7 @@
     },
     {
       "id": 158,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "자신이 지옥으로 가야 하는 이유를 묻네요.",
       "place": null,
@@ -1331,7 +1331,7 @@
     },
     {
       "id": 159,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "흠… 지옥의 끝에는 보물이 기다리고 있으니까… 그렇게 말하면 되겠습니까.",
       "place": null,
@@ -1340,7 +1340,7 @@
     },
     {
       "id": 160,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<무슨… 원래 내가 보물 사냥이라도 하고 있었다는 뜻이야?>",
       "place": null,
@@ -1349,7 +1349,7 @@
     },
     {
       "id": 161,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "아예 알아듣질 못하는군요.",
       "place": null,
@@ -1358,7 +1358,7 @@
     },
     {
       "id": 162,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "이해를 요구한 건 아닙니다, 단테. 의사를 물은 것도 아니죠.",
       "place": null,
@@ -1367,7 +1367,7 @@
     },
     {
       "id": 163,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "기억과 머리를 되찾고 싶다면 제 말을 들어야 할 겁니다.",
       "place": null,
@@ -1376,7 +1376,7 @@
     },
     {
       "id": 164,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<그거야… 되찾고 싶지만…>",
       "place": null,
@@ -1385,7 +1385,7 @@
     },
     {
       "id": 165,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "미적거리네요.",
       "place": null,
@@ -1394,7 +1394,7 @@
     },
     {
       "id": 166,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "파우스트 씨. 단테가 계속해서 거부하면 우린 어떻게 되는 거지? 거부할 거란 예상은 없었잖아.",
       "place": null,
@@ -1403,7 +1403,7 @@
     },
     {
       "id": 167,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "무슨 말씀을. 파우스트는 모든 것을 예상한답니다.",
       "place": null,
@@ -1412,7 +1412,7 @@
     },
     {
       "id": 168,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "단테, 모든 임무를 마치고 나면…",
       "place": null,
@@ -1421,7 +1421,7 @@
     },
     {
       "id": 169,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "당신은 성위를 새길 수 있을 거예요.",
       "place": null,
@@ -1430,7 +1430,7 @@
     },
     {
       "id": 170,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "제가 보증하죠.",
       "place": null,
@@ -1457,7 +1457,7 @@
     },
     {
       "id": 173,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "보이죠? 고개를 끄덕이잖아요.",
       "place": null,
@@ -1466,7 +1466,7 @@
     },
     {
       "id": 174,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "좋아. 계속 가면 되겠어.",
       "place": null,
@@ -1475,7 +1475,7 @@
     },
     {
       "id": 175,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "그런데 카론, 아까부터 왜 출발을 안 하고 있지? 졸았나?",
       "place": null,
@@ -1484,7 +1484,7 @@
     },
     {
       "id": 176,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "버스 기사는 졸음 쉼터에서만 졸아, 베르.",
       "place": null,
@@ -1493,7 +1493,7 @@
     },
     {
       "id": 177,
-      "teller": null,
+      "teller": "카론",
       "title": null,
       "content": "메피 앞에 이상한 놈들이 서성이고 있었어.",
       "place": null,
@@ -1502,7 +1502,7 @@
     },
     {
       "id": 178,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "카론, 말했잖아. 버스에 무슨 일이 생기면 곧바로 알려야 한다니까.",
       "place": null,
@@ -1511,7 +1511,7 @@
     },
     {
       "id": 179,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<메피? 메피는 누구지?>",
       "place": null,
@@ -1520,7 +1520,7 @@
     },
     {
       "id": 180,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "메피스토펠레스. 이 버스의 이름이자 버스를 구동하는 엔진의 이름.",
       "place": null,
@@ -1529,7 +1529,7 @@
     },
     {
       "id": 181,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "…그리고 파우스트의 심혈을 기울인 역작이죠.",
       "place": null,
@@ -1538,7 +1538,7 @@
     },
     {
       "id": 182,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "지옥을 순항하기에는 걸맞는 나룻배가 아닐 수 없지.",
       "place": null,
@@ -1547,7 +1547,7 @@
     },
     {
       "id": 183,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "그렇게 생각하지 않습니까? 단테.",
       "place": null,
@@ -1565,7 +1565,7 @@
     },
     {
       "id": 185,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "보아하니, 뒷골목에 기거하는 익숙한 쥐새끼들이군.",
       "place": null,
@@ -1574,7 +1574,7 @@
     },
     {
       "id": 186,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "마침 잘 됐습니다, 단테. 지휘를 연습하기는 더할 나위 없는 조건이군요.",
       "place": null,
@@ -1583,7 +1583,7 @@
     },
     {
       "id": 187,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "단테, 처음 전투에서는 생략한 부분이 많았어요.",
       "place": null,
@@ -1592,7 +1592,7 @@
     },
     {
       "id": 188,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "제대로 설명할 시간이 없었으니까요.",
       "place": null,
@@ -1601,7 +1601,7 @@
     },
     {
       "id": 189,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "하지만 그런 식으로만 전투가 이뤄지면 우리는 항상 도륙 날 거고.",
       "place": null,
@@ -1610,7 +1610,7 @@
     },
     {
       "id": 190,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "당신은 우리를 살리기 위해 의미 없는 고통을 느껴야만 하겠죠.",
       "place": null,
@@ -1619,7 +1619,7 @@
     },
     {
       "id": 191,
-      "teller": null,
+      "teller": "단테",
       "title": null,
       "content": "<고통… 살려? 그럼 아까 그게…>",
       "place": null,
@@ -1628,7 +1628,7 @@
     },
     {
       "id": 192,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "네, 당신이 ‘시계를 돌려’주었기에, 우리는 살아나는 거랍니다.",
       "place": null,
@@ -1637,7 +1637,7 @@
     },
     {
       "id": 193,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "당장 필요한 설명은 아닌 듯합니다, 파우스트 씨.",
       "place": null,
@@ -1646,7 +1646,7 @@
     },
     {
       "id": 194,
-      "teller": null,
+      "teller": "베르길리우스",
       "title": null,
       "content": "자잘한 담소는 나중에. 너희들. 전원 하차.",
       "place": null,
@@ -1655,7 +1655,7 @@
     },
     {
       "id": 195,
-      "teller": null,
+      "teller": "파우스트",
       "title": null,
       "content": "…전투에 대한 설명을 이어가죠.",
       "place": null,

@@ -16,6 +16,12 @@ type NavGroup = {
 
 const navGroups: NavGroup[] = [
   {
+    label: '스토리',
+    items: [
+      { href: '/story', label: '메인 스토리' },
+    ],
+  },
+  {
     label: 'DB',
     items: [
       { href: '/sinners',        label: '수감자' },
@@ -171,6 +177,27 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-5">
             {navGroups.map(group => {
               const isActive = group.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+              const isSingleItem = group.items.length === 1
+
+              // 아이템 1개 → 바로 이동
+              if (isSingleItem) {
+                return (
+                  <Link
+                    key={group.label}
+                    href={group.items[0].href}
+                    className="flex items-center transition-colors duration-200 hover:text-yellow-300"
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '0.875rem',
+                      color: isActive ? 'var(--gold)' : '#a08a60',
+                      padding: '0.25rem 0',
+                    }}
+                  >
+                    {group.label}
+                  </Link>
+                )
+              }
+
               return (
                 <div
                   key={group.label}
@@ -437,6 +464,29 @@ export default function Navbar() {
           <div className="flex flex-col px-6 py-4" style={{ overflowY: 'auto', flex: 1 }}>
             {navGroups.map(group => {
               const isOpen = mobileOpenGroups.has(group.label)
+
+              // 아이템 1개 → 바로 이동
+              if (group.items.length === 1) {
+                return (
+                  <div key={group.label}>
+                    <Link
+                      href={group.items[0].href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.8125rem',
+                        color: '#5a4838',
+                        letterSpacing: '0.08em',
+                        padding: '0.875rem 0 0.5rem',
+                        display: 'block',
+                      }}
+                    >
+                      {group.label}
+                    </Link>
+                  </div>
+                )
+              }
+
               return (
                 <div key={group.label}>
                   <button
