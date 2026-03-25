@@ -1,0 +1,88 @@
+/* ── Story Viewer ─────────────────────────────── */
+
+.story-viewer {
+  --story-bg: #080604;
+  --story-text: #ddd5c8;
+  --story-text-dim: #9a8a78;
+  --story-text-bright: #f0ead8;
+  --story-text-thought: #8a7a68;
+}
+
+/* Scroll-triggered fade-in */
+.story-block {
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.story-block.in-view {
+  opacity: 1;
+}
+
+/* Camera shake */
+@keyframes story-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-0.15rem, -0.1rem);
+  }
+  20% {
+    transform: translate(0.2rem, 0.06rem);
+  }
+  30% {
+    transform: translate(-0.1rem, 0.18rem);
+  }
+  40% {
+    transform: translate(0.18rem, -0.08rem);
+  }
+  50% {
+    transform: translate(-0.22rem, 0.12rem);
+  }
+  60% {
+    transform: translate(0.12rem, -0.18rem);
+  }
+  70% {
+    transform: translate(-0.18rem, 0.08rem);
+  }
+  80% {
+    transform: translate(0.22rem, -0.1rem);
+  }
+  90% {
+    transform: translate(-0.08rem, 0.15rem);
+  }
+}
+
+.story-shake {
+  animation: story-shake 0.45s ease-in-out;
+}
+
+/* CG image reveal */
+.cg-image-enter {
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 1s ease-out,
+    transform 1.4s ease-out;
+}
+.cg-image-enter.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Progress bar glow */
+.story-progress-bar {
+  box-shadow: 0 0 0.5rem var(--gold-dim);
+}
+
+/* Episode card hover */
+.episode-card {
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+.episode-card:hover {
+  border-color: color-mix(in srgb, var(--gold-dim) 40%, transparent);
+  background: var(--bg-elevated);
+  transform: translateX(0.2rem);
+}

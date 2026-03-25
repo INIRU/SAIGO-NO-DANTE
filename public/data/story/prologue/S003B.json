@@ -1,0 +1,52 @@
+{
+  "episodeId": "S003B",
+  "nodeId": 10003,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "아까보다는 쓸만해 보이는군요, 단테.",
+      "place": "메피스토펠레스 내부",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "<하지만 한 놈 빼고 전부 도망갔어. 쫓아가지 않아도 되나?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "놓친 적을 걱정하네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "걱정할 건 없습니다… 마침 가야 할 길이었으니. 카론?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": null,
+      "title": null,
+      "content": "발판을 꾹꾹. 신나는 기분으로 달릴게.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}
