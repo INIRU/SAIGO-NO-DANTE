@@ -255,90 +255,7 @@ function PlaceDivider({
   )
 }
 
-/* ── CGSubPanel (스택된 CG 이미지 + dialog) ──── */
-
-function CGSubPanel({
-  cgStack,
-  lines,
-  observerRef,
-}: {
-  cgStack: string[]
-  lines: StoryLine[]
-  observerRef: React.RefObject<IntersectionObserver | null>
-}) {
-  const [loadedSet, setLoadedSet] = useState<Set<string>>(new Set())
-  const linesWithContent = lines.filter((l) => l.content)
-
-  const markLoaded = useCallback((name: string) => {
-    setLoadedSet((prev) => new Set(prev).add(name))
-  }, [])
-
-  return (
-    <div
-      className="relative w-full overflow-hidden"
-      style={{
-        aspectRatio: '16 / 9',
-        border: '1px solid rgba(200, 144, 10, 0.08)',
-      }}
-    >
-      {/* Stacked CG images (아래→위 순서) */}
-      {cgStack.map((cg, i) => (
-        <Image
-          key={cg}
-          src={getCGUrl(cg)}
-          alt=""
-          fill
-          className={`object-cover cg-image-enter ${loadedSet.has(cg) ? 'loaded' : ''}`}
-          onLoad={() => markLoaded(cg)}
-          sizes="100vw"
-          style={{ zIndex: i }}
-        />
-      ))}
-
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 30%, var(--story-bg) 100%)',
-          zIndex: cgStack.length,
-        }}
-      />
-
-      {/* Bottom gradient */}
-      {linesWithContent.length > 0 && (
-        <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{
-            height: '65%',
-            background:
-              'linear-gradient(to top, var(--story-bg) 0%, color-mix(in srgb, var(--story-bg) 80%, transparent) 35%, transparent 100%)',
-            zIndex: cgStack.length + 1,
-          }}
-        />
-      )}
-
-      {/* Dialog over CG */}
-      {linesWithContent.length > 0 && (
-        <div
-          className="absolute inset-x-0 bottom-0 px-[1.5rem] pb-[1.25rem] sm:px-[2.5rem]"
-          style={{ zIndex: cgStack.length + 2 }}
-        >
-          {linesWithContent.map((line) => (
-            <DialogBlock
-              key={line.id}
-              line={line}
-              isOverCG
-              observerRef={observerRef}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── CGPanel (연속 CG 합침, 스택별 서브섹션) ──── */
+/* ── CGPanel (sticky CG + 대사 스크롤, 위로 가면 페이드) ── */
 
 function CGPanel({
   group,
@@ -347,6 +264,56 @@ function CGPanel({
   group: LineGroup
   observerRef: React.RefObject<IntersectionObserver | null>
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const sections = useMemo(() => splitCGSections(group.lines), [group.lines])
+
+  const allCGs = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of sections) for (const cg of s.cgStack) set.add(cg)
+    return [...set]
+  }, [sections])
+
+  const allLines = useMemo(
+    () => group.lines.filter((l) => l.content),
+    [group.lines],
+  )
+
+  const [visibleStack, setVisibleStack] = useState<string[]>(
+    sections[0]?.cgStack ?? [],
+  )
+  const [activeLineId, setActiveLineId] = useState<number>(
+    allLines[0]?.id ?? -1,
+  )
+
+  // 대사별 IntersectionObserver — 활성 대사 + CG 스택 전환
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const lineId = entry.target.getAttribute('data-cg-line')
+          if (lineId) {
+            const id = parseInt(lineId)
+            setActiveLineId(id)
+            const stack =
+              entry.target
+                .getAttribute('data-cg-stack')
+                ?.split(',')
+                .filter(Boolean) ?? []
+            if (stack.length > 0) setVisibleStack(stack)
+          }
+        }
+      },
+      { rootMargin: '-55% 0px -15% 0px' },
+    )
+
+    containerRef.current
+      ?.querySelectorAll('[data-cg-line]')
+      .forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [allLines])
+
   const panelRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (node) observerRef.current?.observe(node)
@@ -354,21 +321,88 @@ function CGPanel({
     [observerRef],
   )
 
-  const sections = splitCGSections(group.lines)
-
   return (
     <div
-      ref={panelRef}
-      className="story-block my-[2.5rem] -mx-[1rem] sm:-mx-[1.5rem] md:-mx-[3rem] rounded-[0.25rem] overflow-hidden"
+      ref={(node) => {
+        containerRef.current = node
+        panelRef(node)
+      }}
+      className="story-block my-[2.5rem] -mx-[1rem] sm:-mx-[1.5rem] md:-mx-[3rem]"
     >
-      {sections.map((section, i) => (
-        <CGSubPanel
-          key={`${section.cgStack.join('-')}-${i}`}
-          cgStack={section.cgStack}
-          lines={section.lines}
-          observerRef={observerRef}
+      {/* Sticky CG — 전체화면 */}
+      <div
+        className="sticky top-0 z-10 overflow-hidden cg-fullscreen-enter"
+        style={{ height: '100dvh' }}
+      >
+        {allCGs.map((cg, i) => (
+          <Image
+            key={cg}
+            src={getCGUrl(cg)}
+            alt=""
+            fill
+            className="object-contain"
+            sizes="100vw"
+            style={{
+              zIndex: i,
+              opacity: visibleStack.includes(cg) ? 1 : 0,
+              transition: 'opacity 0.6s ease',
+            }}
+          />
+        ))}
+
+        {/* Vignette */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at center, transparent 30%, var(--story-bg) 100%)',
+            zIndex: allCGs.length,
+          }}
         />
-      ))}
+
+        {/* Bottom gradient */}
+        <div
+          className="absolute inset-x-0 bottom-0 pointer-events-none"
+          style={{
+            height: '55%',
+            background:
+              'linear-gradient(to top, var(--story-bg) 0%, transparent 100%)',
+            zIndex: allCGs.length + 1,
+          }}
+        />
+
+      </div>
+
+      {/* 대사 — CG 하단에서 시작, 활성 대사만 선명 */}
+      <div
+        className="relative px-[1.25rem] sm:px-[2rem] pb-[3rem]"
+        style={{ zIndex: 20, marginTop: '-100dvh', paddingTop: '68dvh' }}
+      >
+        {allLines.map((line) => (
+          <div
+            key={line.id}
+            data-cg-line={line.id}
+            data-cg-stack={line.activeCGs.join(',')}
+            className="mb-[1rem] px-[1.125rem] py-[0.75rem] rounded-[0.375rem]"
+            style={{
+              background:
+                'color-mix(in srgb, var(--story-bg) 75%, transparent)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border:
+                '1px solid color-mix(in srgb, var(--gold-dim) 6%, transparent)',
+              opacity: line.id >= activeLineId ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+            }}
+          >
+            <DialogBlock
+              line={line}
+              isOverCG
+              observerRef={observerRef}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

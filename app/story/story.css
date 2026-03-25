@@ -56,22 +56,43 @@
   animation: story-shake 0.45s ease-in-out;
 }
 
-/* CG image reveal */
-.cg-image-enter {
-  opacity: 0;
-  transform: scale(1.04);
-  transition:
-    opacity 1s ease-out,
-    transform 1.4s ease-out;
+/* CG fullscreen entrance */
+@keyframes cg-expand {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+    border-radius: 0.5rem;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 0;
+  }
 }
-.cg-image-enter.loaded {
-  opacity: 1;
-  transform: scale(1);
+
+.cg-fullscreen-enter {
+  animation: cg-expand 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Progress bar glow */
 .story-progress-bar {
   box-shadow: 0 0 0.5rem var(--gold-dim);
+}
+
+/* CG dialog — 한 대사씩 전환 */
+@keyframes cg-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cg-dialog-fade {
+  animation: cg-dialog-in 0.35s ease forwards;
 }
 
 /* Episode card hover */

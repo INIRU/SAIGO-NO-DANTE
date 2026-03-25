@@ -85,7 +85,7 @@ async function processEpisode(storyId) {
 
     lines.push({
       id: item.id,
-      teller: t?.teller ?? null,
+      teller: t?.teller ?? t?.model ?? null,
       title: t?.title ?? null,
       content: t?.content ?? null,
       place: t?.place ?? null,
