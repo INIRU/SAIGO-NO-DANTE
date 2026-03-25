@@ -69,7 +69,7 @@ const CHAPTER_LABELS: Record<string, string> = {
 }
 
 function getCGUrl(name: string, chapter = 'prologue') {
-  return `${STORAGE_BASE}/story/${chapter}/cg/${name}.png`
+  return `${STORAGE_BASE}/story/${chapter}/cg/${name}.webp`
 }
 
 /* ── Line Grouping ────────────────────────────── */
@@ -321,6 +321,9 @@ function CGPanel({
         // 래퍼가 뷰포트에서 충분히 벗어났을 때만 숨김
         cg.style.opacity = '0'
         cg.style.pointerEvents = 'none'
+        // CG가 완전히 나가면 다음 진입 시 첫 대사 리셋 준비
+        hasEnteredOnce.current = false
+        setDialogReady(false)
       } else {
         cg.style.opacity = '1'
         cg.style.pointerEvents = 'none'
@@ -334,6 +337,9 @@ function CGPanel({
           if (isFull && !hasEnteredOnce.current) {
             hasEnteredOnce.current = true
             setActiveLineId(allLines[0]?.id ?? -1)
+            // 리셋 직후 observer가 덮어쓰지 않도록 잠시 차단
+            wasVisible.current = false
+            setTimeout(() => { wasVisible.current = true }, 300)
           }
         }
       }
