@@ -1,0 +1,160 @@
+{
+  "episodeId": "3D305B",
+  "nodeId": 10322,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "데미안",
+      "title": "신비로운 전학생",
+      "content": "결국 크로머한테 열쇠를 넘겼었구나.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "어떻게 알았어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "데미안은 말을 하지 않은 것까지도 모두 알아채는 능력이 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "언젠가 그에 관해 물어보았더니 ‘사람을 자세히 관찰해보면 알게 될 일’이라고만 말했을 뿐, 더 이상 자세히는 말해주지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "데미안",
+      "title": "신비로운 전학생",
+      "content": "싱클레어, 앞으로 더욱 힘들고 괴로운 일들이 널 연달아서 덮쳐올지도 몰라.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "데미안",
+      "title": "신비로운 전학생",
+      "content": "하지만 포기해선 안 돼.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "데미안",
+      "title": "신비로운 전학생",
+      "content": "그 고통이 너를 더욱 아름답게 성장시켜줄 거니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "제아무리 어려운 말도 데미안의 입을 거치면 모두 그럴듯해지고 마는, 그에게는 그런 신비한 힘이 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그의 말을 들으면 나는 꼭 성장할 수 있을 것 같았다. 그럴 가치가 있는 존재가 될 수 있을 것 같았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "응…하지만 잘은 이해가 안 돼, 데미안.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "데미안",
+      "title": "신비로운 전학생",
+      "content": "네가 알아내. 그런 다음에 나에게 답을 말해줘.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "말투는 부드러웠고 눈은 웃고 있었음에도 어째서인지 그래야만 할 것 같다는 생각이 들었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그 눈동자에는 분명 특별한 힘이 있는 게 분명했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "눈만 마주치면 힘이 풀리고 무력해지는 특별한 힘.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "하지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그렇다면 왜 일말의 언급조차 해주지 않았는지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나는 지금까지도 궁금해지곤 한다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

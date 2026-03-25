@@ -1,0 +1,142 @@
+{
+  "episodeId": "4D201B",
+  "nodeId": 10454,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "이상",
+      "title": null,
+      "content": "꽃은 지고, 만물이 바삐 걸음 하기 시작하였소.",
+      "place": "소란스러워지는 구인회",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "이상",
+      "title": null,
+      "content": "이곳에 걸음 하는 이들의 수도 나날이 늘고, 소란은 그들의 곱절만큼 쌓여가는구료.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "여기가 무슨 동네 저잣거리도 아니고 말이야, 너무 시끄러워.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "…아홉일 때가 딱 적당했어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "우와… 신기한 게 많이 생겼소! 나, 여기 있는 발명품 좀 만져봐도 되겠나?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "…입 좀 닫아 줄래?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "끄흐음…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "단테",
+      "title": null,
+      "content": "<무섭네…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "동백. 너무 그러지 마. 활기차 보이기만 하는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "이상",
+      "title": null,
+      "content": "누군가는 소란을 소음으로 여겼고… // 누군가는 이를 달갑게 여기지 않았고…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "이상",
+      "title": null,
+      "content": "누군가는 난장을 성장으로 여겼지. // 누군가는 이를 새로운 변화의 한 걸음으로 받아들였지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "이상",
+      "title": null,
+      "content": "나는… 여느 때처럼 비껴보았소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "이상",
+      "title": null,
+      "content": "햇볕만이 계속 내리쬐다가도, 수 일간 장대비만 내릴 때가 있는 것처럼…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "이상",
+      "title": null,
+      "content": "날씨의 변덕스러움을 헤아리려 하는 것은 의미가 없다고 생각하였기에.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "이상",
+      "title": null,
+      "content": "잔잔해질 날을 기다리며, 고개를 내어다 볼 뿐이었지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

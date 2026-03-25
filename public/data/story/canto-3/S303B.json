@@ -1,0 +1,958 @@
+{
+  "episodeId": "S303B",
+  "nodeId": 10303,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "금방금방 빠지네요. 10분 정도만 기다리면 저희 차례가 오겠어요.",
+      "place": "K사 검문소",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "통과 질문은 저희 13명이 다 해야 하나요? 단테 씨는 말을 못 알아들을 텐데, 어떻게 해야 하죠?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "이스마엘은 긴장하면 말이 빨라지고 질문이 늘어나는 버릇이 있는 듯했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "안 그래도 그 이야기를 하려던 참이었지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "잘 들어. K사의 직원은 이쪽 줄에 서 있는 사람들에게는 매우 간단한 질문만 할 거다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그리고 너희들 또한 매우 간단한 대답만 하면 되는 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "심문소 직원이 어떤 목적으로 왔냐고 물어보면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "‘림버스 컴퍼니 업무상으로 왔습니다, 업무 비자를 확인해주세요.’",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "라고 대답을 하면 된다. 토씨 하나 빼먹지 말고 그대로 외워.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그 밖에는 내가 알아서 할 테니, 그저 문제를 일으키지 않을 사람이라는 것만 증명하면 돼.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "파우스트",
+      "title": null,
+      "content": "혹시나 저 말을 외우지 못하겠다면, 차라리 입을 다물고 있으세요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "파우스트",
+      "title": null,
+      "content": "그저 갖고 계시는 사원증을 내밀기만 해도 되니까요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "단테",
+      "title": null,
+      "content": "<입 다물고 문제만 일으키지 않으면 된다. 제일 쉬운 일이지.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "눈치를 보며 슬쩍 비꼬았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "파우스트가 행여나 일러바치진 않을까 내심 걱정을 했지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "베르길리우스는 다행히 허공만 바라보고 있을 뿐 별말은 하지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "자, 그럼.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "질문이 있는 사람은, 내가 정말 가치 있는 질문을 생각했는가에 대한 고민을 해본 후에.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "조용히 손을 들도록.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": null,
+      "title": null,
+      "content": "나를 포함해서 몇 명이 손을 들었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "로지온.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "로쟈",
+      "title": null,
+      "content": "업무 목적이니까 무기는 들고 들어가도 되지~?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그렇다. 다음.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "로쟈",
+      "title": null,
+      "content": "그럼, 그렉의 기기괴괴한 팔이나 단테의 근사한 시계 머리도 상관없겠네?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "맞아요. 참고로 관리자님의 머리는 무기가 아니라 의체로 분류가 되기 때문에 관광 비자여도 허용은 돼요. 비록 불사의 능력을 지니고 있더라도요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": null,
+      "title": null,
+      "content": "모범생 역할을 자처하기로 마음먹은 것 같은 이스마엘이 대신 대답했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": null,
+      "title": null,
+      "content": "요전번 카지노 때도 느꼈던 것이지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": null,
+      "title": null,
+      "content": "이스마엘은 믿었던 내가 어벙하게 굴었다는 것 때문에 스스로가 나서야 한다고 판단한 모양이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "정확해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": null,
+      "title": null,
+      "content": "나와 그레고르의 팔이 동시에 내려갔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그리고, 료슈. 담배는 끄고 얘기하도록.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "료슈",
+      "title": null,
+      "content": "…난 손 안 들었다만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "……",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": null,
+      "title": null,
+      "content": "베르길리우스는 마지막까지 힘차게 뻗은 돈키호테의 팔은 무시하려 듯했지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": null,
+      "title": null,
+      "content": "결단코 내릴 생각을 하지 않는 꼿꼿한 팔에 어쩔 수 없이 대꾸를 해주는 듯했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…그래, 돈키호테. 뭐지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": "돈키호테",
+      "title": "3번 수감자",
+      "content": "저 유리 벽은 어떤 용도로 있는 것이오?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": null,
+      "title": null,
+      "content": "모두의 시선이 돈키호테가 가리킨 입국 심사관 안에 있는 유리 벽으로 향했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": null,
+      "title": null,
+      "content": "절반 정도를 나누어 놓은 투명한 유리 벽 너머에는…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": null,
+      "title": null,
+      "content": "헤아리기 힘들 정도로 많은 사람이 일렬로 기다리고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": "그레고르",
+      "title": null,
+      "content": "저쪽은 기다린다기보단 아예 사람들이 바닥에 앉아 있군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": "그레고르",
+      "title": null,
+      "content": "줄을 선 지 꽤 시간이 지난 모양이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "무장 경호원도 많군. 이곳 인원의 3배.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…대부분 건물에 세워져 있는 유리 벽은 안전을 위한 용도일 가능성이 크다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "로쟈",
+      "title": null,
+      "content": "뭐~ 쉽게 말하자면 뒷골목 사람들 전용 구역이지. 둥지마다 방식은 다르지만, 어쨌든 제대로 된 비자가 없이 다른 둥지로 가는 건 진짜 진짜 까다롭거든.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "로쟈",
+      "title": null,
+      "content": "왜 검문소 근처에서 목숨까지 걸고 우리를 습격하려고 했겠어? 비자를 강제로 빼앗아서라도 둥지에 가려고 했던 거지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…그리고 우리가 해결해줄 수 없는 문제이기도 하지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": null,
+      "title": null,
+      "content": "하지만 그것이 돈키호테에게는 만족스러운 답변이 되지 못했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": null,
+      "title": null,
+      "content": "그 이유가 유리 벽 너머만의 음울하면서도 위압적인 분위기 때문인지,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": null,
+      "title": null,
+      "content": "혹은 지금 유리 벽 너머에서 벌어지고 있는 소란 때문인지는 몰랐다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": "오티스",
+      "title": null,
+      "content": "관리자님, 저희 차례입니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": "단테",
+      "title": null,
+      "content": "<아? 응…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": null,
+      "title": null,
+      "content": "우리 쪽의 줄은 매우 빠른 속도로 줄어들었기에 몇 마디 더 나눌 새도 없이 차례가 다가왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "기억하세요. 그쪽에서 어떤 목적으로 왔냐고 하면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": "료슈",
+      "title": null,
+      "content": "…한 번만 더 말하면 심사관인지 뭔지 하는 놈이랑 만.단.지.예 해주겠어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": null,
+      "title": null,
+      "content": "이스마엘의 걱정과는 다르게 검문소를 통과하는 과정은 순항을 맞이하고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "소속 그룹, 이유를 말씀해주세요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "그레고르",
+      "title": null,
+      "content": "아, 업무차 림버스 컴퍼니에서 왔습니다. 사원증 확인 부탁드립니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "…확인했습니다. 다음.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 59,
+      "teller": "로쟈",
+      "title": null,
+      "content": "림버스 컴퍼니에서 왔죠. 비즈니스 때문에. 사원증 보시면 된대요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 60,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "…확인했습니다. 다음.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 61,
+      "teller": null,
+      "title": null,
+      "content": "이미 앞 선에서 림버스 컴퍼니 소속임을 증명했던 것 때문인지,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 62,
+      "teller": null,
+      "title": null,
+      "content": "검문소 직원은 높낮이 없는 똑같은 질문과 무심한 눈빛으로 얼굴 한 번, 사원증을 한 번 보고 (하지만 속도를 보아하니 눈으로 확인하기보단 관습적인 몸짓에 가까워 보였다) 수감자들을 통과시켜주었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 63,
+      "teller": "기다리는 사람들",
+      "title": "11구",
+      "content": "……. ……. ",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 64,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…저쪽에서 무슨 문제가 생겼나 봐요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 65,
+      "teller": null,
+      "title": null,
+      "content": "하지만 이곳의 유리 벽은 소리까지 차단해 줄 정도로 두꺼운 모양이었는지,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 66,
+      "teller": null,
+      "title": null,
+      "content": "정확히 무슨 일이 벌어졌는지는 알기 힘들었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 67,
+      "teller": null,
+      "title": null,
+      "content": "그러나 누군가가 경비원들에 의해 양손을 결박당한 채로 끌려가고 있었으며,",
+      "place": null,
+      "activeCGs": [
+        "S301_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 68,
+      "teller": null,
+      "title": null,
+      "content": "그 앞에는 어린아이가 어찌해야 할 바를 모른 채 울기만 하는 장면만큼은 명확하게 보였다.",
+      "place": null,
+      "activeCGs": [
+        "S301_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 69,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…신경 쓰지 말죠. 잘은 모르지만 날개의 금기를 어긴 모양이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 70,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "그래. 가난뱅이들이 어긴 금기래 봤자 만족스러울 만큼 충분한 돈을 뒷구멍에 찔러주지 않았다는 것 외엔 더 있겠어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 71,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…지금 저한테 이죽대는 건가요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 72,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "허. 뭐야, 신경 쓸 일은 아니라며? 너무 신경 쓰는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 73,
+      "teller": null,
+      "title": null,
+      "content": "처음으로 이스마엘을 골리는 데 성공해서 목소리가 커진 히스클리프를 보고 있었는데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 74,
+      "teller": null,
+      "title": null,
+      "content": "예상했던 인물이 예상하지 못한 타이밍에, 또다시 치고 들어와 버렸다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 75,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "소속 그룹, 이유를 말씀해주세요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 76,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 77,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "약자에게 자유를 주기 위해 왔노라!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 78,
+      "teller": null,
+      "title": null,
+      "content": "처음으로 검문소 직원의 얼굴에 감정이라는 것이 드러난다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 79,
+      "teller": null,
+      "title": null,
+      "content": "경악.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 80,
+      "teller": null,
+      "title": null,
+      "content": "말 그대로 경악이 그려진 표정이 돈키호테를 올려다본다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 81,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "저자들을 풀어주게! 고통스러워하고 있지 않은가?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 82,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "…소속 그룹, 이유를 말씀해주세요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 83,
+      "teller": null,
+      "title": null,
+      "content": "검문소 직원은 애써 그 말을 무시하며 계속해왔던 대사만을 반복해서 읊을 뿐이었고,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 84,
+      "teller": null,
+      "title": null,
+      "content": "돈키호테의 심기는 시시각각 나빠져 가는 것이 눈에 훤했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 85,
+      "teller": null,
+      "title": null,
+      "content": "그리고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 86,
+      "teller": null,
+      "title": null,
+      "content": "다시 쳐다본 유리창 너머의 광경엔…",
+      "place": null,
+      "activeCGs": [
+        "S301_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 87,
+      "teller": null,
+      "title": null,
+      "content": "끌려 나가는 사람을 향한 아이의 처절한 입 모양이 보였다.",
+      "place": null,
+      "activeCGs": [
+        "S301_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 88,
+      "teller": "아이",
+      "title": "???",
+      "content": "아",
+      "place": null,
+      "activeCGs": [
+        "S301_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 89,
+      "teller": "아이",
+      "title": "???",
+      "content": "빠",
+      "place": null,
+      "activeCGs": [
+        "S301_1",
+        "S301_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 90,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "그대가 나설 마음이 없다면 내가 직접 해결하겠네!",
+      "place": null,
+      "activeCGs": [
+        "S301_1",
+        "S301_2",
+        "S301_3"
+      ],
+      "effect": {
+        "type": "shake",
+        "intensity": 50
+      }
+    },
+    {
+      "id": 91,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "…후.",
+      "place": null,
+      "activeCGs": [
+        "S301_1",
+        "S301_2",
+        "S301_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 92,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "코드 퍼플, 코드 퍼플. 금기 K185 위반 발생.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 93,
+      "teller": "검문소 직원",
+      "title": "K사",
+      "content": "트롬보사이트 지원 요망. 재전파, 트롬보사이트…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 94,
+      "teller": null,
+      "title": null,
+      "content": "똑같은 문장 외엔 말하는 방법을 모르는 것 같았던 검문소 직원은 이윽고 살벌해 보이는 단어를 무전에 불어넣기 시작했고,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 95,
+      "teller": "안내 방송",
+      "title": "K사",
+      "content": "안내합니다. 코드 퍼플, 코드 퍼플. 순환 2동 검문소 14번. 트롬보사이트, 루코사이트.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 96,
+      "teller": null,
+      "title": null,
+      "content": "두꺼운 철문들이 무서운 기세로 닫히며, 무어라 떠드는지 알 수 없는 말과 사이렌이 사정없이 울려 퍼지기 시작했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 97,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "…그냥 대갈통을 부수고 시체 자루에 넣어서 지나갈 걸 그랬어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 98,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "그런다고 아주 달라질 건 없었을 것 같지만요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 99,
+      "teller": "이상",
+      "title": null,
+      "content": "트롬보, 루코… 각각 혈소판, 백혈구를 의미하는 것 같소만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 100,
+      "teller": "파우스트",
+      "title": null,
+      "content": "저들을 의미하나 보군요. K사와 어울리네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 101,
+      "teller": null,
+      "title": null,
+      "content": "파우스트가 손가락을 들어 올린 방향으로 모두가 고개를 돌렸고…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 102,
+      "teller": null,
+      "title": null,
+      "content": "사나운 복장을 한 사람들 역시 우리를 바라보고 있었다.  ",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

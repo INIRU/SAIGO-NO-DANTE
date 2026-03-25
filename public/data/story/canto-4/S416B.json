@@ -1,0 +1,151 @@
+{
+  "episodeId": "S416B",
+  "nodeId": 10416,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "…목적지에 도착할 때까지, 시끌거리는 소리는 잦아드는 일이 없었다.",
+      "place": "K사 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "료슈",
+      "title": null,
+      "content": "고요 속에서 우아하게 예술이 피어나야 하거늘…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "슈렌느",
+      "title": "K사 연구소",
+      "content": "어느 팀에나 재수 없는 놈들이 설치는 건 여전하지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "오티스",
+      "title": null,
+      "content": "동감이다, 의뢰를 수행하려 온 건지 놀러 온 건지… 툭하면 긴장감 풀려서는…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "하지만 적어도 이곳에 환상체들은 없을 거예요. 불행 중 다행이랄까요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "단테",
+      "title": null,
+      "content": "<이 사람은 왜 자꾸 나한테 말을 거는 거지?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "사실 처음에 환상체라는 것들을 보았을 땐 충격의 연속이었어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "참 하이브리드 했다고나 할까요. 사람의 무의식을 이용한 신에너지 개발이라니, 저로서는 상상도 못 할 발상이었으니까요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "단테",
+      "title": null,
+      "content": "<음…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "이제 평범하고 흔한 그 뭐냐… 아, 인간의 시대는 끝나가고 있다고 생각해요. 지금은 최우수한 두뇌의 시대죠. 그걸 마음으로 깨달은 자들은 아직 많이 없기도 하고요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "단테",
+      "title": null,
+      "content": "<인간의 시대는 뭔데?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그러니 당신들이 합류해 줘서 제가 얼마나 기뻤는지 모를 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "단테",
+      "title": null,
+      "content": "<…참 일방적인 대화야… 베르길리우스보다 심한데.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "애초에 성립이 안 되었으니, 대화는 아닌가?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "쉿. 인기척이 들리는군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "당신만 다물면 되는 것 같은데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

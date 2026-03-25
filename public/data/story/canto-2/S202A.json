@@ -4,121 +4,136 @@
   "stageDetail": "After",
   "lines": [
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 0,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "거, 너무 우르르 들어오는 거 아니유? 가뜩이나 좁아터진 가게구만...",
+      "place": "전당포",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "트럼프로 볼거유, 아니면 마작 점으로 볼거유?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 2,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "가게 안을 들어가자마자 맞이해 준 건 전당포 주인으로 보이는 노인의 퉁명스러운 인사였다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 3,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "저게 뭐라는 거냐?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 4,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "…저만 J사 안내 책자 읽어온 거예요? 베르길리우스 씨가 떠나기 전에 한 번씩 읽어보라고 했잖아요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 5,
+      "teller": "그레고르",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "뭐, 표지 정도는 봤던 것 같기도 하고...",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 6,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "이곳에서는 그날 하루의 운에 따라서 받을 수 있는 지불금도 달라져요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 7,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "대복이면 값을 더 치러주겠지만 흉에 가까워질수록 본전도 못 건지게 되는 거죠.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 8,
+      "teller": "홍루",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "아~ 그러고 보니 우리 집은 아예 점을 보는 사람들을 정식으로 고용하기도 했어요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 9,
+      "teller": "홍루",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "집을 나오기 직전에 봤던 점에 대복을 뽑았는데, 이렇게 다 같이 만날 운명을 암시한 거였나 봐요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 10,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "와, 유복한 집에서 신선놀음이나 해왔던 게 당신의 운명이라니. 저도 다음에는 그런 운명으로 태어나길 기도해야겠네요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 11,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "난 사양이야. 저런 놈들이 알고 보면 더 더럽게 노는 법이거든.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 12,
+      "teller": "홍루",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "그럴 수도 있겠네요. 저도 어렸을 때부터 제 동생 하고는 같이 놀기 싫었던 것 같아요. 맨날 반칙을 쓰면서 심술을 부렸거든요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 13,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "아니, 내가 말한 건 그런 뜻이 아니고!",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
-      "place": null,
-      "activeCGs": [],
-      "effect": null
-    },
-    {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 14,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "다들 점 볼 거여, 말 거여?",
       "place": null,
       "activeCGs": [],
       "effect": {
@@ -127,65 +142,73 @@
       }
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 15,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "그런데… 시방, 저당 잡을 걸 가지고 있긴 한 거여? 다들 행색이...",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 16,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "전당포 주인이 미덥지 않은 얼굴로 수감자들을 한 명씩 흩어 내리다가 내 앞에 멈췄다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 17,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "오호... 저 시계머리는 값이 되긴 하겠군.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 18,
+      "teller": "로쟈",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "얼마로 예상하는데, 영감?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 19,
+      "teller": "단테",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "<로쟈… 가격은 왜 물어보는 거야…>",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 20,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "연락받으셨을 진 모르겠지만 저희는 림버스 컴퍼니 소속으로...",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 21,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "불행히도 수감자들은 물론이고, 전당포 주인조차 파우스트의 말을 제대로 듣지 않고 있다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 22,
+      "teller": "홍루",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "아, 이 손수건은 집 나올 때 가져왔던 건데요...",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -193,9 +216,10 @@
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 23,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "오호… 비단에 용 자수를 놓았군. 바늘땀이 꼼꼼한 게, 이 정도면… 칠백만… 안?",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -203,9 +227,10 @@
       "effect": null
     },
     {
-      "teller": null,
+      "id": 24,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "그깟 천 조각이 그렇게 비싸다고?! 눈이 썩어버린 거 아냐, 영감?!",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -213,9 +238,10 @@
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 25,
+      "teller": "전당포 주인",
+      "title": "J사 전당포",
+      "content": "뭐? 이런 고급품을 못 알아… 하아, 그런 고물 반지나 끼고 있으니… 쯧쯔.",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -223,9 +249,10 @@
       "effect": null
     },
     {
-      "teller": null,
+      "id": 26,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "…뭐라고 했냐.",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -233,9 +260,10 @@
       "effect": null
     },
     {
-      "teller": null,
+      "id": 27,
+      "teller": "로쟈",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "아우, 시끄러! 단테~ 얘네 좀 조용히 시켜줘~",
       "place": null,
       "activeCGs": [
         "S201_1"
@@ -246,262 +274,295 @@
       }
     },
     {
-      "teller": null,
+      "id": 28,
+      "teller": "???",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "걱정했잖아요, 파우스트.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 29,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "난장판이 된 전당포의 소음 속에서, 상냥하기 그지없는 사근사근한 목소리가 들려왔다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 30,
+      "teller": "???",
+      "title": "???",
+      "content": "보기로 한 시간은 4시였는데 15분이나 지나버려서. 당신이 시계 보는 법을 까먹었을 리는 없을 테고요. 그렇죠?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 31,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "네, 버스를 운전한 건 제가 아니니까요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 32,
+      "teller": "???",
+      "title": "???",
+      "content": "아하, 그래서 이런 시계 인간까지 데리고 다니는 거야? 알람 기능까진 없었나 보네.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 33,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "이젠 아예 업신여기는 기색을 숨길 의지조차 없는 목소리도 이어서 들려왔다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 34,
+      "teller": "단테",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "<이봐, 너무하잖아. 처음 보는 사이끼리...>",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 35,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "수감자들 외엔 내 말이 들리지 않을 거라는 걸 알고 있음에도 무례한 언사엔 매번 흥분하게 된다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 36,
+      "teller": "???",
+      "title": "???",
+      "content": "아, 너희야? 이번에 황금가지 탈환 작전 말아먹은 애들.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 37,
+      "teller": "???",
+      "title": "???",
+      "content": "도시에서 손꼽힌다는 천재가 속한 팀이라길래 주위에서 기대가 많았는데.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 38,
+      "teller": "???",
+      "title": "???",
+      "content": "어쩐지... 파우스트 씨 표정이 계속 안 좋아 보이던데.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 39,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "제 표정은 항상 동일했어요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 40,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "야, 넌 왜 가만히 있어? 얘도 나름 두뇌파야. 무시하지 말라고.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 41,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "히스클리프가 이상을 곁눈으로 가리키며 말했지만, 정작 이상의 반응은 시큰둥 했다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 42,
+      "teller": "이상",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "그저 무의미한 자랑이기 때문이오.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 43,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "너 지하에서만 해도 말 많지 않았냐? 왜 갑자기 또 이상해진 거야?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 44,
+      "teller": "이상",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "본인은 본래부터 이상이었소만.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 45,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "이… 하. 됐다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 46,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "첫 번째 임무는 애초에 실패를 염두에 둔 계획이었어요. ",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 47,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "각자의 잠재력을 확인하는 시간이 필요했으니까.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 48,
+      "teller": "그레고르",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "…그랬던 거였어?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 49,
+      "teller": "오티스",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "처음부터 목표가 실패인 작전이라니, 작전이라고 부르기도 무엇하군.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 50,
+      "teller": "???",
+      "title": "???",
+      "content": "베르길리우스 님은 어디 갔죠? 전 그 분 얼굴이라도 뵐 수 있을까 싶어서 작전에 합류하겠다고 한 건데요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 51,
+      "teller": "???",
+      "title": "???",
+      "content": "그분도 쪽팔렸겠지. 이런 애들이랑 같이 다닌다고 생각해봐.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 52,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "큭… 그 자식, 일부러 멀찌감치 내려 준거였나? 우리가 쪽팔려서?!",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 53,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "…왜 비하 발언에는 반박을 아무도 안 하는 건데요.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 54,
+      "teller": "이스마엘",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "그리고 자기소개라도 해야 잘난 척이든 허세든 의미 있어진다는 거 몰라요?",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 55,
+      "teller": "파우스트",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "이번에 합동작전을 하게 될 분들이에요. 림버스 컴퍼니 클리어 부서, LCC에서 오셨습니다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
-      "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "id": 56,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "비포팀 까지 붙여주시죠. 아, 전 소드고 이 사람은 에피랍니다.",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 57,
+      "teller": "히스클리프",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "뭐, 우리가 박수라도 쳐줘야 되는…",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
-      "teller": null,
+      "id": 58,
+      "teller": "홍루",
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "와! 반가워요!",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 59,
       "teller": null,
       "title": null,
-      "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",
+      "content": "홍루만이 진심으로 반가워하며 그들을 환영했으며(실제로 박수를 치기 직전까지 갔다),",
       "place": null,
       "activeCGs": [],
       "effect": null
     },
     {
+      "id": 60,
       "teller": null,
       "title": null,
       "content": "나머지의 반은 싸늘한, 반은 경계 어린 눈빛으로 쳐다보는 걸로 인사 시간은 마무리가 되었다.",

@@ -1,0 +1,603 @@
+{
+  "episodeId": "4D105B",
+  "nodeId": 10454,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "이상",
+      "title": null,
+      "content": "그 봄날, 나는 조그만 거울을 하나 만들었소. 그걸 ‘연심’이라 이름 붙였지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "이상",
+      "title": null,
+      "content": "그리고, 수많은 잡음과 훼손을 덜어내다가 우연히 잡힌 신호.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "이상",
+      "title": null,
+      "content": "연심 속에서 비로소 그대를 만난 것이오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "이상",
+      "title": null,
+      "content": "아름답고 담담한… 나의 왼손잡이를.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "이상",
+      "title": null,
+      "content": "반갑소. 나는…",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "상이",
+      "title": "연심",
+      "content": "이상이라 하지. 이거 참으로 이상한 경험이네.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "상이",
+      "title": "연심",
+      "content": "네가 들고 있는 그 거울은…",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "이상",
+      "title": null,
+      "content": "연심이라 하오.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "상이",
+      "title": "연심",
+      "content": "연심 (硏尋) 이라…",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "이상",
+      "title": null,
+      "content": "이것은 무언가를 갈아내고… 마음마저도 갈아내어 광을 낸 것이기에.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "상이",
+      "title": "연심",
+      "content": "그렇구나. 모든 이상은 연구에 진심이었나 봐.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "이상",
+      "title": null,
+      "content": "그대, 날개가 돋아 있구료.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "상이",
+      "title": "연심",
+      "content": "…그대가 보기에 내 날개는 어때?",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "이상",
+      "title": null,
+      "content": "…찬란하군.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "이상",
+      "title": null,
+      "content": "퍽 따듯하고도… 자유로워 보여.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "이상",
+      "title": null,
+      "content": "우리는 서로를 들여다보고 내다보았소.",
+      "place": null,
+      "activeCGs": [
+        "S423"
+      ],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "이상",
+      "title": null,
+      "content": "영지 형의 기술에 살짝의 변형만 가한 것뿐이오.",
+      "place": "꽃이 피던 구인회",
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "이상",
+      "title": null,
+      "content": "어떠한 가능성도 있는 그대로 비추고 싶었소.",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "홍루",
+      "title": null,
+      "content": "여기서 누워 보는 별은 진정으로 멀었는데…",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "홍루",
+      "title": null,
+      "content": "이렇게 가까이서 볼 수도 있었던 거네.",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "너 이걸 찾아내느라 그간 안 보였던 거야? 워낙 빵 보다 쌀밥을 좋아해서 다시 S사로 돌아가 버린 줄…",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "그런데 뭐… 나쁘지 않네.",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "동랑, 너 왜 그렇게 웃니?",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "눈은 엄청 빛나고 있는데, 그렇게 표독스럽게 말하니까 재밌잖아.",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "이상, 이놈한테 시끄럽다고 전해줄래?",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "얼음과자 처음 먹어본 어린애 같은 표정이나 감춰줄래?",
+      "place": null,
+      "activeCGs": [
+        "S423",
+        "S411"
+      ],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "구보, 너도 뭐라고 좀 말 해봐. 구인회에 들어온 지가 언제인데, 아직도 그렇게 우두커니 손님처럼 있어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "…이미 모두가 입을 모았는데, 무슨 말을 더하라는 말이오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "…깍두기면 깍두기답게 넉살이라도 떨던가, 새초롬하긴.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "홍루",
+      "title": null,
+      "content": "그렇구나… 이것이… 네가 세상을 보는 방식이구나.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "이상",
+      "title": null,
+      "content": "…내가 보는 세상이라.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "홍루",
+      "title": null,
+      "content": "그거 알아? 모든 기술에는 만든 사람의 낭만과 소망이 숨어 있대.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "홍루",
+      "title": null,
+      "content": "그걸 찾아내는 것도 구경하는 자들의 묘미야. 알아 두면 좋을 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "이상, 그래서 자네는 이 기술로 무엇을 해볼 참이야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "이상",
+      "title": null,
+      "content": "무엇을… 해 본다니?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "영지 형의 유리창은 벌써부터 세간에 소문이 돌고 있는 모양이야. 다른 둥지의 연구원들도 관심을 보이고 있다더군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "참… 이곳을 구경하러 오는 손님은 별로 없었는데, 이젠 차례로 줄이라도 서라고 번호표를 뿌려야 할 판이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그러니까 여기서 네 기술까지 발표한다면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": "이상",
+      "title": null,
+      "content": "동랑, 나는 이것을 발표할 생각이 하등 없소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "…없다고? 전혀?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": "이상",
+      "title": null,
+      "content": "그저…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": "이상",
+      "title": null,
+      "content": "우리끼리 웃음을 터뜨리는 순간으로 간직하면 어떨까, 싶소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "야, 너는 대체 무슨 생각으로…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "풉… 이상. 너, 이제까지 본 것 중에 두 번째로 웃겼어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "동백",
+      "title": "구인회",
+      "content": "첫 번째는… 그 있잖아, 누렁이한테 우유 먹이고 있었는데, 갑자기 쟤 머리를 핥아 가지고… 큽…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그러게, 나도 동백이가 그렇게 박장대소 한 건 처음 봤어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": "이상",
+      "title": null,
+      "content": "그… 그건… 이제 묻어두는 편이…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "이상",
+      "title": null,
+      "content": "사람의 눈동자는 참으로 반짝거리고 뜨겁소. 사뭇 데일 것만 같아, 나는 그것을 부러 비껴보곤 하였지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "이상",
+      "title": null,
+      "content": "하지만 대상을 직선으로 보지 않는다고 하여, 고깝게 여긴다는 것은 아니오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": "이상",
+      "title": null,
+      "content": "바라보지 않아도 스며들 수는 있으니.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": "로쟈",
+      "title": null,
+      "content": "그런데 저거… 우리가 쓰고 있는 거울이랑 같은 거야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": "파우스트",
+      "title": null,
+      "content": "엄밀하게는 비슷한 것이죠. 림버스 컴퍼니에서는 특수하게 개량된 거울을 사용하고 있어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": "로쟈",
+      "title": null,
+      "content": "엄청난 걸 발명했었네, 이상 씨…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": "이상",
+      "title": null,
+      "content": "나나 영지 형이 한 것은… 발명이 아니라 발견이오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "T사는… 허가없이 다른 세계를 엿볼 수 있는 기술이 만들어졌다는 걸 달가워하지 않았을 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "다른 세계를 엿보는 것이 중한 게 아니라, 허가받지 않았다는 것이 중한 것임은 알고 있겠지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "이상",
+      "title": null,
+      "content": "짐작은 하고 있었으나…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": "이상",
+      "title": null,
+      "content": "우리끼리 놀이라고 생각하였기에 괜찮을 거라고 여기었지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 59,
+      "teller": "이상",
+      "title": null,
+      "content": "참으로 안일한 결정이 아닐 수 없었소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

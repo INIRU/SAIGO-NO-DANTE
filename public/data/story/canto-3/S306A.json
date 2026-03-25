@@ -1,0 +1,184 @@
+{
+  "episodeId": "S306A",
+  "nodeId": 10306,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "K사의 특이점, HP탄.",
+      "place": "K사 검문소",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "우리 쪽에서 간신히 치명상을 입혔다 해도 K사의 회복 탄환 한 발이면 깨끗하게 도루묵이 되어갔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "아니나 다를까, 아슬아슬하게 유지되어오고 있던 히스클리프의 인내심부터 박살이 나는 소리가 들려왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "못 해 먹겠네! 우린 세상에서 제일 의미 없는 일을 하고 있어! 알아?",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 30
+      }
+    },
+    {
+      "id": 4,
+      "teller": "파우스트",
+      "title": null,
+      "content": "말했잖아요. 날개와 엮이는 건 무의미하다고요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "로쟈",
+      "title": null,
+      "content": "이렇게 실시간으로 허무해지는 전투일 줄은 몰랐지~",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "잘라내면 잘라내는 대로 살점이 차오른다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "전투를 제대로 지속하기 어렵다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "료슈",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "료슈",
+      "title": null,
+      "content": "그래… 이딴 예술도 있는 거군…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "료슈는 여태까지 본 것 중 제일 괴로운 표정을 지으며 우거지상으로 칼집을 휘두르고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": null,
+      "title": null,
+      "content": "베어도 베어도 피가 제대로 나오기도 전, 즉각적으로 회복이 되는 전투라니, 료슈로써는 이보다 더 최악의 전투는 없을 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "단테",
+      "title": null,
+      "content": "<방법이 없나…?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "파우스트",
+      "title": null,
+      "content": "HP… 헬라포이세스 기술은 손실된 신체의 세포를 끊임없이 보충하는 기술이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "파우스트",
+      "title": null,
+      "content": "한번 투약받아도 상당히 오래 지속되는데, 둥지 안에서 보급을 받는 저들은…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "파우스트",
+      "title": null,
+      "content": "전투로는 이길 방법이 없다고 할 수도 있겠네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "파우스트마저도 머리를 가로젓는 그때,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "???",
+      "title": "???",
+      "content": "음하하하하하!!! 혼란 속에, 비로소 이 몸이 등장하였으니!!",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 18,
+      "teller": null,
+      "title": null,
+      "content": "지나칠 정도로 쾌활한 누군가의 웃음소리가 메아리를 타고 울려왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

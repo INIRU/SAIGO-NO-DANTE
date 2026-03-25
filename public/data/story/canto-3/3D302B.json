@@ -1,0 +1,332 @@
+{
+  "episodeId": "3D302B",
+  "nodeId": 10322,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "우리 가족은 매일 아침마다 같이 식사를 해야 하는 규칙이 있었다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "온 가족이 식탁에 둘러앉아 이야기를 공유하고 격려나 농담이 오가는 따뜻한 시간.",
+      "place": null,
+      "activeCGs": [
+        "S307_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나는 그 시간이 좋았다. 그리고 그 규칙은 내게 한없이 부드럽고 온화하기만 했다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "내게는 너무 당연한, 바뀔 리가 없는. 나의 세계.",
+      "place": null,
+      "activeCGs": [
+        "S307_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그 세계가 슬쩍 위화감을 가지기 시작한 건,",
+      "place": null,
+      "activeCGs": [
+        "S307_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나의 누나까지 의체 시술을 받고 식탁에 자리했던 그날부터였다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "아버지의 머리가 양철과 각종 전선, 회로로 이뤄진 낯선 것으로 바뀌었을 때부터, 나의 세계는 점점 달라지기 시작했다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "가족들 간의 식사는 더 이상 따뜻하고 밝은 세계가 아니었다. 그것은 오히려 불편하고 말 수가 줄어드는, 불편한 경험이 되어있었다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "아… 나는 의체로부터 태생적인 불결함을 느끼기 시작한 것이다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "‘더러워…’",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "신체를 뼈와 살이 아닌 다른 무언가로 대체해야 한다는 것이 도통 마음으로 받아들여지지가 않았다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "왜 우리는 의체를 사용하는 걸까?",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "조심스럽게 이유를 물어오니 돌아오는 대답은 간결했다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "인간의 몸은 고리타분하다는 것이었다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "먹지 않으면 배고파하고, 자지 않으면 피곤해하고, 다치기라도 하면 회복을 기다려야 하고.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "이 모든 것들은 한없이 비효율적이다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그러니 시간이 지날수록 의체를 사용하는 이들의 비율은 늘어갈 것이며, 결과적으로 의체의 일상화는 곧 필연이라고 했다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나는 속으로,",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "‘그럴 거라면 차라리 도태되어버리는 게 낫지 않을까?’라고 생각했다.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…논리정연하게 그 말에 반박을 할 수는 없었지만.",
+      "place": null,
+      "activeCGs": [
+        "S307_1",
+        "S307_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "싱클레어, 의체 시술받는 거… 사실 마음에 안 들지?",
+      "place": "교실",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나는 조용히 끄덕였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "하지만 부모님한테 솔직하게 말했다간 그들이 속상해하실 테고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "아무것도 할 수 없는 게 원망스럽지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "다시 한번 고개를 끄덕인다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "내가 도와줄까? 그런 것 따위 받지 않고 자유롭게 살아가도록.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "어, 어떻게?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "그건, 다음에 말해 줄게.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "그 대신…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "크로머",
+      "title": "학급생",
+      "content": "내가 너의 원망을 해소해 주듯이, 너도 나의 원망을 이루어 줘야 할 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

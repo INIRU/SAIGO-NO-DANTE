@@ -1,0 +1,721 @@
+{
+  "episodeId": "S313A",
+  "nodeId": 10313,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…힘든 상대였어요. 저자가 완전히 정신을 차리기 전에 우선 도망치죠.",
+      "place": "칼프 마을 광장",
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 1,
+      "teller": "오티스",
+      "title": null,
+      "content": "수치스러운 소리를 잘도 지껄이는군. 승기를 잡은 군인은 적을 두고 꽁무니를 빼지 않는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "지금 군인 정신이 중요할 때예요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "단테",
+      "title": null,
+      "content": "<이스마엘 말이 맞는 것 같아. 저자는 우리 실력으로 상대하기 버거워.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "오티스",
+      "title": null,
+      "content": "…철수하겠습니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": null,
+      "title": null,
+      "content": "오티스가 내키지 않는단 표정으로 한 걸음 물러섰다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "단테",
+      "title": null,
+      "content": "<싱클레어, 크로머 라는 자가 말한 ‘네가 알던 그 곳’이라는 게 어디야?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그… 건.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "싱클레어는 여전히 몸을 떨면서 공포에 마음을 빼앗긴 듯 해 보였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": null,
+      "title": null,
+      "content": "하지만 이를 갈고 있던 싱클레어에게는 그를 앞서는 분노도 담긴 듯했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "문득, 마음속에 피어난 생각이 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "단테",
+      "title": null,
+      "content": "<이제는 말해야 해. 싱클레어.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "단테",
+      "title": null,
+      "content": "<네 이야기 하나로, 우리가 죽을 횟수를 절반은 줄일 수 있을 거야.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "오티스",
+      "title": null,
+      "content": "작전의 성공률도 올라간다. 효과적인 정보를 기대하지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "…이 행동이 관리자로서 옳은 행동이 맞겠지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "나의 이야기를 들은 싱클레어는 고개를 빠르게 젓고 크게 호흡을 들이키더니, 어렵게 입을 열었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…우리 집이요. 크로머는 분명 그곳에 있을 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "너, 그 자식이랑 아는 사이였냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "젠장, 하도 귀가 찢어질 듯 웃어대서 머리가 다 지끈거리네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…학교에서 만났어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "로쟈",
+      "title": null,
+      "content": "저런, 혹시 친구였어? 친구라면 잘 타일렀으면 좋겠는데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "친구 아니에요. 크로머는 우리 가족들을 죽였어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "로쟈",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "로쟈",
+      "title": null,
+      "content": "미안해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": null,
+      "title": null,
+      "content": "나무에 매달린 의체 머리 하나가 아주 천천히 우리 쪽으로 움직였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": null,
+      "title": null,
+      "content": "의체에 새어 나오는 불빛은 조명처럼 간간이 깜빡이고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "누군가의 의체 머리",
+      "title": "칼프 마을 주민",
+      "content": "싱… 클… 레… 어. 칙… 치직…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "누군가의 의체 머리",
+      "title": "칼프 마을 주민",
+      "content": "왜… 돌아… 온 거니…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "로쟈",
+      "title": null,
+      "content": "…싱클레어, 이웃들이야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": null,
+      "title": null,
+      "content": "조각조각이 나버린 의체들을 바라보며 로쟈가 물어왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그런 것 같아요… 아니었으면 좋겠지만요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": null,
+      "title": null,
+      "content": "불꽃이 타닥타닥 피어오르는 전선들을 어두운 표정으로 바라보며 싱클레어가 대답했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": null,
+      "title": null,
+      "content": "간신히 소리를 내던 머리는 곧 무수한 잡음만 낸 채 멈췄다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": null,
+      "title": null,
+      "content": "그러더니 곧 노래 하나가 울려 퍼진다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "누군가의 의체 머리",
+      "title": "칼프 마을 주민",
+      "content": "고요한 밤…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": null,
+      "title": null,
+      "content": "매달려 있는 머리들로부터 모두 같은 노래가 흘러나오고 있다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": null,
+      "title": null,
+      "content": "껍데기만 남은 각양각색의 머리에서부터 울려 퍼지는 성가는 불길과 함께 내려앉는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": "누군가의 의체 머리",
+      "title": "칼프 마을 주민",
+      "content": "거룩한 밤…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "이들에게 이단이란 건… 역시 의체 보유자를 말하는 것이군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": "파우스트",
+      "title": null,
+      "content": "도시에 의체 보유자들이 보이게 된 지 꽤 오랜 시간이 흘렀지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": "파우스트",
+      "title": null,
+      "content": "여전히 그들의 모습을 보고 이질감을 느끼는 사람들은 많죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…저희 마을은요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "저희 마을은… ‘K사 의체 산업의 성지’라고 불릴 정도로, 주민 대부분이 하이엔드 의체 부품 제작에 종사하고 있었어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "크로머는 오래전부터 계속 우리 마을을 주시했던 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "그레고르",
+      "title": null,
+      "content": "네 가족도…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "네, 저희 아버지는 신생 의체 회사의 대표였어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그래서…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "아니.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "제가 보기엔, 이 자들에게 그런 거창한 사상 따위는 없어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "그냥… 그냥, 광기와 폭력에 매료된 미치광이죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": null,
+      "title": null,
+      "content": "이스마엘의 일갈이 있었고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": null,
+      "title": null,
+      "content": "이웃들이 내걸린 크리스마스트리를 한참 동안 바라보던 싱클레어가 나를 향해 고개를 돌렸다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "관리자 님, 예전부터 여쭤보고 싶었던 게 있어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": "단테",
+      "title": null,
+      "content": "<뭔데?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그… 기분이 어떠세요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": "단테",
+      "title": null,
+      "content": "<기분?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "머리 대신 의체를 달고 있는 기분이 어떻냐고요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": null,
+      "title": null,
+      "content": "그런 식의 질문은 처음 받아보는 것이기에 잠시 당혹감을 느꼈다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 59,
+      "teller": null,
+      "title": null,
+      "content": "문제는 의체를 지니기 전의 기분까지는 내가 알 리가 만무하다는 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 60,
+      "teller": "단테",
+      "title": null,
+      "content": "<으음… 그게…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 61,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "아! 그, 저… 따지려 드는 게 아니라요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 62,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…무, 무례한 질문이었겠죠. 죄송해요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 63,
+      "teller": "단테",
+      "title": null,
+      "content": "<아니야, 괜찮아.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 64,
+      "teller": null,
+      "title": null,
+      "content": "다른 수감자는 이보다 억겁은 더 무례한 언사를 뱉어댔는데, 뭐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 65,
+      "teller": "단테",
+      "title": null,
+      "content": "<어차피 머리가 바뀌기 전의 기억은 없어서… 대답해 줄 수도 없는걸.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 66,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그러시군요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 67,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "항상 궁금했어요. 머리 대신 다른 것이 자리를 잡았을 때의 기분은 어떤지…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 68,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "가족들은 모자를 쓰고 시계를 걸치는 것과 다를 바 없다고 말했지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 69,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "저는 아무리 떠올리려고 해도 잘 상상이 되지 않더라고요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 70,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그 덕에, 저만 유일하게 살아남았지만요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 71,
+      "teller": "단테",
+      "title": null,
+      "content": "<어린 나이였을 텐데, 의체 시술이 무서울 만했겠지. 그런 걸로 죄책감 가질 필요는 없어.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 72,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "아니에요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 5
+      }
+    },
+    {
+      "id": 73,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그런 게 아니에요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 74,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "전 단테 씨 생각처럼 그렇게 무고한 사람이 아니에요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 75,
+      "teller": null,
+      "title": null,
+      "content": "싱클레어가 조용히 고개를 떨궜다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 76,
+      "teller": null,
+      "title": null,
+      "content": "대답할 말을 열심히 찾아보았지만, 뾰족한 위로는 솟아나지 않았고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 77,
+      "teller": null,
+      "title": null,
+      "content": "타닥거리고 지직거리는 불쾌한 잡음만이 도로를 메울 뿐이었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

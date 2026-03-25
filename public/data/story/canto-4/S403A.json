@@ -1,0 +1,283 @@
+{
+  "episodeId": "S403A",
+  "nodeId": 10403,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "로쟈",
+      "title": null,
+      "content": "겨우 다 처리했네… 설마 이 드론들 우리보고 물어내라고 하진 않겠지?",
+      "place": "난장판이 된 K사 거리",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "파우스트",
+      "title": null,
+      "content": "합당한 방어였다고, 제 선에서 보고서로 처리해 보죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "로쟈",
+      "title": null,
+      "content": "파우… 내가 말했던가? 자기는 정말 뭐라 해야 하지… 암튼 그거… 짱이야!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "파우스트",
+      "title": null,
+      "content": "깨달음이 느리신 편이군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…뭔가 이상해요. 이 환상체요, 평소와는 다른 느낌이 들어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "그레고르",
+      "title": null,
+      "content": "흠, 평소라고 할 만큼 많이 겪은 건 아닌 것 같지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "그레고르",
+      "title": null,
+      "content": "뭐, 주위에 소리 지르는 구경꾼들이 있다는 정도가 다르긴 한가…?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "로쟈",
+      "title": null,
+      "content": "어떻게 된 거야, 이 환상체들… 둥지 복판에 나타난 것도 모자라서 왜 지금까지 만난 환상체보다 더… 끔찍해졌지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "단테",
+      "title": null,
+      "content": "<게다가 저건 거울 던전에서 몇 번 봤던 환상체네. 싸워본 적은 없지만.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "단테",
+      "title": null,
+      "content": "<그러고 보니… 거울 던전에서 우리와 싸우지 않던 환상체들은 뭐였던 거야?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "파우스트",
+      "title": null,
+      "content": "우리가 본 건 거울 던전의 균열을 통해서 엿본 환상체의 심상이자 보금자리에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "이상",
+      "title": null,
+      "content": "그것은 굉장히 좁고도 불안정한 균열이오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "파우스트",
+      "title": null,
+      "content": "맞아요. 그래서 한정된 상호작용만 가능했던 거죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "그딴 건 모르겠고… 이건 왜 이리 끈질겨? 철도에서 잡은 것들만큼 독한데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "확실히 그러하다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "게다가 환상체에게 떨어지는 이… 기분 나쁜 액체는 뭐죠?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "수감자들의 말대로 우리가 상대하고 있는 환상체는 지금까지 만난 것과는 명백하게 달랐다.",
+      "place": null,
+      "activeCGs": [
+        "S401"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": null,
+      "title": null,
+      "content": "이것은…",
+      "place": null,
+      "activeCGs": [
+        "S401"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": null,
+      "title": null,
+      "content": "푸른색을 띄는 정체불명의 액체를 흘리고 있었다.",
+      "place": null,
+      "activeCGs": [
+        "S401"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "파우스트",
+      "title": null,
+      "content": "성분을 검토할 시간은 없으니, 최대한 신체와 닿지 않게 해야겠어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "로쟈",
+      "title": null,
+      "content": "으~ 알아. 굳이 묻히면서 다닐 생각은 없다구.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "야! 이것들 어디서 뭐 잘못 주워 먹은 거 아니야? 무슨 광견병 걸린 것 마냥…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "어어? 히스클리프 씨, 위요!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": null,
+      "title": null,
+      "content": "히스클리프가 힘 없이 바닥에 내동댕이쳐졌다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "관리자님… 아무래도 고생 좀 하시겠네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "오티스",
+      "title": null,
+      "content": "…제가 간언했다는 점, 꼭 기억해주시기 바랍니다. 관리자님.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "오티스",
+      "title": null,
+      "content": "총원, 전투 준비!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "단테",
+      "title": null,
+      "content": "<각오는 했어…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": null,
+      "title": null,
+      "content": "이제 와서 죽은 수감자들을 끄집어 올리는 걸 두려워할 것도 없다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "단테",
+      "title": null,
+      "content": "<이기고 돌아가자고.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

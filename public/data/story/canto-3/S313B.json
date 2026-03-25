@@ -1,0 +1,663 @@
+{
+  "episodeId": "S313B",
+  "nodeId": 10313,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "창문 너머로 희미하게만 보였던 연기는, 이미 마을 전체를 자욱하게 덮고 있었다.",
+      "place": "칼프 마을 광장",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "윽… 난장판이네요, 정말.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "그런데 어디서… 익숙한 노랫소리가 들리는 것 같지 않아요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "아, 나 이 노래 알아. 뭐더라, 눈이 더럽게 많이 오던 날만 되면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "그레고르",
+      "title": null,
+      "content": "전쟁 때 병사들 사기 올린다고 이거 틀 때마다 진짜 힘이 쭉 빠졌는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": null,
+      "title": null,
+      "content": "모두가 같은 노래를 들으며 각자의 추억을 회상하고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": null,
+      "title": null,
+      "content": "나는… 모르겠다. 익숙한 곡조인 것 같으면서도 명확히는 떠오르지는 않는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": null,
+      "title": null,
+      "content": "하지만 마음 깊은 곳에서 물안개가 퍼지듯 희미한 감정이 저려 왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "기억이 온전했을 때의 나는 아마 이 노래를 알고 있었을지도 모른다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": null,
+      "title": null,
+      "content": "하지만 마음속에서 밀려오는 느낌은… 그다지 소중하거나 따뜻하진 않다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "시큰함.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": null,
+      "title": null,
+      "content": "나는 이 노래를 듣고 이유 모를 아림을 느꼈다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "맞아요… 그날도…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "이렇게 눈이 쌓여 있고… 노래가 들리던…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "눈앞에 보이는 나무에는 장식이라도 걸어 놓으려던 의도였는지,",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "배 속에 있었던 것들을 전부 끄집어내려는 의도였는지 온갖 장기들, 그리고 기계 부품들이 거대한 나무에 주렁주렁 매달려 있었다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "로쟈",
+      "title": null,
+      "content": "욱… 이건 너무 지독한 거 아니야?",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "료슈",
+      "title": null,
+      "content": "클래식… 아니, 키치하군.",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "…근방에 생존자는 없다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": null,
+      "title": null,
+      "content": "그제야 이 모든 것이 의미하는 게 무엇인지 명확해졌다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": null,
+      "title": null,
+      "content": "이건 마치…",
+      "place": null,
+      "activeCGs": [
+        "S304_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "???",
+      "title": "???",
+      "content": "아~ 아~ 마이크 테스트, 마이크 테스트!!",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": {
+        "type": "shake",
+        "intensity": 20
+      }
+    },
+    {
+      "id": 22,
+      "teller": null,
+      "title": null,
+      "content": "고막이 찢어질 듯한 소리에 모두가 귀를 막았다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "???",
+      "title": "???",
+      "content": "모두 즐거운 성탄절 보내고 있나?",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "???",
+      "title": "???",
+      "content": "고요하지는 않지만 거룩한 밤이지.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "단테",
+      "title": null,
+      "content": "<…? 아직 크리스마스까지는 시간이 남지 않았나?>",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "네, 한참이죠.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "내 이름은 크로머, 순수를 사랑하는 박애주의자, 그리고 망치를 쥐는 자.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "이곳을 어떻게 넘어왔는지는 모르겠지만, 너희는 지금 사유지를 침범 중이지.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "왜냐하면 여긴… 보다시피, 못과 망치가 심판 중인 신성한 구역이거든. 내 장식이 마음에 들려나 모르겠네.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "뭐, 길은 잘못 들어왔다 치고… 지금이라도 얌전히 돌아가 주면 너그럽게 벌금만 매겨주지.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "왜냐하면… 오늘은 성탄절이니까!",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "아, 그전에 잠깐. 거기 귀도 있어?",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect"
+      ],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "귀도",
+      "title": "못과 망치",
+      "content": "이곳에 있나니.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "응. 혹시 말이야, 거기에 이단이 있나?",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": null,
+      "title": null,
+      "content": "귀도라는 이름에 대답한, 거대한 덩치를 가진 자가 우리를 돌아본다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": null,
+      "title": null,
+      "content": "차례차례 우리를 뜯어보던 그의 시선이 이윽고 나에게서 멈춘다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": null,
+      "title": null,
+      "content": "그리고는 아주 오랫동안 응시한다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": null,
+      "title": null,
+      "content": "가면을 쓰고 있었음에도 감춰져 있을 그 눈빛은…",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": null,
+      "title": null,
+      "content": "정말 못에라도 박힌 것처럼, 우리를 꼼짝도 할 수 없게 만들었다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": "귀도",
+      "title": "못과 망치",
+      "content": "순수하지 아니한 자와 그들의 추종꾼이 함께합니다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": "귀도",
+      "title": "못과 망치",
+      "content": "그리고… 말씀하신 그 아이도.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "하하핫! 뭐야! 내 싱클레어가 돌아왔어?",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": {
+        "type": "shake",
+        "intensity": 20
+      }
+    },
+    {
+      "id": 43,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "날 보러 와, 싱클레어! 난 네가 알던 그곳에 있어!",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "으… 으큭… 크로… 머…",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": {
+        "type": "shake",
+        "intensity": 20
+      }
+    },
+    {
+      "id": 45,
+      "teller": null,
+      "title": null,
+      "content": "싱클레어로부터 이가 빠드득하고 갈리는 소리가 들려온다.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": null,
+      "title": null,
+      "content": "그 근원이 두려움인지 증오인지 구분되지 않을 정도로 소름 끼치는 소리가.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "나머지는 처리해, 귀도. 아니면 내가 나서야 하나? 그래도 되는데?",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "귀도",
+      "title": "못과 망치",
+      "content": "쥐는 자께서는 불순한 것을 두드리는 일에 집중하소서.",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "하하하하하! 좋아, 좋아!! 우리, 정화 작업을 계속하자고!",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "그럼, 모두 메리 크리스마스!",
+      "place": null,
+      "activeCGs": [
+        "S304_1",
+        "S304_2",
+        "S304_effect",
+        "S304_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": null,
+      "title": null,
+      "content": "귀도 주위에 다른 심문관들이 다가오는 것이 보였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": null,
+      "title": null,
+      "content": "귀도는 그 뒤에 굳건히 서 있다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": null,
+      "title": null,
+      "content": "…그저 그럴 뿐이지만, 모든 수감자가 압도되는 것만 같이.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": null,
+      "title": null,
+      "content": "강렬하고 무거운 적의가 그를 둘러싸고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

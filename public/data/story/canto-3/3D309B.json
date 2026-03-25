@@ -1,0 +1,135 @@
+{
+  "episodeId": "3D309B",
+  "nodeId": 10322,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "어땠어? 싱클레어. 네 마음속에 나 있는 길에서 정답은 찾을 수 있었니?",
+      "place": "끝없는 시체들의 언덕",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…크로머.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "아하하, 눈 그렇게 뜨지 마.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "아직 때가 되지도 않았는데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "널 죽여보고 싶잖아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "아후… 아냐, 아냐. 참아야지… 당장의 재미보다는 더 중요한 일이 있으니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "파우스트",
+      "title": null,
+      "content": "싱클레어, 공명하기 시작한 황금가지를 회수하려면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "알아요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…황금가지가 아니었어도.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "저 개새끼는… 제가 찢어 마실 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 80
+      }
+    },
+    {
+      "id": 9,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "풉… 아하하하!!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "크큭… 싱클레어…! 언제부터 그런 말을 배운 거야? 너 같지 않아 보여서… 우습잖아… 푸훗.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "그래도… 뭐. 친구들도 많이 생긴 것 같고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "크로머",
+      "title": "못과 망치",
+      "content": "이번에는, 도망치지 않을 거지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

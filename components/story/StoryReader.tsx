@@ -269,7 +269,7 @@ function PlaceDivider({
   )
 }
 
-/* ── CGPanel (sticky CG + 대사 스크롤, 위로 가면 페이드) ── */
+/* ── CGPanel (sticky height:0 + overflow:visible) ── */
 
 function CGPanel({
   group,
@@ -300,8 +300,53 @@ function CGPanel({
   const [activeLineId, setActiveLineId] = useState<number>(
     allLines[0]?.id ?? -1,
   )
+  const cgRef = useRef<HTMLDivElement>(null)
+  const [dialogReady, setDialogReady] = useState(false)
+  const wasVisible = useRef(false)
+  const hasEnteredOnce = useRef(false)
 
-  // 대사별 IntersectionObserver — 활성 대사 + CG 스택 전환
+  const cgPanelId = useMemo(() => `cg-panel-${allCGs[0] ?? Math.random()}`, [allCGs])
+
+  // Fixed CG를 래퍼 영역에만 표시
+  useEffect(() => {
+    const onScroll = () => {
+      const wrapper = document.querySelector(`[data-cg-panel="${cgPanelId}"]`)
+      const wr = wrapper?.getBoundingClientRect()
+      const cg = cgRef.current
+      if (!wr || !cg) return
+      const vh = window.innerHeight
+      const top = Math.max(0, wr.top)
+      const bottom = Math.min(vh, wr.bottom)
+      if (bottom <= top) {
+        // 래퍼가 뷰포트에서 충분히 벗어났을 때만 숨김
+        cg.style.opacity = '0'
+        cg.style.pointerEvents = 'none'
+      } else {
+        cg.style.opacity = '1'
+        cg.style.pointerEvents = 'none'
+        cg.style.top = `${top}px`
+        cg.style.height = `${bottom - top}px`
+        // CG가 전체화면으로 꽉 찼을 때만 대사 표시
+        const isFull = top <= 5 && (bottom - top) >= vh * 0.85
+        if (isFull !== wasVisible.current) {
+          wasVisible.current = isFull
+          setDialogReady(isFull)
+          if (isFull && !hasEnteredOnce.current) {
+            hasEnteredOnce.current = true
+            setActiveLineId(allLines[0]?.id ?? -1)
+          }
+        }
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    onScroll()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -309,8 +354,7 @@ function CGPanel({
           if (!entry.isIntersecting) continue
           const lineId = entry.target.getAttribute('data-cg-line')
           if (lineId) {
-            const id = parseInt(lineId)
-            setActiveLineId(id)
+            setActiveLineId(parseInt(lineId))
             const stack =
               entry.target
                 .getAttribute('data-cg-stack')
@@ -320,7 +364,7 @@ function CGPanel({
           }
         }
       },
-      { rootMargin: '-45% 0px -25% 0px' },
+      { rootMargin: '-35% 0px -35% 0px', threshold: 0.5 },
     )
 
     containerRef.current
@@ -337,87 +381,131 @@ function CGPanel({
     [observerRef],
   )
 
+  const activeLine = allLines.find((l) => l.id === activeLineId) ?? null
+
   return (
     <div
       ref={(node) => {
         containerRef.current = node
         panelRef(node)
       }}
-      className="story-block my-[2.5rem] -mx-[1rem] sm:-mx-[1.5rem] md:-mx-[3rem]"
+      className="my-[2.5rem] -mx-[1rem] sm:-mx-[1.5rem] md:-mx-[3rem]"
+      data-cg-panel={cgPanelId}
+      style={{ position: 'relative', isolation: 'isolate' }}
     >
-      {/* Sticky CG — 전체화면 */}
+      {/* Fixed CG — clip-path로 래퍼 영역에만 표시 */}
       <div
-        className="sticky top-0 z-10 overflow-hidden cg-fullscreen-enter"
-        style={{ height: '100dvh' }}
+        ref={cgRef}
+        className="cg-fullscreen-enter"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '100dvh',
+          zIndex: 40,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          opacity: 0,
+        }}
       >
-        {allCGs.map((cg, i) => (
-          <Image
-            key={cg}
-            src={getCGUrl(cg, chapter)}
-            alt=""
-            fill
-            className="object-contain"
-            sizes="100vw"
+          {allCGs.map((cg, i) => (
+            <Image
+              key={cg}
+              src={getCGUrl(cg, chapter)}
+              alt=""
+              fill
+              className="object-contain"
+              sizes="100vw"
+              style={{
+                zIndex: i,
+                opacity: visibleStack.includes(cg) ? 1 : 0,
+                transition: 'opacity 0.6s ease',
+              }}
+            />
+          ))}
+
+          <div
+            className="absolute inset-0"
             style={{
-              zIndex: i,
-              opacity: visibleStack.includes(cg) ? 1 : 0,
-              transition: 'opacity 0.6s ease',
+              background: 'radial-gradient(ellipse at center, transparent 30%, var(--story-bg) 100%)',
+              zIndex: allCGs.length,
             }}
           />
-        ))}
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{
+              height: '55%',
+              background: 'linear-gradient(to top, var(--story-bg) 0%, transparent 100%)',
+              zIndex: allCGs.length + 1,
+            }}
+          />
 
-        {/* Vignette */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at center, transparent 30%, var(--story-bg) 100%)',
-            zIndex: allCGs.length,
-          }}
-        />
-
-        {/* Bottom gradient */}
-        <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{
-            height: '55%',
-            background:
-              'linear-gradient(to top, var(--story-bg) 0%, transparent 100%)',
-            zIndex: allCGs.length + 1,
-          }}
-        />
-
+          {/* 대사 오버레이 */}
+          {dialogReady && activeLine && (
+            <div
+              className="absolute bottom-[2rem] left-[1.25rem] right-[1.25rem] sm:left-[2rem] sm:right-[2rem]"
+              style={{ zIndex: allCGs.length + 10, pointerEvents: 'auto' }}
+            >
+              <div
+                key={activeLine.id}
+                className="cg-dialog-fade px-[1.25rem] py-[1rem] rounded-[0.5rem]"
+                style={{
+                  background: 'color-mix(in srgb, var(--story-bg) 80%, transparent)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid color-mix(in srgb, var(--gold-dim) 10%, transparent)',
+                }}
+              >
+                {activeLine.teller && activeLine.teller !== '나' && (
+                  <div className="mb-[0.25rem]">
+                    <span
+                      className="text-[0.85rem] tracking-[0.05em]"
+                      style={{
+                        color: getSpeakerColor(activeLine.teller),
+                        fontFamily: 'Paperlogy, sans-serif',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {activeLine.teller}
+                    </span>
+                  </div>
+                )}
+                {activeLine.teller === '나' && activeLine.title && (
+                  <div className="mb-[0.25rem]">
+                    <span
+                      className="text-[0.8rem] tracking-[0.1em]"
+                      style={{ color: 'var(--gold-dim)', fontFamily: 'KotraBold, serif' }}
+                    >
+                      {activeLine.title}
+                    </span>
+                  </div>
+                )}
+                <p
+                  className="text-[0.95rem] leading-[1.8]"
+                  style={{
+                    color: 'var(--story-text-bright)',
+                    fontFamily: 'Paperlogy, sans-serif',
+                    fontWeight: 400,
+                    whiteSpace: 'pre-line',
+                  }}
+                >
+                  {parseColorTags(activeLine.content!)}
+                </p>
+              </div>
+            </div>
+          )}
       </div>
 
-      {/* 대사 — CG 하단에서 시작, 활성 대사만 선명 */}
-      <div
-        className="relative px-[1.25rem] sm:px-[2rem] pb-[3rem]"
-        style={{ zIndex: 20, marginTop: '-100dvh', paddingTop: '68dvh' }}
-      >
-        {allLines.map((line, i) => (
+      {/* 센티넬 */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {allLines.map((line) => (
           <div
             key={line.id}
             data-cg-line={line.id}
             data-cg-stack={line.activeCGs.join(',')}
-            className="mb-[1rem] px-[1.125rem] py-[0.75rem] rounded-[0.375rem]"
-            style={{
-              background:
-                'color-mix(in srgb, var(--story-bg) 75%, transparent)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border:
-                '1px solid color-mix(in srgb, var(--gold-dim) 6%, transparent)',
-              opacity: line.id >= activeLineId ? 1 : 0,
-              transition: 'opacity 0.4s ease',
-            }}
-          >
-            <DialogBlock
-              line={line}
-              isOverCG
-              observerRef={observerRef}
-              showSpeaker={i === 0 || allLines[i - 1].teller !== line.teller}
-            />
-          </div>
+            style={{ height: '16rem' }}
+          />
         ))}
       </div>
     </div>
@@ -580,21 +668,6 @@ export default function StoryReader({
         {groups.map((group, gi) => {
           const elements: React.ReactNode[] = []
 
-          /* Place dividers (CG 구간에서는 숨김) */
-          if (group.type !== 'cg') {
-            for (const line of group.lines) {
-              if (line.place && placeChanges.has(line.id)) {
-                elements.push(
-                  <PlaceDivider
-                    key={`place-${line.id}`}
-                    place={line.place}
-                    observerRef={observerRef}
-                  />,
-                )
-              }
-            }
-          }
-
           /* CG group */
           if (group.type === 'cg') {
             elements.push(
@@ -606,29 +679,44 @@ export default function StoryReader({
               />,
             )
           } else {
-            /* Text group */
+            /* Text group — 디바이더와 대사를 인터리브로 렌더링 */
             const textLines = group.lines.filter((l) => l.content)
-            for (let i = 0; i < textLines.length; i++) {
+            let prevTeller: string | null = null
+            for (const line of textLines) {
+              if (line.place && placeChanges.has(line.id)) {
+                elements.push(
+                  <PlaceDivider
+                    key={`place-${line.id}`}
+                    place={line.place}
+                    observerRef={observerRef}
+                  />,
+                )
+                prevTeller = null
+              }
               elements.push(
                 <DialogBlock
-                  key={`line-${textLines[i].id}`}
-                  line={textLines[i]}
+                  key={`line-${line.id}`}
+                  line={line}
                   observerRef={observerRef}
-                  showSpeaker={i === 0 || textLines[i - 1].teller !== textLines[i].teller}
+                  showSpeaker={prevTeller !== line.teller}
                 />,
               )
+              prevTeller = line.teller
             }
           }
 
           return <div key={gi}>{elements}</div>
         })}
 
-        {/* ── Episode navigation ── */}
+        {/* ── Episode navigation (CG 위에 표시되도록 z-index) ── */}
         <nav
           className="mt-[4rem] pt-[2rem] flex justify-between items-center"
           style={{
             borderTop:
               '1px solid color-mix(in srgb, var(--border) 40%, transparent)',
+            position: 'relative',
+            zIndex: 50,
+            background: 'var(--story-bg)',
           }}
         >
           {prevEpisode ? (
