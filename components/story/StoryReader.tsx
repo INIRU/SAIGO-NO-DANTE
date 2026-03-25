@@ -304,6 +304,7 @@ function CGPanel({
   const [dialogReady, setDialogReady] = useState(false)
   const wasVisible = useRef(false)
   const hasEnteredOnce = useRef(false)
+  const resetTimestamp = useRef(0)
 
   const cgPanelId = useMemo(() => `cg-panel-${allCGs[0] ?? Math.random()}`, [allCGs])
 
@@ -330,16 +331,16 @@ function CGPanel({
         cg.style.top = `${top}px`
         cg.style.height = `${bottom - top}px`
         // CG가 전체화면으로 꽉 찼을 때만 대사 표시
+        const isVisible = (bottom - top) > vh * 0.3
         const isFull = top <= 5 && (bottom - top) >= vh * 0.85
-        if (isFull !== wasVisible.current) {
-          wasVisible.current = isFull
+        wasVisible.current = isVisible
+        if (isFull !== (dialogReady && hasEnteredOnce.current)) {
           setDialogReady(isFull)
           if (isFull && !hasEnteredOnce.current) {
             hasEnteredOnce.current = true
             setActiveLineId(allLines[0]?.id ?? -1)
-            // 리셋 직후 observer가 덮어쓰지 않도록 잠시 차단
-            wasVisible.current = false
-            setTimeout(() => { wasVisible.current = true }, 300)
+            setVisibleStack(sections[0]?.cgStack ?? [])
+            resetTimestamp.current = Date.now()
           }
         }
       }
@@ -353,32 +354,42 @@ function CGPanel({
     }
   }, [])
 
+  // 스크롤 위치 기반 대사 전환 (observer 대신 — 역스크롤 완벽 지원)
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          const lineId = entry.target.getAttribute('data-cg-line')
-          if (lineId && wasVisible.current) {
-            setActiveLineId(parseInt(lineId))
-            const stack =
-              entry.target
-                .getAttribute('data-cg-stack')
-                ?.split(',')
-                .filter(Boolean) ?? []
-            if (stack.length > 0) setVisibleStack(stack)
-          }
+    const onLineScroll = () => {
+      if (!wasVisible.current) return
+      if (Date.now() - resetTimestamp.current < 150) return
+
+      const wrapper = document.querySelector(`[data-cg-panel="${cgPanelId}"]`)
+      const sentinels = wrapper?.querySelectorAll('[data-cg-line]')
+      if (!sentinels?.length) return
+
+      const vh = window.innerHeight
+      const center = vh / 2
+      let closest: Element | null = null
+      let closestDist = Infinity
+
+      for (const el of sentinels) {
+        const rect = el.getBoundingClientRect()
+        const mid = rect.top + rect.height / 2
+        const dist = Math.abs(mid - center)
+        if (dist < closestDist) {
+          closestDist = dist
+          closest = el
         }
-      },
-      { rootMargin: '-35% 0px -35% 0px', threshold: 0.5 },
-    )
+      }
 
-    containerRef.current
-      ?.querySelectorAll('[data-cg-line]')
-      .forEach((el) => observer.observe(el))
+      if (closest) {
+        const lineId = closest.getAttribute('data-cg-line')
+        const stack = closest.getAttribute('data-cg-stack')?.split(',').filter(Boolean) ?? []
+        if (lineId) setActiveLineId(parseInt(lineId))
+        if (stack.length > 0) setVisibleStack(stack)
+      }
+    }
 
-    return () => observer.disconnect()
-  }, [allLines])
+    window.addEventListener('scroll', onLineScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onLineScroll)
+  }, [allLines, cgPanelId])
 
   const panelRef = useCallback(
     (node: HTMLDivElement | null) => {
