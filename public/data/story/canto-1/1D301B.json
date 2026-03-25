@@ -1,0 +1,620 @@
+{
+  "episodeId": "1D301B",
+  "nodeId": 10111,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "로쟈",
+      "title": null,
+      "content": "이 층에는 유독 구더기들이 많이 보이네.",
+      "place": "4구 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "단테",
+      "title": null,
+      "content": "<차라리 벌레가 나아. 이전 층에 있던 환상체 같은 건 두 번 다신 보고 싶지 않아.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "로쟈",
+      "title": null,
+      "content": "풉.. 그거 그렉이 들으면 기뻐하겠다. 안 그래, 벌레 친구?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "하지만 그레고르는 로쟈의 말을 듣고 있지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…다들 아까부터 무슨 소리 안 들려?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "소리라면 계속 들렸잖아요. 로쟈 씨, 이 상황에서까지 배가 고픈 거예요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "로쟈",
+      "title": null,
+      "content": "그, 그런 건 모르는 척하는 거야~ 응?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "그레고르",
+      "title": null,
+      "content": "아니, 그거 말고… 마치…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "여태 앞장조차 서지 않았던 그레고르가 먼저 걸어가더니 홀린 듯 문을 열었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "잠깐, 거긴 환상체 격리실…!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "그레고르",
+      "title": null,
+      "content": "마치… 그때처럼…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": null,
+      "title": null,
+      "content": "아니다, 문은 이미 열려 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "쏟아지는 황금빛을 그레고르만이 넋을 놓은 듯 바라보고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "단테",
+      "title": null,
+      "content": "<그레고…!>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "우리… 시간 여행이라도 한 걸까요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "희뿌연 하늘이 보인다.",
+      "place": null,
+      "activeCGs": [
+        "story_gregor_smokewar_blur_CG"
+      ],
+      "effect": {
+        "type": "shake",
+        "intensity": 8
+      }
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "먼발치에서는 비명과 함성이 비틀린 듯 얽혀 들려온다.",
+      "place": null,
+      "activeCGs": [
+        "story_gregor_smokewar_blur_CG"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": null,
+      "title": null,
+      "content": "그리고 한데 섞여 들리는 포격 소리와 함성 소리는 매캐하게 공간을 메워낸다.",
+      "place": null,
+      "activeCGs": [
+        "story_gregor_smokewar_blur_CG"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "오티스",
+      "title": null,
+      "content": "딱 보면 모르는가? 이곳은…",
+      "place": null,
+      "activeCGs": [
+        "story_gregor_smokewar_blur_CG"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "오티스",
+      "title": null,
+      "content": "전장… 한복판.",
+      "place": "연기전쟁 한복판",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…이, 이건… 꿈? 악몽? 왜, 왜 또다시…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "그러니까 왜 전장 한복판에 있냔 말이야! 함정에라도 빠진 거 아니야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "파우스트",
+      "title": null,
+      "content": "아니요. 길을 잘 찾은 것 같군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "파우스트",
+      "title": null,
+      "content": "멀지 않은 곳에 우리가 찾던 기술의 정수가 있습니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "황금가지요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "파우스트",
+      "title": null,
+      "content": "네, 다들 이곳이 언제인지 알아보시겠나요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "오티스",
+      "title": null,
+      "content": "눈이라는 게 있다면 한눈에 알아보겠지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "단테",
+      "title": null,
+      "content": "<어, 나는… 모르겠는데.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": null,
+      "title": null,
+      "content": "솔직하게 밝혔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "오티스",
+      "title": null,
+      "content": "관리자님은 모르는 게 당연합니다. 관리자님께서는 눈이 없으시니.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "그걸 변명이라고 하나요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": null,
+      "title": null,
+      "content": "오티스는 당황한 기색을 가리려는 듯 헛기침을 두어 번 하고, 눈을 가늘게 뜨며 전장을 바라보았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "오티스",
+      "title": null,
+      "content": "소속을 과시하는 듯한 형형색색 촌스러운 깃발들이 나부끼는 걸로 봐선…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "오티스",
+      "title": null,
+      "content": "연기전쟁이 발발한 지 최소 70일 후…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "오티스",
+      "title": null,
+      "content": "…입니다, 관리자님.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": null,
+      "title": null,
+      "content": "그때, 누군가 뒤에서 긴박하게 옷깃을 잡아당겼다.",
+      "place": null,
+      "activeCGs": [
+        "S10_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": "???",
+      "title": "???",
+      "content": "당신들 미쳤어? 어서 대피해! 저 폭탄에 노출되면 급격하게 노화가 진행된다고!",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": "???",
+      "title": "???",
+      "content": "옆 초소 직원들은 지금 전쟁이고 뭐고 지팡이 없이는 걷지도 못한다니까!",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "대체 이 자식은 누군데 아는 척을…",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": "???",
+      "title": "???",
+      "content": "앗! 그레고르 과장님, 고생 많으십니다!",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": null,
+      "title": null,
+      "content": "붕대를 감은 남자는 그레고르를 보자마자 각이 선 자세로 경례를 올렸다.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…너는.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "저를 모르시겠죠. 생체 관리팀, 토마입니다!",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "선발 대열에 계신 줄 알았는데, 후방에 있었을 줄은 몰랐네요.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "합류를 해야 하는 거면 제가 도와드릴까요? 전 다리 특화형이여서 점프에는 자신이…",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "로쟈",
+      "title": null,
+      "content": "윽, 말만 들어도 징그러워.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": null,
+      "title": null,
+      "content": "토마가 의아한 눈초리로 로쟈를 쳐다보았다.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "당신, 방금 무슨 말을…",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "그레고르",
+      "title": null,
+      "content": "토, 토마! 대리, 아니… 사원인가?",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "넵! 이등 사원입니다!",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": "그레고르",
+      "title": null,
+      "content": "이, 이쪽은 아직 시술된 지 얼마 안 된 직원이라… 정신착란 부작용이 해결되지 않았어. 내가 잘 타이르지.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": "토마",
+      "title": "기억 속 병사",
+      "content": "그렇군요… 아무리 그래도 전시에 준비도 안 된 직원을.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": "그레고르",
+      "title": null,
+      "content": "미안, 미안하네. 내가 급히 데려갈 일이 있어서…",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": null,
+      "title": null,
+      "content": "그레고르는 거의 밀다시피 남자와 거리를 두고, 파우스트에게 급하게 다가왔다.",
+      "place": null,
+      "activeCGs": [
+        "S10_1",
+        "S10_2",
+        "S10_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": "그레고르",
+      "title": null,
+      "content": "어떻게 된 거지, 파우스트 씨? 이건…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…내 기억이잖아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "파우스트",
+      "title": null,
+      "content": "정확히는 자아심도예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "파우스트",
+      "title": null,
+      "content": "당신의 마음속에 나 있는 하나의 길. 즉…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": "파우스트",
+      "title": null,
+      "content": "우리가 그레고르씨의 마음 안에 들어오게 되었다는 뜻이죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

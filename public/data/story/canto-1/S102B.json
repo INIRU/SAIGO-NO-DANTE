@@ -1,0 +1,301 @@
+{
+  "episodeId": "S102B",
+  "nodeId": 10102,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "저기! 질문이 있네!",
+      "place": "메피스토펠레스 내부",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "돈키호테가 갑작스럽게 손을 번쩍 들었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "첫 번째 규칙은 이해했다네! 그럼 두 번째는 무엇인가?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "그레고르",
+      "title": null,
+      "content": "나 참… 아니 그걸 왜 굳이 나서서 물어보는 거야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": null,
+      "title": null,
+      "content": "베르길리우스가 서늘한 표정으로 료슈를 쳐다보았다. 마침 새로운 담배에 불을 당긴 료슈가 오묘한 표정으로 그를 바라보았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "두 번째 규칙…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "버스 바닥에 담배꽁초 버리지 마. 자국 남으니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "료슈",
+      "title": null,
+      "content": "…하.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "버스에는 다시 정적이 흐른다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "잠깐, 버스에 정적이 흐르면 안 되지. 엔진소리는 어디 갔나?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "카론, 왜 속도를 안 내는 거지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "카론",
+      "title": null,
+      "content": "밥이 없어. 메피가 배고파해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "잘됐군. 분위기를 좀 환기시키지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "주유소라도 들르는 걸까?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "버스 주유구에 기름을 넣고 있는 베르길리우스의 모습이 잘 상상되진 않는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "차가 움직이려면 연료가 필요하지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "카론, 헤드라이트를 깜빡거려 봐. 무대 조명처럼.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "카론",
+      "title": null,
+      "content": "응, 댄스 타임이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "잠깐, 헤드라이트까지 켜면 습격받기 딱 좋은 상황이잖아요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "그걸 노린 거군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…네?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": null,
+      "title": null,
+      "content": "누군가 밖에서 버스의 철판을 내리치는 소리가 들렸다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 50
+      }
+    },
+    {
+      "id": 24,
+      "teller": "숫자 세는 불한당",
+      "title": "4구 뒷골목",
+      "content": "어이! 가진 거 다 놓고 내려! 30초 준다! 10! 9!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "예리한 불한당",
+      "title": "4구 뒷골목",
+      "content": "이봐, 20이 빠졌잖아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "숫자 세는 불한당",
+      "title": "4구 뒷골목",
+      "content": "어… 어… 그럼 20초 동안은 기도나 하고 있어라!",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 20
+      }
+    },
+    {
+      "id": 27,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "하아, 왜 이렇게 주변에 모자란 사람들이 많은 건지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "…뭐라고 했냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "비겁하게 습격을 하다니! 틀림없는 악인들이로군!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "자, 다들 내려.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그리고 말이야, 최대한 죽지 않을 만큼만 해줘. 알지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

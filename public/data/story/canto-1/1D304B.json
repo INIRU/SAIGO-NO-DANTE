@@ -1,0 +1,187 @@
+{
+  "episodeId": "1D304B",
+  "nodeId": 10111,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "그레고르",
+      "title": null,
+      "content": "유리 씨, 안 오고 뭐 해?",
+      "place": "연기전쟁 중부전선",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "자, 잠시만요. 가방에서 방독면이 떨어져서…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "오티스",
+      "title": null,
+      "content": "이젠 쓸모도 없을 텐데, 군장의 무게만 늘리는군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "아야 씨의… 유품이잖아요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "오티스",
+      "title": null,
+      "content": "N사 소속도 아니면서, 세상에서 가장 의미 없는 짓을 하는군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "반대로 묶어야 돼요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "네?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "매듭이요. 그렇게 묶으면 금방 다시 떨어질 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "배에서 안 풀리게 묶던 방법이 있었어요. 버스로 돌아가면 방법 알려드릴게요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "아… 고마워요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "뭔데. 너네 뭔데 화목하고 자빠졌냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "로쟈",
+      "title": null,
+      "content": "유리~ 이렇게 된 거, 림버스 컴퍼니 새 수감자로 합류는 어때?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "제, 제가요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "파우스트",
+      "title": null,
+      "content": "그건…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "로쟈",
+      "title": null,
+      "content": "알아, 알아. 베르길리우스나 그 윗선의 권한이라는 거. 그래도 말은 꺼내 볼 수 있잖아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "파우스트",
+      "title": null,
+      "content": "흠… 글쎄요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "로쟈",
+      "title": null,
+      "content": "그리고 분홍 머리가 회사의 마스코트로도 제격이거든. 어때, 어때? 응?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "마, 마스코트요…? 후후.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": null,
+      "title": null,
+      "content": "처음으로 유리가 희미하게 웃었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

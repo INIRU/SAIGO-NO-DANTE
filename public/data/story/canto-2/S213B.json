@@ -1,0 +1,61 @@
+{
+  "episodeId": "S213B",
+  "nodeId": 10213,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "위협적인 철공회 조직원",
+      "title": "철공회",
+      "content": "이건 또 뭐다냐?",
+      "place": "카지노 3F",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "몸 푸는 철공회 조직원",
+      "title": "철공회",
+      "content": "느이, 여기가 어딘 줄 알고 기어 올라왔냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "위협적인 철공회 조직원",
+      "title": "철공회",
+      "content": "함부로 껄떡거리다간 몸을 아크로바틱 하게 비틀어줄 것이여.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "몸 푸는 철공회 조직원",
+      "title": "철공회",
+      "content": "그런 다음엔 손가락 마디마디마다 조각내서 마작 패로 써주지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "어휴… 환영 인사가 참 살벌하네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "후, 내가 이런 인사를 마다하는 성미는 아니라서. 야! 조져!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}
