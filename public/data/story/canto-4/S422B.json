@@ -1,0 +1,277 @@
+{
+  "episodeId": "S422B",
+  "nodeId": 10422,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "아… 잠깐잠깐. 타임아웃이 필요할 것 같아요.",
+      "place": "K사 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "오늘 아침에 먹은 정어리가 좀 잘못되었는지… 속이 좀 안 좋아서.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "대장님!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "료슈",
+      "title": null,
+      "content": "그런 건 없어. 다음은 모. 분. 이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "슈렌느 씨…!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "료슈",
+      "title": null,
+      "content": "슈, 뭐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "슈렌느 씨가 말해줬어요. 이곳에 들어오면 절대로… 절대로 재생 앰플만큼은 사용하지 말라고…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "슈렌느",
+      "title": "K사 연구소",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "하… 그걸 곧이곧대로 말하면… 계약 파기야, 임마…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "로쟈",
+      "title": null,
+      "content": "오… 슈렌느가 그렇게 말했다고? 왜?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "몰라요… 때가 되면 알게 될 거라고 했는데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "뭐, 제일 간단한 방법이 있지 않겠어요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "동랑이 재생 앰플을 만지작거리더니 돌연히…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "비수라도 던지듯, 방심한 해결사의 몸에 꽂아 넣었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "앗…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "그는 황급히 몸에 꽂힌 앰플을 빼려고 했지만, 이미 앰플은 전부 주입 되어버렸고…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "…!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "…왜 그렇게 놀라요, 대장님? 재생 앰플을 꽂으면 어떻게 되는 건데요…?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "…어, 이거 이상한데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": null,
+      "title": null,
+      "content": "팔과 다리가 이상한 각도로 꺾여 나가더니,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "해결사 조수",
+      "title": "장미스패너 공방",
+      "content": "우와아. 우아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": null,
+      "title": null,
+      "content": "이윽고 신체를 뚫고 무언가 불쑥 튀어나오기 시작했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": null,
+      "title": null,
+      "content": "그리고는 바닥에 주저앉은 채로 뭔가를 더 부르짖으려 하지만, 해내지는 못했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…이거, 나만 익숙한 모습이냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "로쟈",
+      "title": null,
+      "content": "설마. 그 벌레 소굴을 기억하는 사람이 그렉, 당신뿐이겠어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": null,
+      "title": null,
+      "content": "마치 애벌레나 달팽이와도 같은…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "…이런.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "슈렌느",
+      "title": "K사 연구소",
+      "content": "그만하자. 내가 너무 많은 사람을 끌어들였나 봐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "뭐… 돈에 혹해서 온 건 저잖아요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "니코",
+      "title": "장미스패너 공방",
+      "content": "에효… 이럴 줄 알았으면 어제 한탕 좀 제대로 해보고 오는 거였는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "episodeId": "S304B",
+  "nodeId": 10304,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "단테",
+      "title": null,
+      "content": "<이런 상황에 익숙해지긴 했지만, 이번엔 좀 심각해 보이긴 하네.>",
+      "place": "K사 검문소",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "파우스트",
+      "title": null,
+      "content": "네, 날개의 금기를 어겼으니까요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "단테",
+      "title": null,
+      "content": "<아직 다친 사람도 없는데, 말로 해결하는 건 안 되는 거야?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "파우스트가 내 얼굴을 똑바로 바라보았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": null,
+      "title": null,
+      "content": "보통 허공 너머 어딘가를 바라보며 말하던 파우스트가 사람을 마주한다는 건,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": null,
+      "title": null,
+      "content": "내가 어지간히 답답한 소리를 했다는 뜻일 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "파우스트",
+      "title": null,
+      "content": "어떤 날개든, 금기를 어겼다는 건…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": null,
+      "title": null,
+      "content": "굉음과 함께 돈키호테가 다양한 부위로 분리가 되었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 30
+      }
+    },
+    {
+      "id": 8,
+      "teller": "파우스트",
+      "title": null,
+      "content": "별도의 발포 경고 없이 금기자를 처단할 수 있다는 뜻이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": null,
+      "title": null,
+      "content": "수감자들까지 모조리 해체를 시키고 나서야 괘씸죄가 상쇄될 모양인지…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "사방에서는 무장한 직원들이 다가오고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…날이 갈수록 놀라워.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "바닥 밑에 고여있던 조그마한 기대감마저 증발시켜 버리니 말이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "난 빠지지. 저 녀석의 단독 범행이라고 하던 다 같이 해결하던 알아서 해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "아까는 관리자님만으로는 부족하니까 동행한 거라면서요?!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "어쩔 수 없는 것에 책임을 져 준다고 했지, 이따위 헛짓거리에 동참해준다는 뜻은 아니었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": null,
+      "title": null,
+      "content": "베르길리우스가 여유롭게 무장한 경비들 사이를 헤쳐 지나가더니 벽에 기댔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": null,
+      "title": null,
+      "content": "구경꾼으로 입지를 굳히기로 작정한 듯 팔짱까지 낀 채로.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

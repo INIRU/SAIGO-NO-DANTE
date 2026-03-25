@@ -1,0 +1,476 @@
+{
+  "episodeId": "4D305B",
+  "nodeId": 10454,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그렇구나. 난 아마 죽어가겠지.",
+      "place": null,
+      "activeCGs": [
+        "S418_6"
+      ],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "이렇게 평화로운 곳에서…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1"
+      ],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": null,
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "…뭐.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "하, 하하…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3"
+      ],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "정말이네요, 역시 못 알아보잖아.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4"
+      ],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "비록 지금은 껍데기들로 채워져 있어도 난 알아…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4"
+      ],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "거의 다 왔어. 곧… 내 기술을 만들어서 알맹이를 채워 나갈 거거든.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4"
+      ],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "다시 팀원을 모으고… 비서를 뽑고… 해야 할 일이 많겠어.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5"
+      ],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그러니… 더 이상은 네가 없어도 될 것 같아.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5"
+      ],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "알폰소",
+      "title": "K사",
+      "content": "…동랑? 나 언제까지 기다려야 할까.",
+      "place": "K사 어딘가의 실험실",
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "아, 미안해요. 잠시 고향에 두고 왔던 게 떠올랐는데…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "지금은 두고 온 게 아니라 앞으로 얻을 것에 대해 생각해야 할 때라는 걸 깨달았어요.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "알폰소",
+      "title": "K사",
+      "content": "누구나 잠깐 어리석어질 수 있지.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "알폰소",
+      "title": "K사",
+      "content": "그래… 눈물을 끊임없이 흘릴 수 있는 방법에 대해 알고 있다고?",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "일정 치의 양을 모으기 위해서 사람을 고문하고… 눈물로 치료하고… 또다시 고문하고…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그러기에는 사용되는 눈물이 너무 아깝잖아요.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "알폰소",
+      "title": "K사",
+      "content": "그래서 여러 날개와 뒷골목 조직들로부터 영상들도 수입해 오고 있는데.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "그 시청각 사료들도 점차 부르는 값을 높여가고 있지 않나요?",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "다른 세력들도 희미하지만 또렷하게 눈치채고 있는 거죠. 우리 K사에게는 어떻게 사용되는지는 모르겠지만.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "정신나간 부하",
+      "title": "K사",
+      "content": "흐… 흐흐… 흐흣…",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "정신나간 부하",
+      "title": "K사",
+      "content": "이번엔 손가락을… 부러뜨려 주실래요?",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "이것 봐. 여기 묶여 있는 당신 부하도 제정신 아닌 것 같은데.",
+      "place": null,
+      "activeCGs": [
+        "S418_6",
+        "S418_1",
+        "S418_2",
+        "S418_3",
+        "S418_4",
+        "S418_5",
+        "S421_7"
+      ],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "동랑",
+      "title": "K사 식량자원개량부",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "눈을 감아서는 안 되지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "카르멘 씨… 아무래도 다른 것 같아요. 길은 끝나지 않았던 거고 전 이제 가야 할 길이 제대로 보이네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "이상",
+      "title": null,
+      "content": "동랑… 돌고 돌아… 이 길로 돌아온 것이오?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "더 이상은 눈동자를 보더라도… 지난날과 같은 측은지심이 들지 않아.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "대신에… 보여? 구인회의 유리라는 그 잘난 그늘에 거머리처럼 붙은 채 만들어 낸 기술이… K사의 특이점을 더욱 드높이 매달아 올린 깃발이 되었어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "이상",
+      "title": null,
+      "content": "…그래, 잘 보이는구료.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "영지 형은 떠났고 동백은 꽃으로 돌아갔고…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "남은 건 영지의 유리에 기생해서 돌연변이처럼 돋아난…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "이도 저도 아니게 베끼어 버린 나의 유리네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "K사 식량자원개량부",
+      "content": "세상을 변화시키지 못하는 기술이 무슨 소용이 있겠어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "모든 것을 부정하는 동랑",
+      "title": "개화 E.G.O::마름",
+      "content": "그러니까 너도 마음을 멈춰. 괴롭고 슬픈 마음을 대신해서 눈물을 흘리는 건 그것의 몫이니.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

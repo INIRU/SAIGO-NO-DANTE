@@ -68,14 +68,15 @@ async function processEpisode(storyId) {
   const script = JSON.parse(await readFile(scriptPath, 'utf-8'))
   const text = JSON.parse(await readFile(textPath, 'utf-8'))
 
-  const textMap = new Map(text.dataList.map((i) => [i.id, i]))
+  const textMap = new Map(text.dataList.map((i) => [i.id ?? i.d, i]))
   const lines = []
   let cgStack = []
 
   for (const item of script.dataList) {
-    if (item.id < 0) continue
+    const itemId = item.id ?? item.d
+    if (itemId < 0) continue
 
-    const t = textMap.get(item.id)
+    const t = textMap.get(itemId)
     const cgs = parseCG(item.cg)
     const effect = parseEffect(item.effect)
 
@@ -96,7 +97,7 @@ async function processEpisode(storyId) {
     if (!t?.content && !stackChanged && !effect) continue
 
     lines.push({
-      id: item.id,
+      id: itemId,
       teller: t?.teller ?? t?.model ?? null,
       title: t?.title ?? null,
       content: t?.content ?? null,

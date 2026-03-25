@@ -87,22 +87,23 @@ export default function StoryPage() {
         </div>
 
         {/* Chapter Grid */}
-        <div className="space-y-[2.5rem]">
+        <div className="flex flex-col gap-[2rem]">
           {CHAPTERS.map((ch, idx) => {
             const prevAvailable = idx > 0 && CHAPTERS[idx - 1].available
             const showDivider = !ch.available && prevAvailable
             const inner = (
               <div
-                className={`rounded-[0.5rem] p-[1.75rem] transition-all duration-300 overflow-hidden relative ${
+                className={`rounded-[0.5rem] p-[2rem] transition-all duration-300 overflow-hidden relative ${
                   ch.available
                     ? 'episode-card cursor-pointer'
                     : 'opacity-35 cursor-not-allowed'
                 }`}
                 style={{
                   background: 'var(--bg-card)',
-                  border: ch.available
-                    ? '1px solid color-mix(in srgb, var(--gold-dim) 15%, transparent)'
-                    : '1px solid var(--border)',
+                  border: 'none',
+                  boxShadow: ch.available
+                    ? '0 0 0 1px color-mix(in srgb, var(--gold-dim) 12%, transparent)'
+                    : '0 0 0 1px var(--border)',
                 }}
               >
                 {/* Thumbnail background */}

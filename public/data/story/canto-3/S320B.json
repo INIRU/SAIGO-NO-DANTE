@@ -1,0 +1,196 @@
+{
+  "episodeId": "S320B",
+  "nodeId": 10320,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "우리는 불타버린 집 안으로 들어갔고, 싱클레어는 우리를 지하실로 안내했다.",
+      "place": "지하실 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "그 지하실의 문을 열자…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "어딘가로 이어져 있는 기다란 지하 통로가 드러났다.",
+      "place": "지하통로",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "단테",
+      "title": null,
+      "content": "<이런 곳에 지하 통로가…>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "아마… 제 짐작이 맞는다면 이 통로가 로보토미 지부로 이어지는 통로일 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "지하실에 대체 왜 이런 수상한 통로가 있는 거야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "원래는 없었어요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "뭐? 그럼 우리를 어떻게 알고 지하실로 안내한 건데?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "나침반이 북쪽 방향에 이끌리듯이… 그냥 느낌으로 알 수 있었던 것뿐이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "파우스트",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "…그거 아니었나요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "저희를 가지를 향한 나침반으로 쓰려고 데리고 다니는 거.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "싱클레어는 파우스트를 조용하게 쳐다보았고.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "그녀는 그에게 대답하는 대신, 물 흐르듯 지나와 지하실의 문 앞에 섰다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "파우스트",
+      "title": null,
+      "content": "재질을 보아하니 비교적 최근에 만들어진 것 같군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "파우스트",
+      "title": null,
+      "content": "아마 N사의 파견원들이 이곳을 점령하며 만들어 놓았겠죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "파우스트",
+      "title": null,
+      "content": "짧은 길은 아닐 거예요. 그들만을 위한 통로인 만큼, 적들을 마주칠 가능성도 다분하겠죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "파우스트",
+      "title": null,
+      "content": "…준비되었으면 출발하죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "단테",
+      "title": null,
+      "content": "<…….>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "파우스트",
+      "title": null,
+      "content": "그렇게 쳐다보지 마세요, 단테.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "파우스트",
+      "title": null,
+      "content": "…저는 아무 말도 할 수 없을 뿐이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}
