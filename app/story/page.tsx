@@ -16,7 +16,7 @@ const CHAPTERS = [
     desc: '나는 검은 숲의 한 가운데에 있었다.\n이유도, 과거도 전부 잊은 채로.',
     episodes: 7,
     available: true,
-    thumbnail: `${STORAGE_BASE}/story/prologue/bg/Dark_Forest.png`,
+    thumbnail: `${STORAGE_BASE}/story/prologue/bg/Dark_Forest.webp`,
   },
   {
     id: 'canto-1',
@@ -25,7 +25,7 @@ const CHAPTERS = [
     desc: '로보토미 본사 지하에 뭔가가 있다.',
     episodes: 30,
     available: true,
-    thumbnail: `${STORAGE_BASE}/story/canto-1/bg/thumbnail.png`,
+    thumbnail: `${STORAGE_BASE}/story/canto-1/bg/thumbnail.webp`,
   },
   {
     id: 'canto-2',
@@ -34,7 +34,7 @@ const CHAPTERS = [
     desc: '카지노에서 벌어지는 도박과 거래.',
     episodes: 29,
     available: true,
-    thumbnail: `${STORAGE_BASE}/story/canto-2/bg/thumbnail.png`,
+    thumbnail: `${STORAGE_BASE}/story/canto-2/bg/thumbnail.webp`,
   },
   {
     id: 'chapter-3',
