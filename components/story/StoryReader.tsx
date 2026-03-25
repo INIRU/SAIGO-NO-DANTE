@@ -56,6 +56,18 @@ function getSpeakerColor(name: string): string {
 
 /* ── Constants ────────────────────────────────── */
 
+const CHAPTER_LABELS: Record<string, string> = {
+  prologue: '프롤로그',
+  'canto-1': '1장',
+  'canto-2': '2장',
+  'canto-3': '3장',
+  'canto-4': '4장',
+  'canto-5': '5장',
+  'canto-6': '6장',
+  'canto-7': '7장',
+  'canto-8': '8장',
+}
+
 function getCGUrl(name: string, chapter = 'prologue') {
   return `${STORAGE_BASE}/story/${chapter}/cg/${name}.png`
 }
@@ -548,7 +560,7 @@ export default function StoryReader({
               className="text-[0.8rem]"
               style={{ fontFamily: 'Paperlogy, sans-serif' }}
             >
-              프롤로그
+              {CHAPTER_LABELS[slug] ?? slug}
             </span>
           </Link>
           <span
@@ -568,16 +580,18 @@ export default function StoryReader({
         {groups.map((group, gi) => {
           const elements: React.ReactNode[] = []
 
-          /* Place dividers */
-          for (const line of group.lines) {
-            if (line.place && placeChanges.has(line.id)) {
-              elements.push(
-                <PlaceDivider
-                  key={`place-${line.id}`}
-                  place={line.place}
-                  observerRef={observerRef}
-                />,
-              )
+          /* Place dividers (CG 구간에서는 숨김) */
+          if (group.type !== 'cg') {
+            for (const line of group.lines) {
+              if (line.place && placeChanges.has(line.id)) {
+                elements.push(
+                  <PlaceDivider
+                    key={`place-${line.id}`}
+                    place={line.place}
+                    observerRef={observerRef}
+                  />,
+                )
+              }
             }
           }
 
