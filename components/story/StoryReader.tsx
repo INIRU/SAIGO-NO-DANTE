@@ -436,9 +436,10 @@ function CGPanel({
               sizes="100vw"
               style={{
                 zIndex: i,
-                opacity: visibleStack.includes(cg)
-                  ? (visibleStack[visibleStack.length - 1] === cg ? 1 : 0.3)
-                  : 0,
+                opacity: visibleStack.includes(cg) ? 1 : 0,
+                filter: visibleStack.includes(cg) && visibleStack[visibleStack.length - 1] !== cg
+                  ? 'brightness(0.3)'
+                  : 'none',
                 transition: 'opacity 0.6s ease',
               }}
             />
