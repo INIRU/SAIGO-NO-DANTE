@@ -115,10 +115,12 @@ function DialogBlock({
   line,
   isOverCG,
   observerRef,
+  showSpeaker = true,
 }: {
   line: StoryLine
   isOverCG?: boolean
   observerRef: React.RefObject<IntersectionObserver | null>
+  showSpeaker?: boolean
 }) {
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
@@ -143,7 +145,7 @@ function DialogBlock({
       data-shake={hasShake ? '' : undefined}
     >
       {/* Named speaker (not Dante) */}
-      {line.teller && !isDante && (
+      {showSpeaker && line.teller && !isDante && (
         <div className="mb-[0.375rem] flex items-baseline gap-[0.5rem]">
           <span
             className="text-[0.9rem] tracking-[0.05em]"
@@ -171,7 +173,7 @@ function DialogBlock({
       )}
 
       {/* Dante (censored name) */}
-      {isDante && line.title && (
+      {showSpeaker && isDante && line.title && (
         <div className="mb-[0.375rem]">
           <span
             className="text-[0.85rem] tracking-[0.1em]"
@@ -378,7 +380,7 @@ function CGPanel({
         className="relative px-[1.25rem] sm:px-[2rem] pb-[3rem]"
         style={{ zIndex: 20, marginTop: '-100dvh', paddingTop: '68dvh' }}
       >
-        {allLines.map((line) => (
+        {allLines.map((line, i) => (
           <div
             key={line.id}
             data-cg-line={line.id}
@@ -399,6 +401,7 @@ function CGPanel({
               line={line}
               isOverCG
               observerRef={observerRef}
+              showSpeaker={i === 0 || allLines[i - 1].teller !== line.teller}
             />
           </div>
         ))}
@@ -584,16 +587,16 @@ export default function StoryReader({
             )
           } else {
             /* Text group */
-            for (const line of group.lines) {
-              if (line.content) {
-                elements.push(
-                  <DialogBlock
-                    key={`line-${line.id}`}
-                    line={line}
-                    observerRef={observerRef}
-                  />,
-                )
-              }
+            const textLines = group.lines.filter((l) => l.content)
+            for (let i = 0; i < textLines.length; i++) {
+              elements.push(
+                <DialogBlock
+                  key={`line-${textLines[i].id}`}
+                  line={textLines[i]}
+                  observerRef={observerRef}
+                  showSpeaker={i === 0 || textLines[i - 1].teller !== textLines[i].teller}
+                />,
+              )
             }
           }
 
