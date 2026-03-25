@@ -275,14 +275,25 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
               {/* Theme preview or placeholder */}
               {selectedTheme ? (
                 <>
-                  {selectedTheme.boss_image_url && (
-                    <Image
-                      src={selectedTheme.boss_image_url}
-                      alt="보스"
-                      width={28}
-                      height={32}
-                      style={{ width: '1.75rem', height: '2rem', objectFit: 'contain', flexShrink: 0, opacity: 0.8 }}
-                    />
+                  {selectedTheme.image_url && (
+                    <div style={{ position: 'relative', width: '1.75rem', height: '3.175rem', flexShrink: 0 }}>
+                      <Image
+                        src={selectedTheme.image_url}
+                        alt={selectedTheme.name}
+                        width={18}
+                        height={33}
+                        style={{ width: '1.75rem', height: '3.175rem', objectFit: 'cover', borderRadius: '0.1875rem' }}
+                      />
+                      {selectedTheme.boss_image_url && (
+                        <Image
+                          src={selectedTheme.boss_image_url}
+                          alt="보스"
+                          width={28}
+                          height={32}
+                          style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '1.625rem', height: '1.8rem', objectFit: 'contain', opacity: 0.85 }}
+                        />
+                      )}
+                    </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
@@ -336,22 +347,24 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                       border: '1px solid rgba(200,144,10,0.2)',
                     }}>
                       {selectedTheme.image_url && (
-                        <Image
-                          src={selectedTheme.image_url}
-                          alt={selectedTheme.name}
-                          width={38}
-                          height={69}
-                          style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem', flexShrink: 0 }}
-                        />
-                      )}
-                      {selectedTheme.boss_image_url && (
-                        <Image
-                          src={selectedTheme.boss_image_url}
-                          alt="보스"
-                          width={40}
-                          height={44}
-                          style={{ width: '2.5rem', height: '2.75rem', objectFit: 'contain', flexShrink: 0, opacity: 0.8 }}
-                        />
+                        <div style={{ position: 'relative', width: '2.375rem', height: '4.3125rem', flexShrink: 0 }}>
+                          <Image
+                            src={selectedTheme.image_url}
+                            alt={selectedTheme.name}
+                            width={38}
+                            height={69}
+                            style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem' }}
+                          />
+                          {selectedTheme.boss_image_url && (
+                            <Image
+                              src={selectedTheme.boss_image_url}
+                              alt="보스"
+                              width={40}
+                              height={44}
+                              style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '2.25rem', height: '2.5rem', objectFit: 'contain', opacity: 0.85 }}
+                            />
+                          )}
+                        </div>
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e8b030' }}>
