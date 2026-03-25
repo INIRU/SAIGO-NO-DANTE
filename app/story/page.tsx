@@ -34,6 +34,7 @@ const CHAPTERS = [
     desc: '카지노에서 벌어지는 도박과 거래.',
     episodes: 29,
     available: true,
+    thumbnail: `${STORAGE_BASE}/story/canto-2/bg/thumbnail.png`,
   },
   {
     id: 'chapter-3',
@@ -86,20 +87,22 @@ export default function StoryPage() {
         </div>
 
         {/* Chapter Grid */}
-        <div className="space-y-[1.5rem]">
+        <div className="space-y-[2.5rem]">
           {CHAPTERS.map((ch, idx) => {
             const prevAvailable = idx > 0 && CHAPTERS[idx - 1].available
             const showDivider = !ch.available && prevAvailable
             const inner = (
               <div
-                className={`rounded-[0.375rem] p-[1.5rem] transition-all duration-300 overflow-hidden relative ${
+                className={`rounded-[0.5rem] p-[1.75rem] transition-all duration-300 overflow-hidden relative ${
                   ch.available
                     ? 'episode-card cursor-pointer'
                     : 'opacity-35 cursor-not-allowed'
                 }`}
                 style={{
                   background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
+                  border: ch.available
+                    ? '1px solid color-mix(in srgb, var(--gold-dim) 15%, transparent)'
+                    : '1px solid var(--border)',
                 }}
               >
                 {/* Thumbnail background */}

@@ -308,7 +308,7 @@ function CGPanel({
           }
         }
       },
-      { rootMargin: '-55% 0px -15% 0px' },
+      { rootMargin: '-45% 0px -25% 0px' },
     )
 
     containerRef.current
