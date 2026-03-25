@@ -353,7 +353,7 @@ function CGPanel({
         for (const entry of entries) {
           if (!entry.isIntersecting) continue
           const lineId = entry.target.getAttribute('data-cg-line')
-          if (lineId) {
+          if (lineId && wasVisible.current) {
             setActiveLineId(parseInt(lineId))
             const stack =
               entry.target
@@ -419,7 +419,9 @@ function CGPanel({
               sizes="100vw"
               style={{
                 zIndex: i,
-                opacity: visibleStack.includes(cg) ? 1 : 0,
+                opacity: visibleStack.includes(cg)
+                  ? (visibleStack[visibleStack.length - 1] === cg ? 1 : 0.3)
+                  : 0,
                 transition: 'opacity 0.6s ease',
               }}
             />
