@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 export const metadata: Metadata = {
   title: '스토리',
@@ -14,20 +16,24 @@ const CHAPTERS = [
     desc: '나는 검은 숲의 한 가운데에 있었다.\n이유도, 과거도 전부 잊은 채로.',
     episodes: 7,
     available: true,
+    thumbnail: `${STORAGE_BASE}/story/prologue/bg/Dark_Forest.png`,
   },
   {
-    id: 'chapter-1',
+    id: 'canto-1',
     number: '1',
     title: '속하지 못하는',
-    episodes: 0,
-    available: false,
+    desc: '로보토미 본사 지하에 뭔가가 있다.',
+    episodes: 30,
+    available: true,
+    thumbnail: `${STORAGE_BASE}/story/canto-1/bg/thumbnail.png`,
   },
   {
-    id: 'chapter-2',
+    id: 'canto-2',
     number: '2',
     title: '사랑할 수 없는',
-    episodes: 0,
-    available: false,
+    desc: '카지노에서 벌어지는 도박과 거래.',
+    episodes: 29,
+    available: true,
   },
   {
     id: 'chapter-3',
@@ -80,13 +86,13 @@ export default function StoryPage() {
         </div>
 
         {/* Chapter Grid */}
-        <div className="space-y-[1rem]">
+        <div className="space-y-[1.5rem]">
           {CHAPTERS.map((ch, idx) => {
             const prevAvailable = idx > 0 && CHAPTERS[idx - 1].available
             const showDivider = !ch.available && prevAvailable
             const inner = (
               <div
-                className={`rounded-[0.375rem] p-[1.5rem] transition-all duration-300 ${
+                className={`rounded-[0.375rem] p-[1.5rem] transition-all duration-300 overflow-hidden relative ${
                   ch.available
                     ? 'episode-card cursor-pointer'
                     : 'opacity-35 cursor-not-allowed'
@@ -96,7 +102,27 @@ export default function StoryPage() {
                   border: '1px solid var(--border)',
                 }}
               >
-                <div className="flex items-start gap-[1.25rem]">
+                {/* Thumbnail background */}
+                {ch.thumbnail && (
+                  <>
+                    <Image
+                      src={ch.thumbnail}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 42rem"
+                      style={{ opacity: 0.15, zIndex: 0 }}
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: 'linear-gradient(to right, var(--bg-card) 30%, transparent 70%)',
+                        zIndex: 1,
+                      }}
+                    />
+                  </>
+                )}
+                <div className="flex items-start gap-[1.25rem] relative" style={{ zIndex: 2 }}>
                   {/* Chapter number */}
                   <div
                     className="shrink-0 w-[3rem] h-[3rem] rounded-[0.25rem] flex items-center justify-center"

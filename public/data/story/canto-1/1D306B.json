@@ -1,0 +1,97 @@
+{
+  "episodeId": "1D306B",
+  "nodeId": 10111,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "파우스트",
+      "title": null,
+      "content": "단테, 이 격리실 앞. 여태까지 만난 것들과는 다른 느낌이 들지 않나요?",
+      "place": "4구 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "단테",
+      "title": null,
+      "content": "<그런 것 같은데… 아, 이게?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "파우스트",
+      "title": null,
+      "content": "네, 황금가지가 뿌리내린 환상체가 있을 거예요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "그레고르",
+      "title": null,
+      "content": "하아… 그래도 다 온 모양이구만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "그레고르 씨…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…버스로 돌아가면, 카론한테 지도 보는 법을 알려줘도 될까요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…그래, 그래. 카론이 좋아할 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그럴 리가요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "싱클레어는 고개를 절레절레하며 대답하곤 헛구역질을 했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "후후, 돌아갈 곳이 있다는 건 좋은 거네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

@@ -56,8 +56,8 @@ function getSpeakerColor(name: string): string {
 
 /* ── Constants ────────────────────────────────── */
 
-function getCGUrl(name: string) {
-  return `${STORAGE_BASE}/story/prologue/cg/${name}.png`
+function getCGUrl(name: string, chapter = 'prologue') {
+  return `${STORAGE_BASE}/story/${chapter}/cg/${name}.png`
 }
 
 /* ── Line Grouping ────────────────────────────── */
@@ -262,8 +262,10 @@ function PlaceDivider({
 function CGPanel({
   group,
   observerRef,
+  chapter,
 }: {
   group: LineGroup
+  chapter: string
   observerRef: React.RefObject<IntersectionObserver | null>
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -339,7 +341,7 @@ function CGPanel({
         {allCGs.map((cg, i) => (
           <Image
             key={cg}
-            src={getCGUrl(cg)}
+            src={getCGUrl(cg, chapter)}
             alt=""
             fill
             className="object-contain"
@@ -416,11 +418,14 @@ export default function StoryReader({
   data,
   prevEpisode,
   nextEpisode,
+  chapterSlug = 'prologue',
 }: {
   data: EpisodeData
   prevEpisode?: string | null
   nextEpisode?: string | null
+  chapterSlug?: string
 }) {
+  const slug = chapterSlug
   const [showTop, setShowTop] = useState(false)
   const showTopRef = useRef(false)
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -534,7 +539,7 @@ export default function StoryReader({
       >
         <div className="max-w-[42rem] mx-auto px-[1.25rem] py-[0.75rem] flex items-center justify-between">
           <Link
-            href="/story/prologue"
+            href={`/story/${slug}`}
             className="flex items-center gap-[0.5rem] transition-opacity hover:opacity-70"
             style={{ color: 'var(--gold-dim)' }}
           >
@@ -582,6 +587,7 @@ export default function StoryReader({
               <CGPanel
                 key={`cg-${gi}`}
                 group={group}
+                chapter={slug}
                 observerRef={observerRef}
               />,
             )
@@ -613,7 +619,7 @@ export default function StoryReader({
         >
           {prevEpisode ? (
             <Link
-              href={`/story/prologue/${prevEpisode}`}
+              href={`/story/${slug}/${prevEpisode}`}
               className="text-[0.85rem] transition-opacity hover:opacity-70"
               style={{
                 color: 'var(--gold-dim)',
@@ -626,7 +632,7 @@ export default function StoryReader({
             <div />
           )}
           <Link
-            href="/story/prologue"
+            href={`/story/${slug}`}
             className="text-[0.7rem] tracking-[0.1em] transition-opacity hover:opacity-70"
             style={{
               color: 'var(--gold-dim)',
@@ -638,7 +644,7 @@ export default function StoryReader({
           </Link>
           {nextEpisode ? (
             <Link
-              href={`/story/prologue/${nextEpisode}`}
+              href={`/story/${slug}/${nextEpisode}`}
               className="text-[0.85rem] transition-opacity hover:opacity-70"
               style={{
                 color: 'var(--gold-dim)',

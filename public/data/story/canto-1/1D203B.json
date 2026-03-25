@@ -1,0 +1,821 @@
+{
+  "episodeId": "1D203B",
+  "nodeId": 10111,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "이곳부터는 패잔병들이 머물렀던 흔적조차 보이지 않네요.",
+      "place": "4구 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "더 이상 전진은 하지 말라고도 경고하던데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "죽은 지 오래되어 보이는 시체들이 보이기 시작했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "이건 우리… 아니, L사 직원들의 시체에요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "이상",
+      "title": null,
+      "content": "둔기로 맞은 흔적이오. 전원이 그러하구료.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "관리기록서… 이건 환상체 관리법을 적어두는 문서에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "보통 관리 업무를 지정 받으면 지겨울 정도로 암기를 해서 들어가니까… 이런 건 필요 없는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "이상",
+      "title": null,
+      "content": "추측건대, 환상체가 탈출했고 아무도 관리법을 알지 못했던 게 아닐까 하오만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "…흐응.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "아직 격리실로 운반하지 않은 알들이었다면… 그럴 수도 있겠네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "단테",
+      "title": null,
+      "content": "<시체가 너무 많은데.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "대체 어떤 환상체길래 이렇게 많은 수의 직원들이…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "잠깐… 이게 무슨 냄새죠?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "…이번에 사무실에서 비싼 장비를 하나 장만했지요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "얜 또 뭐라는 거냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "특정 층부터는 독성 검출이 높아진다고, 그런 소문을 들은 적이 있었거든요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "로쟈",
+      "title": null,
+      "content": "나, 아까부터 귀에서 피가 흐르는데~ 이거 괜찮은 거야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "고난 없이 어찌 전투를… 으헥, 꾸엑! 쿨럭!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "지속 노출되면 신체에서 지속적으로 출혈을 일으킨다더군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "로쟈",
+      "title": null,
+      "content": "으… 정작 그렇게 말하는 본인은 너무 멀쩡한데?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "이거… 예전에 보급되었던 환상체 제압용 독성가스탄이네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "시체들 사이에서… 쿨럭… 폭발이라도 했나 봐요…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "확실히 이 부근부터는 독기가 꽤 진해지는군요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": null,
+      "title": null,
+      "content": "그렇게 말하는 홉킨스는 어느새 얼굴에 방독면을 쓰고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "로쟈",
+      "title": null,
+      "content": "뭐야, 우린 저런 거 없어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "파우스트",
+      "title": null,
+      "content": "제공되는 보급품은 따로 없었습니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "이 새끼, 넌 일찌감치 알고 있었냐? 버러지 같은 자식이… 큭…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": null,
+      "title": null,
+      "content": "히스클리프가 말을 멈추고 자리에 주저앉는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "파우스트",
+      "title": null,
+      "content": "흥분하면 혈류가 더 빨라집니다. 독이 금방 퍼진다는 거죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "파우스트",
+      "title": null,
+      "content": "자리에서 되도록 날뛰지 말고 최대한 천천히 호흡하세요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "홉킨스 씨… 왜… 쿨럭, 미리 말을 해주시지 않으셨어요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "나야말로 물어보자, 유리.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "별 기대도 안 하고 들여놓은 짐짝 같은 사람한테, 가뜩이나 비싼 물건을 축낼 만한 사실을 왜 알려야 하지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "냉정하게 말하면, 우리 사무실에 네가 발을 들인 것도 놀라운 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "아야는 널 귀엽게 봐서 챙겨주려고 했을지는 몰라도… 지금은 죽었는데 무슨 상관이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "비겁한 새끼… 그러고 살고 싶냐…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "해결사에게 비겁이라니, 되도 않는 말을 하네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 38,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "붉은시선님이 데리고 다니는 이들이길래 누군지나 보려고 했더니…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "제대로 된 도구나 정보도 없이 여길 기어들어 오는 미친놈들이었을 줄이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 40,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "저딴 새끼를… 그냥 두고만 봐야 한다니…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": null,
+      "title": null,
+      "content": "홉킨스 역시 살의를 느꼈는지 재빨리 입구 쪽을 향해 뒷걸음질을 쳤다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "그래도 덕분에 엔케팔린은 쏠쏠하게 얻어갈 수 있었어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "창피할 테니까, 질식사 말고 행방불명이라고 보고해줄게.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "홉킨스",
+      "title": "8급 해결사",
+      "content": "그럼.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": null,
+      "title": null,
+      "content": "유리는 주저앉은 채로 쏟아지는 코피를 손으로 받고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": null,
+      "title": null,
+      "content": "그것만이 아니다. 로쟈나 히스클리프, 그 외의 다른 수감자들도 저마다 괴로워하며 피를 쏟는다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "단테",
+      "title": null,
+      "content": "<그레고르?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "그레고르",
+      "title": null,
+      "content": "쩝, 유품이나 챙겨주려고 들고 왔던 건데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": null,
+      "title": null,
+      "content": "그의 손에는 홉킨스가 썼던 것과 똑같은 방독면이 들려 있었다.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "왜…",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": "그레고르",
+      "title": null,
+      "content": "아야 씨가, 쿨럭. 너는 챙겨주려고 했었다면서… 그럼 네 거지.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": "그레고르",
+      "title": null,
+      "content": "도구도 없이 기어들어 온 미친놈들은… 다 살아남을 구멍이 있으니까 걱정말고.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": null,
+      "title": null,
+      "content": "유리가 피 섞인 기침을 하며 천천히 방독면을 썼다.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…알고 있어요.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "밤낮없이 궂은 일을 도맡아보았자, 아무 연고도 없이 사무실에 인정받는 게 쉬운 일이 아니란 것쯤은.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "지부가 폐쇄될 때까지 남은 시간은 고작 3분이었고…",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": "안내 방송",
+      "title": "L사 ",
+      "content": "[부지 매몰을 시작합니다.]",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 59,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "제 눈앞에서 문이 닫혀가고 있었어요.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 60,
+      "teller": "안내 방송",
+      "title": "L사 ",
+      "content": "[에너지 전송, 85% 완료.]",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 61,
+      "teller": "알렉스",
+      "title": "L사 직원",
+      "content": "유리, 날 두고 가지 마! 유리!",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 62,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "그럼 난 도대체 어쩌라는 거에요?",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 63,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "살아남은 게 죄인가요?",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 64,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "동료들이랑 같이 파묻히기라도 했어야 해요?",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 65,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "환상체들이 도시로 빠져나오면 안 된다는 이유로 회사가 통째로 폐쇄되고 있는데?",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 66,
+      "teller": "그레고르",
+      "title": null,
+      "content": "큭… 죄지. 이곳에선.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 67,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "켁, 켁. 그 말은 좀 아프네요, 그레고르 씨…",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 68,
+      "teller": null,
+      "title": null,
+      "content": "망연하게 서 있다가 문득 수감자들을 바라보았다.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 69,
+      "teller": null,
+      "title": null,
+      "content": "절반은 이미 바닥에 드러누워 숨이 멎은 것 같았고, 이스마엘도 그 말을 마지막으로 고개를 바닥으로 떨구었다.",
+      "place": null,
+      "activeCGs": [
+        "S2"
+      ],
+      "effect": null
+    },
+    {
+      "id": 70,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "죄…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 71,
+      "teller": "그레고르",
+      "title": null,
+      "content": "근데, 하아… 그러면 뭐 어떠냐…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 72,
+      "teller": "그레고르",
+      "title": null,
+      "content": "계속 뻔뻔하게 살아남아야지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 73,
+      "teller": "그레고르",
+      "title": null,
+      "content": "쿨럭, 일일이 죄책감 부여하다간… 네 마음이 남아나지 않아…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 74,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 75,
+      "teller": null,
+      "title": null,
+      "content": "마침내 그레고르의 숨까지 멎었고, 방독면을 쓴 유리와 나만이 그 공간에 유일하게 서 있게 되었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 76,
+      "teller": "단테",
+      "title": null,
+      "content": "<어… 너, 너무 걱정하지 마. 아까 거기로 가서 되살리면 되니까.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 77,
+      "teller": null,
+      "title": null,
+      "content": "유리에게는 째깍거리는 소리밖에 들리지 않는다는 걸 알았지만, 나는 최선을 다해서 그렇게 전달하려고 했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 78,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…알아요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 79,
+      "teller": null,
+      "title": null,
+      "content": "유리는 그 말을 끝으로 단 한마디도 말을 하지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 80,
+      "teller": null,
+      "title": null,
+      "content": "어색하고 음울한 시간이 한참 지났고, 마침내 독이 전부 흩어져 사라졌다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 81,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "…이제 괜찮은 것 같네요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 82,
+      "teller": "단테",
+      "title": null,
+      "content": "<으응? 응, 그래.>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 83,
+      "teller": "유리",
+      "title": "8급 해결사",
+      "content": "도울게요, 가서 빨리 살리고 오죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 84,
+      "teller": null,
+      "title": null,
+      "content": "그렇게 말한 유리는 방독면을 벗고, 담담한 표정으로 쓰러진 수감자들을 하나씩 둘러멨다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 85,
+      "teller": null,
+      "title": null,
+      "content": "그 표정에 어떠한 말을 붙일지 몰라서, 나는 잠자코 있기로 마음먹었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

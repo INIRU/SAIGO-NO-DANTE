@@ -9,8 +9,10 @@ const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII']
 
 export default function EpisodeList({
   episodes,
+  chapterSlug = 'prologue',
 }: {
   episodes: EpisodeSummary[]
+  chapterSlug?: string
 }) {
   const [readSet, setReadSet] = useState<Set<string>>(new Set())
 
@@ -32,7 +34,7 @@ export default function EpisodeList({
         return (
           <Link
             key={ep.storyId}
-            href={`/story/prologue/${ep.storyId}`}
+            href={`/story/${chapterSlug}/${ep.storyId}`}
             className="episode-card block rounded-[0.25rem]"
             style={{
               background: 'var(--bg-card)',

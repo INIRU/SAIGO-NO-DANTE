@@ -1,0 +1,283 @@
+{
+  "episodeId": "S209B",
+  "nodeId": 10209,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "료슈",
+      "title": null,
+      "content": "답답해서 못 봐주겠군.",
+      "place": "카지노 1F",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "료슈",
+      "title": null,
+      "content": "저런 어중이떠중이 새끼들을 언제까지 상대하고 있을 거야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "보통 그렇게 말하는 사람치고 명쾌한 해답을 제시하는 사람은 없죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "료슈는 이스마엘의 말을 듣고, 고개를 가로젓더니 잘 봐두라는 듯한 표정을 지었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "료슈",
+      "title": null,
+      "content": "...이런 게 예술이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "료슈",
+      "title": null,
+      "content": "네 놈, 그 칼 줘봐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "이상",
+      "title": null,
+      "content": "영영 앗아가도 괜찮소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "이상",
+      "title": null,
+      "content": "날붙이가 나를 떠나 내내 허공을 떠도는 것이 차라리 좋을 것이오.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "료슈",
+      "title": null,
+      "content": "감사.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 30
+      }
+    },
+    {
+      "id": 9,
+      "teller": null,
+      "title": null,
+      "content": "료슈는 이상의 단검을 받아 들더니 그대로 허공을 향해 날렸다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "단검은 정확히 샹들리에의 고정장치를 꿰뚫었고, 곧바로 위태롭게 흔들리기 시작했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": null,
+      "title": null,
+      "content": "그래… 료슈는 비록 수감자가 되면서 힘이 일부 약해지긴 했지만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "그럼에도 쇠붙이 정돈 간단히 베어낼 수 있는 최고의 칼잡이였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "고작 내 말을 씹다 뱉은 껌보다도 우습게 여기는 수감자였음에도 아무렴, 그런 건 중요하지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "모두의 시선은 기우뚱하게 흔들리는 샹들리에를 향해 쏟아졌고...",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "부끄럼을 이기지 못한 샹들리에는 결국…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "이상",
+      "title": null,
+      "content": "아스라히, 바스라지는구료.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "각 잡힌 카지노 경호원",
+      "title": "J사 전당포",
+      "content": "어어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "카지노 경호원 대장",
+      "title": "J사 전당포",
+      "content": "피… 피해!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": null,
+      "title": null,
+      "content": "쿠구궁!",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 50
+      }
+    },
+    {
+      "id": 20,
+      "teller": null,
+      "title": null,
+      "content": "굉장한 소음과 함께 바닥에 있는 힘껏 처박혔다.",
+      "place": "난장판이 된 카지노 1F",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": null,
+      "title": null,
+      "content": "……",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": null,
+      "title": null,
+      "content": "그래, 처박히기만 했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": null,
+      "title": null,
+      "content": "아무 일도 일어나지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": null,
+      "title": null,
+      "content": "우리와 적들은 전장 한 가운데에 떨어진 샹들리에를 잠시 동안 멀뚱히 바라보았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "단테",
+      "title": null,
+      "content": "<저기, 뭐 한 거야? 료슈?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "료슈",
+      "title": null,
+      "content": "…퍼포먼스다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "그레고르",
+      "title": null,
+      "content": "방금 그렇게 정한 거지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그래도, 다들 무사해서 다행이네요!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…앞으로 무사하게 될지는 모를 것 같지만 말이에요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "episodeId": "S205A",
+  "nodeId": 10205,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "젠장, 그만 좀 튀어나와!",
+      "place": "10구, 뒷골목",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "카지노에 들어가기도 전에 지쳐서 뒤지는 게 더 빠르겠어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "홍루",
+      "title": null,
+      "content": "안심해요, 히스클리프. 관리자님이 있는 한 우리가 지쳐서 죽을 일은…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "누가 그걸 몰라서 물어보냐! #@$@#$!!!",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 4,
+      "teller": "뫼르소",
+      "title": null,
+      "content": "해결은 간단하다. 어떤 조직이더라도 그 대가리를 깨부수면, \n떠받던 고깃덩어리는 무너진다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "너, 여기서 유일하게 맘에 드는 소리를 하네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "짜증 나니까 쳐부수러 가자. 대가리든 뭐든.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "자, 전진하세!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "에피",
+      "title": "LCCB",
+      "content": "잠깐! 다들 돌아와!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "에피",
+      "title": "LCCB",
+      "content": "…파우스트, 너 계속 이런 애들이랑 같이 다녀야 하는 거냐?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "파우스트",
+      "title": null,
+      "content": "삶은 늘 의문투성이죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "이상",
+      "title": null,
+      "content": "그렇기에 이상적이라고 할 수도 있겠소.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "너네 대가리 어딨어! 당장 튀어나오라 그래!",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 10
+      }
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "히스클리프가 이미 의식을 잃은 것 같은 조직원의 멱살을 붙잡고 마구잡이로 흔들고 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "…잃은 건 의식뿐만이 아닐지도 모르겠지만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "세보이고 싶었던 콩콩이파 조직원",
+      "title": "콩콩이 파",
+      "content": "우리 형님은… 차 탑에 계실 거다…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "차 탑? 차 탑이 어디야?! 알아듣게 말해!",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "에피",
+      "title": "LCCB",
+      "content": "이 근방의 폐차장을 말하는 걸 거야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "에피",
+      "title": "LCCB",
+      "content": "그런데 너희, 진심으로 콩콩이파 보스까지 처리할 생각이야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "에피",
+      "title": "LCCB",
+      "content": "그런다고 인사고과에 반영되거나 하진 않아. 알고 있어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "저자는 그런 것까지 염두에 두고 행동할 만큼 명민하진 못해요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "오티스",
+      "title": null,
+      "content": "계략, 속셈 따위랑은 거리가 먼 오물이지. 말도 안 되는 일과는 가깝지만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "아니야… 말이 되는 것 같기도 해요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "문제없어, 에피. 우리는 항상 플랜 B까지 대비해 놓잖아?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": null,
+      "title": null,
+      "content": "소드는 온화한 표정으로 말을 이어 나갔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": null,
+      "title": null,
+      "content": "하지만, 평정심을 유지하려고 애를 쓰는 모습이 드문드문 보이는 것이, 온화함을 연기하는 것은 아닌가 하는 생각이 들게 만들기도 했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "여러분이 위장을 하는 게 불가능하다면…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "다 같이 콩콩이파 조직원들로 위장해버리는 겁니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "단체로 들어가도 눈에 띄지 않을 거고, 순조롭게 꼭대기 층까지 진입할 수 있을 테니까요.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "소드",
+      "title": "LCCB",
+      "content": "겸사겸사 콩콩이파에게서 소망력도 뺏어가죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

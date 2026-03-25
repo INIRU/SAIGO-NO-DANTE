@@ -1,0 +1,760 @@
+{
+  "episodeId": "S201B",
+  "nodeId": 10201,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "버스의 공기는 그리 밝지만은 않았다.",
+      "place": "메피스토펠레스 내부",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "로쟈의 시답잖은 소리, 혹은 히스클리프가 다른 누구 (아마도 돈키호테나 싱클레어 중 하나였을 것이다)한테 의미 없는 시비를 거는 듯한 소리라던가.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": null,
+      "title": null,
+      "content": "라이터 기름을 다 썼는지 불이 필요하다고 외치는 료슈의 목소리라던가.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "크고 작은 소동 가운데에서, 적어도 그레고르 만큼은 분위기를 환기해줄 의지가 있는 유일한 수감자였으나…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": null,
+      "title": null,
+      "content": "지금은 우리 중 제일 조용한 수감자가 되어있다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": null,
+      "title": null,
+      "content": "무언가 골똘히 생각이라도 하는 듯, 그저 창문 밖만을 뚫어지게 노려보고 있을 뿐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "한 가지 확실한 건.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": null,
+      "title": null,
+      "content": "버스의 분위기를 이따위로 만든 주범이 베르길리우스라는 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": null,
+      "title": null,
+      "content": "우리가 그 황금가지에 가까이 가기 위해서 어떤 개고생을 했고,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": null,
+      "title": null,
+      "content": "죽을 고비를 (물론 실제로 죽었던 이들도 있었지만) 몇 번이나 넘겼는지, 그러는 와중에 또 얼마나 많은 퇴사의 위기를 겪었는지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "베르길리우스는 도통 이해하려 들지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": null,
+      "title": null,
+      "content": "이러니 수감자들의 불만이 버스 안을 꽉 메워 버리는 것도 당연하다면 당연한 처사일 것이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": null,
+      "title": null,
+      "content": "결국, 참다못한 이스마엘이 먼저 말을 꺼냈다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "이제 다음 장소는 어디인지 정도는 말해줘야 되는 거 아닌가요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "아, 실례했군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "너희에게 임무를 설명해줄 가치가 있을지 고민하던 참이었어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": "로쟈",
+      "title": null,
+      "content": "하, 나 서운해지려고 해. 기대에 못 미치는 자식일수록 더 품어야 된다는 거 몰라?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 19,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "간곡히 부탁하건대, 이번만큼은 망신을 시켜주지 않으면 좋겠어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 20,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "오합지졸을 데리고 소풍 가는 교사로 보이고 싶진 않으니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 21,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "특히 우리 로지온에겐 기대가 더욱 커. 이번엔 훌륭한 가이드가 되어줄 수도 있을 것 같으니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 22,
+      "teller": "로쟈",
+      "title": null,
+      "content": "응? 내가 대단하다는 건 알고 있지만, 모르는 곳까지 가이드 하기에는…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 23,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "걱정 마. 익숙하다 못해 친숙한 곳일 테니.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 24,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "돈에 잠길 수도, 말라죽을 수도 있는 환락의 둥지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 25,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "J사다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 26,
+      "teller": "로쟈",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 27,
+      "teller": null,
+      "title": null,
+      "content": "좋아, 이젠 로쟈까지 입을 닫아버렸네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 28,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "뭐, 이참에 한탕 두둑하게 챙겨보는 것도 나쁘지 않겠지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 29,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "야, 도착하면 아무나 깨워라.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 30,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…공교롭게도 이번엔 지부 앞까지 모셔다 두진 못하게 되었습니다, 손님.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 31,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "카론, 정차.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 32,
+      "teller": "카론",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 33,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…? 카론?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 34,
+      "teller": "카론",
+      "title": null,
+      "content": "‘정차’가 뭐야?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 35,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "멈추란 뜻이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 36,
+      "teller": "카론",
+      "title": null,
+      "content": "멈추는 건 빨간색. 카론이 맛 없어하는 빨간색.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 37,
+      "teller": null,
+      "title": null,
+      "content": "카론이 그렇게 중얼거리면서 느닷없이 브레이크를 밟았고, 대부분의 수감자는 자리에서 나동그라지거나 앞 좌석에 얼굴을 부딪치고 말았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 50
+      }
+    },
+    {
+      "id": 38,
+      "teller": null,
+      "title": null,
+      "content": "물론, 나를 포함해서.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 39,
+      "teller": null,
+      "title": null,
+      "content": "고함과 불평불만이 뒤섞여 터져 나왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": {
+        "type": "shake",
+        "intensity": 30
+      }
+    },
+    {
+      "id": 40,
+      "teller": null,
+      "title": null,
+      "content": "수감자들이 정확히 무슨 말을 뱉었는지는 알 수 없었지만…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 41,
+      "teller": null,
+      "title": null,
+      "content": "태반은 욕지거리인 것 같으니, 못 알아들은 게 다행일지도 모르지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 42,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "힘이 넘치는 건 좋군. 내려.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 43,
+      "teller": "홍루",
+      "title": null,
+      "content": "으음… 목적지까진 한참 남았던데… 아~ 택시를 불러줄 건가요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 44,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "…파우스트 씨가 자세히 설명해주겠지만, 이번엔 지난번 임무와는 많은 차이가 있을 겁니다, 단테.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 45,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "왜냐하면 이번에 황금가지를 탈환해야 할 곳은…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 46,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "카지노의 지하니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 47,
+      "teller": "오티스",
+      "title": null,
+      "content": "설마, 저 골목 한 가운데에 있는 번쩍번쩍한 건물들인가?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 48,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "그래, 저것들 중 하나다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 49,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "지난번 잠입했던 로보토미 지부는 오랫동안 방치된 곳이었죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 50,
+      "teller": "싱클레어",
+      "title": null,
+      "content": "그럼… 그게 특수한 경우였다는 뜻인가요?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 51,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "이렇게 보면 머리를 굴릴 줄 아는 직원이 없는 것도 아닌데…\n이전 작전은 왜 그렇게 무참하게 망쳤을까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 52,
+      "teller": "이스마엘",
+      "title": null,
+      "content": "…….",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 53,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "황금가지는 많은 기술이 응축된 강력한 에너지원이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 54,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "강한 에너지는 자연스럽게 돈과 사람들을 불러오고 순식간에 그 위에 문명이 생겨버리지.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 55,
+      "teller": "파우스트",
+      "title": null,
+      "content": "그렇기에, 이후로 방문할 곳도 다른 집단들이 자리를 메우고 있을 가능성이 크죠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 56,
+      "teller": "파우스트",
+      "title": null,
+      "content": "…또한, 카지노 외에 온갖 곳들을 방문해야 한다는 뜻이기도 합니다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 57,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "처음 임무는 비교적 쉬운 편이었다는 뜻이기도 하지. 멋들어지게 실패해버렸지만.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 58,
+      "teller": "단테",
+      "title": null,
+      "content": "<…저 친구 원래 저렇게 뒤끝이 길어?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 59,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…흠흠.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 60,
+      "teller": "로쟈",
+      "title": null,
+      "content": "모르지~ 단테나 우리나 봤던 기간은 별반 차이가 없으니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 61,
+      "teller": "로쟈",
+      "title": null,
+      "content": "뭐라 그랬지? ‘림버스 컴퍼니에 입사한 걸 환영한다. 나는 안내자, 베르길리우스라고 하지.’ 라면서…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 62,
+      "teller": "로쟈",
+      "title": null,
+      "content": "핫! 방금 되게 잘 따라 하지 않았어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 63,
+      "teller": "그레고르",
+      "title": null,
+      "content": "그러고 보니 무게를 엄청 잡긴 했지. 입사하자마자 퇴직원을 내도 되는지 물어볼 뻔했다니까.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 64,
+      "teller": "단테",
+      "title": null,
+      "content": "<아마 대부분이 같은 생각을 하지 않았을까?>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 65,
+      "teller": "돈키호테",
+      "title": null,
+      "content": "무슨 소리요! 그것은 역사적인 날이었지! 특색 해결사 붉은시선의 부름을 받는다는 건! 정말이지, 영광스러운…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 66,
+      "teller": "그레고르",
+      "title": null,
+      "content": "아, 그래도 한 명 정도는 팬이 있었나 봐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 67,
+      "teller": "로쟈",
+      "title": null,
+      "content": "우후후, 그러게나 말이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 68,
+      "teller": null,
+      "title": null,
+      "content": "어느새 기운을 회복한 로쟈와 그레고르가 키득거리기 시작했다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 69,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "다들 말이 필요 이상으로 많군. 버스 안에서의 세 번째 규칙을 만들고 싶게 하진 않았으면 좋겠는데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 70,
+      "teller": "로쟈",
+      "title": null,
+      "content": "아 거, 직원들끼리 상사 욕 좀 할 수 있지. 되게 쩨쩨하네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 71,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "다음엔 쩨쩨한 내가 듣지 못하는 곳에서 해줬으면 좋겠어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 72,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "난 보기보다 상처를 잘 받거든.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 73,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "다들 이만 하차하지. 이번에는 부디 황금가지를 든 채로 만나게 되면 좋겠군.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 74,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "이번에도 실패하면 어떻게 할 건데?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 75,
+      "teller": "베르길리우스",
+      "title": null,
+      "content": "혹시 모르지. 카론이 갑자기 개폐 버튼을 잊어버려서 문이 안 열리게 된다던가.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 76,
+      "teller": "카론",
+      "title": null,
+      "content": "버튼, 빨간색. 맛없는 색이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 77,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "…이거, 순 미친놈…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 78,
+      "teller": "료슈",
+      "title": null,
+      "content": "내머.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 79,
+      "teller": "히스클리프",
+      "title": null,
+      "content": "내머가 뭔데?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 80,
+      "teller": "료슈",
+      "title": null,
+      "content": "내리자, 머저리들. 이란 뜻이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 81,
+      "teller": null,
+      "title": null,
+      "content": "히스클리프는 입안 가득 욕지거리가 올라온 듯이 료슈를 쏘아보다가, 이내 한쪽으로 크게 한숨만 내쉬었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 82,
+      "teller": null,
+      "title": null,
+      "content": "죽여서 해결될 일도 아니라는 걸 깨달은 듯, 체념한 모습이 그답지는 않아 보였다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

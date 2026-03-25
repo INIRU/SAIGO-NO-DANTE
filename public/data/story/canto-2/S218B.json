@@ -1,0 +1,160 @@
+{
+  "episodeId": "S218B",
+  "nodeId": 10218,
+  "stageDetail": "Before",
+  "lines": [
+    {
+      "id": 0,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "어… 너네는 다 뭐니…?",
+      "place": "카지노 개인실",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": "단테",
+      "title": null,
+      "content": "<로쟈, 어떻게 됐어?!>",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "소냐",
+      "title": "유로지비",
+      "content": "로쟈, 그동안 새 친구들을 사귀었나 보네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": null,
+      "title": null,
+      "content": "그는 손에 들고 있는 패를 전부 양손을 펼쳐 내려놓았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "소냐",
+      "title": "유로지비",
+      "content": "게임은 끝났어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "소냐",
+      "title": "유로지비",
+      "content": "네가 이겼다, 로지온. 이의제기는 없어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": null,
+      "title": null,
+      "content": "그러고선 문을 열고 나가더니, 다시 돌아오지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": null,
+      "title": null,
+      "content": "대신에, 방 안에는 공허한 박수 소리가 갑작스레 퍼져 나왔다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "하하, 이야… 게임은 잘 봤어. 그런데…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "난 소냐처럼 쿨하진 못해.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "친구들을 데려온 기념으로 나도 내 친구들 좀 소개시켜 줄게.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…그 뭐냐, 갬블은 오로지 재미를 위해서 하는 거라고, 너네 조직이 그랬던 것 같은데.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "응, 결과에 바로 승복하는 것보다는 이게 더 재미있지 않아?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "로쟈",
+      "title": null,
+      "content": "누가 이기든 간에 힘으로 밀고 갈 생각이었네. 그렇지?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "아이드",
+      "title": "마리아치",
+      "content": "풉. 야, 생각해봐. 난 힘도 있고 부하들도 있는데 고작 게임 한판승에 황금가지를 내주겠어?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": "로쟈",
+      "title": null,
+      "content": "그래. 차라리 잘됐네.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "로쟈",
+      "title": null,
+      "content": "나도 아까부터 좀이 쑤시던 참이라서.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "episodeId": "1D202A",
+  "nodeId": 10111,
+  "stageDetail": "After",
+  "lines": [
+    {
+      "id": 0,
+      "teller": null,
+      "title": null,
+      "content": "전쟁터를 떠난지 이미 너무 많은 세월이 지났던 탓인지,",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 1,
+      "teller": null,
+      "title": null,
+      "content": "과거엔 수많은 적들을 썰어버렸을 G사 부장의 숨은 꺼져가고 있었다. ",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 2,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "한때는 널 존경하는 자들도 있었지, 그레고르…",
+      "place": "4구 로보토미 지부 어딘가",
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 3,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…존경해달라고 부탁한 적 없었어.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 4,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "더 이상은 전진하지 마라… 그곳은 지옥이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 5,
+      "teller": "그레고르",
+      "title": null,
+      "content": "미안하지만 그러기는 힘들 것 같아. 성실하게 일하지 않으면 잘리거든.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 6,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "돈에… 명예까지 팔아버린 거냐.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 7,
+      "teller": "그레고르",
+      "title": null,
+      "content": "애저녁에 훈장이랑 같이 팔았지. 집주인이 월세를 독촉해서 말이야.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 8,
+      "teller": null,
+      "title": null,
+      "content": "죽어가던 옛 부장의 얼굴에 쓰디쓴 웃음이 떠올랐다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 9,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "너도… 우리와 다를 것 없군…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 10,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "결국, 우리는…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 11,
+      "teller": "노쇠한 옛 G사 부장",
+      "title": "몰락한 G사",
+      "content": "역겨운… 벌레 새끼들일 뿐…",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 12,
+      "teller": null,
+      "title": null,
+      "content": "그러더니 숨을 몇 번 몰아쉬고 더 이상 움직이지 않았다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 13,
+      "teller": "그레고르",
+      "title": null,
+      "content": "…어이, 담배 좀 빌릴 수 있나?",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 14,
+      "teller": "료슈",
+      "title": null,
+      "content": "…이번만이다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 15,
+      "teller": null,
+      "title": null,
+      "content": "그레고르는 자기 담배와 빌린 담배를 함께 꺼내 물더니, 빌렸던 담배에 불을 붙여 숨이 끊어진 자의 품에 슬쩍 던져주었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 16,
+      "teller": "그레고르",
+      "title": null,
+      "content": "미안, 저거한테 내 담배를 나눠서 물려주긴 싫었거든.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 17,
+      "teller": "료슈",
+      "title": null,
+      "content": "…흥.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    },
+    {
+      "id": 18,
+      "teller": null,
+      "title": null,
+      "content": "료슈의 코웃음과 그레고르의 담배 연기. 그리고 만연한 침묵만이 그 자리에 잠시간 남아 있었다.",
+      "place": null,
+      "activeCGs": [],
+      "effect": null
+    }
+  ]
+}
