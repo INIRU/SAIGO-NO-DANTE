@@ -782,9 +782,15 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
 
                 {theme ? (
                   <>
-                    {theme.boss_image_url && (
-                      <Image src={theme.boss_image_url} alt="보스" width={28} height={32}
-                        style={{ width: '1.75rem', height: '2rem', objectFit: 'contain', opacity: 0.8, flexShrink: 0 }} />
+                    {theme.image_url && (
+                      <div style={{ position: 'relative', width: '1.75rem', height: '3.175rem', flexShrink: 0 }}>
+                        <Image src={theme.image_url} alt={theme.name} width={18} height={33}
+                          style={{ width: '1.75rem', height: '3.175rem', objectFit: 'cover', borderRadius: '0.1875rem' }} />
+                        {theme.boss_image_url && (
+                          <Image src={theme.boss_image_url} alt="보스" width={28} height={32}
+                            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '1.625rem', height: '1.8rem', objectFit: 'contain', opacity: 0.85 }} />
+                        )}
+                      </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e8b030', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -811,12 +817,14 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   {/* 테마 정보 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
                     {theme.image_url && (
-                      <Image src={theme.image_url} alt={theme.name} width={38} height={69}
-                        style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem', flexShrink: 0 }} />
-                    )}
-                    {theme.boss_image_url && (
-                      <Image src={theme.boss_image_url} alt="보스" width={40} height={44}
-                        style={{ width: '2.5rem', height: '2.75rem', objectFit: 'contain', opacity: 0.8, flexShrink: 0 }} />
+                      <div style={{ position: 'relative', width: '2.375rem', height: '4.3125rem', flexShrink: 0 }}>
+                        <Image src={theme.image_url} alt={theme.name} width={38} height={69}
+                          style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem' }} />
+                        {theme.boss_image_url && (
+                          <Image src={theme.boss_image_url} alt="보스" width={40} height={44}
+                            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '2.25rem', height: '2.5rem', objectFit: 'contain', opacity: 0.85 }} />
+                        )}
+                      </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e8b030' }}>{theme.name}</div>
