@@ -2,12 +2,36 @@ import type { Metadata } from 'next'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
+import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
 export const metadata: Metadata = {
   title: '최애의 관리자 | SAIGO NO DANTE',
   description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더, 티어표',
   alternates: { canonical: 'https://saigo-no-dante.com' },
 }
+
+const HOME_FAQ = [
+  {
+    question: '림버스 컴퍼니 리세마라 추천 인격은?',
+    answer: '최애의 관리자 티어표 페이지에서 S+/S/A/B/C/F 등급별 추천 인격을 커뮤니티 투표 기반으로 확인할 수 있습니다. 티어표는 주기적으로 업데이트됩니다.',
+  },
+  {
+    question: '림버스 컴퍼니 거울 던전 기프트 조합식은 어디서 볼 수 있나요?',
+    answer: '거울 던전 페이지에서 E.G.O 기프트 408종의 키워드별 필터, 등급별 검색, 조합 레시피를 확인할 수 있습니다. 테마팩별 전용 기프트도 확인 가능합니다.',
+  },
+  {
+    question: '림버스 컴퍼니 수감자는 몇 명인가요?',
+    answer: '림버스 컴퍼니에는 이상, 파우스트, 돈키호테, 료슈, 뫼르소, 홍루, 히스클리프, 이스마엘, 로쟈, 싱클레어, 오티스, 그레고르 총 12명의 수감자가 있습니다.',
+  },
+  {
+    question: '림버스 컴퍼니 인격 스킬 정보는 어디서 확인하나요?',
+    answer: '수감자 페이지에서 각 인격의 스킬 위력, 코인 수, 코인 위력, 공격 타입, 죄악 속성, 패시브 등 상세 정보를 확인할 수 있습니다. 동기화 3/4 단계별 데이터도 제공합니다.',
+  },
+  {
+    question: '림버스 컴퍼니 덱 빌더란?',
+    answer: '덱 빌더는 12명의 수감자 인격을 편성하고 활성화되는 E.G.O 기프트를 확인할 수 있는 도구입니다. 만든 덱을 커뮤니티에 공유하고 다른 유저의 덱을 참고할 수도 있습니다.',
+  },
+]
 
 export type Announcement = {
   id: string
@@ -89,5 +113,10 @@ export default async function HomePage() {
     getLatestYoutubeVideo(),
     getPinnedAnnouncement(),
   ])
-  return <HomeClient latestIdentities={latestIdentities} latestVideo={latestVideo} pinnedAnnouncement={pinnedAnnouncement} />
+  return (
+    <>
+      <JsonLd data={faqJsonLd(HOME_FAQ)} />
+      <HomeClient latestIdentities={latestIdentities} latestVideo={latestVideo} pinnedAnnouncement={pinnedAnnouncement} />
+    </>
+  )
 }

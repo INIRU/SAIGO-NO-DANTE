@@ -10,7 +10,7 @@ import { KeywordProvider, type KeywordInfo } from '@/components/providers/Keywor
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
-import JsonLd, { websiteJsonLd, organizationJsonLd } from '@/components/seo/JsonLd'
+import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import AprilFools from '@/components/events/AprilFools'
 import { createClient } from '@/lib/supabase/server'
 
@@ -124,6 +124,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
+        <JsonLd data={videoGameJsonLd(SITE_URL)} />
       </head>
       <body className="antialiased">
         <SkipNav />
