@@ -495,7 +495,10 @@ export default function MirrorDungeonClient({
       }} />
       <style>{`
         .gift-grid {
-          grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+        }
+        @media (min-width: 640px) {
+          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); }
         }
         @media (min-width: 768px) {
           .gift-grid { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }
@@ -512,7 +515,7 @@ export default function MirrorDungeonClient({
       `}</style>
       {/* 헤더 + 탭 통합 */}
       <div className="mb-10">
-        <div className="flex items-end justify-between mb-6" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="flex items-end justify-between mb-4 md:mb-6" style={{ position: 'relative', zIndex: 1 }}>
           <div>
             {/* 장식 라인 */}
             <div className="md-header-line" style={{
@@ -533,9 +536,10 @@ export default function MirrorDungeonClient({
               E.G.O 기프트 도감 · 테마팩 · 조합 레시피
             </p>
           </div>
+          {/* 데스크톱: 탭을 헤더 우측에 표시 */}
           {themes.length > 0 && (
             <div
-              className="flex"
+              className="hidden md:flex"
               style={{
                 background: 'rgba(10,8,5,0.7)',
                 border: '1px solid var(--border)',
@@ -585,6 +589,57 @@ export default function MirrorDungeonClient({
             </div>
           )}
         </div>
+        {/* 모바일: 탭을 서브타이틀 아래, 구분선 위에 풀 너비로 표시 */}
+        {themes.length > 0 && (
+          <div
+            className="flex md:hidden mb-4"
+            style={{
+              background: 'rgba(10,8,5,0.7)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.5rem',
+              padding: '0.1875rem',
+              gap: '0.125rem',
+            }}
+          >
+            {(['gifts', 'themes', 'events'] as const).map(t => {
+              const isActive = activeTab === t
+              const label = t === 'gifts' ? '기프트' : t === 'themes' ? '테마팩' : '이벤트'
+              const count = t === 'gifts' ? gifts.length : t === 'themes' ? themes.length : events.length
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActiveTab(t)}
+                  className="flex flex-1 items-center gap-1.5 px-3 py-2 transition-all duration-200"
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: '0.8125rem',
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? '#0d0b08' : '#666660',
+                    background: isActive
+                      ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)'
+                      : 'transparent',
+                    borderRadius: '0.375rem',
+                    boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
+                    cursor: 'pointer',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {label}
+                  <span
+                    style={{
+                      fontSize: '0.6875rem',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      opacity: isActive ? 0.7 : 0.5,
+                    }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
         <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent 60%)' }} />
       </div>
 
