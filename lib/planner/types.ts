@@ -223,6 +223,7 @@ export interface EgoData {
   grade: string
   sin_affinity: string | null
   image_url: string | null
+  cost: number[] | null
 }
 
 export interface SkillSummary {
