@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import styles from '@/styles/components/IdentityCard.module.css'
 
 
@@ -126,7 +127,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
       {/* 스탯 바 (compact 모드에서는 숨김) */}
       {!compact && (
         <div
-          className="px-2 py-1.5"
+          className="px-2 py-1.5 mt-1"
           style={{
             borderTop: `1px solid ${sinColor}30`,
             background: 'rgba(0,0,0,0.4)',
@@ -147,10 +148,10 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             ))}
           </div>
 
-          {/* 키워드 배지 */}
+          {/* 키워드 배지 (특수 충전→충전 정규화) */}
           {identity.keywords && identity.keywords.length > 0 && (
             <div className="flex flex-wrap gap-0.5 mt-1">
-              {identity.keywords.filter(kw => kwSinMap[kw]).slice(0, 3).map(kw => {
+              {[...new Set(identity.keywords.map(normalizeThemeKeyword))].filter(kw => kwSinMap[kw]).slice(0, 3).map(kw => {
                 const kwColor = SIN_COLORS[kwSinMap[kw]] || sinColor
                 const iconUrl = getIconUrl(kw)
                 return (

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote } from '@/lib/types'
+import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType } from '@/lib/types'
+import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 
 // ── Supabase 클라이언트 (browser/server 공용 anon key) ─────────────────────
 function supabase() {
@@ -208,6 +209,99 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   }
 
   return data
+}
+
+// ── 브라우저용 전체 인격 (스킬 요약 포함) ──────────────────────────────────
+// Design Ref: §4.1 — 서버에서 스킬 요약 가공 후 클라이언트 전달
+export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[]> {
+  // 1. 전체 인격 + 수감자 JOIN
+  const { data: identities, error: idErr } = await supabase()
+    .schema('limbus')
+    .from('identities')
+    .select('id, sinner_id, name, name_kr, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)')
+    .order('rarity', { ascending: false })
+    .order('name')
+  if (idErr) throw idErr
+
+  // 2. 전체 스킬 (uptie_level=4, 공격스킬만) — 필터용 요약
+  const { data: skills, error: skErr } = await supabase()
+    .schema('limbus')
+    .from('skills')
+    .select('identity_id, sin_affinity, skill_type, atk_weight, coins')
+    .eq('uptie_level', 4)
+    .in('skill_type', ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter'])
+  if (skErr) throw skErr
+
+  // 3. 스킬을 identity_id로 그룹핑하여 요약
+  const skillMap = new Map<string, { sins: Set<string>, types: Set<string>, weights: Set<number>, coins: Set<number> }>()
+  for (const s of (skills ?? [])) {
+    let entry = skillMap.get(s.identity_id)
+    if (!entry) {
+      entry = { sins: new Set(), types: new Set(), weights: new Set(), coins: new Set() }
+      skillMap.set(s.identity_id, entry)
+    }
+    if (s.sin_affinity) entry.sins.add(s.sin_affinity)
+    if (s.skill_type) entry.types.add(s.skill_type)
+    if (s.atk_weight) entry.weights.add(s.atk_weight)
+    if (s.coins) entry.coins.add(s.coins)
+  }
+
+  // 4. 합치기
+  return (identities ?? []).map(id => {
+    const sinner = id.sinner as unknown as { id: string; name_kr: string; order_num: number }
+    const sk = skillMap.get(id.id)
+    return {
+      id: id.id,
+      sinner_id: id.sinner_id,
+      name: id.name,
+      name_kr: id.name_kr,
+      rarity: id.rarity,
+      keywords: id.keywords ?? [],
+      folder_name: id.folder_name,
+      game_id: id.game_id,
+      hp: id.hp ?? 0,
+      speed_min: id.speed_min ?? 0,
+      speed_max: id.speed_max ?? 0,
+      def_level: id.def_level ?? 0,
+      sinner_name_kr: sinner.name_kr,
+      sinner_slug: sinner.id,
+      sinner_order: sinner.order_num,
+      skill_sins: sk ? [...sk.sins] as SinType[] : [],
+      skill_types: sk ? [...sk.types] : [],
+      atk_weights: sk ? [...sk.weights] : [],
+      coin_counts: sk ? [...sk.coins] : [],
+    }
+  })
+}
+
+// ── 브라우저용 전체 EGO ─────────────────────────────────────────────────────
+export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
+  const { data, error } = await supabase()
+    .schema('limbus')
+    .from('ego')
+    .select('id, sinner_id, name, name_kr, grade, sin_affinity, keywords, folder_name, image_url, game_id, sinner:sinners(id, name_kr, order_num)')
+    .order('grade')
+    .order('name')
+  if (error) throw error
+
+  return (data ?? []).map(e => {
+    const sinner = e.sinner as unknown as { id: string; name_kr: string; order_num: number }
+    return {
+      id: e.id,
+      sinner_id: e.sinner_id,
+      name: e.name,
+      name_kr: e.name_kr,
+      grade: e.grade,
+      sin_affinity: e.sin_affinity as SinType | null,
+      keywords: e.keywords,
+      folder_name: e.folder_name,
+      image_url: e.image_url,
+      game_id: e.game_id,
+      sinner_name_kr: sinner.name_kr,
+      sinner_slug: sinner.id,
+      sinner_order: sinner.order_num,
+    }
+  })
 }
 
 export async function getEgoGiftsForNotes(): Promise<EgoGiftNote[]> {
