@@ -66,9 +66,9 @@ export default async function PlanDetailPage({ params }: Props) {
       .eq('uptie_level', 4),
   ])
 
-  // 그룹 3: EGO
+  // 그룹 3: EGO (cost 포함 — DeckStatsPanel에서 EGO 코스트 계산용)
   const { data: egos } = await supabase.schema('limbus').from('ego')
-    .select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url')
+    .select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
 
   if (!plan) notFound()
 
