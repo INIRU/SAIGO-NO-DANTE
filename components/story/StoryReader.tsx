@@ -294,102 +294,164 @@ function CGPanel({
     [group.lines],
   )
 
-  const [visibleStack, setVisibleStack] = useState<string[]>(
-    sections[0]?.cgStack ?? [],
-  )
-  const [activeLineId, setActiveLineId] = useState<number>(
-    allLines[0]?.id ?? -1,
-  )
+  const [visibleStack, setVisibleStack] = useState<string[]>([])
+  const visibleStackRef = useRef<string[]>([])
+  const [activeLineId, setActiveLineId] = useState<number>(-1)
+  const activeLineIdRef = useRef<number>(-1)
   const cgRef = useRef<HTMLDivElement>(null)
   const [dialogReady, setDialogReady] = useState(false)
-  const wasVisible = useRef(false)
-  const hasEnteredOnce = useRef(false)
-  const resetTimestamp = useRef(0)
+  const dialogReadyRef = useRef(false)
+
+  // Design Ref: §3 — Ref sync helpers (scroll handler reads refs, setState triggers render)
+  const updateDialogReady = (val: boolean) => {
+    if (dialogReadyRef.current === val) return
+    dialogReadyRef.current = val
+    setDialogReady(val)
+  }
+  const updateActiveLineId = (id: number) => {
+    if (activeLineIdRef.current === id) return
+    activeLineIdRef.current = id
+    setActiveLineId(id)
+  }
+  const updateVisibleStack = (stack: string[]) => {
+    if (visibleStackRef.current.join(',') === stack.join(',')) return
+    visibleStackRef.current = stack
+    setVisibleStack(stack)
+  }
+
+  // Keep derived refs in sync with memoized values (§3.2)
+  const allLinesRef = useRef(allLines)
+  allLinesRef.current = allLines
+  const sectionsRef = useRef(sections)
+  sectionsRef.current = sections
 
   const cgPanelId = useMemo(() => `cg-panel-${allCGs[0] ?? Math.random()}`, [allCGs])
 
-  // Fixed CG를 래퍼 영역에만 표시
+  // Design Ref: §4 — Unified scroll handler with 3-phase state machine
+  // Plan SC: FR-01 (첫 대사 보장), FR-02 (안정적 대사 전환), FR-03 (역스크롤)
   useEffect(() => {
-    const onScroll = () => {
+    let rafId = 0
+    // Phase state: hidden → entering → locked → tracking
+    // 'locked' guarantees first dialogue display regardless of scroll speed
+    let phase: 'hidden' | 'entering' | 'locked' | 'tracking' = 'hidden'
+
+    const tick = () => {
       const wrapper = document.querySelector(`[data-cg-panel="${cgPanelId}"]`)
-      const wr = wrapper?.getBoundingClientRect()
       const cg = cgRef.current
-      if (!wr || !cg) return
+      if (!wrapper || !cg) return
+      const wr = wrapper.getBoundingClientRect()
       const vh = window.innerHeight
       const top = Math.max(0, wr.top)
       const bottom = Math.min(vh, wr.bottom)
+      const center = vh / 2
+
+      // ── Phase 1: Visibility ──
       if (bottom <= top) {
-        // 래퍼가 뷰포트에서 충분히 벗어났을 때만 숨김
         cg.style.opacity = '0'
         cg.style.pointerEvents = 'none'
-        // CG가 완전히 나가면 다음 진입 시 첫 대사 리셋 준비
-        hasEnteredOnce.current = false
-        setDialogReady(false)
-      } else {
-        cg.style.opacity = '1'
-        cg.style.pointerEvents = 'none'
-        cg.style.top = `${top}px`
-        cg.style.height = `${bottom - top}px`
-        // CG가 전체화면으로 꽉 찼을 때만 대사 표시
-        const isVisible = (bottom - top) > vh * 0.3
-        const isFull = top <= 5 && (bottom - top) >= vh * 0.85
-        wasVisible.current = isVisible
-        if (isFull !== (dialogReady && hasEnteredOnce.current)) {
-          setDialogReady(isFull)
-          if (isFull && !hasEnteredOnce.current) {
-            hasEnteredOnce.current = true
-            setActiveLineId(allLines[0]?.id ?? -1)
-            setVisibleStack(sections[0]?.cgStack ?? [])
-            resetTimestamp.current = Date.now()
+        if (phase !== 'hidden') {
+          phase = 'hidden'
+          updateDialogReady(false)
+          updateActiveLineId(-1)
+        }
+        return
+      }
+      cg.style.opacity = '1'
+      cg.style.pointerEvents = 'none'
+      cg.style.top = `${top}px`
+      cg.style.height = `${bottom - top}px`
+
+      // ── Phase 2: State Machine Transitions ──
+      const isFull = top <= 5 && (bottom - top) >= vh * 0.85
+
+      if (phase === 'hidden') {
+        phase = 'entering'
+      }
+
+      if (phase === 'entering') {
+        if (isFull) {
+          phase = 'locked'
+          const lines = allLinesRef.current
+          const sects = sectionsRef.current
+          updateDialogReady(true)
+          updateActiveLineId(lines[0]?.id ?? -1)
+          updateVisibleStack(sects[0]?.cgStack ?? [])
+          return // locked 진입 즉시 return — 첫 대사 보장
+        }
+        return // entering 중엔 대사 미표시
+      }
+
+      if (phase === 'locked') {
+        const firstSentinel = wrapper.querySelector('[data-cg-line]')
+        if (firstSentinel) {
+          const r = firstSentinel.getBoundingClientRect()
+          if (r.bottom < center) {
+            phase = 'tracking'
+            // fall through to tracking logic
+          } else {
+            return // 아직 첫 대사 유지
           }
+        } else {
+          return
         }
       }
+
+      // ── Phase 3: Dialog Tracking (tracking phase only) ──
+      if (phase === 'tracking') {
+        const sentinels = wrapper.querySelectorAll('[data-cg-line]')
+        if (!sentinels.length) return
+
+        // 역스크롤로 첫 sentinel이 다시 center 아래로 왔으면 locked 복귀
+        const firstRect = sentinels[0].getBoundingClientRect()
+        if (firstRect.bottom >= center) {
+          phase = 'locked'
+          const lines = allLinesRef.current
+          const sects = sectionsRef.current
+          updateActiveLineId(lines[0]?.id ?? -1)
+          updateVisibleStack(sects[0]?.cgStack ?? [])
+          return
+        }
+
+        // Closest sentinel to center
+        let closest: Element | null = null
+        let closestDist = Infinity
+        for (const el of sentinels) {
+          const rect = el.getBoundingClientRect()
+          const mid = rect.top + rect.height / 2
+          const dist = Math.abs(mid - center)
+          if (dist < closestDist) {
+            closestDist = dist
+            closest = el
+          }
+        }
+
+        if (closest) {
+          const lineId = closest.getAttribute('data-cg-line')
+          const stack = closest.getAttribute('data-cg-stack')?.split(',').filter(Boolean) ?? []
+          if (lineId) updateActiveLineId(parseInt(lineId))
+          if (stack.length > 0) updateVisibleStack(stack)
+        }
+
+        if (!dialogReadyRef.current) updateDialogReady(true)
+      }
     }
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(tick)
+    }
+
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onScroll)
-    onScroll()
+    // 초기 실행 (이미 스크롤된 상태에서 mount될 수 있음)
+    rafId = requestAnimationFrame(tick)
+
     return () => {
+      cancelAnimationFrame(rafId)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
-  }, [])
-
-  // 스크롤 위치 기반 대사 전환 (observer 대신 — 역스크롤 완벽 지원)
-  useEffect(() => {
-    const onLineScroll = () => {
-      if (!wasVisible.current) return
-      if (Date.now() - resetTimestamp.current < 150) return
-
-      const wrapper = document.querySelector(`[data-cg-panel="${cgPanelId}"]`)
-      const sentinels = wrapper?.querySelectorAll('[data-cg-line]')
-      if (!sentinels?.length) return
-
-      const vh = window.innerHeight
-      const center = vh / 2
-      let closest: Element | null = null
-      let closestDist = Infinity
-
-      for (const el of sentinels) {
-        const rect = el.getBoundingClientRect()
-        const mid = rect.top + rect.height / 2
-        const dist = Math.abs(mid - center)
-        if (dist < closestDist) {
-          closestDist = dist
-          closest = el
-        }
-      }
-
-      if (closest) {
-        const lineId = closest.getAttribute('data-cg-line')
-        const stack = closest.getAttribute('data-cg-stack')?.split(',').filter(Boolean) ?? []
-        if (lineId) setActiveLineId(parseInt(lineId))
-        if (stack.length > 0) setVisibleStack(stack)
-      }
-    }
-
-    window.addEventListener('scroll', onLineScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onLineScroll)
-  }, [allLines, cgPanelId])
+  }, [cgPanelId])
 
   const panelRef = useCallback(
     (node: HTMLDivElement | null) => {
