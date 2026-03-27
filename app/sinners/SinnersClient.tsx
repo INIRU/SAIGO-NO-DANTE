@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { Users, Sparkles } from 'lucide-react'
 import { Sinner } from '@/lib/data/sinners'
 import SinnerCard from '@/components/sinners/SinnerCard'
 
@@ -121,6 +123,34 @@ export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
           transformOrigin: 'center',
           transform: 'scaleX(0)',
         }} />
+
+        {/* 전체 보기 버튼 */}
+        <div className="sinners-header-sub flex items-center justify-center gap-3 mt-6" style={{ opacity: 0 }}>
+          <Link
+            href="/sinners/identities"
+            className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all duration-300 hover:scale-[1.03]"
+            style={{
+              border: '1px solid rgba(200,144,10,0.4)',
+              color: 'var(--gold)',
+              background: 'rgba(200,144,10,0.06)',
+            }}
+          >
+            <Users size={16} />
+            인격 전체 보기
+          </Link>
+          <Link
+            href="/sinners/ego"
+            className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all duration-300 hover:scale-[1.03]"
+            style={{
+              border: '1px solid rgba(200,144,10,0.4)',
+              color: 'var(--gold)',
+              background: 'rgba(200,144,10,0.06)',
+            }}
+          >
+            <Sparkles size={16} />
+            E.G.O 전체 보기
+          </Link>
+        </div>
       </div>
 
       {/* 카드 그리드 */}
