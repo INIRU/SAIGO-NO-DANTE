@@ -17,6 +17,7 @@ import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
 import RelativeTime from '@/components/ui/RelativeTime'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
+import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
@@ -157,6 +158,7 @@ type EgoData = {
   grade: string
   sin_affinity: string | null
   image_url: string | null
+  cost: number[] | null
 }
 
 type SkillSummary = {
@@ -884,6 +886,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               })}
             </div>
           )}
+
+          {/* 공격 유형 + 죄악 자원 + 패시브 */}
+          {deckSubTab === 'identity' && deck.length > 0 && (() => {
+            const selectedEgoIds = new Set(egoSlots.map(e => e.ego_id).filter(Boolean))
+            const selectedEgoCosts = egos.filter(e => selectedEgoIds.has(e.id)).map(e => ({ cost: e.cost }))
+            return (
+              <DeckStatsPanel
+                identitySlots={deck}
+                skills={skills}
+                passives={passives}
+                sinners={sinners}
+                egoCosts={selectedEgoCosts}
+              />
+            )
+          })()}
 
           {/* EGO 그리드 */}
           {deckSubTab === 'ego' && (
