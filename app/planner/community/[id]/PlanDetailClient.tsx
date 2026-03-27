@@ -846,7 +846,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                             background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
                             paddingTop: '1.25rem', paddingBottom: '0.25rem',
                           }}>
-                            <p className="font-serif text-[0.5rem] sm:text-[0.6875rem]" style={{ color: '#e8dcc8', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.name_kr}</p>
+                            <p className="font-serif text-[0.5rem] sm:text-[0.6875rem]" style={{ color: '#e8dcc8', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>{slot.name_kr}</p>
                           </div>
                           {n != null && (
                             <div style={{

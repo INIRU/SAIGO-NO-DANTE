@@ -27,7 +27,7 @@ export default async function PlannerPage() {
   ])
 
   // 그룹 3: EGO
-  const { data: egos } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url')
+  const { data: egos } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
 
   return <PlannerClient
     themes={themes ?? []}
