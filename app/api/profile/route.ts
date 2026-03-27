@@ -24,7 +24,7 @@ export async function GET() {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    const [profileRes, decksRes, bookmarksRes] = await Promise.all([
+    const [profileRes, decksRes, bookmarksRes, planCountRes, planVoteSumRes] = await Promise.all([
       admin
         .schema('limbus')
         .from('profiles')
@@ -53,6 +53,18 @@ export async function GET() {
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false }),
+      // Design Ref: §4.1 — 활동 통계용 플랜 카운트
+      admin
+        .schema('limbus')
+        .from('md_plans')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      // Design Ref: §4.1 — 내 플랜이 받은 총 추천 수
+      admin
+        .schema('limbus')
+        .from('md_plans')
+        .select('vote_count')
+        .eq('user_id', userId),
     ])
 
     const bookmarkedDecks = (bookmarksRes.data ?? [])
@@ -68,11 +80,21 @@ export async function GET() {
       })
       .filter(Boolean)
 
+    // Design Ref: §4.1 — 활동 통계 계산
+    const deckVoteSum = (decksRes.data ?? []).reduce((sum: number, d: Record<string, unknown>) => sum + ((d.vote_count as number) ?? 0), 0)
+    const planVoteSum = (planVoteSumRes.data ?? []).reduce((sum: number, p: Record<string, unknown>) => sum + ((p.vote_count as number) ?? 0), 0)
+
     return NextResponse.json({
       profile: profileRes.data ?? { username: session.user.name, bio: null, avatar_url: null, created_at: null, collection_code: null },
       decks: decksRes.data ?? [],
       bookmarkedDecks,
       email: session.user.email,
+      stats: {
+        deckCount: decksRes.data?.length ?? 0,
+        planCount: planCountRes.count ?? 0,
+        bookmarkCount: bookmarksRes.data?.length ?? 0,
+        totalVotesReceived: deckVoteSum + planVoteSum,
+      },
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

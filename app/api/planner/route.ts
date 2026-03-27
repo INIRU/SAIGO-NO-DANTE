@@ -18,12 +18,41 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') ?? '0')
     const difficulty = searchParams.get('difficulty')
     const tag = searchParams.get('tag')
+    // Design Ref: §4.2 — 마이페이지용 파라미터
+    const userIdParam = searchParams.get('userId')
+    const votedBy = searchParams.get('votedBy')
+
+    // userId=me 또는 votedBy=me → 인증 필요
+    let resolvedUserId: string | null = null
+    if (userIdParam === 'me' || votedBy === 'me') {
+      const session = await getServerSession(authOptions)
+      if (!session?.user?.email) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+      const admin = createAdminClient()
+      resolvedUserId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
+    }
+
+    // votedBy=me → 내가 추천한 플랜 ID 목록 조회
+    let votedPlanIds: string[] | null = null
+    if (votedBy === 'me' && resolvedUserId) {
+      const admin = createAdminClient()
+      const { data: votes } = await admin
+        .schema('limbus')
+        .from('md_plan_votes')
+        .select('plan_id')
+        .eq('user_id', resolvedUserId)
+      votedPlanIds = votes?.map((v: { plan_id: string }) => v.plan_id) ?? []
+      if (votedPlanIds.length === 0) {
+        return NextResponse.json({ plans: [], total: 0 })
+      }
+    }
 
     let query = supabase
       .schema('limbus')
       .from('md_plans')
       .select('id, title, description, difficulty, deck, egos, tags, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)', { count: 'exact' })
 
+    if (userIdParam === 'me' && resolvedUserId) query = query.eq('user_id', resolvedUserId)
+    if (votedPlanIds) query = query.in('id', votedPlanIds)
     if (difficulty) query = query.eq('difficulty', difficulty)
     if (tag) query = query.contains('tags', [tag])
 
