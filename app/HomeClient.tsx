@@ -6,6 +6,7 @@ import Image from 'next/image'
 import {
   Globe, Youtube, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
   Shield, Layers, Pin, ChevronDown,
+  Compass, BookOpen, Trophy, Dices, Shuffle, Map,
 } from 'lucide-react'
 
 import GlitchText from '@/components/ui/GlitchText'
@@ -50,16 +51,64 @@ const FEATURES = [
     icon: Shield,
     tag: 'SINNER DB',
     title: '수감자 DB',
-    desc: '12인 수감자의 모든 인격, EGO, 스킬 데이터를 한 곳에서.',
+    desc: '12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서.',
     accent: '#c8900a',
   },
   {
     href: '/decks',
     icon: Layers,
     tag: 'DECK BOARD',
-    title: '덱 공유',
-    desc: '커뮤니티가 공유한 덱 빌드를 탐색하고 나만의 최적 덱을 등록하세요.',
+    title: '덱 게시판',
+    desc: '커뮤니티 덱 빌드를 탐색하고 나만의 덱을 등록.',
     accent: '#4898b0',
+  },
+  {
+    href: '/mirror-dungeon',
+    icon: Compass,
+    tag: 'MIRROR DUNGEON',
+    title: '거울 던전',
+    desc: 'EGO 기프트 도감, 키워드 필터, 조합 레시피.',
+    accent: '#8058a8',
+  },
+  {
+    href: '/collection',
+    icon: BookOpen,
+    tag: 'COLLECTION',
+    title: '보유 현황',
+    desc: '나의 인격·EGO 체크리스트, URL로 공유.',
+    accent: '#d4b830',
+  },
+  {
+    href: '/tier-list',
+    icon: Trophy,
+    tag: 'TIER LIST',
+    title: '티어표',
+    desc: '커뮤니티 투표 기반 리세마라 티어 랭킹.',
+    accent: '#d06030',
+  },
+  {
+    href: '/extraction',
+    icon: Dices,
+    tag: 'EXTRACTION SIM',
+    title: '추출 시뮬',
+    desc: '뽑기 확률 시뮬레이션으로 운명을 시험.',
+    accent: '#c83030',
+  },
+  {
+    href: '/random',
+    icon: Shuffle,
+    tag: 'RANDOM COMP',
+    title: '랜덤 편성',
+    desc: '슬롯머신 UI로 무작위 편성, 키워드 필터.',
+    accent: '#3870b0',
+  },
+  {
+    href: '/planner',
+    icon: Map,
+    tag: 'DUNGEON PLANNER',
+    title: '거던 플래너',
+    desc: '층별 테마팩 선택, 전략 시뮬레이션.',
+    accent: '#8b1a1a',
   },
 ]
 
@@ -269,7 +318,6 @@ export default function HomeClient({
 }) {
   const heroRef = useRef<HTMLDivElement>(null)
   const [heroIdentity, setHeroIdentity] = useState<IdentityWithSinner | null>(latestIdentities[0] ?? null)
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null)
   const [announcementOpen, setAnnouncementOpen] = useState(false)
   const [announcementDismissed, setAnnouncementDismissed] = useState(false)
 
@@ -321,11 +369,11 @@ export default function HomeClient({
             scrollTrigger: { trigger: '.official-section', start: 'top 85%' } }
         )
 
-        // 기능 패널
+        // 기능 카드 그리드
         gsap.fromTo('.feature-card',
-          { opacity: 0, y: 40 },
-          { opacity: 1, y: 0, duration: 0.7, stagger: 0.15, ease: 'power2.out',
-            scrollTrigger: { trigger: '.features-section', start: 'top 75%' } }
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out',
+            scrollTrigger: { trigger: '.features-section', start: 'top 80%' } }
         )
       })
 
@@ -535,13 +583,9 @@ export default function HomeClient({
       {/* ── 최신 유튜브 영상 ─────────────────────────────────────── */}
       {latestVideo && (
         <section
-          className="relative max-w-7xl mx-auto px-6 py-20"
-          style={{
-            // atmospheric radial glow behind the whole section
-            isolation: 'isolate',
-          }}
+          className="relative max-w-5xl mx-auto px-6 py-20"
+          style={{ isolation: 'isolate' }}
         >
-          {/* subtle atmospheric background */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -577,72 +621,67 @@ export default function HomeClient({
 
             <div className="divider-gold mb-8" />
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
-              {/* iframe embed */}
-              <div
-                className="md:col-span-3"
-                style={{
-                  position: 'relative',
-                  paddingTop: '56.25%',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
-                }}
-              >
-                <iframe
-                  src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0&modestbranding=1`}
-                  title={latestVideo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                />
-              </div>
+            {/* 풀 폭 영상 */}
+            <div
+              style={{
+                position: 'relative',
+                paddingTop: '56.25%',
+                borderRadius: '0.25rem',
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+                boxShadow: '0 0.5rem 2.5rem rgba(0,0,0,0.6)',
+              }}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0&modestbranding=1`}
+                title={latestVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+              />
+            </div>
 
-              {/* 영상 정보 */}
-              <div className="md:col-span-2 flex flex-col justify-center gap-4 py-2">
-                {/* 제목 */}
-                <a
-                  href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-serif font-light text-xl leading-snug hover:text-yellow-300 transition-colors"
-                  style={{ color: 'var(--gold-light)' }}
+            {/* 하단 메타 바 */}
+            <div
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-4"
+              style={{ padding: '0.75rem 0' }}
+            >
+              {/* 채널 배지 */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div
+                  className="flex items-center justify-center rounded-full shrink-0"
+                  style={{ width: '1.75rem', height: '1.75rem', background: 'rgba(200,48,48,0.12)', border: '1px solid rgba(200,48,48,0.3)' }}
                 >
-                  {latestVideo.title}
-                </a>
-
-                {/* 출판일 */}
-                {latestVideo.publishedAt && (
-                  <div className="flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                    <Calendar size={11} />
-                    <span className="font-mono" style={{ fontSize: '0.6875rem' }}>
-                      {formatDate(latestVideo.publishedAt.slice(0, 10))}
-                    </span>
-                  </div>
-                )}
-
-                {/* 구분선 */}
-                <div className="divider-gold" />
-
-                {/* 채널 배지 */}
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-                    style={{ background: 'rgba(200,48,48,0.12)', border: '1px solid rgba(200,48,48,0.3)' }}
-                  >
-                    <Youtube size={15} style={{ color: '#c83030' }} />
-                  </div>
-                  <div>
-                    <div className="font-serif text-sm font-bold" style={{ color: 'var(--gold-light)' }}>
-                      Project Moon
-                    </div>
-                    <div className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>
-                      @projectmoon_official
-                    </div>
-                  </div>
+                  <Youtube size={13} style={{ color: '#c83030' }} />
                 </div>
+                <span className="font-serif text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Project Moon
+                </span>
               </div>
+
+              {/* 구분점 (데스크탑) */}
+              <span className="hidden sm:block" style={{ color: 'var(--text-muted)', fontSize: '0.5rem' }}>●</span>
+
+              {/* 영상 제목 */}
+              <a
+                href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-serif font-light leading-snug hover:text-yellow-300 transition-colors flex-1 min-w-0 truncate"
+                style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}
+              >
+                {latestVideo.title}
+              </a>
+
+              {/* 출판일 */}
+              {latestVideo.publishedAt && (
+                <div className="flex items-center gap-1.5 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                  <Calendar size={10} />
+                  <span className="font-mono" style={{ fontSize: '0.625rem' }}>
+                    {formatDate(latestVideo.publishedAt.slice(0, 10))}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -675,7 +714,7 @@ export default function HomeClient({
 
             <div className="divider-gold mb-10" />
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
               {latestIdentities.map((identity) => {
                 const portraitUrl   = getIdentityInfoUrl(identity)
                 const logoUrl       = getSinnerLogoUrl(identity.sinner_id)
@@ -684,10 +723,10 @@ export default function HomeClient({
                   <Link key={identity.id} href={`/sinners/${identity.sinner_id}/identities/${identity.id}`} className="latest-card group block" style={{ opacity: 0 }}>
                     <div
                       className="relative overflow-hidden"
-                      style={{ aspectRatio: '3/4', background: 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)', border: '1px solid var(--border)', borderRadius: '4px', transition: 'border-color 0.25s, box-shadow 0.25s' }}
+                      style={{ aspectRatio: '3/4', background: 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)', border: '1px solid var(--border)', borderRadius: '0.25rem', transition: 'border-color 0.25s, box-shadow 0.25s' }}
                       onMouseEnter={e => {
                         e.currentTarget.style.borderColor = 'var(--gold-dim)'
-                        e.currentTarget.style.boxShadow = '0 0 20px rgba(200,144,10,0.2), inset 0 0 20px rgba(200,144,10,0.05)'
+                        e.currentTarget.style.boxShadow = '0 0 1.25rem rgba(200,144,10,0.2), inset 0 0 1.25rem rgba(200,144,10,0.05)'
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.borderColor = 'var(--border)'
@@ -712,7 +751,7 @@ export default function HomeClient({
                       </div>
                       {rarityIconSrc && (
                         <div className="absolute top-2 right-2 z-10">
-                          <Image src={rarityIconSrc} alt={`${identity.rarity}성`} width={48} height={16} unoptimized style={{ height: '11px', width: 'auto', objectFit: 'contain' }} />
+                          <Image src={rarityIconSrc} alt={`${identity.rarity}성`} width={48} height={16} unoptimized style={{ height: '0.6875rem', width: 'auto', objectFit: 'contain' }} />
                         </div>
                       )}
                       <div className="absolute bottom-0 left-0 right-0 z-10" style={{ height: '60%', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }} />
@@ -720,24 +759,47 @@ export default function HomeClient({
                         <div className="font-serif font-light leading-tight group-hover:text-yellow-300 transition-colors" style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}>
                           {identity.name_kr}
                         </div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)', marginTop: '1px' }}>
-                          {identity.sinner?.name_kr ?? identity.sinner_id}
+                        <div className="flex items-center gap-1" style={{ marginTop: '0.125rem' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)' }}>
+                            {identity.sinner?.name_kr ?? identity.sinner_id}
+                          </span>
+                          {identity.release_date && (
+                            <>
+                              <span style={{ color: '#3a2a15', fontSize: '0.375rem' }}>·</span>
+                              <span className="font-mono" style={{ color: '#3a2a15', fontSize: '0.5rem' }}>
+                                {formatDate(identity.release_date)}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                    {identity.release_date && (
-                      <div className="mt-1.5 flex items-center gap-1" style={{ color: '#3a2a15' }}>
-                        <Calendar size={9} />
-                        <span className="font-mono" style={{ fontSize: '0.5625rem' }}>{formatDate(identity.release_date)}</span>
-                      </div>
-                    )}
                   </Link>
                 )
               })}
             </div>
 
-            <div className="mt-10 flex justify-end">
-              <Link href="/sinners" className="flex items-center gap-1.5 text-sm transition-all hover:gap-2.5" style={{ color: 'var(--gold-dim)' }}>
+            <div className="mt-12 flex justify-center">
+              <Link
+                href="/sinners"
+                className="flex items-center gap-2 font-serif text-sm transition-all"
+                style={{
+                  color: 'var(--gold-dim)',
+                  border: '1px solid var(--gold-dim)',
+                  padding: '0.5rem 1.5rem',
+                  borderRadius: '0.125rem',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--gold)'
+                  e.currentTarget.style.color = 'var(--gold-light)'
+                  e.currentTarget.style.background = 'rgba(200,144,10,0.05)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--gold-dim)'
+                  e.currentTarget.style.color = 'var(--gold-dim)'
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
                 전체 수감자 보기
                 <ChevronRight size={14} />
               </Link>
@@ -746,10 +808,9 @@ export default function HomeClient({
         </section>
       )}
 
-      {/* ── 기능 소개 (수직 메뉴 패널) ─────────────────────────── */}
+      {/* ── 기능 소개 (카드 그리드) ──────────────────────────── */}
       <section className="features-section max-w-7xl mx-auto px-6 py-16">
-        {/* 섹션 헤더 */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
           <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
             FEATURES
@@ -757,129 +818,103 @@ export default function HomeClient({
           <div className="divider-gold flex-1" />
         </div>
 
-        {/* 패널 묶음 — 하나의 border 안에 divider로 구분 */}
-        <div style={{ border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
-          {FEATURES.map((feature, i) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {FEATURES.map((feature) => {
             const Icon = feature.icon
-            const isHovered = hoveredFeature === i
             return (
               <Link
                 key={feature.href}
                 href={feature.href}
-                className="feature-card block"
-                style={{ opacity: 0 }}
-                onMouseEnter={() => setHoveredFeature(i)}
-                onMouseLeave={() => setHoveredFeature(null)}
+                className="feature-card group relative block"
+                style={{
+                  opacity: 0,
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.25rem',
+                  padding: '1.5rem',
+                  minHeight: '10rem',
+                  transition: 'border-color 0.25s, box-shadow 0.25s, background 0.25s',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget
+                  el.style.borderColor = `${feature.accent}50`
+                  el.style.boxShadow = `0 0 1.5rem ${feature.accent}15, inset 0 0 1.5rem ${feature.accent}08`
+                  el.style.background = `linear-gradient(135deg, ${feature.accent}08 0%, var(--bg-card) 60%)`
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget
+                  el.style.borderColor = 'var(--border)'
+                  el.style.boxShadow = 'none'
+                  el.style.background = 'var(--bg-card)'
+                }}
               >
+                {/* 아이콘 */}
                 <div
+                  className="flex items-center justify-center rounded-full"
                   style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '20px',
-                    padding: '20px 24px',
-                    background: isHovered
-                      ? `linear-gradient(to right, ${feature.accent}0a 0%, var(--bg-card) 40%)`
-                      : 'var(--bg-card)',
-                    borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                    transition: 'background 0.25s ease',
-                    overflow: 'hidden',
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    background: `${feature.accent}12`,
+                    border: `1px solid ${feature.accent}30`,
+                    marginBottom: '1rem',
+                    transition: 'background 0.25s, border-color 0.25s',
                   }}
                 >
-                  {/* 왼쪽 세로 accent bar */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: '3px',
-                      background: feature.accent,
-                      transform: isHovered ? 'scaleY(1)' : 'scaleY(0)',
-                      transformOrigin: 'center',
-                      transition: 'transform 0.22s ease',
-                      borderRadius: '0 2px 2px 0',
-                    }}
-                  />
-
-                  {/* 아이콘 컨테이너 */}
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      width: '44px',
-                      height: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: isHovered ? `${feature.accent}1a` : `${feature.accent}0e`,
-                      border: `1px solid ${isHovered ? feature.accent + '60' : feature.accent + '30'}`,
-                      borderRadius: '4px',
-                      transition: 'background 0.25s ease, border-color 0.25s ease',
-                    }}
-                  >
-                    <Icon
-                      size={20}
-                      style={{
-                        color: feature.accent,
-                        opacity: isHovered ? 1 : 0.7,
-                        transition: 'opacity 0.25s ease',
-                      }}
-                    />
-                  </div>
-
-                  {/* 텍스트 */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* mono 태그 */}
-                    <div
-                      className="font-mono"
-                      style={{
-                        fontSize: '0.5625rem',
-                        letterSpacing: '0.35em',
-                        color: feature.accent,
-                        opacity: isHovered ? 0.9 : 0.5,
-                        marginBottom: '4px',
-                        transition: 'opacity 0.25s ease',
-                      }}
-                    >
-                      {feature.tag}
-                    </div>
-                    {/* 타이틀 */}
-                    <div
-                      className="font-serif font-light"
-                      style={{
-                        fontSize: '1.0625rem',
-                        color: isHovered ? 'var(--gold-light)' : 'var(--gold)',
-                        marginBottom: '3px',
-                        transition: 'color 0.25s ease',
-                      }}
-                    >
-                      {feature.title}
-                    </div>
-                    {/* 설명 */}
-                    <div
-                      style={{
-                        fontSize: '0.75rem',
-                        color: isHovered ? '#7a6040' : '#7a6840',
-                        fontFamily: 'var(--font-body)',
-                        transition: 'color 0.25s ease',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {feature.desc}
-                    </div>
-                  </div>
-
-                  {/* 쉐브론 */}
-                  <ChevronRight
-                    size={16}
-                    style={{
-                      flexShrink: 0,
-                      color: isHovered ? feature.accent : '#3a2a15',
-                      transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
-                      transition: 'color 0.25s ease, transform 0.25s ease',
-                    }}
+                  <Icon
+                    size={18}
+                    style={{ color: feature.accent, opacity: 0.8, transition: 'opacity 0.25s' }}
                   />
                 </div>
+
+                {/* 태그 */}
+                <div
+                  className="font-mono"
+                  style={{
+                    fontSize: '0.5625rem',
+                    letterSpacing: '0.3em',
+                    color: feature.accent,
+                    opacity: 0.5,
+                    marginBottom: '0.25rem',
+                  }}
+                >
+                  {feature.tag}
+                </div>
+
+                {/* 타이틀 */}
+                <div
+                  className="font-serif font-light"
+                  style={{
+                    fontSize: '1.0625rem',
+                    color: 'var(--gold)',
+                    marginBottom: '0.25rem',
+                    transition: 'color 0.25s',
+                  }}
+                >
+                  {feature.title}
+                </div>
+
+                {/* 설명 */}
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-tertiary)',
+                    fontFamily: 'var(--font-body)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {feature.desc}
+                </div>
+
+                {/* 쉐브론 */}
+                <ChevronRight
+                  size={14}
+                  className="absolute transition-all group-hover:translate-x-0.5"
+                  style={{
+                    bottom: '1rem',
+                    right: '1rem',
+                    color: '#3a2a15',
+                  }}
+                />
               </Link>
             )
           })}
@@ -887,50 +922,77 @@ export default function HomeClient({
       </section>
 
       {/* ── 공식 채널 ──────────────────────────────────────────── */}
-      <section className="official-section max-w-7xl mx-auto px-6 pb-24">
-        <div className="flex items-center gap-4 mb-8">
+      <section className="official-section max-w-7xl mx-auto px-6 pb-16">
+        <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
           <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
           <div className="divider-gold flex-1" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {OFFICIAL_LINKS.map(({ label, sub, href, icon: Icon, color }) => (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="official-link-card group flex items-center gap-4 px-6 py-5 transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, #1a1510 0%, #120e08 100%)',
-                border: '1px solid var(--border)',
-                borderRadius: '4px',
-                opacity: 0,
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = color + '80'
-                el.style.boxShadow = `0 0 20px ${color}20`
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'var(--border)'
-                el.style.boxShadow = 'none'
-              }}
-            >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full shrink-0" style={{ background: `${color}18`, border: `1px solid ${color}40` }}>
-                <Icon size={18} style={{ color }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-serif font-light text-sm mb-0.5" style={{ color: 'var(--gold-light)' }}>{label}</div>
-                <div className="truncate font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
-              </div>
-              <ExternalLink size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: '#3a2a15' }} />
-            </a>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {OFFICIAL_LINKS.map(({ label, sub, href, icon: Icon, color }) => {
+            const isInternal = href.startsWith('/')
+            const linkProps = isInternal ? {} : { target: '_blank' as const, rel: 'noopener noreferrer' }
+            const Wrapper = isInternal ? Link : 'a'
+            return (
+              <Wrapper
+                key={href}
+                href={href}
+                {...linkProps}
+                className="official-link-card group relative flex flex-col items-center text-center transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(160deg, #1a1510 0%, #120e08 100%)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.25rem',
+                  padding: '1.5rem',
+                  minHeight: '9rem',
+                  opacity: 0,
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.borderColor = color + '60'
+                  el.style.boxShadow = `0 0 1.25rem ${color}15`
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.borderColor = 'var(--border)'
+                  el.style.boxShadow = 'none'
+                }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-full"
+                  style={{
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    background: `${color}18`,
+                    border: `1px solid ${color}40`,
+                    marginBottom: '1rem',
+                  }}
+                >
+                  <Icon size={18} style={{ color }} />
+                </div>
+                <div className="font-serif font-light text-sm mb-1" style={{ color: 'var(--gold-light)' }}>{label}</div>
+                <div className="truncate font-mono w-full" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
+                <ExternalLink
+                  size={12}
+                  className="absolute transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  style={{ bottom: '0.75rem', right: '0.75rem', color: '#3a2a15' }}
+                />
+              </Wrapper>
+            )
+          })}
+        </div>
+
+        {/* 마무리 */}
+        <div className="mt-14 flex flex-col items-center gap-3">
+          <div className="divider-gold" style={{ maxWidth: '12rem' }} />
+          <span className="font-logo tracking-widest" style={{ color: 'var(--gold-dim)', fontSize: '1.125rem', opacity: 0.4, letterSpacing: '0.3em' }}>
+            SAIGO NO DANTE
+          </span>
+          <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
+            Limbus Company 팬 아카이브
+          </span>
         </div>
       </section>
-
 
     </div>
   )
