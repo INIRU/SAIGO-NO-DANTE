@@ -22,6 +22,7 @@ type IdentityPreview = {
     folder_name: string | null
     game_id: string | null
     keywords: string[] | null
+    name_kr: string | null
   } | null
 }
 

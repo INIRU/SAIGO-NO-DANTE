@@ -10,8 +10,13 @@ import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 
 type SortKey = 'latest' | 'popular'
+type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
+type IdentityNameEntry = { name_kr: string; sinner_id: string; folder_name: string | null; game_id: string | null }
 const PAGE_SIZE = 20
 
 const DIFFICULTY_STYLE: Record<string, { bg: string; color: string; border: string }> = {
@@ -19,6 +24,13 @@ const DIFFICULTY_STYLE: Record<string, { bg: string; color: string; border: stri
   hard:    { bg: 'rgba(200,144,10,0.12)',  color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
   overlap: { bg: 'rgba(72,152,176,0.12)',  color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
+}
+
+// 플랜의 모든 인격 이름 (검색용)
+function getPlanIdentityNames(plan: PlanSummary): string[] {
+  return (plan.deck ?? [])
+    .map(s => s.name_kr)
+    .filter((n): n is string => Boolean(n))
 }
 
 // 플랜 덱에서 자동 키워드 추출 (PlanCard와 동일 기준: 편성 인격의 40% 이상 공유)
@@ -47,7 +59,8 @@ function getPlanThemeKeywords(plan: PlanSummary): string[] {
 
 export default function CommunityClient() {
   const { status: authStatus } = useSession()
-  const { getIconUrl } = useKeywordData()
+  const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
+  const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const [plans, setPlans] = useState<PlanSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -56,7 +69,112 @@ export default function CommunityClient() {
   const [sort, setSort] = useState<SortKey>('latest')
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const offsetRef = useRef(0)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [acIndex, setAcIndex] = useState(-1)
+
+  // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
+  const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
+  useEffect(() => {
+    createBrowserClient()
+      .schema('limbus')
+      .from('identities')
+      .select('name_kr, sinner_id, folder_name, game_id')
+      .then(({ data }) => {
+        if (data) {
+          const seen = new Set<string>()
+          const deduped = (data as IdentityNameEntry[])
+            .filter(d => { if (seen.has(d.name_kr)) return false; seen.add(d.name_kr); return true })
+            .sort((a, b) => a.name_kr.localeCompare(b.name_kr))
+          setAllIdentities(deduped)
+        }
+      })
+  }, [])
+
+  // 인격 + 키워드 자동완성 후보
+  const suggestions = useMemo((): SearchSuggestion[] => {
+    const { activeTerm } = getActiveTerm(search)
+    if (activeTerm.length === 0) return []
+    const q = activeTerm.toLowerCase()
+
+    const sortByRelevance = (a: string, b: string) => {
+      const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1
+      const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1
+      if (aStarts !== bStarts) return aStarts - bStarts
+      return a.length - b.length
+    }
+
+    const idMatches: SearchSuggestion[] = allIdentities
+      .filter(id => id.name_kr.toLowerCase().includes(q))
+      .sort((a, b) => sortByRelevance(a.name_kr, b.name_kr))
+      .slice(0, 5)
+      .map(id => ({
+        label: id.name_kr,
+        type: 'identity',
+        imageUrl: id.game_id && id.folder_name && id.sinner_id
+          ? `${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`
+          : undefined,
+      }))
+
+    const kwMatches: SearchSuggestion[] = ALL_KEYWORDS
+      .filter(kw => kw.toLowerCase().includes(q))
+      .sort(sortByRelevance)
+      .slice(0, 5)
+      .map(label => ({ label, type: 'keyword' }))
+
+    return [...idMatches, ...kwMatches].slice(0, 8)
+  }, [search, ALL_KEYWORDS, allIdentities])
+
+  useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
+      e.preventDefault(); setShowSuggestions(true); return
+    }
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Escape') setShowSuggestions(false)
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault(); setAcIndex(prev => (prev + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
+    } else if (e.key === 'Tab' && acIndex >= 0) {
+      e.preventDefault()
+      const selected = suggestions[acIndex].label
+      const { prefix } = getActiveTerm(search)
+      // IME 조합 강제 종료
+      e.currentTarget.blur()
+      setShowSuggestions(false)
+      setAcIndex(-1)
+      // IME compositionend → onChange 이후 값 설정 (잔재 방지)
+      setTimeout(() => {
+        setSearch(prefix + selected)
+        ;(e.target as HTMLInputElement).focus()
+      }, 10)
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false); setAcIndex(-1)
+    }
+  }
+
+  // 외부 클릭 시 자동완성 닫기
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false); setAcIndex(-1)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // 검색 debounce (필터링 성능)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   // 키워드 필터
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
@@ -181,13 +299,23 @@ export default function CommunityClient() {
   const filtered = useMemo(() => {
     let list = plans
 
-    // 텍스트 검색
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        (p.description ?? '').toLowerCase().includes(q)
-      )
+    // 텍스트 검색: 인격 + 제목 + 설명 (+: OR, *: AND)
+    if (debouncedSearch.trim()) {
+      const parsed = parseSearchQuery(debouncedSearch)
+      if (parsed.terms.length > 0) {
+        list = list.filter(p => {
+          const searchable = [
+            p.title,
+            p.description ?? '',
+            ...getPlanIdentityNames(p),
+          ]
+          if (parsed.mode === 'and') {
+            return parsed.terms.every(term => termMatchesAny(term, searchable))
+          } else {
+            return parsed.terms.some(term => termMatchesAny(term, searchable))
+          }
+        })
+      }
     }
 
     // 키워드 필터
@@ -226,7 +354,7 @@ export default function CommunityClient() {
     }
 
     return list
-  }, [plans, search, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [plans, debouncedSearch, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
@@ -261,12 +389,12 @@ export default function CommunityClient() {
         {/* ── 필터 패널 ── */}
         <div style={{
           background: 'rgba(10,8,5,0.5)', border: '1px solid #1a1510',
-          borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '1.5rem',
+          borderRadius: '0.5rem', marginBottom: '1.5rem',
         }}>
           {/* 상단: 검색 + 정렬 */}
           <div className="flex items-center gap-3 p-3" style={{ borderBottom: '1px solid #1a1510' }}>
             {/* 검색 */}
-            <div className="flex items-center gap-2 flex-1" style={{
+            <div ref={searchRef} className="relative flex items-center gap-2 flex-1" style={{
               background: '#0d0b08', border: '1px solid #222', borderRadius: '0.375rem',
               padding: '0.375rem 0.625rem',
             }}>
@@ -274,17 +402,73 @@ export default function CommunityClient() {
               <input
                 type="text"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="플랜 검색..."
+                onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="인격, 키워드, 제목 검색... (+: OR, *: AND)"
                 style={{
                   background: 'transparent', border: 'none', outline: 'none',
                   color: '#e5e7eb', fontSize: '0.8125rem', width: '100%',
                 }}
               />
               {search && (
-                <button onClick={() => setSearch('')} style={{ color: '#555', cursor: 'pointer', flexShrink: 0, background: 'none', border: 'none' }}>
+                <button onClick={() => { setSearch(''); setShowSuggestions(false) }} style={{ color: '#555', cursor: 'pointer', flexShrink: 0, background: 'none', border: 'none' }}>
                   <X size={12} />
                 </button>
+              )}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  className="absolute left-0 right-0 z-50 overflow-hidden"
+                  style={{
+                    top: '100%',
+                    marginTop: 4,
+                    background: '#1a1510',
+                    border: '1px solid #2a2015',
+                    borderRadius: '0.25rem',
+                    boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
+                    인격 / 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
+                  </div>
+                  {suggestions.map((sg, i) => {
+                    const kwIconUrl = sg.type === 'keyword' ? getIconUrl(sg.label) : null
+                    const isFocused = acIndex === i
+                    return (
+                      <div
+                        key={`${sg.type}-${sg.label}-${i}`}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                        onClick={() => {
+                          const { prefix } = getActiveTerm(search)
+                          setSearch(prefix + sg.label)
+                          setShowSuggestions(false)
+                          setAcIndex(-1)
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          color: isFocused ? '#e8b030' : '#c8b890',
+                          fontFamily: 'var(--font-heading)',
+                          background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
+                          borderLeft: isFocused ? '2px solid #c8900a' : '2px solid transparent',
+                        }}
+                      >
+                        {sg.type === 'identity' && sg.imageUrl ? (
+                          <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.1875rem', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(200,144,10,0.2)' }}>
+                            <Image src={sg.imageUrl} alt="" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%' }} />
+                          </div>
+                        ) : sg.type === 'identity' ? (
+                          <User size={14} style={{ flexShrink: 0, color: '#8a9bb0' }} />
+                        ) : kwIconUrl ? (
+                          <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                        ) : null}
+                        <span>{sg.label}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.5625rem', color: '#555', flexShrink: 0 }}>
+                          {sg.type === 'identity' ? '인격' : '키워드'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
 
