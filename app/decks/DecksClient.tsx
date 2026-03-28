@@ -9,10 +9,15 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import { User, PackageOpen, Link2 } from 'lucide-react'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 
 const PAGE_SIZE = 12
 
 type SortKey = 'latest' | 'popular'
+type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
+type IdentityNameEntry = { name_kr: string; sinner_id: string; folder_name: string | null; game_id: string | null }
 
 // DeckCard와 동일한 테마 키워드 상수
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -47,6 +52,13 @@ function getDeckAllKeywords(deck: DeckSummary): string[] {
   return [...kws]
 }
 
+// 덱의 모든 인격 이름 (검색용)
+function getDeckIdentityNames(deck: DeckSummary): string[] {
+  return (deck.deck_identities ?? [])
+    .map(s => s.identities?.name_kr)
+    .filter((n): n is string => Boolean(n))
+}
+
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 
 function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
@@ -63,25 +75,63 @@ export default function DecksClient() {
   const [hasMore, setHasMore] = useState(true)
   const [sort, setSort] = useState<SortKey>('latest')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // 키워드 자동완성 후보
-  const suggestions = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (q.length === 0) return []
-    const matches = ALL_KEYWORDS.filter(kw => kw.toLowerCase().includes(q))
-    // 시작 일치 우선, 짧은 것 우선
-    matches.sort((a, b) => {
+  // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
+  const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
+  useEffect(() => {
+    createBrowserClient()
+      .schema('limbus')
+      .from('identities')
+      .select('name_kr, sinner_id, folder_name, game_id')
+      .then(({ data }) => {
+        if (data) {
+          const seen = new Set<string>()
+          const deduped = (data as IdentityNameEntry[])
+            .filter(d => { if (seen.has(d.name_kr)) return false; seen.add(d.name_kr); return true })
+            .sort((a, b) => a.name_kr.localeCompare(b.name_kr))
+          setAllIdentities(deduped)
+        }
+      })
+  }, [])
+
+  // 인격 + 키워드 자동완성 후보
+  const suggestions = useMemo((): SearchSuggestion[] => {
+    const { activeTerm } = getActiveTerm(search)
+    if (activeTerm.length === 0) return []
+    const q = activeTerm.toLowerCase()
+
+    const sortByRelevance = (a: string, b: string) => {
       const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1
       const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1
       if (aStarts !== bStarts) return aStarts - bStarts
       return a.length - b.length
-    })
-    return matches.slice(0, 8)
-  }, [search, ALL_KEYWORDS])
+    }
+
+    const idMatches: SearchSuggestion[] = allIdentities
+      .filter(id => id.name_kr.toLowerCase().includes(q))
+      .sort((a, b) => sortByRelevance(a.name_kr, b.name_kr))
+      .slice(0, 5)
+      .map(id => ({
+        label: id.name_kr,
+        type: 'identity',
+        imageUrl: id.game_id && id.folder_name && id.sinner_id
+          ? `${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`
+          : undefined,
+      }))
+
+    const kwMatches: SearchSuggestion[] = ALL_KEYWORDS
+      .filter(kw => kw.toLowerCase().includes(q))
+      .sort(sortByRelevance)
+      .slice(0, 5)
+      .map(label => ({ label, type: 'keyword' }))
+
+    return [...idMatches, ...kwMatches].slice(0, 8)
+  }, [search, ALL_KEYWORDS, allIdentities])
 
   // 검색어 변경 시 자동완성 첫 항목 선택
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
@@ -106,12 +156,17 @@ export default function DecksClient() {
       setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
     } else if (e.key === 'Tab' && acIndex >= 0) {
       e.preventDefault()
-      // IME 조합 중이면 강제 종료
+      const selected = suggestions[acIndex].label
+      const { prefix } = getActiveTerm(search)
+      // IME 조합 강제 종료
       e.currentTarget.blur()
-      setSearch(suggestions[acIndex])
       setShowSuggestions(false)
       setAcIndex(-1)
-      setTimeout(() => (e.target as HTMLInputElement).focus(), 0)
+      // IME compositionend → onChange 이후 값 설정 (잔재 방지)
+      setTimeout(() => {
+        setSearch(prefix + selected)
+        ;(e.target as HTMLInputElement).focus()
+      }, 10)
     } else if (e.key === 'Escape') {
       setShowSuggestions(false)
       setAcIndex(-1)
@@ -129,6 +184,12 @@ export default function DecksClient() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // 검색 debounce (필터링 성능)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   // 콘텐츠 유형 필터
   const [activeContentType, setActiveContentType] = useState<string>('')
@@ -333,15 +394,25 @@ export default function DecksClient() {
       list = list.filter(d => d.content_type === activeContentType)
     }
 
-    // 텍스트 검색: 제목 + 설명 + 태그 + 키워드
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter(d =>
-        d.title.toLowerCase().includes(q) ||
-        (d.description ?? '').toLowerCase().includes(q) ||
-        d.tags.some(t => t.toLowerCase().includes(q)) ||
-        getDeckAllKeywords(d).some(kw => kw.toLowerCase().includes(q))
-      )
+    // 텍스트 검색: 인격 + 제목 + 설명 + 태그 + 키워드 (+: OR, *: AND)
+    if (debouncedSearch.trim()) {
+      const parsed = parseSearchQuery(debouncedSearch)
+      if (parsed.terms.length > 0) {
+        list = list.filter(d => {
+          const searchable = [
+            d.title,
+            d.description ?? '',
+            ...d.tags,
+            ...getDeckAllKeywords(d),
+            ...getDeckIdentityNames(d),
+          ]
+          if (parsed.mode === 'and') {
+            return parsed.terms.every(term => termMatchesAny(term, searchable))
+          } else {
+            return parsed.terms.some(term => termMatchesAny(term, searchable))
+          }
+        })
+      }
     }
 
     // 태그 멀티 필터: 선택된 모든 태그를 포함하는 덱
@@ -393,7 +464,7 @@ export default function DecksClient() {
     }
 
     return list
-  }, [decks, search, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   const hasAnyFilter = search || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
 
@@ -479,7 +550,6 @@ export default function DecksClient() {
           background: 'rgba(10,8,5,0.5)',
           border: '1px solid var(--border)',
           borderRadius: '0.375rem',
-          overflow: 'hidden',
         }}
       >
         {/* 검색 + 정렬 */}
@@ -494,7 +564,7 @@ export default function DecksClient() {
             </svg>
             <input
               type="text"
-              placeholder="제목, 설명, 태그, 키워드 검색..."
+              placeholder="인격, 키워드, 제목 검색... (+: OR, *: AND)"
               value={search}
               onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
               onFocus={() => setShowSuggestions(true)}
@@ -529,26 +599,42 @@ export default function DecksClient() {
                 }}
               >
                 <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
-                  키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
+                  인격 / 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
                 </div>
-                {suggestions.map((kw, i) => {
-                  const iconUrl = getIconUrl(kw)
+                {suggestions.map((sg, i) => {
+                  const kwIconUrl = sg.type === 'keyword' ? getIconUrl(sg.label) : null
                   const isFocused = acIndex === i
                   return (
                     <div
-                      key={kw}
-                      className="flex items-center gap-2 px-3 py-2 text-xs"
+                      key={`${sg.type}-${sg.label}-${i}`}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                      onClick={() => {
+                        const { prefix } = getActiveTerm(search)
+                        setSearch(prefix + sg.label)
+                        setShowSuggestions(false)
+                        setAcIndex(-1)
+                      }}
                       style={{
+                        cursor: 'pointer',
                         color: isFocused ? '#e8b030' : '#c8b890',
                         fontFamily: 'var(--font-heading)',
                         background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
                         borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
                       }}
                     >
-                      {iconUrl && (
-                        <Image src={iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
-                      )}
-                      <span>{kw}</span>
+                      {sg.type === 'identity' && sg.imageUrl ? (
+                        <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.1875rem', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(200,144,10,0.2)' }}>
+                          <Image src={sg.imageUrl} alt="" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%' }} />
+                        </div>
+                      ) : sg.type === 'identity' ? (
+                        <User size={14} style={{ flexShrink: 0, color: '#8a9bb0' }} />
+                      ) : kwIconUrl ? (
+                        <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                      ) : null}
+                      <span>{sg.label}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '0.5625rem', color: '#555', flexShrink: 0 }}>
+                        {sg.type === 'identity' ? '인격' : '키워드'}
+                      </span>
                     </div>
                   )
                 })}

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
-        deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords)),
+        deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
         deck_egos(ego_id)
       `)
       .order(orderColumn, { ascending: false })
