@@ -60,7 +60,7 @@ export default function SkillFrame({
       >
         <div
           className="relative overflow-hidden"
-          style={{ width: '55%', height: '55%', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' }}
+          style={{ width: '50%', height: '50%', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' }}
         >
           {iconFailed ? (
             <div
