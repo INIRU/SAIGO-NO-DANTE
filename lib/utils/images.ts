@@ -60,6 +60,26 @@ export function computeSkillImageIndices(skills: { id: string; skill_order: numb
   return result
 }
 
+// ── 스킬 프레임 (죄악 × 슬롯) ─────────────────────────────────────────────
+const SIN_TO_FRAME_NAME: Record<string, string> = {
+  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
+  gloom: 'azure', pride: 'indigo', envy: 'violet', neutral: 'neutral',
+}
+
+/** 스킬 프레임 outer (배경 글로우) */
+export function getSkillFrameOuterUrl(sin: string, skillSlot: number): string {
+  const name = SIN_TO_FRAME_NAME[sin] || 'crimson'
+  const slot = Math.min(Math.max(skillSlot, 1), 3)
+  return `${STORAGE_BASE}/icons/skill-frames/outer/${name}_skill${slot}.webp`
+}
+
+/** 스킬 프레임 inner (테두리) */
+export function getSkillFrameInnerUrl(sin: string, skillSlot: number): string {
+  const name = SIN_TO_FRAME_NAME[sin] || 'crimson'
+  const slot = Math.min(Math.max(skillSlot, 1), 3)
+  return `${STORAGE_BASE}/icons/skill-frames/inner/${name}_skill${slot}.webp`
+}
+
 export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {
   const folder = encodeURIComponent(egoFolderName)
   return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/`

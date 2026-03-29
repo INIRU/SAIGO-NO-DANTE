@@ -7,6 +7,7 @@ import { X } from 'lucide-react'
 import {
   Identity,
   Sinner,
+  STORAGE_BASE,
   getIdentityInfoUrl,
   getIdentityProfileUrl,
   getSinnerLogoUrl,
@@ -110,17 +111,24 @@ export default function IdentityPortraitSection({
       <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
         {/* 인격 이름 헤더 */}
         <div className="flex items-center gap-2">
-          <Image
-            src={getSinnerLogoUrl(sinner.id)}
-            alt=""
-            width={28}
-            height={28}
-            style={{ width: '1.75rem', height: '1.75rem', filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))', opacity: 0.9 }}
-          />
+          {/* 등급 프레임 + 수감자 로고 */}
+          <div className="relative shrink-0" style={{ width: '2.5rem', height: '2.5rem' }}>
+            <Image
+              src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
+              alt="" width={40} height={40}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+            <Image
+              src={getSinnerLogoUrl(sinner.id)}
+              alt="" width={24} height={24}
+              className="absolute inset-0 m-auto"
+              style={{ width: '55%', height: '55%', objectFit: 'contain' }}
+            />
+          </div>
           <div className="flex-1 min-w-0">
             <h1
-              className="font-serif font-light truncate"
-              style={{ color: '#e8dcc8', fontSize: '1.125rem', lineHeight: 1.2 }}
+              className="font-serif truncate"
+              style={{ color: '#e8dcc8', fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, WebkitTextStroke: '0.5px #e8dcc8' }}
             >
               {identity.name_kr || identity.name}
             </h1>

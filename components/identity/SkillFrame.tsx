@@ -1,0 +1,109 @@
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import { getSkillFrameOuterUrl, getSkillFrameInnerUrl } from '@/lib/utils/images'
+
+interface SkillFrameProps {
+  skillIconUrl: string
+  skillIconFallback?: string
+  sin: string
+  /** 1 | 2 | 3 */
+  skillSlot: number
+  sinColor: string
+  label: string
+  /** rem 단위 전체 크기 (기본 3.5rem) */
+  size?: string
+}
+
+export default function SkillFrame({
+  skillIconUrl,
+  skillIconFallback,
+  sin,
+  skillSlot,
+  sinColor,
+  label,
+  size = '3.5rem',
+}: SkillFrameProps) {
+  const [iconSrc, setIconSrc] = useState(skillIconUrl)
+  const [iconFailed, setIconFailed] = useState(false)
+
+  // url 변경 추적
+  const [prevUrl, setPrevUrl] = useState(skillIconUrl)
+  if (prevUrl !== skillIconUrl) {
+    setPrevUrl(skillIconUrl)
+    setIconSrc(skillIconUrl)
+    setIconFailed(false)
+  }
+
+  const outerUrl = getSkillFrameOuterUrl(sin, skillSlot)
+  const innerUrl = getSkillFrameInnerUrl(sin, skillSlot)
+
+  return (
+    <div
+      className="relative shrink-0"
+      style={{ width: size, height: size }}
+    >
+      {/* Layer 1: outer glow */}
+      <Image
+        src={outerUrl}
+        alt=""
+        width={128}
+        height={128}
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+      />
+
+      {/* Layer 2: skill icon (center, octagonal clip) */}
+      <div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      >
+        <div
+          className="relative overflow-hidden"
+          style={{ width: '55%', height: '55%', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' }}
+        >
+          {iconFailed ? (
+            <div
+              className="w-full h-full flex items-center justify-center rounded"
+              style={{ background: `${sinColor}18`, border: `1px solid ${sinColor}40` }}
+            >
+              <span className="font-mono font-bold" style={{ fontSize: '0.5rem', color: `${sinColor}60` }}>
+                {label}
+              </span>
+            </div>
+          ) : (
+            <Image
+              src={iconSrc}
+              alt=""
+              width={64}
+              height={64}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)',
+              }}
+              onError={() => {
+                if (skillIconFallback && iconSrc !== skillIconFallback) {
+                  setIconSrc(skillIconFallback)
+                } else {
+                  setIconFailed(true)
+                }
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Layer 3: inner frame border */}
+      <Image
+        src={innerUrl}
+        alt=""
+        width={128}
+        height={128}
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+      />
+    </div>
+  )
+}

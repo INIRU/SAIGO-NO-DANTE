@@ -1,5 +1,19 @@
 /* ── 로컬 폰트 ────────────────────────────────────────── */
 @font-face {
+  font-family: 'ExcelsiorSans';
+  src: url('/fonts/ExcelsiorSans.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Mikodacs';
+  src: url('/fonts/Mikodacs.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: 'BebasKai';
   src: url('/fonts/BebasKai.otf') format('opentype'),
        url('/fonts/BebasKai.ttf') format('truetype');
@@ -140,7 +154,7 @@
   box-sizing: border-box;
   text-rendering: optimizeLegibility;
 }
-html { scroll-behavior: smooth; font-size: 17px !important; }
+html { scroll-behavior: smooth; font-size: 17px !important; background-color: var(--bg-deep); }
 html[data-font-size="small"]  { font-size: 15px !important; }
 html[data-font-size="large"]  { font-size: 20px !important; }
 
@@ -158,7 +172,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased; /* 텍스트 서브픽셀 품질 향상 */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
 ::-webkit-scrollbar { width: 5px; height: 4px; }
@@ -244,4 +257,17 @@ textarea:focus-visible {
   background-size: 200% 100%;
   animation: card-shimmer 3s ease-in-out infinite;
   border-radius: inherit;
+}
+
+/* 스킬명 무한 마퀴 스크롤 — hover 시 정지 */
+@keyframes skill-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.skill-marquee-track {
+  display: inline-flex;
+  animation: skill-marquee 6s linear infinite;
+}
+.skill-banner-scroll:hover .skill-marquee-track {
+  animation-play-state: paused;
 }
