@@ -11,7 +11,7 @@ const NAV_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="mt-24" style={{ borderTop: '1px solid var(--border)' }}>
+    <footer className="mt-24">
       {/* 장식선 */}
       <div className="flex items-center gap-4 px-8 pt-10 max-w-6xl mx-auto">
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border))' }} />
