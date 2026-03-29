@@ -199,8 +199,8 @@ export default function DecksClient() {
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
 
-  // 상세 필터 토글 (기본 접힘, 활성 필터 있으면 자동 펼침)
-  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
+  // 상세 필터 토글 (기본 펼침)
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(true)
   const [showTagFilter, setShowTagFilter] = useState(true)
   const [showKeywordFilter, setShowKeywordFilter] = useState(true)
   const [showCollectionFilter, setShowCollectionFilter] = useState(true)
