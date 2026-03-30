@@ -72,6 +72,7 @@ export default function MirrorDungeonClient({
   const [themeSearchFocused, setThemeSearchFocused] = useState(false)
   const [themeDiffFilter, setThemeDiffFilter] = useState<string>('전체')
   const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
+  const [slotFilter, setSlotFilter] = useState<string>('전체')
   const [eventSearch, setEventSearch] = useState('')
 
   // 모달 열릴 때 배경 스크롤 잠금
@@ -267,9 +268,30 @@ export default function MirrorDungeonClient({
   // 등급 정렬용 순서
   const GRADE_ORDER: Record<string, number> = { '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, 'EX': 6 }
 
+  // 편성 전용 효과 슬롯 번호 파싱 (gift.id → Set<number>)
+  const giftSlotMap = useMemo(() => {
+    const map = new Map<string, Set<number>>()
+    const regex = /\[(?:편성\s*(?:순서\s*)?)?([\d번\s,]+?)(?:\s*인격\s*)?(?:편성\s*)?전용\s*효과\]/g
+    for (const g of gifts) {
+      const slots = new Set<number>()
+      for (const text of [g.effect_base, g.effect_plus, g.effect_plusplus]) {
+        if (!text) continue
+        regex.lastIndex = 0
+        let m: RegExpExecArray | null
+        while ((m = regex.exec(text)) !== null) {
+          const nums = m[1].match(/\d+/g)
+          if (nums) nums.forEach(n => slots.add(Number(n)))
+        }
+      }
+      if (slots.size > 0) map.set(g.id, slots)
+    }
+    return map
+  }, [gifts])
+
   // 필터링 + 정렬
   const filtered = useMemo(() => {
     const DIFF_ORDER = { '노말': 0, '하드': 1, '익스트림': 2 } as const
+    const slotNum = slotFilter !== '전체' ? Number(slotFilter) : null
     const result = gifts.filter(g => {
       if (keywords.size > 0 && !keywords.has(g.keyword)) return false
       if (grades.size > 0 && !grades.has(g.grade)) return false
@@ -279,6 +301,10 @@ export default function MirrorDungeonClient({
         const selectedIdx = DIFF_ORDER[selected] ?? 2
         const giftIdx = DIFF_ORDER[giftDiff] ?? 0
         if (giftIdx > selectedIdx) return false
+      }
+      if (slotNum !== null) {
+        const slots = giftSlotMap.get(g.id)
+        if (!slots || !slots.has(slotNum)) return false
       }
       if (search && !g.name.includes(search)) return false
       if (themeGiftNames && !themeGiftNames.has(g.name)) return false
@@ -294,7 +320,7 @@ export default function MirrorDungeonClient({
     if (sortDesc) result.reverse()
 
     return result
-  }, [gifts, keywords, grades, tiers, search, sortBy, sortDesc, themeGiftNames])
+  }, [gifts, keywords, grades, tiers, search, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap])
 
   // 무한 스크롤: 한 번에 40개씩 로드
   const PAGE_SIZE = 40
@@ -1390,6 +1416,26 @@ export default function MirrorDungeonClient({
               else setTiers(new Set([v]))
             }}
             prefix="난이도:"
+            defaultValue="전체"
+            minWidth={120}
+          />
+
+          {/* 편성 전용 필터 */}
+          <Dropdown
+            value={slotFilter}
+            options={[
+              { value: '전체', label: '전체' },
+              { value: '1', label: '1번' },
+              { value: '2', label: '2번' },
+              { value: '3', label: '3번' },
+              { value: '4', label: '4번' },
+              { value: '5', label: '5번' },
+              { value: '6', label: '6번' },
+              { value: '7', label: '7번' },
+              { value: '8', label: '8번' },
+            ]}
+            onChange={v => setSlotFilter(v)}
+            prefix="편성 전용:"
             defaultValue="전체"
             minWidth={120}
           />
