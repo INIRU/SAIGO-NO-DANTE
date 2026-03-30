@@ -271,3 +271,9 @@ textarea:focus-visible {
 .skill-banner-scroll:hover .skill-marquee-track {
   animation-play-state: paused;
 }
+
+/* 트리거 모드 — Navbar, Footer 숨김 */
+.trigger-mode nav[aria-label="메인 내비게이션"],
+.trigger-mode footer {
+  display: none !important;
+}

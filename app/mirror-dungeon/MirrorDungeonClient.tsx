@@ -8,7 +8,7 @@ import Dropdown from '@/components/ui/Dropdown'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/sinners/KeywordTooltip'
 import type { EgoGift, Recipe, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
-import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
+import { KEYWORD_COLORS, GRADE_LABELS } from '@/components/mirror-dungeon/types'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
 import GiftModal from '@/components/mirror-dungeon/GiftModal'
 import GradeMultiDropdown from '@/components/mirror-dungeon/GradeMultiDropdown'
@@ -521,13 +521,16 @@ export default function MirrorDungeonClient({
       }} />
       <style>{`
         .gift-grid {
-          grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(3.75rem, 1fr));
         }
         @media (min-width: 640px) {
-          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); }
+          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); }
         }
         @media (min-width: 768px) {
-          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }
+          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+          .gift-grid { grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); }
         }
         .gift-card {
           container-type: inline-size;
@@ -1356,14 +1359,15 @@ export default function MirrorDungeonClient({
         )
       })()}
 
-      {/* 필터 영역 + 그리드 (전체 기프트 탭) */}
+      {/* ── 기프트 탭: 필터 + 그리드 ── */}
       {activeTab === 'gifts' && (<>
-      <div className="mb-6 space-y-4">
+      <div className="space-y-3 mb-8">
         {/* 키워드 필터 */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
           {KEYWORDS.map(kw => {
             const isAll = kw.key === '전체'
             const active = isAll ? keywords.size === 0 : keywords.has(kw.key)
+            const kwColor = !isAll ? (KEYWORD_COLORS[kw.key] ?? '#666') : 'var(--gold)'
             const iconUrl = !isAll ? getGiftKeywordIcon(kw.key) : null
             return (
               <button
@@ -1372,14 +1376,11 @@ export default function MirrorDungeonClient({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
                 style={{
                   cursor: 'pointer',
-                  background: active
-                    ? (isAll ? 'var(--gold)' : KEYWORD_COLORS[kw.key] ?? '#666')
-                    : 'rgba(255,255,255,0.05)',
-                  color: active ? '#0d0b08' : '#777',
-                  border: `1px solid ${active
-                    ? 'transparent'
-                    : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? kwColor : 'rgba(255,255,255,0.04)',
+                  color: active ? '#0d0b08' : '#666',
+                  border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.06)'}`,
                   fontFamily: 'var(--font-heading)',
+                  boxShadow: active && !isAll ? `0 0 0.75rem ${KEYWORD_COLORS[kw.key] ?? '#666'}30` : 'none',
                 }}
               >
                 {iconUrl && (
@@ -1388,7 +1389,7 @@ export default function MirrorDungeonClient({
                     alt={kw.label}
                     width={14}
                     height={14}
-                    style={{ opacity: active ? 0.9 : 0.5 }}
+                    style={{ opacity: active ? 0.9 : 0.4, width: '0.875rem', height: '0.875rem' }}
                   />
                 )}
                 {kw.label}
@@ -1397,131 +1398,195 @@ export default function MirrorDungeonClient({
           })}
         </div>
 
-        {/* 등급 + 검색 */}
-        <div className="flex gap-3 justify-center items-center flex-wrap">
-          {/* 등급 멀티 드롭다운 */}
-          <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
+        {/* 컨트롤 바 */}
+        <div
+          className="flex items-center gap-3 flex-wrap rounded-lg"
+          style={{
+            padding: '0.5rem 0.75rem',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          {/* 필터 드롭다운 그룹 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
+            <Dropdown
+              value={tiers.size === 0 ? '전체' : [...tiers][0]}
+              options={[
+                { value: '전체', label: '전체' },
+                { value: '노말', label: '노말' },
+                { value: '하드', label: '하드' },
+                { value: '익스트림', label: '익스트림' },
+              ]}
+              onChange={v => {
+                if (v === '전체') setTiers(new Set())
+                else setTiers(new Set([v]))
+              }}
+              prefix="난이도:"
+              defaultValue="전체"
+              minWidth={120}
+            />
+            <Dropdown
+              value={slotFilter}
+              options={[
+                { value: '전체', label: '전체' },
+                ...Array.from({ length: 8 }, (_, i) => ({ value: `${i + 1}`, label: `${i + 1}번` })),
+              ]}
+              onChange={v => setSlotFilter(v)}
+              prefix="편성 전용:"
+              defaultValue="전체"
+              minWidth={120}
+            />
+          </div>
 
-          {/* 난이도 필터 (드롭다운) */}
-          <Dropdown
-            value={tiers.size === 0 ? '전체' : [...tiers][0]}
-            options={[
-              { value: '전체', label: '전체' },
-              { value: '노말', label: '노말' },
-              { value: '하드', label: '하드' },
-              { value: '익스트림', label: '익스트림' },
-            ]}
-            onChange={v => {
-              if (v === '전체') setTiers(new Set())
-              else setTiers(new Set([v]))
-            }}
-            prefix="난이도:"
-            defaultValue="전체"
-            minWidth={120}
-          />
+          {/* 구분선 */}
+          <div className="hidden sm:block flex-shrink-0" style={{ width: '1px', height: '1.25rem', background: 'rgba(255,255,255,0.06)' }} />
 
-          {/* 편성 전용 필터 */}
-          <Dropdown
-            value={slotFilter}
-            options={[
-              { value: '전체', label: '전체' },
-              { value: '1', label: '1번' },
-              { value: '2', label: '2번' },
-              { value: '3', label: '3번' },
-              { value: '4', label: '4번' },
-              { value: '5', label: '5번' },
-              { value: '6', label: '6번' },
-              { value: '7', label: '7번' },
-              { value: '8', label: '8번' },
-            ]}
-            onChange={v => setSlotFilter(v)}
-            prefix="편성 전용:"
-            defaultValue="전체"
-            minWidth={120}
-          />
+          {/* 정렬 + 검색 그룹 */}
+          <div className="flex items-center gap-2 ml-auto">
+            {/* 세그먼트 정렬 */}
+            <div className="flex items-center overflow-hidden rounded-md" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+              {(['default', 'name', 'grade'] as const).map((key, i, arr) => {
+                const labels = { default: '기본', name: '이름', grade: '등급' }
+                const isSort = sortBy === key
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (sortBy === key && key !== 'default') setSortDesc(v => !v)
+                      else { setSortBy(key); setSortDesc(false) }
+                    }}
+                    className="transition-colors"
+                    style={{
+                      padding: '0.375rem 0.625rem',
+                      fontSize: '0.6875rem',
+                      background: isSort ? 'rgba(200,144,10,0.12)' : 'transparent',
+                      color: isSort ? 'var(--gold)' : '#555',
+                      fontFamily: 'var(--font-heading)',
+                      cursor: 'pointer',
+                      borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                    }}
+                  >
+                    {labels[key]}{isSort && key !== 'default' && (sortDesc ? ' ↓' : ' ↑')}
+                  </button>
+                )
+              })}
+            </div>
 
-          {/* 정렬 버튼 */}
-          <div className="flex items-center gap-1">
-            {(['default', 'name', 'grade'] as const).map(key => {
-              const labels = { default: '기본', name: '이름순', grade: '등급순' }
+            {/* 검색 */}
+            <div className="relative">
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#444', pointerEvents: 'none' }}
+              />
+              <input
+                type="text"
+                placeholder="기프트 검색..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8 pr-7 py-1.5 rounded-md text-xs w-36 sm:w-44"
+                style={{
+                  background: 'rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: '#ccc',
+                  outline: 'none',
+                  fontFamily: 'var(--font-heading)',
+                }}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#555', cursor: 'pointer' }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* 결과 수 */}
+            <span className="flex-shrink-0 tabular-nums" style={{ color: '#555', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+              {filtered.length}<span style={{ fontSize: '0.5625rem', marginLeft: '1px' }}>건</span>
+            </span>
+          </div>
+        </div>
+
+        {/* 활성 필터 칩 */}
+        {(keywords.size > 0 || grades.size > 0 || tiers.size > 0 || slotFilter !== '전체') && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span style={{ color: '#3a3530', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', marginRight: '0.125rem' }}>필터</span>
+            {[...keywords].map(kw => {
+              const c = KEYWORD_COLORS[kw] ?? '#666'
+              const iconUrl = getGiftKeywordIcon(kw)
               return (
                 <button
-                  key={key}
-                  onClick={() => {
-                    if (sortBy === key && key !== 'default') {
-                      setSortDesc(v => !v)
-                    } else {
-                      setSortBy(key)
-                      setSortDesc(false)
-                    }
-                  }}
-                  className="px-2.5 py-1.5 rounded text-[0.6875rem] transition-colors"
-                  style={{
-                    cursor: 'pointer',
-                    background: sortBy === key ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${sortBy === key ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                    color: sortBy === key ? 'var(--gold)' : '#777',
-                    fontFamily: 'var(--font-heading)',
-                  }}
+                  key={`fk-${kw}`}
+                  onClick={() => toggleKeyword(kw)}
+                  className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+                  style={{ background: `${c}15`, border: `1px solid ${c}25`, color: c, fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
                 >
-                  {labels[key]}
-                  {sortBy === key && key !== 'default' && (
-                    <span style={{ marginLeft: '3px' }}>{sortDesc ? '↓' : '↑'}</span>
-                  )}
+                  {iconUrl && <Image src={iconUrl} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
+                  {kw}
+                  <X size={10} style={{ opacity: 0.5 }} />
                 </button>
               )
             })}
-          </div>
-
-          {/* 검색 */}
-          <div className="relative">
-            <Search
-              size={14}
-              style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#555' }}
-            />
-            <input
-              type="text"
-              placeholder="기프트 검색..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded text-xs w-48"
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#ccc',
-                outline: 'none',
-                fontFamily: 'var(--font-heading)',
-              }}
-            />
-            {search && (
+            {[...grades].map(g => (
               <button
-                onClick={() => setSearch('')}
+                key={`fg-${g}`}
+                onClick={() => toggleGrade(g)}
+                className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+                style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.2)', color: 'var(--gold)', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
+              >
+                등급 {GRADE_LABELS[g] ?? g}
+                <X size={10} style={{ opacity: 0.5 }} />
+              </button>
+            ))}
+            {[...tiers].map(t => (
+              <button
+                key={`ft-${t}`}
+                onClick={() => setTiers(new Set())}
+                className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
                 style={{
-                  position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-                  color: '#555', cursor: 'pointer',
+                  background: t === '익스트림' ? 'rgba(224,64,64,0.1)' : t === '하드' ? 'rgba(232,144,48,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${t === '익스트림' ? 'rgba(224,64,64,0.2)' : t === '하드' ? 'rgba(232,144,48,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                  color: t === '익스트림' ? '#e04040' : t === '하드' ? '#e89030' : '#888',
+                  fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', cursor: 'pointer',
                 }}
               >
-                <X size={12} />
+                {t}
+                <X size={10} style={{ opacity: 0.5 }} />
+              </button>
+            ))}
+            {slotFilter !== '전체' && (
+              <button
+                onClick={() => setSlotFilter('전체')}
+                className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+                style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.2)', color: 'var(--gold)', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
+              >
+                {slotFilter}번 전용
+                <X size={10} style={{ opacity: 0.5 }} />
               </button>
             )}
+            <button
+              onClick={() => { setKeywords(new Set()); setGrades(new Set()); setTiers(new Set()); setSlotFilter('전체'); setSearch('') }}
+              className="ml-auto px-2 py-0.5 rounded-full transition-colors hover:bg-white/5"
+              style={{ color: '#444', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.04)' }}
+            >
+              초기화
+            </button>
           </div>
-
-          {/* 결과 수 */}
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-            {filtered.length}건
-          </span>
-        </div>
+        )}
       </div>
 
       {/* 그리드 */}
       {filtered.length === 0 ? (
         <div className="text-center py-20" style={{ color: '#555' }}>
-          <p className="text-lg mb-2">결과 없음</p>
-          <p className="text-sm">필터를 변경해 보세요.</p>
+          <p className="text-lg font-serif mb-2">결과 없음</p>
+          <p className="text-sm" style={{ color: '#3a3530' }}>필터를 변경하거나 검색어를 확인해 보세요.</p>
         </div>
       ) : (
         <>
-          <div className="gift-grid" style={{ display: 'grid', gap: '0.625rem' }}>
+          <div className="gift-grid" style={{ display: 'grid', gap: '0.5rem', position: 'relative', zIndex: 0 }}>
             {visibleGifts.map(gift => (
               <GiftCard
                 key={gift.id}
@@ -1533,8 +1598,11 @@ export default function MirrorDungeonClient({
           </div>
           {/* 무한 스크롤 sentinel */}
           {visibleCount < filtered.length && (
-            <div ref={sentinelRef} className="flex justify-center py-6">
-              <span style={{ color: '#555', fontSize: '0.75rem' }}>불러오는 중...</span>
+            <div ref={sentinelRef} className="flex justify-center py-8">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin" style={{ width: '0.875rem', height: '0.875rem', border: '2px solid rgba(200,144,10,0.15)', borderTopColor: 'var(--gold)', borderRadius: '50%' }} />
+                <span style={{ color: '#444', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>불러오는 중...</span>
+              </div>
             </div>
           )}
         </>

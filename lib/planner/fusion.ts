@@ -1,6 +1,40 @@
 import type { RecipeData, GiftData } from './types'
 import { normalizeThemeKeyword } from '../constants/keywords'
 
+// ── 기프트 활성화 상태 ─────────────────────────────────────────────────────
+// Design Ref: §4.6 — 키워드 매칭 기반 확률업 하이라이트
+
+export type ActivationLevel = 'met' | 'almost' | 'specific' | 'unmet'
+
+export function getGiftActivationStatus(
+  gift: GiftData,
+  formationKeywords: Record<string, number>,
+  allKeywords: Record<string, number>,
+  specificIds: Set<number>,
+): ActivationLevel {
+  if (specificIds.has(gift.game_id)) return 'specific'
+  const cond = gift.activation_condition
+  if (!cond || !cond.count) return 'met'
+
+  // multi_keyword: 여러 키워드 중 하나라도 충족
+  if (cond.type === 'multi_keyword' && cond.keywords) {
+    const formMet = cond.keywords.some(kw => (formationKeywords[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+    if (formMet) return 'met'
+    const allMet = cond.keywords.some(kw => (allKeywords[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+    if (allMet) return 'almost'
+    return 'unmet'
+  }
+
+  // single keyword
+  const keyword = normalizeThemeKeyword(cond.keyword ?? '')
+  const formCount = formationKeywords[keyword] ?? 0
+  const allCount = allKeywords[keyword] ?? 0
+
+  if (formCount >= cond.count) return 'met'
+  if (allCount >= cond.count) return 'almost'
+  return 'unmet'
+}
+
 export interface FusionResult {
   recipe: RecipeData
   materials: GiftData[]

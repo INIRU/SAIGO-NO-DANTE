@@ -5,12 +5,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Heart, Eye, MessageCircle, Send, ChevronDown, ChevronUp, Copy, GitFork, Pencil, Trash2, Check } from 'lucide-react'
+import { ArrowLeft, Heart, Eye, MessageCircle, Send, ChevronDown, ChevronUp, Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { DIFFICULTY_CONFIG, type Difficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { saveDraftToLocal } from '@/lib/planner/encoder'
+import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
@@ -758,6 +758,28 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
             }}>
               <GitFork size={12} /> Fork
+            </button>
+            <button
+              onClick={() => {
+                savePlanForRun({
+                  difficulty: plan.difficulty,
+                  title: plan.title ?? '',
+                  description: plan.description ?? '',
+                  identitySlots: deck,
+                  egoSlots: egoSlots,
+                  floorPlan: floorPlan.map((e: any, i: number) => ({ floor: i + 1, theme_id: e?.theme_id ?? null, gift_ids: [] as string[], memo: e?.memo ?? '' })),
+                  giftInventory: plan.gift_inventory ?? [],
+                  activeTab: 'deck' as const,
+                } as any)
+                window.location.href = '/planner/run?from-plan=1'
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
+                background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
+                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              <Play size={12} /> 트리거 모드
             </button>
             {(isOwner || isAdmin) && (
               <>
