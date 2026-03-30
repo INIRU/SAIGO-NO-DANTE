@@ -3,10 +3,10 @@
 import { useReducer, useMemo, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Save, Upload, Check } from 'lucide-react'
+import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Save, Upload, Check, Play } from 'lucide-react'
 import { plannerReducer, createInitialState, DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { loadDraftFromLocal, encodePlan, saveDraftToLocal } from '@/lib/planner/encoder'
+import { loadDraftFromLocal, encodePlan, saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import DeckTab from '@/components/planner/DeckTab'
 import FloorTab from '@/components/planner/FloorTab'
 import SummaryTab from '@/components/planner/SummaryTab'
@@ -164,6 +164,17 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             <h1 className="font-serif text-lg sm:text-2xl" style={{ color: '#e8dcc8' }}>거울 던전 플래너</h1>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => { savePlanForRun(state as any); window.location.href = '/planner/run?from-plan=1' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
+                background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
+                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              <Play size={12} />
+              트리거 모드
+            </button>
             <button onClick={handleCopyUrl} style={{
               display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
               background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(200,144,10,0.1)',

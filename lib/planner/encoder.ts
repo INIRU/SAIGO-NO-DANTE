@@ -94,3 +94,98 @@ export function loadDraftFromLocal(): Partial<PlannerState> | null {
 export function clearDraftFromLocal(): void {
   try { localStorage.removeItem(LS_KEY) } catch { /* */ }
 }
+
+// ── Plan → Trigger Mode 전환용 (slot_order 보존) ──────────────────────────
+
+const PLAN_TO_RUN_KEY = 'md-plan-to-run'
+
+export function savePlanForRun(state: PlannerState): void {
+  try {
+    localStorage.setItem(PLAN_TO_RUN_KEY, JSON.stringify({
+      difficulty: state.difficulty,
+      identitySlots: state.identitySlots,
+      egoSlots: state.egoSlots,
+      floorPlan: state.floorPlan,
+      giftInventory: state.giftInventory,
+    }))
+  } catch { /* */ }
+}
+
+export function loadPlanForRun(): Partial<PlannerState> | null {
+  try {
+    const raw = localStorage.getItem(PLAN_TO_RUN_KEY)
+    if (!raw) return null
+    localStorage.removeItem(PLAN_TO_RUN_KEY) // 일회용
+    return JSON.parse(raw)
+  } catch { return null }
+}
+
+// ── 트리거 모드 런 저장/복원 ──────────────────────────────────────────────────
+
+import type { RunState } from './run-types'
+
+const RUN_DRAFT_KEY = 'md-run-draft'
+const RUN_HISTORY_KEY = 'md-run-history'
+const MAX_RUN_HISTORY = 5
+
+interface RunDraft {
+  state: RunState
+  savedAt: string
+  label: string
+}
+
+function makeRunLabel(state: RunState): string {
+  const diff = DIFF_LABELS[state.difficulty] ?? state.difficulty
+  const gifts = state.giftInventory.length
+  return `${diff} ${state.currentFloor}/${state.maxFloors}층 기프트 ${gifts}개`
+}
+
+const DIFF_LABELS: Record<string, string> = {
+  normal: '노말', hard: '하드', overlap: '평행중첩', extreme: '익스트림',
+}
+
+export function saveRunDraft(state: RunState): void {
+  try {
+    const draft: RunDraft = {
+      state,
+      savedAt: new Date().toISOString(),
+      label: makeRunLabel(state),
+    }
+    localStorage.setItem(RUN_DRAFT_KEY, JSON.stringify(draft))
+  } catch { /* quota exceeded */ }
+}
+
+export function loadRunDraft(): RunDraft | null {
+  try {
+    const raw = localStorage.getItem(RUN_DRAFT_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+export function clearRunDraft(): void {
+  try { localStorage.removeItem(RUN_DRAFT_KEY) } catch { /* */ }
+}
+
+export function saveRunToHistory(state: RunState): void {
+  try {
+    const history: RunDraft[] = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+    history.unshift({
+      state,
+      savedAt: new Date().toISOString(),
+      label: makeRunLabel(state),
+    })
+    if (history.length > MAX_RUN_HISTORY) history.length = MAX_RUN_HISTORY
+    localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(history))
+  } catch { /* */ }
+}
+
+export function loadRunHistory(): RunDraft[] {
+  try {
+    return JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}

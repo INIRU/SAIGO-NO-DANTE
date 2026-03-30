@@ -81,7 +81,7 @@ const GiftCard = memo(function GiftCard({ gift, onClick, getGiftKeywordIcon }: {
       </div>
 
       <p
-        className="text-[0.625rem] md:text-[0.6875rem] leading-tight text-center mt-1.5 line-clamp-2 w-full"
+        className="text-[0.5625rem] md:text-[0.625rem] leading-tight text-center mt-1 line-clamp-2 w-full"
         style={{ color: '#aaa', fontFamily: 'var(--font-heading)' }}
       >
         {gift.name}
