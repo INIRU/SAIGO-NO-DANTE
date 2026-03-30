@@ -26,6 +26,14 @@ import PlannerGiftModal from './PlannerGiftModal'
 
 const S = STORAGE_BASE
 const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
+
+// 편성 N번 전용 효과 슬롯 파싱
+function parseFormationSlots(text: string | null): number[] {
+  if (!text) return []
+  const m = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  if (!m) return []
+  return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
+}
 const GRADE_ROMAN: Record<string, string> = { 'EX': 'EX', '5': '\u2164', '4': '\u2163', '3': '\u2162', '2': '\u2161', '1': '\u2160' }
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
@@ -206,6 +214,21 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     return list
   }, [state.giftInventory, giftMap])
 
+  // 편성 슬롯 → 최종 기프트 이미지 매핑
+  const slotGiftMap = useMemo(() => {
+    const map = new Map<number, string[]>()
+    for (const { gift, enhance } of finalGifts) {
+      const txt = enhance === 2 ? gift.effect_plusplus : enhance === 1 ? gift.effect_plus : gift.effect_base
+      const slots = parseFormationSlots(txt)
+      if (!gift.image_url || !slots.length) continue
+      for (const s of slots) {
+        if (!map.has(s)) map.set(s, [])
+        map.get(s)!.push(gift.image_url)
+      }
+    }
+    return map
+  }, [finalGifts])
+
   // 조건 체크 (편성 vs 전체)
   const { formationKwCounts, allKwCounts } = useMemo(() => {
     const formation: Record<string, number> = {}
@@ -350,15 +373,38 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                         </div>
                         {n != null && (
                           <div style={{
-                            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
                           }}>
-                            <span style={{ fontSize: '1rem', fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                              {n <= 7 ? '편성' : '대기'}
-                            </span>
-                            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                              {n}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontSize: '1rem', fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
+                                {n <= 7 ? '편성' : '대기'}
+                              </span>
+                              <span style={{ fontSize: '1.5rem', fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
+                                {n}
+                              </span>
+                            </div>
+                            {(slotGiftMap.get(n)?.length ?? 0) > 0 && (() => {
+                              const urls = slotGiftMap.get(n)!
+                              const MAX = 3
+                              const shown = urls.slice(0, MAX)
+                              const rest = urls.length - MAX
+                              return (
+                                <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.1875rem', alignItems: 'center', justifyContent: 'center' }}>
+                                  {shown.map((url, gi) => (
+                                    <Image key={gi} src={url} alt="" width={28} height={28}
+                                      className="w-[0.875rem] h-[0.875rem] sm:w-[1.25rem] sm:h-[1.25rem]"
+                                      style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.8))' }}
+                                    />
+                                  ))}
+                                  {rest > 0 && (
+                                    <span style={{ fontSize: '0.5rem', color: '#9ca3af', fontWeight: 600, marginLeft: '0.0625rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,1)' }}>
+                                      ...+{rest}
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </div>
                         )}
                       </>
@@ -390,7 +436,9 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         {/* 공격 유형 분포 + 죄악 자원 + 패시브 */}
         {deckSubTab === 'identity' && state.identitySlots.length > 0 && (() => {
           const selectedEgoIds = new Set(state.egoSlots.map(e => e.ego_id))
-          const selectedEgoCosts = egos.filter(e => selectedEgoIds.has(e.id)).map(e => ({ cost: e.cost }))
+          const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
+          const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
+          const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
           return (
             <DeckStatsPanel
               identitySlots={state.identitySlots}
@@ -398,6 +446,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
               passives={passives}
               sinners={sinners}
               egoCosts={selectedEgoCosts}
+              egoSinAffinities={selectedEgoSins}
             />
           )
         })()}

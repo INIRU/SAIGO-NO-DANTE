@@ -49,11 +49,12 @@ export interface DeckStatsPanelProps {
   passives: PassiveLike[]
   sinners: SinnerLike[]
   egoCosts?: EgoCostEntry[]  // 선택된 EGO들의 코스트 배열
+  egoSinAffinities?: string[]  // 선택된 EGO들의 죄악 속성 (sin resource 생성에 포함)
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function DeckStatsPanel({ identitySlots, skills, passives, sinners, egoCosts }: DeckStatsPanelProps) {
+export default function DeckStatsPanel({ identitySlots, skills, passives, sinners, egoCosts, egoSinAffinities }: DeckStatsPanelProps) {
   const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
 
   if (identitySlots.length === 0) return null
@@ -74,12 +75,18 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
   const ATK_CLR: Record<string, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
   const DEF_LABELS: Record<string, string> = { evade: '회피', defense: '수비', counter: '반격' }
 
-  // ── 죄악 자원 집계 (스킬 기반 = 현재 생성량) ──
+  // ── 죄악 자원 집계 (모든 스킬 + EGO 스킬 죄악) ──
   const deckSinCounts: Record<string, number> = {}
   for (const sk of skills) {
-    if (!slotIds.has(sk.identity_id) || sk.skill_order > 3) continue
+    if (!slotIds.has(sk.identity_id)) continue
     const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
     if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+  }
+  if (egoSinAffinities) {
+    for (const sin of egoSinAffinities) {
+      const en = SIN_KR_TO_EN[sin] ?? sin
+      if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+    }
   }
 
   // ── EGO 코스트 합산 (= 필요량) ──

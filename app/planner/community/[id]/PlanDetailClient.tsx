@@ -73,6 +73,14 @@ function getKwIconUrl(slug: string): string {
   return `${S}/icons/keywords/${slug}.webp`
 }
 
+// 편성 N번 전용 효과 슬롯 파싱
+function parseFormationSlots(text: string | null): number[] {
+  if (!text) return []
+  const m = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  if (!m) return []
+  return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
+}
+
 const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
   normal:  { bg: 'rgba(74,152,104,0.15)',  color: '#4a9868', border: 'rgba(74,152,104,0.35)' },
   hard:    { bg: 'rgba(200,144,10,0.15)',  color: '#e8b030', border: 'rgba(200,144,10,0.35)' },
@@ -516,6 +524,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return list
   }, [giftInventory, giftMap])
 
+  // 편성 슬롯 → 최종 기프트 이미지 매핑
+  const slotGiftMap = useMemo(() => {
+    const map = new Map<number, string[]>()
+    for (const { gift, enhance } of finalGifts) {
+      const txt = enhance === 2 ? gift.effect_plusplus : enhance === 1 ? gift.effect_plus : gift.effect_base
+      const slots = parseFormationSlots(txt)
+      if (!gift.image_url || !slots.length) continue
+      for (const s of slots) {
+        if (!map.has(s)) map.set(s, [])
+        map.get(s)!.push(gift.image_url)
+      }
+    }
+    return map
+  }, [finalGifts])
+
   // Condition checks for final gifts
   const { formationKwCounts, allKwCounts } = useMemo(() => {
     const formation: Record<string, number> = {}
@@ -850,15 +873,38 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                           </div>
                           {n != null && (
                             <div style={{
-                              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                               zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
                             }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <span className="text-[0.625rem] sm:text-base" style={{ fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
                                 {n <= 7 ? '편성' : '대기'}
                               </span>
                               <span className="text-sm sm:text-2xl" style={{ fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
                                 {n}
                               </span>
+                              </div>
+                              {(slotGiftMap.get(n)?.length ?? 0) > 0 && (() => {
+                                const urls = slotGiftMap.get(n)!
+                                const MAX = 3
+                                const shown = urls.slice(0, MAX)
+                                const rest = urls.length - MAX
+                                return (
+                                  <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.1875rem', alignItems: 'center', justifyContent: 'center' }}>
+                                    {shown.map((url, gi) => (
+                                      <Image key={gi} src={url} alt="" width={28} height={28}
+                                        className="w-[0.875rem] h-[0.875rem] sm:w-[1.25rem] sm:h-[1.25rem]"
+                                        style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.8))' }}
+                                      />
+                                    ))}
+                                    {rest > 0 && (
+                                      <span style={{ fontSize: '0.5rem', color: '#9ca3af', fontWeight: 600, marginLeft: '0.0625rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,1)' }}>
+                                        ...+{rest}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
+                              })()}
                             </div>
                           )}
                         </>
@@ -890,7 +936,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           {/* 공격 유형 + 죄악 자원 + 패시브 */}
           {deckSubTab === 'identity' && deck.length > 0 && (() => {
             const selectedEgoIds = new Set(egoSlots.map(e => e.ego_id).filter(Boolean))
-            const selectedEgoCosts = egos.filter(e => selectedEgoIds.has(e.id)).map(e => ({ cost: e.cost }))
+            const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
+            const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
+            const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
             return (
               <DeckStatsPanel
                 identitySlots={deck}
@@ -898,6 +946,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 passives={passives}
                 sinners={sinners}
                 egoCosts={selectedEgoCosts}
+                egoSinAffinities={selectedEgoSins}
               />
             )
           })()}
