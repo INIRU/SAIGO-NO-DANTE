@@ -111,11 +111,11 @@ export default function IdentitySkillsTab({
                   {/* 공격 타입 (하단 중앙) */}
                   {isAttackSkill && skill.skill_type && ['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
                     <div className="absolute z-20 pointer-events-none"
-                      style={{ bottom: 0, left: '50%', marginLeft: '-1rem', transform: 'translateY(-25%)', width: '2rem', height: '2rem' }}>
+                      style={{ bottom: 0, left: '50%', marginLeft: '-0.875rem', transform: 'translateY(-30%)', width: '1.75rem', height: '1.75rem' }}>
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
-                        alt="" width={24} height={24} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
-                        alt="" width={24} height={24} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
                         alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.875rem', height: '0.875rem' }} />
                     </div>
