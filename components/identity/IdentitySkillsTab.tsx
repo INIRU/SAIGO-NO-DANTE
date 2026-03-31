@@ -128,13 +128,24 @@ export default function IdentitySkillsTab({
                   </div>
                   {/* 코인 위력 (상단) */}
                   <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
-                    <span style={{
-                      fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-                      color: skillSinColor,
-                      textShadow: '1px 1px 1px black', WebkitTextStroke: '0.01px black',
-                    }}>
-                      {skill.coin_power >= 0 ? `+${skill.coin_power}` : <><span style={{ fontSize: '1.5rem' }}>-</span>{Math.abs(skill.coin_power)}</>}
-                    </span>
+                    {skill.coin_power >= 0 ? (
+                      <span style={{
+                        fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
+                        color: skillSinColor,
+                        textShadow: '1px 1px 1px black', WebkitTextStroke: '0.01px black',
+                      }}>
+                        +{skill.coin_power}
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
+                        color: '#fff',
+                        textShadow: `0 0 0.25rem ${skillSinColor}, 1px 1px 1px black`,
+                        WebkitTextStroke: '0.01px black',
+                      }}>
+                        <span style={{ fontSize: '1.5rem' }}>-</span>{Math.abs(skill.coin_power)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
