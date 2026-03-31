@@ -11,6 +11,7 @@ import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 import CollectionSection from '@/components/mypage/CollectionSection'
+import { usePretextSingleLineTruncate } from '@/lib/hooks/usePretextTruncate'
 
 const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
   { keyword: '출혈', sin: 'wrath' },
@@ -40,6 +41,30 @@ type ViewMode = 'sinner' | 'all'
 
 function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: boolean }) {
   const url = identityInfoUrl(identity)
+  const nameRef = useRef<HTMLParagraphElement>(null)
+  const [nameWidth, setNameWidth] = useState(0)
+
+  useEffect(() => {
+    if (!nameRef.current) return
+    const ro = new ResizeObserver(([entry]) => {
+      setNameWidth(entry.contentRect.width)
+    })
+    ro.observe(nameRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  const rootFs = typeof document !== 'undefined'
+    ? (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    : 16
+  // 0.5625rem at root font size, font-heading = KotraBold
+  const nameFontPx = 0.5625 * rootFs
+
+  const { displayText, isTruncated } = usePretextSingleLineTruncate(
+    identity.name_kr,
+    nameWidth,
+    `bold ${nameFontPx}px KotraBold, serif`,
+  )
+
   return (
     <div
       className="relative rounded overflow-hidden"
@@ -78,12 +103,16 @@ function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: 
         background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
         padding: '16px 4px 4px',
       }}>
-        <p style={{
-          fontSize: '0.5625rem', color: isOwned ? '#c8a450' : '#6a6080',
-          textAlign: 'center', fontFamily: 'var(--font-heading)',
-          lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {identity.name_kr}
+        <p
+          ref={nameRef}
+          style={{
+            fontSize: '0.5625rem', color: isOwned ? '#c8a450' : '#6a6080',
+            textAlign: 'center', fontFamily: 'var(--font-heading)',
+            lineHeight: 1.2, whiteSpace: 'nowrap',
+          }}
+          title={isTruncated ? identity.name_kr : undefined}
+        >
+          {nameWidth > 0 ? displayText : identity.name_kr}
         </p>
       </div>
     </div>
@@ -93,6 +122,31 @@ function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: 
 function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
   const sinType = normalizeSin(ego.sin_affinity)
   const egoSinColor = sinType ? SIN_COLORS[sinType] : 'var(--gold-dim)'
+
+  const egoNameRef = useRef<HTMLParagraphElement>(null)
+  const [egoNameWidth, setEgoNameWidth] = useState(0)
+
+  useEffect(() => {
+    if (!egoNameRef.current) return
+    const ro = new ResizeObserver(([entry]) => {
+      setEgoNameWidth(entry.contentRect.width)
+    })
+    ro.observe(egoNameRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  const rootFs = typeof document !== 'undefined'
+    ? (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    : 16
+  // 0.5rem at root font size, font-heading = KotraBold
+  const egoNameFontPx = 0.5 * rootFs
+
+  const { displayText: egoDisplayText, isTruncated: egoIsTruncated } = usePretextSingleLineTruncate(
+    ego.name_kr ?? '',
+    egoNameWidth,
+    `bold ${egoNameFontPx}px KotraBold, serif`,
+  )
+
   return (
     <div
       className="relative rounded overflow-hidden"
@@ -130,12 +184,16 @@ function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
         background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
         padding: '12px 3px 3px',
       }}>
-        <p style={{
-          fontSize: '0.5rem', color: isOwned ? '#c8a450' : '#6a6080',
-          textAlign: 'center', fontFamily: 'var(--font-heading)',
-          lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {ego.name_kr}
+        <p
+          ref={egoNameRef}
+          style={{
+            fontSize: '0.5rem', color: isOwned ? '#c8a450' : '#6a6080',
+            textAlign: 'center', fontFamily: 'var(--font-heading)',
+            lineHeight: 1.2, whiteSpace: 'nowrap',
+          }}
+          title={egoIsTruncated ? (ego.name_kr ?? '') : undefined}
+        >
+          {egoNameWidth > 0 ? egoDisplayText : ego.name_kr}
         </p>
       </div>
     </div>

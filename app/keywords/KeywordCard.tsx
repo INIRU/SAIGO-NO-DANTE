@@ -1,9 +1,11 @@
 'use client'
 
+import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
+import { usePretextTruncate } from '@/lib/hooks/usePretextTruncate'
 
 const SIN_LABELS: Record<string, string> = {
   wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식',
@@ -34,6 +36,34 @@ export default function KeywordCard({
   const iconUrl = kw.icon_slug
     ? `${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`
     : null
+
+  // Pretext 기반 description truncation (line-clamp-2 대체)
+  const descRef = useRef<HTMLParagraphElement>(null)
+  const [descWidth, setDescWidth] = useState(0)
+
+  useEffect(() => {
+    if (!descRef.current) return
+    const ro = new ResizeObserver(([entry]) => {
+      setDescWidth(entry.contentRect.width)
+    })
+    ro.observe(descRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  const rootFontSize = typeof document !== 'undefined'
+    ? (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    : 16
+  // text-[0.6875rem] = 11px at 16px root, leading-relaxed = 1.625
+  const descFontSizePx = 0.6875 * rootFontSize
+  const descLineHeightPx = descFontSizePx * 1.625
+
+  const { displayText: descDisplayText, isTruncated: descIsTruncated } = usePretextTruncate(
+    kw.description ?? '',
+    2,
+    descWidth,
+    `${descFontSizePx}px SCDream, Pretendard, sans-serif`,
+    descLineHeightPx,
+  )
 
   return (
     <button
@@ -97,8 +127,13 @@ export default function KeywordCard({
             )}
           </div>
           {kw.description && (
-            <p className="text-[0.6875rem] leading-relaxed line-clamp-2" style={{ color: '#7a6845' }}>
-              {kw.description}
+            <p
+              ref={descRef}
+              className="text-[0.6875rem] leading-relaxed"
+              style={{ color: '#7a6845' }}
+              title={descIsTruncated ? kw.description : undefined}
+            >
+              {descWidth > 0 ? descDisplayText : kw.description}
             </p>
           )}
           {/* 카운트 태그 */}
