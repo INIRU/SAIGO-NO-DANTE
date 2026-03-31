@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useQueryState, parseAsString } from 'nuqs'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -73,9 +74,9 @@ export default function DecksClient() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [sort, setSort] = useState<SortKey>('latest')
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)

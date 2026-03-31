@@ -1,12 +1,14 @@
 'use client'
 
-import { useReducer, useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Save, Upload, Check, Play } from 'lucide-react'
-import { plannerReducer, createInitialState, DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
+import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play } from 'lucide-react'
+import { DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { loadDraftFromLocal, encodePlan, saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
+import { encodePlan, savePlanForRun } from '@/lib/planner/encoder'
+import { usePlannerStore } from '@/lib/stores/planner'
+import { showSuccess, showError } from '@/lib/toast'
 import DeckTab from '@/components/planner/DeckTab'
 import FloorTab from '@/components/planner/FloorTab'
 import SummaryTab from '@/components/planner/SummaryTab'
@@ -33,12 +35,12 @@ const TABS = [
 ]
 
 export default function PlannerClient({ themes, gifts, recipes, identities, sinners, passives, skills, egos }: Props) {
-  const [state, dispatch] = useReducer(plannerReducer, 'hard', createInitialState)
+  const state = usePlannerStore()
+  const dispatch = usePlannerStore(s => s.dispatch)
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
 
   const [copied, setCopied] = useState(false)
-  const [saved, setSaved] = useState(false)
   const handleCopyUrl = async () => {
     try {
       const encoded = await encodePlan(state)
@@ -46,16 +48,10 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
     } catch { /* */ }
   }
-  const handleSaveDraft = () => {
-    saveDraftToLocal(state)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
 
   const session = useSession()
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
 
   // edit 모드 감지
@@ -65,13 +61,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     if (eid) setEditId(eid)
   }, [])
 
-  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 4000)
-  }
   const handleUpload = async () => {
     if (uploading) return
-    if (!state.title.trim()) { showToast('플랜 제목을 입력하세요'); return }
+    if (!state.title.trim()) { showError('플랜 제목을 입력하세요'); return }
     setUploading(true)
     try {
       const planBody = {
@@ -92,27 +84,20 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       })
       if (res.ok) {
         setUploaded(true)
-        showToast(editId ? '플랜이 수정되었습니다!' : '커뮤니티에 업로드되었습니다!', 'success')
+        showSuccess(editId ? '플랜이 수정되었습니다!' : '커뮤니티에 업로드되었습니다!')
         setTimeout(() => setUploaded(false), 3000)
         if (editId) {
-          // 수정 완료 후 edit 모드 해제
           window.history.replaceState(null, '', '/planner')
         }
       } else {
         const data = await res.json()
-        showToast(data.error ?? (editId ? '수정 실패' : '업로드 실패'))
+        showError(data.error ?? (editId ? '수정 실패' : '업로드 실패'))
       }
-    } catch { showToast('업로드 중 오류가 발생했습니다') }
+    } catch { showError('업로드 중 오류가 발생했습니다') }
     finally { setUploading(false) }
   }
 
-  // localStorage 복원
-  useEffect(() => {
-    const draft = loadDraftFromLocal()
-    if (draft) dispatch({ type: 'LOAD_PLAN', state: draft })
-  }, [])
-
-  // URL 파라미터 복원
+  // URL 파라미터 복원 (Zustand persist가 localStorage 자동 복원)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const planCode = params.get('plan')
@@ -185,16 +170,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? '복사 완료' : 'URL 복사'}
             </button>
-            <button onClick={handleSaveDraft} style={{
-              display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
-              background: saved ? 'rgba(34,197,94,0.12)' : '#1a1510',
-              border: `1px solid ${saved ? 'rgba(34,197,94,0.35)' : '#333'}`,
-              borderRadius: '0.375rem', color: saved ? '#4ade80' : '#9ca3af',
-              fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-            }}>
-              {saved ? <Check size={12} /> : <Save size={12} />}
-              {saved ? '저장 완료' : '임시 저장'}
-            </button>
+            {/* 임시 저장은 Zustand persist로 자동 처리 */}
             <button
               onClick={session.status === 'authenticated' ? handleUpload : undefined}
               disabled={session.status !== 'authenticated' || uploading}
@@ -277,19 +253,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         )}
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 100, padding: '0.625rem 1.25rem', borderRadius: '0.5rem',
-          background: toast.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(34,197,94,0.95)',
-          color: '#fff', fontSize: '0.8125rem', fontWeight: 600,
-          boxShadow: '0 0.5rem 2rem rgba(0,0,0,0.5)',
-          animation: 'fadeInUp 0.2s ease',
-        }}>
-          {toast.message}
-        </div>
-      )}
+      {/* Toast는 Sonner가 글로벌로 처리 */}
     </div>
   )
 }

@@ -8,8 +8,8 @@ import {
   AdminButton,
   AdminCard,
   AdminFormSection,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,8 +30,6 @@ export default function NewEGOPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedSinner = searchParams.get('sinner') ?? ''
-  const { toasts, showToast, dismissToast } = useToast()
-
   const [form, setForm] = useState({
     sinner_id: preselectedSinner,
     name: '',
@@ -87,13 +85,13 @@ export default function NewEGOPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        showToast(d.error ?? '생성 실패', 'error')
+        showError(d.error ?? '생성 실패')
       } else {
         const newEgo = await res.json()
         router.push(`/admin/data/ego/${newEgo.id}`)
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -200,7 +198,6 @@ export default function NewEGOPage() {
         </AdminFormSection>
       </AdminCard>
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

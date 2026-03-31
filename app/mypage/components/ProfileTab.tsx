@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Pencil, Calendar, X, Check, LogOut, Layers, Map, Bookmark, Heart } from 'lucide-react'
 import { signOut } from 'next-auth/react'
+import { showSuccess, showError } from '@/lib/toast'
 import AvatarPicker, { AvatarEditOverlay } from '@/components/mypage/AvatarPicker'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 
@@ -30,7 +31,6 @@ type Props = {
   displayName: string
   stats: Stats
   onProfileUpdate: (updates: Partial<Profile>) => void
-  showToast: (msg: string, type?: 'success' | 'error') => void
 }
 
 const STAT_ITEMS: { key: keyof Stats; label: string; icon: typeof Layers }[] = [
@@ -40,7 +40,7 @@ const STAT_ITEMS: { key: keyof Stats; label: string; icon: typeof Layers }[] = [
   { key: 'totalVotesReceived', label: '받은 추천', icon: Heart },
 ]
 
-export default function ProfileTab({ profile, email, displayName, stats, onProfileUpdate, showToast }: Props) {
+export default function ProfileTab({ profile, email, displayName, stats, onProfileUpdate }: Props) {
   // 닉네임 편집
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(profile.username ?? '')
@@ -74,14 +74,14 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
       })
       if (!res.ok) {
         const err = await res.json()
-        showToast(err.error ?? '저장에 실패했습니다.')
+        showError(err.error ?? '저장에 실패했습니다.')
         return
       }
       onProfileUpdate({ username: nameValue.trim() })
       setEditingName(false)
-      showToast('닉네임이 변경되었습니다.', 'success')
+      showSuccess('닉네임이 변경되었습니다.')
     } catch {
-      showToast('저장에 실패했습니다.')
+      showError('저장에 실패했습니다.')
     } finally {
       setNameSaving(false)
     }
@@ -97,14 +97,14 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
       })
       if (!res.ok) {
         const err = await res.json()
-        showToast(err.error ?? '저장에 실패했습니다.')
+        showError(err.error ?? '저장에 실패했습니다.')
         return
       }
       onProfileUpdate({ bio: bioValue })
       setEditingBio(false)
-      showToast('소개가 변경되었습니다.', 'success')
+      showSuccess('소개가 변경되었습니다.')
     } catch {
-      showToast('저장에 실패했습니다.')
+      showError('저장에 실패했습니다.')
     } finally {
       setBioSaving(false)
     }
@@ -117,13 +117,13 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: url }),
       })
-      if (!res.ok) { showToast('프로필 사진 변경에 실패했습니다.'); return }
+      if (!res.ok) { showError('프로필 사진 변경에 실패했습니다.'); return }
       onProfileUpdate({ avatar_url: url })
       setAvatarPickerOpen(false)
-      showToast('프로필 사진이 변경되었습니다.', 'success')
+      showSuccess('프로필 사진이 변경되었습니다.')
       window.dispatchEvent(new CustomEvent('avatar-changed', { detail: url }))
     } catch {
-      showToast('프로필 사진 변경에 실패했습니다.')
+      showError('프로필 사진 변경에 실패했습니다.')
     }
   }
 
@@ -134,13 +134,13 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: DEFAULT_AVATAR_URL }),
       })
-      if (!res.ok) { showToast('프로필 사진 초기화에 실패했습니다.'); return }
+      if (!res.ok) { showError('프로필 사진 초기화에 실패했습니다.'); return }
       onProfileUpdate({ avatar_url: DEFAULT_AVATAR_URL })
       setAvatarPickerOpen(false)
-      showToast('프로필 사진이 초기화되었습니다.', 'success')
+      showSuccess('프로필 사진이 초기화되었습니다.')
       window.dispatchEvent(new CustomEvent('avatar-changed', { detail: null }))
     } catch {
-      showToast('프로필 사진 초기화에 실패했습니다.')
+      showError('프로필 사진 초기화에 실패했습니다.')
     }
   }
 
@@ -150,12 +150,12 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
       const res = await fetch('/api/profile', { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
-        showToast(err.error ?? '탈퇴에 실패했습니다.')
+        showError(err.error ?? '탈퇴에 실패했습니다.')
         return
       }
       await signOut({ callbackUrl: '/' })
     } catch {
-      showToast('탈퇴에 실패했습니다.')
+      showError('탈퇴에 실패했습니다.')
     } finally {
       setWithdrawing(false)
       setShowWithdraw(false)

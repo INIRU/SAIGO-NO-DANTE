@@ -3,10 +3,13 @@ import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
+import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
@@ -189,14 +192,30 @@ export default async function RootLayout({
       <body className="antialiased">
         <SkipNav />
         <AprilFoolsWrapper />
-        <SessionProvider>
-          <KeywordProvider keywords={keywords}>
-            <Navbar />
-            <Suspense><main id="main-content">{children}</main></Suspense>
-            <Footer />
-            <FloatingFontControl />
-          </KeywordProvider>
-        </SessionProvider>
+        <NuqsAdapter>
+          <SessionProvider>
+            <SWRProvider>
+              <KeywordProvider keywords={keywords}>
+                <Navbar />
+                <Suspense><main id="main-content">{children}</main></Suspense>
+                <Footer />
+                <FloatingFontControl />
+              </KeywordProvider>
+            </SWRProvider>
+          </SessionProvider>
+        </NuqsAdapter>
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#1a1510',
+              border: '1px solid #3a3020',
+              color: '#e8dcc8',
+              fontFamily: 'var(--font-body)',
+            },
+          }}
+        />
         <Analytics />
         <ServiceWorkerRegister />
       </body>

@@ -8,8 +8,8 @@ import {
   AdminButton,
   AdminCard,
   AdminFormSection,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,8 +76,6 @@ const BLANK_FORM: IdentityForm = {
 export default function NewIdentityPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { toasts, showToast, dismissToast } = useToast()
-
   const [sinners, setSinners] = useState<SinnerOption[]>([])
   const [form, setForm] = useState<IdentityForm>({ ...BLANK_FORM, sinner_id: searchParams.get('sinner') ?? '' })
   const [saving, setSaving] = useState(false)
@@ -97,7 +95,7 @@ export default function NewIdentityPage() {
 
   const handleCreate = async () => {
     if (!form.sinner_id || !form.name || !form.rarity) {
-      showToast('수감자, 이름, 등급은 필수입니다.', 'error')
+      showError('수감자, 이름, 등급은 필수입니다.')
       return
     }
     setSaving(true)
@@ -130,13 +128,13 @@ export default function NewIdentityPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        showToast(d.error ?? '생성 실패', 'error')
+        showError(d.error ?? '생성 실패')
       } else {
         const newIdentity = await res.json()
         router.push(`/admin/data/identities/${newIdentity.id}`)
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -312,7 +310,6 @@ export default function NewIdentityPage() {
         </p>
       </AdminCard>
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

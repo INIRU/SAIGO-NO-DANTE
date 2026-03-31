@@ -9,8 +9,8 @@ import {
   AdminButton, AdminIconButton,
   AdminCard,
   AdminFormSection,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -301,8 +301,6 @@ export default function EditIdentityPage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
-  const { toasts, showToast, dismissToast } = useToast()
-
   // Identity form state
   const [identity, setIdentity] = useState<Identity | null>(null)
   const [form, setForm] = useState<Partial<Identity>>({})
@@ -355,12 +353,12 @@ export default function EditIdentityPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        showToast(d.error ?? '저장 실패', 'error')
+        showError(d.error ?? '저장 실패')
       } else {
-        showToast('저장됨', 'success')
+        showSuccess('저장됨')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -386,13 +384,13 @@ export default function EditIdentityPage() {
         const updated = await res.json()
         setSkills(prev => prev.map(s => s.id === updated.id ? updated : s))
         setEditingSkill(null)
-        showToast('스킬 저장됨', 'success')
+        showSuccess('스킬 저장됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? '스킬 저장 실패', 'error')
+        showError(d.error ?? '스킬 저장 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSkillSaving(false)
     }
@@ -411,13 +409,13 @@ export default function EditIdentityPage() {
         setSkills(prev => [...prev, created])
         setNewSkill(false)
         setNewSkillDraft({})
-        showToast('스킬 추가됨', 'success')
+        showSuccess('스킬 추가됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? '스킬 추가 실패', 'error')
+        showError(d.error ?? '스킬 추가 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSkillSaving(false)
     }
@@ -450,13 +448,13 @@ export default function EditIdentityPage() {
         const updated = await res.json()
         setPassives(prev => prev.map(p => p.id === updated.id ? updated : p))
         setEditingPassive(null)
-        showToast('패시브 저장됨', 'success')
+        showSuccess('패시브 저장됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? '패시브 저장 실패', 'error')
+        showError(d.error ?? '패시브 저장 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setPassiveSaving(false)
     }
@@ -475,13 +473,13 @@ export default function EditIdentityPage() {
         setPassives(prev => [...prev, created])
         setNewPassive(false)
         setNewPassiveDraft({})
-        showToast('패시브 추가됨', 'success')
+        showSuccess('패시브 추가됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? '패시브 추가 실패', 'error')
+        showError(d.error ?? '패시브 추가 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setPassiveSaving(false)
     }
@@ -805,7 +803,6 @@ export default function EditIdentityPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

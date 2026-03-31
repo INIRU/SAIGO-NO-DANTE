@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useToast, Toast } from '@/components/ui/Toast'
+import useSWR from 'swr'
+import { showSuccess, showError } from '@/lib/toast'
 import MypageTabs, { type MypageTab } from './components/MypageTabs'
 import ProfileTab from './components/ProfileTab'
 import DecksTab from './components/DecksTab'
@@ -51,26 +52,18 @@ export default function MypageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [data, setData] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<MypageTab>(() => resolveInitialTab(searchParams))
 
-  const { toast, showToast } = useToast()
+  // SWR: 프로필 로드 (인증 시에만)
+  const { data, isLoading: loading, mutate } = useSWR<ProfileData>(
+    status === 'authenticated' ? '/api/profile' : null,
+    { onError: () => showError('프로필을 불러올 수 없습니다.') },
+  )
 
   // 미인증 리다이렉트
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
-
-  // 프로필 로드
-  useEffect(() => {
-    if (status !== 'authenticated') return
-    fetch('/api/profile')
-      .then(r => r.json())
-      .then((d: ProfileData) => setData(d))
-      .catch(() => showToast('프로필을 불러올 수 없습니다.'))
-      .finally(() => setLoading(false))
-  }, [status, showToast])
 
   // Plan SC: SC-01 — 탭 전환 + URL 동기화
   const handleTabChange = useCallback((tab: MypageTab) => {
@@ -102,32 +95,32 @@ export default function MypageClient() {
       const res = await fetch(`/api/decks/${deckId}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
-        showToast(err.error ?? '삭제에 실패했습니다.')
+        showError(err.error ?? '삭제에 실패했습니다.')
         return
       }
-      setData(prev => prev ? { ...prev, decks: prev.decks.filter(d => d.id !== deckId) } : prev)
-      showToast('덱이 삭제되었습니다.', 'success')
+      mutate(prev => prev ? { ...prev, decks: prev.decks.filter(d => d.id !== deckId) } : prev, false)
+      showSuccess('덱이 삭제되었습니다.')
     } catch {
-      showToast('삭제에 실패했습니다.')
+      showError('삭제에 실패했습니다.')
     }
-  }, [showToast])
+  }, [])
 
   // 북마크 해제
   const removeBookmark = useCallback(async (deckId: string) => {
     try {
       const res = await fetch(`/api/decks/${deckId}/bookmark`, { method: 'POST' })
       if (res.ok) {
-        setData(prev => prev ? { ...prev, bookmarkedDecks: prev.bookmarkedDecks.filter(d => d.id !== deckId) } : prev)
-        showToast('북마크가 해제되었습니다.', 'success')
+        mutate(prev => prev ? { ...prev, bookmarkedDecks: prev.bookmarkedDecks.filter(d => d.id !== deckId) } : prev, false)
+        showSuccess('북마크가 해제되었습니다.')
       }
     } catch {
-      showToast('북마크 해제에 실패했습니다.')
+      showError('북마크 해제에 실패했습니다.')
     }
-  }, [showToast])
+  }, [])
 
   // 프로필 업데이트 콜백
   const handleProfileUpdate = useCallback((updates: Partial<Profile>) => {
-    setData(prev => prev ? { ...prev, profile: { ...prev.profile, ...updates } } : prev)
+    mutate(prev => prev ? { ...prev, profile: { ...prev.profile, ...updates } } : prev, false)
   }, [])
 
   // 로딩 스켈레톤
@@ -203,7 +196,6 @@ export default function MypageClient() {
               displayName={displayName}
               stats={data.stats}
               onProfileUpdate={handleProfileUpdate}
-              showToast={showToast}
             />
           )}
 
@@ -217,7 +209,7 @@ export default function MypageClient() {
           )}
 
           {activeTab === 'planner' && (
-            <PlannerTab showToast={showToast} />
+            <PlannerTab />
           )}
 
           {activeTab === 'collection' && (
@@ -226,7 +218,6 @@ export default function MypageClient() {
         </div>
       </div>
 
-      <Toast toast={toast} />
     </div>
   )
 }

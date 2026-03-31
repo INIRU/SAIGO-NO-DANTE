@@ -9,8 +9,8 @@ import {
   AdminButton, AdminIconButton,
   AdminCard,
   AdminFormSection,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -175,8 +175,6 @@ export default function EditEGOPage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
-  const { toasts, showToast, dismissToast } = useToast()
-
   const [form, setForm] = useState<Omit<EGO, 'id' | 'ego_skills'>>({
     sinner_id: '',
     name: '',
@@ -257,12 +255,12 @@ export default function EditEGOPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        showToast(d.error ?? '저장 실패', 'error')
+        showError(d.error ?? '저장 실패')
       } else {
-        showToast('저장됨', 'success')
+        showSuccess('저장됨')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -288,13 +286,13 @@ export default function EditEGOPage() {
         const updated = await res.json()
         setEgoSkills(prev => prev.map(s => s.id === updated.id ? updated : s))
         setEditingEgoSkill(null)
-        showToast('EGO 스킬 저장됨', 'success')
+        showSuccess('EGO 스킬 저장됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? 'EGO 스킬 저장 실패', 'error')
+        showError(d.error ?? 'EGO 스킬 저장 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setEgoSkillSaving(false)
     }
@@ -313,13 +311,13 @@ export default function EditEGOPage() {
         setEgoSkills(prev => [...prev, created])
         setNewEgoSkill(false)
         setNewEgoSkillDraft({})
-        showToast('EGO 스킬 추가됨', 'success')
+        showSuccess('EGO 스킬 추가됨')
       } else {
         const d = await res.json()
-        showToast(d.error ?? 'EGO 스킬 추가 실패', 'error')
+        showError(d.error ?? 'EGO 스킬 추가 실패')
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setEgoSkillSaving(false)
     }
@@ -332,7 +330,7 @@ export default function EditEGOPage() {
       setEgoSkills(prev => prev.filter(s => s.id !== deleteTarget.id))
       setDeleteTarget(null)
     } catch {
-      showToast('삭제 실패', 'error')
+      showError('삭제 실패')
     }
   }
 
@@ -515,7 +513,6 @@ export default function EditEGOPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

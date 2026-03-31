@@ -1,38 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import useSWR from 'swr'
 import { Plus, Map } from 'lucide-react'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 
 // Design Ref: §5.4 — 내 플랜 + 추천 플랜 (lazy load)
 
-type Props = {
-  showToast: (msg: string, type?: 'success' | 'error') => void
-}
-
-export default function PlannerTab({ showToast }: Props) {
-  const [myPlans, setMyPlans] = useState<PlanSummary[]>([])
-  const [votedPlans, setVotedPlans] = useState<PlanSummary[]>([])
-  const [loading, setLoading] = useState(true)
+export default function PlannerTab() {
+  const { data: myData, isLoading: myLoading } = useSWR<{ plans: PlanSummary[] }>('/api/planner?userId=me&limit=50')
+  const { data: votedData, isLoading: votedLoading } = useSWR<{ plans: PlanSummary[] }>('/api/planner?votedBy=me&limit=50')
+  const myPlans = myData?.plans ?? []
+  const votedPlans = votedData?.plans ?? []
+  const loading = myLoading || votedLoading
   const [subTab, setSubTab] = useState<'mine' | 'voted'>('mine')
-
-  // Plan SC: SC-03, SC-04 — 플래너 탭 진입 시 lazy fetch
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([
-      fetch('/api/planner?userId=me&limit=50').then(r => r.json()),
-      fetch('/api/planner?votedBy=me&limit=50').then(r => r.json()),
-    ])
-      .then(([mine, voted]) => {
-        if (cancelled) return
-        setMyPlans(mine.plans ?? [])
-        setVotedPlans(voted.plans ?? [])
-      })
-      .catch(() => showToast('플랜을 불러올 수 없습니다.'))
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [showToast])
 
   if (loading) {
     return (

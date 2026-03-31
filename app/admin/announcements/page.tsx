@@ -6,8 +6,8 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
   AdminCard, AdminInput, AdminTextarea, AdminCheckbox,
   AdminButton, AdminIconButton,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 interface Announcement {
   id: string
@@ -26,8 +26,6 @@ export default function AdminAnnouncementsPage() {
   const [form, setForm] = useState({ title: '', content: '', pinned: false })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
-  const { toasts, showToast, dismissToast } = useToast()
-
   const fetchItems = async () => {
     setLoading(true)
     const res = await fetch('/api/admin/announcements')
@@ -48,12 +46,12 @@ export default function AdminAnnouncementsPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        showToast(`공지 작성 실패: ${err.error ?? res.statusText}`, 'error')
+        showError(`공지 작성 실패: ${err.error ?? res.statusText}`)
         return
       }
       setCreating(false)
       setForm({ title: '', content: '', pinned: false })
-      showToast('공지가 작성되었습니다.', 'success')
+      showSuccess('공지가 작성되었습니다.')
       fetchItems()
     } finally {
       setSaving(false)
@@ -71,12 +69,12 @@ export default function AdminAnnouncementsPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        showToast(`공지 수정 실패: ${err.error ?? res.statusText}`, 'error')
+        showError(`공지 수정 실패: ${err.error ?? res.statusText}`)
         return
       }
       setEditing(null)
       setForm({ title: '', content: '', pinned: false })
-      showToast('공지가 수정되었습니다.', 'success')
+      showSuccess('공지가 수정되었습니다.')
       fetchItems()
     } finally {
       setSaving(false)
@@ -89,7 +87,7 @@ export default function AdminAnnouncementsPage() {
     setDeleteTarget(null)
     await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
     setItems(prev => prev.filter(a => a.id !== id))
-    showToast('공지가 삭제되었습니다.', 'success')
+    showSuccess('공지가 삭제되었습니다.')
   }, [deleteTarget])
 
   const startEdit = (a: Announcement) => {
@@ -224,7 +222,6 @@ export default function AdminAnnouncementsPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

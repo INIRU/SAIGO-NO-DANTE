@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { LegalDoc, LegalSection } from '@/lib/data/legal'
-import { adminInputStyle, AdminButton, useToast, AdminToastContainer } from '@/components/admin'
+import { adminInputStyle, AdminButton } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 function SectionEditor({
   section, index, total,
@@ -107,7 +108,6 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
   const router = useRouter()
   const [doc, setDoc] = useState<LegalDoc>(initial)
   const [saving, setSaving] = useState(false)
-  const { toasts, showToast, dismissToast } = useToast()
 
   const updateSection = (i: number, s: LegalSection) => {
     const sections = doc.sections.map((sec, j) => j === i ? s : sec)
@@ -141,13 +141,13 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
       })
       if (!res.ok) {
         const data = await res.json()
-        showToast(data.error ?? '저장 실패', 'error')
+        showError(data.error ?? '저장 실패')
       } else {
-        showToast('저장되었습니다.', 'success')
+        showSuccess('저장되었습니다.')
         router.refresh()
       }
     } catch {
-      showToast('네트워크 오류', 'error')
+      showError('네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -212,7 +212,6 @@ export default function LegalEditorClient({ initial }: { initial: LegalDoc }) {
         + 섹션 추가
       </button>
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

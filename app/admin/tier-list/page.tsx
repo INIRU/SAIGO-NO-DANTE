@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef, DragEvent } from 'react'
 import Image from 'next/image'
 import { Save, GripVertical, Search, X } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import { AdminButton, useToast, AdminToastContainer } from '@/components/admin'
+import { AdminButton } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import type { Identity } from '@/lib/types'
@@ -32,8 +33,6 @@ export default function AdminTierListPage() {
   const [saving, setSaving] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const { toasts, showToast, dismissToast } = useToast()
-
   // drag state
   const dragItem = useRef<{ id: string; source: Tier | 'unassigned' } | null>(null)
   const [dragOverTarget, setDragOverTarget] = useState<Tier | 'unassigned' | null>(null)
@@ -83,9 +82,9 @@ export default function AdminTierListPage() {
         const err = await res.json()
         throw new Error(err.error || '저장 실패')
       }
-      showToast('티어표가 저장되었습니다.', 'success')
+      showSuccess('티어표가 저장되었습니다.')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.', 'error')
+      showError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
     }
@@ -323,7 +322,6 @@ export default function AdminTierListPage() {
         onCancel={() => setConfirmOpen(false)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

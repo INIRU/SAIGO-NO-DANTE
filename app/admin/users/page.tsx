@@ -6,8 +6,9 @@ import { Ban, CheckCircle } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
   AdminInput, AdminSelect, AdminIconButton,
-  AdminTable, useToast, AdminToastContainer,
+  AdminTable,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 interface User {
   id: string
@@ -63,14 +64,12 @@ export default function AdminUsersPage() {
   const [updating, setUpdating] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction | null>(null)
   const [search, setSearch] = useState('')
-  const { toasts, showToast, dismissToast } = useToast()
-
   const fetchUsers = () => {
     setLoading(true)
     fetch('/api/admin/users')
       .then(r => r.json())
       .then(data => setUsers(Array.isArray(data) ? data : []))
-      .catch(() => showToast('유저 목록을 불러오지 못했습니다.', 'error'))
+      .catch(() => showError('유저 목록을 불러오지 못했습니다.'))
       .finally(() => setLoading(false))
   }
 
@@ -92,7 +91,7 @@ export default function AdminUsersPage() {
         })
         if (!res.ok) throw new Error()
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
-        showToast(`역할이 "${ROLE_LABELS[newRole] ?? newRole}"(으)로 변경되었습니다.`, 'success')
+        showSuccess(`역할이 "${ROLE_LABELS[newRole] ?? newRole}"(으)로 변경되었습니다.`)
       } else {
         const res = await fetch(`/api/admin/users/${user.id}`, {
           method: 'PATCH',
@@ -101,10 +100,10 @@ export default function AdminUsersPage() {
         })
         if (!res.ok) throw new Error()
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, suspended: !u.suspended } : u))
-        showToast(user.suspended ? '계정 정지가 해제되었습니다.' : '계정이 정지되었습니다.', 'success')
+        showSuccess(user.suspended ? '계정 정지가 해제되었습니다.' : '계정이 정지되었습니다.')
       }
     } catch {
-      showToast('작업 중 오류가 발생했습니다.', 'error')
+      showError('작업 중 오류가 발생했습니다.')
     } finally {
       setUpdating(null)
     }
@@ -280,7 +279,6 @@ export default function AdminUsersPage() {
         onCancel={() => setPending(null)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
