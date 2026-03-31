@@ -111,13 +111,13 @@ export default function IdentitySkillsTab({
                   {/* 공격 타입 (하단 중앙) */}
                   {isAttackSkill && skill.skill_type && ['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
                     <div className="absolute z-20 pointer-events-none"
-                      style={{ bottom: 0, left: '50%', marginLeft: '-0.875rem', transform: 'translateY(-30%)', width: '1.75rem', height: '1.75rem' }}>
+                      style={{ bottom: 0, left: '50%', marginLeft: '-1rem', transform: 'translateY(-25%)', width: '2rem', height: '2rem' }}>
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
-                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        alt="" width={24} height={24} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
-                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        alt="" width={24} height={24} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
-                        alt="" width={14} height={14} className="absolute inset-0 m-auto z-10" style={{ width: '0.7rem', height: '0.7rem' }} />
+                        alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.875rem', height: '0.875rem' }} />
                     </div>
                   )}
                   {/* 기본 위력 (좌측) */}
@@ -129,8 +129,8 @@ export default function IdentitySkillsTab({
                   {/* 코인 위력 (상단) */}
                   <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
                     <span style={{
-                      fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1rem', fontWeight: 700, lineHeight: 1,
-                      color: skill.coin_power >= 0 ? skillSinColor : '#e04040',
+                      fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
+                      color: skillSinColor,
                       textShadow: '1px 1px 1px black', WebkitTextStroke: '0.01px black',
                     }}>
                       {skill.coin_power >= 0 ? `+${skill.coin_power}` : skill.coin_power}
