@@ -133,7 +133,7 @@ export default function IdentitySkillsTab({
                       color: skillSinColor,
                       textShadow: '1px 1px 1px black', WebkitTextStroke: '0.01px black',
                     }}>
-                      {skill.coin_power >= 0 ? `+${skill.coin_power}` : <><span style={{ fontSize: '1.5rem' }}>−</span>{Math.abs(skill.coin_power)}</>}
+                      {skill.coin_power >= 0 ? `+${skill.coin_power}` : <><span style={{ fontSize: '1.5rem' }}>-</span>{Math.abs(skill.coin_power)}</>}
                     </span>
                   </div>
                 </div>
