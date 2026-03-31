@@ -3,8 +3,9 @@
 import { useMemo } from 'react'
 import Image from 'next/image'
 import { type PlannerState, type PlannerAction } from '@/lib/planner/types'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
-const S = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+const S = STORAGE_BASE
 
 // 가호 데이터 (게임 추출 기반)
 interface Blessing {

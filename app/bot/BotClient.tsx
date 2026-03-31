@@ -5,8 +5,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, ExternalLink, ChevronDown, Bell, HelpCircle } from 'lucide-react'
 
+import { STORAGE_BASE } from '@/lib/constants/game'
+
 const BOT_AVATAR = '/icons/icon-192x192.png'
-const S = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+const S = STORAGE_BASE
 
 function I({ src, s = 16 }: { src: string; s?: number }) {
   return <Image src={src} alt="" width={s} height={s} style={{ width: `${s / 16}rem`, height: `${s / 16}rem`, display: 'inline', verticalAlign: 'middle', objectFit: 'contain' }} />

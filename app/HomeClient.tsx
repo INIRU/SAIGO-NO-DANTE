@@ -258,18 +258,18 @@ function HeroGlitchSlider({
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" />
+          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" quality={90} />
         </div>
       )}
       {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" />
+        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" quality={90} />
         {/* RGB Chromatic Aberration 오버레이 (전환 시 GSAP 제어) */}
         <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" />
+          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" quality={60} />
         </div>
         <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" />
+          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" quality={60} />
         </div>
       </div>
       {/* 그라디언트 오버레이 — 모바일은 더 진하게 */}
@@ -714,7 +714,7 @@ export default function HomeClient({
 
             <div className="divider-gold mb-10" />
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {latestIdentities.map((identity) => {
                 const portraitUrl   = getIdentityInfoUrl(identity)
                 const logoUrl       = getSinnerLogoUrl(identity.sinner_id)

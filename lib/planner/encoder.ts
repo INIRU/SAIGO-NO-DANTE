@@ -1,4 +1,3 @@
-import pako from 'pako'
 import type { PlannerState, Difficulty } from './types'
 
 interface PlanData {
@@ -14,7 +13,8 @@ interface PlanData {
 const DIFF_SHORT: Record<Difficulty, string> = { normal: 'n', hard: 'h', overlap: 'o', extreme: 'e' }
 const SHORT_DIFF: Record<string, Difficulty> = { n: 'normal', h: 'hard', o: 'overlap', e: 'extreme' }
 
-export function encodePlan(state: PlannerState): string {
+export async function encodePlan(state: PlannerState): Promise<string> {
+  const pako = (await import('pako')).default
   const data: PlanData = {
     d: DIFF_SHORT[state.difficulty],
     i: state.identitySlots.map(s => s.identity_id),
@@ -33,7 +33,7 @@ export function encodePlan(state: PlannerState): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-export function decodePlan(encoded: string): {
+export async function decodePlan(encoded: string): Promise<{
   difficulty: Difficulty
   identityIds: string[]
   egoIds: string[]
@@ -41,7 +41,8 @@ export function decodePlan(encoded: string): {
   giftIds: string[]
   title: string
   description: string
-} {
+}> {
+  const pako = (await import('pako')).default
   // URL-safe base64 복원
   let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
   while (b64.length % 4) b64 += '='

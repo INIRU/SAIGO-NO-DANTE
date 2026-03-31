@@ -53,8 +53,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     // ?plan=<encoded>: URL 인코딩된 플랜 (legacy, slot_order 미보존)
     const planParam = params.get('plan')
     if (planParam) {
-      try {
-        const decoded = decodePlan(planParam)
+      decodePlan(planParam).then(decoded => {
         const slots = decoded.identityIds.map((id, i) => {
           const ident = identities.find(x => x.id === id)
           if (!ident) return null
@@ -81,7 +80,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             giftInventory: decoded.giftIds,
           },
         })
-      } catch { /* invalid */ }
+      }).catch(() => { /* invalid */ })
       return
     }
     // ?draft=1

@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,7 +131,6 @@ export async function PATCH(request: NextRequest) {
 
     // avatar_url 유효성 검사
     if (avatar_url !== undefined && avatar_url !== null) {
-      const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
       if (!avatar_url.startsWith(STORAGE_BASE)) {
         return NextResponse.json({ error: '유효하지 않은 이미지 URL입니다.' }, { status: 400 })
       }

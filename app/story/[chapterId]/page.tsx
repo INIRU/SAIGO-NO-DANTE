@@ -59,7 +59,7 @@ export default async function ChapterPage({ params }: Props) {
         <Link
           href="/story"
           className="inline-flex items-center gap-[0.5rem] mb-[2rem] transition-opacity hover:opacity-70"
-          style={{ color: 'var(--gold-dim)', fontFamily: 'Paperlogy, sans-serif' }}
+          style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-paperlogy), sans-serif' }}
         >
           <ArrowLeft style={{ width: '0.85rem', height: '0.85rem' }} />
           <span className="text-[0.8rem]">챕터 목록</span>
@@ -71,7 +71,7 @@ export default async function ChapterPage({ params }: Props) {
             className="text-[0.65rem] tracking-[0.4em] uppercase mb-[0.75rem]"
             style={{
               color: 'var(--gold-dim)',
-              fontFamily: 'PerfectDOS, monospace',
+              fontFamily: 'var(--font-perfect-dos), monospace',
               opacity: 0.5,
             }}
           >
@@ -79,7 +79,7 @@ export default async function ChapterPage({ params }: Props) {
           </p>
           <h1
             className="text-[2.25rem] mb-[0.5rem]"
-            style={{ fontFamily: 'KotraBold, serif', color: 'var(--gold)' }}
+            style={{ fontFamily: 'var(--font-kotra-bold), serif', color: 'var(--gold)' }}
           >
             {meta.title}
           </h1>
@@ -87,7 +87,7 @@ export default async function ChapterPage({ params }: Props) {
             <p
               className="text-[0.85rem] leading-[1.7] max-w-[24rem] mx-auto"
               style={{
-                fontFamily: 'Paperlogy, sans-serif',
+                fontFamily: 'var(--font-paperlogy), sans-serif',
                 fontWeight: 300,
                 color: '#9a8a78',
                 whiteSpace: 'pre-line',

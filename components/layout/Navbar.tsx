@@ -6,7 +6,8 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, ChevronDown, Search } from 'lucide-react'
-import SearchModal from '@/components/ui/SearchModal'
+import dynamic from 'next/dynamic'
+const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 
 type NavGroup = {
@@ -357,12 +358,12 @@ export default function Navbar() {
                   style={{ cursor: 'pointer' }}
                 >
                   {avatarUrl ? (
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
+                    <div style={{ width: '1.875rem', height: '1.875rem', borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
                       <Image src={avatarUrl} alt="" fill sizes="30px" style={{ objectFit: 'cover' }} />
                     </div>
                   ) : (
                     <div style={{
-                      width: 30, height: 30, borderRadius: '50%',
+                      width: '1.875rem', height: '1.875rem', borderRadius: '50%',
                       background: 'rgba(200,144,10,0.15)',
                       border: '1.5px solid var(--gold-dim)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -533,12 +534,12 @@ export default function Navbar() {
                 {/* 유저 정보 */}
                 <div className="flex items-center gap-3 py-4" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
                   {avatarUrl ? (
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
+                    <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
                       <Image src={avatarUrl} alt="" fill sizes="36px" style={{ objectFit: 'cover' }} />
                     </div>
                   ) : (
                     <div style={{
-                      width: 36, height: 36, borderRadius: '50%',
+                      width: '2.25rem', height: '2.25rem', borderRadius: '50%',
                       background: 'rgba(200,144,10,0.15)',
                       border: '1.5px solid var(--gold-dim)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',

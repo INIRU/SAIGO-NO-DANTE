@@ -508,7 +508,7 @@ export default function DecksClient() {
       </div>
 
       {/* ── 헤더 ── */}
-      <div className="decks-header flex items-end justify-between mb-10 relative" style={{ zIndex: 1 }}>
+      <div className="decks-header flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 relative" style={{ zIndex: 1 }}>
         <div>
           {/* 상단 장식 라인 */}
           <div className="decks-header-line" style={{
@@ -523,7 +523,7 @@ export default function DecksClient() {
           <p className="decks-header-tag" style={{ opacity: 0, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             DECK ARCHIVE
           </p>
-          <h1 className="decks-header-title font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
+          <h1 className="decks-header-title font-serif text-3xl sm:text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
             덱 게시판
           </h1>
           <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>

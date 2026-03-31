@@ -180,10 +180,10 @@ export default function GiftModal({
             style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
             {gift.price != null && (
-              <MetaItem label="가격" value={`${gift.price}`} icon="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" />
+              <MetaItem label="가격" value={`${gift.price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
             )}
             {gift.sell_price != null && (
-              <MetaItem label="판매가" value={`${gift.sell_price}`} icon="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/ui/credits.webp" />
+              <MetaItem label="판매가" value={`${gift.sell_price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
             )}
             {gift.buy_disabled && (
               <MetaItem label="구매" value="불가" valueColor="#c83030" />

@@ -226,15 +226,15 @@ export default function TierListClient({
       {/* 범례 */}
       <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
         <span className="flex items-center gap-1.5">
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#60c860', display: 'inline-block' }} />
+          <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#60c860', display: 'inline-block' }} />
           <span style={{ color: '#8a8a8a' }}>발푸르기스 밤</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ffd040', display: 'inline-block' }} />
+          <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ffd040', display: 'inline-block' }} />
           <span style={{ color: '#8a8a8a' }}>추출만 가능</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ff5050', display: 'inline-block' }} />
+          <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ff5050', display: 'inline-block' }} />
           <span style={{ color: '#8a8a8a' }}>이번 시즌 획득 불가</span>
         </span>
       </div>
@@ -251,9 +251,9 @@ export default function TierListClient({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 24,
-                height: 18,
-                borderRadius: 3,
+                width: '1.5rem',
+                height: '1.125rem',
+                borderRadius: '0.1875rem',
                 background: TIER_COLORS[tier],
                 color: '#fff',
                 fontSize: '0.625rem',
@@ -277,7 +277,7 @@ export default function TierListClient({
       ) : (
         <>
           {/* 티어표 */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {TIERS.map(tier => {
               if (tiers[tier].length === 0) return null
               return (
@@ -286,13 +286,13 @@ export default function TierListClient({
                   <div className="flex items-center gap-3 mb-3">
                     <div
                       style={{
-                        width: '48px',
-                        height: '48px',
+                        width: '3rem',
+                        height: '3rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         background: TIER_COLORS[tier],
-                        borderRadius: '6px',
+                        borderRadius: '0.375rem',
                         fontFamily: 'var(--font-heading)',
                         fontSize: '1.25rem',
                         fontWeight: 700,
@@ -318,8 +318,8 @@ export default function TierListClient({
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                      gap: '8px',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(6.875rem, 1fr))',
+                      gap: '0.5rem',
                     }}
                   >
                     {tiers[tier].map(identity => (
@@ -342,17 +342,17 @@ export default function TierListClient({
             <div
               style={{
                 position: 'fixed',
-                bottom: '20px',
+                bottom: '1.25rem',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 50,
                 background: '#1a1510',
                 border: '1px solid var(--gold-dim)',
-                borderRadius: '12px',
-                padding: calcOpen ? '16px 20px' : '10px 20px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(200,144,10,0.1)',
-                minWidth: '280px',
-                maxWidth: '420px',
+                borderRadius: '0.75rem',
+                padding: calcOpen ? '1rem 1.25rem' : '0.625rem 1.25rem',
+                boxShadow: '0 0.5rem 2rem rgba(0,0,0,0.6), 0 0 0 1px rgba(200,144,10,0.1)',
+                minWidth: '17.5rem',
+                maxWidth: '26.25rem',
                 width: '90%',
                 transition: 'all 0.2s',
               }}
@@ -382,7 +382,7 @@ export default function TierListClient({
                 </button>
                 <button
                   onClick={() => setSelected(new Set())}
-                  style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }}
+                  style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '0.25rem' }}
                   title="초기화"
                 >
                   <RotateCcw size={14} style={{ color: '#888888' }} />
@@ -391,21 +391,21 @@ export default function TierListClient({
 
               {/* 상세 */}
               {calcOpen && (
-                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
                   {/* 계산 내역 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.5rem' }}>
                     {calcResult.details.map((d, i) => (
                       <div key={i} className="flex items-center justify-between" style={{ fontSize: '0.75rem' }}>
                         <span style={{ color: '#c8a450' }}>{d.name_kr}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <span
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              width: 20,
-                              height: 14,
-                              borderRadius: 2,
+                              width: '1.25rem',
+                              height: '0.875rem',
+                              borderRadius: '0.125rem',
                               background: TIER_COLORS[d.tier],
                               color: '#fff',
                               fontSize: '0.5625rem',
@@ -431,8 +431,8 @@ export default function TierListClient({
                   {/* 판정 */}
                   <div
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.375rem',
                       background: calcResult.score >= 7.0 ? 'rgba(96,200,96,0.1)' : calcResult.score >= 5.5 ? 'rgba(255,208,64,0.1)' : 'rgba(255,80,80,0.1)',
                       border: `1px solid ${calcResult.score >= 7.0 ? 'rgba(96,200,96,0.2)' : calcResult.score >= 5.5 ? 'rgba(255,208,64,0.2)' : 'rgba(255,80,80,0.2)'}`,
                       textAlign: 'center',
@@ -450,7 +450,7 @@ export default function TierListClient({
                         : '리세를 더 해보세요'}
                     </p>
                     {calcResult.score >= 5.5 && calcResult.score < 7.0 && (
-                      <p style={{ fontSize: '0.6875rem', color: '#8a8a8a', marginTop: '2px' }}>
+                      <p style={{ fontSize: '0.6875rem', color: '#8a8a8a', marginTop: '0.125rem' }}>
                         애매하다면 갤러리에 이륙 질문글을 올려보세요
                       </p>
                     )}
@@ -461,7 +461,7 @@ export default function TierListClient({
           )}
 
           {/* Q&A */}
-          <div style={{ marginTop: '48px' }}>
+          <div style={{ marginTop: '3rem' }}>
             <button
               onClick={() => setQnaOpen(v => !v)}
               className="flex items-center gap-2 w-full transition-colors hover:opacity-80"
@@ -469,7 +469,7 @@ export default function TierListClient({
                 cursor: 'pointer',
                 background: 'none',
                 border: 'none',
-                padding: '12px 0',
+                padding: '0.75rem 0',
                 borderBottom: '1px solid var(--border)',
               }}
             >
@@ -480,13 +480,13 @@ export default function TierListClient({
             </button>
 
             {qnaOpen && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' }}>
                 {QNA.map((item, i) => (
                   <div key={i}>
-                    <p style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
+                    <p style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
                       {item.q}
                     </p>
-                    <p style={{ color: '#8a8a8a', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-line', paddingLeft: '12px' }}>
+                    <p style={{ color: '#8a8a8a', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-line', paddingLeft: '0.75rem' }}>
                       {item.a}
                     </p>
                   </div>
@@ -495,11 +495,11 @@ export default function TierListClient({
                 {/* 고인물 안내 */}
                 <div
                   style={{
-                    marginTop: '8px',
-                    padding: '12px 16px',
+                    marginTop: '0.5rem',
+                    padding: '0.75rem 1rem',
                     background: 'rgba(200,144,10,0.05)',
                     border: '1px solid var(--border)',
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                   }}
                 >
                   <p style={{ color: '#8a7855', fontSize: '0.75rem', lineHeight: 1.7 }}>
@@ -512,7 +512,7 @@ export default function TierListClient({
           </div>
 
           {/* 하단 패딩 (플로팅 계산기 겹침 방지) */}
-          {selected.size > 0 && <div style={{ height: '80px' }} />}
+          {selected.size > 0 && <div style={{ height: '5rem' }} />}
         </>
       )}
       </div>
@@ -540,14 +540,14 @@ function TierCard({
       style={{
         background: '#1a1510',
         border: isSelected ? '2px solid var(--gold)' : '1px solid var(--border)',
-        borderRadius: '6px',
+        borderRadius: '0.375rem',
         overflow: 'hidden',
         position: 'relative',
         cursor: 'pointer',
         textAlign: 'left',
         padding: 0,
         transition: 'border-color 0.15s, box-shadow 0.15s',
-        boxShadow: isSelected ? '0 0 12px rgba(200,144,10,0.2)' : 'none',
+        boxShadow: isSelected ? '0 0 0.75rem rgba(200,144,10,0.2)' : 'none',
       }}
     >
       {/* 선택 체크 */}
@@ -555,17 +555,17 @@ function TierCard({
         <div
           style={{
             position: 'absolute',
-            top: '5px',
-            left: '5px',
+            top: '0.3125rem',
+            left: '0.3125rem',
             zIndex: 2,
-            width: '26px',
-            height: '26px',
-            borderRadius: '6px',
+            width: '1.625rem',
+            height: '1.625rem',
+            borderRadius: '0.375rem',
             background: 'var(--gold)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+            boxShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.5)',
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d0b08" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -592,14 +592,14 @@ function TierCard({
         )}
         {/* 등급 아이콘 */}
         {rarityIcon && (
-          <div style={{ position: 'absolute', top: '4px', right: '4px' }}>
+          <div style={{ position: 'absolute', top: '0.25rem', right: '0.25rem' }}>
             <Image src={rarityIcon} alt={`${identity.rarity}성`} width={18} height={18} unoptimized />
           </div>
         )}
       </div>
 
       {/* 이름 */}
-      <div style={{ padding: '6px 6px 4px', textAlign: 'center' }}>
+      <div style={{ padding: '0.375rem 0.375rem 0.25rem', textAlign: 'center' }}>
         <p style={{
           fontSize: '0.6875rem',
           color: isSelected ? 'var(--gold)' : '#c8a450',
@@ -617,9 +617,9 @@ function TierCard({
       {bar && (
         <div
           style={{
-            height: '4px',
+            height: '0.25rem',
             background: bar.color,
-            borderRadius: '0 0 4px 4px',
+            borderRadius: '0 0 0.25rem 0.25rem',
           }}
           title={bar.label}
         />

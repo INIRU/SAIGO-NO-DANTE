@@ -59,12 +59,13 @@ async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
 
 async function getCurrentSeason(): Promise<number> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .schema('limbus')
     .from('app_config')
     .select('value')
     .eq('key', 'current_season')
     .single()
+  if (error) console.error('Failed to fetch current season:', error)
   return data?.value?.season ?? 7
 }
 

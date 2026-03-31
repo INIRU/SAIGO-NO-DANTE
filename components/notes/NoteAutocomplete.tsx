@@ -176,12 +176,12 @@ export function NoteAutocompleteDropdown({
     <div style={{
       position: 'absolute', left: 0, right: 0, bottom: '100%', marginBottom: -1,
       background: '#151210', border: '1px solid rgba(200,144,10,0.2)',
-      borderRadius: '4px 4px 0 0', padding: '6px 4px',
-      boxShadow: '0 -4px 12px rgba(0,0,0,0.4)', zIndex: 10,
+      borderRadius: '0.25rem 0.25rem 0 0', padding: '0.375rem 0.25rem',
+      boxShadow: '0 -0.25rem 0.75rem rgba(0,0,0,0.4)', zIndex: 10,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 4,
-        padding: '0 6px 4px', borderBottom: '1px solid rgba(200,144,10,0.08)', marginBottom: 4,
+        display: 'flex', alignItems: 'center', gap: '0.25rem',
+        padding: '0 0.375rem 0.25rem', borderBottom: '1px solid rgba(200,144,10,0.08)', marginBottom: '0.25rem',
       }}>
         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>자동완성</span>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>↑↓ 이동 · Enter/Tab 선택 · Esc 닫기</span>
@@ -206,9 +206,9 @@ export function NoteAutocompleteDropdown({
               ) : sugg.iconUrl ? (
                 <Image src={sugg.iconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
               ) : sugg.typeLabel ? (
-                <span style={{ fontSize: '0.75rem', color: '#999', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: 28, textAlign: 'center' }}>{sugg.typeLabel}</span>
+                <span style={{ fontSize: '0.75rem', color: '#999', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: '1.75rem', textAlign: 'center' }}>{sugg.typeLabel}</span>
               ) : (
-                <span style={{ width: 14, flexShrink: 0 }} />
+                <span style={{ width: '0.875rem', flexShrink: 0 }} />
               )}
               {/* 라벨 */}
               <span style={{ color: sugg.color, fontSize: '0.6875rem', fontWeight: 600, flex: 1 }}>{sugg.label}</span>

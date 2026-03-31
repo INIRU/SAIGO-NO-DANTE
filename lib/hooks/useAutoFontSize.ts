@@ -12,7 +12,7 @@ export function useAutoFontSize(
   maxRem: number,
   minRem: number,
   maxWidthPx: number,
-  fontFamily: string = 'KotraBold, serif',
+  fontFamily: string = 'var(--font-kotra-bold), serif',
 ): number {
   const [fontSizeRem, setFontSizeRem] = useState(maxRem)
 
@@ -32,8 +32,12 @@ export function useAutoFontSize(
       const minPx = minRem * rootFontSize
       const step = rootFontSize * 0.0625 // 1px step in rem terms
 
+      // Resolve CSS variables (e.g. var(--font-kotra-bold)) to actual font-family names
+      const rootStyle = getComputedStyle(document.documentElement)
+      const resolvedFamily = fontFamily.replace(/var\(([^)]+)\)/g, (_, v) => rootStyle.getPropertyValue(v).trim() || '')
+
       for (let sizePx = maxPx; sizePx >= minPx; sizePx -= step) {
-        const font = `bold ${sizePx}px ${fontFamily}`
+        const font = `bold ${sizePx}px ${resolvedFamily}`
         const prepared = prepare(text, font)
         const result = layout(prepared, maxWidthPx, sizePx * 1.2)
 

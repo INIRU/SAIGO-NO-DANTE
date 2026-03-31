@@ -39,9 +39,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
-  const handleCopyUrl = () => {
+  const handleCopyUrl = async () => {
     try {
-      const encoded = encodePlan(state)
+      const encoded = await encodePlan(state)
       const url = `${window.location.origin}/planner?p=${encoded}`
       navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
     } catch { /* */ }
@@ -117,9 +117,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     const params = new URLSearchParams(window.location.search)
     const planCode = params.get('plan')
     if (planCode) {
-      import('@/lib/planner/encoder').then(({ decodePlan }) => {
+      import('@/lib/planner/encoder').then(async ({ decodePlan }) => {
         try {
-          const decoded = decodePlan(planCode)
+          const decoded = await decodePlan(planCode)
           // identity_ids → identitySlots로 복원
           const slots = decoded.identityIds.map((id, i) => {
             const identity = identities.find(ident => ident.id === id)
@@ -163,7 +163,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             </Link>
             <h1 className="font-serif text-lg sm:text-2xl" style={{ color: '#e8dcc8' }}>거울 던전 플래너</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => { savePlanForRun(state as any); window.location.href = '/planner/run?from-plan=1' }}
               style={{
@@ -222,7 +222,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             <button
               key={key}
               onClick={() => dispatch({ type: 'SET_DIFFICULTY', difficulty: key })}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0"
               style={{
                 background: state.difficulty === key ? '#c8900a20' : '#1a1510',
                 color: state.difficulty === key ? '#e8b030' : '#666',

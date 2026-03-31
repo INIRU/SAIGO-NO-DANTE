@@ -7,12 +7,13 @@ type Props = { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const supabase = createAdminClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .schema('limbus')
     .from('decks')
     .select('title, description, tags')
     .eq('id', id)
     .single()
+  if (error) console.error('Failed to fetch deck metadata:', error)
 
   if (!data) {
     return { title: '덱을 찾을 수 없습니다' }

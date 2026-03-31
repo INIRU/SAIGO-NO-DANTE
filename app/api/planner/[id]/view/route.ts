@@ -8,19 +8,21 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const admin = createAdminClient()
 
-  const { data } = await admin
+  const { data, error } = await admin
     .schema('limbus')
     .from('md_plans')
     .select('view_count')
     .eq('id', id)
     .single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (data) {
-    await admin
+    const { error: updateError } = await admin
       .schema('limbus')
       .from('md_plans')
       .update({ view_count: (data.view_count ?? 0) + 1 })
       .eq('id', id)
+    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

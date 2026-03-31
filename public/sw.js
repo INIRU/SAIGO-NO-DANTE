@@ -25,6 +25,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   // API/auth 요청은 캐시하지 않음
   if (request.url.includes('/api/') || request.url.includes('/auth/')) return
+  // 외부 도메인(imgproxy 등)은 브라우저 캐시에 맡김
+  if (!request.url.startsWith(self.location.origin)) return
 
   event.respondWith(
     fetch(request)

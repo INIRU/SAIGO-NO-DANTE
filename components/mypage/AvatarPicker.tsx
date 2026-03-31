@@ -133,13 +133,13 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
               className="flex-shrink-0 transition-all duration-150"
               title={s.name_kr}
               style={{
-                width: 36,
-                height: 36,
+                width: '2.25rem',
+                height: '2.25rem',
                 borderRadius: '50%',
                 border: selectedSinner === s.id ? '2px solid var(--gold)' : '2px solid transparent',
                 background: selectedSinner === s.id ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.03)',
                 cursor: 'pointer',
-                padding: 3,
+                padding: '0.1875rem',
               }}
             >
               <Image
@@ -220,7 +220,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                       className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{
                         background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
-                        padding: '16px 4px 6px',
+                        padding: '1rem 0.25rem 0.375rem',
                       }}
                     >
                       <p
@@ -242,8 +242,8 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                       >
                         <div
                           style={{
-                            width: 24,
-                            height: 24,
+                            width: '1.5rem',
+                            height: '1.5rem',
                             borderRadius: '50%',
                             background: 'var(--gold)',
                             display: 'flex',
@@ -251,7 +251,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                             justifyContent: 'center',
                             color: '#0d0b08',
                             fontWeight: 'bold',
-                            fontSize: '14px',
+                            fontSize: '0.875rem',
                           }}
                         >
                           ✓

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function KeywordsPage() {
   const supabase = await createClient()
 
-  const [{ data: keywords }, { data: identities }, { data: sinners }, { data: gifts }, { data: egos }] = await Promise.all([
+  const [{ data: keywords, error: keywordsError }, { data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: gifts, error: giftsError }, { data: egos, error: egosError }] = await Promise.all([
     supabase.schema('limbus').from('keyword_meta')
       .select('name, description, max_stack, icon_slug, sin_affinity')
       .order('name'),
@@ -33,6 +33,11 @@ export default async function KeywordsPage() {
       .select('id, name, name_kr, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
       .order('name'),
   ])
+  if (keywordsError) console.error('Failed to fetch keywords:', keywordsError)
+  if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
+  if (sinnersError) console.error('Failed to fetch sinners:', sinnersError)
+  if (giftsError) console.error('Failed to fetch gifts:', giftsError)
+  if (egosError) console.error('Failed to fetch egos:', egosError)
 
   return (
     <KeywordsClient

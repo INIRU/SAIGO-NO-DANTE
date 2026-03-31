@@ -38,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
 
-    const { data: plan } = await admin.schema('limbus').from('md_plans').select('user_id').eq('id', id).single()
+    const { data: plan, error: planError } = await admin.schema('limbus').from('md_plans').select('user_id').eq('id', id).single()
+    if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
     if (!plan || plan.user_id !== userId) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     const body = await req.json()
@@ -67,7 +68,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
 
-    const { data: plan } = await admin.schema('limbus').from('md_plans').select('user_id').eq('id', id).single()
+    const { data: plan, error: planError } = await admin.schema('limbus').from('md_plans').select('user_id').eq('id', id).single()
+    if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
     if (!plan || plan.user_id !== userId) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     const { error } = await admin.schema('limbus').from('md_plans').delete().eq('id', id)

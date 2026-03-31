@@ -12,22 +12,30 @@ export default async function PlannerPage() {
   const supabase = await createClient()
 
   // 그룹 1: 거울 던전 데이터
-  const [{ data: themes }, { data: gifts }, { data: recipes }] = await Promise.all([
+  const [{ data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }] = await Promise.all([
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info'),
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
   ])
+  if (themesError) console.error('Failed to fetch themes:', themesError)
+  if (giftsError) console.error('Failed to fetch gifts:', giftsError)
+  if (recipesError) console.error('Failed to fetch recipes:', recipesError)
 
   // 그룹 2: 인격/수감자/패시브/스킬/EGO
-  const [{ data: identities }, { data: sinners }, { data: passives }, { data: skills }] = await Promise.all([
+  const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: passives, error: passivesError }, { data: skills, error: skillsError }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, rarity, keywords, game_id, folder_name').order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level').eq('uptie_level', 4),
     supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').eq('uptie_level', 4),
   ])
+  if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
+  if (sinnersError) console.error('Failed to fetch sinners:', sinnersError)
+  if (passivesError) console.error('Failed to fetch passives:', passivesError)
+  if (skillsError) console.error('Failed to fetch skills:', skillsError)
 
   // 그룹 3: EGO
-  const { data: egos } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
+  const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
+  if (egosError) console.error('Failed to fetch egos:', egosError)
 
   return <PlannerClient
     themes={themes ?? []}

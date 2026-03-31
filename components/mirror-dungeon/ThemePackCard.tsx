@@ -12,7 +12,7 @@ interface Props {
 
 export default function ThemePackCard({ theme, onClick }: Props) {
   const nameColor = getThemePackNameColor(theme.id)
-  const fontSize = useAutoFontSize(theme.name, 1.5, 0.6875, 130, 'KotraBold, serif')
+  const fontSize = useAutoFontSize(theme.name, 1.5, 0.6875, 130, 'var(--font-kotra-bold), serif')
 
   return (
     <button

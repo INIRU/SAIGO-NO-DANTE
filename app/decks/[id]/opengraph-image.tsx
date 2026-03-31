@@ -7,7 +7,7 @@ export const alt = '덱 공유 이미지'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 function portraitUrl(
   sinner_id: string,
