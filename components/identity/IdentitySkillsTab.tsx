@@ -122,7 +122,7 @@ export default function IdentitySkillsTab({
                   )}
                   {/* 기본 위력 (좌측) */}
                   <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-                    <span style={{ fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.75rem', lineHeight: 1, color: '#e8dcc8' }}>
+                    <span style={{ fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.75rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
                       {skill.base_power}
                     </span>
                   </div>
@@ -131,17 +131,18 @@ export default function IdentitySkillsTab({
                     {skill.coin_power >= 0 ? (
                       <span style={{
                         fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-                        color: skillSinColor,
-                        textShadow: '1px 1px 1px black', WebkitTextStroke: '0.01px black',
+                        color: 'oklch(81.35% .0894 69.33)',
+                        textShadow: `0 0 0.375rem ${skillSinColor}, 0 0 0.125rem rgba(0,0,0,0.8)`,
+                        WebkitTextStroke: '0.5px rgba(0,0,0,0.6)',
                       }}>
                         +{skill.coin_power}
                       </span>
                     ) : (
                       <span style={{
                         fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-                        color: '#fff',
-                        textShadow: `0 0 0.25rem ${skillSinColor}, 1px 1px 1px black`,
-                        WebkitTextStroke: '0.01px black',
+                        color: '#ff8866',
+                        textShadow: `0 0 0.375rem ${skillSinColor}, 0 0 0.125rem rgba(0,0,0,0.8)`,
+                        WebkitTextStroke: '0.5px rgba(0,0,0,0.6)',
                       }}>
                         <span style={{ fontSize: '1.5rem' }}>-</span>{Math.abs(skill.coin_power)}
                       </span>
