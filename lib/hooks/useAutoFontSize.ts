@@ -17,7 +17,10 @@ export function useAutoFontSize(
   const [fontSizeRem, setFontSizeRem] = useState(maxRem)
 
   useEffect(() => {
-    if (!text || maxWidthPx <= 0) return
+    if (!text || maxWidthPx <= 0) {
+      setFontSizeRem(maxRem)
+      return
+    }
 
     let cancelled = false
 
@@ -41,6 +44,8 @@ export function useAutoFontSize(
       }
 
       if (!cancelled) setFontSizeRem(minRem)
+    }).catch(() => {
+      if (!cancelled) setFontSizeRem(maxRem)
     })
 
     return () => { cancelled = true }

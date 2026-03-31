@@ -1,38 +1,51 @@
 import type { ReactNode } from 'react'
 import { SIN_KR_TO_EN, SIN_COLORS } from '@/lib/constants/sin'
 import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
-import { CHOICE_EVENT_EFFECTS } from '@/lib/data/choice-event-effects'
 import { ACTION_EVENT_EFFECTS, AB_EVENT_EFFECTS } from '@/lib/data/event-effects-map'
 
 // ── Unity <color=...> 태그 파서 ─────────────────────────────────────────────
 
-const UNITY_COLOR_RE = /<color=(#[0-9a-fA-F]{6})>([\s\S]*?)<\/color>/g
-
-/** Unity <color=#hex>text</color> 태그를 React span으로 변환 */
+/** Unity <color=#hex>text</color> 태그를 React span으로 변환 (중첩 지원) */
 export function parseUnityColorTags(raw: string): ReactNode {
-  const parts: ReactNode[] = []
-  let cursor = 0
-  let keyIdx = 0
-
   // 잘못된 닫는 태그 정리 (</color=#xxx> → </color>)
   const cleaned = raw.replace(/<\/color=[^>]*>/g, '</color>')
+  let keyIdx = 0
 
-  const re = new RegExp(UNITY_COLOR_RE.source, UNITY_COLOR_RE.flags)
-  let m: RegExpExecArray | null
-  while ((m = re.exec(cleaned)) !== null) {
-    if (m.index > cursor) {
-      parts.push(cleaned.slice(cursor, m.index))
+  function parse(text: string): ReactNode[] {
+    const parts: ReactNode[] = []
+    let cursor = 0
+    const openRe = /<color=(#[0-9a-fA-F]{3,8})>/g
+    let m: RegExpExecArray | null
+
+    while ((m = openRe.exec(text)) !== null) {
+      if (m.index > cursor) parts.push(text.slice(cursor, m.index))
+      const color = m[1]
+      const innerStart = m.index + m[0].length
+      // 중첩 깊이 추적하여 매칭되는 </color> 찾기
+      let depth = 1
+      let i = innerStart
+      while (i < text.length && depth > 0) {
+        if (text.startsWith('<color=', i)) depth++
+        else if (text.startsWith('</color>', i)) depth--
+        if (depth > 0) i++
+        else break
+      }
+      const innerEnd = i
+      const innerText = text.slice(innerStart, innerEnd)
+      parts.push(
+        <span key={keyIdx++} style={{ color, fontWeight: 600 }}>
+          {parse(innerText)}
+        </span>
+      )
+      cursor = innerEnd + '</color>'.length
+      openRe.lastIndex = cursor
     }
-    parts.push(
-      <span key={keyIdx++} style={{ color: m[1], fontWeight: 600 }}>
-        {m[2]}
-      </span>
-    )
-    cursor = m.index + m[0].length
+    if (cursor < text.length) parts.push(text.slice(cursor))
+    return parts
   }
-  if (cursor < cleaned.length) parts.push(cleaned.slice(cursor))
 
-  return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : parts
+  const result = parse(cleaned)
+  return result.length === 1 && typeof result[0] === 'string' ? result[0] : result
 }
 
 // ── 이벤트 효과 텍스트 조회 ─────────────────────────────────────────────────
