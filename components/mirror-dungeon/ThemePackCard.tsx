@@ -21,8 +21,8 @@ export default function ThemePackCard({ theme, themeGifts, specificCount, topKey
   const hoverBorder = isExtreme ? 'rgba(224,64,64,0.8)' : isHard ? 'rgba(232,144,48,0.6)' : 'rgba(200,144,10,0.35)'
   const nameColor = getThemePackNameColor(theme.id)
 
-  // Pretext 기반 자동 폰트 사이징: 카드 폭 ~140px 기준, 최대 16px → 최소 10px
-  const fontSize = useAutoFontSize(theme.name, 16, 10, 130, 'KotraBold, serif')
+  // Pretext 기반 자동 폰트 사이징: 카드 폭 기준, 최대 1.5rem → 최소 0.6875rem
+  const fontSize = useAutoFontSize(theme.name, 1.5, 0.6875, 130, 'KotraBold, serif')
 
   return (
     <button
@@ -49,20 +49,6 @@ export default function ThemePackCard({ theme, themeGifts, specificCount, topKey
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             style={{ opacity: 0.85 }}
           />
-          {theme.boss_image_url && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
-                <ImageWithFallback
-                  src={theme.boss_image_url}
-                  alt=""
-                  fill
-                  fallbackType="default"
-                  sizes="(max-width: 640px) 33vw, 20vw"
-                  className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-            </div>
-          )}
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.4) 40%, transparent 100%)' }} />
 
           {/* 테마팩 이름 (Pretext 자동 사이징) */}
@@ -71,10 +57,11 @@ export default function ThemePackCard({ theme, themeGifts, specificCount, topKey
               className="font-serif font-bold leading-tight text-center"
               style={{
                 color: nameColor,
-                fontSize: `${fontSize / 16}rem`,
-                textShadow: 'rgba(0,0,0,0.9) 0.075rem 0.075rem 0',
+                fontSize: `${fontSize}rem`,
+                textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
                 maxWidth: '92%',
-                wordBreak: 'keep-all',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
               }}
             >
               {theme.name}
