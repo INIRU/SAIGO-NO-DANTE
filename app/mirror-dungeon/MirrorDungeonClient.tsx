@@ -408,23 +408,10 @@ export default function MirrorDungeonClient({
 
   // 테마팩 카드 렌더 (층별/전체 뷰 공용)
   function renderThemeCard(theme: EgoGiftTheme) {
-    const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
-    if (themeGifts.length === 0) return null
-    const specificCount = theme.specific_ego_gift_ids.length
-    const kwCount: Record<string, number> = {}
-    for (const g of themeGifts) {
-      kwCount[g.keyword] = (kwCount[g.keyword] || 0) + 1
-    }
-    const topKws = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    const topKeywordIcons = topKws.map(([kw]) => ({ kw, iconUrl: getGiftKeywordIcon(kw) }))
-
     return (
       <ThemePackCard
         key={theme.id}
         theme={theme}
-        themeGifts={themeGifts}
-        specificCount={specificCount}
-        topKeywordIcons={topKeywordIcons}
         onClick={() => setExpandedThemeId(theme.id)}
       />
     )
