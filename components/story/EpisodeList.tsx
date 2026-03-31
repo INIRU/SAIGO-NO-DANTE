@@ -49,7 +49,7 @@ export default function EpisodeList({
                   <span
                     className="text-[0.65rem] tracking-[0.12em] shrink-0"
                     style={{
-                      fontFamily: 'PerfectDOS, monospace',
+                      fontFamily: 'var(--font-perfect-dos), monospace',
                       color: 'var(--gold-dim)',
                       opacity: 0.6,
                       minWidth: '1.25rem',
@@ -62,7 +62,7 @@ export default function EpisodeList({
                   <span
                     className="text-[0.95rem]"
                     style={{
-                      fontFamily: 'Paperlogy, sans-serif',
+                      fontFamily: 'var(--font-paperlogy), sans-serif',
                       fontWeight: 700,
                       color: '#ddd5c8',
                     }}
@@ -75,7 +75,7 @@ export default function EpisodeList({
                     <span
                       className="text-[0.55rem] px-[0.375rem] py-[0.125rem] rounded-[0.125rem] shrink-0"
                       style={{
-                        fontFamily: 'PerfectDOS, monospace',
+                        fontFamily: 'var(--font-perfect-dos), monospace',
                         color:
                           ep.stageDetail === 'Before'
                             ? 'var(--gold-dim)'
@@ -109,7 +109,7 @@ export default function EpisodeList({
                     className="text-[0.8rem] truncate mt-[0.25rem]"
                     style={{
                       color: isRead ? '#706858' : '#9a8a78',
-                      fontFamily: 'Paperlogy, sans-serif',
+                      fontFamily: 'var(--font-paperlogy), sans-serif',
                       fontWeight: 300,
                     }}
                   >
@@ -122,7 +122,7 @@ export default function EpisodeList({
               <span
                 className="text-[0.6rem] mt-[0.25rem] shrink-0"
                 style={{
-                  fontFamily: 'PerfectDOS, monospace',
+                  fontFamily: 'var(--font-perfect-dos), monospace',
                   color: 'var(--gold-dim)',
                   opacity: 0.3,
                 }}

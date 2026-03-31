@@ -589,7 +589,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }, [plan.id, session])
 
   const handleVote = async () => {
-    if (!session) { alert('로그인이 필요합니다.'); return }
+    if (!session) { setToast({ message: '로그인이 필요합니다.', type: 'error' }); setTimeout(() => setToast(null), 3000); return }
     setVoteLoading(true)
     try {
       const res = await fetch(`/api/planner/${plan.id}/vote`, { method: 'POST' })
@@ -619,7 +619,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   useEffect(() => { fetchComments() }, [fetchComments])
 
   const handleCommentSubmit = async () => {
-    if (!session) { alert('로그인이 필요합니다.'); return }
+    if (!session) { setToast({ message: '로그인이 필요합니다.', type: 'error' }); setTimeout(() => setToast(null), 3000); return }
     const content = commentText.trim()
     if (!content) return
     setSubmitting(true)

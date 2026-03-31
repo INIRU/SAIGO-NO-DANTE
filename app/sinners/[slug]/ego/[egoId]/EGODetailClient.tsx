@@ -287,7 +287,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
       {/* ─── 히어로 배너 ─── */}
       <div className="ego-detail-header" style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604', opacity: 0 }}>
         {ego.image_url && (
-          <Image src={ego.image_url} alt="" fill
+          <Image src={ego.image_url} alt="" fill quality={50}
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
             sizes="(max-width: 768px) 90vw, 200px"
           />

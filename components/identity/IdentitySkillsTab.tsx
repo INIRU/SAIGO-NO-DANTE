@@ -122,7 +122,7 @@ export default function IdentitySkillsTab({
                   )}
                   {/* 기본 위력 (좌측) */}
                   <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-                    <span style={{ fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '2.125rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
+                    <span style={{ fontFamily: "var(--font-excelsior), sans-serif", fontSize: '2.125rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
                       {skill.base_power}
                     </span>
                   </div>
@@ -130,7 +130,7 @@ export default function IdentitySkillsTab({
                   <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
                     {skill.coin_power >= 0 ? (
                       <span style={{
-                        fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
+                        fontFamily: "var(--font-excelsior), sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
                         color: 'oklch(81.35% .0894 69.33)',
                         textShadow: '1px 1px 1px black',
                         WebkitTextStroke: '0.01px black',
@@ -139,7 +139,7 @@ export default function IdentitySkillsTab({
                       </span>
                     ) : (
                       <span style={{
-                        fontFamily: "'ExcelsiorSans', sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
+                        fontFamily: "var(--font-excelsior), sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
                         color: '#ff8866',
                         textShadow: '1px 1px 1px black',
                         WebkitTextStroke: '0.01px black',
@@ -190,10 +190,10 @@ export default function IdentitySkillsTab({
                     {skill.offense_level != null && (
                       <div className="flex items-center gap-1">
                         <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} style={{ width: '1.375rem', height: '1.375rem' }} />
-                        <span style={{ fontFamily: "'ExcelsiorSans', sans-serif", color: '#e8dcc8', fontSize: '1.375rem', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
+                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: '1.375rem', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
                           {skill.offense_level}
                         </span>
-                        {offCorrStr && <span style={{ fontFamily: "'ExcelsiorSans', sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
+                        {offCorrStr && <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
                       </div>
                     )}
                     {isAttackSkill && (

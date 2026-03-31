@@ -1,4 +1,5 @@
-export const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+import { STORAGE_BASE } from '@/lib/constants/game'
+export { STORAGE_BASE }
 
 export type GiftSubTab = 'observe' | 'start' | 'final'
 

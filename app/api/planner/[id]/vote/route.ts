@@ -16,7 +16,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
 
-    const { data } = await admin.schema('limbus').from('md_plan_votes').select('plan_id').eq('plan_id', id).eq('user_id', userId).maybeSingle()
+    const { data, error } = await admin.schema('limbus').from('md_plan_votes').select('plan_id').eq('plan_id', id).eq('user_id', userId).maybeSingle()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ voted: !!data })
   } catch {

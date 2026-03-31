@@ -17,7 +17,7 @@ import {
 } from '@/components/notes/NoteAutocomplete'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 
-const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+import { STORAGE_BASE } from '@/lib/constants/game'
 const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
 
 const GRADE_ROMAN: Record<string, string> = {

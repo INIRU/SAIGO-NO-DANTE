@@ -53,12 +53,12 @@ const config: Config = {
         'glow-hover': 'var(--shadow-glow-hover)',
       },
       fontFamily: {
-        serif:   ['"Paperlogy"', '"KotraBold"', 'Georgia', 'serif'],
-        mono:    ['"PerfectDOS"', '"JetBrains Mono"', 'monospace'],
-        sans:    ['"SCDream"', '"Pretendard"', 'sans-serif'],
-        logo:    ['"CorporateLogo"', '"BebasKai"', 'sans-serif'],
-        title:   ['"BebasKai"', 'sans-serif'],
-        display: ['var(--font-black-han)', '"SCDream"', 'sans-serif'],
+        serif:   ['var(--font-paperlogy)', 'var(--font-kotra-bold)', 'Georgia', 'serif'],
+        mono:    ['var(--font-perfect-dos)', '"JetBrains Mono"', 'monospace'],
+        sans:    ['var(--font-scdream)', '"Pretendard"', 'sans-serif'],
+        logo:    ['var(--font-corporate-logo)', 'var(--font-bebas-kai)', 'sans-serif'],
+        title:   ['var(--font-bebas-kai)', 'sans-serif'],
+        display: ['var(--font-black-han)', 'var(--font-scdream)', 'sans-serif'],
       },
       animation: {
         'glow': 'glow 2s ease-in-out infinite alternate',

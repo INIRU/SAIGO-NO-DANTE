@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
@@ -11,7 +12,7 @@ import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
-import AprilFools from '@/components/events/AprilFools'
+import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { createClient } from '@/lib/supabase/server'
 
 const songMyung = Song_Myung({
@@ -24,6 +25,65 @@ const blackHanSans = Black_Han_Sans({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-black-han',
+  display: 'swap',
+})
+
+/* ── Local Fonts ──────────────────────────────────────── */
+
+const excelsiorSans = localFont({
+  src: '../public/fonts/ExcelsiorSans.ttf',
+  variable: '--font-excelsior',
+  display: 'swap',
+})
+
+const mikodacs = localFont({
+  src: '../public/fonts/Mikodacs.ttf',
+  variable: '--font-mikodacs',
+  display: 'swap',
+})
+
+const bebasKai = localFont({
+  src: [
+    { path: '../public/fonts/BebasKai.otf', style: 'normal' },
+  ],
+  variable: '--font-bebas-kai',
+  display: 'swap',
+})
+
+const corporateLogo = localFont({
+  src: '../public/fonts/Corporate-Logo-Bold-ver2.otf',
+  weight: '700',
+  variable: '--font-corporate-logo',
+  display: 'swap',
+})
+
+const kotraBold = localFont({
+  src: '../public/fonts/KOTRA_BOLD.ttf',
+  weight: '700',
+  variable: '--font-kotra-bold',
+  display: 'swap',
+})
+
+const scDream = localFont({
+  src: '../public/fonts/SCDream5.otf',
+  weight: '500',
+  variable: '--font-scdream',
+  display: 'swap',
+})
+
+const perfectDOS = localFont({
+  src: '../public/fonts/PerfectDOSVGA437.ttf',
+  variable: '--font-perfect-dos',
+  display: 'swap',
+})
+
+const paperlogy = localFont({
+  src: [
+    { path: '../public/fonts/Paperlogy-Light.ttf', weight: '300', style: 'normal' },
+    { path: '../public/fonts/Paperlogy-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/Paperlogy-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-paperlogy',
   display: 'swap',
 })
 
@@ -119,7 +179,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable}`}>
+    <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
@@ -128,7 +188,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <SkipNav />
-        <AprilFools />
+        <AprilFoolsWrapper />
         <SessionProvider>
           <KeywordProvider keywords={keywords}>
             <Navbar />

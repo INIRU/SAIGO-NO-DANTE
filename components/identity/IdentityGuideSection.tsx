@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Swords, Pencil, X, Check, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry, type NotePassiveEntry } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, NoteAutocompleteDropdown, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 
@@ -105,11 +106,22 @@ export function useGuideEditor(identityId: string, initialGuides: GuideData[]) {
     }
   }, [editingGuideId, guideTitle, guideContent, identityId, refreshGuides])
 
-  const handleGuideDelete = useCallback(async (guideId: string) => {
-    if (!confirm('이 운영법을 삭제하시겠습니까?')) return
-    await fetch(`/api/guides/${guideId}`, { method: 'DELETE' })
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  const requestGuideDelete = useCallback((guideId: string) => {
+    setDeleteConfirm(guideId)
+  }, [])
+
+  const confirmGuideDelete = useCallback(async () => {
+    if (!deleteConfirm) return
+    await fetch(`/api/guides/${deleteConfirm}`, { method: 'DELETE' })
+    setDeleteConfirm(null)
     await refreshGuides()
-  }, [refreshGuides])
+  }, [deleteConfirm, refreshGuides])
+
+  const cancelGuideDelete = useCallback(() => {
+    setDeleteConfirm(null)
+  }, [])
 
   return {
     guides,
@@ -126,7 +138,10 @@ export function useGuideEditor(identityId: string, initialGuides: GuideData[]) {
     startNewGuide,
     cancelEdit,
     handleGuideSave,
-    handleGuideDelete,
+    requestGuideDelete,
+    confirmGuideDelete,
+    cancelGuideDelete,
+    deleteConfirm,
   }
 }
 
@@ -157,7 +172,10 @@ export default function IdentityGuideSection({
     startNewGuide,
     cancelEdit,
     handleGuideSave,
-    handleGuideDelete,
+    requestGuideDelete,
+    confirmGuideDelete,
+    cancelGuideDelete,
+    deleteConfirm,
   } = useGuideEditor(identityId, initialGuides)
 
   const ac = useNoteAutocomplete({
@@ -368,7 +386,7 @@ export default function IdentityGuideSection({
                               수정
                             </button>
                             <button
-                              onClick={() => handleGuideDelete(g.id)}
+                              onClick={() => requestGuideDelete(g.id)}
                               className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
                               style={{ background: 'rgba(200,50,50,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#c85050' }}
                             >
@@ -404,6 +422,16 @@ export default function IdentityGuideSection({
           </a>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!deleteConfirm}
+        variant="danger"
+        title="운영법 삭제"
+        message="이 운영법을 삭제하시겠습니까?"
+        confirmLabel="삭제"
+        onConfirm={confirmGuideDelete}
+        onCancel={cancelGuideDelete}
+      />
     </div>
   )
 }

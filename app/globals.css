@@ -1,81 +1,9 @@
-/* ── 로컬 폰트 ────────────────────────────────────────── */
-@font-face {
-  font-family: 'ExcelsiorSans';
-  src: url('/fonts/ExcelsiorSans.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Mikodacs';
-  src: url('/fonts/Mikodacs.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'BebasKai';
-  src: url('/fonts/BebasKai.otf') format('opentype'),
-       url('/fonts/BebasKai.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'CorporateLogo';
-  src: url('/fonts/Corporate-Logo-Bold-ver2.otf') format('opentype');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'KotraBold';
-  src: url('/fonts/KOTRA_BOLD.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'SCDream';
-  src: url('/fonts/SCDream5.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PerfectDOS';
-  src: url('/fonts/PerfectDOSVGA437.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Paperlogy';
-  src: url('/fonts/Paperlogy-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Paperlogy';
-  src: url('/fonts/Paperlogy-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Paperlogy';
-  src: url('/fonts/Paperlogy-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
+/* Local fonts are now loaded via next/font/local in app/layout.tsx */
 
 @import "tailwindcss";
 
 @theme {
-  --font-serif: 'Paperlogy', 'KotraBold', Georgia, serif;
+  --font-serif: var(--font-paperlogy), var(--font-kotra-bold), Georgia, serif;
 }
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
@@ -102,12 +30,12 @@
   --pride:    #3870b0;
   --envy:     #8058a8;
 
-  /* 폰트 변수 */
-  --font-logo:    'CorporateLogo', 'BebasKai', sans-serif;
-  --font-title:   'BebasKai', sans-serif;
-  --font-heading: 'KotraBold', 'SCDream', sans-serif;
-  --font-body:    'SCDream', sans-serif;
-  --font-mono:    'PerfectDOS', monospace;
+  /* 폰트 변수 (next/font/local CSS variables) */
+  --font-logo:    var(--font-corporate-logo), var(--font-bebas-kai), sans-serif;
+  --font-title:   var(--font-bebas-kai), sans-serif;
+  --font-heading: var(--font-kotra-bold), var(--font-scdream), sans-serif;
+  --font-body:    var(--font-scdream), sans-serif;
+  --font-mono:    var(--font-perfect-dos), monospace;
 
   /* ── 텍스트 위계 ─────────────────────────────── */
   --text-primary:   #e8dcc8;

@@ -198,7 +198,7 @@ function Skeleton() {
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
       <div style={{ height: '360px', background: 'linear-gradient(to bottom, #080604, #0d0b08)' }} />
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6 flex gap-5">
-        <div className="hidden lg:block" style={{ width: 252, flexShrink: 0 }}>
+        <div className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
           <div className="rounded-lg h-36 mb-3" style={{ background: '#120e09' }} />
           <div className="rounded-lg h-48" style={{ background: '#120e09', opacity: 0.6 }} />
         </div>
@@ -567,8 +567,8 @@ export default function DeckDetailClient({ id }: { id: string }) {
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
 
       {/* ── 히어로 파노라마 ── */}
-      <div className="relative" style={{ paddingTop: '64px' }}>
-        <div className="relative overflow-hidden" style={{ height: '340px' }}>
+      <div className="relative" style={{ paddingTop: '4rem' }}>
+        <div className="relative overflow-hidden" style={{ height: '21.25rem' }}>
 
           {/* 12 포트레이트 스트립 */}
           <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)' }}>
@@ -728,7 +728,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
         <div className="flex gap-5 items-start">
 
           {/* 데스크탑 사이드바 */}
-          <aside className="hidden lg:block" style={{ width: 252, flexShrink: 0 }}>
+          <aside className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
             <DeckSidebarPanel {...headerProps} />
           </aside>
 
@@ -856,7 +856,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
                             return (
                               <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
                                 <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
-                                <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '120px' }}>
+                                <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '7.5rem' }}>
                                   {id_.name_kr}
                                 </span>
                                 <div style={{ flex: 1 }} />

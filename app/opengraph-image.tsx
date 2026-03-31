@@ -6,7 +6,7 @@ export const alt = '최애의 관리자 — Limbus Company 팬 아카이브'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 // 거미집 검지 아비 이상 (각성)
 const PORTRAIT_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/${encodeURIComponent('The House of Spiders The Index Nursefather')}/10115_gacksung.webp`

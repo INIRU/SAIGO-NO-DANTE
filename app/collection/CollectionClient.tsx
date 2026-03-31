@@ -376,10 +376,10 @@ function CollectionViewer() {
     return (
       <div className="min-h-screen pt-24 pb-16 px-6">
         <div className="max-w-5xl mx-auto">
-          <div style={{ width: 200, height: 32, background: '#2a2015', borderRadius: 4, marginBottom: 16 }} />
-          <div className="flex gap-2 mb-4">
+          <div style={{ width: '12.5rem', height: '2rem', background: '#2a2015', borderRadius: '0.25rem', marginBottom: '1rem' }} />
+          <div className="flex gap-2 mb-4 overflow-x-auto">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ width: 40, height: 40, borderRadius: '50%', background: '#2a2015' }} />
+              <div key={i} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#2a2015', flexShrink: 0 }} />
             ))}
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
@@ -507,7 +507,7 @@ function CollectionViewer() {
                       background: isActive ? 'rgba(200,144,10,0.12)' : 'transparent',
                       border: `1px solid ${isActive ? 'var(--gold-dim)' : 'transparent'}`,
                       cursor: 'pointer',
-                      minWidth: 52,
+                      minWidth: '3.25rem',
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

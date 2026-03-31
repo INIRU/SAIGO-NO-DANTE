@@ -344,16 +344,16 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
   if (loading) {
     return (
-      <section style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: 8, padding: 24 }}>
-        <div style={{ width: 140, height: 14, background: '#2a2015', borderRadius: 2, marginBottom: 16 }} />
+      <section style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1.5rem' }}>
+        <div style={{ width: '8.75rem', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '1rem' }} />
         <div className="flex gap-2 mb-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} style={{ width: 40, height: 40, borderRadius: '50%', background: '#2a2015' }} />
+            <div key={i} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#2a2015' }} />
           ))}
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} style={{ aspectRatio: '3/4', background: '#2a2015', borderRadius: 6, opacity: 0.4 + i * 0.05 }} />
+            <div key={i} style={{ aspectRatio: '3/4', background: '#2a2015', borderRadius: '0.375rem', opacity: 0.4 + i * 0.05 }} />
           ))}
         </div>
       </section>
@@ -418,7 +418,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   background: isActive ? 'rgba(200,144,10,0.12)' : 'transparent',
                   border: `1px solid ${isActive ? 'var(--gold-dim)' : 'transparent'}`,
                   cursor: 'pointer',
-                  minWidth: 52,
+                  minWidth: '3.25rem',
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -490,7 +490,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                       src={getIconUrl(keyword)!}
                       alt={keyword}
                       style={{
-                        width: '14px', height: '14px',
+                        width: '0.875rem', height: '0.875rem',
                         filter: isActive ? `drop-shadow(0 0 3px ${color}80)` : 'grayscale(0.7) brightness(0.5)',
                       }}
                     />
@@ -655,8 +655,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                     {/* 체크 표시 */}
                     {isOwned && (
                       <div style={{
-                        position: 'absolute', top: 3, right: 3,
-                        width: 16, height: 16, borderRadius: '50%',
+                        position: 'absolute', top: '0.1875rem', right: '0.1875rem',
+                        width: '1rem', height: '1rem', borderRadius: '50%',
                         background: 'var(--gold)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
@@ -668,7 +668,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                       style={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
                         background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
-                        padding: '16px 4px 4px',
+                        padding: '1rem 0.25rem 0.25rem',
                       }}
                     >
                       <p style={{
@@ -750,8 +750,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                           )}
                           {isOwned && (
                             <div style={{
-                              position: 'absolute', top: 2, right: 2,
-                              width: 14, height: 14, borderRadius: '50%',
+                              position: 'absolute', top: '0.125rem', right: '0.125rem',
+                              width: '0.875rem', height: '0.875rem', borderRadius: '50%',
                               background: egoSinColor,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
@@ -762,7 +762,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                             style={{
                               position: 'absolute', bottom: 0, left: 0, right: 0,
                               background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
-                              padding: '12px 3px 3px',
+                              padding: '0.75rem 0.1875rem 0.1875rem',
                             }}
                           >
                             <p style={{
@@ -905,11 +905,11 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
     <div ref={ref} style={{ position: 'fixed', left: '-9999px', top: 0, width: '1200px', background: '#0d0b08', padding: '40px', zIndex: -1 }}>
       {/* 헤더 */}
       <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
-        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
+        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
         <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
           보유 현황{showIdentity && !showEgo ? ' — 인격' : !showIdentity && showEgo ? ' — E.G.O' : ''}
         </p>
-        <p style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.8125rem' }}>
+        <p style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.8125rem' }}>
           {showIdentity && <>인격 {stats.ownedIdentities}/{stats.totalIdentities}</>}
           {showIdentity && showEgo && <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>}
           {showEgo && <>EGO {stats.ownedEgos}/{stats.totalEgos}</>}
@@ -929,7 +929,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={sinnerLogoUrl(sinner.id)} alt={sinner.name_kr} width={28} height={28} crossOrigin="anonymous" style={{ borderRadius: '50%' }} />
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{sinner.name_kr}</span>
-                <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
+                <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}
               {egoList.length > 0 && renderEgoGrid(egoList)}
@@ -947,7 +947,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
             <div key={themeKw} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{themeKw}</span>
-                <span style={{ color: '#555', fontFamily: 'PerfectDOS, monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
+                <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}
               {egoList.length > 0 && renderEgoGrid(egoList)}
@@ -958,7 +958,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
 
       {/* 푸터 */}
       <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #2a2015' }}>
-        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'PerfectDOS, monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>saigo-no-dante.com</p>
+        <p style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.75rem', letterSpacing: '0.15em' }}>saigo-no-dante.com</p>
       </div>
     </div>
   )

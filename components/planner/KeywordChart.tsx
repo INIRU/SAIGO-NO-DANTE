@@ -1,8 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-
-const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 // 키워드 → slug 매핑 (주요 키워드)
 const KEYWORD_SLUG: Record<string, string> = {

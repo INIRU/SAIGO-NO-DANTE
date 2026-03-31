@@ -70,14 +70,14 @@ export default function StoryPage() {
         <div className="text-center mb-[3.5rem]">
           <h1
             className="text-[2.5rem] mb-[0.5rem]"
-            style={{ fontFamily: 'KotraBold, serif', color: 'var(--gold)' }}
+            style={{ fontFamily: 'var(--font-kotra-bold), serif', color: 'var(--gold)' }}
           >
             스토리
           </h1>
           <p
             className="text-[0.75rem] tracking-[0.3em] uppercase"
             style={{
-              fontFamily: 'PerfectDOS, monospace',
+              fontFamily: 'var(--font-perfect-dos), monospace',
               color: 'var(--gold-dim)',
               opacity: 0.4,
             }}
@@ -139,7 +139,7 @@ export default function StoryPage() {
                     <span
                       className="text-[1.25rem]"
                       style={{
-                        fontFamily: 'PerfectDOS, monospace',
+                        fontFamily: 'var(--font-perfect-dos), monospace',
                         color: 'var(--gold)',
                       }}
                     >
@@ -151,7 +151,7 @@ export default function StoryPage() {
                     <h2
                       className="text-[1.1rem] mb-[0.25rem]"
                       style={{
-                        fontFamily: 'Paperlogy, sans-serif',
+                        fontFamily: 'var(--font-paperlogy), sans-serif',
                         fontWeight: 700,
                         color: ch.available ? '#ddd5c8' : '#666',
                       }}
@@ -162,7 +162,7 @@ export default function StoryPage() {
                       <p
                         className="text-[0.8rem] leading-[1.6]"
                         style={{
-                          fontFamily: 'Paperlogy, sans-serif',
+                          fontFamily: 'var(--font-paperlogy), sans-serif',
                           fontWeight: 300,
                           color: '#9a8a78',
                           whiteSpace: 'pre-line',
@@ -175,7 +175,7 @@ export default function StoryPage() {
                       <p
                         className="text-[0.7rem] mt-[0.25rem]"
                         style={{
-                          fontFamily: 'PerfectDOS, monospace',
+                          fontFamily: 'var(--font-perfect-dos), monospace',
                           color: 'var(--gold-dim)',
                           opacity: 0.5,
                         }}
@@ -190,7 +190,7 @@ export default function StoryPage() {
                     <span
                       className="text-[0.6rem] mt-[0.25rem] shrink-0"
                       style={{
-                        fontFamily: 'PerfectDOS, monospace',
+                        fontFamily: 'var(--font-perfect-dos), monospace',
                         color: 'var(--gold-dim)',
                         opacity: 0.4,
                       }}
@@ -213,7 +213,7 @@ export default function StoryPage() {
                     <div className="flex-1 h-px" style={{ background: 'var(--border)', opacity: 0.4 }} />
                     <span
                       className="text-[0.6rem] tracking-[0.2em]"
-                      style={{ fontFamily: 'PerfectDOS, monospace', color: 'var(--gold-dim)', opacity: 0.3 }}
+                      style={{ fontFamily: 'var(--font-perfect-dos), monospace', color: 'var(--gold-dim)', opacity: 0.3 }}
                     >
                       UPCOMING
                     </span>

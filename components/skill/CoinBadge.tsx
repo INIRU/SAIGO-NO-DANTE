@@ -1,5 +1,3 @@
-'use client'
-
 import { COIN_BADGE_STYLES } from './tokens'
 
 interface CoinBadgeProps {

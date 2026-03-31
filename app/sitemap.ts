@@ -11,12 +11,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
 
   // 인격 + EGO + 덱 + 플래너 동적 페이지
-  const [{ data: identities }, { data: egos }, { data: decks }, { data: plans }] = await Promise.all([
+  const [{ data: identities, error: identitiesError }, { data: egos, error: egosError }, { data: decks, error: decksError }, { data: plans, error: plansError }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id'),
     supabase.schema('limbus').from('ego').select('id, sinner_id'),
     supabase.schema('limbus').from('decks').select('id, created_at').order('created_at', { ascending: false }).limit(500),
     supabase.schema('limbus').from('mirror_dungeon_plans').select('id, created_at').order('created_at', { ascending: false }).limit(200),
   ])
+  if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
+  if (egosError) console.error('Failed to fetch egos:', egosError)
+  if (decksError) console.error('Failed to fetch decks:', decksError)
+  if (plansError) console.error('Failed to fetch plans:', plansError)
 
   // 정적 페이지 — 주요 콘텐츠
   const staticPages: MetadataRoute.Sitemap = [

@@ -60,9 +60,10 @@ export default async function IdentityPage({
     getEgoGiftsForNotes(),
     (async () => {
       const supabase = await createClient()
-      const { data } = await supabase
+      const { data, error } = await supabase
         .schema('limbus').from('app_config').select('value')
         .eq('key', 'current_season').single()
+      if (error) console.error('Failed to fetch current season:', error)
       return data?.value?.season ?? 7
     })(),
   ])
@@ -71,12 +72,13 @@ export default async function IdentityPage({
   let guides: { id: string; title: string; content: string; author_name: string | null; updated_at: string }[] = []
   try {
     const admin = createAdminClient()
-    const { data } = await admin
+    const { data, error: guidesError } = await admin
       .schema('limbus')
       .from('identity_guides')
       .select('id, title, content, updated_at, author_id')
       .eq('identity_id', identity.id)
       .order('created_at', { ascending: true })
+    if (guidesError) console.error('Failed to fetch identity guides:', guidesError)
     if (data && data.length > 0) {
       const authorIds = [...new Set(data.map(g => g.author_id))]
       const { data: profiles } = await admin

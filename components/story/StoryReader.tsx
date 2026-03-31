@@ -163,7 +163,7 @@ function DialogBlock({
             className="text-[0.9rem] tracking-[0.05em]"
             style={{
               color: getSpeakerColor(line.teller),
-              fontFamily: 'Paperlogy, sans-serif',
+              fontFamily: 'var(--font-paperlogy), sans-serif',
               fontWeight: 700,
             }}
           >
@@ -174,7 +174,7 @@ function DialogBlock({
               className="text-[0.7rem]"
               style={{
                 color: 'var(--gold-dim)',
-                fontFamily: 'PerfectDOS, monospace',
+                fontFamily: 'var(--font-perfect-dos), monospace',
                 opacity: 0.6,
               }}
             >
@@ -191,7 +191,7 @@ function DialogBlock({
             className="text-[0.85rem] tracking-[0.1em]"
             style={{
               color: 'var(--gold-dim)',
-              fontFamily: 'KotraBold, serif',
+              fontFamily: 'var(--font-kotra-bold), serif',
             }}
           >
             {line.title}
@@ -208,7 +208,7 @@ function DialogBlock({
             : isInnerThought
               ? 'var(--story-text-thought)'
               : 'var(--story-text)',
-          fontFamily: 'Paperlogy, sans-serif',
+          fontFamily: 'var(--font-paperlogy), sans-serif',
           fontWeight: isInnerThought ? 300 : 400,
           whiteSpace: 'pre-line',
         }}
@@ -252,7 +252,7 @@ function PlaceDivider({
         className="text-[0.7rem] tracking-[0.25em] uppercase whitespace-nowrap"
         style={{
           color: 'var(--gold-dim)',
-          fontFamily: 'PerfectDOS, monospace',
+          fontFamily: 'var(--font-perfect-dos), monospace',
         }}
       >
         {place}
@@ -545,7 +545,7 @@ function CGPanel({
                       className="text-[0.85rem] tracking-[0.05em]"
                       style={{
                         color: getSpeakerColor(activeLine.teller),
-                        fontFamily: 'Paperlogy, sans-serif',
+                        fontFamily: 'var(--font-paperlogy), sans-serif',
                         fontWeight: 700,
                       }}
                     >
@@ -557,7 +557,7 @@ function CGPanel({
                   <div className="mb-[0.25rem]">
                     <span
                       className="text-[0.8rem] tracking-[0.1em]"
-                      style={{ color: 'var(--gold-dim)', fontFamily: 'KotraBold, serif' }}
+                      style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-kotra-bold), serif' }}
                     >
                       {activeLine.title}
                     </span>
@@ -567,7 +567,7 @@ function CGPanel({
                   className="text-[0.95rem] leading-[1.8]"
                   style={{
                     color: 'var(--story-text-bright)',
-                    fontFamily: 'Paperlogy, sans-serif',
+                    fontFamily: 'var(--font-paperlogy), sans-serif',
                     fontWeight: 400,
                     whiteSpace: 'pre-line',
                   }}
@@ -728,7 +728,7 @@ export default function StoryReader({
             <ArrowLeft style={{ width: '0.9rem', height: '0.9rem' }} />
             <span
               className="text-[0.8rem]"
-              style={{ fontFamily: 'Paperlogy, sans-serif' }}
+              style={{ fontFamily: 'var(--font-paperlogy), sans-serif' }}
             >
               {CHAPTER_LABELS[slug] ?? slug}
             </span>
@@ -737,7 +737,7 @@ export default function StoryReader({
             className="text-[0.6rem] tracking-[0.15em] opacity-40"
             style={{
               color: 'var(--gold-dim)',
-              fontFamily: 'PerfectDOS, monospace',
+              fontFamily: 'var(--font-perfect-dos), monospace',
             }}
           >
             {data.episodeId}
@@ -807,7 +807,7 @@ export default function StoryReader({
               className="text-[0.85rem] transition-opacity hover:opacity-70"
               style={{
                 color: 'var(--gold-dim)',
-                fontFamily: 'Paperlogy, sans-serif',
+                fontFamily: 'var(--font-paperlogy), sans-serif',
               }}
             >
               ← 이전
@@ -820,7 +820,7 @@ export default function StoryReader({
             className="text-[0.7rem] tracking-[0.1em] transition-opacity hover:opacity-70"
             style={{
               color: 'var(--gold-dim)',
-              fontFamily: 'PerfectDOS, monospace',
+              fontFamily: 'var(--font-perfect-dos), monospace',
               opacity: 0.5,
             }}
           >
@@ -832,7 +832,7 @@ export default function StoryReader({
               className="text-[0.85rem] transition-opacity hover:opacity-70"
               style={{
                 color: 'var(--gold-dim)',
-                fontFamily: 'Paperlogy, sans-serif',
+                fontFamily: 'var(--font-paperlogy), sans-serif',
               }}
             >
               다음 →

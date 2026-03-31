@@ -6,8 +6,9 @@ import { Loader2, Plus, Pencil, Trash2, Search, X, Tags } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { AdminButton, AdminIconButton, AdminInput } from '@/components/admin'
 import { AdminTextarea, AdminSelect } from '@/components/admin/AdminInput'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
-const ICON_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/icons/keywords'
+const ICON_BASE = `${STORAGE_BASE}/icons/keywords`
 
 const SIN_COLORS: Record<string, string> = {
   wrath:    '#c83030',
@@ -107,6 +108,7 @@ export default function AdminKeywordsPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [iconPreviewErr, setIconPreviewErr] = useState(false)
+  const [errorToast, setErrorToast] = useState<string | null>(null)
 
   const fetchRows = useCallback(async (q?: string) => {
     const url = q ? `/api/admin/keywords?q=${encodeURIComponent(q)}` : '/api/admin/keywords'
@@ -160,7 +162,8 @@ export default function AdminKeywordsPage() {
         })
         if (!res.ok) {
           const err = await res.json()
-          alert(err.error || '추가 실패')
+          setErrorToast(err.error || '추가 실패')
+          setTimeout(() => setErrorToast(null), 3000)
           return
         }
       } else if (editRow) {
@@ -176,7 +179,8 @@ export default function AdminKeywordsPage() {
         })
         if (!res.ok) {
           const err = await res.json()
-          alert(err.error || '수정 실패')
+          setErrorToast(err.error || '수정 실패')
+          setTimeout(() => setErrorToast(null), 3000)
           return
         }
       }
@@ -418,6 +422,28 @@ export default function AdminKeywordsPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* 에러 토스트 */}
+      {errorToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '1.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            background: 'rgba(200,48,48,0.95)',
+            color: '#fff',
+            padding: '0.5rem 1.25rem',
+            borderRadius: '0.5rem',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          }}
+        >
+          {errorToast}
+        </div>
+      )}
     </div>
   )
 }

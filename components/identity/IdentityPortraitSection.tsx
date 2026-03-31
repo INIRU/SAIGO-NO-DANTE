@@ -185,6 +185,7 @@ export default function IdentityPortraitSection({
                 alt="인격 정보"
                 width={480}
                 height={320}
+                quality={90}
                 placeholder="blur"
                 blurDataURL={BLUR_PLACEHOLDER}
                 className="w-full h-auto max-w-[320px] mx-auto"

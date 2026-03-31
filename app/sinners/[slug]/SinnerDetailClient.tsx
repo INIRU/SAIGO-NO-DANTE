@@ -656,7 +656,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         <button
                           key={label}
                           onClick={() => setRarityFilter(value)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all duration-200"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200 min-h-[2.75rem] sm:min-h-0"
                           style={{
                             background: isActive ? `${borderColor}20` : 'transparent',
                             border: `1px solid ${isActive ? borderColor : 'var(--border)'}`,
@@ -672,7 +672,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                               height={14}
                               unoptimized
                               style={{
-                                height: '14px',
+                                height: '0.875rem',
                                 width: 'auto',
                                 filter: isActive ? 'none' : 'grayscale(0.8) brightness(0.6)',
                               }}
@@ -830,7 +830,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           {/* 원형 CG - 메인 포커스 */}
                           <div style={{
                             position: 'relative',
-                            width: '110px', height: '110px',
+                            width: '6.875rem', height: '6.875rem',
                             borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
                             border: `2px solid ${sinColor}`,
                             boxShadow: `0 0 18px ${sinColor}60, 0 0 36px ${sinColor}25`,
