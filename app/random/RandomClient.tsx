@@ -11,7 +11,7 @@ import type { KeywordCondition, RandomResult } from '@/lib/random/engine'
 import { encodeRandomResult } from '@/lib/random/deckCode'
 import OptionPanel from '@/components/random/OptionPanel'
 import ResultGrid from '@/components/random/ResultGrid'
-import { useToast, Toast } from '@/components/ui/Toast'
+import { showSuccess, showError, showWarning } from '@/lib/toast'
 import { Copy, Shuffle } from 'lucide-react'
 
 type Props = {
@@ -25,8 +25,6 @@ const COLLECTION_CODE_KEY = 'random_collection_code'
 export default function RandomClient({ sinners, identities, egos }: Props) {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
-  const { toast, showToast } = useToast()
-
   // Options
   const [identityEnabled, setIdentityEnabled] = useState(true)
   const [egoEnabled, setEgoEnabled] = useState(true)
@@ -112,20 +110,20 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
       decodeCollectionAsync(collectionCode.trim(), sinnerInfos, idsByS, egosByS)
         .then(set => {
           if (set.size === 0) {
-            showToast('컬렉션 코드가 유효하지 않습니다', 'warning')
+            showWarning('컬렉션 코드가 유효하지 않습니다')
             setOwnedIds(null)
           } else {
             setOwnedIds(set)
           }
         })
         .catch(() => {
-          showToast('컬렉션 코드 디코딩 실패', 'error')
+          showError('컬렉션 코드 디코딩 실패')
           setOwnedIds(null)
         })
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [collectionEnabled, collectionCode, sinners, identities, egos, showToast])
+  }, [collectionEnabled, collectionCode, sinners, identities, egos])
 
   // Per-sinner identity pools
   const pools = useMemo(() => {
@@ -162,7 +160,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
       const missing = sinners.filter(s => !pools[s.id]?.length)
       if (missing.length > 0) {
         const reason = rarityFilter ? '해당 등급의 ' : ''
-        showToast(`${missing.map(s => s.name_kr).join(', ')}에게 ${reason}인격이 없습니다`, 'error')
+        showError(`${missing.map(s => s.name_kr).join(', ')}에게 ${reason}인격이 없습니다`)
         return
       }
     }
@@ -175,7 +173,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
           return !pool.some(e => e.grade === 'ZAYIN')
         })
         if (missingZayin.length > 0) {
-          showToast(`${missingZayin.map(s => s.name_kr).join(', ')}의 ZAYIN E.G.O가 컬렉션에 없습니다`, 'error')
+          showError(`${missingZayin.map(s => s.name_kr).join(', ')}의 ZAYIN E.G.O가 컬렉션에 없습니다`)
           return
         }
       }
@@ -184,7 +182,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
     if (keywords.length > 0 && identityEnabled) {
       const error = validateConditions(sinners, pools, keywords)
       if (error) {
-        showToast(error, 'error')
+        showError(error)
         return
       }
     }
@@ -203,7 +201,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
       rarityFilter,
     })
     setResult(newResult)
-  }, [sinners, identities, egos, identityEnabled, egoEnabled, keywords, pools, egoPools, collectionEnabled, ownedIds, bothOff, isRolling, showToast])
+  }, [sinners, identities, egos, identityEnabled, egoEnabled, keywords, pools, egoPools, collectionEnabled, ownedIds, bothOff, isRolling])
 
   // Reveal done
   const handleRevealDone = useCallback(() => {
@@ -243,8 +241,8 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
   const handleCopy = useCallback(async () => {
     if (!deckCode) return
     await navigator.clipboard.writeText(deckCode)
-    showToast('편성코드가 복사되었습니다', 'success')
-  }, [deckCode, showToast])
+    showSuccess('편성코드가 복사되었습니다')
+  }, [deckCode])
 
   const showTabs = identityEnabled && egoEnabled
 
@@ -273,7 +271,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
           onCollectionToggle={() => setCollectionEnabled(p => !p)}
           onCollectionCodeChange={setCollectionCode}
           onKeywordsChange={setKeywords}
-          onKeywordMaxExceeded={() => showToast('키워드는 최대 2개까지 선택할 수 있습니다', 'warning')}
+          onKeywordMaxExceeded={() => showWarning('키워드는 최대 2개까지 선택할 수 있습니다')}
           onRarityFilterChange={setRarityFilter}
         />
 
@@ -378,7 +376,6 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
         </div>
       </div>
 
-      <Toast toast={toast} />
     </div>
   )
 }

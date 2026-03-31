@@ -12,6 +12,7 @@ import { DIFFICULTY_CONFIG, type Difficulty, type GiftActivationCondition, type 
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { showSuccess, showError } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
@@ -366,18 +367,12 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [codeCopied, setCodeCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   const router = useRouter()
 
   const isOwner = session?.user?.email && plan.profiles?.username // 서버에서 비교해야 정확하지만, UI 표시용
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
-
-  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }
 
   const handleCopyCode = async () => {
     try {
@@ -408,7 +403,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
       await navigator.clipboard.writeText(code)
       setCodeCopied(true)
       setTimeout(() => setCodeCopied(false), 2000)
-    } catch { showToast('편성코드 복사 실패') }
+    } catch { showError('편성코드 복사 실패') }
   }
 
   const handleFork = () => {
@@ -424,7 +419,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
     saveDraftToLocal(planState as any)
     router.push('/planner')
-    showToast('플래너에 불러왔습니다', 'success')
+    showSuccess('플래너에 불러왔습니다')
   }
 
   const handleDelete = async () => {
@@ -434,9 +429,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         router.push('/planner/community')
       } else {
         const data = await res.json()
-        showToast(data.error ?? '삭제 실패')
+        showError(data.error ?? '삭제 실패')
       }
-    } catch { showToast('삭제 중 오류 발생') }
+    } catch { showError('삭제 중 오류 발생') }
     setShowDeleteModal(false)
   }
 
@@ -589,7 +584,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }, [plan.id, session])
 
   const handleVote = async () => {
-    if (!session) { setToast({ message: '로그인이 필요합니다.', type: 'error' }); setTimeout(() => setToast(null), 3000); return }
+    if (!session) { showError('로그인이 필요합니다.'); return }
     setVoteLoading(true)
     try {
       const res = await fetch(`/api/planner/${plan.id}/vote`, { method: 'POST' })
@@ -619,7 +614,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   useEffect(() => { fetchComments() }, [fetchComments])
 
   const handleCommentSubmit = async () => {
-    if (!session) { setToast({ message: '로그인이 필요합니다.', type: 'error' }); setTimeout(() => setToast(null), 3000); return }
+    if (!session) { showError('로그인이 필요합니다.'); return }
     const content = commentText.trim()
     if (!content) return
     setSubmitting(true)
@@ -1470,19 +1465,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         </section>
 
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 100, padding: '0.625rem 1.25rem', borderRadius: '0.5rem',
-          background: toast.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(34,197,94,0.95)',
-          color: '#fff', fontSize: '0.8125rem', fontWeight: 600,
-          boxShadow: '0 0.5rem 2rem rgba(0,0,0,0.5)',
-        }}>
-          {toast.message}
-        </div>
-      )}
 
       {/* 기프트 상세 모달 */}
       {selectedGift && (

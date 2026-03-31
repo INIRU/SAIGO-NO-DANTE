@@ -6,8 +6,9 @@ import { Trash2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
   AdminInput, AdminIconButton,
-  AdminTable, useToast, AdminToastContainer,
+  AdminTable,
 } from '@/components/admin'
+import { showSuccess, showError } from '@/lib/toast'
 
 interface Deck {
   id: string
@@ -26,8 +27,6 @@ export default function AdminDecksPage() {
 
   const [deleting, setDeleting] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Deck | null>(null)
-  const { toasts, showToast, dismissToast } = useToast()
-
   const fetchDecks = async (q = '') => {
     setLoading(true)
     try {
@@ -37,7 +36,7 @@ export default function AdminDecksPage() {
       const data = await res.json()
       setDecks(Array.isArray(data) ? data : [])
     } catch {
-      showToast('덱 목록을 불러오지 못했습니다.', 'error')
+      showError('덱 목록을 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -60,9 +59,9 @@ export default function AdminDecksPage() {
       const res = await fetch(`/api/admin/decks/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
       setDecks(prev => prev.filter(d => d.id !== id))
-      showToast(`"${title}" 덱이 삭제되었습니다.`, 'success')
+      showSuccess(`"${title}" 덱이 삭제되었습니다.`)
     } catch {
-      showToast('덱 삭제 중 오류가 발생했습니다.', 'error')
+      showError('덱 삭제 중 오류가 발생했습니다.')
     } finally {
       setDeleting(null)
     }
@@ -171,7 +170,6 @@ export default function AdminDecksPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

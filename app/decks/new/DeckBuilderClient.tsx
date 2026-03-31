@@ -1,5 +1,7 @@
 'use client'
 
+import { showSuccess, showError } from '@/lib/toast'
+
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -29,7 +31,6 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
-import { useToast, Toast } from '@/components/ui/Toast'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import CompactButton from '@/components/ui/CompactButton'
 import Image from 'next/image'
@@ -131,7 +132,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [contentType, setContentType] = useState<string>(initData?.content_type && initData.content_type !== '없음' ? initData.content_type : '')
   const [description, setDescription] = useState(initData?.description ?? '')
   const [saving, setSaving] = useState(false)
-  const { toast, showToast } = useToast()
+  // toast는 Sonner가 글로벌로 처리 (showSuccess/showError from lib/toast)
   const [showCostDetail, setShowCostDetail] = useState(false)
   const [showIdentityDetail, setShowIdentityDetail] = useState(false)
   const [descPreview, setDescPreview] = useState(false)
@@ -480,7 +481,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       router.push(editMode ? `/decks/${editMode.deckId}` : '/decks')
     } else {
       const data = await res.json().catch(() => null)
-      showToast(data?.error ?? (editMode ? '덱 수정에 실패했습니다.' : '덱 저장에 실패했습니다.'))
+      showError(data?.error ?? (editMode ? '덱 수정에 실패했습니다.' : '덱 저장에 실패했습니다.'))
     }
   }
 
@@ -814,7 +815,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )}
       </div>
 
-      <Toast toast={toast} />
+      {/* Toast는 Sonner가 글로벌로 처리 */}
 
       {/* ── 테마팩(EGO 기프트) 모달 ───────────────────── */}
       <EgoGiftModal

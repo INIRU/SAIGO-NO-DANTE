@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Trash2, Reply, X, ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
-import { useToast, Toast } from '@/components/ui/Toast'
+import { showSuccess, showError } from '@/lib/toast'
 import { STORAGE_BASE, GRADE_COLORS, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
@@ -218,7 +218,6 @@ export default function DeckDetailClient({ id }: { id: string }) {
 
   const [deck, setDeck] = useState<DeckDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const { toast, showToast } = useToast()
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [voting, setVoting] = useState(false)
@@ -327,10 +326,10 @@ export default function DeckDetailClient({ id }: { id: string }) {
         setVoted(data.voted)
         setVoteCount(c => data.voted ? c + 1 : c - 1)
       } else {
-        showToast('추천에 실패했습니다.')
+        showError('추천에 실패했습니다.')
       }
     } catch {
-      showToast('추천에 실패했습니다.')
+      showError('추천에 실패했습니다.')
     } finally {
       setVoting(false)
     }
@@ -351,12 +350,12 @@ export default function DeckDetailClient({ id }: { id: string }) {
       const data = await res.json()
       if (res.ok) {
         setBookmarked(data.bookmarked)
-        showToast(data.bookmarked ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.', 'success')
+        showSuccess(data.bookmarked ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.')
       } else {
-        showToast('북마크에 실패했습니다.')
+        showError('북마크에 실패했습니다.')
       }
     } catch {
-      showToast('북마크에 실패했습니다.')
+      showError('북마크에 실패했습니다.')
     } finally {
       setBookmarking(false)
     }
@@ -397,14 +396,14 @@ export default function DeckDetailClient({ id }: { id: string }) {
         setComments(prev => [...prev, comment])
         setCommentText('')
       } else {
-        showToast('댓글 작성에 실패했습니다.')
+        showError('댓글 작성에 실패했습니다.')
       }
     } catch {
-      showToast('댓글 작성에 실패했습니다.')
+      showError('댓글 작성에 실패했습니다.')
     } finally {
       setCommentSubmitting(false)
     }
-  }, [commentText, commentSubmitting, authStatus, id, showToast])
+  }, [commentText, commentSubmitting, authStatus, id])
 
   const handleReplySubmit = useCallback(async () => {
     if (!replyingTo || !replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
@@ -421,28 +420,28 @@ export default function DeckDetailClient({ id }: { id: string }) {
         setReplyText('')
         setReplyingTo(null)
       } else {
-        showToast('답글 작성에 실패했습니다.')
+        showError('답글 작성에 실패했습니다.')
       }
     } catch {
-      showToast('답글 작성에 실패했습니다.')
+      showError('답글 작성에 실패했습니다.')
     } finally {
       setCommentSubmitting(false)
     }
-  }, [replyingTo, replyText, commentSubmitting, authStatus, id, showToast])
+  }, [replyingTo, replyText, commentSubmitting, authStatus, id])
 
   const handleCommentDelete = useCallback(async (commentId: string) => {
     try {
       const res = await fetch(`/api/decks/${id}/comments?commentId=${commentId}`, { method: 'DELETE' })
       if (res.ok) {
         setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
-        showToast('댓글이 삭제되었습니다.', 'success')
+        showSuccess('댓글이 삭제되었습니다.')
       } else {
-        showToast('댓글 삭제에 실패했습니다.')
+        showError('댓글 삭제에 실패했습니다.')
       }
     } catch {
-      showToast('댓글 삭제에 실패했습니다.')
+      showError('댓글 삭제에 실패했습니다.')
     }
-  }, [id, showToast])
+  }, [id])
 
   const handleFork = useCallback(() => {
     window.location.href = `/decks/new?fork=${id}`
@@ -1199,7 +1198,6 @@ export default function DeckDetailClient({ id }: { id: string }) {
         </div>
       </div>
 
-      <Toast toast={toast} />
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
       )}

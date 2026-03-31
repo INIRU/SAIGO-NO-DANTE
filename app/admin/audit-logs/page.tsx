@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import {
   AdminSelect, AdminButton, AdminTable,
-  useToast, AdminToastContainer,
 } from '@/components/admin'
+import { showError } from '@/lib/toast'
 
 interface AuditLog {
   id: string
@@ -56,8 +56,6 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
   const [page, setPage] = useState(0)
-  const { toasts, showToast, dismissToast } = useToast()
-
   useEffect(() => {
     setLoading(true)
     setPage(0)
@@ -66,7 +64,7 @@ export default function AuditLogsPage() {
     fetch(`/api/admin/audit-logs?${params}`)
       .then(r => r.json())
       .then(data => setLogs(Array.isArray(data) ? data : []))
-      .catch(() => showToast('감사 로그를 불러오지 못했습니다.', 'error'))
+      .catch(() => showError('감사 로그를 불러오지 못했습니다.'))
       .finally(() => setLoading(false))
   }, [filter])
 
@@ -199,7 +197,6 @@ export default function AuditLogsPage() {
         </>
       )}
 
-      <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

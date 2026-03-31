@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useQueryState, parseAsString } from 'nuqs'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -66,10 +67,10 @@ export default function CommunityClient() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [total, setTotal] = useState(0)
-  const [sort, setSort] = useState<SortKey>('latest')
+  const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
   const offsetRef = useRef(0)
   const searchRef = useRef<HTMLDivElement>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -229,11 +230,11 @@ export default function CommunityClient() {
 
   useEffect(() => {
     offsetRef.current = 0
-    fetchPlans({ sort, difficulty, offset: 0, replace: true })
+    fetchPlans({ sort: sort as SortKey, difficulty, offset: 0, replace: true })
   }, [sort, difficulty, fetchPlans])
 
   const handleLoadMore = () => {
-    fetchPlans({ sort, difficulty, offset: offsetRef.current, replace: false })
+    fetchPlans({ sort: sort as SortKey, difficulty, offset: offsetRef.current, replace: false })
   }
 
   // 컬렉션 마스터 데이터 로드

@@ -1,11 +1,12 @@
 'use client'
 
-import { useReducer, useMemo, useEffect, useState, useCallback, useRef } from 'react'
+import { useMemo, useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, RotateCcw, ChevronRight, ChevronsRight, ChevronsLeft } from 'lucide-react'
-import { runReducer, createInitialRunState, type RunState } from '@/lib/planner/run-types'
+import { type RunState } from '@/lib/planner/run-types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { saveRunDraft, loadRunDraft, clearRunDraft, saveRunToHistory, decodePlan, loadPlanForRun } from '@/lib/planner/encoder'
+import { saveRunToHistory, decodePlan, loadPlanForRun } from '@/lib/planner/encoder'
+import { useRunStore } from '@/lib/stores/run'
 import { type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData } from '@/lib/planner/types'
 import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 import dynamic from 'next/dynamic'
@@ -28,7 +29,8 @@ interface Props {
 }
 
 export default function RunClient({ themes, gifts, recipes, identities, sinners, skills, passives, egos, events }: Props) {
-  const [state, dispatch] = useReducer(runReducer, createInitialRunState('hard'))
+  const state = useRunStore()
+  const dispatch = useRunStore(s => s.dispatch)
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
 
   // 트리거 모드: Navbar, Footer 숨김
@@ -83,29 +85,19 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       }).catch(() => { /* invalid */ })
       return
     }
-    // ?draft=1
-    if (params.get('draft') === '1') {
-      const saved = loadRunDraft()
-      if (saved) dispatch({ type: 'LOAD_RUN', state: saved.state })
-    }
+    // ?draft=1 — Zustand persist가 자동 복원하므로 별도 처리 불필요
   }, [identities, egos])
 
-  // 자동저장 (playing 상태에서 2초 debounce)
-  useEffect(() => {
-    if (state.phase !== 'playing') return
-    const t = setTimeout(() => saveRunDraft(state), 2000)
-    return () => clearTimeout(t)
-  }, [state])
+  // Zustand persist가 자동 저장 처리
 
   // 완료 시 히스토리 저장
   useEffect(() => {
     if (state.phase === 'completed') {
       saveRunToHistory(state)
-      clearRunDraft()
     }
   }, [state.phase])
 
-  const handleReset = useCallback(() => { clearRunDraft(); dispatch({ type: 'RESET' }) }, [])
+  const handleReset = useCallback(() => { dispatch({ type: 'RESET' }) }, [dispatch])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
