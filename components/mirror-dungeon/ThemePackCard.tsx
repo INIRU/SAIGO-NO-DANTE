@@ -36,6 +36,20 @@ export default function ThemePackCard({ theme, onClick }: Props) {
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {theme.boss_image_url && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
+                <ImageWithFallback
+                  src={theme.boss_image_url}
+                  alt=""
+                  fill
+                  fallbackType="default"
+                  sizes="(max-width: 640px) 33vw, 20vw"
+                  className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
           {/* 테마팩 이름 — 높이 고정, 글씨만 축소 */}
