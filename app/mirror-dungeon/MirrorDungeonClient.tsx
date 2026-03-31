@@ -13,6 +13,7 @@ import GiftCard from '@/components/mirror-dungeon/GiftCard'
 import GiftModal from '@/components/mirror-dungeon/GiftModal'
 import GradeMultiDropdown from '@/components/mirror-dungeon/GradeMultiDropdown'
 import EventModal from '@/components/mirror-dungeon/EventModal'
+import ThemePackCard from '@/components/mirror-dungeon/ThemePackCard'
 
 /* ── 타입/상수는 @/components/mirror-dungeon/types.ts에서 import ── */
 
@@ -415,88 +416,17 @@ export default function MirrorDungeonClient({
       kwCount[g.keyword] = (kwCount[g.keyword] || 0) + 1
     }
     const topKws = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 3)
+    const topKeywordIcons = topKws.map(([kw]) => ({ kw, iconUrl: getGiftKeywordIcon(kw) }))
 
     return (
-      <button
+      <ThemePackCard
         key={theme.id}
+        theme={theme}
+        themeGifts={themeGifts}
+        specificCount={specificCount}
+        topKeywordIcons={topKeywordIcons}
         onClick={() => setExpandedThemeId(theme.id)}
-        className="group text-left overflow-hidden transition-all duration-200"
-        style={{
-          background: 'var(--bg-panel)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          cursor: 'pointer',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'; e.currentTarget.style.background = 'var(--bg-card)' }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)' }}
-      >
-        {theme.image_url && (
-          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '380/690' }}>
-            <ImageWithFallback
-              src={theme.image_url}
-              alt={theme.name}
-              fill
-              fallbackType="theme"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              style={{ opacity: 0.85 }}
-            />
-            {theme.boss_image_url && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
-                  <ImageWithFallback
-                    src={theme.boss_image_url}
-                    alt=""
-                    fill
-                    fallbackType="default"
-                    sizes="(max-width: 640px) 33vw, 20vw"
-                    className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              </div>
-            )}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, rgba(13,11,8,0.3) 50%, transparent 100%)' }} />
-            <div className="absolute bottom-0 left-0 right-0 px-2 pb-1.5">
-              <div className="font-serif font-medium leading-tight" style={{ color: '#fff', fontSize: 'var(--text-sm)', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                {theme.name}
-              </div>
-              <div className="flex items-center justify-between mt-0.5">
-                <div className="flex items-center gap-1">
-                  {topKws.map(([kw]) => {
-                    const iconUrl = getGiftKeywordIcon(kw)
-                    return iconUrl ? (
-                      <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.8 }} />
-                    ) : null
-                  })}
-                </div>
-                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                  {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-        {!theme.image_url && (
-          <div className="px-3 py-2.5">
-            <div className="font-serif font-medium leading-tight mb-1" style={{ color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
-              {theme.name}
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {topKws.map(([kw]) => {
-                  const iconUrl = getGiftKeywordIcon(kw)
-                  return iconUrl ? (
-                    <Image key={kw} src={iconUrl} alt={kw} width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', opacity: 0.6 }} />
-                  ) : null
-                })}
-              </div>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                {specificCount > 0 ? `★${specificCount}` : ''} {themeGifts.length}종
-              </span>
-            </div>
-          </div>
-        )}
-      </button>
+      />
     )
   }
 
