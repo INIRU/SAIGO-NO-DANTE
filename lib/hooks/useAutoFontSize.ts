@@ -34,7 +34,7 @@ export function useAutoFontSize(
         const prepared = prepare(text, font)
         const result = layout(prepared, maxWidthPx, sizePx * 1.2)
 
-        if (result.lineCount <= 2) {
+        if (result.lineCount <= 1) {
           if (!cancelled) setFontSizeRem(sizePx / rootFontSize)
           return
         }
