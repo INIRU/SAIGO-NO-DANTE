@@ -38,13 +38,14 @@ export default function ThemePackCard({ theme, onClick }: Props) {
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
-          {/* 테마팩 이름 */}
-          <div className="absolute left-0 right-0 flex flex-col items-center px-1" style={{ bottom: '12%' }}>
+          {/* 테마팩 이름 — 높이 고정, 글씨만 축소 */}
+          <div className="absolute left-0 right-0 flex items-center justify-center px-1" style={{ bottom: '10%', height: '1.75rem' }}>
             <div
-              className="font-serif font-bold leading-tight text-center"
+              className="font-serif font-bold text-center"
               style={{
                 color: nameColor,
                 fontSize: `${fontSize}rem`,
+                lineHeight: '1.75rem',
                 textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
                 maxWidth: '92%',
                 whiteSpace: 'nowrap',
