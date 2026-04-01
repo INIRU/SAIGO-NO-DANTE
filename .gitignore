@@ -44,3 +44,5 @@ next-env.d.ts
 
 .omc
 /docs
+# sentry
+.env.sentry-build-plugin
