@@ -533,16 +533,16 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       </BaseModal>
 
       {/* ── EGO 선택 모달 (DeckTab 패턴: 등급별 섹션 + 이미지) ── */}
-      {egoSinner && (() => {
-        const modalSinnerEgo = sinners.find(s => s.id === egoSinner)
-        const availableEgos = sinnerEgos.get(egoSinner) ?? []
-        const selectedEgos = state.egoSlots.filter(e => e.sinner_id === egoSinner)
-        const egoByGrade: Record<string, typeof state.egoSlots[0]> = {}
-        for (const e of selectedEgos) egoByGrade[e.grade] = e
+      <BaseModal open={!!egoSinner} onClose={() => setEgoSinner(null)} maxWidth="42rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
+        {egoSinner && (() => {
+          const modalSinnerEgo = sinners.find(s => s.id === egoSinner)
+          const availableEgos = sinnerEgos.get(egoSinner) ?? []
+          const selectedEgos = state.egoSlots.filter(e => e.sinner_id === egoSinner)
+          const egoByGrade: Record<string, typeof state.egoSlots[0]> = {}
+          for (const e of selectedEgos) egoByGrade[e.grade] = e
 
-        return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)', padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)' }} onClick={() => setEgoSinner(null)}>
-          <div onClick={e => e.stopPropagation()} className="relative w-full max-w-2xl mx-4" style={{ background: '#1a1510', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
+          return (
+          <div className="relative w-full" style={{ background: '#1a1510', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
             {/* 헤더 */}
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">
@@ -623,9 +623,9 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
               })}
             </div>
           </div>
-        </div>
-        )
-      })()}
+          )
+        })()}
+      </BaseModal>
 
       {/* 인격 상세 모달 (꾹 눌러서 열림) */}
       {detailIdentityId && (
