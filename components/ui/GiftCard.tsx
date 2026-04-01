@@ -18,7 +18,7 @@ interface GiftCardGift {
 interface GiftCardProps {
   gift: GiftCardGift
   onClick: () => void
-  /** Fixed card width (default: '4.5rem') */
+  /** Fixed card width */
   size?: string
   /** Show name text below card (default: true) */
   showName?: boolean
