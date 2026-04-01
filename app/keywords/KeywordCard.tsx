@@ -19,6 +19,7 @@ interface KeywordCardProps {
     max_stack: number | null
     icon_slug: string | null
     sin_affinity: string | null
+    category: string | null
   }
   identityCount: number
   egoCount: number

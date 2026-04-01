@@ -19,7 +19,7 @@ export default async function KeywordsPage() {
 
   const [{ data: keywords, error: keywordsError }, { data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: gifts, error: giftsError }, { data: egos, error: egosError }] = await Promise.all([
     supabase.schema('limbus').from('keyword_meta')
-      .select('name, description, max_stack, icon_slug, sin_affinity')
+      .select('name, description, max_stack, icon_slug, sin_affinity, category')
       .order('name'),
     supabase.schema('limbus').from('identities')
       .select('id, name, name_kr, sinner_id, keywords, rarity, game_id, folder_name')
