@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp, X, Plus, Package } from 'lucide-react'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import ThemePackCard from '@/components/ui/ThemePackCard'
+import GiftCard from '@/components/ui/GiftCard'
 import type { PlannerState, PlannerAction, ThemeData, GiftData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
 import { getAvailableThemes, computeKeywordDistribution } from '@/lib/planner/fusion'
@@ -416,80 +418,16 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
 
                     {/* Selected gifts */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'flex-start' }}>
-                      {floorGifts.map(gift => {
-                        const kwSlug = getKeywordSlug(gift.keyword ?? null)
-                        const kwIconUrl = kwSlug ? getKeywordIconUrl(kwSlug) : null
-                        return (
-                          <div
-                            key={gift.game_id}
-                            style={{
-                              width: '4.5rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => toggleGiftId(entry.floor, String(gift.game_id), entry.gift_ids)}
-                          >
-                            <div style={{
-                              position: 'relative',
-                              width: '100%',
-                              aspectRatio: '1',
-                              overflow: 'hidden',
-                              backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              clipPath: OCTAGON_CLIP,
-                              outline: '2px solid #c8900a',
-                              outlineOffset: '2px',
-                            }}>
-                              {/* Grade */}
-                              <span style={{
-                                position: 'absolute', top: '4%', left: '3%', zIndex: 10, pointerEvents: 'none',
-                                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                                fontWeight: 700, fontSize: '1.25rem', lineHeight: 1,
-                                color: (gift.grade === 'EX') ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-                                textShadow: (gift.grade === 'EX')
-                                  ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
-                                  : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-                              }}>
-                                {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
-                              </span>
-                              {/* Keyword icon */}
-                              {kwIconUrl && (
-                                <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 10, pointerEvents: 'none', width: '30%', height: '30%' }}>
-                                  <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
-                                </div>
-                              )}
-                              {/* Gift image */}
-                              <div style={{ position: 'absolute', inset: '15%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {gift.image_url?.startsWith('http') ? (
-                                  <Image src={gift.image_url} alt={gift.name} fill style={{ objectFit: 'contain' }} sizes="80px" />
-                                ) : (
-                                  <div style={{ width: '1.75rem', height: '1.75rem', background: '#333', borderRadius: '50%' }} />
-                                )}
-                              </div>
-                              {/* Remove overlay on hover */}
-                              <div style={{
-                                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex',
-                                alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 20,
-                              }}
-                                onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
-                                onMouseLeave={e => { e.currentTarget.style.opacity = '0' }}
-                              >
-                                <X size={18} color="#ef4444" />
-                              </div>
-                            </div>
-                            <span style={{
-                              fontSize: '0.625rem', color: '#e5e7eb', textAlign: 'center',
-                              marginTop: '0.25rem', lineHeight: 1.2, width: '100%',
-                              overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                            }}>
-                              {gift.name}
-                            </span>
-                          </div>
-                        )
-                      })}
+                      {floorGifts.map(gift => (
+                        <GiftCard
+                          key={gift.game_id}
+                          gift={gift}
+                          size="4.5rem"
+                          isSelected
+                          onClick={() => toggleGiftId(entry.floor, String(gift.game_id), entry.gift_ids)}
+                          onRemove={() => toggleGiftId(entry.floor, String(gift.game_id), entry.gift_ids)}
+                        />
+                      ))}
 
                       {/* Add button */}
                       <div

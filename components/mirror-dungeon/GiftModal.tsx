@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import BaseModal from '@/components/ui/BaseModal'
+import KeywordChip from '@/components/ui/KeywordChip'
 import { X, FlaskConical } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { OCTAGON_CLIP, GIFT_BG_URL } from '@/lib/constants/gift'
@@ -109,16 +110,7 @@ export default function GiftModal({
                 {gift.name}
               </h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
-                  style={{ background: `${kwColor}25`, color: kwColor, fontFamily: 'var(--font-heading)' }}
-                >
-                  {(() => {
-                    const iconUrl = getGiftKeywordIcon(gift.keyword)
-                    return iconUrl ? <Image src={iconUrl} alt="" width={12} height={12} /> : null
-                  })()}
-                  {gift.keyword}
-                </span>
+                <KeywordChip keyword={gift.keyword} />
               {(() => {
                 const diff = gift.difficulty || '노말'
                 if (diff === '노말') return null
