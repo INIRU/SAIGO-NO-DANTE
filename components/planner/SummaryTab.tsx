@@ -34,7 +34,6 @@ function parseFormationSlots(text: string | null): number[] {
   if (!m) return []
   return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
 }
-const GRADE_ROMAN: Record<string, string> = { 'EX': 'EX', '5': '\u2164', '4': '\u2163', '3': '\u2162', '2': '\u2161', '1': '\u2160' }
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 // ── 자동완성 지원 textarea ────────────────────────────────────────────────
@@ -92,21 +91,6 @@ const BLESSING_EFFECTS: Record<number, [string[], string[], string[]]> = {
   109: [['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 1개 선택', '어두운 잔영 1개'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 2개 선택', '1~2등급 합성 재료'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 3개 선택', '1~3등급 합성 재료']],
 }
 
-const SLUG_TO_KEYWORD: Record<string, string> = {
-  burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
-  sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
-  pierce: '관통', blunt: '타격',
-}
-const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
-function getKeywordSlug(kw: string | null): string | null {
-  if (!kw) return null
-  for (const [slug, k] of Object.entries(SLUG_TO_KEYWORD)) { if (kw.includes(k) || k.includes(kw)) return slug }
-  return null
-}
-function getKwIconUrl(slug: string): string | null {
-  if (STATS_SLUGS.has(slug)) return `${S}/icons/stats/${slug}.webp`
-  return `${S}/icons/keywords/${slug}.webp`
-}
 
 interface SummaryTabProps {
   state: PlannerState
