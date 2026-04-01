@@ -2,8 +2,10 @@
 
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import BaseModal from '@/components/ui/BaseModal'
 import { X, FlaskConical } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/data/sinners'
+import { OCTAGON_CLIP, GIFT_BG_URL } from '@/lib/constants/gift'
 import { KEYWORD_COLORS, GRADE_LABELS } from './types'
 import type { EgoGift, Recipe, EgoGiftTheme } from './types'
 import EffectBlock from './EffectBlock'
@@ -31,20 +33,14 @@ export default function GiftModal({
   const isEX = gift.grade === 'EX'
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
-
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem">
       <div
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl"
+        className="relative w-full max-h-[85vh] overflow-y-auto rounded-xl"
         style={{
           background: '#131110',
           border: `1px solid ${kwColor}30`,
           boxShadow: `0 0 3rem ${kwColor}10, 0 1.5rem 4rem rgba(0,0,0,0.6)`,
         }}
-        onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -70,10 +66,10 @@ export default function GiftModal({
               style={{
                 width: '5rem',
                 height: '5rem',
-                backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
+                backgroundImage: `url(${GIFT_BG_URL})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                clipPath: 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)',
+                clipPath: OCTAGON_CLIP,
               }}
             >
               <span
@@ -322,6 +318,6 @@ export default function GiftModal({
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   )
 }

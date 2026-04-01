@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import { STORAGE_BASE, ATK_TYPE_ICON_MAP, RARITY_ICON_MAP } from '@/lib/constants/game'
@@ -8,6 +8,7 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { computeSkillImageIndices } from '@/lib/utils/images'
 import SkillDescription from '@/components/skill/SkillDescription'
+import BaseModal from '@/components/ui/BaseModal'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type SkillData = {
@@ -135,40 +136,16 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
     return () => { cancelled = true }
   }, [identityId])
 
-  // ESC 키로 닫기
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  // 스크롤 방지
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
-
-  const handleBackdrop = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose()
-  }, [onClose])
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={handleBackdrop}
-    >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
-
+    <BaseModal open={!!identityId} onClose={onClose} maxWidth="52rem" padding="1rem">
       <div
-        className="relative w-full overflow-y-auto rounded-xl"
+        className="relative overflow-y-auto rounded-xl"
         style={{
-          maxWidth: '32rem',
           maxHeight: '85vh',
           background: '#131110',
           border: '1px solid rgba(200,144,10,0.15)',
           boxShadow: '0 0 3rem rgba(200,144,10,0.05), 0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
-        onClick={e => e.stopPropagation()}
       >
         {/* 닫기 버튼 */}
         <button
@@ -187,7 +164,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
         )}
         {data && !loading && <ModalContent data={data} />}
       </div>
-    </div>
+    </BaseModal>
   )
 }
 

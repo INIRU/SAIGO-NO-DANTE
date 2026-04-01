@@ -19,13 +19,13 @@ import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { OCTAGON_CLIP } from '@/lib/constants/gift'
 import type { PassiveData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import PlannerGiftModal from './PlannerGiftModal'
 
 const S = STORAGE_BASE
-const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
 
 // 편성 N번 전용 효과 슬롯 파싱
 function parseFormationSlots(text: string | null): number[] {

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import type { MirrorDungeonEvent, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
@@ -469,16 +470,10 @@ export default function EventModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-      style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}
-    >
+    <BaseModal open={true} onClose={onClose} maxWidth="36rem" padding="1rem">
       <div
-        onClick={e => e.stopPropagation()}
         className="relative w-full overflow-hidden"
         style={{
-          maxWidth: '36rem',
           maxHeight: '85vh',
           borderRadius: '0.75rem',
           background: '#131110',
@@ -860,6 +855,6 @@ export default function EventModal({
         </div>
         {/* End scroll container */}
       </div>
-    </div>
+    </BaseModal>
   )
 }

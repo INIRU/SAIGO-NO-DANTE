@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_ORDER, SIN_LABELS_KR, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
@@ -113,38 +114,16 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
     return () => { cancelled = true }
   }, [egoId])
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
-
-  const handleBackdrop = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose()
-  }, [onClose])
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={handleBackdrop}
-    >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
-
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem">
       <div
         className="relative w-full overflow-y-auto rounded-xl"
         style={{
-          maxWidth: '32rem',
           maxHeight: '85vh',
           background: '#131110',
           border: '1px solid rgba(200,144,10,0.15)',
           boxShadow: '0 0 3rem rgba(200,144,10,0.05), 0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
-        onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -162,7 +141,7 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
         )}
         {data && !loading && <ModalContent data={data} />}
       </div>
-    </div>
+    </BaseModal>
   )
 }
 

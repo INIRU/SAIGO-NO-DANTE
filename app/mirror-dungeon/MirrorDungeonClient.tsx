@@ -881,7 +881,7 @@ export default function MirrorDungeonClient({
                     </div>
                     <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
                       {exclusiveGifts.map(g => (
-                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
+                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} />
                       ))}
                     </div>
                     <div className="mt-4" style={{ height: '1px', background: 'linear-gradient(90deg, var(--gold-dim), transparent)' }} />
@@ -900,7 +900,7 @@ export default function MirrorDungeonClient({
                     </div>
                     <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
                       {kwGifts.map(g => (
-                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} getGiftKeywordIcon={getGiftKeywordIcon} />
+                        <GiftCard key={g.id} gift={g} onClick={() => { setExpandedThemeId(null); setSelected(g) }} />
                       ))}
                     </div>
                   </div>
@@ -1286,7 +1286,6 @@ export default function MirrorDungeonClient({
                 key={gift.id}
                 gift={gift}
                 onClick={() => setSelected(gift)}
-                getGiftKeywordIcon={getGiftKeywordIcon}
               />
             ))}
           </div>
