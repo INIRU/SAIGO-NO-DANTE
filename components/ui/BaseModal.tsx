@@ -47,6 +47,8 @@ export default function BaseModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="fixed inset-0 flex items-center justify-center"
       style={{ zIndex, padding }}
       onClick={onClose}
