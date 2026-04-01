@@ -10,6 +10,7 @@ interface ThemePackCardTheme {
   name: string
   image_url?: string | null
   boss_image_url?: string | null
+  ego_gift_ids?: number[] | null
   specific_ego_gift_ids?: number[] | null
 }
 
@@ -25,7 +26,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
   const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
   const nameColor = getThemePackNameColor(numId)
   const fontSize = useAutoFontSize(theme.name, 1.5, 0.6875, 130, 'var(--font-kotra-bold), serif')
-  const giftCount = (theme.specific_ego_gift_ids ?? []).length
+  const giftCount = (theme.ego_gift_ids ?? []).length
 
   return (
     <button

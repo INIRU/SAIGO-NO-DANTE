@@ -1269,7 +1269,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e8b030' }}>{theme.name}</div>
                             <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.125rem' }}>
-                              기프트 {(theme.ego_gift_ids?.length ?? 0) + (theme.specific_ego_gift_ids?.length ?? 0)}종
+                              기프트 {theme.ego_gift_ids?.length ?? 0}종
                             </div>
                           </div>
                         </div>

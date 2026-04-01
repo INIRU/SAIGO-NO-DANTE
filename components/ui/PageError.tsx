@@ -6,9 +6,13 @@ interface PageErrorProps {
   /** Charon-style quote line 2 (optional) */
   subQuote?: string
   reset: () => void
+  /** Recovery link href (default: '/') */
+  homeHref?: string
+  /** Recovery link label (default: '메인으로') */
+  homeLabel?: string
 }
 
-export default function PageError({ quote, subQuote, reset }: PageErrorProps) {
+export default function PageError({ quote, subQuote, reset, homeHref = '/', homeLabel = '메인으로' }: PageErrorProps) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 pt-24">
       <div className="text-center max-w-md space-y-4 mb-8">
@@ -30,11 +34,11 @@ export default function PageError({ quote, subQuote, reset }: PageErrorProps) {
           다시 해보기
         </button>
         <a
-          href="/"
+          href={homeHref}
           className="px-5 py-2 rounded font-medium text-sm transition-all hover:brightness-110"
           style={{ color: 'var(--gold)', border: '1px solid var(--gold-dim)', fontFamily: 'var(--font-heading)' }}
         >
-          메인으로
+          {homeLabel}
         </a>
       </div>
     </div>
