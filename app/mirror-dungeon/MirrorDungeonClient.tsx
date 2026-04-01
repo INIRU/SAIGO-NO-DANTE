@@ -118,9 +118,13 @@ export default function MirrorDungeonClient({
   const setSlotFilter = useCallback((v: string) => setSlotFilterParam(v === '전체' ? null : v), [setSlotFilterParam])
   const setEventSearch = useCallback((v: string) => setEventSearchParam(v || null), [setEventSearchParam])
 
+  // 테마팩 필터 (URL 연동)
+  const [themeIdParam, setThemeIdParam] = useQueryState('theme', parseAsString.withDefault(''))
+  const selectedThemeId = themeIdParam ? Number(themeIdParam) : null
+  const setSelectedThemeId = useCallback((v: number | null) => setThemeIdParam(v !== null ? String(v) : null), [setThemeIdParam])
+
   // 로컬 상태 (URL 불필요 — 모달/UI 상태)
   const [selected, setSelected] = useState<EgoGift | null>(null)
-  const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
   const [themeSearchFocused, setThemeSearchFocused] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
@@ -1115,6 +1119,17 @@ export default function MirrorDungeonClient({
               prefix="편성 전용:"
               defaultValue="전체"
               minWidth={120}
+            />
+            <Dropdown
+              value={selectedThemeId !== null ? String(selectedThemeId) : '전체'}
+              options={[
+                { value: '전체', label: '전체' },
+                ...themes.map(t => ({ value: String(t.id), label: t.name })),
+              ]}
+              onChange={v => setSelectedThemeId(v === '전체' ? null : Number(v))}
+              prefix="테마팩:"
+              defaultValue="전체"
+              minWidth={140}
             />
           </div>
 
