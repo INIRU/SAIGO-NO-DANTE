@@ -1,17 +1,4 @@
-import Skeleton from '@/components/ui/Skeleton'
+import PageLoadingSkeleton from '@/components/ui/PageLoadingSkeleton'
 export default function Loading() {
-  return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-6xl mx-auto px-6">
-        <Skeleton style={{ width: '8rem', height: '2rem', marginBottom: '1rem' }} />
-        <Skeleton style={{ width: '100%', height: '10rem', borderRadius: '0.75rem', marginBottom: '2rem' }} />
-        <Skeleton style={{ width: '6rem', height: '1.5rem', marginBottom: '1rem' }} />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} style={{ height: '14rem', borderRadius: '0.5rem' }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+  return <PageLoadingSkeleton titleWidth="8rem" count={8} cardHeight="14rem" />
 }

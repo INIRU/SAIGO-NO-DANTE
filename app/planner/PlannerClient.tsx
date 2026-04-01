@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play } from 'lucide-react'
@@ -49,6 +50,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     } catch { /* */ }
   }
 
+  const router = useRouter()
   const session = useSession()
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
@@ -83,11 +85,12 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         body: JSON.stringify(planBody),
       })
       if (res.ok) {
+        const result = await res.json()
         setUploaded(true)
         showSuccess(editId ? '플랜이 수정되었습니다!' : '커뮤니티에 업로드되었습니다!')
-        setTimeout(() => setUploaded(false), 3000)
-        if (editId) {
-          window.history.replaceState(null, '', '/planner')
+        const targetId = editId ?? result.id
+        if (targetId) {
+          setTimeout(() => router.push(`/planner/community/${targetId}`), 800)
         }
       } else {
         const data = await res.json()
