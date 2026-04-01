@@ -22,7 +22,8 @@ interface ThemePackCardProps {
 }
 
 export default function ThemePackCard({ theme, onClick, isSelected, showGiftCount }: ThemePackCardProps) {
-  const nameColor = getThemePackNameColor(typeof theme.id === 'number' ? theme.id : 0)
+  const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
+  const nameColor = getThemePackNameColor(numId)
   const fontSize = useAutoFontSize(theme.name, 1.5, 0.6875, 130, 'var(--font-kotra-bold), serif')
   const giftCount = (theme.specific_ego_gift_ids ?? []).length
 
@@ -39,6 +40,13 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
         boxShadow: isSelected ? '0 0 1rem rgba(200,144,10,0.3)' : 'none',
       }}
     >
+      {/* Selected indicator */}
+      {isSelected && !theme.image_url && (
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
+          <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
+          <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>선택됨</span>
+        </div>
+      )}
       {theme.image_url ? (
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '380/690', borderRadius: 'var(--radius-md)' }}>
           <ImageWithFallback
@@ -105,6 +113,11 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
           <div className="font-serif font-bold leading-tight" style={{ color: nameColor, fontSize: '0.875rem' }}>
             {theme.name}
           </div>
+          {showGiftCount && giftCount > 0 && (
+            <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
+              기프트 {giftCount}종
+            </span>
+          )}
         </div>
       )}
     </button>

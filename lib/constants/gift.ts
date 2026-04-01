@@ -10,7 +10,7 @@ export const GRADE_ROMAN: Record<string, string> = {
 }
 
 export const GRADE_COLORS: Record<string, string> = {
-  'EX': '#c6ff2e', '5': '#c8900a', '4': '#7c4fc0', '3': '#2a7fd4', '2': '#2d9e60', '1': '#888',
+  'EX': '#c6ff2e', '5': '#c8900a', '4': '#7c4fc0', '3': '#2a7fd4', '2': '#2d9e60', '1': '#888888',
 }
 
 export const GRADE_ORDER = ['3', '2', '1']
@@ -62,8 +62,8 @@ export const GIFT_KEYWORD_COLORS: Record<string, string> = {
 }
 
 export function getGiftKeywordColor(keyword: string | null): string {
-  if (!keyword) return '#888'
-  return GIFT_KEYWORD_COLORS[keyword] ?? '#888'
+  if (!keyword) return '#888888'
+  return GIFT_KEYWORD_COLORS[keyword] ?? '#888888'
 }
 
 // ── 기프트 이미지 배경 URL ──────────────────────────────────────────────────
