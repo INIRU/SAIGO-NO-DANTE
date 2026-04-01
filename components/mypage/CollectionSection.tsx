@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef, forwardRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useQueryState, parseAsString } from 'nuqs'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
@@ -91,15 +92,15 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [data, setData] = useState<CollectionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [owned, setOwned] = useState<Set<string>>(new Set())
-  const [activeSinner, setActiveSinner] = useState<string>('')
+  const [activeSinner, setActiveSinner] = useQueryState('sinner', parseAsString.withDefault(''))
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [autoSaved, setAutoSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
-  const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
-  const [showUnowned, setShowUnowned] = useState(true)
+  const [keywordFilter, setKeywordFilter] = useQueryState('kw', parseAsString.withDefault(''))
+  const [showUnowned, setShowUnowned] = useQueryState('unowned', parseAsString.withDefault('true'))
   const [generating, setGenerating] = useState(false)
   const [showDownloadModal, setShowDownloadModal] = useState(false)
   const [downloadOptions, setDownloadOptions] = useState<{ include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }>({ include: new Set(['identity', 'ego']), groupBy: 'sinner' })
@@ -112,7 +113,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
       .then(r => r.json())
       .then(async (d: CollectionData) => {
         setData(d)
-        if (d.sinners.length > 0) setActiveSinner(d.sinners[0].id)
+        if (d.sinners.length > 0 && !activeSinner) setActiveSinner(d.sinners[0].id)
 
         if (persistMode === 'local') {
           // local 모드: localStorage 우선, 없으면 로그인 유저의 DB 저장값 동기화
@@ -325,7 +326,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   }, [data])
 
   const filterByKeyword = useCallback((identities: IdentityInfo[]) => {
-    if (!keywordFilter) return identities
+    if (!keywordFilter || keywordFilter === '') return identities
     const filterSin = kwSinMap[keywordFilter]
     return identities.filter(i =>
       i.keywords?.some(kw => {
@@ -336,7 +337,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   }, [keywordFilter, kwSinMap])
 
   const filterEgoByKeyword = useCallback((egoList: EGOInfo[]) => {
-    if (!keywordFilter) return egoList
+    if (!keywordFilter || keywordFilter === '') return egoList
     const filterSin = kwSinMap[keywordFilter]
     if (!filterSin) return egoList
     return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
@@ -364,8 +365,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
   const allIdentities = filterByKeyword(data.identities[activeSinner] ?? [])
   const allEgos = filterEgoByKeyword(data.egos[activeSinner] ?? [])
-  const currentIdentities = showUnowned ? allIdentities : allIdentities.filter(i => owned.has(i.id))
-  const currentEgos = showUnowned ? allEgos : allEgos.filter(e => owned.has(e.id))
+  const currentIdentities = showUnowned === 'true' ? allIdentities : allIdentities.filter(i => owned.has(i.id))
+  const currentEgos = showUnowned === 'true' ? allEgos : allEgos.filter(e => owned.has(e.id))
 
   // EGO를 등급별로 그룹핑
   const egosByGrade = GRADE_ORDER.reduce<Record<string, EGOInfo[]>>((acc, grade) => {
@@ -461,9 +462,9 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
               onClick={() => setKeywordFilter(null)}
               className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all duration-200"
               style={{
-                background: !keywordFilter ? 'rgba(200,144,10,0.15)' : 'transparent',
-                border: `1px solid ${!keywordFilter ? 'var(--gold-dim)' : 'rgba(58,42,21,0.4)'}`,
-                color: !keywordFilter ? 'var(--gold)' : '#6a6080',
+                background: !keywordFilter || keywordFilter === '' ? 'rgba(200,144,10,0.15)' : 'transparent',
+                border: `1px solid ${!keywordFilter || keywordFilter === '' ? 'var(--gold-dim)' : 'rgba(58,42,21,0.4)'}`,
+                color: !keywordFilter || keywordFilter === '' ? 'var(--gold)' : '#6a6080',
                 cursor: 'pointer',
               }}
             >
@@ -521,16 +522,16 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
             </button>
             <div className="flex-1" />
             <button
-              onClick={() => setShowUnowned(v => !v)}
+              onClick={() => setShowUnowned(showUnowned === 'true' ? 'false' : 'true')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
               style={{
-                background: showUnowned ? 'rgba(90,80,112,0.15)' : 'transparent',
-                border: `1px solid ${showUnowned ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
-                color: showUnowned ? '#8a7aaa' : '#6a6080',
+                background: showUnowned === 'true' ? 'rgba(90,80,112,0.15)' : 'transparent',
+                border: `1px solid ${showUnowned === 'true' ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
+                color: showUnowned === 'true' ? '#8a7aaa' : '#6a6080',
                 cursor: 'pointer',
               }}
             >
-              {showUnowned ? (
+              {showUnowned === 'true' ? (
                 <CheckSquare size={12} />
               ) : (
                 <Square size={12} />
