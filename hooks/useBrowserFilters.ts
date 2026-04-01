@@ -41,7 +41,7 @@ function toggleNum(param: string, value: number): string | null {
 // ── 활성 필터 수 ─────────────────────────────────────────────────────────────
 function countActiveIdentity(f: IdentityFilterState): number {
   return f.sinners.size + f.keywords.size + f.sins.size +
-    f.rarities.size + f.atkTypes.size + f.atkWeights.size + f.coinCounts.size
+    f.rarities.size + f.seasons.size + f.atkTypes.size + f.atkWeights.size + f.coinCounts.size
 }
 function countActiveEGO(f: EGOFilterState): number {
   return f.sinners.size + f.keywords.size + f.sins.size + f.grades.size
@@ -56,6 +56,7 @@ const identityParams = {
   keywords: parseAsString.withDefault(''),
   sins: parseAsString.withDefault(''),
   rarities: parseAsString.withDefault(''),
+  seasons: parseAsString.withDefault(''),
   atkTypes: parseAsString.withDefault(''),
   atkWeights: parseAsString.withDefault(''),
   coinCounts: parseAsString.withDefault(''),
@@ -70,10 +71,11 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
     keywords: toStringSet(params.keywords),
     sins: toStringSet(params.sins) as Set<SinType>,
     rarities: toNumSet(params.rarities),
+    seasons: toNumSet(params.seasons),
     atkTypes: toStringSet(params.atkTypes),
     atkWeights: toNumSet(params.atkWeights),
     coinCounts: toNumSet(params.coinCounts),
-  }), [params.sinners, params.keywords, params.sins, params.rarities, params.atkTypes, params.atkWeights, params.coinCounts])
+  }), [params.sinners, params.keywords, params.sins, params.rarities, params.seasons, params.atkTypes, params.atkWeights, params.coinCounts])
 
   const sort = (params.sort || 'default') as SortOption
   const setSort = useCallback((v: SortOption) => {
@@ -81,7 +83,7 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
   }, [setParams])
 
   const toggle = useCallback((key: keyof IdentityFilterState, value: unknown) => {
-    const numKeys = ['rarities', 'atkWeights', 'coinCounts'] as const
+    const numKeys = ['rarities', 'seasons', 'atkWeights', 'coinCounts'] as const
     if ((numKeys as readonly string[]).includes(key)) {
       setParams({ [key]: toggleNum(params[key], value as number) })
     } else {
@@ -92,7 +94,7 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
   const resetAll = useCallback(() => {
     setParams({
       sinners: null, keywords: null, sins: null, rarities: null,
-      atkTypes: null, atkWeights: null, coinCounts: null,
+      seasons: null, atkTypes: null, atkWeights: null, coinCounts: null,
     })
   }, [setParams])
 
@@ -101,6 +103,7 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
     return items.filter(item => {
       if (filters.sinners.size > 0 && !filters.sinners.has(item.sinner_id)) return false
       if (filters.rarities.size > 0 && !filters.rarities.has(item.rarity)) return false
+      if (filters.seasons.size > 0 && !filters.seasons.has(item.season)) return false
       if (filters.sins.size > 0 && !item.skill_sins.some(s => filters.sins.has(s))) return false
       if (filters.atkTypes.size > 0 && !item.skill_types.some(t => filters.atkTypes.has(t))) return false
       if (filters.atkWeights.size > 0 && !item.atk_weights.some(w => filters.atkWeights.has(w))) return false

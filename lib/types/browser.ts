@@ -22,6 +22,8 @@ export type IdentityBrowserItem = {
   sinner_name_kr: string
   sinner_slug: string
   sinner_order: number
+  // 시즌 (acquisition_info에서 추출)
+  season: number
   // 스킬 요약 (서버에서 가공, 필터용)
   skill_sins: SinType[]
   skill_types: string[]
@@ -56,6 +58,7 @@ export type IdentityFilterState = {
   keywords: Set<string>
   sins: Set<SinType>
   rarities: Set<number>
+  seasons: Set<number>
   atkTypes: Set<string>
   atkWeights: Set<number>
   coinCounts: Set<number>
