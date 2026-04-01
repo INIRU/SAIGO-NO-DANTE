@@ -721,125 +721,14 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                   }}>
                     {filteredThemes.map(theme => {
                       const isSelected = modalEntry.theme_id === theme.id
-                      const tGiftCount = (theme.ego_gift_ids?.length ?? 0) + (theme.specific_ego_gift_ids?.length ?? 0)
                       return (
-                        <button
+                        <ThemePackCard
                           key={theme.id}
+                          theme={theme}
                           onClick={() => selectTheme(themeModalFloor, theme.id)}
-                          style={{
-                            background: isSelected ? 'rgba(200,144,10,0.12)' : '#1a1510',
-                            border: isSelected ? '2px solid #c8900a' : '1px solid #222',
-                            borderRadius: '0.5rem',
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                            textAlign: 'left',
-                            padding: 0,
-                            transition: 'border-color 0.2s, background 0.2s',
-                          }}
-                          onMouseEnter={e => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
-                              e.currentTarget.style.background = '#1f1a13'
-                            }
-                          }}
-                          onMouseLeave={e => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = '#222'
-                              e.currentTarget.style.background = '#1a1510'
-                            }
-                          }}
-                        >
-                          {/* Theme image with boss overlay */}
-                          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '380/690' }}>
-                            {theme.image_url ? (
-                              <ImageWithFallback
-                                src={theme.image_url}
-                                alt={theme.name}
-                                fill
-                                fallbackType="theme"
-                                sizes="(max-width: 640px) 50vw, 25vw"
-                                style={{ objectFit: 'cover', opacity: 0.85 }}
-                              />
-                            ) : (
-                              <div style={{ position: 'absolute', inset: 0, background: '#222' }} />
-                            )}
-                            {theme.boss_image_url && (
-                              <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                pointerEvents: 'none',
-                              }}>
-                                <div style={{ position: 'relative', width: '100%', aspectRatio: '391/432' }}>
-                                  <ImageWithFallback
-                                    src={theme.boss_image_url}
-                                    alt=""
-                                    fill
-                                    fallbackType="default"
-                                    sizes="(max-width: 640px) 33vw, 20vw"
-                                    style={{ objectFit: 'contain', filter: 'drop-shadow(0 0.125rem 0.25rem rgba(0,0,0,0.5))' }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            {/* Gradient overlay */}
-                            <div style={{
-                              position: 'absolute',
-                              inset: 0,
-                              background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, rgba(13,11,8,0.3) 50%, transparent 100%)',
-                            }} />
-                            {/* Bottom info */}
-                            <div style={{
-                              position: 'absolute',
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              padding: '0 0.5rem 0.375rem',
-                            }}>
-                              <div style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                color: '#fff',
-                                lineHeight: 1.3,
-                                textShadow: '0 0.0625rem 0.1875rem rgba(0,0,0,0.8)',
-                                fontFamily: 'var(--font-title), sans-serif',
-                              }}>
-                                {theme.name}
-                              </div>
-                              <div style={{
-                                fontSize: '0.625rem',
-                                color: 'rgba(255,255,255,0.6)',
-                                marginTop: '0.125rem',
-                                fontFamily: 'var(--font-mono), monospace',
-                              }}>
-                                {tGiftCount}종
-                              </div>
-                            </div>
-                            {/* Selected checkmark */}
-                            {isSelected && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '0.375rem',
-                                right: '0.375rem',
-                                width: '1.5rem',
-                                height: '1.5rem',
-                                borderRadius: '50%',
-                                background: '#c8900a',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.75rem',
-                                color: '#0d0b08',
-                                fontWeight: 700,
-                                boxShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.4)',
-                              }}>
-                                ✓
-                              </div>
-                            )}
-                          </div>
-                        </button>
+                          isSelected={isSelected}
+                          showGiftCount
+                        />
                       )
                     })}
                   </div>
