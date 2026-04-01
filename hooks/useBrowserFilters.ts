@@ -1,7 +1,8 @@
 'use client'
 
-// Design Ref: §6.1 — 필터 상태 관리 커스텀 훅
-import { useState, useMemo, useCallback } from 'react'
+// Design Ref: §6.1 — 필터 상태 관리 커스텀 훅 (nuqs URL 동기화)
+import { useMemo, useCallback } from 'react'
+import { useQueryStates, parseAsString } from 'nuqs'
 import type {
   IdentityBrowserItem,
   EGOBrowserItem,
@@ -9,77 +10,101 @@ import type {
   EGOFilterState,
   SortOption,
 } from '@/lib/types/browser'
+import type { SinType } from '@/lib/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 
-// ── 유틸: Set 토글 ──────────────────────────────────────────────────────────
-function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
-  const next = new Set(set)
-  if (next.has(value)) next.delete(value)
-  else next.add(value)
-  return next
+// ── URL ↔ Set 변환 유틸 ─────────────────────────────────────────────────────
+function toStringSet(param: string): Set<string> {
+  return new Set(param.split(',').filter(Boolean))
+}
+function toNumSet(param: string): Set<number> {
+  return new Set(param.split(',').filter(Boolean).map(Number).filter(n => !isNaN(n)))
+}
+function fromSet<T>(set: Set<T>): string | null {
+  return set.size > 0 ? Array.from(set).join(',') : null
 }
 
-// ── 인격 필터 초기 상태 ──────────────────────────────────────────────────────
-function createIdentityFilterState(): IdentityFilterState {
-  return {
-    sinners: new Set(),
-    keywords: new Set(),
-    sins: new Set(),
-    rarities: new Set(),
-    atkTypes: new Set(),
-    atkWeights: new Set(),
-    coinCounts: new Set(),
-  }
+// ── Set 토글 (URL param 문자열 기준) ────────────────────────────────────────
+function toggleString(param: string, value: string): string | null {
+  const set = toStringSet(param)
+  if (set.has(value)) set.delete(value)
+  else set.add(value)
+  return fromSet(set)
 }
-
-// ── EGO 필터 초기 상태 ──────────────────────────────────────────────────────
-function createEGOFilterState(): EGOFilterState {
-  return {
-    sinners: new Set(),
-    keywords: new Set(),
-    sins: new Set(),
-    grades: new Set(),
-  }
+function toggleNum(param: string, value: number): string | null {
+  const set = toNumSet(param)
+  if (set.has(value)) set.delete(value)
+  else set.add(value)
+  return fromSet(set)
 }
 
 // ── 활성 필터 수 ─────────────────────────────────────────────────────────────
-function countActive(f: IdentityFilterState | EGOFilterState): number {
-  let n = f.sinners.size + f.keywords.size + f.sins.size
-  if ('rarities' in f) n += f.rarities.size + f.atkTypes.size + f.atkWeights.size + f.coinCounts.size
-  if ('grades' in f) n += f.grades.size
-  return n
+function countActiveIdentity(f: IdentityFilterState): number {
+  return f.sinners.size + f.keywords.size + f.sins.size +
+    f.rarities.size + f.atkTypes.size + f.atkWeights.size + f.coinCounts.size
+}
+function countActiveEGO(f: EGOFilterState): number {
+  return f.sinners.size + f.keywords.size + f.sins.size + f.grades.size
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 인격 브라우저 필터
 // ═════════════════════════════════════════════════════════════════════════════
 
+const identityParams = {
+  sinners: parseAsString.withDefault(''),
+  keywords: parseAsString.withDefault(''),
+  sins: parseAsString.withDefault(''),
+  rarities: parseAsString.withDefault(''),
+  atkTypes: parseAsString.withDefault(''),
+  atkWeights: parseAsString.withDefault(''),
+  coinCounts: parseAsString.withDefault(''),
+  sort: parseAsString.withDefault('default'),
+}
+
 export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
-  const [filters, setFilters] = useState(createIdentityFilterState)
-  const [sort, setSort] = useState<SortOption>('default')
+  const [params, setParams] = useQueryStates(identityParams)
+
+  const filters = useMemo<IdentityFilterState>(() => ({
+    sinners: toStringSet(params.sinners),
+    keywords: toStringSet(params.keywords),
+    sins: toStringSet(params.sins) as Set<SinType>,
+    rarities: toNumSet(params.rarities),
+    atkTypes: toStringSet(params.atkTypes),
+    atkWeights: toNumSet(params.atkWeights),
+    coinCounts: toNumSet(params.coinCounts),
+  }), [params.sinners, params.keywords, params.sins, params.rarities, params.atkTypes, params.atkWeights, params.coinCounts])
+
+  const sort = (params.sort || 'default') as SortOption
+  const setSort = useCallback((v: SortOption) => {
+    setParams({ sort: v === 'default' ? null : v })
+  }, [setParams])
 
   const toggle = useCallback((key: keyof IdentityFilterState, value: unknown) => {
-    setFilters(prev => ({ ...prev, [key]: toggleInSet(prev[key] as Set<unknown>, value) }))
-  }, [])
+    const numKeys = ['rarities', 'atkWeights', 'coinCounts'] as const
+    if ((numKeys as readonly string[]).includes(key)) {
+      setParams({ [key]: toggleNum(params[key], value as number) })
+    } else {
+      setParams({ [key]: toggleString(params[key], value as string) })
+    }
+  }, [params, setParams])
 
-  const resetAll = useCallback(() => setFilters(createIdentityFilterState), [])
+  const resetAll = useCallback(() => {
+    setParams({
+      sinners: null, keywords: null, sins: null, rarities: null,
+      atkTypes: null, atkWeights: null, coinCounts: null,
+    })
+  }, [setParams])
 
   // Plan SC: SC-02 필터 변경 시 100ms 이내 반영 (useMemo)
   const filtered = useMemo(() => {
     return items.filter(item => {
-      // 수감자 (OR)
       if (filters.sinners.size > 0 && !filters.sinners.has(item.sinner_id)) return false
-      // 등급 (OR)
       if (filters.rarities.size > 0 && !filters.rarities.has(item.rarity)) return false
-      // 죄악 (OR) — 스킬 기준
       if (filters.sins.size > 0 && !item.skill_sins.some(s => filters.sins.has(s))) return false
-      // 공격 유형 (OR)
       if (filters.atkTypes.size > 0 && !item.skill_types.some(t => filters.atkTypes.has(t))) return false
-      // 가중치 (OR)
       if (filters.atkWeights.size > 0 && !item.atk_weights.some(w => filters.atkWeights.has(w))) return false
-      // 코인 수 (OR)
       if (filters.coinCounts.size > 0 && !item.coin_counts.some(c => filters.coinCounts.has(c))) return false
-      // 키워드 (AND — 선택된 모든 키워드 보유해야, 특수 충전→충전 매핑)
       if (filters.keywords.size > 0) {
         const normalizedItemKws = item.keywords.map(normalizeThemeKeyword)
         for (const kw of filters.keywords) {
@@ -98,7 +123,7 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
     return arr
   }, [filtered, sort])
 
-  const activeCount = useMemo(() => countActive(filters), [filters])
+  const activeCount = useMemo(() => countActiveIdentity(filters), [filters])
 
   return {
     filters, sort, setSort,
@@ -117,15 +142,36 @@ export function useIdentityBrowserFilters(items: IdentityBrowserItem[]) {
 
 const GRADE_ORDER: Record<string, number> = { ZAYIN: 0, TETH: 1, HE: 2, WAW: 3, ALEPH: 4 }
 
+const egoParams = {
+  sinners: parseAsString.withDefault(''),
+  keywords: parseAsString.withDefault(''),
+  sins: parseAsString.withDefault(''),
+  grades: parseAsString.withDefault(''),
+  sort: parseAsString.withDefault('default'),
+}
+
 export function useEGOBrowserFilters(items: EGOBrowserItem[]) {
-  const [filters, setFilters] = useState(createEGOFilterState)
-  const [sort, setSort] = useState<SortOption>('default')
+  const [params, setParams] = useQueryStates(egoParams)
+
+  const filters = useMemo<EGOFilterState>(() => ({
+    sinners: toStringSet(params.sinners),
+    keywords: toStringSet(params.keywords),
+    sins: toStringSet(params.sins) as Set<SinType>,
+    grades: toStringSet(params.grades),
+  }), [params.sinners, params.keywords, params.sins, params.grades])
+
+  const sort = (params.sort || 'default') as SortOption
+  const setSort = useCallback((v: SortOption) => {
+    setParams({ sort: v === 'default' ? null : v })
+  }, [setParams])
 
   const toggle = useCallback((key: keyof EGOFilterState, value: unknown) => {
-    setFilters(prev => ({ ...prev, [key]: toggleInSet(prev[key] as Set<unknown>, value) }))
-  }, [])
+    setParams({ [key]: toggleString(params[key], value as string) })
+  }, [params, setParams])
 
-  const resetAll = useCallback(() => setFilters(createEGOFilterState), [])
+  const resetAll = useCallback(() => {
+    setParams({ sinners: null, keywords: null, sins: null, grades: null })
+  }, [setParams])
 
   const filtered = useMemo(() => {
     return items.filter(item => {
@@ -153,7 +199,7 @@ export function useEGOBrowserFilters(items: EGOBrowserItem[]) {
     return arr
   }, [filtered, sort])
 
-  const activeCount = useMemo(() => countActive(filters), [filters])
+  const activeCount = useMemo(() => countActiveEGO(filters), [filters])
 
   return {
     filters, sort, setSort,
