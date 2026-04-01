@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
+import { useQueryState, parseAsString } from 'nuqs'
 import type { Sinner, Identity, EGO } from '@/lib/types'
 import type { SinnerInfo, IdentityInfo, EGOInfo } from '@/lib/collection'
 import { decodeCollectionAsync } from '@/lib/collection'
@@ -34,7 +35,8 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
   const [rarityFilter, setRarityFilter] = useState<Set<number> | null>(null) // null = all
 
   // Tab
-  const [activeTab, setActiveTab] = useState<'identity' | 'ego'>('identity')
+  const [activeTabParam, setActiveTab] = useQueryState('tab', parseAsString.withDefault('identity'))
+  const activeTab = (activeTabParam as 'identity' | 'ego') || 'identity'
 
   // Result
   const [result, setResult] = useState<RandomResult | null>(null)
