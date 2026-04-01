@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { IdentityData, SinnerData, SkillSummary, EgoData, PassiveData, GiftData } from '@/lib/planner/types'
@@ -482,9 +483,9 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       )}
 
       {/* ── 인격 선택 모달 ── */}
-      {swapSinner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(0.5rem)', padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)' }} onClick={() => setSwapSinner(null)}>
-          <div onClick={e => e.stopPropagation()} className="relative w-full max-w-3xl mx-4 rounded-lg" style={{ background: '#1a1510', border: '1px solid #333', maxHeight: '85vh', overflowY: 'auto' }}>
+      <BaseModal open={!!swapSinner} onClose={() => setSwapSinner(null)} maxWidth="48rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
+        {swapSinner && (
+          <div className="relative w-full rounded-lg" style={{ background: '#1a1510', border: '1px solid #333', maxHeight: '85vh', overflowY: 'auto' }}>
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '0.75rem 1rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">
                 <Image src={getSinnerLogoUrl(swapSinner)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7, flexShrink: 0 }} />
@@ -528,8 +529,8 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
               })}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </BaseModal>
 
       {/* ── EGO 선택 모달 (DeckTab 패턴: 등급별 섹션 + 이미지) ── */}
       {egoSinner && (() => {

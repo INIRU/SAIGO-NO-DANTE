@@ -17,6 +17,7 @@ import {
   GRADE_COLORS,
 } from '@/lib/data/sinners'
 import IdentityCard from '@/components/sinners/IdentityCard'
+import BaseModal from '@/components/ui/BaseModal'
 
 /* ── 수감자 빈 카드 (공통) ────────────────────────────── */
 function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: React.ReactNode }) {
@@ -192,16 +193,10 @@ export function IdentityTab({
     </div>
 
     {/* ── 인격 선택 모달 (플래너 패턴) ── */}
-    {modalSinnerId && modalSinner && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(0.5rem)' }}
-        onClick={() => setModalSinnerId(null)}
-      >
+    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="48rem" padding="1rem">
+      {modalSinnerId && modalSinner && (
         <div
-          className="relative w-full max-w-3xl mx-4"
           style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: 'var(--radius-lg)', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}
-          onClick={e => e.stopPropagation()}
         >
           {/* 모달 헤더 */}
           <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
@@ -270,8 +265,8 @@ export function IdentityTab({
             })}
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </BaseModal>
     </>
   )
 }
@@ -360,16 +355,11 @@ export function EgoTab({
     </div>
 
     {/* ── 에고 선택 모달 (수감자별, 전 등급 동시 표시) ── */}
-    {modalSinnerId && modalSinner && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(0.5rem)' }}
-        onClick={() => setModalSinnerId(null)}
-      >
+    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="42rem" padding="1rem">
+      {modalSinnerId && modalSinner && (
         <div
-          className="relative w-full max-w-2xl mx-4 flex flex-col"
+          className="flex flex-col"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', maxHeight: '85vh', boxShadow: 'var(--shadow-lg)' }}
-          onClick={e => e.stopPropagation()}
         >
           {/* 모달 헤더 */}
           <div className="flex items-center justify-between flex-shrink-0 sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }}>
@@ -453,8 +443,8 @@ export function EgoTab({
             })}
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </BaseModal>
     </>
   )
 }
