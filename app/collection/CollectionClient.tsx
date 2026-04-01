@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useQueryState, parseAsString } from 'nuqs'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
@@ -204,7 +203,7 @@ function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
 // ── 키워드 필터 UI ───────────────────────────────────────────────────────
 
 function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
-  keywordFilter: string
+  keywordFilter: string | null
   setKeywordFilter: (v: string | null) => void
 }) {
   const { getIconUrl } = useKeywordData()
@@ -304,10 +303,10 @@ function CollectionViewer() {
   const [data, setData] = useState<CollectionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [owned, setOwned] = useState<Set<string>>(new Set())
-  const [activeSinner, setActiveSinner] = useQueryState('sinner', parseAsString.withDefault(''))
-  const [keywordFilter, setKeywordFilter] = useQueryState('kw', parseAsString.withDefault(''))
-  const [viewMode, setViewMode] = useQueryState('view', parseAsString.withDefault('sinner'))
-  const [showUnowned, setShowUnowned] = useQueryState('unowned', parseAsString.withDefault('true'))
+  const [activeSinner, setActiveSinner] = useState('')
+  const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'sinner' | 'all'>('sinner')
+  const [showUnowned, setShowUnowned] = useState(true)
   const { sinMap: kwSinMap } = useKeywordData()
   const animatedRef = useRef(false)
 
@@ -427,8 +426,8 @@ function CollectionViewer() {
   // ── 수감자별 모드 데이터 ──
   const filteredIdentities = filterByKeyword(data.identities[activeSinner] ?? [])
   const filteredEgos = filterEgoByKeyword(data.egos[activeSinner] ?? [])
-  const currentIdentities = showUnowned === 'true' ? filteredIdentities : filteredIdentities.filter(i => owned.has(i.id))
-  const currentEgos = showUnowned === 'true' ? filteredEgos : filteredEgos.filter(e => owned.has(e.id))
+  const currentIdentities = showUnowned ? filteredIdentities : filteredIdentities.filter(i => owned.has(i.id))
+  const currentEgos = showUnowned ? filteredEgos : filteredEgos.filter(e => owned.has(e.id))
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -552,16 +551,16 @@ function CollectionViewer() {
             {/* 미보유 표시 토글 */}
             <div className="flex items-center justify-end mb-3">
               <button
-                onClick={() => setShowUnowned(showUnowned === 'true' ? 'false' : null)}
+                onClick={() => setShowUnowned(!showUnowned)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
                 style={{
-                  background: showUnowned === 'true' ? 'rgba(90,80,112,0.15)' : 'transparent',
-                  border: `1px solid ${showUnowned === 'true' ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
-                  color: showUnowned === 'true' ? '#8a7aaa' : '#6a6080',
+                  background: showUnowned ? 'rgba(90,80,112,0.15)' : 'transparent',
+                  border: `1px solid ${showUnowned ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
+                  color: showUnowned ? '#8a7aaa' : '#6a6080',
                   cursor: 'pointer',
                 }}
               >
-                {showUnowned === 'true' ? <CheckSquare size={12} /> : <Square size={12} />}
+                {showUnowned ? <CheckSquare size={12} /> : <Square size={12} />}
                 미보유 표시
               </button>
             </div>
@@ -601,8 +600,8 @@ function CollectionViewer() {
                 {data.sinners.map(sinner => {
                   const allIds = filterByKeyword(data.identities[sinner.id] ?? [])
                   const allEgoList = filterEgoByKeyword(data.egos[sinner.id] ?? [])
-                  const ids = showUnowned === 'true' ? allIds : allIds.filter(i => owned.has(i.id))
-                  const egoList = showUnowned === 'true' ? allEgoList : allEgoList.filter(e => owned.has(e.id))
+                  const ids = showUnowned ? allIds : allIds.filter(i => owned.has(i.id))
+                  const egoList = showUnowned ? allEgoList : allEgoList.filter(e => owned.has(e.id))
                   if (ids.length === 0 && egoList.length === 0) return null
                   const ownedIdCount = ids.filter(i => owned.has(i.id)).length
                   const ownedEgoCount = egoList.filter(e => owned.has(e.id)).length
