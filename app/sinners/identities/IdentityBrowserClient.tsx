@@ -14,6 +14,7 @@ import RarityFilter from '@/components/browser/RarityFilter'
 import SinFilter from '@/components/browser/SinFilter'
 import AtkTypeFilter from '@/components/browser/AtkTypeFilter'
 import KeywordFilter from '@/components/browser/KeywordFilter'
+import FilterToggleGroup from '@/components/browser/FilterToggleGroup'
 import NumericFilter from '@/components/browser/NumericFilter'
 import ActiveFilterChips from '@/components/browser/ActiveFilterChips'
 import BrowserHeader from '@/components/browser/BrowserHeader'
@@ -117,6 +118,14 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
           <RarityFilter
             selected={filters.rarities}
             onToggle={v => toggle('rarities', v)}
+          />
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+          <FilterToggleGroup
+            sectionLabel="시즌"
+            items={[0,1,2,3,4,5,6,7].map(s => ({ value: s, label: s === 0 ? '기본' : `S${s}` }))}
+            selected={filters.seasons}
+            onToggle={(v: number) => toggle('seasons', v)}
+            columns={4}
           />
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
           <SinFilter

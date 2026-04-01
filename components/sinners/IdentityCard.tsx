@@ -130,7 +130,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           className="px-2 py-1.5 mt-1"
           style={{
             borderTop: `1px solid ${sinColor}30`,
-            background: 'rgba(0,0,0,0.4)',
+            background: 'rgba(13,11,8,0.85)',
           }}
         >
           <div className="grid grid-cols-3 gap-1 text-center">

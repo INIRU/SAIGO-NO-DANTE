@@ -32,15 +32,15 @@ export default function FilterSidebar({ children, activeCount }: Props) {
     <>
       {/* 데스크탑 사이드바 */}
       <aside
-        className="hidden lg:block shrink-0 sticky self-start overflow-y-auto"
+        className="hidden lg:block shrink-0 sticky self-start overflow-y-auto scrollbar-thin"
         style={{
           width: '16rem',
           top: '5rem',
-          maxHeight: 'calc(100vh - 6rem)',
+          maxHeight: '70dvh',
           paddingRight: '0.75rem',
         }}
       >
-        <div className="flex flex-col gap-4 pb-4">
+        <div className="flex flex-col gap-4 pb-12">
           {children}
         </div>
       </aside>

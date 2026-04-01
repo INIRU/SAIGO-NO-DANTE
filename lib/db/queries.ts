@@ -218,7 +218,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
   const { data: identities, error: idErr } = await supabase()
     .schema('limbus')
     .from('identities')
-    .select('id, sinner_id, name, name_kr, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)')
+    .select('id, sinner_id, name, name_kr, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
     .order('rarity', { ascending: false })
     .order('name')
   if (idErr) throw idErr
@@ -270,6 +270,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
       skill_types: sk ? [...sk.types] : [],
       atk_weights: sk ? [...sk.weights] : [],
       coin_counts: sk ? [...sk.coins] : [],
+      season: (id.acquisition_info as Record<string, unknown>)?.release_season as number ?? 0,
     }
   })
 }
