@@ -112,6 +112,7 @@ export default function ThemeSection({ state, dispatch, themes, gifts, giftMap, 
                   <GiftCard
                     key={gift.game_id}
                     gift={gift}
+                    size="4.5rem"
                     isSelected={owned}
                     onClick={() => dispatch({ type: owned ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
                     conditionStatus={!owned ? getConditionStatus(gift) : null}

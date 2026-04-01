@@ -190,10 +190,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
     }
   }, [dispatch, finalGiftIds])
 
-  // 테마에서 얻을 수 있는 기프트 전체
+  // 테마에서 얻을 수 있는 기프트 전체 (specific은 ego의 부분집합이므로 ego만 사용)
   function getThemeAvailableGifts(theme: ThemeData): GiftData[] {
-    const themeGiftIds = [...(theme.ego_gift_ids ?? []), ...(theme.specific_ego_gift_ids ?? [])]
-    return themeGiftIds
+    return (theme.ego_gift_ids ?? [])
       .map(gid => giftMap.get(gid))
       .filter(Boolean) as GiftData[]
   }
@@ -349,7 +348,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, giftMap }: Fl
                           {selectedTheme.name}
                         </div>
                         <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.125rem' }}>
-                          기프트 {(selectedTheme.ego_gift_ids?.length ?? 0) + (selectedTheme.specific_ego_gift_ids?.length ?? 0)}종
+                          기프트 {selectedTheme.ego_gift_ids?.length ?? 0}종
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
