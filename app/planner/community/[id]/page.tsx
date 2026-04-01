@@ -9,13 +9,12 @@ interface Props {
 
 async function fetchPlanForMeta(id: string) {
   const supabase = await createClient()
-  const { data, error } = await supabase
+  const { data } = await supabase
     .schema('limbus')
     .from('md_plans')
     .select('title, description, difficulty')
     .eq('id', id)
-    .single()
-  if (error) console.error('Failed to fetch plan for metadata:', error)
+    .maybeSingle()
   return data
 }
 
