@@ -20,6 +20,7 @@ interface Keyword {
   max_stack: number | null
   icon_slug: string | null
   sin_affinity: string | null
+  category: string | null
 }
 interface Identity {
   id: string; name: string; name_kr: string; sinner_id: string

@@ -8,7 +8,6 @@ const FONT_SIZES = ['small', 'default', 'large'] as const
 type FontSize = (typeof FONT_SIZES)[number]
 const LABELS: Record<FontSize, string> = { small: '작게', default: '보통', large: '크게' }
 
-// 글자 크기 조정이 표시되는 페이지만 허용
 function isAllowedPage(path: string): boolean {
   return (
     /^\/sinners\/[^/]+\/(identities|ego)\//.test(path) ||
@@ -28,15 +27,6 @@ export default function FloatingFontControl() {
   const circleRef = useRef<HTMLDivElement>(null)
   const gsapRef = useRef<typeof import('gsap')['gsap'] | null>(null)
   const isCollapsed = useRef(true)
-  const [isMobile, setIsMobile] = useState(false)
-
-  // 모바일 감지
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   // localStorage 복원
   useEffect(() => {
@@ -56,7 +46,7 @@ export default function FloatingFontControl() {
     }
   }, [allowed])
 
-  // GSAP 로드 + 입장 애니메이션 (allowed 변경 시 재실행)
+  // GSAP 로드 + 입장 애니메이션
   useEffect(() => {
     if (!allowed) return
     isCollapsed.current = true
@@ -71,21 +61,23 @@ export default function FloatingFontControl() {
       const circle = circleRef.current
       if (!wrap || !controls || !circle) return
 
-      const size = 48
-      gsap.set(wrap, { width: size, height: size, y: 80, xPercent: -50, opacity: 0, visibility: 'visible' })
+      // 접힌 원 크기 = CSS에서 결정 (lg: 2.75rem, else 2.25rem)
+      const circleEl = circle.getBoundingClientRect()
+      const cSize = circleEl.width || 36
+      gsap.set(wrap, { width: cSize, height: cSize, y: 80, opacity: 0, visibility: 'visible', overflow: 'hidden' })
       gsap.set(controls, { opacity: 0, scale: 0.8, pointerEvents: 'none' })
       gsap.set(circle, { opacity: 1, scale: 1, pointerEvents: 'auto' })
 
       const tl = gsap.timeline({ delay: 0.8 })
-
-      // Step 1: Aa 원이 아래에서 올라옴
       tl.to(wrap, { y: 0, opacity: 1, duration: 0.5, ease: 'back.out(1.4)' })
 
-      // Step 2: 잠깐 대기 후 중앙 기준으로 펼쳐짐
-      tl.to(circle, { opacity: 0, scale: 0, pointerEvents: 'none', duration: 0.15, ease: 'power2.in' }, '+=0.3')
-      tl.to(wrap, { width: 'auto', height: 'auto', xPercent: -50, duration: 0.3, ease: 'power2.out' }, '-=0.05')
-      tl.to(controls, { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 0.25, ease: 'back.out(1.2)' }, '-=0.1')
-      tl.add(() => { isCollapsed.current = false })
+      // lg 이상(데스크탑)이면 자동 펼침
+      if (window.innerWidth >= 1024) {
+        tl.to(circle, { opacity: 0, scale: 0, pointerEvents: 'none', duration: 0.15, ease: 'power2.in' }, '+=0.3')
+        tl.to(wrap, { width: 'auto', height: 'auto', duration: 0.3, ease: 'power2.out' }, '-=0.05')
+        tl.to(controls, { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 0.25, ease: 'back.out(1.2)' }, '-=0.1')
+        tl.add(() => { isCollapsed.current = false })
+      }
     })()
     return () => { cancelled = true }
   }, [allowed])
@@ -101,10 +93,15 @@ export default function FloatingFontControl() {
     const circle = circleRef.current
     if (!wrap || !controls || !circle) return
 
-    const size = 48
-    const tl = gsap.timeline()
+    const cSize = circle.offsetWidth || 36
+    const tl = gsap.timeline({
+      onComplete: () => {
+        // GSAP inline width/height 제거 → Tailwind 반응형 복귀
+        gsap.set(wrap, { clearProps: 'width,height' })
+      }
+    })
     tl.to(controls, { opacity: 0, scale: 0.8, pointerEvents: 'none', duration: 0.2, ease: 'power2.in' })
-    tl.to(wrap, { width: size, height: size, xPercent: -50, duration: 0.3, ease: 'power2.inOut' }, '-=0.05')
+    tl.to(wrap, { width: cSize, height: cSize, overflow: 'hidden', duration: 0.3, ease: 'power2.inOut' }, '-=0.05')
     tl.to(circle, { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 0.25, ease: 'back.out(1.4)' }, '-=0.1')
   }, [])
 
@@ -121,7 +118,7 @@ export default function FloatingFontControl() {
 
     const tl = gsap.timeline()
     tl.to(circle, { opacity: 0, scale: 0, pointerEvents: 'none', duration: 0.15, ease: 'power2.in' })
-    tl.to(wrap, { width: 'auto', height: 'auto', xPercent: -50, duration: 0.3, ease: 'power2.out' }, '-=0.05')
+    tl.to(wrap, { width: 'auto', height: 'auto', overflow: 'hidden', duration: 0.3, ease: 'power2.out' }, '-=0.05')
     tl.to(controls, { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 0.25, ease: 'back.out(1.2)' }, '-=0.1')
   }, [])
 
@@ -152,32 +149,18 @@ export default function FloatingFontControl() {
     })
   }, [])
 
-  // 모바일: 버튼 크기 증가, 하단 safe area 고려
-  const btnSize = isMobile ? 40 : 32
-  const iconSize = isMobile ? 18 : 14
-  const circleSize = 48
-
-  // 허용된 페이지에서만 표시
   if (!allowed) return null
 
   return (
     <div
       ref={wrapRef}
+      className="fixed bottom-5 left-4 z-[45] flex items-center justify-center rounded-full invisible
+        w-[2.25rem] h-[2.25rem] lg:w-[3rem] lg:h-[3rem] overflow-hidden"
       style={{
-        position: 'fixed',
-        bottom: isMobile ? 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' : '1.5rem',
-        left: '50%',
-        zIndex: 45,
-        visibility: 'hidden',
-        overflow: 'hidden',
         background: 'rgba(26,21,16,0.95)',
         border: '1px solid var(--border-gold)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 16px rgba(200,144,10,0.2)',
-        backdropFilter: 'blur(12px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '999px',
+        boxShadow: '0 0.25rem 1.5rem rgba(0,0,0,0.6), 0 0 1rem rgba(200,144,10,0.15)',
+        backdropFilter: 'blur(0.75rem)',
         whiteSpace: 'nowrap',
       }}
     >
@@ -185,58 +168,40 @@ export default function FloatingFontControl() {
       <div
         ref={circleRef}
         onClick={expand}
-        style={{
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--gold)',
-          cursor: 'pointer',
-          width: circleSize,
-          height: circleSize,
-        }}
+        className="absolute flex items-center justify-center cursor-pointer
+          w-[2.25rem] h-[2.25rem] lg:w-[3rem] lg:h-[3rem]"
+        style={{ color: 'var(--gold)' }}
       >
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: isMobile ? '1.0625rem' : '0.9375rem' }}>Aa</span>
+        <span className="text-[0.75rem] lg:text-[1rem]" style={{ fontFamily: 'var(--font-heading)' }}>Aa</span>
       </div>
 
       {/* 펼쳐진 상태: 컨트롤 */}
       <div
         ref={controlsRef}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: isMobile ? '0.8125rem' : '0.5625rem',
-          padding: isMobile ? '0.5rem 1.0625rem' : '0.5rem 0.8125rem',
-        }}
+        className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-1.5 lg:py-2"
       >
         <button
           onClick={(e) => { e.stopPropagation(); changeFontSize(-1) }}
           disabled={fontSize === 'small'}
+          className="w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center transition-all duration-200"
           style={{
-            width: btnSize, height: btnSize, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: fontSize === 'small' ? 'transparent' : 'rgba(200,144,10,0.1)',
             border: '1px solid',
             borderColor: fontSize === 'small' ? 'rgba(58,42,21,0.3)' : 'var(--gold-dim)',
             color: fontSize === 'small' ? '#3a2a15' : 'var(--gold)',
             cursor: fontSize === 'small' ? 'default' : 'pointer',
-            transition: 'all 0.2s',
           }}
           aria-label="글자 크기 줄이기"
         >
-          <Minus size={iconSize} />
+          <Minus className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
         </button>
 
         <span
           onClick={collapse}
+          className="text-[0.6875rem] lg:text-[0.8125rem] min-w-[1.75rem] lg:min-w-[2rem] text-center select-none cursor-pointer"
           style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: isMobile ? '0.9375rem' : '0.8125rem',
             color: 'var(--gold-light)',
-            minWidth: isMobile ? '2.6875rem' : '2.125rem',
-            textAlign: 'center',
-            userSelect: 'none',
-            cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent',
           }}
           aria-label="접기"
@@ -247,19 +212,17 @@ export default function FloatingFontControl() {
         <button
           onClick={(e) => { e.stopPropagation(); changeFontSize(1) }}
           disabled={fontSize === 'large'}
+          className="w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center transition-all duration-200"
           style={{
-            width: btnSize, height: btnSize, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: fontSize === 'large' ? 'transparent' : 'rgba(200,144,10,0.1)',
             border: '1px solid',
             borderColor: fontSize === 'large' ? 'rgba(58,42,21,0.3)' : 'var(--gold-dim)',
             color: fontSize === 'large' ? '#3a2a15' : 'var(--gold)',
             cursor: fontSize === 'large' ? 'default' : 'pointer',
-            transition: 'all 0.2s',
           }}
           aria-label="글자 크기 키우기"
         >
-          <Plus size={iconSize} />
+          <Plus className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
         </button>
       </div>
     </div>
