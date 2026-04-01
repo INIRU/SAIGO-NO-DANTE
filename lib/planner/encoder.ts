@@ -70,14 +70,19 @@ const LS_KEY = 'md-planner-draft'
 
 export function saveDraftToLocal(state: PlannerState): void {
   try {
+    // Zustand persist 형식으로 저장 ({ state: {...}, version: 0 })
     localStorage.setItem(LS_KEY, JSON.stringify({
-      difficulty: state.difficulty,
-      identitySlots: state.identitySlots,
-      egoSlots: state.egoSlots,
-      floorPlan: state.floorPlan,
-      giftInventory: state.giftInventory,
-      title: state.title,
-      description: state.description,
+      state: {
+        difficulty: state.difficulty,
+        identitySlots: state.identitySlots,
+        egoSlots: state.egoSlots,
+        floorPlan: state.floorPlan,
+        giftInventory: state.giftInventory,
+        title: state.title,
+        description: state.description,
+        activeTab: state.activeTab ?? 'deck',
+      },
+      version: 0,
     }))
   } catch { /* quota exceeded 등 무시 */ }
 }
