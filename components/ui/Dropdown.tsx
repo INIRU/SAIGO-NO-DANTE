@@ -69,12 +69,13 @@ export default function Dropdown<T extends string = string>({
       </button>
       {open && (
         <div
-          className="absolute top-full mt-1 left-0 z-30 rounded overflow-hidden"
+          className="absolute top-full mt-1 left-0 z-30 rounded overflow-y-auto"
           style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-lg)',
             minWidth: `${minWidth}px`,
+            maxHeight: '16rem',
           }}
         >
           {options.map(opt => (
