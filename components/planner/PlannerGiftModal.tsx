@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { X } from 'lucide-react'
+import KeywordChip from '@/components/ui/KeywordChip'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
@@ -109,10 +110,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
                 {gift.name}
               </h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold" style={{ background: `${kwColor}25`, color: kwColor }}>
-                  {kwIconUrl && <Image src={kwIconUrl} alt="" width={12} height={12} />}
-                  {gift.keyword}
-                </span>
+                {gift.keyword && <KeywordChip keyword={gift.keyword} />}
                 {gift.effect_plus && (
                   <span className="px-2 py-0.5 rounded-full text-[0.625rem]" style={{ background: 'rgba(64,160,96,0.15)', color: '#40a060' }}>
                     강화 가능

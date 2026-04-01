@@ -19,7 +19,7 @@ import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-import { OCTAGON_CLIP } from '@/lib/constants/gift'
+import GiftCard from '@/components/ui/GiftCard'
 import type { PassiveData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -864,111 +864,15 @@ function GiftGrid({ gifts, getCondition, onGiftClick }: {
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
       {gifts.map(({ gift, enhance }) => {
         const cond = getCondition?.(gift)
-        const kwSlug = getKeywordSlug(gift.keyword ?? null)
-        const kwIconUrl = kwSlug ? getKwIconUrl(kwSlug) : null
         return (
-          <div
+          <GiftCard
             key={`${gift.game_id}_${enhance}`}
-            title={[
-              gift.name,
-              gift.keyword ? `키워드: ${gift.keyword}` : null,
-              gift.effect_base ? `효과: ${gift.effect_base}` : null,
-              enhance === 1 && gift.effect_plus ? `+: ${gift.effect_plus}` : null,
-              enhance === 2 && gift.effect_plusplus ? `++: ${gift.effect_plusplus}` : null,
-              cond ? (cond.level === 'unmet'
-                ? `⛔ 조건 미달: ${cond.text} — 전체 인격으로도 부족`
-                : `⚠️ 조건 주의: ${cond.text} — 편성(1-7)만으로는 부족, 대기 포함 시 충족`)
-              : null,
-            ].filter(Boolean).join('\n')}
+            gift={gift}
             onClick={() => onGiftClick?.(gift, enhance)}
-            style={{ width: '4.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onGiftClick ? 'pointer' : 'help' }}
-          >
-            <div style={{
-              position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden',
-              backgroundImage: `url(${S}/icons/ego-gift-bg.webp)`, backgroundSize: 'cover', backgroundPosition: 'center',
-              clipPath: OCTAGON_CLIP,
-            }}>
-              {/* Grade */}
-              <span style={{
-                position: 'absolute', top: '4%', left: '3%', zIndex: 10, pointerEvents: 'none',
-                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                fontWeight: 700, fontSize: '1.25rem', lineHeight: 1,
-                color: (gift.grade === 'EX') ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-                textShadow: (gift.grade === 'EX')
-                  ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
-                  : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-              }}>
-                {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
-              </span>
-              {/* Keyword icon */}
-              {kwIconUrl && (
-                <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 10, pointerEvents: 'none', width: '30%', height: '30%' }}>
-                  <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
-                </div>
-              )}
-              {/* Gift image */}
-              <div style={{ position: 'absolute', inset: '15%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {gift.image_url?.startsWith('http') ? (
-                  <Image src={gift.image_url} alt={gift.name} fill style={{ objectFit: 'contain' }} sizes="80px" />
-                ) : (
-                  <div style={{ width: '1.75rem', height: '1.75rem', background: '#333', borderRadius: '50%' }} />
-                )}
-              </div>
-              {/* Enhance badge */}
-              {enhance > 0 && (
-                <span style={{
-                  position: 'absolute', top: '1%', right: '6%', zIndex: 15,
-                  fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                  fontWeight: 800, fontSize: '1.25rem', lineHeight: 1,
-                  color: enhance === 2 ? '#ff8c00' : '#e8b030',
-                  textShadow: enhance === 2
-                    ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
-                    : '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)',
-                  filter: enhance === 2
-                    ? 'drop-shadow(0 0 0.375rem rgba(255,100,0,0.8))'
-                    : 'drop-shadow(0 0 0.25rem rgba(232,176,48,0.7))',
-                }}>
-                  {enhance === 2 ? '++' : '+'}
-                </span>
-              )}
-              {/* 조건 오버레이 */}
-              {cond && (
-                <div
-                  title={cond.level === 'unmet'
-                    ? `조건 미달: ${cond.text} — 전체 인격으로도 부족`
-                    : `조건 주의: ${cond.text} — 편성(1-7)만으로는 부족, 대기 포함 시 충족`}
-                  style={{
-                    position: 'absolute', inset: 0, zIndex: 18,
-                    background: cond.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'help',
-                  }}
-                >
-                  <span style={{
-                    fontSize: '0.5rem', fontWeight: 700,
-                    color: cond.level === 'unmet' ? '#ef4444' : '#e8b030',
-                    textShadow: '0 0 0.25rem rgba(0,0,0,0.9)',
-                    textAlign: 'center', lineHeight: 1.3,
-                  }}>
-                    {cond.level === 'unmet' ? '조건 미달' : '조건 주의'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <span style={{
-              fontSize: '0.625rem',
-              color: cond?.level === 'unmet' ? '#ef4444' : cond?.level === 'warn' ? '#e8b030' : '#9ca3af',
-              textAlign: 'center', marginTop: '0.1875rem', lineHeight: 1.2, width: '100%',
-              overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}>
-              {gift.name}
-            </span>
-            {cond && (
-              <span style={{ fontSize: '0.5rem', color: cond.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2 }}>
-                {cond.text}
-              </span>
-            )}
-          </div>
+            size="4.5rem"
+            enhance={enhance}
+            conditionStatus={cond}
+          />
         )
       })}
     </div>
