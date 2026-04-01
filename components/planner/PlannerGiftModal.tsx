@@ -6,15 +6,10 @@ import type { GiftData, ThemeData } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
+import { OCTAGON_CLIP, GRADE_ROMAN, getGiftKeywordColor } from '@/lib/constants/gift'
 import BaseModal from '@/components/ui/BaseModal'
 
 const S = STORAGE_BASE
-const KW_COLORS: Record<string, string> = {
-  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
-  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
-  관통: '#dd8833', 타격: '#cc8822', '공통/범용': '#888',
-}
 
 export interface RecipeLookup {
   materials: GiftData[]
@@ -33,7 +28,7 @@ interface Props {
 
 export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeClick, enhance, conditionStatus, recipe }: Props) {
   const { getIconUrl } = useKeywordData()
-  const kwColor = KW_COLORS[gift.keyword ?? ''] ?? '#888'
+  const kwColor = getGiftKeywordColor(gift.keyword ?? null)
   const gradeLabel = GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade
   const isEX = gift.grade === 'EX'
   const kwIconUrl = gift.keyword ? getIconUrl(gift.keyword) : null
