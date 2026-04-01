@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import type { ActivationCondition } from '@/lib/data/sinners'
 
@@ -67,12 +68,10 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
     return counts
   }, [activatableGifts])
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+    <BaseModal open={open} onClose={onClose} maxWidth="42rem" padding="1rem">
       <div
-        className="flex flex-col w-full max-w-2xl mx-4 sm:mx-auto"
+        className="flex flex-col w-full"
         style={{
           maxHeight: '85vh',
           background: 'var(--bg-card, #1a1510)',
@@ -80,7 +79,6 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
           borderRadius: '0.5rem',
           boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
-        onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}
         <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -264,6 +262,6 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X, Camera } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
 
@@ -58,20 +59,15 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.8)' }}
-      onClick={onClose}
-    >
+    <BaseModal open={open} onClose={onClose} maxWidth="42rem">
       <div
-        className="relative w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col"
+        className="relative w-full max-h-[80vh] flex flex-col"
         style={{
           background: '#1a1510',
           border: '1px solid var(--border)',
-          borderRadius: 8,
+          borderRadius: '0.5rem',
           overflow: 'hidden',
         }}
-        onClick={e => e.stopPropagation()}
       >
         {/* 상단 골드 라인 */}
         <div style={{
@@ -265,7 +261,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   )
 }
 

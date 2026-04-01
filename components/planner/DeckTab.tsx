@@ -10,6 +10,7 @@ import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import KeywordChart from './KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
+import BaseModal from '@/components/ui/BaseModal'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 
@@ -420,14 +421,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       )}
 
       {/* ── 인격 선택 모달 ── */}
-      {identityModalSinner && modalSinner && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(0.5rem)' }}
-          onClick={() => setIdentityModalSinner(null)}
-        >
+      {modalSinner && (
+        <BaseModal open={!!identityModalSinner} onClose={() => setIdentityModalSinner(null)} maxWidth="48rem">
           <div
-            className="relative w-full max-w-3xl mx-4"
             style={{
               background: '#1a1510',
               border: '1px solid #333',
@@ -436,7 +432,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               overflowY: 'auto',
               boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)',
             }}
-            onClick={e => e.stopPropagation()}
           >
             {/* 모달 헤더 */}
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
@@ -541,7 +536,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               })}
             </div>
           </div>
-        </div>
+        </BaseModal>
       )}
 
       {/* ── EGO 탭 ── */}
@@ -654,13 +649,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         for (const e of selectedEgos) egoByGrade[e.grade] = e
 
         return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)' }}
-            onClick={() => setEgoModalSinner(null)}
-          >
+          <BaseModal open={!!egoModalSinner} onClose={() => setEgoModalSinner(null)} maxWidth="42rem">
             <div
-              className="relative w-full max-w-2xl mx-4"
               style={{
                 background: '#1a1510',
                 border: '1px solid #333',
@@ -669,7 +659,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 overflowY: 'auto',
                 boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)',
               }}
-              onClick={e => e.stopPropagation()}
             >
               {/* 모달 헤더 */}
               <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
@@ -805,7 +794,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 })}
               </div>
             </div>
-          </div>
+          </BaseModal>
         )
       })()}
 
