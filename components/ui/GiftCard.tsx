@@ -78,7 +78,7 @@ const GiftCard = memo(function GiftCard({
       }}
     >
       {/* Octagon frame */}
-      <div style={{
+      <div className="gift-frame" style={{
         position: 'relative',
         width: '100%',
         aspectRatio: '1',
