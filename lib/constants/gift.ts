@@ -54,5 +54,17 @@ export function getGiftKeywordSlug(keyword: string | null): string | null {
   return 'general'
 }
 
+// ── 기프트 키워드 색상 ──────────────────────────────────────────────────────
+export const GIFT_KEYWORD_COLORS: Record<string, string> = {
+  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
+  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
+  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888', '공통/범용': '#888888',
+}
+
+export function getGiftKeywordColor(keyword: string | null): string {
+  if (!keyword) return '#888'
+  return GIFT_KEYWORD_COLORS[keyword] ?? '#888'
+}
+
 // ── 기프트 이미지 배경 URL ──────────────────────────────────────────────────
 export const GIFT_BG_URL = `${STORAGE_BASE}/icons/ego-gift-bg.webp`

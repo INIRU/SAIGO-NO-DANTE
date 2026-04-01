@@ -1,16 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Image from 'next/image'
-import { Check, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, IdentityData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
 import { getAvailableThemes } from '@/lib/planner/fusion'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
-import GiftCard from '@/components/planner/gift-plan/GiftCard'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import GiftCard from '@/components/ui/GiftCard'
+import ThemePackCard from '@/components/ui/ThemePackCard'
 
 interface Props {
   state: RunState
@@ -87,65 +85,15 @@ export default function ThemeSection({ state, dispatch, themes, gifts, giftMap, 
         테마팩 선택 ({available.length}개)
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2" style={{ marginBottom: '1.5rem' }}>
-        {available.map(theme => {
-          const isSelected = currentLog?.themeId === theme.id
-          const giftCount = (theme.specific_ego_gift_ids ?? []).length
-          return (
-            <button
-              key={theme.id}
-              onClick={() => dispatch({ type: 'SET_FLOOR_THEME', themeId: theme.id })}
-              className="group relative rounded-lg overflow-hidden text-left transition-all"
-              style={{
-                aspectRatio: '380/500',
-                border: `2px solid ${isSelected ? '#c8900a' : 'rgba(255,255,255,0.06)'}`,
-                boxShadow: isSelected ? '0 0 1rem rgba(200,144,10,0.3)' : 'none',
-                background: '#1a1714',
-              }}
-              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(200,144,10,0.25)' }}
-              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
-            >
-              {/* 테마팩 이미지 */}
-              {theme.image_url && (
-                <ImageWithFallback src={theme.image_url} alt={theme.name} fill fallbackType="default" sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 20vw"
-                  className="object-cover transition-transform group-hover:scale-105" style={{ opacity: isSelected ? 0.9 : 0.7 }}
-                  placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
-              )}
-
-              {/* 보스 이미지 — 가운데 (거던 페이지 패턴) */}
-              {theme.boss_image_url && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
-                  <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
-                    <ImageWithFallback src={theme.boss_image_url} alt="" fill fallbackType="default" sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 20vw"
-                      className="object-contain drop-shadow-lg transition-transform group-hover:scale-105" />
-                  </div>
-                </div>
-              )}
-
-              {/* 하단 그래디언트 + 정보 */}
-              <div className="absolute inset-0 z-[3]" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 40%, transparent 70%)' }} />
-              <div className="absolute bottom-0 left-0 right-0 z-[4]" style={{ padding: '0 0.625rem 0.5rem' }}>
-                <p className="font-serif leading-tight" style={{ color: '#e8d8c0', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.8)', marginBottom: '0.25rem' }}>
-                  {theme.name}
-                </p>
-                <div className="flex items-center gap-2">
-                  {giftCount > 0 && (
-                    <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                      기프트 {giftCount}종
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 선택 체크 */}
-              {isSelected && (
-                <div className="absolute top-0 left-0 right-0 z-[5] flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
-                  <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-                  <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>선택됨</span>
-                </div>
-              )}
-            </button>
-          )
-        })}
+        {available.map(theme => (
+          <ThemePackCard
+            key={theme.id}
+            theme={theme}
+            onClick={() => dispatch({ type: 'SET_FLOOR_THEME', themeId: theme.id })}
+            isSelected={currentLog?.themeId === theme.id}
+            showGiftCount
+          />
+        ))}
       </div>
 
       {/* 선택된 테마 전용 기프트 — GiftCard 사용 */}
