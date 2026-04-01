@@ -6,6 +6,7 @@ import { Check, AlertCircle, ChevronDown, ChevronUp, X, ArrowRight } from 'lucid
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
+import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
 import { colorizeEventText, replaceEventPlaceholders, getOptionEffects } from '@/lib/utils/event-text'
@@ -159,12 +160,12 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
       </div>
 
       {/* ════════ 이벤트 상세 모달 ════════ */}
-      {selectedEvent && (() => {
-        const ev = selectedEvent
-        const children = childMap.get(ev.id) ?? []
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setSelectedEvent(null)} style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(0.5rem)', padding: 'calc(env(safe-area-inset-top) + 1rem) calc(env(safe-area-inset-right) + 1rem) calc(env(safe-area-inset-bottom) + 1rem) calc(env(safe-area-inset-left) + 1rem)' }}>
-          <div onClick={e => e.stopPropagation()} className="relative w-full overflow-hidden" style={{ maxWidth: '40rem', maxHeight: '85vh', borderRadius: '0.75rem', background: '#131110', border: '1px solid rgba(200,144,10,0.12)', boxShadow: '0 0 3rem rgba(200,144,10,0.06), 0 1.5rem 4rem rgba(0,0,0,0.6)' }}>
+      <BaseModal open={!!selectedEvent} onClose={() => setSelectedEvent(null)} padding="calc(env(safe-area-inset-top) + 1rem) calc(env(safe-area-inset-right) + 1rem) calc(env(safe-area-inset-bottom) + 1rem) calc(env(safe-area-inset-left) + 1rem)">
+        {selectedEvent && (() => {
+          const ev = selectedEvent
+          const children = childMap.get(ev.id) ?? []
+          return (
+          <div className="relative w-full overflow-hidden" style={{ maxHeight: '85vh', borderRadius: '0.75rem', background: '#131110', border: '1px solid rgba(200,144,10,0.12)', boxShadow: '0 0 3rem rgba(200,144,10,0.06), 0 1.5rem 4rem rgba(0,0,0,0.6)' }}>
             {/* 닫기 */}
             <button onClick={() => setSelectedEvent(null)} className="absolute top-2 right-2 z-30 flex items-center justify-center transition-all"
               style={{ color: 'rgba(255,255,255,0.4)', width: '2.75rem', height: '2.75rem', borderRadius: '50%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
@@ -216,7 +217,7 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
                       <div key={optIdx}>
                         {/* 선택지 헤더 */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleSelect(ev, optIdx) }}
+                          onClick={() => handleSelect(ev, optIdx)}
                           className="w-full text-left transition-all"
                           style={{
                             padding: '0.75rem 1rem',
@@ -317,9 +318,9 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
             )}
             </div>
           </div>
-          </div>
-        )
-      })()}
+          )
+        })()}
+      </BaseModal>
     </div>
   )
 }
