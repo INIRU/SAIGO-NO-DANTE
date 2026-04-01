@@ -24,12 +24,11 @@ import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
 const S = STORAGE_BASE
-const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
-const GRADE_ROMAN: Record<string, string> = { 'EX': 'EX', '5': '\u2164', '4': '\u2163', '3': '\u2162', '2': '\u2161', '1': '\u2160' }
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 const BLESSING_NAMES: Record<number, string> = {

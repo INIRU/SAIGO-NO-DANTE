@@ -6,11 +6,10 @@ import type { GiftData, ThemeData } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
+import BaseModal from '@/components/ui/BaseModal'
 
 const S = STORAGE_BASE
-const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
-
-const GRADE_ROMAN: Record<string, string> = { 'EX': 'EX', '5': '\u2164', '4': '\u2163', '3': '\u2162', '2': '\u2161', '1': '\u2160' }
 const KW_COLORS: Record<string, string> = {
   화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
   침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
@@ -45,12 +44,10 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem">
       <div
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl"
+        className="relative w-full max-h-[85vh] overflow-y-auto rounded-xl"
         style={{ background: '#131110', border: `1px solid ${kwColor}30`, boxShadow: `0 0 3rem ${kwColor}10, 0 1.5rem 4rem rgba(0,0,0,0.6)` }}
-        onClick={e => e.stopPropagation()}
       >
         {/* 닫기 */}
         <button onClick={onClose} className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
@@ -233,7 +230,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   )
 }
 

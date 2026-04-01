@@ -18,31 +18,7 @@ import {
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 
 import { STORAGE_BASE } from '@/lib/constants/game'
-const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
-
-const GRADE_ROMAN: Record<string, string> = {
-  'EX': 'EX', '5': '\u2164', '4': '\u2163', '3': '\u2162', '2': '\u2161', '1': '\u2160',
-}
-
-const SLUG_TO_KEYWORD: Record<string, string> = {
-  burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
-  sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
-  pierce: '관통', blunt: '타격',
-}
-const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
-
-function getKeywordSlug(keyword: string | null): string | null {
-  if (!keyword) return null
-  for (const [slug, kw] of Object.entries(SLUG_TO_KEYWORD)) {
-    if (keyword.includes(kw) || kw.includes(keyword)) return slug
-  }
-  return null
-}
-
-function getKeywordIconUrl(slug: string): string | null {
-  if (STATS_SLUGS.has(slug)) return `${STORAGE_BASE}/icons/stats/${slug}.webp`
-  return `${STORAGE_BASE}/icons/keywords/${slug}.webp`
-}
+import { OCTAGON_CLIP, GRADE_ROMAN, getGiftKeywordSlug as getKeywordSlug, getGiftKeywordIconUrl as getKeywordIconUrl } from '@/lib/constants/gift'
 
 // ── FloorMemo: 자동완성 지원 메모 입력 ──────────────────────────────────────
 function FloorMemo({
