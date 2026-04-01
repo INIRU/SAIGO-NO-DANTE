@@ -5,6 +5,7 @@ import { showSuccess, showError } from '@/lib/toast'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useQueryState, parseAsString } from 'nuqs'
 import Link from 'next/link'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
@@ -92,7 +93,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const { keywords: kwContext, getIconUrl: kwGetIconUrl } = useKeywordData()
   const router = useRouter()
   const initData = editMode ?? forkMode
-  const [tab, setTab] = useState<Tab>('identity')
+  const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
+  const tab = (tabParam as Tab) || 'identity'
   const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
     if (initData?.identitySlotIds) {
       const slots: Record<string, Identity | undefined> = {}
@@ -149,8 +151,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [showPassiveDetail, setShowPassiveDetail] = useState(false)
   const [showGiftPanel, setShowGiftPanel] = useState(false)
   const [giftTabKw, setGiftTabKw] = useState('전체')
-  const [giftSearch, setGiftSearch] = useState('')
-  const [giftGradeFilter, setGiftGradeFilter] = useState('전체')
+  const [giftSearch, setGiftSearch] = useQueryState('gq', parseAsString.withDefault(''))
+  const [giftGradeFilter, setGiftGradeFilter] = useQueryState('gg', parseAsString.withDefault('전체'))
   const [giftStatusFilter, setGiftStatusFilter] = useState<'all' | 'met' | 'unmet'>('all')
   const [showGiftModal, setShowGiftModal] = useState(false)
 

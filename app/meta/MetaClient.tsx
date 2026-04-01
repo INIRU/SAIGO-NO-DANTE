@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import { useQueryState, parseAsString } from 'nuqs'
 import {
   Sinner, SinType, SIN_COLORS, GRADE_COLORS,
   RARITY_ICON_MAP, getSinnerLogoUrl, STORAGE_BASE,
@@ -154,11 +155,11 @@ function KeywordBadge({ keyword }: { keyword: string }) {
 interface Props { sinners: Sinner[] }
 
 export default function MetaClient({ sinners }: Props) {
-  const [tab, setTab] = useState<Tab>('identity')
-  const [identitySubTab, setIdentitySubTab] = useState<IdentitySubTab>('battle')
+  const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
+  const [identitySubTab, setIdentitySubTab] = useQueryState('sub', parseAsString.withDefault('battle'))
   const [data, setData] = useState<MetaData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sinnerFilter, setSinnerFilter] = useState<string | null>(null)
+  const [sinnerFilter, setSinnerFilter] = useQueryState('sinner', parseAsString.withDefault(''))
 
   const sinnerMap = useMemo(() => {
     const m = new Map<string, Sinner>()
@@ -324,8 +325,8 @@ export default function MetaClient({ sinners }: Props) {
           setSinnerFilter={setSinnerFilter}
           filteredStats={identitySubTab === 'battle' ? filteredBattleStats : filteredSupportStats}
           label={identitySubTab === 'battle' ? '배틀 채용률' : '서포트 채용률'}
-          subTab={identitySubTab}
-          setSubTab={setIdentitySubTab}
+          subTab={identitySubTab as IdentitySubTab}
+          setSubTab={(v: IdentitySubTab) => setIdentitySubTab(v === 'battle' ? null : v)}
         />
       )}
       {tab === 'keyword' && <KeywordTab data={data} />}
@@ -345,7 +346,7 @@ function IdentityTab({
   totalDecks: number
   sinners: Sinner[]
   sinnerMap: Map<string, Sinner>
-  sinnerFilter: string | null
+  sinnerFilter: string
   setSinnerFilter: (v: string | null) => void
   filteredStats: IdentityStat[]
   label: string
@@ -815,7 +816,7 @@ function EGOTab({
   sinnerMap: Map<string, Sinner>
   egoByGrade: Record<string, EGOStat[]>
 }) {
-  const [gradeTab, setGradeTab] = useState<string>('ALL')
+  const [gradeTab, setGradeTab] = useQueryState('grade', parseAsString.withDefault('ALL'))
   const globalMax = data.egoStats[0]?.count || 1
 
   // 표시할 등급 목록 (데이터 있는 것만)
@@ -840,7 +841,7 @@ function EGOTab({
       {/* 등급 서브탭 */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <button
-          onClick={() => setGradeTab('ALL')}
+          onClick={() => setGradeTab(null)}
           className="px-3 py-1.5 rounded text-xs font-mono font-bold tracking-wider transition-all"
           style={{
             background: gradeTab === 'ALL' ? 'var(--gold)' : 'rgba(255,255,255,0.05)',
@@ -855,7 +856,7 @@ function EGOTab({
           return (
             <button
               key={grade}
-              onClick={() => setGradeTab(active ? 'ALL' : grade)}
+              onClick={() => setGradeTab(active ? null : grade)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono font-bold tracking-wider transition-all"
               style={{
                 background: active ? `${gc}30` : 'rgba(255,255,255,0.05)',

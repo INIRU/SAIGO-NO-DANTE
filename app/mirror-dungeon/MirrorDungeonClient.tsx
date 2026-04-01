@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useQueryState, parseAsString } from 'nuqs'
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { Search, X } from 'lucide-react'
@@ -54,22 +55,75 @@ export default function MirrorDungeonClient({
     [getIconUrl]
   )
 
-  const [keywords, setKeywords] = useState<Set<string>>(new Set())
-  const [grades, setGrades] = useState<Set<string>>(new Set())
-  const [tiers, setTiers] = useState<Set<string>>(new Set())
-  const [search, setSearch] = useState('')
+  // nuqs URL 상태 (검색/필터/탭 — 공유 가능)
+  const [searchParam, setSearchParam] = useQueryState('q', parseAsString.withDefault(''))
+  const [kwParam, setKwParam] = useQueryState('kw', parseAsString.withDefault(''))
+  const [gradeParam, setGradeParam] = useQueryState('grade', parseAsString.withDefault(''))
+  const [tierParam, setTierParam] = useQueryState('tier', parseAsString.withDefault(''))
+  const [sortByParam, setSortByParam] = useQueryState('sort', parseAsString.withDefault('default'))
+  const [sortDescParam, setSortDescParam] = useQueryState('desc', parseAsString.withDefault('false'))
+  const [activeTabParam, setActiveTabParam] = useQueryState('tab', parseAsString.withDefault('gifts'))
+  const [themeSearchParam, setThemeSearchParam] = useQueryState('tq', parseAsString.withDefault(''))
+  const [themeDiffParam, setThemeDiffParam] = useQueryState('diff', parseAsString.withDefault('전체'))
+  const [slotFilterParam, setSlotFilterParam] = useQueryState('slot', parseAsString.withDefault('전체'))
+  const [eventSearchParam, setEventSearchParam] = useQueryState('eq', parseAsString.withDefault(''))
+
+  // URL 파라미터 → 파생 상태
+  const keywords = useMemo(() => new Set(kwParam.split(',').filter(Boolean)), [kwParam])
+  const grades = useMemo(() => new Set(gradeParam.split(',').filter(Boolean)), [gradeParam])
+  const tiers = useMemo(() => new Set(tierParam.split(',').filter(Boolean)), [tierParam])
+  const search = searchParam
+  const sortBy = (sortByParam as 'default' | 'name' | 'grade') || 'default'
+  const sortDesc = sortDescParam === 'true'
+  const activeTab = (activeTabParam as 'gifts' | 'themes' | 'events') || 'gifts'
+  const themeSearch = themeSearchParam
+  const themeDiffFilter = themeDiffParam
+  const slotFilter = slotFilterParam
+  const eventSearch = eventSearchParam
+
+  // Set 상태 래퍼 (기존 setKeywords/setGrades/setTiers 인터페이스 유지)
+  const setKeywords = useCallback((fn: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    if (typeof fn === 'function') {
+      const next = fn(keywords)
+      setKwParam(next.size > 0 ? Array.from(next).join(',') : null)
+    } else {
+      setKwParam(fn.size > 0 ? Array.from(fn).join(',') : null)
+    }
+  }, [keywords, setKwParam])
+  const setGrades = useCallback((fn: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    if (typeof fn === 'function') {
+      const next = fn(grades)
+      setGradeParam(next.size > 0 ? Array.from(next).join(',') : null)
+    } else {
+      setGradeParam(fn.size > 0 ? Array.from(fn).join(',') : null)
+    }
+  }, [grades, setGradeParam])
+  const setTiers = useCallback((fn: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    if (typeof fn === 'function') {
+      const next = fn(tiers)
+      setTierParam(next.size > 0 ? Array.from(next).join(',') : null)
+    } else {
+      setTierParam(fn.size > 0 ? Array.from(fn).join(',') : null)
+    }
+  }, [tiers, setTierParam])
+  const setSearch = useCallback((v: string) => setSearchParam(v || null), [setSearchParam])
+  const setSortBy = useCallback((v: 'default' | 'name' | 'grade') => setSortByParam(v === 'default' ? null : v), [setSortByParam])
+  const setSortDesc = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    if (typeof v === 'function') setSortDescParam(v(sortDesc) ? 'true' : null)
+    else setSortDescParam(v ? 'true' : null)
+  }, [sortDesc, setSortDescParam])
+  const setActiveTab = useCallback((v: 'gifts' | 'themes' | 'events') => setActiveTabParam(v === 'gifts' ? null : v), [setActiveTabParam])
+  const setThemeSearch = useCallback((v: string) => setThemeSearchParam(v || null), [setThemeSearchParam])
+  const setThemeDiffFilter = useCallback((v: string) => setThemeDiffParam(v === '전체' ? null : v), [setThemeDiffParam])
+  const setSlotFilter = useCallback((v: string) => setSlotFilterParam(v === '전체' ? null : v), [setSlotFilterParam])
+  const setEventSearch = useCallback((v: string) => setEventSearchParam(v || null), [setEventSearchParam])
+
+  // 로컬 상태 (URL 불필요 — 모달/UI 상태)
   const [selected, setSelected] = useState<EgoGift | null>(null)
-  const [sortBy, setSortBy] = useState<'default' | 'name' | 'grade'>('default')
-  const [sortDesc, setSortDesc] = useState(false)
-  const [activeTab, setActiveTab] = useState<'gifts' | 'themes' | 'events'>('gifts')
   const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
-  const [themeSearch, setThemeSearch] = useState('')
   const [themeSearchFocused, setThemeSearchFocused] = useState(false)
-  const [themeDiffFilter, setThemeDiffFilter] = useState<string>('전체')
   const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
-  const [slotFilter, setSlotFilter] = useState<string>('전체')
-  const [eventSearch, setEventSearch] = useState('')
 
   // 모달 열릴 때 배경 스크롤 잠금
   useEffect(() => {
@@ -225,15 +279,6 @@ export default function MirrorDungeonClient({
       if (key === '전체') return new Set()
       const next = new Set(prev)
       if (next.has(key)) next.delete(key); else next.add(key)
-      return next
-    })
-  }
-
-  const toggleTier = (t: string) => {
-    setTiers(prev => {
-      if (t === '전체') return new Set()
-      const next = new Set(prev)
-      if (next.has(t)) next.delete(t); else next.add(t)
       return next
     })
   }
