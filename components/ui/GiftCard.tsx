@@ -56,13 +56,14 @@ const GiftCard = memo(function GiftCard({
 
   return (
     <button
+      className="gift-card"
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
-        width: size,
+        width: size ?? '100%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
