@@ -10,6 +10,7 @@ import {
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { SPECIAL_CHARGE_KEYWORDS } from '@/lib/constants/keywords'
 
 interface IdentityInfoCardProps {
   identity: Identity
@@ -48,11 +49,21 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
           )}
         </div>
 
-        {/* 키워드 (메인 상태이상만) */}
-        {identity.keywords && identity.keywords.filter(kw => kwSinMap[kw]).length > 0 && (
+        {/* 키워드 (메인 상태이상 + 특수 충전) */}
+        {identity.keywords && (identity.keywords.filter(kw => kwSinMap[kw]).length > 0 || identity.keywords.some(kw => SPECIAL_CHARGE_KEYWORDS.has(kw))) && (
           <>
             <div style={{ width: '1px', height: '18px', background: 'var(--border)' }} />
             <div className="flex items-center gap-2 flex-wrap">
+              {identity.keywords.filter(kw => SPECIAL_CHARGE_KEYWORDS.has(kw)).map(kw => (
+                <KeywordWithTooltip key={kw} keyword={kw}>
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-semibold"
+                    style={{ color: SIN_COLORS[kwSinMap['충전']] || '#7b68ee' }}
+                  >
+                    {kw}
+                  </span>
+                </KeywordWithTooltip>
+              ))}
               {identity.keywords.filter(kw => kwSinMap[kw]).map(kw => {
                 const kwColor = SIN_COLORS[kwSinMap[kw]] || '#888'
                 return (
@@ -237,6 +248,18 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                 {(info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')) && (() => {
                   const releaseSeason = Number(info.release_season ?? 0)
                   const diff = currentSeason - releaseSeason
+                  // 같은 시즌 신규: 출시 7일 이내는 교환 불가
+                  if (diff === 0 && identity.release_date) {
+                    const daysSince = Math.floor((Date.now() - new Date(identity.release_date).getTime()) / (1000 * 60 * 60 * 24))
+                    if (daysSince < 7) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>자판기</span>
+                          <span style={{ fontSize: '0.75rem', color: '#ff6b6b' }}>교환 불가 (출시 7일 후 개방)</span>
+                        </div>
+                      )
+                    }
+                  }
                   const available = diff !== 1
                   return (
                     <div className="flex items-center gap-2">
