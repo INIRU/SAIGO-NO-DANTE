@@ -49,6 +49,7 @@ interface SkillDescriptionProps {
   skillNameColors?: Record<string, string>
   showCoinBadges?: boolean
   allowedKeywords?: Set<string>
+  level4Desc?: string
 }
 
 export default function SkillDescription({
@@ -58,6 +59,7 @@ export default function SkillDescription({
   skillNameColors,
   showCoinBadges,
   allowedKeywords,
+  level4Desc,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
   const styles = SKILL_DESC_STYLES[variant]
@@ -66,13 +68,46 @@ export default function SkillDescription({
   if (!description) return null
 
   const { globalEffects, coinSections } = parseDescription(description)
+  const parsed4 = level4Desc ? parseDescription(level4Desc) : null
 
   return (
     <div style={{ color: styles.color, fontSize: styles.fontSize, lineHeight: styles.lineHeight, whiteSpace: 'pre-line' }}>
-      {/* 전체 효과 */}
-      {globalEffects.map((line, i) => (
-        <div key={`g-${i}`}>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
-      ))}
+      {/* 전체 효과 + 4동기화 diff */}
+      {globalEffects.map((line, i) => {
+        const newLine = parsed4?.globalEffects[i]
+        const hasDiff = newLine !== undefined && newLine !== line
+        const prevDiff = i > 0 && parsed4?.globalEffects[i - 1] !== undefined && parsed4?.globalEffects[i - 1] !== globalEffects[i - 1]
+        const isLast = i === globalEffects.length - 1
+        // 마지막 전체효과 줄 뒤에 4동기화 추가 줄도 붙임
+        const extraLines = isLast && parsed4 && parsed4.globalEffects.length > globalEffects.length
+          ? parsed4.globalEffects.slice(globalEffects.length)
+          : []
+        return (
+          <div key={`g-${i}`}>
+            <div>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
+            {hasDiff && (
+              <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
+                {!prevDiff ? (
+                  <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                ) : (
+                  <span className="shrink-0" style={{ width: '0.75rem' }} />
+                )}
+                <span>{formatSkillDesc(newLine, accentColor, skillNameColors, allowedKeywords)}</span>
+              </div>
+            )}
+            {extraLines.map((eLine, ei) => (
+              <div key={`g4-${ei}`} className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
+                {ei === 0 && !hasDiff ? (
+                  <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                ) : (
+                  <span className="shrink-0" style={{ width: '0.75rem' }} />
+                )}
+                <span>{formatSkillDesc(eLine, accentColor, skillNameColors, allowedKeywords)}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })}
 
       {/* 코인별 효과 */}
       {coinSections.map((coin, ci) => (
@@ -102,22 +137,58 @@ export default function SkillDescription({
                     파괴 불가 코인
                   </span>
                 )}
-                {coin.lines.map((line, li) => (
-                  <div key={li}>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
-                ))}
+                {coin.lines.map((line, li) => {
+                  const coin4 = parsed4?.coinSections[ci]
+                  const newLine = coin4?.lines[li]
+                  const hasDiff = newLine !== undefined && newLine !== line
+                  const prevDiff = li > 0 && coin4?.lines[li - 1] !== undefined && coin4?.lines[li - 1] !== coin.lines[li - 1]
+                  return (
+                    <div key={li}>
+                      <div>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
+                      {hasDiff && (
+                        <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
+                          {!prevDiff ? (
+                            <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                          ) : (
+                            <span className="shrink-0" style={{ width: '0.75rem' }} />
+                          )}
+                          <span>{formatSkillDesc(newLine, accentColor, skillNameColors, allowedKeywords)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ) : (
             <>
-              {coin.lines.map((line, li) => (
-                <div key={li}>
-                  {li === 0 && <span style={{ color: accentColor, fontWeight: 600 }}>[코인 {coin.coinNum}] </span>}
-                  {coin.isUnbreakable && li === 0 && (
-                    <span style={{ fontWeight: 600 }}>파괴 불가 코인 </span>
-                  )}
-                  {formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}
-                </div>
-              ))}
+              {coin.lines.map((line, li) => {
+                const coin4 = parsed4?.coinSections[ci]
+                const newLine = coin4?.lines[li]
+                const hasDiff = newLine !== undefined && newLine !== line
+                const prevDiff = li > 0 && coin4?.lines[li - 1] !== undefined && coin4?.lines[li - 1] !== coin.lines[li - 1]
+                return (
+                  <div key={li}>
+                    <div>
+                      {li === 0 && <span style={{ color: accentColor, fontWeight: 600 }}>[코인 {coin.coinNum}] </span>}
+                      {coin.isUnbreakable && li === 0 && (
+                        <span style={{ fontWeight: 600 }}>파괴 불가 코인 </span>
+                      )}
+                      {formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}
+                    </div>
+                    {hasDiff && (
+                      <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
+                        {!prevDiff ? (
+                          <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                        ) : (
+                          <span className="shrink-0" style={{ width: '0.75rem' }} />
+                        )}
+                        <span>{formatSkillDesc(newLine, accentColor, skillNameColors, allowedKeywords)}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               {coin.lines.length === 0 && coin.isUnbreakable && (
                 <div>
                   <span style={{ color: accentColor, fontWeight: 600 }}>[코인 {coin.coinNum}] </span>
@@ -128,6 +199,7 @@ export default function SkillDescription({
           )}
         </div>
       ))}
+
     </div>
   )
 }
