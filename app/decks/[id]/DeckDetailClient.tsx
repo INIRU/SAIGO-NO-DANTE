@@ -267,30 +267,43 @@ export default function DeckDetailClient({ id }: { id: string }) {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
     fetch(`/api/decks/${id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data && !data.error) {
-          const fixed: DeckDetail = {
-            ...data,
-            deck_identities: (data.deck_identities ?? []).map((slot: IdentitySlot & { identities: unknown }) => ({
-              ...slot,
-              identities: Array.isArray(slot.identities)
-                ? (slot.identities[0] as IdentityDetail | undefined) ?? null
-                : slot.identities as unknown as IdentityDetail | null,
-            })),
-            deck_egos: (data.deck_egos ?? []).map((es: EgoSlot & { ego: unknown }) => ({
-              ...es,
-              ego: Array.isArray(es.ego)
-                ? (es.ego[0] as EgoSlot['ego'] | undefined) ?? null
-                : es.ego as EgoSlot['ego'],
-            })),
-          }
-          setDeck(fixed)
-          setVoteCount(data.vote_count ?? 0)
+        if (cancelled || !data || data.error) return
+
+        const fixed: DeckDetail = {
+          ...data,
+          deck_identities: (data.deck_identities ?? []).map((slot: IdentitySlot & { identities: unknown }) => ({
+            ...slot,
+            identities: Array.isArray(slot.identities)
+              ? (slot.identities[0] as IdentityDetail | undefined) ?? null
+              : slot.identities as unknown as IdentityDetail | null,
+          })),
+          deck_egos: (data.deck_egos ?? []).map((es: EgoSlot & { ego: unknown }) => ({
+            ...es,
+            ego: Array.isArray(es.ego)
+              ? (es.ego[0] as EgoSlot['ego'] | undefined) ?? null
+              : es.ego as EgoSlot['ego'],
+          })),
         }
+        setDeck(fixed)
+        setVoteCount(data.vote_count ?? 0)
       })
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        if (cancelled) return
+        console.error('Failed to fetch deck detail:', err)
+        showError('덱 정보를 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [id])
 
   useEffect(() => {

@@ -113,8 +113,17 @@ const FEATURES = [
 ]
 
 function formatDate(d: string) {
-  const dt = new Date(d)
-  return `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')}`
+  const dateOnly = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly
+    return `${year}.${month}.${day}`
+  }
+
+  const timestamp = Date.parse(d)
+  if (Number.isNaN(timestamp)) return d
+
+  const kst = new Date(timestamp + 9 * 60 * 60 * 1000)
+  return `${kst.getUTCFullYear()}.${String(kst.getUTCMonth() + 1).padStart(2, '0')}.${String(kst.getUTCDate()).padStart(2, '0')}`
 }
 
 function RarityIcon({ rarity }: { rarity: number }) {
@@ -523,7 +532,7 @@ export default function HomeClient({
                 {pinnedAnnouncement.title}
               </span>
               <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem', flexShrink: 0 }}>
-                {new Date(pinnedAnnouncement.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                {formatDate(pinnedAnnouncement.created_at)}
               </span>
               <Link
                 href="/announcements"
