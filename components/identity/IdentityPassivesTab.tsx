@@ -1,17 +1,20 @@
 'use client'
 
 import Image from 'next/image'
-import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
+import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, STORAGE_BASE } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
+import type { PassiveDiff } from '@/lib/utils/uptie-diff'
 
 interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
   sinColor: string
   skillNameColors: Record<string, string>
   allowedKeywords?: Set<string>
+  passiveDiffs?: Map<string, PassiveDiff>
+  newPassives?: Passive[]
 }
 
-export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords }: IdentityPassivesTabProps) {
+export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives }: IdentityPassivesTabProps) {
 
   if (filteredPassives.length === 0) {
     return (
@@ -65,6 +68,11 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             {p.sin_count != null && p.sin_count > 0 && (
               <span className="font-mono font-bold" style={{ color: primaryColor, fontSize: '0.875rem' }}>
                 x{p.sin_count}
+                {passiveDiffs?.get(p.id)?.sin_count && (
+                  <span style={{ color: '#e8b030', fontSize: '0.6875rem', fontWeight: 700, marginLeft: '0.25rem' }}>
+                    {'\u2192'}x{passiveDiffs.get(p.id)!.sin_count!.to}
+                  </span>
+                )}
               </span>
             )}
             {p.active_cond && (
@@ -91,6 +99,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             skillNameColors={skillNameColors}
             showCoinBadges={false}
             allowedKeywords={allowedKeywords}
+            level4Desc={passiveDiffs?.get(p.id)?.hasDescDiff ? passiveDiffs.get(p.id)!.level4Desc : undefined}
           />
         )}
       </div>
@@ -131,6 +140,44 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
           <div className="space-y-2">
             {supportPassives.map(renderPassive)}
           </div>
+        </div>
+      )}
+
+      {/* 4동기화 전용 패시브 (dimmed + lock) */}
+      {newPassives && newPassives.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {newPassives.map(p => {
+            const pColor = p.sin_affinity ? SIN_COLORS[SIN_KR_TO_EN[p.sin_affinity] || p.sin_affinity] || sinColor : sinColor
+            return (
+              <div
+                key={p.id}
+                className="relative p-3 rounded"
+                style={{ opacity: 0.35, pointerEvents: 'none', background: `${pColor}08`, border: `1px solid ${pColor}15` }}
+              >
+                <div className="absolute top-2 left-2 z-10">
+                  <Image
+                    src={`${STORAGE_BASE}/icons/ui/lock.webp`}
+                    alt=""
+                    width={118}
+                    height={157}
+                    style={{ width: '0.75rem', height: 'auto', filter: 'brightness(0.7)' }}
+                  />
+                </div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold" style={{ color: pColor }}>{p.name}</span>
+                  <span className="text-xs" style={{ color: '#555' }}>{p.passive_type === 'battle' ? '전투' : '서포트'}</span>
+                </div>
+                <SkillDescription
+                  description={p.description}
+                  accentColor={pColor}
+                  variant="detail"
+                  skillNameColors={skillNameColors}
+                  showCoinBadges={false}
+                  allowedKeywords={allowedKeywords}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

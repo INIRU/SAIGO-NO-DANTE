@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { Settings } from 'lucide-react'
+import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
 import {
   Sinner,
   Identity,
@@ -71,6 +72,10 @@ export default function IdentityDetailClient({
   })
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
+  const [showDiff, setShowDiff] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('uptie-diff') !== 'off'
+  })
   const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
@@ -135,6 +140,26 @@ export default function IdentityDetailClient({
     const filtered = passives.filter(p => (p.uptie_level ?? 3) === uptieLevel)
     return filtered.length > 0 ? filtered : passives.filter(p => (p.uptie_level ?? 3) === 3)
   }, [passives, uptieLevel])
+
+  // 동기화 비교 데이터
+  const level3Skills = useMemo(() =>
+    skills.filter(s => (s.uptie_level ?? 3) === 3), [skills])
+  const level4Skills = useMemo(() =>
+    skills.filter(s => (s.uptie_level ?? 3) === 4), [skills])
+  const level3Passives = useMemo(() =>
+    passives.filter(p => (p.uptie_level ?? 3) === 3), [passives])
+  const level4Passives = useMemo(() =>
+    passives.filter(p => (p.uptie_level ?? 3) === 4), [passives])
+
+  const skillDiffResult = useMemo(() => {
+    if (uptieLevel !== 3 || !showDiff || !hasUptieData) return null
+    return computeSkillDiffs(level3Skills, level4Skills)
+  }, [uptieLevel, showDiff, hasUptieData, level3Skills, level4Skills])
+
+  const passiveDiffResult = useMemo(() => {
+    if (uptieLevel !== 3 || !showDiff || !hasUptieData) return null
+    return computePassiveDiffs(level3Passives, level4Passives)
+  }, [uptieLevel, showDiff, hasUptieData, level3Passives, level4Passives])
 
   // 변형 스킬 맵
   const variantMap = useMemo(() => {
@@ -491,7 +516,7 @@ export default function IdentityDetailClient({
                     })}
                   </div>
 
-                  {/* 3/4동기화 토글 */}
+                  {/* 3/4동기화 토글 + 변경점 토글 */}
                   {hasUptieData && (
                     <div
                       className="flex rounded-t-lg overflow-hidden mb-0"
@@ -530,6 +555,14 @@ export default function IdentityDetailClient({
                     skillImgIdxMap={skillImgIdxMap}
                     variantMap={variantMap}
                     allowedKeywords={allowedKeywords}
+                    skillDiffs={skillDiffResult?.diffs}
+                    newSkills={skillDiffResult?.newSkills}
+                    showDiff={showDiff && uptieLevel === 3 && hasUptieData}
+                    onToggleDiff={() => setShowDiff(d => {
+                      const next = !d
+                      localStorage.setItem('uptie-diff', next ? 'on' : 'off')
+                      return next
+                    })}
                   />
                 )}
 
@@ -539,6 +572,8 @@ export default function IdentityDetailClient({
                     sinColor={sinColor}
                     skillNameColors={skillNameColors}
                     allowedKeywords={allowedKeywords}
+                    passiveDiffs={passiveDiffResult?.diffs}
+                    newPassives={passiveDiffResult?.newPassives}
                   />
                 )}
               </div>
