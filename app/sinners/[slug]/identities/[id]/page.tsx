@@ -110,6 +110,7 @@ export default async function IdentityPage({
       egoGifts={egoGifts}
       canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
       isAdmin={!!session?.user?.isAdmin}
+      isLoggedIn={!!session}
       currentSeason={currentSeason}
     />
   )
