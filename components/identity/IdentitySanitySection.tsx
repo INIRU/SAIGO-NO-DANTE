@@ -35,7 +35,7 @@ export default function IdentitySanitySection({ identity }: IdentitySanitySectio
                 alt=""
                 width={18}
                 height={18}
-                style={{ filter: 'drop-shadow(0 0 3px rgba(180,50,50,0.5))' }}
+                style={{ width: '1.125rem', height: '1.125rem', filter: 'drop-shadow(0 0 3px rgba(180,50,50,0.5))' }}
               />
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: 'rgba(180,50,50,0.15)', color: '#c05050', border: '1px solid rgba(180,50,50,0.3)' }}>

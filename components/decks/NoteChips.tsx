@@ -17,6 +17,19 @@ function sinColorOf(sin: string | null): string {
   return en ? (SIN_COLORS[en] ?? '#888888') : '#888888'
 }
 
+/** 게임 스타일 칩 공통 인라인 스타일 (clipPath 테두리 = outline 기법) */
+function chipStyle(color: string): React.CSSProperties {
+  const c = 5
+  const clip = `polygon(${c}px 0, calc(100% - ${c}px) 0, 100% ${c}px, 100% calc(100% - ${c}px), calc(100% - ${c}px) 100%, ${c}px 100%, 0 calc(100% - ${c}px), 0 ${c}px)`
+  return {
+    display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle',
+    background: `linear-gradient(135deg, ${color}28 0%, ${color}10 100%)`,
+    clipPath: clip,
+    padding: '2px 8px', margin: '0 2px', cursor: 'default', position: 'relative' as const,
+    filter: `drop-shadow(0 0 2px ${color}40)`,
+  }
+}
+
 // ── 툴팁 hover + 터치 관리 훅 ───────────────────────────────────────────
 // 한 번에 하나의 칩 툴팁만 표시
 let activeChipClose: (() => void) | null = null
@@ -198,7 +211,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(sc)}
     >
       <span style={{ position: 'relative', width: 20, height: 20, flexShrink: 0, display: 'inline-block' }}>
         {imgSrc && <Image src={imgSrc} alt="" width={20} height={20} style={{ borderRadius: '50%' }} onError={() => { if (entry.iconFallbackUrl && imgSrc !== entry.iconFallbackUrl) setImgSrc(entry.iconFallbackUrl) }} />}
@@ -254,7 +267,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(sc)}
     >
       {entry.imageUrl && (
         <Image src={entry.imageUrl} alt="" width={12} height={18} quality={20} style={{ width: '12px', height: '18px', borderRadius: 2, objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
@@ -298,7 +311,7 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${gc}18`, border: `1px solid ${gc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(gc)}
     >
       {entry.image_url && (
         <Image src={entry.image_url} alt="" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover' }} />
@@ -341,7 +354,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(sc)}
     >
       {entry.imageUrl && (
         <Image src={entry.imageUrl} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem', borderRadius: '50%', objectFit: 'cover' }} />
@@ -391,7 +404,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(sc)}
     >
       {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{keyword}</span>
@@ -437,7 +450,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
+      style={chipStyle(sc)}
     >
       {entry.image_url && (
         <Image src={entry.image_url} alt="" width={16} height={16} style={{ objectFit: 'contain', flexShrink: 0 }} />
