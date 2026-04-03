@@ -47,6 +47,8 @@ const verbose = args.includes('--verbose')
 
 // ── JSON 데이터 경로 ──
 const JSON_DIR = resolve(process.env.HOME, 'Downloads/JSON')
+const UPTIE_LEVELS = [3, 4]
+const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 
 // ── 수감자 매핑 ──
 const SINNERS = [
@@ -146,6 +148,19 @@ function loadKrTagMap() {
       }
     }
   }
+  // kr/ 폴더 (신규 패치 KR 데이터)도 로드
+  const newKrDir2 = resolve(process.env.HOME, 'Downloads/kr')
+  if (existsSync(newKrDir2)) {
+    for (const f of readdirSync(newKrDir2).filter(f => /^KR_(BattleKeywords|Bufs|BuffAbilities)/i.test(f))) {
+      try {
+        const raw = readFileSync(resolve(newKrDir2, f), 'utf-8').replace(/^\uFEFF/, '')
+        const parsed = JSON.parse(raw)
+        for (const item of parsed?.dataList ?? []) {
+          if (item.id && item.name && !map[item.id]) map[item.id] = item.name
+        }
+      } catch { /* skip */ }
+    }
+  }
   return map
 }
 
@@ -158,6 +173,40 @@ function readJson(filename) {
   const path = resolve(JSON_DIR, filename)
   if (!existsSync(path)) return null
   return JSON.parse(readFileSync(path, 'utf-8'))
+}
+
+function collectJsonEntries(files, listKey = 'list') {
+  const items = []
+  for (const file of files) {
+    const data = readJson(file)
+    if (!data?.[listKey]) continue
+    items.push(...data[listKey])
+  }
+  return items
+}
+
+function collectUniqueJsonEntries(files, { listKey = 'list', keyFn = item => item?.id, filterFn = () => true } = {}) {
+  const items = []
+  const seen = new Set()
+
+  for (const item of collectJsonEntries(files, listKey)) {
+    if (!filterFn(item)) continue
+    const key = keyFn(item)
+    if (key == null || seen.has(key)) continue
+    seen.add(key)
+    items.push(item)
+  }
+
+  return items
+}
+
+function buildIdMap(items) {
+  const map = new Map()
+  for (const item of items) {
+    if (item?.id == null) continue
+    map.set(item.id, item)
+  }
+  return map
 }
 
 // desc 텍스트 정리: 영문 태그 → 한글, Unity 마크업 태그 제거
@@ -209,15 +258,92 @@ function resolveToLevel(skill, targetLevel) {
   return merged
 }
 
-// 하위 호환용
-function resolveUptie4(skill) { return resolveToLevel(skill, 4) }
+function getBestLevelEntry(levels = [], targetLevel = Infinity) {
+  return levels
+    .filter(level => level.level <= targetLevel)
+    .sort((a, b) => b.level - a.level)[0] || levels[0] || null
+}
+
+function collectKrDescriptions(target, krText) {
+  if (!krText) return
+
+  if (krText.desc) target.push(krText.desc)
+
+  for (const coinDesc of krText.coindescs || []) {
+    if (coinDesc?.desc) target.push(coinDesc.desc)
+  }
+
+  for (const level of krText.levelList || []) {
+    if (level?.desc) target.push(level.desc)
+    for (const coin of level.coinlist || []) {
+      for (const coinDesc of coin.coindescs || []) {
+        if (coinDesc?.desc) target.push(coinDesc.desc)
+      }
+    }
+  }
+}
+
+function addMappedKeyword(keywords, tag) {
+  const keyword = TAG_MAP[tag]
+  if (keyword) keywords.add(keyword)
+}
+
+function collectBuffKeywords(value, keywords) {
+  if (!value) return
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectBuffKeywords(item, keywords)
+    }
+    return
+  }
+
+  if (typeof value !== 'object') return
+
+  if (typeof value.buffKeyword === 'string') {
+    addMappedKeyword(keywords, value.buffKeyword)
+  }
+
+  for (const child of Object.values(value)) {
+    collectBuffKeywords(child, keywords)
+  }
+}
+
+function collectBracketKeywords(rawTexts, keywords) {
+  const rawText = rawTexts.join('\n')
+  for (const match of rawText.matchAll(TAG_PATTERN)) {
+    const tag = match[1]
+    if (CONDITION_TAG_MAP[tag]) continue
+    addMappedKeyword(keywords, tag)
+  }
+}
+
+function getIdentityKeywordContext(store, gameId) {
+  if (!store.has(gameId)) {
+    store.set(gameId, {
+      gamePerson: null,
+      skillMap: new Map(),
+      rawKrTexts: [],
+      passiveDetails: [],
+    })
+  }
+
+  return store.get(gameId)
+}
+
+function getPersonalitySkillIds(gamePerson) {
+  return [
+    ...(gamePerson.attributeList || []).map(attribute => attribute.skillId),
+    ...(gamePerson.defenseSkillIDList || []),
+  ]
+}
 
 // 스킬 설명 조립
 function buildDescription(krText) {
   if (!krText) return ''
   // uptie 4 (가장 높은 level) 텍스트 사용
   const levels = krText.levelList || []
-  const best = levels.reduce((a, b) => (b.level > a.level ? b : a), levels[0])
+  const best = getBestLevelEntry(levels)
   if (!best) return ''
 
   const parts = []
@@ -258,6 +384,50 @@ async function supaDelete(table, params) {
   if (!res.ok) throw new Error(`DELETE ${table}: ${res.status} ${await res.text()}`)
 }
 
+async function supaPatch(table, params, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(`PATCH ${table}: ${res.status} ${await res.text()}`)
+}
+
+/**
+ * 인격의 키워드를 게임 데이터에서 추출합니다.
+ * 소스:
+ *   1. skillKeywordList (인격 JSON 최상위)
+ *   2. buffKeyword (스킬 coinList abilityScriptList)
+ *   3. 스킬/패시브 KR 원본 텍스트의 [EnglishTag] 중 CONDITION이 아닌 것
+ *
+ * 핵심 로직: KR 설명 원본에 [Sinking], [KarmaOfIndexAlly] 등 대괄호 태그가 있고,
+ * 발동 타이밍은 [OnSucceedAttack] 등으로 CONDITION_TAG_MAP에 정의되어 있으므로
+ * CONDITION에 없는 [Tag]만 추출하면 키워드만 남음.
+ */
+function extractKeywords({ gamePerson, skillMap, rawKrTexts = [], passiveDetails = [] }) {
+  const keywords = new Set()
+
+  // 1. 인격 JSON 최상위 키워드들
+  for (const keyword of [...(gamePerson.skillKeywordList || []), ...(gamePerson.unitKeywordList || [])]) {
+    addMappedKeyword(keywords, keyword)
+  }
+
+  // 2. 스킬 coinList의 buffKeyword에서 추출
+  for (const skillId of getPersonalitySkillIds(gamePerson)) {
+    collectBuffKeywords(skillMap.get(skillId)?.skillData, keywords)
+  }
+
+  // 3. 패시브 상세 데이터 내 buffKeyword에서 추출
+  for (const passiveDetail of passiveDetails) {
+    collectBuffKeywords(passiveDetail, keywords)
+  }
+
+  // 4. KR 원본 텍스트에서 [EnglishTag] 패턴 추출
+  collectBracketKeywords(rawKrTexts, keywords)
+
+  return [...keywords].sort()
+}
+
 async function supaInsertBatch(table, rows) {
   // 50개씩 배치 삽입
   for (let i = 0; i < rows.length; i += 50) {
@@ -296,7 +466,6 @@ async function main() {
   console.log('╚══════════════════════════════════════════════════════════╝\n')
 
   // KR 스킬 텍스트 로드 (모든 파일 병합)
-  const krSkillMap = new Map()  // skillId → { levelList }
   const krFiles = [
     'KR/KR_Skills.json',
     'KR/KR_Skills_personality-01.json', 'KR/KR_Skills_personality-02.json',
@@ -320,13 +489,7 @@ async function main() {
     'KR/KR_Skills_personality-a1c9p1.json',
     'KR/KR_Skills_personality-a1c9p2.json',
   ]
-  for (const f of krFiles) {
-    const data = readJson(f)
-    if (!data) continue
-    for (const item of data.dataList || []) {
-      krSkillMap.set(item.id, item)
-    }
-  }
+  const krSkillMap = buildIdMap(collectJsonEntries(krFiles, 'dataList'))
   console.log(`  KR 스킬 텍스트: ${krSkillMap.size}개 로드`)
 
   // KR 태그 매핑 로드 (BattleKeywords + Bufs)
@@ -340,6 +503,9 @@ async function main() {
   let totalInserted = 0, totalDeleted = 0, totalSkipped = 0
   let egoInserted = 0, egoDeleted = 0, egoSkipped = 0
 
+  // 키워드 추출용 — 스킬/패시브 단계에서 필요한 원본 컨텍스트를 game_id 단위로 축적
+  const keywordContexts = new Map()
+
   for (const sinner of targetSinners) {
     console.log(`${'═'.repeat(60)}`)
     console.log(`  ${sinner.name.toUpperCase()} (${sinner.slug})`)
@@ -347,34 +513,13 @@ async function main() {
 
     // 게임 데이터 로드 (기본 + 보조 파일)
     const pad = String(sinner.id).padStart(2, '0')
-    const personList = []
-    const seenPIds = new Set()
     const pFiles = [`personality-${pad}.json`, 'personality-a1c8p1.json', 'personality-a1c8p2.json', 'personality-a1c9p1.json', 'personality-a1c9p2.json']
-    for (const f of pFiles) {
-      const d = readJson(f)
-      if (!d) continue
-      for (const p of d.list || []) {
-        if (p.characterId === sinner.id && !seenPIds.has(p.id)) {
-          personList.push(p)
-          seenPIds.add(p.id)
-        }
-      }
-    }
-    const personalities = { list: personList }
+    const personList = collectUniqueJsonEntries(pFiles, {
+      filterFn: person => person.characterId === sinner.id,
+    })
 
-    const skillList = []
-    const seenSIds = new Set()
     const sFiles = [`personality-skill-${pad}.json`, 'personality-skill-a1c8p1.json', 'personality-skill-a1c8p2.json', 'personality-skill-a1c9p1.json', 'personality-skill-a1c9p2.json']
-    for (const f of sFiles) {
-      const d = readJson(f)
-      if (!d) continue
-      for (const s of d.list || []) {
-        if (!seenSIds.has(s.id)) {
-          seenSIds.add(s.id)
-          skillList.push(s)
-        }
-      }
-    }
+    const skillList = collectUniqueJsonEntries(sFiles)
 
     if (personList.length === 0) {
       console.log(`  [!] 게임 데이터 없음`)
@@ -384,7 +529,7 @@ async function main() {
     // 스킬 ID → uptie4 해결 데이터
     const skillMap = new Map()
     for (const s of skillList) {
-      skillMap.set(s.id, { ...s, resolved: resolveUptie4(s) })
+      skillMap.set(s.id, s)
     }
 
     // DB 수감자/인격 로드
@@ -401,7 +546,7 @@ async function main() {
       const gameId = identity.game_id
       if (!gameId) continue
 
-      const gamePerson = personalities.list.find(p => String(p.id) === gameId)
+      const gamePerson = personList.find(person => String(person.id) === gameId)
       if (!gamePerson) {
         if (verbose) console.log(`  [!] 게임 데이터에 인격 없음: ${identity.name} (${gameId})`)
         totalSkipped++
@@ -409,7 +554,7 @@ async function main() {
       }
 
       // 공격 스킬 + 수비 스킬
-      const attackSkillIds = (gamePerson.attributeList || []).map(a => a.skillId)
+      const attackSkillIds = (gamePerson.attributeList || []).map(attribute => attribute.skillId)
       const defenseSkillIds = gamePerson.defenseSkillIDList || []
 
       // 새 스킬 행 생성 (uptie 3 + 4)
@@ -421,8 +566,7 @@ async function main() {
         const coinList = r.coinList || []
         const krText = krSkillMap.get(gs.id)
         // 해당 uptie 레벨의 KR 텍스트 (없으면 가장 높은 레벨)
-        const levels = krText?.levelList || []
-        const bestForLevel = levels.filter(l => l.level <= uptie).sort((a, b) => b.level - a.level)[0] || levels[0]
+        const bestForLevel = getBestLevelEntry(krText?.levelList || [], uptie)
         const name = bestForLevel?.name || (skillOrder === 4 ? '수비' : `스킬${skillOrder}`)
         const description = buildDescription(krText ? { ...krText, levelList: [bestForLevel].filter(Boolean) } : null)
         const isDefense = r.defType && r.defType !== 'ATTACK'
@@ -443,8 +587,6 @@ async function main() {
           uptie_level: uptie,
         }
       }
-
-      const UPTIE_LEVELS = [3, 4]
 
       // 공격 스킬 (skillTier → skill_order)
       for (const uptie of UPTIE_LEVELS) {
@@ -496,6 +638,18 @@ async function main() {
         console.log(`  ${identity.name}: ${dbSkills.length}개 삭제 → ${newSkills.length}개 삽입`)
         await sleep(100)
       }
+
+      // KR 원본 텍스트 수집 (키워드 추출은 패시브 동기화 후 일괄 처리)
+      const keywordContext = getIdentityKeywordContext(keywordContexts, identity.game_id)
+      keywordContext.gamePerson = gamePerson
+      keywordContext.skillMap = skillMap
+
+      // 스킬 KR 원본 (번역 전 [Tag] 포함)
+      for (const sid of getPersonalitySkillIds(gamePerson)) {
+        const kr = krSkillMap.get(sid)
+        if (!kr) continue
+        collectKrDescriptions(keywordContext.rawKrTexts, kr)
+      }
     }
   }
 
@@ -507,28 +661,42 @@ async function main() {
   console.log('═'.repeat(60))
 
   // KR 패시브 텍스트 로드
-  const krPassiveMap = new Map()
   const krPassiveFiles = readdirSync(resolve(JSON_DIR, 'KR'))
     .filter(f => /^KR_Passives/i.test(f) || /^KR_Passive[^s]/i.test(f))
     .map(f => `KR/${f}`)
-  for (const f of krPassiveFiles) {
-    const data = readJson(f)
-    if (!data) continue
-    for (const item of data.dataList || []) {
-      if (item.id && item.name) krPassiveMap.set(item.id, item)
+  const krPassiveEntries = collectJsonEntries(krPassiveFiles, 'dataList')
+  // kr/ 폴더 (신규 패치 KR 데이터)도 로드
+  const newKrDir = resolve(process.env.HOME, 'Downloads/kr')
+  if (existsSync(newKrDir)) {
+    for (const f of readdirSync(newKrDir).filter(f => /^KR_Passives/i.test(f) && !/_Abnormality/i.test(f) && !/_Enemy/i.test(f) && !/_Assist/i.test(f))) {
+      try {
+        const raw = readFileSync(resolve(newKrDir, f), 'utf-8').replace(/^\uFEFF/, '')
+        const parsed = JSON.parse(raw)
+        krPassiveEntries.push(...(parsed?.dataList ?? []))
+      } catch { /* skip */ }
     }
   }
+  const krPassiveMap = buildIdMap(
+    krPassiveEntries.filter(item => item?.id && item?.name)
+  )
 
   // 패시브 상세 데이터 (공명 조건)
-  const passiveDetailMap = new Map()
   const passiveFiles = ['passive.json', 'passive-a1c8p1.json', 'passive-a1c8p2.json', 'passive-a1c9p1.json', 'passive-a1c9p2.json', 'passive-extra.json']
-  for (const f of passiveFiles) {
-    const data = readJson(f)
-    if (!data) continue
-    for (const item of data.list || []) {
-      passiveDetailMap.set(item.id, item)
+  const passiveEntries = collectJsonEntries(passiveFiles)
+  // Json (Text) 폴더의 패시브 데이터도 로드 (신규 패치 데이터)
+  const txtDir = resolve(process.env.HOME, 'Downloads/Json (Text)')
+  for (const txtFile of ['passive.txt', 'passive_check4.txt']) {
+    const txtPath = resolve(txtDir, txtFile)
+    if (existsSync(txtPath)) {
+      try {
+        const raw = readFileSync(txtPath, 'utf-8').replace(/^\uFEFF/, '')
+        const parsed = JSON.parse(raw)
+        const list = parsed?.list ?? (Array.isArray(parsed) ? parsed : [])
+        passiveEntries.push(...list)
+      } catch { /* skip */ }
     }
   }
+  const passiveDetailMap = buildIdMap(passiveEntries)
 
   let passiveInserted = 0, passiveDeleted = 0
 
@@ -537,19 +705,26 @@ async function main() {
     // 패시브 매핑 로드
     const passiveMapping = []
     const pmFiles = [`personality-passive-${pad}.json`, 'personality-passive-a1c8p1.json', 'personality-passive-a1c8p2.json', 'personality-passive-a1c9p1.json', 'personality-passive-a1c9p2.json', 'personality-passive-extra.json']
-    for (const f of pmFiles) {
-      const data = readJson(f)
-      if (!data) continue
-      for (const item of data.list || []) {
-        // personality game_id 앞 2자리로 수감자 필터
-        const sinnerNum = Math.floor((item.personalityID % 10000) / 100)
-        // 실제로는 personalityID / 100의 앞자리가 수감자번호
-        // 10101 → sinner 1, 10215 → sinner 2
+    const addToMapping = (items) => {
+      for (const item of items) {
         const sid = Math.floor(item.personalityID / 100) % 100
         if (sid === sinner.id || Math.floor(item.personalityID / 10000) === sinner.id) {
           passiveMapping.push(item)
         }
       }
+    }
+    for (const f of pmFiles) {
+      const data = readJson(f)
+      if (!data) continue
+      addToMapping(data.list || [])
+    }
+    // Json (Text) 폴더의 신규 패치 personality-passive 파일도 로드
+    for (const txtFile of readdirSync(txtDir).filter(f => f.startsWith('personality-passive') && f.endsWith('.txt'))) {
+      try {
+        const raw = readFileSync(resolve(txtDir, txtFile), 'utf-8').replace(/^\uFEFF/, '')
+        const parsed = JSON.parse(raw)
+        addToMapping(parsed?.list ?? (Array.isArray(parsed) ? parsed : []))
+      } catch { /* skip */ }
     }
 
     const dbSinner = await supaGet('sinners', `name=eq.${encodeURIComponent(sinner.name)}&select=id`)
@@ -565,7 +740,6 @@ async function main() {
       const pm = passiveMapping.find(p => String(p.personalityID) === gameId)
       if (!pm) continue
 
-      const UPTIE_LEVELS = [3, 4]
       const newPassives = []
 
       for (const uptie of UPTIE_LEVELS) {
@@ -579,10 +753,13 @@ async function main() {
           for (const pid of battleLevel.passiveIDList) {
             const kr = krPassiveMap.get(pid)
             const detail = passiveDetailMap.get(pid)
+            const hasStock = detail?.attributeStockCondition?.length > 0
+            const hasResonance = detail?.attributeResonanceCondition?.length > 0
             const conds = detail?.attributeStockCondition || detail?.attributeResonanceCondition || []
             const sinCond = conds[0]
             const sinAffinity = sinCond ? (SIN_MAP[sinCond.type] || null) : null
             const sinCount = sinCond?.value || null
+            const activeCond = hasStock ? 'stock' : hasResonance ? 'resonance' : null
             let desc = kr?.desc || ''
             desc = translateDesc(desc)
 
@@ -592,6 +769,7 @@ async function main() {
               passive_type: 'battle',
               sin_affinity: sinAffinity,
               sin_count: sinCount,
+              active_cond: activeCond,
               description: desc,
               passive_order: ++passiveOrder,
               uptie_level: uptie,
@@ -607,10 +785,13 @@ async function main() {
           for (const pid of supportLevel.passiveIDList) {
             const kr = krPassiveMap.get(pid)
             const detail = passiveDetailMap.get(pid)
+            const hasStock = detail?.attributeStockCondition?.length > 0
+            const hasResonance = detail?.attributeResonanceCondition?.length > 0
             const conds = detail?.attributeStockCondition || detail?.attributeResonanceCondition || []
             const sinCond = conds[0]
             const sinAffinity = sinCond ? (SIN_MAP[sinCond.type] || null) : null
             const sinCount = sinCond?.value || null
+            const activeCond = hasStock ? 'stock' : hasResonance ? 'resonance' : null
             let desc = kr?.desc || ''
             desc = translateDesc(desc)
 
@@ -620,6 +801,7 @@ async function main() {
               passive_type: 'support',
               sin_affinity: sinAffinity,
               sin_count: sinCount,
+              active_cond: activeCond,
               description: desc,
               passive_order: ++passiveOrder,
               uptie_level: uptie,
@@ -629,6 +811,21 @@ async function main() {
       }
 
       if (newPassives.length === 0) continue
+
+      // 패시브 KR 원본 텍스트 수집 (키워드 추출용)
+      const keywordContext = getIdentityKeywordContext(keywordContexts, identity.game_id)
+      // pm의 모든 패시브 ID에서 KR 원본 텍스트 수집
+      const allPassiveIds = [
+        ...(pm.battlePassiveList || []).flatMap(l => l.passiveIDList || []),
+        ...(pm.supporterPassiveList || []).flatMap(l => l.passiveIDList || []),
+      ]
+      for (const pid of allPassiveIds) {
+        const kr = krPassiveMap.get(pid)
+        collectKrDescriptions(keywordContext.rawKrTexts, kr)
+
+        const detail = passiveDetailMap.get(pid)
+        if (detail) keywordContext.passiveDetails.push(detail)
+      }
 
       const dbPassives = await supaGet('passives', `identity_id=eq.${identity.id}&select=id&limit=100`)
 
@@ -651,6 +848,39 @@ async function main() {
   }
 
   // ══════════════════════════════════════════════════════════
+  //  키워드 일괄 추출 + DB 업데이트
+  // ══════════════════════════════════════════════════════════
+  console.log(`\n${'═'.repeat(60)}`)
+  console.log('  키워드 추출 (스킬 + 패시브 설명)')
+  console.log('═'.repeat(60))
+
+  let kwUpdated = 0
+  for (const [gameId, context] of keywordContexts) {
+    if (!context.gamePerson) continue
+
+    const keywords = extractKeywords(context)
+    if (keywords.length === 0) continue
+
+    // identity id 찾기
+    const identities = await supaGet('identities', `game_id=eq.${gameId}&select=id,name`)
+    if (identities.length === 0) continue
+
+    const identity = identities[0]
+    if (dryRun) {
+      console.log(`  ${identity.name}: [${keywords.join(', ')}]`)
+    } else {
+      await supaPatch('identities', `id=eq.${identity.id}`, { keywords })
+      kwUpdated++
+    }
+  }
+
+  if (dryRun) {
+    console.log(`  총 ${keywordContexts.size}개 인격 키워드 추출 완료`)
+  } else {
+    console.log(`  키워드 업데이트: ${kwUpdated}개`)
+  }
+
+  // ══════════════════════════════════════════════════════════
   //  EGO 스킬 동기화
   // ══════════════════════════════════════════════════════════
   console.log(`\n${'═'.repeat(60)}`)
@@ -659,32 +889,12 @@ async function main() {
 
   for (const sinner of targetSinners) {
     // EGO 기본 + 보조 파일 모두 로드
-    const egoList = []
-    const egoSkillMap = new Map()
     const egoBaseFiles = [`ego-${sinner.id}.json`, 'ego-a1c5p2.json', 'ego-a1c5p3.json', 'ego-a1c6p2.json', 'ego-a1c8p2.json', 'ego-a1c8p3.json', 'ego-a1c9p2.json', 'ego-a1c9p3.json']
     const egoSkillFiles = [`ego-skill-${sinner.id}.json`, 'ego-skill-a1c5p2.json', 'ego-skill-a1c5p3.json', 'ego-skill-a1c6p2.json', 'ego-skill-a1c6p3.json', 'ego-skill-a1c8p2.json', 'ego-skill-a1c8p3.json', 'ego-skill-a1c9p2.json', 'ego-skill-a1c9p3.json']
-    const seenEgoIds = new Set()
-    for (const f of egoBaseFiles) {
-      const data = readJson(f)
-      if (!data) continue
-      for (const e of data.list || []) {
-        if (e.characterId === sinner.id && !seenEgoIds.has(e.id)) {
-          egoList.push(e)
-          seenEgoIds.add(e.id)
-        }
-      }
-    }
-    const seenSkillIds = new Set()
-    for (const f of egoSkillFiles) {
-      const data = readJson(f)
-      if (!data) continue
-      for (const s of data.list || []) {
-        if (!seenSkillIds.has(s.id)) {
-          egoSkillMap.set(s.id, { ...s, resolved: resolveUptie4(s) })
-          seenSkillIds.add(s.id)
-        }
-      }
-    }
+    const egoList = collectUniqueJsonEntries(egoBaseFiles, {
+      filterFn: egoData => egoData.characterId === sinner.id,
+    })
+    const egoSkillMap = buildIdMap(collectUniqueJsonEntries(egoSkillFiles))
     if (egoList.length === 0) {
       if (verbose) console.log(`  [!] ${sinner.name}: EGO 게임 데이터 없음`)
       continue
@@ -721,16 +931,14 @@ async function main() {
       }
 
       const newEgoSkills = []
-      const EGO_LEVELS = [3, 4]  // 3해석 + 4해석
-      for (const uptie of EGO_LEVELS) {
+      for (const uptie of UPTIE_LEVELS) {
         for (const { id: sid, category } of skillIds) {
           const gs = egoSkillMap.get(sid)
           if (!gs) continue
           const r = resolveToLevel(gs, uptie)
           const coinList = r.coinList || []
           const krText = krSkillMap.get(sid)
-          const levels = krText?.levelList || []
-          const bestForLevel = levels.filter(l => l.level <= uptie).sort((a, b) => b.level - a.level)[0] || levels[0]
+          const bestForLevel = getBestLevelEntry(krText?.levelList || [], uptie)
           const name = bestForLevel?.name || (category === 'awakening' ? '각성 스킬' : '침식 스킬')
           const description = buildDescription(krText ? { ...krText, levelList: [bestForLevel].filter(Boolean) } : null)
 
