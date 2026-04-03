@@ -130,12 +130,15 @@ function SkillFrameBlock({
   const imgIdx = skillImgIdx[skill.id] ?? 0
   const iconUrl = identity ? getSkillIconUrl(identity, imgIdx) : ''
   const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
-  const baseOrder = skill.skill_order >= 5 ? 3 : skill.skill_order
+  const baseOrder = skill.skill_order
   const isDefense = baseOrder === 4
   const isAttackSkill = !isDefense
+  const isVariant = skill.variant_order != null && skill.variant_order > 1
   const skillLabel = isDefense
     ? (SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
-    : skill.skill_order >= 5 ? `S3-${skill.skill_order - 3}` : `S${baseOrder}`
+    : isVariant
+      ? `S${baseOrder}-${skill.variant_order}`
+      : `S${baseOrder}`
   const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
 
   const unbreakableCoins = new Set<number>()
@@ -259,16 +262,18 @@ function SkillEmbed({
 }) {
   const [showVariants, setShowVariants] = useState(false)
 
-  // 대표 스킬 찾기 (skill_order === order, 또는 baseOrder 매칭)
-  const mainSkill = skills.find(s => s.skill_order === order)
+  // 대표 스킬 찾기 (skill_order === order, variant_order가 없거나 1인 것)
+  const mainSkill = skills.find(s =>
+    s.skill_order === order && (s.variant_order == null || s.variant_order <= 1)
+  )
   if (!mainSkill) {
     return <span style={{ color: '#666', fontSize: '0.75rem' }}>[스킬 {order}]</span>
   }
 
-  // 변형 스킬 찾기 (skill_order >= 5이고 baseOrder가 같은 스킬들)
-  const variants = order === 3
-    ? skills.filter(s => s.skill_order >= 5).sort((a, b) => a.skill_order - b.skill_order)
-    : []
+  // 변형 스킬 찾기 (같은 skill_order에서 variant_order > 1)
+  const variants = skills
+    .filter(s => s.skill_order === order && s.variant_order != null && s.variant_order > 1)
+    .sort((a, b) => (a.variant_order ?? 0) - (b.variant_order ?? 0))
 
   const skillSinColor = SIN_COLORS[mainSkill.sin_affinity] || sinColor
 
