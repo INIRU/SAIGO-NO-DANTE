@@ -527,7 +527,8 @@ export function NoteRenderer({
   while ((m = tokenRe.exec(text)) !== null) {
     if (m.index > last) elements.push(<span key={`t${last}`}>{formatSkillDesc(text.slice(last, m.index), '#b0a898', undefined, allowedKeywords)}</span>)
     if (m[1]) {
-      const e = skillLookup[m[1]]
+      // 변형 스킬 fallback: "돈키호테:1" → "돈키호테:1:1" 시도
+      const e = skillLookup[m[1]] ?? skillLookup[`${m[1]}:1`]
       elements.push(e
         ? <SkillChip key={`s${m.index}`} entry={e} />
         : <FallbackChip key={`s${m.index}`} type="s" tokenKey={m[1]} />
