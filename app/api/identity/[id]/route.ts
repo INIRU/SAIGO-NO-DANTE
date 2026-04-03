@@ -62,7 +62,7 @@ export async function GET(
       const rawText = row.condition_type === 'increase' ? tpl?.add_text : tpl?.min_text
       const params = (row.params ?? []) as number[]
       const text = params.reduce<string>(
-        (t, val, i) => t.replace(`{${i}}`, String(val)),
+        (t, val, i) => t.replaceAll(`{${i}}`, String(val)),
         rawText ?? '',
       )
       return {

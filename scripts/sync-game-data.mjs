@@ -44,6 +44,7 @@ const sinnerFilter = args.includes('--sinner') ? args[args.indexOf('--sinner') +
 const autoFix = args.includes('--fix')
 const dryRun = !autoFix
 const verbose = args.includes('--verbose')
+const syncSanityOnly = args.includes('--sync-sanity')
 
 // ── JSON 데이터 경로 ──
 const JSON_DIR = resolve(process.env.HOME, 'Downloads/JSON')
@@ -454,6 +455,177 @@ async function supaInsertBatch(table, rows) {
       }
     }
     if (rows.length > 50) await sleep(200)
+  }
+}
+
+// ── 정신력 조건 동기화 ──
+async function syncSanityConditions() {
+  console.log(`\n${'═'.repeat(60)}`)
+  console.log('  정신력 조건 동기화 (panic_types + identity_sanity_conditions)')
+  console.log('═'.repeat(60))
+
+  // 1. KR_MentalCondition*.json → mental_condition_templates 업서트
+  const mentalTemplateMap = new Map() // templateId → { add_text, min_text }
+  for (const f of readdirSync(resolve(JSON_DIR, 'KR')).filter(n => n.startsWith('KR_MentalCondition') && n.endsWith('.json'))) {
+    const data = readJson(`KR/${f}`)
+    if (!data) continue
+    for (const item of data.dataList || []) {
+      if (!item.id) continue
+      if (!mentalTemplateMap.has(item.id)) {
+        mentalTemplateMap.set(item.id, { add_text: item.add || '', min_text: item.min || '' })
+      }
+    }
+  }
+  console.log(`  KR_MentalCondition: ${mentalTemplateMap.size}개 템플릿 로드`)
+
+  if (dryRun) {
+    console.log(`  [DRY RUN] mental_condition_templates 업서트 예정: ${mentalTemplateMap.size}개`)
+    for (const [id, { add_text, min_text }] of mentalTemplateMap) {
+      console.log(`    ${id}: add="${add_text.slice(0, 50)}" min="${min_text.slice(0, 50)}"`)
+    }
+  } else {
+    const templateRows = [...mentalTemplateMap.entries()].map(([id, { add_text, min_text }]) => ({
+      id,
+      add_text,
+      min_text,
+    }))
+    // 50개씩 업서트 (id PK, merge-duplicates)
+    for (let i = 0; i < templateRows.length; i += 50) {
+      const batch = templateRows.slice(i, i + 50)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/mental_condition_templates`, {
+        method: 'POST',
+        headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(batch),
+      })
+      if (!res.ok) throw new Error(`UPSERT mental_condition_templates: ${res.status} ${await res.text()}`)
+      if (templateRows.length > 50) await sleep(200)
+    }
+    console.log(`  mental_condition_templates 업서트: ${templateRows.length}개`)
+  }
+
+  // 2. personality JSON → game_id별 mentalConditionInfo 수집
+  const gameMentalMap = new Map() // game_id (string) → mentalConditionInfo
+  const gamePanicTypeMap = new Map() // game_id (string) → panicType (int)
+  for (const sinner of SINNERS) {
+    const pad = String(sinner.id).padStart(2, '0')
+    const pFiles = [`personality-${pad}.json`]
+    for (const extra of readdirSync(JSON_DIR).filter(f => f.startsWith('personality-a1c') && f.endsWith('.json'))) {
+      if (!pFiles.includes(extra)) pFiles.push(extra)
+    }
+    for (const f of pFiles) {
+      const data = readJson(f)
+      if (!data) continue
+      for (const p of data.list || []) {
+        if (p.id == null) continue
+        const gid = String(p.id)
+        if (p.mentalConditionInfo != null && !gameMentalMap.has(gid)) {
+          gameMentalMap.set(gid, p.mentalConditionInfo)
+        }
+        if (p.panicType != null && !gamePanicTypeMap.has(gid)) {
+          gamePanicTypeMap.set(gid, p.panicType)
+        }
+      }
+    }
+  }
+  console.log(`  personality JSON: ${gameMentalMap.size}개 인격 mentalConditionInfo 로드`)
+
+  // 3. DB identities → game_id → uuid 매핑
+  const dbIdentitiesAll = await supaGet('identities', 'select=id,game_id&limit=1000')
+  const identityUuidMap = new Map() // game_id (string) → uuid
+  for (const row of dbIdentitiesAll) {
+    if (row.game_id) identityUuidMap.set(String(row.game_id), row.id)
+  }
+  console.log(`  DB identities: ${identityUuidMap.size}개 로드`)
+
+  // conditionID → templateId + params 파싱 헬퍼
+  function parseConditionId(conditionID) {
+    const templateId = conditionID.replace(/\d+/g, '')
+    const params = (conditionID.match(/\d+/g) || []).map(Number)
+    return { templateId, params }
+  }
+
+  // 4. identity별 identity_sanity_conditions 삭제 후 재삽입
+  let totalInserted = 0
+  let totalDeleted = 0
+  let totalSkipped = 0
+  let processed = 0
+  const total = identityUuidMap.size
+
+  for (const [gameId, identityId] of identityUuidMap) {
+    processed++
+    const mentalInfo = gameMentalMap.get(gameId)
+    if (!mentalInfo) {
+      totalSkipped++
+      continue
+    }
+
+    // level=1 기준으로 조건 수집 (add → 'increase', min → 'decrease')
+    const newRows = []
+    let sortOrder = 0
+
+    const addEntry = (mentalInfo.add || []).find(e => e.level === 1)
+    for (const c of addEntry?.conditionIDList || []) {
+      const { templateId, params } = parseConditionId(c.conditionID)
+      if (!mentalTemplateMap.has(templateId)) {
+        if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
+        continue
+      }
+      newRows.push({
+        identity_id: identityId,
+        template_id: templateId,
+        condition_type: 'increase',
+        params,
+        sort_order: ++sortOrder,
+      })
+    }
+
+    const minEntry = (mentalInfo.min || []).find(e => e.level === 1)
+    for (const c of minEntry?.conditionIDList || []) {
+      const { templateId, params } = parseConditionId(c.conditionID)
+      if (!mentalTemplateMap.has(templateId)) {
+        if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
+        continue
+      }
+      newRows.push({
+        identity_id: identityId,
+        template_id: templateId,
+        condition_type: 'decrease',
+        params,
+        sort_order: ++sortOrder,
+      })
+    }
+
+    if (newRows.length === 0) {
+      totalSkipped++
+      continue
+    }
+
+    if (dryRun) {
+      console.log(`  [${processed}/${total}] game_id=${gameId}: ${newRows.length}개 조건`)
+      if (verbose) {
+        for (const r of newRows) {
+          console.log(`    [${r.condition_type}] ${r.template_id} params=[${r.params.join(',')}]`)
+        }
+      }
+    } else {
+      // 기존 조건 삭제 후 재삽입
+      const existing = await supaGet('identity_sanity_conditions', `identity_id=eq.${identityId}&select=id&limit=100`)
+      if (existing.length > 0) {
+        await supaDelete('identity_sanity_conditions', `identity_id=eq.${identityId}`)
+        totalDeleted += existing.length
+      }
+      await supaInsertBatch('identity_sanity_conditions', newRows)
+      totalInserted += newRows.length
+      console.log(`  [${processed}/${total}] game_id=${gameId}: ${existing.length}개 삭제 → ${newRows.length}개 삽입`)
+      await sleep(80)
+    }
+  }
+
+  if (dryRun) {
+    console.log(`\n  (DRY RUN — DB 미변경)`)
+    console.log(`  처리: ${processed - totalSkipped}개 인격 / 스킵: ${totalSkipped}개`)
+  } else {
+    console.log(`\n  삭제: ${totalDeleted}개 / 삽입: ${totalInserted}개 / 스킵: ${totalSkipped}개`)
   }
 }
 
@@ -1150,6 +1322,11 @@ async function main() {
     console.log(`  정신력 조건 업데이트: ${sanityUpdated}개`)
   }
   console.log(`  스킵: ${panicSkipped}개`)
+
+  // ── 정신력 조건 동기화 (identity_sanity_conditions) ──
+  if (!dryRun || syncSanityOnly) {
+    await syncSanityConditions()
+  }
 
   console.log(`\n${'═'.repeat(60)}`)
   console.log('  결과 요약')
