@@ -46,6 +46,7 @@ interface Props {
   egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
   canEditGuide?: boolean
   isAdmin?: boolean
+  isLoggedIn?: boolean
   currentSeason?: number
 }
 
@@ -61,6 +62,7 @@ export default function IdentityDetailClient({
   egoGifts = [],
   canEditGuide,
   isAdmin,
+  isLoggedIn,
   currentSeason = 7,
 }: Props) {
   const [gacksung, setGacksung] = useState(false)
@@ -448,6 +450,10 @@ export default function IdentityDetailClient({
                     egoLookup={egoTokenLookup}
                     identityLookup={identityTokenLookup}
                     egoGiftLookup={egoGiftLookup}
+                    skills={filteredSkills}
+                    passives={filteredPassives}
+                    identity={identity}
+                    isLoggedIn={isLoggedIn}
                   />
                 )}
                 {guideTab === 'guide' && (
