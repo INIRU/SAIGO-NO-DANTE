@@ -92,7 +92,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               width={identity.rarity === 1 ? 20 : identity.rarity === 2 ? 34 : 46}
               height={14}
 
-              style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}
+              style={{ height: '0.875rem', width: 'auto', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}
             />
           ) : (
             <span

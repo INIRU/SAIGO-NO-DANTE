@@ -241,7 +241,7 @@ export default function DeckIdentityCard({
               <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-light text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{id_.name_kr}</Link>
             </div>
             {RARITY_ICON_MAP[id_.rarity] ? (
-              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={`${id_.rarity}성`} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={`${id_.rarity}성`} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9, height: '0.875rem', width: 'auto' }} />
             ) : (
               <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                 {id_.rarity}성
