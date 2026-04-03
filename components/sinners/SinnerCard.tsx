@@ -7,9 +7,10 @@ import { Sinner, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE } from '@/l
 interface SinnerCardProps {
   sinner: Sinner
   index?: number
+  priority?: boolean
 }
 
-export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
+export default function SinnerCard({ sinner, index = 0, priority: priorityProp = false }: SinnerCardProps) {
   const profileUrl = getSinnerProfileUrl(sinner.id)
 
   return (
@@ -33,6 +34,7 @@ export default function SinnerCard({ sinner, index = 0 }: SinnerCardProps) {
               alt={sinner.name}
               fill
               unoptimized
+              priority={priorityProp}
               className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
               style={{ objectPosition: '50% 15%' }}
             />

@@ -9,11 +9,11 @@ import { PackageOpen, Search, X, Link2, User } from 'lucide-react'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
+import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
@@ -27,35 +27,14 @@ const DIFFICULTY_STYLE: Record<string, { bg: string; color: string; border: stri
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
 }
 
-// 플랜의 모든 인격 이름 (검색용)
+// 플랜의 모든 인격 이름 (검색용) — API가 pre-compute한 값 우선 사용
 function getPlanIdentityNames(plan: PlanSummary): string[] {
-  return (plan.deck ?? [])
-    .map(s => s.name_kr)
-    .filter((n): n is string => Boolean(n))
+  return plan.identity_names ?? []
 }
 
-// 플랜 덱에서 자동 키워드 추출 (PlanCard와 동일 기준: 편성 인격의 40% 이상 공유)
+// 플랜 테마 키워드 — API가 서버사이드에서 pre-compute한 값 사용
 function getPlanThemeKeywords(plan: PlanSummary): string[] {
-  const formed = (plan.deck ?? []).filter(s => (s.slot_order ?? 99) < 99 && s.keywords)
-  const total = formed.length
-  if (total === 0) return []
-
-  const freq: Record<string, number> = {}
-  for (const slot of formed) {
-    const normalized = new Set((slot.keywords ?? []).map(normalizeThemeKeyword))
-    for (const kw of normalized) {
-      if ((THEME_KEYWORDS as readonly string[]).includes(kw)) {
-        freq[kw] = (freq[kw] ?? 0) + 1
-      }
-    }
-  }
-
-  const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
-  return Object.entries(freq)
-    .filter(([, n]) => n >= minCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([kw]) => kw)
+  return plan.theme_keywords ?? []
 }
 
 export default function CommunityClient() {

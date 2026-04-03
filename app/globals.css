@@ -1,5 +1,20 @@
 /* Local fonts are now loaded via next/font/local in app/layout.tsx */
 
+/*
+ * CLS mitigation: override the auto-generated fallback font metrics for SCDream
+ * so the swap from "Apple SD Gothic Neo" / "Malgun Gothic" causes minimal layout shift.
+ * Apple SD Gothic Neo line-gap≈0, ascent≈800/1000, descent≈200/1000 ≈ size-adjust 100%.
+ * SCDream5 is a medium-weight Korean sans-serif with similar proportions.
+ */
+@font-face {
+  font-family: 'SCDream5 Fallback';
+  src: local('Apple SD Gothic Neo'), local('Malgun Gothic'), local('sans-serif');
+  size-adjust: 100%;
+  ascent-override: 88%;
+  descent-override: 20%;
+  line-gap-override: 0%;
+}
+
 @import "tailwindcss";
 
 @theme {

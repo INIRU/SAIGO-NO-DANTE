@@ -545,13 +545,40 @@ async function syncSanityConditions() {
   }
 
   // 4. identity별 identity_sanity_conditions 삭제 후 재삽입
+  // --sinner 지정 시 해당 sinner의 game_id만 처리
+  let filteredUuidMap = identityUuidMap
+  if (sinnerFilter) {
+    const targetSinner = SINNERS.find(s => s.slug === sinnerFilter)
+    if (targetSinner) {
+      const sinnerGameIds = new Set()
+      const pad = String(targetSinner.id).padStart(2, '0')
+      const pFiles = [`personality-${pad}.json`]
+      for (const extra of readdirSync(JSON_DIR).filter(f => f.startsWith('personality-a1c') && f.endsWith('.json'))) {
+        if (!pFiles.includes(extra)) pFiles.push(extra)
+      }
+      for (const f of pFiles) {
+        const data = readJson(f)
+        if (!data) continue
+        for (const p of data.list || []) {
+          if (p.characterId === targetSinner.id && p.id != null) {
+            sinnerGameIds.add(String(p.id))
+          }
+        }
+      }
+      filteredUuidMap = new Map([...identityUuidMap].filter(([gid]) => sinnerGameIds.has(gid)))
+      console.log(`  --sinner ${sinnerFilter} 필터: ${filteredUuidMap.size}개 인격 대상`)
+    } else {
+      console.warn(`  [경고] 알 수 없는 sinner slug: ${sinnerFilter} — 전체 처리`)
+    }
+  }
+
   let totalInserted = 0
   let totalDeleted = 0
   let totalSkipped = 0
   let processed = 0
-  const total = identityUuidMap.size
+  const total = filteredUuidMap.size
 
-  for (const [gameId, identityId] of identityUuidMap) {
+  for (const [gameId, identityId] of filteredUuidMap) {
     processed++
     const mentalInfo = gameMentalMap.get(gameId)
     if (!mentalInfo) {
@@ -559,40 +586,42 @@ async function syncSanityConditions() {
       continue
     }
 
-    // level=1 기준으로 조건 수집 (add → 'increase', min → 'decrease')
+    // 모든 level의 조건 수집 (add → 'increase', min → 'decrease')
     const newRows = []
     let sortOrder = 0
 
-    const addEntry = (mentalInfo.add || []).find(e => e.level === 1)
-    for (const c of addEntry?.conditionIDList || []) {
-      const { templateId, params } = parseConditionId(c.conditionID)
-      if (!mentalTemplateMap.has(templateId)) {
-        if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
-        continue
+    for (const addEntry of (mentalInfo.add || [])) {
+      for (const c of addEntry?.conditionIDList || []) {
+        const { templateId, params } = parseConditionId(c.conditionID)
+        if (!mentalTemplateMap.has(templateId)) {
+          if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
+          continue
+        }
+        newRows.push({
+          identity_id: identityId,
+          template_id: templateId,
+          condition_type: 'increase',
+          params,
+          sort_order: ++sortOrder,
+        })
       }
-      newRows.push({
-        identity_id: identityId,
-        template_id: templateId,
-        condition_type: 'increase',
-        params,
-        sort_order: ++sortOrder,
-      })
     }
 
-    const minEntry = (mentalInfo.min || []).find(e => e.level === 1)
-    for (const c of minEntry?.conditionIDList || []) {
-      const { templateId, params } = parseConditionId(c.conditionID)
-      if (!mentalTemplateMap.has(templateId)) {
-        if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
-        continue
+    for (const minEntry of (mentalInfo.min || [])) {
+      for (const c of minEntry?.conditionIDList || []) {
+        const { templateId, params } = parseConditionId(c.conditionID)
+        if (!mentalTemplateMap.has(templateId)) {
+          if (verbose) console.log(`    [경고] 템플릿 없음: ${templateId} (conditionID: ${c.conditionID})`)
+          continue
+        }
+        newRows.push({
+          identity_id: identityId,
+          template_id: templateId,
+          condition_type: 'decrease',
+          params,
+          sort_order: ++sortOrder,
+        })
       }
-      newRows.push({
-        identity_id: identityId,
-        template_id: templateId,
-        condition_type: 'decrease',
-        params,
-        sort_order: ++sortOrder,
-      })
     }
 
     if (newRows.length === 0) {
@@ -1243,10 +1272,8 @@ async function main() {
     const panicTypeId = gamePanicMap.get(String(gameId))
     if (panicTypeId == null) { panicSkipped++; continue }
 
-    const panicInfo = panicInfoMap.get(panicTypeId)
-    if (!panicInfo) { panicSkipped++; continue }
-
-    const newPanicType = panicInfo.name || ''
+    // panic_type 컬럼은 panic_types.id (int) FK — name이 아니라 numeric ID를 저장
+    const newPanicType = panicTypeId
 
     const panicChanged = identity.panic_type !== newPanicType
 
@@ -1257,7 +1284,8 @@ async function main() {
     const patchBody = { panic_type: newPanicType }
 
     if (dryRun) {
-      console.log(`  [변경] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
+      const panicInfo = panicInfoMap.get(panicTypeId)
+      console.log(`  [변경] game_id=${gameId}: panic_type ${identity.panic_type} → ${newPanicType} (${panicInfo?.name || '?'})`)
     } else {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/identities?game_id=eq.${gameId}`, {
         method: 'PATCH',
@@ -1267,7 +1295,8 @@ async function main() {
       if (!res.ok) {
         console.error(`  [오류] game_id=${gameId} PATCH 실패: ${res.status} ${await res.text()}`)
       } else {
-        console.log(`  [업데이트] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
+        const panicInfo = panicInfoMap.get(panicTypeId)
+        console.log(`  [업데이트] game_id=${gameId}: panic_type ${identity.panic_type} → ${newPanicType} (${panicInfo?.name || '?'})`)
         panicUpdated++
       }
       await sleep(50)

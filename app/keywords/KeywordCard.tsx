@@ -109,7 +109,7 @@ export default function KeywordCard({
         >
           {iconUrl ? (
             <Image src={iconUrl} alt={kw.name} width={22} height={22}
-              style={{ width: '1.375rem', height: '1.375rem' }} />
+              style={{ width: '1.375rem', height: 'auto' }} />
           ) : (
             <span style={{ color: '#555', fontSize: '0.75rem' }}>?</span>
           )}

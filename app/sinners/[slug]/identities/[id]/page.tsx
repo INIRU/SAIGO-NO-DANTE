@@ -5,8 +5,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { getIdentityInfoUrl } from '@/lib/utils/images'
+import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import IdentityDetailClient from './IdentityDetailClient'
+import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
+
+export const revalidate = 60
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 
 export async function generateMetadata({
   params,
@@ -23,17 +28,26 @@ export async function generateMetadata({
   const rarityStr = identity.rarity === 3 ? '000등급' : identity.rarity === 2 ? '00등급' : '0등급'
   const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
   const description = `${sinner.name_kr} ${identity.name_kr} — ${rarityStr}${keywordsStr ? `, 키워드: ${keywordsStr}` : ''}. 스킬, 패시브, 스탯 정보.`
-  const imageUrl = getIdentityInfoUrl(identity)
-  const canonical = `https://saigo-no-dante.com/sinners/${slug}/identities/${id}`
+  const imageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
+  const canonical = `${SITE_URL}/sinners/${slug}/identities/${id}`
+  const pageTitle = `${identity.name_kr} | ${sinner.name_kr} | SAIGO NO DANTE`
 
   return {
-    title: `${identity.name_kr} — ${sinner.name_kr}`,
+    title: { absolute: pageTitle },
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${identity.name_kr} — ${sinner.name_kr} | 최애의 관리자`,
+      title: pageTitle,
       description,
-      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512 }] } : {}),
+      url: canonical,
+      type: 'article',
+      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512, alt: `${identity.name_kr} — ${sinner.name_kr} 인격 이미지` }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description,
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
   }
 }
@@ -99,23 +113,43 @@ export default async function IdentityPage({
     }
   } catch { /* guide fetch failed, continue without it */ }
 
+  const canonical = `${SITE_URL}/sinners/${slug}/identities/${id}`
+  const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
+
   return (
-    <IdentityDetailClient
-      sinner={sinner}
-      identity={identity}
-      skills={skills}
-      passives={passives}
-      sanityConditions={sanityConditions}
-      panicInfo={panicInfo}
-      guides={guides}
-      allSinners={allSinners}
-      allIdentities={allIdentities}
-      allEgos={allEgos}
-      egoGifts={egoGifts}
-      canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
-      isAdmin={!!session?.user?.isAdmin}
-      isLoggedIn={!!session}
-      currentSeason={currentSeason}
-    />
+    <>
+      <JsonLd data={breadcrumbJsonLd([
+        { name: '홈', url: SITE_URL },
+        { name: '수감자', url: `${SITE_URL}/sinners` },
+        { name: sinner.name_kr, url: `${SITE_URL}/sinners/${slug}` },
+        { name: identity.name_kr, url: canonical },
+      ])} />
+      {identityImageUrl && (
+        <JsonLd data={gameCharacterJsonLd({
+          name: `${identity.name_kr} — ${sinner.name_kr}`,
+          description: `${sinner.name_kr}의 ${identity.name_kr} 인격. Limbus Company 수감자 인격 정보.`,
+          image: identityImageUrl,
+          url: canonical,
+          siteUrl: SITE_URL,
+        })} />
+      )}
+      <IdentityDetailClient
+        sinner={sinner}
+        identity={identity}
+        skills={skills}
+        passives={passives}
+        sanityConditions={sanityConditions}
+        panicInfo={panicInfo}
+        guides={guides}
+        allSinners={allSinners}
+        allIdentities={allIdentities}
+        allEgos={allEgos}
+        egoGifts={egoGifts}
+        canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
+        isAdmin={!!session?.user?.isAdmin}
+        isLoggedIn={!!session}
+        currentSeason={currentSeason}
+      />
+    </>
   )
 }

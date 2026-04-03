@@ -66,3 +66,18 @@ export async function requireAdmin() {
   }
   return { error: false as const, session }
 }
+
+/**
+ * Requires an authenticated, non-suspended user.
+ * Returns 401 if not logged in, 403 if suspended.
+ */
+export async function requireActiveUser() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return { error: true as const, response: NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 }) }
+  }
+  if (session.user.isSuspended) {
+    return { error: true as const, response: NextResponse.json({ error: '이용이 정지된 계정입니다.' }, { status: 403 }) }
+  }
+  return { error: false as const, session }
+}
