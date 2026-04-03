@@ -117,14 +117,14 @@ const SIN_FRAME_MAP: Record<string, string> = {
 
 /* ─── 단일 스킬 프레임 렌더 (SkillEmbed와 변형 모두에서 사용) ─── */
 function SkillFrameBlock({
-  skill, skills, identity, sinColor, allowedKeywords, compact,
+  skill, skills, identity, sinColor, allowedKeywords, variantIndex,
 }: {
   skill: Skill
   skills: Skill[]
   identity?: Identity
   sinColor: string
   allowedKeywords?: Set<string>
-  compact?: boolean
+  variantIndex?: number
 }) {
   const skillImgIdx = computeSkillImageIndices(skills)
   const imgIdx = skillImgIdx[skill.id] ?? 0
@@ -133,11 +133,10 @@ function SkillFrameBlock({
   const baseOrder = skill.skill_order
   const isDefense = baseOrder === 4
   const isAttackSkill = !isDefense
-  const isVariant = skill.variant_order != null && skill.variant_order > 1
   const skillLabel = isDefense
     ? (SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
-    : isVariant
-      ? `S${baseOrder}-${skill.variant_order}`
+    : variantIndex
+      ? `S${baseOrder}-${variantIndex}`
       : `S${baseOrder}`
   const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
 
@@ -147,7 +146,7 @@ function SkillFrameBlock({
     for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]))
   }
 
-  const frameSize = compact ? '3.5rem' : '4.5rem'
+  const frameSize = '4.5rem'
 
   return (
     <div>
@@ -185,20 +184,20 @@ function SkillFrameBlock({
           )}
           {/* 기본 위력 */}
           <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-            <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', fontSize: compact ? '1.25rem' : '1.5rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
+            <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', fontSize: '1.5rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
               {skill.base_power}
             </span>
           </div>
           {/* 코인 위력 */}
           <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
             <span style={{
-              fontFamily: 'var(--font-excelsior), sans-serif', fontSize: compact ? '0.6875rem' : '0.8125rem', fontWeight: 700, lineHeight: 1,
+              fontFamily: 'var(--font-excelsior), sans-serif', fontSize: '0.8125rem', fontWeight: 700, lineHeight: 1,
               color: skill.coin_power >= 0 ? 'oklch(81.35% .0894 69.33)' : '#ff8866',
               textShadow: '1px 1px 1px black',
               WebkitTextStroke: '0.01px black',
             }}>
               {skill.coin_power >= 0 ? `+${skill.coin_power}` : <>
-                <span style={{ fontSize: compact ? '0.8125rem' : '1rem' }}>-</span>{Math.abs(skill.coin_power)}
+                <span style={{ fontSize: '1rem' }}>-</span>{Math.abs(skill.coin_power)}
               </>}
             </span>
           </div>
@@ -206,6 +205,7 @@ function SkillFrameBlock({
 
         {/* 스킬 정보 */}
         <div className="flex-1 min-w-0 overflow-hidden pt-0.5">
+          {/* 코인 */}
           <div className="flex items-center gap-0.5 mb-0.5">
             {Array.from({ length: skill.coins }).map((_, ci) => {
               const isUb = unbreakableCoins.has(ci + 1)
@@ -213,7 +213,7 @@ function SkillFrameBlock({
                 <Image key={ci}
                   src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
                   alt={isUb ? '파괴 불가 코인' : '코인'} width={16} height={16}
-                  style={{ width: compact ? '0.75rem' : '0.875rem', height: compact ? '0.75rem' : '0.875rem' }}
+                  style={{ width: '0.875rem', height: '0.875rem' }}
                 />
               )
             })}
@@ -229,7 +229,7 @@ function SkillFrameBlock({
                 textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
               }}>
                 <span className="font-bold whitespace-nowrap" style={{
-                  fontSize: compact ? '0.6875rem' : '0.75rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
+                  fontSize: '0.75rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
                   paddingRight: '3.5em',
                 }}>
                   {skill.name}
@@ -237,13 +237,34 @@ function SkillFrameBlock({
               </div>
             </div>
           </div>
+          {/* 공격 레벨 + 가중치 */}
+          <div className="flex items-center gap-3">
+            {skill.offense_level != null && (
+              <div className="flex items-center gap-0.5">
+                <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} style={{ width: '1rem', height: '1rem' }} />
+                <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: '#e8dcc8', fontSize: '1rem', textDecoration: 'underline', textUnderlineOffset: '2px', textDecorationColor: '#e8dcc8' }}>
+                  {skill.offense_level}
+                </span>
+              </div>
+            )}
+            {isAttackSkill && (
+              <div className="flex items-center gap-1">
+                <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>공격 가중치</span>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
+                    <div key={i} style={{ width: '0.5625rem', height: '0.5625rem', background: '#c8900a', borderRadius: '0.1rem' }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <SkillDescription
         description={skill.description}
         accentColor={skillSinColor}
-        variant={compact ? 'tooltip' : 'compact'}
+        variant="compact"
         allowedKeywords={allowedKeywords}
       />
     </div>
@@ -262,18 +283,18 @@ function SkillEmbed({
 }) {
   const [showVariants, setShowVariants] = useState(false)
 
-  // 대표 스킬 찾기 (skill_order === order, variant_order가 없거나 1인 것)
-  const mainSkill = skills.find(s =>
-    s.skill_order === order && (s.variant_order == null || s.variant_order <= 1)
-  )
+  // 같은 skill_order인 스킬들을 variant_order 순으로 정렬
+  const slotSkills = skills
+    .filter(s => s.skill_order === order)
+    .sort((a, b) => (a.variant_order ?? 0) - (b.variant_order ?? 0))
+
+  const mainSkill = slotSkills[0]
   if (!mainSkill) {
     return <span style={{ color: '#666', fontSize: '0.75rem' }}>[스킬 {order}]</span>
   }
 
-  // 변형 스킬 찾기 (같은 skill_order에서 variant_order > 1)
-  const variants = skills
-    .filter(s => s.skill_order === order && s.variant_order != null && s.variant_order > 1)
-    .sort((a, b) => (a.variant_order ?? 0) - (b.variant_order ?? 0))
+  // 변형 스킬 = 같은 slot의 나머지
+  const variants = slotSkills.slice(1)
 
   const skillSinColor = SIN_COLORS[mainSkill.sin_affinity] || sinColor
 
@@ -328,7 +349,7 @@ function SkillEmbed({
               flexDirection: 'column',
               gap: '0.75rem',
             }}>
-              {variants.map(v => (
+              {variants.map((v, i) => (
                 <SkillFrameBlock
                   key={v.id}
                   skill={v}
@@ -336,7 +357,7 @@ function SkillEmbed({
                   identity={identity}
                   sinColor={sinColor}
                   allowedKeywords={allowedKeywords}
-                  compact
+                  variantIndex={i + 2}
                 />
               ))}
             </div>
