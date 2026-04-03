@@ -118,7 +118,7 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  const user = session?.user
+  const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean; isWanjang?: boolean; isSuspended?: boolean } | undefined
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
   const userEmail = user?.email
 
@@ -170,7 +170,7 @@ export default function Navbar() {
             className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
             style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
           >
-            <Image src="/images/logo.webp" alt="" width={42} height={42} className="w-[34px] md:w-[42px] h-auto -ml-2" />
+            <Image src="/images/logo.webp" alt="" width={42} height={42} unoptimized className="w-[34px] md:w-[42px] -ml-2" style={{ height: 'auto' }} />
             최애의 관리자
           </Link>
 

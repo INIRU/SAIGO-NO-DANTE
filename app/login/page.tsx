@@ -192,7 +192,7 @@ export default function LoginPage() {
           }} />
 
           <Image
-            src="/images/logo.webp" alt="" width={40} height={58}
+            src="/images/logo.webp" alt="" width={40} height={58} unoptimized
             style={{
               width: '2.5rem', height: 'auto',
               filter: 'drop-shadow(0 0 1rem rgba(200,144,10,0.6))',

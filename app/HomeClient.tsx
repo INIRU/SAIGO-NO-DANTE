@@ -4,10 +4,19 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  Globe, Youtube, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
+  Globe, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
   Shield, Layers, Pin, ChevronDown,
   Compass, BookOpen, Trophy, Dices, Shuffle, Map,
 } from 'lucide-react'
+
+function YoutubeIcon({ size = 16, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+      <path d="m10 15 5-3-5-3z" />
+    </svg>
+  )
+}
 
 import GlitchText from '@/components/ui/GlitchText'
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
@@ -40,7 +49,7 @@ const OFFICIAL_LINKS: Array<{
   color: string
 }> = [
   { label: '공식 사이트', sub: 'limbuscompany.com',           href: 'https://limbuscompany.com',                       icon: Globe,        color: '#4898b0' },
-  { label: 'YouTube',    sub: '공식 채널',                    href: 'https://www.youtube.com/@ProjectMoonOfficial',   icon: Youtube,      color: '#c83030' },
+  { label: 'YouTube',    sub: '공식 채널',                    href: 'https://www.youtube.com/@ProjectMoonOfficial',   icon: YoutubeIcon,      color: '#c83030' },
   { label: 'Twitter / X',sub: '@LimbusCompany_B',            href: 'https://x.com/LimbusCompany_B',                  icon: XIcon,        color: '#3870b0' },
   { label: '팬 디스코드', sub: '봇 소개 · 서버 참여',           href: '/bot',                                           icon: DiscordIcon,  color: '#5865f2' },
 ]
@@ -313,7 +322,7 @@ function HeroGlitchSlider({
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 
-type YoutubeVideo = { videoId: string; title: string; publishedAt: string }
+type YoutubeIconVideo = { videoId: string; title: string; publishedAt: string }
 type Announcement = { id: string; title: string; content: string; pinned: boolean; created_at: string }
 
 export default function HomeClient({
@@ -322,7 +331,7 @@ export default function HomeClient({
   pinnedAnnouncement,
 }: {
   latestIdentities: IdentityWithSinner[]
-  latestVideo?: YoutubeVideo | null
+  latestVideo?: YoutubeIconVideo | null
   pinnedAnnouncement?: Announcement | null
 }) {
   const heroRef = useRef<HTMLDivElement>(null)
@@ -430,7 +439,7 @@ export default function HomeClient({
         {/* 텍스트 콘텐츠 */}
         <div className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl" style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh' }}>
           <div className="flex items-center gap-3 md:gap-4 mb-2">
-            <Image src="/images/logo-hero.webp" alt="" width={66} height={82} className="w-[28px] sm:w-[38px] md:w-[66px] h-auto" style={{ flexShrink: 0 }} />
+            <Image src="/images/logo-hero.webp" alt="" width={66} height={82} unoptimized className="w-[28px] sm:w-[38px] md:w-[66px] h-auto" style={{ flexShrink: 0 }} />
             <GlitchText
               text="SAIGO NO DANTE"
               tag="h1"
@@ -608,7 +617,7 @@ export default function HomeClient({
             <div className="flex items-end justify-between mb-6">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Youtube size={11} style={{ color: '#c83030' }} />
+                  <YoutubeIcon size={11} style={{ color: '#c83030' }} />
                   <span className="font-mono" style={{ color: '#c83030', fontSize: '0.625rem', letterSpacing: '0.4em', opacity: 0.8 }}>
                     LATEST VIDEO
                   </span>
@@ -661,7 +670,7 @@ export default function HomeClient({
                   className="flex items-center justify-center rounded-full shrink-0"
                   style={{ width: '1.75rem', height: '1.75rem', background: 'rgba(200,48,48,0.12)', border: '1px solid rgba(200,48,48,0.3)' }}
                 >
-                  <Youtube size={13} style={{ color: '#c83030' }} />
+                  <YoutubeIcon size={13} style={{ color: '#c83030' }} />
                 </div>
                 <span className="font-serif text-sm" style={{ color: 'var(--text-secondary)' }}>
                   Project Moon
