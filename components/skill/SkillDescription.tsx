@@ -15,14 +15,17 @@ interface CoinSection {
 function parseDescription(description: string) {
   const lines = description.split('\n')
   const globalEffects: string[] = []
+  const paragraphBreaks = new Set<number>()
   const coinSections: CoinSection[] = []
   let currentCoin: CoinSection | null = null
+  let sawEmptyLine = false
 
   for (const line of lines) {
     const coinMatch = line.match(/^\[코인\s?(\d+)\]\s*(.*)/)
     if (coinMatch) {
       currentCoin = { coinNum: parseInt(coinMatch[1]), isUnbreakable: false, lines: [] }
       coinSections.push(currentCoin)
+      sawEmptyLine = false
       const content = coinMatch[2].trim()
       if (content === '파괴 불가 코인' || content.startsWith('파괴 불가 코인')) {
         currentCoin.isUnbreakable = true
@@ -35,11 +38,17 @@ function parseDescription(description: string) {
       // 같은 코인의 후속 줄
       currentCoin.lines.push(line.trim())
     } else if (line.trim()) {
+      if (sawEmptyLine && globalEffects.length > 0) {
+        paragraphBreaks.add(globalEffects.length)
+      }
       globalEffects.push(line.trim())
+      sawEmptyLine = false
+    } else if (!currentCoin) {
+      sawEmptyLine = true
     }
   }
 
-  return { globalEffects, coinSections }
+  return { globalEffects, coinSections, paragraphBreaks }
 }
 
 interface SkillDescriptionProps {
@@ -67,7 +76,7 @@ export default function SkillDescription({
 
   if (!description) return null
 
-  const { globalEffects, coinSections } = parseDescription(description)
+  const { globalEffects, coinSections, paragraphBreaks } = parseDescription(description)
   const parsed4 = level4Desc ? parseDescription(level4Desc) : null
 
   return (
@@ -78,12 +87,13 @@ export default function SkillDescription({
         const hasDiff = newLine !== undefined && newLine !== line
         const prevDiff = i > 0 && parsed4?.globalEffects[i - 1] !== undefined && parsed4?.globalEffects[i - 1] !== globalEffects[i - 1]
         const isLast = i === globalEffects.length - 1
+        const isParagraphStart = paragraphBreaks.has(i)
         // 마지막 전체효과 줄 뒤에 4동기화 추가 줄도 붙임
         const extraLines = isLast && parsed4 && parsed4.globalEffects.length > globalEffects.length
           ? parsed4.globalEffects.slice(globalEffects.length)
           : []
         return (
-          <div key={`g-${i}`}>
+          <div key={`g-${i}`} style={isParagraphStart ? { marginTop: '0.625rem' } : undefined}>
             <div>{formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}</div>
             {hasDiff && (
               <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>

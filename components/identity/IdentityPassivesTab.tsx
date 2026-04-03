@@ -38,38 +38,45 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
     const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : '#cccccc'
 
     return (
-      <div
-        key={p.id}
-        className="p-3 rounded"
-        style={{
-          background: `${primaryColor}08`,
-          border: `1px solid ${primaryColor}25`,
-        }}
-      >
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="font-semibold" style={{ color: primaryColor, fontSize: '0.8125rem' }}>
-            {p.name}
-          </span>
+      <div key={p.id} className="py-2">
+        {/* 패시브 이름 배너 */}
+        <div className="overflow-hidden mb-3" style={{ width: 'fit-content', maxWidth: '100%' }}>
+          <div style={{
+            color: '#e8dcc8',
+            backgroundImage: `linear-gradient(255deg, transparent 2em, ${primaryColor}30 2em)`,
+          }}>
+            <div style={{
+              padding: '0.3em 0 0.3em 0.5em',
+              backgroundImage: `linear-gradient(290deg, transparent 3em, ${primaryColor}35 3em, ${primaryColor}35 3.2em, transparent 3.2em, transparent 3.4em, ${primaryColor}35 3.4em, ${primaryColor}35 3.6em, transparent 3.6em, transparent 3.8em, ${primaryColor}35 3.8em, ${primaryColor}35 4em, transparent 4em, transparent 4.2em, ${primaryColor}35 4.2em)`,
+              textShadow: '1px 1px 3px rgba(0,0,0,0.7)',
+            }}>
+              <span className="font-bold whitespace-nowrap" style={{
+                fontSize: '1.0625rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
+                paddingRight: '5.5em',
+              }}>
+                {p.name}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 발동 조건 */}
         {(sinTypes.length > 0 || p.active_cond) && (
-          <div className="flex items-center gap-1.5 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             {sinTypes.map((st, i) => (
               <Image
                 key={i}
                 src={getSinIconUrl(st)}
                 alt=""
-                width={20}
-                height={20}
-                style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st]}60)` }}
+                width={28}
+                height={28}
               />
             ))}
             {p.sin_count != null && p.sin_count > 0 && (
-              <span className="font-mono font-bold" style={{ color: primaryColor, fontSize: '0.875rem' }}>
+              <span className="font-bold" style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}>
                 x{p.sin_count}
                 {passiveDiffs?.get(p.id)?.sin_count && (
-                  <span style={{ color: '#e8b030', fontSize: '0.6875rem', fontWeight: 700, marginLeft: '0.25rem' }}>
+                  <span style={{ color: '#e8b030', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>
                     {'\u2192'}x{passiveDiffs.get(p.id)!.sin_count!.to}
                   </span>
                 )}
@@ -77,12 +84,8 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             )}
             {p.active_cond && (
               <span
-                className="text-xs px-1.5 py-0.5 rounded"
-                style={{
-                  background: `${primaryColor}18`,
-                  color: primaryColor,
-                  border: `1px solid ${primaryColor}35`,
-                }}
+                className="font-bold"
+                style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}
               >
                 {p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : p.active_cond}
               </span>
@@ -106,24 +109,39 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
     )
   }
 
+  const SectionBadge = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center gap-3 my-4">
+      {/* 좌측 장식선 */}
+      <div className="flex-1" style={{
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent 0%, var(--gold-dim) 100%)',
+      }} />
+      <span
+        className="text-sm font-bold tracking-widest"
+        style={{
+          color: 'var(--gold)',
+          fontFamily: 'var(--font-heading)',
+          letterSpacing: '0.25em',
+          textShadow: '0 0 12px rgba(200,144,10,0.15)',
+        }}
+      >
+        {children}
+      </span>
+      {/* 우측 장식선 */}
+      <div className="flex-1" style={{
+        height: '1px',
+        background: 'linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%)',
+      }} />
+    </div>
+  )
+
   return (
     <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-      <h2
-        className="font-serif font-light mb-4"
-        style={{ color: 'var(--gold)', fontSize: '1rem' }}
-      >
-        패시브
-      </h2>
 
       {battlePassives.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded"
-              style={{ background: `${sinColor}20`, color: sinColor, border: `1px solid ${sinColor}40` }}>
-              배틀 패시브
-            </span>
-          </div>
-          <div className="space-y-2">
+        <div className="mb-6">
+          <SectionBadge>패시브</SectionBadge>
+          <div className="divide-y divide-white/5 space-y-4">
             {battlePassives.map(renderPassive)}
           </div>
         </div>
@@ -131,13 +149,8 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
 
       {supportPassives.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded"
-              style={{ background: 'rgba(100,140,180,0.15)', color: '#6b9bc0', border: '1px solid rgba(100,140,180,0.3)' }}>
-              서포트 패시브
-            </span>
-          </div>
-          <div className="space-y-2">
+          <SectionBadge>서포트 패시브</SectionBadge>
+          <div className="divide-y divide-white/5 space-y-4">
             {supportPassives.map(renderPassive)}
           </div>
         </div>
