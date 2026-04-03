@@ -15,7 +15,7 @@ export async function GET(
     const { data: identity, error: idErr } = await supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, tier, rarity, hp, speed_min, speed_max, def_level, keywords, slash_res, pierce_res, blunt_res, panic_type, sanity_increase, sanity_decrease, break_section, game_id, folder_name')
+      .select('id, sinner_id, name, name_kr, tier, rarity, hp, speed_min, speed_max, def_level, keywords, slash_res, pierce_res, blunt_res, panic_type, break_section, game_id, folder_name')
       .eq('id', id)
       .single()
 
@@ -23,8 +23,8 @@ export async function GET(
       return NextResponse.json({ error: 'Identity not found' }, { status: 404 })
     }
 
-    // 수감자 이름, 스킬, 패시브 병렬 조회
-    const [sinnerRes, skillsRes, passivesRes] = await Promise.all([
+    // 수감자 이름, 스킬, 패시브, 정신력 조건 병렬 조회
+    const [sinnerRes, skillsRes, passivesRes, sanityRes, panicRes] = await Promise.all([
       supabase
         .schema('limbus')
         .from('sinners')
@@ -44,13 +44,42 @@ export async function GET(
         .select('id, name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level')
         .eq('identity_id', id)
         .order('passive_order'),
+      supabase
+        .schema('limbus')
+        .from('identity_sanity_conditions')
+        .select('template_id, condition_type, params, sort_order, mental_condition_templates(add_text, min_text)')
+        .eq('identity_id', id)
+        .order('condition_type')
+        .order('sort_order'),
+      identity.panic_type
+        ? supabase.schema('limbus').from('panic_types').select('id, name, description').eq('id', identity.panic_type).single()
+        : Promise.resolve({ data: null, error: null }),
     ])
+
+    // 정신력 조건 텍스트 렌더링 (템플릿 + params 치환)
+    const sanityConditions = (sanityRes.data ?? []).map((row: Record<string, unknown>) => {
+      const tpl = row.mental_condition_templates as { add_text: string; min_text: string } | null
+      const rawText = row.condition_type === 'increase' ? tpl?.add_text : tpl?.min_text
+      const params = (row.params ?? []) as number[]
+      const text = params.reduce<string>(
+        (t, val, i) => t.replace(`{${i}}`, String(val)),
+        rawText ?? '',
+      )
+      return {
+        template_id: row.template_id,
+        condition_type: row.condition_type,
+        text,
+        sort_order: row.sort_order,
+      }
+    })
 
     return NextResponse.json({
       identity,
       sinner_name: sinnerRes.data?.name_kr ?? null,
       skills: skillsRes.data ?? [],
       passives: passivesRes.data ?? [],
+      sanity_conditions: sanityConditions,
+      panic_info: panicRes.data ?? null,
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

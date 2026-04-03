@@ -30,6 +30,7 @@ import IdentityGuideSection, { type GuideData } from '@/components/identity/Iden
 import IdentitySkillsTab from '@/components/identity/IdentitySkillsTab'
 import IdentityPassivesTab from '@/components/identity/IdentityPassivesTab'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
+import type { SanityCondition, PanicType } from '@/lib/types'
 import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
 import IdentityAISection from '@/components/identity/IdentityAISection'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -44,6 +45,8 @@ interface Props {
   allIdentities: Identity[]
   allEgos: EGO[]
   egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null }[]
+  sanityConditions?: SanityCondition[]
+  panicInfo?: PanicType | null
   canEditGuide?: boolean
   isAdmin?: boolean
   isLoggedIn?: boolean
@@ -60,6 +63,8 @@ export default function IdentityDetailClient({
   allIdentities,
   allEgos,
   egoGifts = [],
+  sanityConditions = [],
+  panicInfo,
   canEditGuide,
   isAdmin,
   isLoggedIn,
@@ -584,7 +589,7 @@ export default function IdentityDetailClient({
                 )}
               </div>
 
-              <IdentitySanitySection identity={identity} />
+              <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
 
               <IdentityReviewSection identityId={identity.id} sinColor={sinColor} />
 

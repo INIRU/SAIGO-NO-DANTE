@@ -11,6 +11,19 @@ export type Sinner = {
   literary_source: string
 }
 
+export type SanityCondition = {
+  template_id: string
+  condition_type: 'increase' | 'decrease'
+  text: string
+  sort_order: number
+}
+
+export type PanicType = {
+  id: number
+  name: string
+  description: string
+}
+
 export type Identity = {
   id: string
   sinner_id: string
@@ -32,14 +45,12 @@ export type Identity = {
   acquisition?: string
   game_id?: string | null
   folder_name?: string | null
-  panic_type?: string | number
-  panic_description?: string
+  panic_type?: number | null
   break_section?: number[]
   base_hp?: number
   hp_per_level?: number
   bg_image_url?: string | null
-  sanity_increase?: string
-  sanity_decrease?: string
+  sanity_conditions?: SanityCondition[]
   acquisition_info?: {
     type: 'default' | 'standard' | 'event' | 'walpurgis' | 'attendance'
     release_season: number
