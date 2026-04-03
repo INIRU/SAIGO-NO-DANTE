@@ -765,7 +765,7 @@ export default function HomeClient({
                         </div>
                       )}
                       <div className="absolute top-2 left-2 z-10">
-                        <Image src={logoUrl} alt="" width={20} height={20} style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75 }} />
+                        <Image src={logoUrl} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75 }} />
                       </div>
                       {rarityIconSrc && (
                         <div className="absolute top-2 right-2 z-10">
