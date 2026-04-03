@@ -1,130 +1,141 @@
 import Image from 'next/image'
-import { Identity, STORAGE_BASE } from '@/lib/data/sinners'
+import type { SanityCondition, PanicType } from '@/lib/types'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 interface IdentitySanitySectionProps {
-  identity: Identity
+  sanityConditions: SanityCondition[]
+  panicInfo?: PanicType | null
 }
 
-export default function IdentitySanitySection({ identity }: IdentitySanitySectionProps) {
-  if (!identity.panic_type && !identity.sanity_increase && !identity.sanity_decrease) {
+export default function IdentitySanitySection({ sanityConditions, panicInfo }: IdentitySanitySectionProps) {
+  if (!panicInfo && sanityConditions.length === 0) {
     return null
   }
 
+  const increaseConditions = sanityConditions.filter(c => c.condition_type === 'increase')
+  const decreaseConditions = sanityConditions.filter(c => c.condition_type === 'decrease')
+
   return (
     <div className="card p-6">
+      {panicInfo && (
+        <div className="mb-5">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded mb-3"
+            style={{
+              background: 'rgba(180,50,50,0.12)',
+              border: '1px solid rgba(180,50,50,0.35)',
+            }}
+          >
+            <span className="text-xs font-bold" style={{ color: '#e05555' }}>패닉 타입</span>
+          </div>
+
+          <div className="flex items-center gap-3 mb-2">
+            <Image
+              src={`${STORAGE_BASE}/icons/stats/panic.webp`}
+              alt=""
+              width={40}
+              height={40}
+              style={{ width: '2.5rem', height: '2.5rem', filter: 'drop-shadow(0 0 4px rgba(180,50,50,0.5))' }}
+            />
+            <div>
+              <p className="text-xs" style={{ color: '#999' }}>패닉 효과</p>
+              <p className="text-sm font-medium" style={{ color: '#ddd' }}>{panicInfo.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h2
         className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
-        정신력
+        패닉
       </h2>
 
-      <div className="space-y-4">
-        {/* 패닉 유형 */}
-        {identity.panic_type && (
+      {increaseConditions.length > 0 && (
+        <div className="mb-4">
           <div
-            className="p-3 rounded"
+            className="inline-flex items-center px-3 py-1 rounded mb-3"
             style={{
-              background: 'rgba(180,50,50,0.08)',
-              border: '1px solid rgba(180,50,50,0.25)',
+              background: 'rgba(200,170,60,0.12)',
+              border: '1px solid rgba(200,170,60,0.4)',
             }}
           >
-            <div className="flex items-center gap-2 mb-1.5">
-              <Image
-                src={`${STORAGE_BASE}/icons/stats/panic.webp`}
-                alt=""
-                width={18}
-                height={18}
-                style={{ width: '1.125rem', height: '1.125rem', filter: 'drop-shadow(0 0 3px rgba(180,50,50,0.5))' }}
-              />
-              <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: 'rgba(180,50,50,0.15)', color: '#c05050', border: '1px solid rgba(180,50,50,0.3)' }}>
-                패닉 유형
-              </span>
-              <span className="font-semibold" style={{ color: '#c05050', fontSize: '0.8125rem' }}>
-                {identity.panic_type}
-              </span>
-            </div>
-            {identity.panic_description && (
-              <p style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.6, paddingLeft: '26px' }}>
-                {identity.panic_description}
-              </p>
-            )}
+            <span className="text-xs font-bold" style={{ color: '#c8aa3c' }}>
+              기본 정신력 증가 조건
+            </span>
           </div>
-        )}
+          <div className="space-y-2 pl-1">
+            {increaseConditions.map((c, i) => (
+              <div key={`inc-${i}`} className="text-sm leading-relaxed" style={{ color: '#ccc' }}>
+                <ConditionText text={c.text} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {/* 정신력 증가 조건 */}
-        {identity.sanity_increase && (
+      {decreaseConditions.length > 0 && (
+        <div>
           <div
-            className="p-3 rounded"
+            className="inline-flex items-center px-3 py-1 rounded mb-3"
             style={{
-              background: 'rgba(80,160,100,0.08)',
-              border: '1px solid rgba(80,160,100,0.25)',
+              background: 'rgba(180,50,50,0.12)',
+              border: '1px solid rgba(180,50,50,0.35)',
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '1.125rem',
-                  height: '1.125rem',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700,
-                  color: '#50a064',
-                  filter: 'drop-shadow(0 0 3px rgba(80,160,100,0.4))',
-                }}
-              >
-                +
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: 'rgba(80,160,100,0.15)', color: '#50a064', border: '1px solid rgba(80,160,100,0.3)' }}>
-                정신력 증가 조건
-              </span>
-            </div>
-            <div style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
-              {identity.sanity_increase}
-            </div>
+            <span className="text-xs font-bold" style={{ color: '#e05555' }}>
+              기본 정신력 감소 조건
+            </span>
           </div>
-        )}
-
-        {/* 정신력 감소 조건 */}
-        {identity.sanity_decrease && (
-          <div
-            className="p-3 rounded"
-            style={{
-              background: 'rgba(100,130,200,0.08)',
-              border: '1px solid rgba(100,130,200,0.25)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '1.125rem',
-                  height: '1.125rem',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700,
-                  color: '#6482c8',
-                  filter: 'drop-shadow(0 0 3px rgba(100,130,200,0.4))',
-                }}
-              >
-                -
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: 'rgba(100,130,200,0.15)', color: '#6482c8', border: '1px solid rgba(100,130,200,0.3)' }}>
-                정신력 감소 조건
-              </span>
-            </div>
-            <div style={{ color: '#aaa', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-line', paddingLeft: '26px' }}>
-              {identity.sanity_decrease}
-            </div>
+          <div className="space-y-2 pl-1">
+            {decreaseConditions.map((c, i) => (
+              <div key={`dec-${i}`} className="text-sm leading-relaxed" style={{ color: '#ccc' }}>
+                <ConditionText text={c.text} />
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
+}
+
+function ConditionText({ text }: { text: string }) {
+  const cleaned = text
+    .replace(/<size=\d+%>/g, '')
+    .replace(/<\/size>/g, '')
+
+  const parts: (string | React.ReactElement)[] = []
+  let remaining = cleaned
+  let key = 0
+
+  const colorRegex = /<color=([^>]+)>([\s\S]*?)<\/color>/
+  let match = colorRegex.exec(remaining)
+  while (match) {
+    if (match.index > 0) {
+      parts.push(remaining.slice(0, match.index))
+    }
+    parts.push(
+      <span key={key++} style={{ color: match[1] }}>{match[2]}</span>
+    )
+    remaining = remaining.slice(match.index + match[0].length)
+    match = colorRegex.exec(remaining)
+  }
+  if (remaining) parts.push(remaining)
+
+  const result: (string | React.ReactElement)[] = []
+  for (const part of parts) {
+    if (typeof part === 'string') {
+      const lines = part.split('\n')
+      lines.forEach((line, i) => {
+        if (i > 0) result.push(<br key={`br-${key++}`} />)
+        result.push(line)
+      })
+    } else {
+      result.push(part)
+    }
+  }
+
+  return <>{'\u00B7'}{result}</>
 }

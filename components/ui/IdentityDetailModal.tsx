@@ -54,12 +54,23 @@ type IdentityData = {
   slash_res: string | null
   pierce_res: string | null
   blunt_res: string | null
-  panic_type: string | number | null
-  sanity_increase: string | null
-  sanity_decrease: string | null
+  panic_type: number | null
   break_section: number[] | null
   game_id: string | null
   folder_name: string | null
+}
+
+type SanityConditionData = {
+  template_id: string
+  condition_type: 'increase' | 'decrease'
+  text: string
+  sort_order: number
+}
+
+type PanicInfoData = {
+  id: number
+  name: string
+  description: string
 }
 
 type ApiResponse = {
@@ -67,6 +78,8 @@ type ApiResponse = {
   sinner_name: string | null
   skills: SkillData[]
   passives: PassiveData[]
+  sanity_conditions: SanityConditionData[]
+  panic_info: PanicInfoData | null
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
@@ -87,10 +100,7 @@ const RES_STYLE: Record<string, { color: string; label: string }> = {
   '면역': { color: '#40c060', label: '면역' },
 }
 
-const PANIC_LABELS: Record<string, string> = {
-  panic: '패닉', '1': '패닉',
-  reverb_base: '역공진', '2': '역공진',
-}
+
 
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
@@ -188,7 +198,7 @@ function LoadingSkeleton() {
 
 // ── 모달 본문 ─────────────────────────────────────────────────────────────
 function ModalContent({ data }: { data: ApiResponse }) {
-  const { identity, sinner_name, skills, passives } = data
+  const { identity, sinner_name, skills, passives, sanity_conditions: sanityConditions = [], panic_info: panicInfo = null } = data
 
   // 4동기화 우선 스킬
   const sortedSkills = bestUptie(skills, s => `${s.skill_order}:${s.variant_order ?? 0}`)
@@ -350,41 +360,45 @@ function ModalContent({ data }: { data: ApiResponse }) {
       </Section>
 
       {/* ── 정신력 / 패닉 ─────────────────────────────────────── */}
-      {(identity.panic_type || identity.sanity_increase || identity.sanity_decrease) && (
+      {(panicInfo || sanityConditions.length > 0) && (
         <Section title="정신력">
           <div className="flex flex-col gap-2">
-            {identity.panic_type && (
+            {panicInfo && (
               <div className="flex items-center gap-2 p-2 rounded" style={{ background: 'rgba(200,64,80,0.08)', border: '1px solid rgba(200,64,80,0.2)' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(200,64,80,0.15)', color: '#c84050', border: '1px solid rgba(200,64,80,0.3)' }}>
                   패닉
                 </span>
                 <span style={{ color: '#c84050', fontSize: '0.75rem', fontWeight: 600 }}>
-                  {PANIC_LABELS[String(identity.panic_type)] ?? identity.panic_type}
+                  {panicInfo.name} — {panicInfo.description}
                 </span>
               </div>
             )}
-            {identity.sanity_increase && (
+            {sanityConditions.filter(c => c.condition_type === 'increase').length > 0 && (
               <div className="p-2 rounded" style={{ background: 'rgba(136,168,48,0.08)', border: '1px solid rgba(136,168,48,0.2)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(136,168,48,0.15)', color: '#88a830', border: '1px solid rgba(136,168,48,0.3)' }}>
-                    회복
+                    증가
                   </span>
                 </div>
-                <div style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#88a830', whiteSpace: 'pre-wrap' }}>
-                  {identity.sanity_increase}
-                </div>
+                {sanityConditions.filter(c => c.condition_type === 'increase').map((c, i) => (
+                  <div key={`inc-${i}`} style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#88a830' }}>
+                    ·{c.text.replace(/<[^>]+>/g, '')}
+                  </div>
+                ))}
               </div>
             )}
-            {identity.sanity_decrease && (
+            {sanityConditions.filter(c => c.condition_type === 'decrease').length > 0 && (
               <div className="p-2 rounded" style={{ background: 'rgba(224,96,112,0.08)', border: '1px solid rgba(224,96,112,0.2)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(224,96,112,0.15)', color: '#e06070', border: '1px solid rgba(224,96,112,0.3)' }}>
                     감소
                   </span>
                 </div>
-                <div style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#e06070', whiteSpace: 'pre-wrap' }}>
-                  {identity.sanity_decrease}
-                </div>
+                {sanityConditions.filter(c => c.condition_type === 'decrease').map((c, i) => (
+                  <div key={`dec-${i}`} style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#e06070' }}>
+                    ·{c.text.replace(/<[^>]+>/g, '')}
+                  </div>
+                ))}
               </div>
             )}
           </div>

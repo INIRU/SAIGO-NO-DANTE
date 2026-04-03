@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes } from '@/lib/db/queries'
+import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -50,7 +50,7 @@ export default async function IdentityPage({
   ])
   if (!sinner || !identity) notFound()
 
-  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts, currentSeason] = await Promise.all([
+  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts, currentSeason, sanityConditions, panicInfo] = await Promise.all([
     getSkills(identity.id),
     getPassives(identity.id),
     getServerSession(authOptions),
@@ -66,6 +66,8 @@ export default async function IdentityPage({
       if (error) console.error('Failed to fetch current season:', error)
       return data?.value?.season ?? 7
     })(),
+    getSanityConditions(identity.id),
+    identity.panic_type ? getPanicInfo(identity.panic_type) : Promise.resolve(null),
   ])
 
   // 운영법 조회 (여러 개)
@@ -103,6 +105,8 @@ export default async function IdentityPage({
       identity={identity}
       skills={skills}
       passives={passives}
+      sanityConditions={sanityConditions}
+      panicInfo={panicInfo}
       guides={guides}
       allSinners={allSinners}
       allIdentities={allIdentities}

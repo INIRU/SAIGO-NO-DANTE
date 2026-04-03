@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType } from '@/lib/types'
+import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 
 // ── Supabase 클라이언트 (browser/server 공용 anon key) ─────────────────────
@@ -60,6 +60,43 @@ export async function getIdentityById(id: string): Promise<Identity | null> {
     .eq('id', id)
     .single()
   if (error) return null
+  return data
+}
+
+export async function getSanityConditions(identityId: string): Promise<SanityCondition[]> {
+  const { data, error } = await supabase()
+    .schema('limbus')
+    .from('identity_sanity_conditions')
+    .select('template_id, condition_type, params, sort_order, mental_condition_templates(add_text, min_text)')
+    .eq('identity_id', identityId)
+    .order('condition_type')
+    .order('sort_order')
+  if (error || !data) return []
+  return data.map((row: Record<string, unknown>) => {
+    const tpl = row.mental_condition_templates as { add_text: string; min_text: string } | null
+    const rawText = row.condition_type === 'increase' ? tpl?.add_text : tpl?.min_text
+    const params = (row.params ?? []) as number[]
+    const text = params.reduce<string>(
+      (t, val, i) => t.replace(`{${i}}`, String(val)),
+      rawText ?? '',
+    )
+    return {
+      template_id: row.template_id as string,
+      condition_type: row.condition_type as 'increase' | 'decrease',
+      text,
+      sort_order: row.sort_order as number,
+    }
+  })
+}
+
+export async function getPanicInfo(panicTypeId: number): Promise<PanicType | null> {
+  const { data, error } = await supabase()
+    .schema('limbus')
+    .from('panic_types')
+    .select('id, name, description')
+    .eq('id', panicTypeId)
+    .single()
+  if (error || !data) return null
   return data
 }
 
