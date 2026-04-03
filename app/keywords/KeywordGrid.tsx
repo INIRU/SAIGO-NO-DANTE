@@ -102,7 +102,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
                 >
                   {iconUrl ? (
                     <Image src={iconUrl} alt={kw.name} width={20} height={20}
-                      style={{ width: '1.25rem', height: '1.25rem' }} unoptimized />
+                      style={{ width: '1.25rem', height: 'auto' }} unoptimized />
                   ) : (
                     <span style={{ color: '#555', fontSize: '0.625rem' }}>?</span>
                   )}

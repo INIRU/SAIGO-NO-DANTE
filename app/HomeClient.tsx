@@ -192,17 +192,6 @@ function HeroGlitchSlider({
     if (s) onSlideChange(s.identity)
   }, [currentIdx, slides, onSlideChange])
 
-  // 최초 fade-in
-  const sliderAnimRef = useRef(false)
-  useEffect(() => {
-    const el = sliderRef.current
-    if (!el || sliderAnimRef.current) return
-    sliderAnimRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.9, delay: 0.4, ease: 'power2.out' })
-    })
-  }, [])
-
   // 켄번즈 효과 — 슬라이드마다 천천히 줌인
   useEffect(() => {
     const el = layerARef.current
@@ -272,7 +261,7 @@ function HeroGlitchSlider({
   if (!current) return null
 
   return (
-    <div ref={sliderRef} className="absolute inset-0 md:inset-y-0 md:left-auto md:right-0 w-full md:w-[62%] overflow-hidden" style={{ opacity: 0, zIndex: 1 }}>
+    <div ref={sliderRef} className="absolute inset-0 md:inset-y-0 md:left-auto md:right-0 w-full md:w-[62%] overflow-hidden" style={{ zIndex: 1 }}>
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div className="absolute inset-0" style={{ zIndex: 5 }}>
@@ -439,7 +428,7 @@ export default function HomeClient({
         {/* 텍스트 콘텐츠 */}
         <div className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl" style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh' }}>
           <div className="flex items-center gap-3 md:gap-4 mb-2">
-            <Image src="/images/logo-hero.webp" alt="" width={66} height={82} unoptimized className="w-[28px] sm:w-[38px] md:w-[66px] h-auto" style={{ flexShrink: 0 }} />
+            <Image src="/images/logo-hero.webp" alt="" width={66} height={82} unoptimized priority className="w-[28px] sm:w-[38px] md:w-[66px] h-auto" style={{ flexShrink: 0 }} />
             <GlitchText
               text="SAIGO NO DANTE"
               tag="h1"

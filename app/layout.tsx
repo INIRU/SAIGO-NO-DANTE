@@ -18,68 +18,80 @@ import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/co
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { createClient } from '@/lib/supabase/server'
 
+// decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
 const songMyung = Song_Myung({
   weight: '400',
   variable: '--font-song-myung',
-  display: 'swap',
+  display: 'optional',
 })
 
+// decorative — display:optional prevents FOUT
 const blackHanSans = Black_Han_Sans({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-black-han',
-  display: 'swap',
+  display: 'optional',
 })
 
 /* ── Local Fonts ──────────────────────────────────────── */
 
+// decorative — display:optional prevents FOUT
 const excelsiorSans = localFont({
   src: '../public/fonts/ExcelsiorSans.ttf',
   variable: '--font-excelsior',
-  display: 'swap',
+  display: 'optional',
 })
 
+// decorative — display:optional prevents FOUT
 const mikodacs = localFont({
   src: '../public/fonts/Mikodacs.ttf',
   variable: '--font-mikodacs',
-  display: 'swap',
+  display: 'optional',
 })
 
+// decorative — display:optional prevents FOUT
 const bebasKai = localFont({
   src: [
     { path: '../public/fonts/BebasKai.otf', style: 'normal' },
   ],
   variable: '--font-bebas-kai',
-  display: 'swap',
+  display: 'optional',
 })
 
+// decorative — display:optional prevents FOUT
 const corporateLogo = localFont({
   src: '../public/fonts/Corporate-Logo-Bold-ver2.otf',
   weight: '700',
   variable: '--font-corporate-logo',
-  display: 'swap',
+  display: 'optional',
 })
 
+// heading font — keep swap but specify fallback with similar metrics to reduce shift
 const kotraBold = localFont({
   src: '../public/fonts/KOTRA_BOLD.ttf',
   weight: '700',
   variable: '--font-kotra-bold',
   display: 'swap',
+  fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
+// body font — keep swap (critical for readability) + similar-metric fallbacks
 const scDream = localFont({
   src: '../public/fonts/SCDream5.otf',
   weight: '500',
   variable: '--font-scdream',
   display: 'swap',
+  fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
+// decorative — display:optional prevents FOUT
 const perfectDOS = localFont({
   src: '../public/fonts/PerfectDOSVGA437.ttf',
   variable: '--font-perfect-dos',
-  display: 'swap',
+  display: 'optional',
 })
 
+// decorative — display:optional prevents FOUT
 const paperlogy = localFont({
   src: [
     { path: '../public/fonts/Paperlogy-Light.ttf', weight: '300', style: 'normal' },
@@ -87,7 +99,7 @@ const paperlogy = localFont({
     { path: '../public/fonts/Paperlogy-Bold.ttf', weight: '700', style: 'normal' },
   ],
   variable: '--font-paperlogy',
-  display: 'swap',
+  display: 'optional',
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
@@ -185,6 +197,9 @@ export default async function RootLayout({
     <html lang="ko" data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
+        {/* Preload critical body/heading fonts to minimize CLS from font swap */}
+        <link rel="preload" href="/fonts/SCDream5.otf" as="font" type="font/otf" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/KOTRA_BOLD.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(SITE_URL)} />

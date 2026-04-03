@@ -153,7 +153,7 @@ export default function KeywordModal({
                   <Image
                     src={`${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`}
                     alt={kw.name} width={28} height={28}
-                    style={{ width: '1.75rem', height: '1.75rem' }}
+                    style={{ width: '1.75rem', height: 'auto' }}
                   />
                 </div>
               )}

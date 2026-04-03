@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 
@@ -215,15 +215,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const activeUser = await requireActiveUser()
+    if (activeUser.error) return activeUser.response
+    const { session } = activeUser
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )
@@ -273,10 +272,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const activeUser = await requireActiveUser()
+    if (activeUser.error) return activeUser.response
+    const { session } = activeUser
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
@@ -288,7 +286,7 @@ export async function PATCH(
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )
@@ -325,7 +323,10 @@ export async function PATCH(
     }
 
     // deck_identities: 기존 삭제 → 새로 삽입
-    await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
+    const { error: delIdentitiesError } = await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
+    if (delIdentitiesError) {
+      return NextResponse.json({ error: delIdentitiesError.message }, { status: 500 })
+    }
     if (identitySlots?.length > 0) {
       const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number }) => ({
         deck_id: id,
@@ -336,18 +337,27 @@ export async function PATCH(
         s2_count: slot.s2_count ?? 2,
         s3_count: slot.s3_count ?? 1,
       }))
-      await admin.schema('limbus').from('deck_identities').insert(rows)
+      const { error: insIdentitiesError } = await admin.schema('limbus').from('deck_identities').insert(rows)
+      if (insIdentitiesError) {
+        return NextResponse.json({ error: insIdentitiesError.message }, { status: 500 })
+      }
     }
 
     // deck_egos: 기존 삭제 → 새로 삽입
-    await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
+    const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
+    if (delEgosError) {
+      return NextResponse.json({ error: delEgosError.message }, { status: 500 })
+    }
     if (egoSlots?.length > 0) {
       const rows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
         deck_id: id,
         ego_id: slot.ego_id,
         grade: slot.grade,
       }))
-      await admin.schema('limbus').from('deck_egos').insert(rows)
+      const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
+      if (insEgosError) {
+        return NextResponse.json({ error: insEgosError.message }, { status: 500 })
+      }
     }
 
     writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })

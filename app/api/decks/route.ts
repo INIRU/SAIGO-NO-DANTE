@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 export const dynamic = 'force-dynamic'
@@ -63,10 +62,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const { session } = auth
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
@@ -81,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )
@@ -107,7 +105,12 @@ export async function POST(request: NextRequest) {
         s2_count: slot.s2_count ?? 2,
         s3_count: slot.s3_count ?? 1,
       }))
-      await admin.schema('limbus').from('deck_identities').insert(rows)
+      const { error: identityInsertError } = await admin.schema('limbus').from('deck_identities').insert(rows)
+      if (identityInsertError) {
+        // Rollback: delete the parent deck
+        await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+        return NextResponse.json({ error: identityInsertError.message }, { status: 500 })
+      }
     }
 
     if (egoSlots?.length > 0) {
@@ -116,7 +119,12 @@ export async function POST(request: NextRequest) {
         ego_id: slot.ego_id,
         grade: slot.grade,
       }))
-      await admin.schema('limbus').from('deck_egos').insert(rows)
+      const { error: egoInsertError } = await admin.schema('limbus').from('deck_egos').insert(rows)
+      if (egoInsertError) {
+        // Rollback: delete the parent deck (cascades to deck_identities)
+        await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+        return NextResponse.json({ error: egoInsertError.message }, { status: 500 })
+      }
     }
 
     revalidatePath('/decks')

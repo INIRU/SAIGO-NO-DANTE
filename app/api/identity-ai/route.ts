@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const AI_API_URL = process.env.INIRU_AI_API_URL || 'https://api.iniru.net/v1/chat/completions'
 const AI_API_KEY = process.env.INIRU_AI_API_KEY || ''
@@ -119,6 +122,19 @@ export async function GET(req: NextRequest) {
 // POST: AI 요약 생성
 export async function POST(req: NextRequest) {
   try {
+  // 인증 확인
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  }
+
+  // Rate limit (per IP)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? 'unknown'
+  const rl = checkRateLimit(ip)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 }, )
+  }
+
   const body = await req.json()
   const { identity_id } = body
   if (!identity_id) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })

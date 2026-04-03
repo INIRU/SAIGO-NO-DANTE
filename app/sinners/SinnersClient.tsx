@@ -156,8 +156,8 @@ export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
       {/* 카드 그리드 */}
       <div className="sinners-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative" style={{ zIndex: 1 }}>
         {sinners.map((sinner, i) => (
-          <div key={sinner.id} className="sinner-card-item" style={{ opacity: 0 }}>
-            <SinnerCard sinner={sinner} index={i} />
+          <div key={sinner.id} className="sinner-card-item" style={i === 0 ? undefined : { opacity: 0 }}>
+            <SinnerCard sinner={sinner} index={i} priority={i === 0} />
           </div>
         ))}
       </div>

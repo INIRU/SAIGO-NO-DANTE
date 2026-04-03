@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     // deviceSizes/imageSizes control which widths next/image generates in srcset
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [64, 96, 128, 256, 384],
-    qualities: [20, 60, 75, 90],
+    qualities: [20, 25, 60, 75, 90],
   },
   async headers() {
     return [

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
@@ -11,10 +12,11 @@ import { useKeywordData } from '@/components/sinners/KeywordTooltip'
 import type { EgoGift, Recipe, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS, GRADE_LABELS } from '@/components/mirror-dungeon/types'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
-import GiftModal from '@/components/mirror-dungeon/GiftModal'
 import GradeMultiDropdown from '@/components/mirror-dungeon/GradeMultiDropdown'
-import EventModal from '@/components/mirror-dungeon/EventModal'
 import ThemePackCard from '@/components/mirror-dungeon/ThemePackCard'
+
+const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'), { ssr: false })
+const EventModal = dynamic(() => import('@/components/mirror-dungeon/EventModal'), { ssr: false })
 
 /* ── 타입/상수는 @/components/mirror-dungeon/types.ts에서 import ── */
 

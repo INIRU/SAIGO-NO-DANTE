@@ -8,23 +8,24 @@ import RelativeTime from '@/components/ui/RelativeTime'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { STORAGE_BASE, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
-
-const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 export type PlanSummary = {
   id: string
   title: string
   description: string | null
   difficulty: Difficulty
-  deck: { identity_id?: string; sinner_id?: string; name_kr?: string; game_id?: string | null; folder_name?: string | null; keywords?: string[]; slot_order?: number }[] | null
-  egos: { ego_id?: string; sinner_id?: string; name_kr?: string; grade?: string }[] | null
+  deck: { identity_id?: string; sinner_id?: string; name_kr?: string; game_id?: string | null; folder_name?: string | null; slot_order?: number }[] | null
+  egos: { ego_id?: string }[] | null
   tags: string[] | null
   vote_count: number
   view_count: number
   comment_count: number
   created_at: string
   profiles: { username: string | null; avatar_url: string | null } | null
+  /** Pre-computed server-side: theme keywords extracted from deck */
+  theme_keywords?: string[]
+  /** Pre-computed server-side: identity name_kr values for search */
+  identity_names?: string[]
 }
 
 const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
@@ -65,25 +66,8 @@ export default function PlanCard({ plan }: { plan: PlanSummary }) {
   })
   const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
 
-  // 자동 키워드 태그 (편성 인격 기준)
-  const topKeywords = (() => {
-    const formed = sorted.filter(s => s && (s.slot_order ?? 99) < 99 && s.keywords)
-    const total = formed.length
-    if (total === 0) return []
-    const freq: Record<string, number> = {}
-    for (const slot of formed) {
-      const normalized = new Set((slot!.keywords ?? []).map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        if (THEME_KW_SET.has(kw)) freq[kw] = (freq[kw] ?? 0) + 1
-      }
-    }
-    const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
-    return Object.entries(freq)
-      .filter(([, n]) => n >= minCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([kw]) => kw)
-  })()
+  // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
+  const topKeywords = plan.theme_keywords ?? []
 
   return (
     <div

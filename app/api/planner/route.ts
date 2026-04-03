@@ -2,8 +2,83 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { THEME_KEYWORDS, SPECIAL_CHARGE_KEYWORDS, CHARGE_SUB_KEYWORDS } from '@/lib/constants/keywords'
+
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
+
+type DeckSlotRaw = {
+  identity_id?: string
+  sinner_id?: string
+  name_kr?: string
+  game_id?: string | null
+  folder_name?: string | null
+  keywords?: string[]
+  slot_order?: number
+}
+
+type EgoSlotRaw = {
+  ego_id?: string
+  sinner_id?: string
+  name_kr?: string
+  grade?: string
+}
+
+function computeThemeKeywords(deck: DeckSlotRaw[] | null): string[] {
+  const formed = (deck ?? []).filter(s => (s.slot_order ?? 99) < 99 && s.keywords)
+  const total = formed.length
+  if (total === 0) return []
+
+  const freq: Record<string, number> = {}
+  for (const slot of formed) {
+    const normalized = new Set((slot.keywords ?? []).map(kw => {
+      if (SPECIAL_CHARGE_KEYWORDS.has(kw) || CHARGE_SUB_KEYWORDS.has(kw)) return '충전'
+      return kw
+    }))
+    for (const kw of normalized) {
+      if (THEME_KW_SET.has(kw)) freq[kw] = (freq[kw] ?? 0) + 1
+    }
+  }
+
+  const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
+  return Object.entries(freq)
+    .filter(([, n]) => n >= minCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([kw]) => kw)
+}
+
+function stripPlanForList(plan: Record<string, unknown>) {
+  const deck = (plan.deck as DeckSlotRaw[] | null) ?? null
+  const egos = (plan.egos as EgoSlotRaw[] | null) ?? null
+
+  const theme_keywords = computeThemeKeywords(deck)
+  const identity_names = (deck ?? [])
+    .map(s => s.name_kr)
+    .filter((n): n is string => Boolean(n))
+
+  // Slim deck: keep only fields needed for portrait grid + owned-identity filter
+  const slimDeck = deck?.map(s => ({
+    identity_id: s.identity_id,
+    sinner_id: s.sinner_id,
+    name_kr: s.name_kr,
+    game_id: s.game_id,
+    folder_name: s.folder_name,
+    slot_order: s.slot_order,
+  })) ?? null
+
+  // Slim egos: keep only ego_id for owned-ego filter
+  const slimEgos = egos?.map(e => ({ ego_id: e.ego_id })) ?? null
+
+  return {
+    ...plan,
+    deck: slimDeck,
+    egos: slimEgos,
+    theme_keywords,
+    identity_names,
+  }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -67,7 +142,8 @@ export async function GET(req: NextRequest) {
     const { data, count, error } = await query
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ plans: data, total: count })
+    const plans = (data ?? []).map(plan => stripPlanForList(plan as Record<string, unknown>))
+    return NextResponse.json({ plans, total: count })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -76,11 +152,12 @@ export async function GET(req: NextRequest) {
 // POST /api/planner — 플랜 생성
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    const activeUser = await requireActiveUser()
+    if (activeUser.error) return activeUser.response
+    const { session } = activeUser
 
     const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
+    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
