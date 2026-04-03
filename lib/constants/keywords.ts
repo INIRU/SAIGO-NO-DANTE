@@ -44,7 +44,7 @@ export const THEME_KEYWORDS = ['침잠', '출혈', '파열', '화상', '진동',
  */
 export const SPECIAL_CHARGE_KEYWORDS = new Set([
   '사랑/증오', '깊은 눈물', '적안', '적안적안 - 경계적안 - 포식',
-  '참회', '참회참회 - 경계참회 - 고해', '히스테리',
+  '참회', '참회참회 - 경계참회 - 고해',
   '생체 재료',
 ])
 

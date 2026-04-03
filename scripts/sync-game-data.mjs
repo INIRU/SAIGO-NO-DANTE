@@ -216,12 +216,13 @@ function translateDesc(desc) {
     // <style="highlight">...</style> 제거 (내용은 유지)
     .replace(/<style="[^"]*">/g, '')
     .replace(/<\/style>/g, '')
-    // Unity 마크업 태그 제거 (noparse, u, color, link, sprite 등)
+    // Unity 마크업 태그 제거 (noparse, u, color, link, sprite, size 등)
     .replace(/<\/?noparse>/g, '')
     .replace(/<\/?u>/g, '')
     .replace(/<color=[^>]*>/g, '').replace(/<\/color>/g, '')
     .replace(/<link=[^>]*>/g, '').replace(/<\/link>/g, '')
     .replace(/<sprite[^>]*\/?>/g, '')
+    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
     // [EnglishTag] → 한글 변환 (키워드는 앞뒤 공백 보장)
     .replace(/\[([A-Za-z_][A-Za-z0-9_]*)\]/g, (match, tag, offset, str) => {
       const kr = TAG_MAP[tag]
@@ -707,6 +708,9 @@ async function main() {
     const pmFiles = [`personality-passive-${pad}.json`, 'personality-passive-a1c8p1.json', 'personality-passive-a1c8p2.json', 'personality-passive-a1c9p1.json', 'personality-passive-a1c9p2.json', 'personality-passive-extra.json']
     const addToMapping = (items) => {
       for (const item of items) {
+        // personality game_id 앞 2자리로 수감자 필터
+        // 실제로는 personalityID / 100의 앞자리가 수감자번호
+        // 10101 → sinner 1, 10215 → sinner 2
         const sid = Math.floor(item.personalityID / 100) % 100
         if (sid === sinner.id || Math.floor(item.personalityID / 10000) === sinner.id) {
           passiveMapping.push(item)
@@ -989,6 +993,164 @@ async function main() {
     }
   }
 
+  // ── 패닉 타입 동기화 ──
+  console.log(`\n${'═'.repeat(60)}`)
+  console.log('  패닉 타입 동기화')
+  console.log('═'.repeat(60))
+
+  // KR_PanicInfo*.json 전체 로드 → panicTypeId → { name, description } 맵 구성
+  const panicInfoMap = new Map()
+  const krDir2 = resolve(JSON_DIR, 'KR')
+  const panicFiles = existsSync(krDir2)
+    ? readdirSync(krDir2).filter(f => f.startsWith('KR_PanicInfo')).map(f => `KR/${f}`)
+    : []
+  for (const f of panicFiles) {
+    const data = readJson(f)
+    if (!data) continue
+    for (const item of data.dataList || []) {
+      panicInfoMap.set(item.id, {
+        name: item.panicName,
+        description: translateDesc(item.panicDescription),
+        lowMoraleDesc: translateDesc(item.lowMoraleDescription),
+      })
+    }
+  }
+  console.log(`  KR_PanicInfo: ${panicInfoMap.size}개 항목 로드`)
+
+  // personality-NN.json + personality-a1c*.json 로드 → game_id → panicType 맵 + mentalConditionInfo 맵 구성
+  const gamePanicMap = new Map()
+  const gameMentalMap = new Map() // game_id → mentalConditionInfo
+  for (const sinner of SINNERS) {
+    const pad = String(sinner.id).padStart(2, '0')
+    const pFiles = [`personality-${pad}.json`]
+    for (const extra of readdirSync(JSON_DIR).filter(f => f.startsWith('personality-a1c') && f.endsWith('.json'))) {
+      pFiles.push(extra)
+    }
+    for (const f of pFiles) {
+      const data = readJson(f)
+      if (!data) continue
+      for (const p of data.list || []) {
+        if (p.id != null && p.panicType != null) {
+          gamePanicMap.set(String(p.id), p.panicType)
+        }
+        if (p.id != null && p.mentalConditionInfo != null) {
+          gameMentalMap.set(String(p.id), p.mentalConditionInfo)
+        }
+      }
+    }
+  }
+  console.log(`  personality JSON: ${gamePanicMap.size}개 인격 panicType 로드, ${gameMentalMap.size}개 인격 mentalConditionInfo 로드`)
+
+  // KR_MentalCondition*.json 로드 → templateId → { add, min } 맵 구성
+  const mentalConditionTemplates = new Map()
+  for (const f of readdirSync(resolve(JSON_DIR, 'KR')).filter(n => n.startsWith('KR_MentalCondition') && n.endsWith('.json'))) {
+    const data = readJson(`KR/${f}`)
+    if (!data) continue
+    for (const item of data.dataList || []) {
+      if (item.id) mentalConditionTemplates.set(item.id, { add: item.add || '', min: item.min || '' })
+    }
+  }
+  console.log(`  KR_MentalCondition: ${mentalConditionTemplates.size}개 템플릿 로드`)
+
+  /**
+   * conditionID 를 한국어 텍스트로 변환
+   * @param {string} conditionID - e.g. "OnWinDuelAsParryingCountMultiply10AndPlus20Percent"
+   * @param {'add'|'min'} mode
+   * @returns {string}
+   */
+  function resolveCondition(conditionID, mode) {
+    const nums = conditionID.match(/\d+/g) || []
+    const templateKey = conditionID.replace(/\d+/g, '')
+    const template = mentalConditionTemplates.get(templateKey)
+    if (!template) return conditionID // fallback: raw id
+    let text = template[mode] || ''
+    nums.forEach((n, i) => { text = text.replaceAll(`{${i}}`, n) })
+    return translateDesc(text)
+  }
+
+  // DB에서 모든 인격의 game_id, panic_type, panic_description, sanity_increase, sanity_decrease 조회
+  const dbIdentitiesAll = await supaGet('identities', 'select=id,game_id,panic_type,panic_description,sanity_increase,sanity_decrease&limit=1000')
+
+  let panicUpdated = 0
+  let panicSkipped = 0
+  let sanityUpdated = 0
+
+  for (const identity of dbIdentitiesAll) {
+    const gameId = identity.game_id
+    if (!gameId) { panicSkipped++; continue }
+
+    const panicTypeId = gamePanicMap.get(String(gameId))
+    if (panicTypeId == null) { panicSkipped++; continue }
+
+    const panicInfo = panicInfoMap.get(panicTypeId)
+    if (!panicInfo) { panicSkipped++; continue }
+
+    const newPanicType = panicInfo.name || ''
+    const newPanicDesc = panicInfo.description || ''
+
+    // 정신력 증가/감소 조건 계산 (level=1 기준)
+    const mentalInfo = gameMentalMap.get(String(gameId))
+    const addConditions = mentalInfo?.add?.find(e => e.level === 1)?.conditionIDList || []
+    const minConditions = mentalInfo?.min?.find(e => e.level === 1)?.conditionIDList || []
+    const newSanityIncrease = addConditions.map(c => `·${resolveCondition(c.conditionID, 'add')}`).join('\n')
+    const newSanityDecrease = minConditions.map(c => `·${resolveCondition(c.conditionID, 'min')}`).join('\n')
+
+    const panicChanged = identity.panic_type !== newPanicType || identity.panic_description !== newPanicDesc
+    const sanityChanged = identity.sanity_increase !== newSanityIncrease || identity.sanity_decrease !== newSanityDecrease
+
+    if (!panicChanged && !sanityChanged) {
+      continue
+    }
+
+    const patchBody = {}
+    if (panicChanged) {
+      patchBody.panic_type = newPanicType
+      patchBody.panic_description = newPanicDesc
+    }
+    if (sanityChanged) {
+      patchBody.sanity_increase = newSanityIncrease
+      patchBody.sanity_decrease = newSanityDecrease
+    }
+
+    if (dryRun) {
+      if (panicChanged) {
+        console.log(`  [변경] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
+      }
+      if (sanityChanged) {
+        console.log(`  [변경] game_id=${gameId}: sanity_increase/decrease 업데이트`)
+        console.log(`    증가: ${newSanityIncrease.slice(0, 80)}`)
+        console.log(`    감소: ${newSanityDecrease.slice(0, 80)}`)
+      }
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/identities?game_id=eq.${gameId}`, {
+        method: 'PATCH',
+        headers: { ...headers, Prefer: 'return=minimal' },
+        body: JSON.stringify(patchBody),
+      })
+      if (!res.ok) {
+        console.error(`  [오류] game_id=${gameId} PATCH 실패: ${res.status} ${await res.text()}`)
+      } else {
+        if (panicChanged) {
+          console.log(`  [업데이트] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
+          panicUpdated++
+        }
+        if (sanityChanged) {
+          console.log(`  [업데이트] game_id=${gameId}: sanity_increase/decrease 동기화`)
+          sanityUpdated++
+        }
+      }
+      await sleep(50)
+    }
+  }
+
+  if (dryRun) {
+    console.log(`  (DRY RUN — 변경 예정 항목 위에 표시됨)`)
+  } else {
+    console.log(`  패닉 타입 업데이트: ${panicUpdated}개`)
+    console.log(`  정신력 조건 업데이트: ${sanityUpdated}개`)
+  }
+  console.log(`  스킵: ${panicSkipped}개`)
+
   console.log(`\n${'═'.repeat(60)}`)
   console.log('  결과 요약')
   console.log('═'.repeat(60))
@@ -997,6 +1159,8 @@ async function main() {
   } else {
     console.log(`  인격 스킬 삭제: ${totalDeleted}개 / 삽입: ${totalInserted}개`)
     console.log(`  EGO 스킬 삭제: ${egoDeleted}개 / 삽입: ${egoInserted}개`)
+    console.log(`  패닉 타입 업데이트: ${panicUpdated}개`)
+    console.log(`  정신력 조건 업데이트: ${sanityUpdated}개`)
   }
   console.log(`  스킵: 인격 ${totalSkipped}개 / EGO ${egoSkipped}개`)
 }
