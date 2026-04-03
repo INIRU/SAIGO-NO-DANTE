@@ -1230,22 +1230,11 @@ async function main() {
    * @param {'add'|'min'} mode
    * @returns {string}
    */
-  function resolveCondition(conditionID, mode) {
-    const nums = conditionID.match(/\d+/g) || []
-    const templateKey = conditionID.replace(/\d+/g, '')
-    const template = mentalConditionTemplates.get(templateKey)
-    if (!template) return conditionID // fallback: raw id
-    let text = template[mode] || ''
-    nums.forEach((n, i) => { text = text.replaceAll(`{${i}}`, n) })
-    return translateDesc(text)
-  }
-
-  // DB에서 모든 인격의 game_id, panic_type, panic_description, sanity_increase, sanity_decrease 조회
-  const dbIdentitiesAll = await supaGet('identities', 'select=id,game_id,panic_type,panic_description,sanity_increase,sanity_decrease&limit=1000')
+  // DB에서 모든 인격의 game_id, panic_type 조회
+  const dbIdentitiesAll = await supaGet('identities', 'select=id,game_id,panic_type&limit=1000')
 
   let panicUpdated = 0
   let panicSkipped = 0
-  let sanityUpdated = 0
 
   for (const identity of dbIdentitiesAll) {
     const gameId = identity.game_id
@@ -1258,41 +1247,17 @@ async function main() {
     if (!panicInfo) { panicSkipped++; continue }
 
     const newPanicType = panicInfo.name || ''
-    const newPanicDesc = panicInfo.description || ''
 
-    // 정신력 증가/감소 조건 계산 (level=1 기준)
-    const mentalInfo = gameMentalMap.get(String(gameId))
-    const addConditions = mentalInfo?.add?.find(e => e.level === 1)?.conditionIDList || []
-    const minConditions = mentalInfo?.min?.find(e => e.level === 1)?.conditionIDList || []
-    const newSanityIncrease = addConditions.map(c => `·${resolveCondition(c.conditionID, 'add')}`).join('\n')
-    const newSanityDecrease = minConditions.map(c => `·${resolveCondition(c.conditionID, 'min')}`).join('\n')
+    const panicChanged = identity.panic_type !== newPanicType
 
-    const panicChanged = identity.panic_type !== newPanicType || identity.panic_description !== newPanicDesc
-    const sanityChanged = identity.sanity_increase !== newSanityIncrease || identity.sanity_decrease !== newSanityDecrease
-
-    if (!panicChanged && !sanityChanged) {
+    if (!panicChanged) {
       continue
     }
 
-    const patchBody = {}
-    if (panicChanged) {
-      patchBody.panic_type = newPanicType
-      patchBody.panic_description = newPanicDesc
-    }
-    if (sanityChanged) {
-      patchBody.sanity_increase = newSanityIncrease
-      patchBody.sanity_decrease = newSanityDecrease
-    }
+    const patchBody = { panic_type: newPanicType }
 
     if (dryRun) {
-      if (panicChanged) {
-        console.log(`  [변경] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
-      }
-      if (sanityChanged) {
-        console.log(`  [변경] game_id=${gameId}: sanity_increase/decrease 업데이트`)
-        console.log(`    증가: ${newSanityIncrease.slice(0, 80)}`)
-        console.log(`    감소: ${newSanityDecrease.slice(0, 80)}`)
-      }
+      console.log(`  [변경] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
     } else {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/identities?game_id=eq.${gameId}`, {
         method: 'PATCH',
@@ -1302,14 +1267,8 @@ async function main() {
       if (!res.ok) {
         console.error(`  [오류] game_id=${gameId} PATCH 실패: ${res.status} ${await res.text()}`)
       } else {
-        if (panicChanged) {
-          console.log(`  [업데이트] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
-          panicUpdated++
-        }
-        if (sanityChanged) {
-          console.log(`  [업데이트] game_id=${gameId}: sanity_increase/decrease 동기화`)
-          sanityUpdated++
-        }
+        console.log(`  [업데이트] game_id=${gameId}: panic_type "${identity.panic_type}" → "${newPanicType}"`)
+        panicUpdated++
       }
       await sleep(50)
     }
@@ -1319,7 +1278,6 @@ async function main() {
     console.log(`  (DRY RUN — 변경 예정 항목 위에 표시됨)`)
   } else {
     console.log(`  패닉 타입 업데이트: ${panicUpdated}개`)
-    console.log(`  정신력 조건 업데이트: ${sanityUpdated}개`)
   }
   console.log(`  스킵: ${panicSkipped}개`)
 
@@ -1337,7 +1295,6 @@ async function main() {
     console.log(`  인격 스킬 삭제: ${totalDeleted}개 / 삽입: ${totalInserted}개`)
     console.log(`  EGO 스킬 삭제: ${egoDeleted}개 / 삽입: ${egoInserted}개`)
     console.log(`  패닉 타입 업데이트: ${panicUpdated}개`)
-    console.log(`  정신력 조건 업데이트: ${sanityUpdated}개`)
   }
   console.log(`  스킵: 인격 ${totalSkipped}개 / EGO ${egoSkipped}개`)
 }
