@@ -12,19 +12,31 @@ const BRAIN_LOVE_HATE_URL = `${STORAGE_BASE}/icons/stats/panic_love_hate.webp`
 const SANITY_INCREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_increase_bg.webp`
 const SANITY_DECREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_decrease_bg.webp`
 
-/** Wraps percentage and numeric values in red highlight spans. */
-function highlightNumbers(text: string): React.ReactNode[] {
-  const parts = text.split(/(\d+(?:\.\d+)?%?)/g)
-  return parts.map((part, i) => {
-    if (/^\d+(?:\.\d+)?%?$/.test(part)) {
-      return (
-        <span key={i} style={{ color: '#ff0000', fontWeight: 600 }}>
-          {part}
-        </span>
-      )
+/** Parse <color=X>text</color> tags and strip <size> tags. */
+function parseMarkupTags(text: string): React.ReactNode[] {
+  const cleaned = text
+    .replace(/<size=\d+%>/g, '')
+    .replace(/<\/size>/g, '')
+
+  const parts: React.ReactNode[] = []
+  let remaining = cleaned
+  let key = 0
+
+  const colorRegex = /<color=([^>]+)>([\s\S]*?)<\/color>/
+  let match = colorRegex.exec(remaining)
+  while (match) {
+    if (match.index > 0) {
+      parts.push(remaining.slice(0, match.index))
     }
-    return part
-  })
+    parts.push(
+      <span key={key++} style={{ color: match[1], fontWeight: 600 }}>{match[2]}</span>
+    )
+    remaining = remaining.slice(match.index + match[0].length)
+    match = colorRegex.exec(remaining)
+  }
+  if (remaining) parts.push(remaining)
+
+  return parts
 }
 
 /** Parse sanity text into structured lines: bullet items + sub-lines (parenthesized). */
@@ -51,7 +63,7 @@ function renderSanityText(text: string, bulletColor?: string): React.ReactNode {
             lineHeight: 1.7,
           }}
         >
-          {highlightNumbers(content)}
+          {parseMarkupTags(content)}
         </div>
       )
     } else {
@@ -72,7 +84,7 @@ function renderSanityText(text: string, bulletColor?: string): React.ReactNode {
             flexShrink: 0,
             marginTop: '0.55rem',
           }} />
-          <span>{highlightNumbers(content)}</span>
+          <span>{parseMarkupTags(content)}</span>
         </div>
       )
     }
@@ -194,6 +206,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                 alt=""
                 width={100}
                 height={100}
+                style={{ width: 'auto', height: 'auto' }}
               />
             </div>
 
@@ -249,6 +262,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                 alt=""
                 width={100}
                 height={100}
+                style={{ width: 'auto', height: 'auto' }}
               />
             </div>
 
@@ -289,43 +303,4 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
       </div>
     </div>
   )
-}
-
-function ConditionText({ text }: { text: string }) {
-  const cleaned = text
-    .replace(/<size=\d+%>/g, '')
-    .replace(/<\/size>/g, '')
-
-  const parts: (string | React.ReactElement)[] = []
-  let remaining = cleaned
-  let key = 0
-
-  const colorRegex = /<color=([^>]+)>([\s\S]*?)<\/color>/
-  let match = colorRegex.exec(remaining)
-  while (match) {
-    if (match.index > 0) {
-      parts.push(remaining.slice(0, match.index))
-    }
-    parts.push(
-      <span key={key++} style={{ color: match[1] }}>{match[2]}</span>
-    )
-    remaining = remaining.slice(match.index + match[0].length)
-    match = colorRegex.exec(remaining)
-  }
-  if (remaining) parts.push(remaining)
-
-  const result: (string | React.ReactElement)[] = []
-  for (const part of parts) {
-    if (typeof part === 'string') {
-      const lines = part.split('\n')
-      lines.forEach((line, i) => {
-        if (i > 0) result.push(<br key={`br-${key++}`} />)
-        result.push(line)
-      })
-    } else {
-      result.push(part)
-    }
-  }
-
-  return <>{'\u00B7'}{result}</>
 }
