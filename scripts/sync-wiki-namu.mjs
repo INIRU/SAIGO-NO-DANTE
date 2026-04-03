@@ -16,7 +16,7 @@
  * 추출 대상 (인격):
  *   - HP, speed_min, speed_max, def_level
  *   - slash_res, pierce_res, blunt_res (내성)
- *   - panic_type, panic_description, sanity_increase, sanity_decrease
+ *   - panic_type (FK → panic_types; sanity conditions managed via identity_sanity_conditions)
  *   - 스킬 (타입, 죄악, 위력, 코인, 가중치, 공격레벨, 설명)
  *   - 패시브 (전투/서포트: 이름, 죄악, 필요수, 발동조건, 설명)
  *   - 대사 (quote)
@@ -468,7 +468,7 @@ async function extractAllData(page, { identMaxDepth = 2 } = {}) {
         const br = dataDiv.querySelector('br')
         if (br && br.nextElementSibling) {
           const desc = br.nextElementSibling.textContent.trim()
-          if (desc) current.panic.panic_description = desc
+          // panic_description now managed via identity_sanity_conditions FK table
         }
         continue
       }
@@ -490,7 +490,7 @@ async function extractAllData(page, { identMaxDepth = 2 } = {}) {
           .replace(/(피격 시)/g, '\n$1')
           .trim()
 
-        if (fullText) current.panic.sanity_increase = fullText
+        // sanity_increase now managed via identity_sanity_conditions FK table
         continue
       }
 
@@ -512,7 +512,7 @@ async function extractAllData(page, { identMaxDepth = 2 } = {}) {
           .replace(/(피격 시)/g, '\n$1')
           .trim()
 
-        if (fullText) current.panic.sanity_decrease = fullText
+        // sanity_decrease now managed via identity_sanity_conditions FK table
         continue
       }
 
@@ -1047,7 +1047,7 @@ async function main() {
     // DB에서 인격/EGO + 관련 데이터 조회
     const [dbIdentities, dbEgos] = await Promise.all([
       !egoOnly ? supaGet('identities',
-        `sinner_id=eq.${sinnerId}&select=id,name_kr,hp,speed_min,speed_max,def_level,slash_res,pierce_res,blunt_res,panic_type,panic_description,sanity_increase,sanity_decrease,quote`
+        `sinner_id=eq.${sinnerId}&select=id,name_kr,hp,speed_min,speed_max,def_level,slash_res,pierce_res,blunt_res,panic_type,quote`
       ) : Promise.resolve([]),
       !identityOnly ? supaGet('ego',
         `sinner_id=eq.${sinnerId}&select=id,name_kr,resistance,cost`
@@ -1129,9 +1129,6 @@ async function main() {
                     pierce_res: wi.resistance.pierce_res || null,
                     blunt_res: wi.resistance.blunt_res || null,
                     panic_type: wi.panic.panic_type || null,
-                    panic_description: wi.panic.panic_description || null,
-                    sanity_increase: wi.panic.sanity_increase || null,
-                    sanity_decrease: wi.panic.sanity_decrease || null,
                     quote: wi.quote || null,
                   }
                   const newIdent = await supaInsert('identities', identData)
