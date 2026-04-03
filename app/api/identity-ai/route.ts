@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
   const { data: skillsRaw } = await supabase
     .schema('limbus')
     .from('skills')
-    .select('name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight, uptie_level')
+    .select('name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight, uptie_level, variant_order')
     .eq('identity_id', identity_id)
     .eq('uptie_level', 4)
     .order('skill_order')

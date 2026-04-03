@@ -257,7 +257,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', background: `${sc}18`, border: `1px solid ${sc}35`, borderRadius: 4, padding: '1px 6px', margin: '0 2px', cursor: 'default', position: 'relative' }}
     >
       {entry.imageUrl && (
-        <Image src={entry.imageUrl} alt="" width={12} height={18} quality={20} style={{ borderRadius: 2, objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
+        <Image src={entry.imageUrl} alt="" width={12} height={18} quality={20} style={{ width: '12px', height: '18px', borderRadius: 2, objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
       )}
       {sinList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={14} height={14} />)}
       <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
