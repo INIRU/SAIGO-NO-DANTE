@@ -13,8 +13,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        // Supabase Storage 이미지 — 1년 캐시 (immutable)
+      // Cache-Control for /_next/image — production only (dev mode uses its own caching)
+      ...(process.env.NODE_ENV === 'production' ? [{
         source: '/_next/image',
         headers: [
           {
@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
             value: 'public, max-age=31536000, immutable',
           },
         ],
-      },
+      }] : []),
       {
         source: '/(.*)',
         headers: [

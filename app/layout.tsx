@@ -182,7 +182,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
+    <html lang="ko" data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
