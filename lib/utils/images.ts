@@ -35,6 +35,21 @@ export function getIdentityInfoUrl(identity: Identity, gacksung = false): string
   return getIdentityImageUrl(identity.sinner_id, identity.folder_name, file)
 }
 
+/**
+ * Portrait (_info) URL from raw DB fields — safe to call in Server Components.
+ * Use this instead of importing portraitUrl from DeckIdentityCard (client module).
+ */
+export function getIdentityPortraitUrl(
+  sinnerId: string,
+  folderName: string | null,
+  gameId: string | null,
+  gacksung: boolean,
+): string {
+  if (!gameId || !folderName) return ''
+  const prefix = gacksung ? 'gacksung' : 'normal'
+  return getIdentityImageUrl(sinnerId, folderName, `${gameId}_${prefix}_info`)
+}
+
 export function getSkillIconUrl(identity: Identity, imageIndex: number): string {
   if (!identity.game_id) return ''
   return `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
