@@ -1105,6 +1105,34 @@ async function main() {
   console.log('  EGO 스킬 동기화')
   console.log('═'.repeat(60))
 
+  // EGO 패시브 KR 텍스트 로드
+  const krEgoPassiveMap = new Map()
+  const krPassiveEgoDir = resolve(process.env.HOME, 'Downloads/kr')
+  if (existsSync(krPassiveEgoDir)) {
+    for (const f of readdirSync(krPassiveEgoDir).filter(f => f.startsWith('KR_Passive_Ego'))) {
+      try {
+        const raw = readFileSync(resolve(krPassiveEgoDir, f), 'utf-8').replace(/^\uFEFF/, '')
+        const parsed = JSON.parse(raw)
+        for (const item of parsed?.dataList ?? []) {
+          if (item.id && item.name) krEgoPassiveMap.set(item.id, item)
+        }
+      } catch { /* skip */ }
+    }
+  }
+  const krEgoPassiveFiles = ['KR/KR_Passive_Ego.json']
+  for (const f of krEgoPassiveFiles) {
+    const data = readJson(f)
+    if (!data) continue
+    for (const item of data.dataList || []) {
+      if (item.id && item.name && !krEgoPassiveMap.has(item.id)) {
+        krEgoPassiveMap.set(item.id, item)
+      }
+    }
+  }
+  console.log(`  KR_Passive_Ego: ${krEgoPassiveMap.size}개 항목 로드`)
+
+  const allEgoKeywords = new Set()
+
   for (const sinner of targetSinners) {
     // EGO 기본 + 보조 파일 모두 로드
     const egoBaseFiles = [`ego-${sinner.id}.json`, 'ego-a1c5p2.json', 'ego-a1c5p3.json', 'ego-a1c6p2.json', 'ego-a1c8p2.json', 'ego-a1c8p3.json', 'ego-a1c9p2.json', 'ego-a1c9p3.json']
@@ -1204,6 +1232,77 @@ async function main() {
         console.log(`  ${ego.name}: ${dbEgoSkills.length}개 삭제 → ${newEgoSkills.length}개 삽입`)
         await sleep(100)
       }
+
+      // ── EGO 패시브 동기화 ──
+      const passiveIds = gameEgo.awakeningPassiveList || []
+      if (passiveIds.length > 0) {
+        const passiveId = passiveIds[0] // 첫 번째 패시브 사용
+        const krPassive = krEgoPassiveMap.get(passiveId)
+        if (krPassive) {
+          const passiveName = krPassive.name
+          const passiveContent = translateDesc(krPassive.desc || '')
+          if (dryRun) {
+            console.log(`    패시브: "${passiveName}" — ${passiveContent.slice(0, 60)}...`)
+          } else {
+            await supaPatch('ego', `id=eq.${ego.id}`, {
+              passive_name: passiveName,
+              passive_content: passiveContent,
+            })
+          }
+        }
+      }
+
+      // ── EGO 키워드 추출 ──
+      const egoKeywords = new Set()
+      // 1. EGO 스킬 데이터에서 buffKeyword 수집 (재귀적으로 전체 객체 탐색)
+      for (const { id: sid } of skillIds) {
+        const gs = egoSkillMap.get(sid)
+        if (gs) collectBuffKeywords(gs, egoKeywords)
+      }
+      // 2. KR 스킬 텍스트에서 [Tag] 패턴 추출
+      for (const { id: sid } of skillIds) {
+        const krText = krSkillMap.get(sid)
+        if (krText) {
+          const texts = []
+          for (const level of krText.levelList || []) {
+            if (level.desc) texts.push(level.desc)
+            for (const coin of level.coinlist || []) {
+              for (const cd of coin.coindescs || []) {
+                if (cd.desc) texts.push(cd.desc)
+              }
+            }
+          }
+          collectBracketKeywords(texts, egoKeywords)
+        }
+      }
+
+      if (egoKeywords.size > 0) {
+        const kwArray = [...egoKeywords].sort()
+        for (const kw of kwArray) allEgoKeywords.add(kw)
+        if (dryRun) {
+          console.log(`    키워드: [${kwArray.join(', ')}]`)
+        } else {
+          await supaPatch('ego', `id=eq.${ego.id}`, { keywords: kwArray })
+        }
+      }
+    }
+  }
+
+  // ── EGO 키워드 → keyword_meta 자동 upsert ──
+  if (allEgoKeywords.size > 0) {
+    const existingMeta = await supaGet('keyword_meta', 'select=name')
+    const existingNames = new Set(existingMeta.map(m => m.name))
+    const newKws = [...allEgoKeywords].filter(kw => !existingNames.has(kw))
+    if (newKws.length > 0) {
+      if (dryRun) {
+        console.log(`\n  EGO keyword_meta 신규: [${newKws.join(', ')}]`)
+      } else {
+        const rows = newKws.map(name => ({ name }))
+        await supaInsertBatch('keyword_meta', rows)
+        console.log(`  EGO keyword_meta 신규 등록: ${newKws.length}개`)
+      }
+    } else {
+      if (dryRun) console.log(`\n  EGO keyword_meta: 신규 키워드 없음`)
     }
   }
 
