@@ -319,6 +319,14 @@ export async function PATCH(
       content_type: deck.content_type,
     }
 
+    // 롤백용 원본 자식 행 저장
+    const [origIdentitiesRes, origEgosRes] = await Promise.all([
+      admin.schema('limbus').from('deck_identities').select('*').eq('deck_id', id),
+      admin.schema('limbus').from('deck_egos').select('*').eq('deck_id', id),
+    ])
+    const originalIdentities = origIdentitiesRes.data ?? []
+    const originalEgos = origEgosRes.data ?? []
+
     // decks 테이블 UPDATE (소유자는 변경하지 않음)
     const { error: updateError } = await admin
       .schema('limbus')
@@ -349,6 +357,9 @@ export async function PATCH(
       const { error: insIdentitiesError } = await admin.schema('limbus').from('deck_identities').insert(rows)
       if (insIdentitiesError) {
         await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+        if (originalIdentities.length > 0) {
+          await admin.schema('limbus').from('deck_identities').insert(originalIdentities)
+        }
         return NextResponse.json({ error: insIdentitiesError.message }, { status: 500 })
       }
     }
@@ -357,6 +368,9 @@ export async function PATCH(
     const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
     if (delEgosError) {
       await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+      if (originalIdentities.length > 0) {
+        await admin.schema('limbus').from('deck_identities').insert(originalIdentities)
+      }
       return NextResponse.json({ error: delEgosError.message }, { status: 500 })
     }
     if (egoSlots?.length > 0) {
@@ -368,6 +382,12 @@ export async function PATCH(
       const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
       if (insEgosError) {
         await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+        if (originalIdentities.length > 0) {
+          await admin.schema('limbus').from('deck_identities').insert(originalIdentities)
+        }
+        if (originalEgos.length > 0) {
+          await admin.schema('limbus').from('deck_egos').insert(originalEgos)
+        }
         return NextResponse.json({ error: insEgosError.message }, { status: 500 })
       }
     }
