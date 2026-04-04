@@ -313,6 +313,7 @@ function collectBuffKeywords(value, keywords) {
     for (const tag of Object.keys(TAG_MAP)) {
       if (CONDITION_TAG_MAP[tag]) continue  // 조건 태그 제외
       if (tag.length < 6) continue  // 짧은 태그 오탐 방지
+      if (['Target', 'Result', 'Damage', 'Attack', 'Return', 'Recover', 'Shield'].includes(tag)) continue  // scriptName 흔한 단어 제외
       if (sn.includes(tag)) {
         addMappedKeyword(keywords, tag)
       }
