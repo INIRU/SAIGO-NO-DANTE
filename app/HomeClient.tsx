@@ -114,13 +114,18 @@ function HeroGlitchSlider({
   useEffect(() => {
     const el = layerARef.current
     if (!el) return
-    import('gsap').then(({ gsap }) => {
+    let ctx: any
+    ;(async () => {
+      const { gsap } = await import('gsap')
       gsap.killTweensOf(el)
-      gsap.fromTo(el,
-        { scale: 1, x: '0%', y: '0%' },
-        { scale: 1.06, x: '-1%', y: '-0.8%', duration: 8, ease: 'none', transformOrigin: 'right center' }
-      )
-    })
+      ctx = gsap.context(() => {
+        gsap.fromTo(el,
+          { scale: 1, x: '0%', y: '0%' },
+          { scale: 1.06, x: '-1%', y: '-0.8%', duration: 8, ease: 'none', transformOrigin: 'right center' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [currentIdx])
 
   // 글리치 전환

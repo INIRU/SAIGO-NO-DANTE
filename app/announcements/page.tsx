@@ -20,15 +20,17 @@ export default function AnnouncementsPage() {
 
   const animRef = useRef(false)
   useEffect(() => {
+    let ctx: any
     fetch('/api/announcements')
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
       .catch(() => setError(true))
-      .finally(() => {
+      .finally(async () => {
         setLoading(false)
         if (animRef.current) return
         animRef.current = true
-        import('gsap').then(({ gsap }) => {
+        const { gsap } = await import('gsap')
+        ctx = gsap.context(() => {
           gsap.fromTo('.announcements-header',
             { opacity: 0, y: -20 },
             { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
@@ -39,6 +41,7 @@ export default function AnnouncementsPage() {
           )
         })
       })
+    return () => { ctx?.revert() }
   }, [])
 
   return (

@@ -58,6 +58,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  // inputValue: local state for immediate input display (avoids IME composition breaks)
+  const [inputValue, setInputValue] = useState(search)
   const [debouncedSearch, setDebouncedSearch] = useState(search)
   const offsetRef = useRef(initialPlans?.length ?? 0)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -84,7 +86,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   // 인격 + 키워드 자동완성 후보
   const suggestions = useMemo((): SearchSuggestion[] => {
-    const { activeTerm } = getActiveTerm(search)
+    const { activeTerm } = getActiveTerm(inputValue)
     if (activeTerm.length === 0) return []
     const q = activeTerm.toLowerCase()
 
@@ -114,7 +116,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       .map(label => ({ label, type: 'keyword' }))
 
     return [...idMatches, ...kwMatches].slice(0, 8)
-  }, [search, ALL_KEYWORDS, allIdentities])
+  }, [inputValue, ALL_KEYWORDS, allIdentities])
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
@@ -133,14 +135,14 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     } else if (e.key === 'Tab' && acIndex >= 0) {
       e.preventDefault()
       const selected = suggestions[acIndex].label
-      const { prefix } = getActiveTerm(search)
+      const { prefix } = getActiveTerm(inputValue)
       // IME 조합 강제 종료
       e.currentTarget.blur()
       setShowSuggestions(false)
       setAcIndex(-1)
       // IME compositionend → onChange 이후 값 설정 (잔재 방지)
       setTimeout(() => {
-        setSearch(prefix + selected)
+        setInputValue(prefix + selected)
         ;(e.target as HTMLInputElement).focus()
       }, 10)
     } else if (e.key === 'Escape') {
@@ -159,11 +161,14 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // 검색 debounce (필터링 성능)
+  // 검색 debounce: inputValue → URL(search) + debouncedSearch
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    const t = setTimeout(() => {
+      setSearch(inputValue || null)
+      setDebouncedSearch(inputValue)
+    }, 300)
     return () => clearTimeout(t)
-  }, [search])
+  }, [inputValue, setSearch])
 
   // 키워드 필터
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
@@ -399,8 +404,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
               <Search size={14} style={{ color: '#444', flexShrink: 0 }} />
               <input
                 type="text"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
+                value={inputValue}
+                onChange={e => { setInputValue(e.target.value); setShowSuggestions(true) }}
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder="인격, 키워드, 제목 검색... (+: OR, *: AND)"
@@ -409,8 +414,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                   color: '#e5e7eb', fontSize: '0.8125rem', width: '100%',
                 }}
               />
-              {search && (
-                <button onClick={() => { setSearch(''); setShowSuggestions(false) }} style={{ color: '#555', cursor: 'pointer', flexShrink: 0, background: 'none', border: 'none' }}>
+              {inputValue && (
+                <button onClick={() => { setInputValue(''); setShowSuggestions(false) }} style={{ color: '#555', cursor: 'pointer', flexShrink: 0, background: 'none', border: 'none' }}>
                   <X size={12} />
                 </button>
               )}
@@ -437,8 +442,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                         key={`${sg.type}-${sg.label}-${i}`}
                         className="flex items-center gap-2 px-3 py-1.5 text-xs"
                         onClick={() => {
-                          const { prefix } = getActiveTerm(search)
-                          setSearch(prefix + sg.label)
+                          const { prefix } = getActiveTerm(inputValue)
+                          setInputValue(prefix + sg.label)
                           setShowSuggestions(false)
                           setAcIndex(-1)
                         }}

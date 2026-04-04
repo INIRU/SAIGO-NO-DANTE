@@ -93,11 +93,12 @@ export default function LoginPage() {
     if (status === 'authenticated') router.replace('/')
   }, [status, router])
 
-  const animRef = useRef(false)
   useEffect(() => {
-    if (status !== 'loading' && !session && !animRef.current) {
-      animRef.current = true
-      import('gsap').then(({ gsap }) => {
+    if (status === 'loading' || session) return
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
         /* 배경 광원 */
         gsap.fromTo('.login-bg-glow',
           { opacity: 0, scale: 0.8 },
@@ -124,7 +125,8 @@ export default function LoginPage() {
           { opacity: 1, duration: 0.5, delay: 0.7, ease: 'power2.out' }
         )
       })
-    }
+    })()
+    return () => { ctx?.revert() }
   }, [status, session])
 
   if (status === 'loading' || session) return null

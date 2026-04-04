@@ -72,9 +72,13 @@ export default function MypageClient() {
     localStorage.setItem('mypage-tab', tab)
 
     // 탭 전환 애니메이션
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.mypage-panel', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' })
-    })
+    ;(async () => {
+      const { gsap } = await import('gsap')
+      const ctx = gsap.context(() => {
+        gsap.fromTo('.mypage-panel', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' })
+      })
+      setTimeout(() => ctx.revert(), 400)
+    })()
   }, [router])
 
   // GSAP 초기 진입 애니메이션
@@ -82,11 +86,16 @@ export default function MypageClient() {
   useEffect(() => {
     if (loading || !data || animPlayed.current) return
     animPlayed.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.mypage-header', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
-      gsap.fromTo('.mypage-tabs', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.15, ease: 'power2.out' })
-      gsap.fromTo('.mypage-panel', { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.25, ease: 'power2.out' })
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        gsap.fromTo('.mypage-header', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
+        gsap.fromTo('.mypage-tabs', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.15, ease: 'power2.out' })
+        gsap.fromTo('.mypage-panel', { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.25, ease: 'power2.out' })
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [loading, data])
 
   // 덱 삭제

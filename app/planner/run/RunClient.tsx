@@ -103,13 +103,17 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
 
   // GSAP: 사이드바 열기/닫기 애니메이션
   useEffect(() => {
+    let ctx: any
     ;(async () => {
       const gsap = (await import('gsap')).default
       if (!sidebarRef.current) return
       if (sidebarOpen) {
-        gsap.fromTo(sidebarRef.current, { x: 50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: 'power2.out' })
+        ctx = gsap.context(() => {
+          gsap.fromTo(sidebarRef.current!, { x: 50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: 'power2.out' })
+        })
       }
     })()
+    return () => { ctx?.revert() }
   }, [sidebarOpen])
 
   // ── Setup ──
