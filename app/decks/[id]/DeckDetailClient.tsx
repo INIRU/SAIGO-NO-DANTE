@@ -4,20 +4,20 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { Trash2, Reply, X, ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
-import { STORAGE_BASE, GRADE_COLORS, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { ActivationCondition } from '@/lib/types'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
-import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
-import { portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
+import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry, portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
 import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
 import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
+import DeckComments from '@/components/deck-detail/DeckComments'
 import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
 
@@ -62,17 +62,6 @@ type DeckDetail = {
 }
 
 const GEODUN_TYPES = new Set(['거던5층', '거던10층', '거던15층'])
-
-type Comment = {
-  id: string
-  content: string
-  created_at: string
-  user_id: string
-  parent_id: string | null
-  username: string | null
-  avatar_url: string | null
-  role?: string
-}
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -213,7 +202,18 @@ function Skeleton() {
 }
 
 // ── 메인 ──────────────────────────────────────────────────────────────────
-export default function DeckDetailClient({ id, initialDeck }: { id: string; initialDeck?: DeckDetail | null }) {
+type Comment = {
+  id: string
+  content: string
+  created_at: string
+  user_id: string
+  parent_id: string | null
+  username: string | null
+  avatar_url: string | null
+  role?: string
+}
+
+export default function DeckDetailClient({ id, initialDeck, initialComments }: { id: string; initialDeck?: DeckDetail | null; initialComments?: Comment[] }) {
   const { status: authStatus } = useSession()
 
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
@@ -228,12 +228,6 @@ export default function DeckDetailClient({ id, initialDeck }: { id: string; init
 
   const [bookmarked, setBookmarked] = useState(false)
   const [bookmarking, setBookmarking] = useState(false)
-
-  const [comments, setComments] = useState<Comment[]>([])
-  const [commentText, setCommentText] = useState('')
-  const [commentSubmitting, setCommentSubmitting] = useState(false)
-  const [replyingTo, setReplyingTo] = useState<{ rootId: string; targetName: string } | null>(null)
-  const [replyText, setReplyText] = useState('')
 
   const [shared, setShared] = useState(false)
   const [shareGenerating, setShareGenerating] = useState(false)
@@ -337,13 +331,6 @@ export default function DeckDetailClient({ id, initialDeck }: { id: string; init
       .catch(() => {})
   }, [id, authStatus])
 
-  useEffect(() => {
-    fetch(`/api/decks/${id}/comments`)
-      .then(r => r.ok ? r.json() : [])
-      .then((data: Comment[]) => setComments(data))
-      .catch(() => {})
-  }, [id])
-
   const handleVote = useCallback(async () => {
     if (authStatus !== 'authenticated' || voting) return
     setVoting(true)
@@ -409,67 +396,6 @@ export default function DeckDetailClient({ id, initialDeck }: { id: string; init
       setShareGenerating(false)
     }
   }, [shareGenerating, deck, id])
-
-  const handleCommentSubmit = useCallback(async () => {
-    if (!commentText.trim() || commentSubmitting || authStatus !== 'authenticated') return
-    setCommentSubmitting(true)
-    try {
-      const res = await fetch(`/api/decks/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: commentText.trim() }),
-      })
-      if (res.ok) {
-        const comment: Comment = await res.json()
-        setComments(prev => [...prev, comment])
-        setCommentText('')
-      } else {
-        showError('댓글 작성에 실패했습니다.')
-      }
-    } catch {
-      showError('댓글 작성에 실패했습니다.')
-    } finally {
-      setCommentSubmitting(false)
-    }
-  }, [commentText, commentSubmitting, authStatus, id])
-
-  const handleReplySubmit = useCallback(async () => {
-    if (!replyingTo || !replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
-    setCommentSubmitting(true)
-    try {
-      const res = await fetch(`/api/decks/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: replyText.trim(), parent_id: replyingTo.rootId }),
-      })
-      if (res.ok) {
-        const comment: Comment = await res.json()
-        setComments(prev => [...prev, comment])
-        setReplyText('')
-        setReplyingTo(null)
-      } else {
-        showError('답글 작성에 실패했습니다.')
-      }
-    } catch {
-      showError('답글 작성에 실패했습니다.')
-    } finally {
-      setCommentSubmitting(false)
-    }
-  }, [replyingTo, replyText, commentSubmitting, authStatus, id])
-
-  const handleCommentDelete = useCallback(async (commentId: string) => {
-    try {
-      const res = await fetch(`/api/decks/${id}/comments?commentId=${commentId}`, { method: 'DELETE' })
-      if (res.ok) {
-        setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
-        showSuccess('댓글이 삭제되었습니다.')
-      } else {
-        showError('댓글 삭제에 실패했습니다.')
-      }
-    } catch {
-      showError('댓글 삭제에 실패했습니다.')
-    }
-  }, [id])
 
   const handleFork = useCallback(() => {
     window.location.href = `/decks/new?fork=${id}`
@@ -592,72 +518,6 @@ export default function DeckDetailClient({ id, initialDeck }: { id: string; init
 
   return (
     <div className="min-h-screen" style={{ background: '#0d0b08' }}>
-
-      {/* ── 히어로 파노라마 ── */}
-      <div className="relative" style={{ paddingTop: '4rem' }}>
-        <div className="relative overflow-hidden" style={{ height: '21.25rem' }}>
-
-          {/* 12 포트레이트 스트립 */}
-          <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)' }}>
-            {slots.map((slot, i) => {
-              const id_ = slot?.identities
-              const imgUrl = id_
-                ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false)
-                : ''
-              const normalImgUrl = id_
-                ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
-                : ''
-              const rarityColor = id_?.rarity ? (RARITY_COLORS[id_.rarity] ?? null) : null
-              return (
-                <div key={i} className="relative overflow-hidden">
-                  {imgUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={imgUrl}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block', filter: 'brightness(0.65) saturate(0.85)' }}
-                      loading={i === 0 ? 'eager' : 'lazy'}
-                      // @ts-expect-error fetchpriority is a valid HTML attribute for LCP
-                      fetchpriority={i === 0 ? 'high' : 'low'}
-                      onError={e => {
-                        if (slot?.gacksung && e.currentTarget.src !== normalImgUrl) {
-                          e.currentTarget.src = normalImgUrl
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: '#08060410' }} />
-                  )}
-                  {i > 0 && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '1px', background: 'rgba(0,0,0,0.5)' }} />
-                  )}
-                  {rarityColor && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: rarityColor, opacity: 0.6 }} />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* 그라디언트 */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(to bottom, rgba(13,11,8,0.1) 0%, rgba(13,11,8,0.0) 25%, rgba(13,11,8,0.55) 60%, rgba(13,11,8,0.96) 90%, rgba(13,11,8,1) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(to right, rgba(13,11,8,0.65) 0%, transparent 18%, transparent 82%, rgba(13,11,8,0.65) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          {/* 파노라마 하단 그라디언트만 유지 — 타이틀은 아래 헤더로 이동 */}
-        </div>
-      </div>
 
       {/* ── 플래너 스타일 헤더 ── */}
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -1002,230 +862,7 @@ export default function DeckDetailClient({ id, initialDeck }: { id: string; init
 
         </div>
 
-        {/* 댓글 섹션 */}
-        <div className="mt-8">
-          <SectionBlock title="댓글" badge={comments.length} defaultOpen={true}>
-
-          {authStatus === 'authenticated' ? (
-            <div className="rounded-lg p-4 mb-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <textarea
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                maxLength={500}
-                rows={3}
-                placeholder="덱에 대한 의견을 남겨보세요..."
-                className="w-full px-3 py-2 outline-none resize-none"
-                style={{ background: 'var(--bg-deep)', border: '1px solid var(--border)', borderRadius: '0.25rem', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}
-              />
-              <div className="flex items-center justify-between mt-2">
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                  {commentText.length}/500
-                </span>
-                <button
-                  onClick={handleCommentSubmit}
-                  disabled={commentSubmitting || !commentText.trim()}
-                  className="px-4 py-1.5 text-xs font-medium transition-all duration-150 hover:brightness-110"
-                  style={{
-                    background: commentText.trim() ? 'var(--gold)' : 'rgba(44,28,12,0.5)',
-                    color: commentText.trim() ? 'var(--bg-deep)' : '#5a5070',
-                    borderRadius: '4px',
-                    cursor: commentText.trim() ? 'pointer' : 'default',
-                    fontFamily: 'var(--font-heading)',
-                    opacity: commentSubmitting ? 0.5 : 1,
-                  }}
-                >
-                  {commentSubmitting ? '등록 중...' : '등록'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="rounded-lg px-4 py-3 mb-4 text-center"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-body)' }}
-            >
-              로그인 후 댓글을 작성할 수 있습니다.
-            </div>
-          )}
-
-          {(() => {
-            const rootComments = comments.filter(c => !c.parent_id)
-            const repliesMap = new Map<string, Comment[]>()
-            for (const c of comments) {
-              if (c.parent_id) {
-                const arr = repliesMap.get(c.parent_id) ?? []
-                arr.push(c)
-                repliesMap.set(c.parent_id, arr)
-              }
-            }
-
-            const renderAvatar = (comment: Comment, size: number) => (
-                <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1px solid rgba(58,40,18,0.5)', flexShrink: 0 }}>
-                  <Image src={comment.avatar_url || DEFAULT_AVATAR_URL} alt="" fill sizes={`${size}px`} style={{ objectFit: 'cover' }} />
-                </div>
-              )
-
-            const renderBadge = (role?: string) => (
-              <>
-                {role === 'admin' && (
-                  <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e84040', background: 'rgba(232,64,64,0.12)', border: '1px solid rgba(232,64,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>ADMIN</span>
-                )}
-                {role === 'wanjang' && (
-                  <span style={{ fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', color: '#e89040', background: 'rgba(232,144,64,0.12)', border: '1px solid rgba(232,144,64,0.3)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em' }}>완장</span>
-                )}
-              </>
-            )
-
-            const formatDate = (d: string) => new Date(d).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-
-            return rootComments.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {rootComments.map(comment => {
-                  const replies = repliesMap.get(comment.id) ?? []
-                  const hasReplies = replies.length > 0 || replyingTo?.rootId === comment.id
-                  return (
-                    <div key={comment.id}>
-                      {/* 루트 댓글 */}
-                      <div className="rounded-lg p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-start gap-3">
-                          {renderAvatar(comment, 28)}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span style={{ color: '#9a8a70', fontSize: '0.75rem', fontWeight: 600 }}>{comment.username ?? '익명'}</span>
-                              {renderBadge(comment.role)}
-                              <span style={{ color: '#5a5065', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{formatDate(comment.created_at)}</span>
-                            </div>
-                            <p style={{ color: '#7a7060', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                              {comment.content}
-                            </p>
-                            <div className="flex items-center gap-3 mt-2">
-                              {authStatus === 'authenticated' && (
-                                <button
-                                  onClick={() => {
-                                    setReplyingTo(prev => prev?.rootId === comment.id && prev?.targetName === (comment.username ?? '익명') ? null : { rootId: comment.id, targetName: comment.username ?? '익명' })
-                                    setReplyText('')
-                                  }}
-                                  className="flex items-center gap-1 transition-colors hover:text-yellow-600"
-                                  style={{ color: replyingTo?.rootId === comment.id ? 'var(--gold-dim)' : '#4a4055', fontSize: '0.6875rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                                >
-                                  <Reply size={11} />
-                                  답글{replies.length > 0 ? ` ${replies.length}` : ''}
-                                </button>
-                              )}
-                              {authStatus !== 'authenticated' && replies.length > 0 && (
-                                <span className="flex items-center gap-1" style={{ color: '#4a4055', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}>
-                                  <Reply size={11} />
-                                  답글 {replies.length}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {authStatus === 'authenticated' && (
-                            <button onClick={() => handleCommentDelete(comment.id)} className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70" style={{ color: '#3a2020', cursor: 'pointer' }} title="댓글 삭제">
-                              <Trash2 size={12} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 답글 영역 */}
-                      {hasReplies && (
-                        <div className="mt-1 rounded-lg" style={{ background: '#0e0b07', border: '1px solid rgba(58,40,18,0.25)', overflow: 'hidden', marginLeft: 16 }}>
-                          {replies.map((reply, ri) => (
-                            <div key={reply.id} className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 0, borderLeft: '2px solid rgba(200,144,10,0.1)', ...(ri < replies.length - 1 ? { borderBottom: '1px solid rgba(58,40,18,0.15)' } : {}) }}>
-                              {renderAvatar(reply, 22)}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <span style={{ color: '#8a7a60', fontSize: '0.6875rem', fontWeight: 600 }}>{reply.username ?? '익명'}</span>
-                                  {renderBadge(reply.role)}
-                                  <span style={{ color: '#4a4555', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>{formatDate(reply.created_at)}</span>
-                                </div>
-                                <p style={{ color: '#6a6050', fontSize: '0.8rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                  {reply.content}
-                                </p>
-                                {/* 답글에 답글 버튼 */}
-                                {authStatus === 'authenticated' && (
-                                  <button
-                                    onClick={() => {
-                                      setReplyingTo({ rootId: comment.id, targetName: reply.username ?? '익명' })
-                                      setReplyText(`@${reply.username ?? '익명'} `)
-                                    }}
-                                    className="flex items-center gap-1 mt-1 transition-colors hover:text-yellow-600"
-                                    style={{ color: '#4a4055', fontSize: '0.625rem', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                                  >
-                                    <Reply size={10} />
-                                    답글
-                                  </button>
-                                )}
-                              </div>
-                              {authStatus === 'authenticated' && (
-                                <button onClick={() => handleCommentDelete(reply.id)} className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70" style={{ color: '#3a2020', cursor: 'pointer' }} title="답글 삭제">
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-
-                          {/* 답글 입력 */}
-                          {replyingTo?.rootId === comment.id && (
-                            <div className="flex items-start gap-2.5 px-4 py-3" style={{ marginLeft: 0, borderLeft: '2px solid rgba(200,144,10,0.2)', borderTop: replies.length > 0 ? '1px solid rgba(58,40,18,0.15)' : 'none' }}>
-                              <Reply size={14} style={{ color: 'rgba(200,144,10,0.3)', marginTop: 4, flexShrink: 0 }} />
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span style={{ color: '#5a5065', fontSize: '0.6875rem', fontFamily: 'var(--font-body)' }}>
-                                    <b style={{ color: '#9a8a70' }}>{replyingTo.targetName}</b>에게 답글
-                                  </span>
-                                  <button onClick={() => setReplyingTo(null)} className="transition-opacity hover:opacity-70" style={{ color: '#5a5065', cursor: 'pointer' }}>
-                                    <X size={13} />
-                                  </button>
-                                </div>
-                                <textarea
-                                  value={replyText}
-                                  onChange={e => setReplyText(e.target.value)}
-                                  maxLength={500}
-                                  rows={2}
-                                  placeholder="답글을 작성하세요..."
-                                  className="w-full px-3 py-2 text-sm outline-none resize-none"
-                                  style={{ background: '#0a0806', border: '1px solid rgba(200,144,10,0.12)', borderRadius: '4px', color: '#e8dcc8', fontFamily: 'var(--font-body)', fontSize: '0.8rem' }}
-                                  autoFocus
-                                />
-                                <div className="flex items-center justify-between mt-1.5">
-                                  <span style={{ color: '#4a4555', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                                    {replyText.length}/500
-                                  </span>
-                                  <button
-                                    onClick={() => handleReplySubmit()}
-                                    disabled={commentSubmitting || !replyText.trim()}
-                                    className="px-3 py-1 text-xs font-medium transition-all duration-150 hover:brightness-110"
-                                    style={{
-                                      background: replyText.trim() ? 'var(--gold)' : 'rgba(44,28,12,0.5)',
-                                      color: replyText.trim() ? 'var(--bg-deep)' : '#5a5070',
-                                      borderRadius: '4px',
-                                      cursor: replyText.trim() ? 'pointer' : 'default',
-                                      fontFamily: 'var(--font-heading)',
-                                      opacity: commentSubmitting ? 0.5 : 1,
-                                      fontSize: '0.6875rem',
-                                    }}
-                                  >
-                                    {commentSubmitting ? '등록 중...' : '답글 등록'}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8" style={{ color: '#5a5065', fontSize: '0.8125rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>
-                아직 댓글이 없습니다.
-              </div>
-            )
-          })()}
-          </SectionBlock>
-        </div>
+        <DeckComments deckId={id} initialComments={initialComments ?? []} />
       </div>
 
       {identityModalId && (

@@ -1,27 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Heart, Eye, MessageCircle, Send, ChevronDown, ChevronUp, Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
+import { ArrowLeft, Heart, Eye, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { DIFFICULTY_CONFIG, type Difficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
-import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
-import { showSuccess, showError } from '@/lib/toast'
-import ConfirmModal from '@/components/ui/ConfirmModal'
-import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
-import EgoDetailModal from '@/components/ui/EgoDetailModal'
+import { showError } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
-import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
-import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import PlanActions from '@/components/planner/PlanActions'
+import PlanComments from '@/components/planner/PlanComments'
+import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
+import { STORAGE_BASE } from '@/lib/constants/game'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
@@ -29,31 +23,6 @@ import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
 const S = STORAGE_BASE
-const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-
-const BLESSING_NAMES: Record<number, string> = {
-  100: '시작의 별', 101: '쌓여가는 별무리', 102: '성간여행', 103: '쏟아지는 유성우',
-  104: '쌍성계 상점', 105: '위성계 상점', 106: '성운의 총애', 107: '별빛의 인도',
-  108: '우연한 혜성', 109: '완전한 가능성',
-}
-const BLESSING_COSTS: Record<number, [number, number, number]> = {
-  100: [10, 20, 30], 101: [10, 20, 30], 102: [20, 40, 60], 103: [20, 40, 60],
-  104: [30, 60, 90], 105: [30, 60, 90], 106: [40, 80, 120], 107: [40, 80, 120],
-  108: [50, 100, 150], 109: [60, 120, 180],
-}
-const BLESSING_EFFECTS: Record<number, [string[], string[], string[]]> = {
-  100: [['시작 코스트 +150', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 2회 무료']],
-  101: [['층 이동 시, 보유 코스트 10% 증가 (최대 100)', '기프트 판매 비용 50% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 20% 증가 (최대 125)', '기프트 판매 비용 75% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 30% 증가 (최대 150)', '기프트 판매 비용 100% 증가 (상점별 1회)']],
-  102: [['테마팩 목록 +1', '테마팩 새로고침 횟수 +2', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +3', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +4', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프']],
-  103: [['시작 코스트 +400', '시작 기프트 수 +1'], ['시작 코스트 +500', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +75'], ['시작 코스트 +700', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +150']],
-  104: [['상점 기프트 목록 +1', '전투 보급 코스트 +20', '높은 등급 기프트 확률 상승'], ['상점 기프트 목록 +1', '전투 보급 코스트 +30', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트'], ['상점 기프트 목록 +1', '전투 보급 코스트 +40', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트']],
-  105: [['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 1개'], ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 2개', '강화 상점 확률 증가'], ['상점 키워드 새로고침 2회 무료', '1층 입장 시, 1등급 기프트 3개', '강화 상점 확률 증가']],
-  106: [['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 5)'], ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'], ['1층 입장 시, 인격 레벨 +3', '6층 입장 시, +3', '층 클리어 시, +1 (최대 9)']],
-  107: [['속도 최댓값 +2', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1']],
-  108: [['합성 판매용 기프트 1개', '3층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 2개', '3/5층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 3개', '3/5/7층 입장 시, 4등급 기프트 1개', '합성 시 1단계 낮은 기프트']],
-  109: [['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 1개 선택', '어두운 잔영 1개'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 2개 선택', '1~2등급 합성 재료'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 3개 선택', '1~3등급 합성 재료']],
-}
-
 const SLUG_TO_KEYWORD: Record<string, string> = {
   burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
   sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
@@ -88,6 +57,28 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#e05050', border: 'rgba(200,48,48,0.35)' },
 }
 
+const BLESSING_NAMES: Record<number, string> = {
+  100: '시작의 별', 101: '쌓여가는 별무리', 102: '성간여행', 103: '쏟아지는 유성우',
+  104: '쌍성계 상점', 105: '위성계 상점', 106: '성운의 총애', 107: '별빛의 인도',
+  108: '우연한 혜성', 109: '완전한 가능성',
+}
+const BLESSING_COSTS: Record<number, [number, number, number]> = {
+  100: [10, 20, 30], 101: [10, 20, 30], 102: [20, 40, 60], 103: [20, 40, 60],
+  104: [30, 60, 90], 105: [30, 60, 90], 106: [40, 80, 120], 107: [40, 80, 120],
+  108: [50, 100, 150], 109: [60, 120, 180],
+}
+const BLESSING_EFFECTS: Record<number, [string[], string[], string[]]> = {
+  100: [['시작 코스트 +150', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 2회 무료']],
+  101: [['층 이동 시, 보유 코스트 10% 증가 (최대 100)', '기프트 판매 비용 50% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 20% 증가 (최대 125)', '기프트 판매 비용 75% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 30% 증가 (최대 150)', '기프트 판매 비용 100% 증가 (상점별 1회)']],
+  102: [['테마팩 목록 +1', '테마팩 새로고침 횟수 +2', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +3', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +4', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프']],
+  103: [['시작 코스트 +400', '시작 기프트 수 +1'], ['시작 코스트 +500', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +75'], ['시작 코스트 +700', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +150']],
+  104: [['상점 기프트 목록 +1', '전투 보급 코스트 +20', '높은 등급 기프트 확률 상승'], ['상점 기프트 목록 +1', '전투 보급 코스트 +30', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트'], ['상점 기프트 목록 +1', '전투 보급 코스트 +40', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트']],
+  105: [['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 1개'], ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 2개', '강화 상점 확률 증가'], ['상점 키워드 새로고침 2회 무료', '1층 입장 시, 1등급 기프트 3개', '강화 상점 확률 증가']],
+  106: [['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 5)'], ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'], ['1층 입장 시, 인격 레벨 +3', '6층 입장 시, +3', '층 클리어 시, +1 (최대 9)']],
+  107: [['속도 최댓값 +2', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1']],
+  108: [['합성 판매용 기프트 1개', '3층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 2개', '3/5층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 3개', '3/5/7층 입장 시, 4등급 기프트 1개', '합성 시 1단계 낮은 기프트']],
+  109: [['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 1개 선택', '어두운 잔영 1개'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 2개 선택', '1~2등급 합성 재료'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 3개 선택', '1~3등급 합성 재료']],
+}
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -203,15 +194,6 @@ type Plan = {
   comment_count: number
   created_at: string
   user_id: string
-  profiles: { username: string | null; avatar_url: string | null } | null
-}
-
-type Comment = {
-  id: string
-  content: string
-  created_at: string
-  user_id: string
-  parent_id: string | null
   profiles: { username: string | null; avatar_url: string | null } | null
 }
 
@@ -354,88 +336,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
-
-  const [comments, setComments] = useState<Comment[]>([])
-  const [commentsLoading, setCommentsLoading] = useState(true)
-  const [commentText, setCommentText] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null)
-
-  const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
-  const [codeCopied, setCodeCopied] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
-  const [identityModalId, setIdentityModalId] = useState<string | null>(null)
-  const [egoModalId, setEgoModalId] = useState<string | null>(null)
-  const router = useRouter()
 
-  const isOwner = session?.user?.email && plan.profiles?.username // 서버에서 비교해야 정확하지만, UI 표시용
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
-
-  const handleCopyCode = async () => {
-    try {
-      // 플랜 덱 → encodeDeckCode 형식으로 변환
-      const deckSlots: Record<string, typeof identities[0] | undefined> = {}
-      const egoSlotsMap: Record<string, Record<string, typeof egos[0]>> = {}
-      const formationOrder: string[] = []
-
-      // 편성 순서로 정렬
-      const formed = deck.filter(s => (s.slot_order ?? 99) < 99).sort((a, b) => (a.slot_order ?? 99) - (b.slot_order ?? 99))
-      for (const slot of formed) {
-        if (!slot.sinner_id || !slot.identity_id) continue
-        const ident = identities.find(i => i.id === slot.identity_id)
-        if (ident) deckSlots[slot.sinner_id] = ident
-        if ((slot.slot_order ?? 99) < 7) formationOrder.push(slot.sinner_id)
-      }
-
-      for (const slot of egoSlots) {
-        if (!slot.sinner_id || !slot.ego_id || !slot.grade) continue
-        const ego = egos.find(e => e.id === slot.ego_id)
-        if (ego) {
-          if (!egoSlotsMap[slot.sinner_id]) egoSlotsMap[slot.sinner_id] = {}
-          egoSlotsMap[slot.sinner_id][slot.grade] = ego
-        }
-      }
-
-      const code = await encodeDeckCode(sinners as any, identities as any, egos as any, deckSlots as any, egoSlotsMap as any, formationOrder)
-      await navigator.clipboard.writeText(code)
-      setCodeCopied(true)
-      setTimeout(() => setCodeCopied(false), 2000)
-    } catch { showError('편성코드 복사 실패') }
-  }
-
-  const handleFork = () => {
-    const planState = {
-      difficulty: plan.difficulty,
-      title: `${plan.title} (Fork)`,
-      description: plan.description ?? '',
-      identitySlots: deck,
-      egoSlots,
-      floorPlan,
-      giftInventory,
-      activeTab: 'deck' as const,
-    }
-    saveDraftToLocal(planState as any)
-    router.push('/planner')
-    showSuccess('플래너에 불러왔습니다')
-  }
-
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/planner/${plan.id}`, { method: 'DELETE' })
-      if (res.ok) {
-        router.push('/planner/community')
-      } else {
-        const data = await res.json()
-        showError(data.error ?? '삭제 실패')
-      }
-    } catch { showError('삭제 중 오류 발생') }
-    setShowDeleteModal(false)
-  }
-
-  const kwContext = useKeywordData()
-  const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
 
   const diffConfig = DIFFICULTY_CONFIG[plan.difficulty]
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
@@ -451,7 +355,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   // Maps
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
-  const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
 
   // 레시피맵
   const giftByName = useMemo(() => {
@@ -480,6 +383,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
     return map
   }, [gifts])
+
+  const kwContext = useKeywordData()
+  const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
 
   // Blessings
   const blessings = useMemo(() => {
@@ -518,7 +424,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return list
   }, [giftInventory, giftMap])
 
-  // 편성 슬롯 → 최종 기프트 이미지 매핑
+  // 편성 슬롯 → 최종 기프트 이미지 매핑 (PlanDeckTabs에 전달)
   const slotGiftMap = useMemo(() => {
     const map = new Map<number, string[]>()
     for (const { gift, enhance } of finalGifts) {
@@ -539,8 +445,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     const all: Record<string, number> = {}
     for (const slot of deck) {
       const order = slot.slot_order ?? 99
-      if (order >= 99) continue // 편성 순서 없는 인격(벤치) 제외
-      const isFormation = order < 7 // 0-6 = 편성 1-7
+      if (order >= 99) continue
+      const isFormation = order < 7
       const normalized = new Set<string>((slot.keywords ?? []).map(normalizeThemeKeyword))
       for (const kw of normalized) {
         all[kw] = (all[kw] ?? 0) + 1
@@ -568,7 +474,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
   }
 
-  // 조회수 증가 (페이지 로드 시 1회, POST로 분리하여 중복 방지)
+  // 조회수 증가 (페이지 로드 시 1회)
   useEffect(() => {
     fetch(`/api/planner/${plan.id}/view`, { method: 'POST' }).catch(() => {})
   }, [plan.id])
@@ -597,64 +503,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
   }
 
-  // Comments
-  const fetchComments = useCallback(async () => {
-    setCommentsLoading(true)
-    try {
-      const res = await fetch(`/api/planner/${plan.id}/comments`)
-      if (!res.ok) return
-      const json = await res.json()
-      setComments(json.comments ?? [])
-    } catch { /* 무시 */ } finally {
-      setCommentsLoading(false)
-    }
-  }, [plan.id])
-
-  useEffect(() => { fetchComments() }, [fetchComments])
-
-  const handleCommentSubmit = async () => {
-    if (!session) { showError('로그인이 필요합니다.'); return }
-    const content = commentText.trim()
-    if (!content) return
-    setSubmitting(true)
-    try {
-      const body: Record<string, string> = { content }
-      if (replyTo) body.parent_id = replyTo.id
-      const res = await fetch(`/api/planner/${plan.id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (res.ok) {
-        setCommentText('')
-        setReplyTo(null)
-        fetchComments()
-      }
-    } catch { /* 무시 */ } finally {
-      setSubmitting(false)
-    }
-  }
-
-  // Build sinner → ego map
-  const egoByGradeMap = useMemo(() => {
-    const map: Record<string, Record<string, EgoSlot>> = {}
-    for (const e of egoSlots) {
-      if (!e.sinner_id || !e.grade) continue
-      if (!map[e.sinner_id]) map[e.sinner_id] = {}
-      map[e.sinner_id][e.grade] = e
-    }
-    return map
-  }, [egoSlots])
-
-  // Slot order map for identity display
-  const slotBySinner = useMemo(() => {
-    const map: Record<string, IdentitySlot> = {}
-    for (const s of deck) {
-      if (s.sinner_id) map[s.sinner_id] = s
-    }
-    return map
-  }, [deck])
-
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
       <div className="max-w-4xl mx-auto px-3 sm:px-6">
@@ -669,7 +517,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           커뮤니티 플랜
         </Link>
 
-        {/* ── 플랜 헤더 (블로그 스타일) ── */}
+        {/* ── 플랜 헤더 ── */}
         <header style={{ marginBottom: '2rem' }}>
           {/* 난이도 + 메타 */}
           <div className="flex items-center gap-2 mb-3">
@@ -695,7 +543,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             {plan.title}
           </h1>
 
-          {/* 작성자 + 날짜 + 통계 */}
+          {/* 작성자 + 날짜 + 통계 + 추천 */}
           <div className="flex items-center gap-3 mb-4">
             <div className="relative overflow-hidden rounded-full" style={{
               width: '2rem', height: '2rem', flexShrink: 0,
@@ -712,7 +560,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                   <Eye style={{ width: '0.6875rem', height: '0.6875rem' }} /> {plan.view_count}
                 </span>
                 <span className="flex items-center gap-1" style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
-                  <MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} /> {comments.length}
+                  <MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} /> {plan.comment_count}
                 </span>
               </div>
             </div>
@@ -735,78 +583,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           </div>
 
           {/* 액션 바 */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <button onClick={handleCopyCode} style={{
-              display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-              background: codeCopied ? 'rgba(34,197,94,0.12)' : 'transparent',
-              border: `1px solid ${codeCopied ? 'rgba(34,197,94,0.4)' : '#333'}`,
-              borderRadius: '0.375rem', color: codeCopied ? '#4ade80' : '#9ca3af',
-              fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-            }}>
-              {codeCopied ? <Check size={12} /> : <Copy size={12} />}
-              {codeCopied ? '복사 완료' : '편성코드 복사'}
-            </button>
-            <button onClick={handleFork} style={{
-              display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-              background: 'transparent', border: '1px solid #333', borderRadius: '0.375rem',
-              color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-            }}>
-              <GitFork size={12} /> Fork
-            </button>
-            <button
-              onClick={() => {
-                savePlanForRun({
-                  difficulty: plan.difficulty,
-                  title: plan.title ?? '',
-                  description: plan.description ?? '',
-                  identitySlots: deck,
-                  egoSlots: egoSlots,
-                  floorPlan: floorPlan.map((e: any, i: number) => ({ floor: i + 1, theme_id: e?.theme_id ?? null, gift_ids: [] as string[], memo: e?.memo ?? '' })),
-                  giftInventory: plan.gift_inventory ?? [],
-                  activeTab: 'deck' as const,
-                } as any)
-                window.location.href = '/planner/run?from-plan=1'
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-                background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
-                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-              }}
-            >
-              <Play size={12} /> 트리거 모드
-            </button>
-            {(isOwner || isAdmin) && (
-              <>
-                <button onClick={() => {
-                  // 플래너에 불러온 후 edit 모드로 이동
-                  saveDraftToLocal({
-                    difficulty: plan.difficulty,
-                    title: plan.title,
-                    description: plan.description ?? '',
-                    identitySlots: deck,
-                    egoSlots,
-                    floorPlan,
-                    giftInventory,
-                    activeTab: 'deck',
-                  } as any)
-                  router.push(`/planner?edit=${plan.id}`)
-                }} style={{
-                  display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-                  background: 'transparent', border: '1px solid rgba(200,144,10,0.3)', borderRadius: '0.375rem',
-                  color: '#c8900a', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-                }}>
-                  <Pencil size={12} /> 수정
-                </button>
-                <button onClick={() => setShowDeleteModal(true)} style={{
-                  display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-                  background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.375rem',
-                  color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-                }}>
-                  <Trash2 size={12} /> 삭제
-                </button>
-              </>
-            )}
-          </div>
+          <PlanActions
+            planId={plan.id}
+            planTitle={plan.title}
+            planDescription={plan.description}
+            difficulty={plan.difficulty}
+            deck={deck}
+            egoSlots={egoSlots}
+            floorPlan={floorPlan}
+            giftInventory={giftInventory}
+            identities={identities}
+            sinners={sinners}
+            egos={egos}
+            isOwner={!!(session?.user?.email && plan.profiles?.username)}
+            isAdmin={isAdmin}
+          />
 
           {/* 구분선 */}
           <div style={{ height: '1px', background: 'linear-gradient(to right, rgba(200,144,10,0.3), transparent)', marginBottom: '1rem' }} />
@@ -819,299 +610,18 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           )}
         </header>
 
-        {/* ── 덱 편성 ── */}
+        {/* ── 덱 편성 탭 ── */}
         <div style={{ marginBottom: '1.5rem' }}>
-          {/* 서브탭 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            {([
-              { key: 'identity' as const, label: `인격 (${deck.length}/12)`, hint: '클릭하여 상세 보기' },
-              { key: 'ego' as const, label: `EGO (${egoSlots.length})` },
-              { key: 'skillset' as const, label: '스킬셋' },
-            ]).map(tab => {
-              const active = deckSubTab === tab.key
-              return (
-                <button key={tab.key} onClick={() => setDeckSubTab(tab.key)} style={{
-                  padding: '0.5rem 0.625rem', fontSize: '0.8125rem', fontWeight: active ? 700 : 400, whiteSpace: 'nowrap',
-                  color: active ? '#e8dcc8' : '#555', cursor: 'pointer',
-                  background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
-                  border: 'none',
-                  borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`,
-                  marginBottom: '-1px',
-                }}>
-                  {tab.label}
-                  {'hint' in tab && active && (
-                    <span style={{ fontSize: '0.5625rem', color: '#5a5065', marginLeft: '0.375rem', fontWeight: 400 }}>
-                      {(tab as { hint: string }).hint}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* 인격 그리드 */}
-          {deckSubTab === 'identity' && (
-            <div className="grid grid-cols-6 gap-x-1.5 sm:gap-x-3 gap-y-3 sm:gap-y-4">
-              {sinners.map(sinner => {
-                const slot = slotBySinner[sinner.id]
-                const identData = slot?.identity_id ? identityMap.get(slot.identity_id) : undefined
-                const rc = slot ? (RARITY_COLORS[slot.rarity ?? 1] ?? RARITY_COLORS[1]) : null
-                const n = slot && (slot.slot_order ?? 99) < 99 ? (slot.slot_order ?? 0) + 1 : null
-                return (
-                  <div key={sinner.id} onClick={() => slot?.identity_id && setIdentityModalId(slot.identity_id)} style={{ cursor: slot?.identity_id ? 'pointer' : 'default' }}>
-                    <div style={{
-                      position: 'relative', width: '100%', aspectRatio: '2/3',
-                      background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                      border: `0.09375rem ${slot ? 'solid' : 'dashed'} ${slot ? (rc?.border ?? '#2a2015') : '#2a2015'}`,
-                      borderRadius: '0.25rem', overflow: 'hidden',
-                      boxShadow: slot ? `0 0 0.5rem ${rc?.glow ?? 'transparent'}` : 'none',
-                    }}>
-                      {slot && identData ? (
-                        <>
-                          <Image
-                            src={getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`)}
-                            alt={slot.name_kr ?? ''} fill className="object-cover object-top" sizes="120px"
-                          />
-                          <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 10, padding: '0.1875rem' }}>
-                            <Image
-                              src={`${S}/icons/Rarity/${slot.rarity ?? 1}star.webp`}
-                              alt={`${slot.rarity ?? 1}성`}
-                              width={(slot.rarity ?? 1) * 14} height={14}
-                              style={{ height: '0.875rem', width: 'auto', objectFit: 'contain' }}
-                            />
-                          </div>
-                          <div style={{
-                            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, textAlign: 'center',
-                            background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                            paddingTop: '1.25rem', paddingBottom: '0.25rem',
-                          }}>
-                            <p className="font-serif text-[0.5rem] sm:text-[0.6875rem]" style={{ color: '#e8dcc8', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>{slot.name_kr}</p>
-                          </div>
-                          {n != null && (
-                            <div style={{
-                              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                              zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
-                            }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span className="text-[0.625rem] sm:text-base" style={{ fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                                {n <= 7 ? '편성' : '대기'}
-                              </span>
-                              <span className="text-sm sm:text-2xl" style={{ fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                                {n}
-                              </span>
-                              </div>
-                              {(slotGiftMap.get(n)?.length ?? 0) > 0 && (() => {
-                                const urls = slotGiftMap.get(n)!
-                                const MAX = 3
-                                const shown = urls.slice(0, MAX)
-                                const rest = urls.length - MAX
-                                return (
-                                  <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.1875rem', alignItems: 'center', justifyContent: 'center' }}>
-                                    {shown.map((url, gi) => (
-                                      <Image key={gi} src={url} alt="" width={28} height={28}
-                                        className="w-[0.875rem] h-[0.875rem] sm:w-[1.25rem] sm:h-[1.25rem]"
-                                        style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.8))' }}
-                                      />
-                                    ))}
-                                    {rest > 0 && (
-                                      <span style={{ fontSize: '0.5rem', color: '#9ca3af', fontWeight: 600, marginLeft: '0.0625rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,1)' }}>
-                                        ...+{rest}
-                                      </span>
-                                    )}
-                                  </div>
-                                )
-                              })()}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                            <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32}
-                              style={{ width: '2rem', height: '2rem', opacity: 0.35 }} />
-                          </div>
-                          <div style={{ position: 'absolute', top: 0, right: 0, width: '36%', opacity: 0.15, pointerEvents: 'none' }}>
-                            <Image src={`${S}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
-                          </div>
-                          <div style={{
-                            position: 'absolute', bottom: 0, left: 0, right: 0, textAlign: 'center', zIndex: 10,
-                            background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                            paddingTop: '1.25rem', paddingBottom: '0.375rem',
-                          }}>
-                            <p className="font-serif font-light text-[0.5rem] sm:text-[0.75rem]" style={{ color: '#3a2a10' }}>{sinner.name_kr}</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* 공격 유형 + 죄악 자원 + 패시브 */}
-          {deckSubTab === 'identity' && deck.length > 0 && (() => {
-            const selectedEgoIds = new Set(egoSlots.map(e => e.ego_id).filter(Boolean))
-            const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
-            const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
-            const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
-            return (
-              <DeckStatsPanel
-                identitySlots={deck}
-                skills={skills}
-                passives={passives}
-                sinners={sinners}
-                egoCosts={selectedEgoCosts}
-                egoSinAffinities={selectedEgoSins}
-              />
-            )
-          })()}
-
-          {/* EGO 그리드 */}
-          {deckSubTab === 'ego' && (
-            deck.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
-                {sinners.map(sinner => {
-                  const slot = slotBySinner[sinner.id]
-                  const egoByGrade = egoByGradeMap[sinner.id] ?? {}
-                  return (
-                    <div key={sinner.id} style={{
-                      background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                      border: `1px solid ${slot ? '#221a0f' : '#18120a'}`,
-                      borderRadius: '0.25rem', overflow: 'hidden',
-                      opacity: slot ? 1 : 0.5,
-                    }}>
-                      <div className="flex items-center gap-1.5" style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #1a1208' }}>
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14}
-                          style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
-                        <span className="font-serif font-light truncate" style={{ color: slot ? '#8a7a60' : '#3a2a10', fontSize: '0.5625rem' }}>
-                          {sinner.name_kr}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', padding: '0.125rem' }}>
-                        {GRADE_ORDER.map(grade => {
-                          const ego = egoByGrade[grade]
-                          const gc = GRADE_COLORS[grade] ?? '#555'
-                          const egoFull = ego ? egos.find(e => e.id === ego.ego_id) : null
-                          const sinEn = egoFull?.sin_affinity ? (SIN_KR_TO_EN[egoFull.sin_affinity] ?? egoFull.sin_affinity) : null
-                          const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
-                          return (
-                            <div key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} style={{
-                              background: ego ? `${ec}1a` : 'rgba(10,8,5,0.7)',
-                              border: `1px solid ${ego ? ec + '55' : '#18120a'}`,
-                              borderRadius: '0.125rem', padding: '0.25rem 0.3125rem',
-                              display: 'flex', alignItems: 'center', gap: '0.3125rem',
-                              minHeight: '1.5rem',
-                              cursor: ego?.ego_id ? 'pointer' : 'default',
-                            }}>
-                              {grade !== 'ALEPH' ? (
-                                <Image src={`${S}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized
-                                  style={{ height: '0.6875rem', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }} />
-                              ) : (
-                                <span style={{ color: gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
-                              )}
-                              {ego ? (
-                                <span style={{ color: gc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, flex: 1, textAlign: 'left' }}>{ego.name_kr}</span>
-                              ) : (
-                                <span style={{ color: '#2a1e10', fontSize: '0.5rem', lineHeight: 1 }}>{slot ? '—' : ''}</span>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                      {!slot && (
-                        <div style={{ padding: '0.25rem 0.5rem 0.375rem', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.5rem', color: '#333' }}>인격 미선택</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <EmptyState text="인격이 편성되지 않았습니다" />
-            )
-          )}
-
-          {/* 스킬셋 */}
-          {deckSubTab === 'skillset' && (
-            deck.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
-                {sinners.map(sinner => {
-                  const slot = slotBySinner[sinner.id]
-                  if (!slot) return null
-                  const identData = slot.identity_id ? identityMap.get(slot.identity_id) : undefined
-                  const dist = [3, 2, 1]
-                  const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } : null
-
-                  return (
-                    <div key={sinner.id} onClick={() => slot.identity_id && setIdentityModalId(slot.identity_id)} style={{ cursor: slot.identity_id ? 'pointer' : 'default' }}>
-                      <div style={{
-                        position: 'relative', width: '100%', aspectRatio: '2/3',
-                        background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                        border: `0.09375rem solid ${(RARITY_COLORS[slot.rarity ?? 1] ?? RARITY_COLORS[1]).border}`,
-                        borderRadius: '0.25rem', overflow: 'hidden',
-                      }}>
-                        {identData && (
-                          <Image
-                            src={getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`)}
-                            alt={slot.name_kr ?? ''} fill className="object-cover object-top" sizes="120px"
-                          />
-                        )}
-                        <div style={{
-                          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, textAlign: 'center',
-                          background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                          paddingTop: '1.25rem', paddingBottom: '0.25rem',
-                        }}>
-                          <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
-                        </div>
-                      </div>
-                      <div style={{
-                        marginTop: '0.375rem',
-                        background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                        border: '1px solid #221a0f', borderRadius: '0.25rem', padding: '0.375rem',
-                      }}>
-                        {[0, 1, 2].map(idx => {
-                          const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
-                          return (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
-                              {identForIcon?.game_id ? (
-                                <Image
-                                  src={getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], idx + 1)}
-                                  alt={`S${idx + 1}`} width={24} height={24}
-                                  style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.125rem', flexShrink: 0 }}
-                                />
-                              ) : (
-                                <span style={{ fontSize: '0.5625rem', color: '#c8900a', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', flexShrink: 0, textAlign: 'center' }}>
-                                  S{idx + 1}
-                                </span>
-                              )}
-                              {skillName ? (
-                                <span style={{ fontSize: '0.5rem', color: '#8a7a60', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {skillName}
-                                </span>
-                              ) : (
-                                <div style={{ flex: 1 }} />
-                              )}
-                              <span style={{
-                                width: '1rem', textAlign: 'center', fontSize: '0.8125rem',
-                                fontFamily: 'var(--font-mono)', fontWeight: 700,
-                                color: dist[idx] === 0 ? '#3a2a10' : '#c8900a',
-                              }}>
-                                {dist[idx]}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <EmptyState text="인격이 편성되지 않았습니다" />
-            )
-          )}
+          <PlanDeckTabs
+            deck={deck}
+            egoSlots={egoSlots}
+            identities={identities}
+            sinners={sinners}
+            egos={egos}
+            skills={skills}
+            passives={passives}
+            slotGiftMap={slotGiftMap}
+          />
         </div>
 
         {/* ── 가호 ── */}
@@ -1332,136 +842,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           )}
         </div>
 
-        {/* ── 댓글 섹션 ── */}
-        <section>
-          <h2 className="flex items-center gap-2 mb-4 font-semibold" style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
-            <MessageCircle style={{ width: '0.875rem', height: '0.875rem' }} />
-            댓글 {comments.length}개
-          </h2>
-
-          {replyTo && (
-            <div className="flex items-center justify-between mb-2 px-3 py-1.5 rounded" style={{ background: 'rgba(200,144,10,0.08)', border: '1px solid rgba(200,144,10,0.2)', fontSize: '0.75rem', color: '#c8900a' }}>
-              <span>@{replyTo.username} 에게 답글 작성 중</span>
-              <button onClick={() => setReplyTo(null)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>취소</button>
-            </div>
-          )}
-
-          {session ? (
-            <div className="flex gap-2 mb-5">
-              <textarea
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                placeholder={replyTo ? `@${replyTo.username}에게 답글...` : '댓글을 입력하세요 (최대 500자)'}
-                maxLength={500}
-                rows={2}
-                className="flex-1 resize-none"
-                style={{
-                  background: '#1a1510', border: '1px solid #333',
-                  borderRadius: '0.375rem', color: '#e5e7eb',
-                  fontSize: '0.875rem', padding: '0.5rem 0.75rem',
-                  outline: 'none', fontFamily: 'inherit',
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault()
-                    handleCommentSubmit()
-                  }
-                }}
-              />
-              <button
-                onClick={handleCommentSubmit}
-                disabled={submitting || !commentText.trim()}
-                className="flex items-center gap-1 transition-all hover:brightness-110 disabled:opacity-40"
-                style={{
-                  padding: '0.5rem 0.875rem',
-                  background: 'rgba(200,144,10,0.15)', border: '1px solid rgba(200,144,10,0.35)',
-                  borderRadius: '0.375rem', color: '#e8b030',
-                  fontSize: '0.75rem', fontWeight: 600,
-                  cursor: submitting || !commentText.trim() ? 'not-allowed' : 'pointer',
-                  alignSelf: 'flex-end',
-                }}
-              >
-                <Send style={{ width: '0.75rem', height: '0.75rem' }} />
-                등록
-              </button>
-            </div>
-          ) : (
-            <div className="text-center py-4 mb-5" style={{
-              background: '#1a1510', border: '1px solid #222',
-              borderRadius: '0.375rem', fontSize: '0.75rem', color: '#6b7280',
-            }}>
-              <Link href="/login" style={{ color: '#e8b030' }}>로그인</Link>
-              {' '}후 댓글을 작성할 수 있습니다.
-            </div>
-          )}
-
-          {commentsLoading ? (
-            <div style={{ fontSize: '0.75rem', color: '#6b7280', padding: '1rem 0' }}>댓글 불러오는 중...</div>
-          ) : comments.length === 0 ? (
-            <div className="text-center py-8" style={{ fontSize: '0.75rem', color: '#4b5563' }}>
-              아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {comments.filter(c => !c.parent_id).map(comment => {
-                const cNickname = comment.profiles?.username ?? '익명'
-                const cAvatar = comment.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
-                const replies = comments.filter(c => c.parent_id === comment.id)
-                return (
-                  <div key={comment.id}>
-                    <div className="flex gap-3 p-4" style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.375rem' }}>
-                      <div className="relative overflow-hidden rounded-full" style={{ width: '1.75rem', height: '1.75rem', flexShrink: 0 }}>
-                        <Image src={cAvatar} alt={cNickname} width={28} height={28}
-                          style={{ width: '1.75rem', height: '1.75rem', objectFit: 'cover' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>{cNickname}</span>
-                          <RelativeTime date={comment.created_at} style={{ fontSize: '0.75rem', color: '#4b5563' }} />
-                        </div>
-                        <p style={{ fontSize: '0.875rem', color: '#e5e7eb', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>
-                          {comment.content}
-                        </p>
-                        {session && (
-                          <button
-                            onClick={() => setReplyTo({ id: comment.id, username: cNickname })}
-                            style={{ marginTop: '0.375rem', fontSize: '0.6875rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                          >
-                            답글
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {replies.map(reply => {
-                      const rNickname = reply.profiles?.username ?? '익명'
-                      const rAvatar = reply.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
-                      return (
-                        <div key={reply.id} className="flex gap-3 p-4" style={{
-                          background: 'rgba(200,144,10,0.03)', border: '1px solid #222',
-                          borderRadius: '0.375rem', marginLeft: '1.5rem', marginTop: '0.375rem',
-                        }}>
-                          <div className="relative overflow-hidden rounded-full" style={{ width: '1.5rem', height: '1.5rem', flexShrink: 0 }}>
-                            <Image src={rAvatar} alt={rNickname} width={24} height={24}
-                              style={{ width: '1.5rem', height: '1.5rem', objectFit: 'cover' }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>{rNickname}</span>
-                              <RelativeTime date={reply.created_at} style={{ fontSize: '0.75rem', color: '#4b5563' }} />
-                            </div>
-                            <p style={{ fontSize: '0.875rem', color: '#e5e7eb', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>
-                              {reply.content}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
+        {/* ── 댓글 ── */}
+        <PlanComments planId={plan.id} />
 
       </div>
 
@@ -1475,24 +857,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           conditionStatus={getConditionStatus(selectedGift.gift)}
           recipe={recipeMap.get(selectedGift.gift.game_id) ?? null}
         />
-      )}
-
-      {/* 삭제 확인 모달 */}
-      <ConfirmModal
-        open={showDeleteModal}
-        title="플랜 삭제"
-        message="이 플랜을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
-        confirmLabel="삭제"
-        cancelLabel="취소"
-        variant="danger"
-        onConfirm={handleDelete}
-        onCancel={() => setShowDeleteModal(false)}
-      />
-      {identityModalId && (
-        <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
-      )}
-      {egoModalId && (
-        <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
     </div>
   )
