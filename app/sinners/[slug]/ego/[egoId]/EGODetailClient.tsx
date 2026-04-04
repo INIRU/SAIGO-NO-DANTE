@@ -265,20 +265,22 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
-  const animRef = useRef(false)
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.ego-detail-header',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-      )
-      gsap.fromTo('.ego-detail-content',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-      )
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        gsap.fromTo('.ego-detail-header',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        )
+        gsap.fromTo('.ego-detail-content',
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   return (

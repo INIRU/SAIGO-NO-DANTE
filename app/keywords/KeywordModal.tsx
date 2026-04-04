@@ -69,25 +69,25 @@ export default function KeywordModal({
 
   // GSAP 진입 애니메이션
   useEffect(() => {
-    let cancelled = false
-    const animate = async () => {
+    let ctx: any
+    ;(async () => {
       const { gsap } = await import('gsap')
-      if (cancelled) return
-      if (backdropRef.current) {
-        gsap.fromTo(backdropRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 0.2, ease: 'power2.out' }
-        )
-      }
-      if (modalRef.current) {
-        gsap.fromTo(modalRef.current,
-          { opacity: 0, y: 24, scale: 0.97 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out', delay: 0.05 }
-        )
-      }
-    }
-    animate()
-    return () => { cancelled = true }
+      ctx = gsap.context(() => {
+        if (backdropRef.current) {
+          gsap.fromTo(backdropRef.current,
+            { opacity: 0 },
+            { opacity: 1, duration: 0.2, ease: 'power2.out' }
+          )
+        }
+        if (modalRef.current) {
+          gsap.fromTo(modalRef.current,
+            { opacity: 0, y: 24, scale: 0.97 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out', delay: 0.05 }
+          )
+        }
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // 닫기 애니메이션

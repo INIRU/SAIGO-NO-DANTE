@@ -103,27 +103,23 @@ export default function IdentityDetailClient({
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  // SSR 히어로 플레이스홀더 숨기기 (LCP 최적화용 서버 렌더 요소)
-  useEffect(() => {
-    const ssrHero = document.getElementById('identity-hero-ssr')
-    if (ssrHero) ssrHero.style.display = 'none'
-  }, [])
-
   // GSAP 입장 애니메이션
-  const animRef = useRef(false)
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
-    import('gsap').then(({ default: gsap }) => {
-      // portrait: slide in from left, no opacity flash (content already visible from SSR)
-      gsap.from('.identity-detail-portrait', {
-        x: -20, duration: 0.5, ease: 'power3.out', clearProps: 'x',
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        // portrait: slide in from left, no opacity flash (content already visible from SSR)
+        gsap.from('.identity-detail-portrait', {
+          x: -20, duration: 0.5, ease: 'power3.out', clearProps: 'x',
+        })
+        // content: subtle fade+slide in
+        gsap.from('.identity-detail-content', {
+          opacity: 0, y: 16, duration: 0.5, delay: 0.1, ease: 'power3.out', clearProps: 'all',
+        })
       })
-      // content: subtle fade+slide in
-      gsap.from('.identity-detail-content', {
-        opacity: 0, y: 16, duration: 0.5, delay: 0.1, ease: 'power3.out', clearProps: 'all',
-      })
-    })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // 풀 일러스트 클릭 안내 (첫 방문 시만)

@@ -82,11 +82,6 @@ export default function KeywordsClient({
   const [selected, setSelected] = useState<Keyword | null>(null)
   const formatSkillDesc = useFormatSkillDesc()
 
-  /* ── SSR 그리드 숨기기: JS 로드 후 즉시 ── */
-  useEffect(() => {
-    document.getElementById('keywords-ssr-grid')?.setAttribute('data-hidden', 'true')
-  }, [])
-
   /* ── nuqs URL 상태 ── */
   const [viewMode, setViewMode] = useQueryState('view', parseAsString.withDefault('detail'))
   const [catParam, setCatParam] = useQueryState('cat', parseAsString.withDefault(''))

@@ -68,20 +68,22 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   // GSAP 카드 등장 애니메이션
-  const animRef = useRef(false)
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.sinner-info-card',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
-      )
-      gsap.fromTo('.sinner-content-area',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power3.out' }
-      )
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        gsap.fromTo('.sinner-info-card',
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+        )
+        gsap.fromTo('.sinner-content-area',
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power3.out' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
@@ -205,13 +207,18 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
   // 인격/EGO 카드 스태거 애니메이션 (탭 전환 시)
   useEffect(() => {
-    import('gsap').then(({ gsap }) => {
+    let ctx: any
+    ;(async () => {
+      const { gsap } = await import('gsap')
       const selector = tab === 'identities' ? '.identity-card-item' : '.ego-card-item'
-      gsap.fromTo(selector,
-        { opacity: 0, y: 20, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.03, ease: 'power2.out' }
-      )
-    })
+      ctx = gsap.context(() => {
+        gsap.fromTo(selector,
+          { opacity: 0, y: 20, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.03, ease: 'power2.out' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [tab, filteredIdentities, filteredEgos])
 
   // 자동완성 드롭다운

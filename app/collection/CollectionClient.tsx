@@ -321,18 +321,21 @@ function CollectionViewer({ data }: { data: CollectionData }) {
 
   // Entrance animation — runs once after first paint
   useEffect(() => {
-    if (animatedRef.current) return
-    animatedRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.collection-header',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-      )
-      gsap.fromTo('.collection-content',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-      )
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        gsap.fromTo('.collection-header',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        )
+        gsap.fromTo('.collection-content',
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   const stats = useMemo(() => {

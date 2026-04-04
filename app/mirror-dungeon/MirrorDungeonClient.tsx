@@ -109,6 +109,12 @@ export default function MirrorDungeonClient({
     }
   }, [tiers, setTierParam])
   const setSearch = useCallback((v: string) => setSearchParam(v || null), [setSearchParam])
+  // inputValue: local state for IME-safe input (debounced write to URL)
+  const [inputValue, setInputValue] = useState(search)
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(inputValue), 300)
+    return () => clearTimeout(t)
+  }, [inputValue, setSearch])
   const setSortBy = useCallback((v: 'default' | 'name' | 'grade') => setSortByParam(v === 'default' ? null : v), [setSortByParam])
   const setSortDesc = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
     if (typeof v === 'function') setSortDescParam(v(sortDesc) ? 'true' : null)
@@ -428,16 +434,22 @@ export default function MirrorDungeonClient({
   useEffect(() => {
     if (headerAnimRef.current) return
     headerAnimRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.md-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
-      gsap.fromTo('.md-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
-      gsap.fromTo('.md-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
-    })
+    let ctx: any
+    ;(async () => {
+      const { gsap } = await import('gsap')
+      ctx = gsap.context(() => {
+        gsap.fromTo('.md-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
+        gsap.fromTo('.md-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
+        gsap.fromTo('.md-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // GSAP 진입 애니메이션 (새로 추가된 카드에도 적용)
   useEffect(() => {
-    const initGSAP = async () => {
+    let ctx: any
+    ;(async () => {
       const { gsap } = await import('gsap')
       const cards = document.querySelectorAll('.gift-grid .gift-card')
       const newCards: Element[] = []
@@ -447,14 +459,16 @@ export default function MirrorDungeonClient({
         }
       })
       if (newCards.length > 0) {
-        gsap.fromTo(newCards,
-          { opacity: 0, y: 16, scale: 0.97 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.008, ease: 'power2.out' }
-        )
+        ctx = gsap.context(() => {
+          gsap.fromTo(newCards,
+            { opacity: 0, y: 16, scale: 0.97 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.008, ease: 'power2.out' }
+          )
+        })
       }
       animatedCountRef.current = cards.length
-    }
-    initGSAP()
+    })()
+    return () => { ctx?.revert() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, visibleCount, activeTab])
 
@@ -1179,8 +1193,8 @@ export default function MirrorDungeonClient({
               <input
                 type="text"
                 placeholder="기프트 검색..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
                 className="pl-8 pr-7 py-1.5 rounded-md text-xs w-36 sm:w-44"
                 style={{
                   background: 'rgba(0,0,0,0.2)',
@@ -1190,9 +1204,9 @@ export default function MirrorDungeonClient({
                   fontFamily: 'var(--font-heading)',
                 }}
               />
-              {search && (
+              {(inputValue || search) && (
                 <button
-                  onClick={() => setSearch('')}
+                  onClick={() => { setInputValue(''); setSearch('') }}
                   style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#555', cursor: 'pointer' }}
                 >
                   <X size={12} />
@@ -1265,7 +1279,7 @@ export default function MirrorDungeonClient({
               </button>
             )}
             <button
-              onClick={() => { setKeywords(new Set()); setGrades(new Set()); setTiers(new Set()); setSlotFilter('전체'); setSearch('') }}
+              onClick={() => { setKeywords(new Set()); setGrades(new Set()); setTiers(new Set()); setSlotFilter('전체'); setInputValue(''); setSearch('') }}
               className="ml-auto px-2 py-0.5 rounded-full transition-colors hover:bg-white/5"
               style={{ color: '#444', fontSize: '0.625rem', fontFamily: 'var(--font-heading)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.04)' }}
             >

@@ -69,20 +69,22 @@ function TierListInner({
   const [calcOpen, setCalcOpen] = useState(false)
   const [qnaOpen, setQnaOpen] = useState(false)
 
-  const animRef = useRef(false)
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.tier-header',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-      )
-      gsap.fromTo('.tier-row',
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
-      )
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        gsap.fromTo('.tier-header',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        )
+        gsap.fromTo('.tier-row',
+          { opacity: 0, x: -30 },
+          { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // identity id → { tier, sinner_id, name_kr } mapping for calculator

@@ -81,6 +81,8 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
   const [hasMore, setHasMore] = useState(true)
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  // inputValue: local state for immediate input display (avoids IME composition breaks)
+  const [inputValue, setInputValue] = useState(search)
   const [debouncedSearch, setDebouncedSearch] = useState(search)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
@@ -107,7 +109,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
 
   // 인격 + 키워드 자동완성 후보
   const suggestions = useMemo((): SearchSuggestion[] => {
-    const { activeTerm } = getActiveTerm(search)
+    const { activeTerm } = getActiveTerm(inputValue)
     if (activeTerm.length === 0) return []
     const q = activeTerm.toLowerCase()
 
@@ -137,7 +139,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       .map(label => ({ label, type: 'keyword' }))
 
     return [...idMatches, ...kwMatches].slice(0, 8)
-  }, [search, ALL_KEYWORDS, allIdentities])
+  }, [inputValue, ALL_KEYWORDS, allIdentities])
 
   // 검색어 변경 시 자동완성 첫 항목 선택
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
@@ -163,14 +165,14 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     } else if (e.key === 'Tab' && acIndex >= 0) {
       e.preventDefault()
       const selected = suggestions[acIndex].label
-      const { prefix } = getActiveTerm(search)
+      const { prefix } = getActiveTerm(inputValue)
       // IME 조합 강제 종료
       e.currentTarget.blur()
       setShowSuggestions(false)
       setAcIndex(-1)
       // IME compositionend → onChange 이후 값 설정 (잔재 방지)
       setTimeout(() => {
-        setSearch(prefix + selected)
+        setInputValue(prefix + selected)
         ;(e.target as HTMLInputElement).focus()
       }, 10)
     } else if (e.key === 'Escape') {
@@ -191,11 +193,15 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // 검색 debounce (필터링 성능)
+  // 검색 debounce: inputValue → URL(search) + filter(debouncedSearch)
+  // 300ms delay prevents IME composition interruption and reduces URL thrash
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    const t = setTimeout(() => {
+      setSearch(inputValue || null)
+      setDebouncedSearch(inputValue)
+    }, 300)
     return () => clearTimeout(t)
-  }, [search])
+  }, [inputValue, setSearch])
 
   // 콘텐츠 유형 필터
   const [activeContentType, setActiveContentType] = useState<string>('')
@@ -222,33 +228,35 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
   const [codeError, setCodeError] = useState(false)
 
   // GSAP 진입 애니메이션
-  const animRef = useRef(false)
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
-    import('gsap').then(({ gsap }) => {
-      // 헤더 시퀀스: line → tag → title → filters
-      gsap.fromTo('.decks-header-line',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
-      )
-      gsap.fromTo('.decks-header-tag',
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-      )
-      gsap.fromTo('.decks-header-title',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
-      )
-      gsap.fromTo('.decks-filters',
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
-      )
-      gsap.fromTo('.decks-divider-bottom',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' }
-      )
-    })
+    let ctx: any
+    ;(async () => {
+      const gsap = (await import('gsap')).default
+      ctx = gsap.context(() => {
+        // 헤더 시퀀스: line → tag → title → filters
+        gsap.fromTo('.decks-header-line',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
+        )
+        gsap.fromTo('.decks-header-tag',
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        )
+        gsap.fromTo('.decks-header-title',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
+        )
+        gsap.fromTo('.decks-filters',
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
+        )
+        gsap.fromTo('.decks-divider-bottom',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' }
+        )
+      })
+    })()
+    return () => { ctx?.revert() }
   }, [])
 
   // 초기 서버 데이터 사용 여부 추적 (sort=latest 첫 렌더에서 fetch 생략)
@@ -482,7 +490,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return list
   }, [decks, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
-  const hasAnyFilter = search || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
+  const hasAnyFilter = inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto relative">
@@ -581,8 +589,8 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
             <input
               type="text"
               placeholder="인격, 키워드, 제목 검색... (+: OR, *: AND)"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
+              value={inputValue}
+              onChange={e => { setInputValue(e.target.value); setShowSuggestions(true) }}
               onFocus={() => setShowSuggestions(true)}
               onKeyDown={handleSearchKeyDown}
               className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
@@ -594,9 +602,9 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
                 fontFamily: 'var(--font-body)',
               }}
             />
-            {search && (
+            {inputValue && (
               <button
-                onClick={() => { setSearch(''); setShowSuggestions(false) }}
+                onClick={() => { setInputValue(''); setSearch(null); setDebouncedSearch(''); setShowSuggestions(false) }}
                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', cursor: 'pointer', zIndex: 1 }}
               >
                 ✕
@@ -625,8 +633,8 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
                       key={`${sg.type}-${sg.label}-${i}`}
                       className="flex items-center gap-2 px-3 py-1.5 text-xs"
                       onClick={() => {
-                        const { prefix } = getActiveTerm(search)
-                        setSearch(prefix + sg.label)
+                        const { prefix } = getActiveTerm(inputValue)
+                        setInputValue(prefix + sg.label)
                         setShowSuggestions(false)
                         setAcIndex(-1)
                       }}

@@ -5,49 +5,49 @@ import Link from 'next/link'
 import { Users, Sparkles } from 'lucide-react'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
-  const animRef = useRef(false)
-
   useEffect(() => {
-    if (animRef.current) return
-    animRef.current = true
+    let ctx: ReturnType<typeof import('gsap')['gsap']['context']> | undefined
     const initGSAP = async () => {
       const gsap = (await import('gsap')).default
       const { ScrollTrigger } = await import('gsap/ScrollTrigger')
       gsap.registerPlugin(ScrollTrigger)
 
-      // 헤더 시퀀스
-      gsap.fromTo('.sinners-header-line',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
-      )
-      gsap.fromTo('.sinners-header-tag',
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-      )
-      gsap.fromTo('.sinners-header-title',
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
-      )
-      gsap.fromTo('.sinners-header-sub',
-        { opacity: 0 },
-        { opacity: 1, duration: 0.5, delay: 0.5, ease: 'power2.out' }
-      )
-      gsap.fromTo('.sinners-header-line-bottom',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.6, delay: 0.6, ease: 'power3.inOut' }
-      )
+      ctx = gsap.context(() => {
+        // 헤더 시퀀스
+        gsap.fromTo('.sinners-header-line',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
+        )
+        gsap.fromTo('.sinners-header-tag',
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+        )
+        gsap.fromTo('.sinners-header-title',
+          { opacity: 0, y: -20 },
+          { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
+        )
+        gsap.fromTo('.sinners-header-sub',
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5, delay: 0.5, ease: 'power2.out' }
+        )
+        gsap.fromTo('.sinners-header-line-bottom',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.6, delay: 0.6, ease: 'power3.inOut' }
+        )
 
-      // 카드 스태거 — 카드는 HTML에서 visible로 렌더링되고 GSAP이 진입 애니메이션만 담당
-      gsap.fromTo('.sinner-card-item',
-        { opacity: 0, y: 40, scale: 0.93 },
-        {
-          opacity: 1, y: 0, scale: 1,
-          duration: 0.55, stagger: 0.06, ease: 'power2.out',
-          scrollTrigger: { trigger: '.sinners-grid', start: 'top 85%' },
-        }
-      )
+        // 카드 스태거 — 카드는 HTML에서 visible로 렌더링되고 GSAP이 진입 애니메이션만 담당
+        gsap.fromTo('.sinner-card-item',
+          { opacity: 0, y: 40, scale: 0.93 },
+          {
+            opacity: 1, y: 0, scale: 1,
+            duration: 0.55, stagger: 0.06, ease: 'power2.out',
+            scrollTrigger: { trigger: '.sinners-grid', start: 'top 85%' },
+          }
+        )
+      })
     }
     initGSAP()
+    return () => { ctx?.revert() }
   }, [])
 
   return (
