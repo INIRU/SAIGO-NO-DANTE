@@ -55,6 +55,12 @@ export default function RandomClient({ sinners, identities, egos, urlCode }: Pro
     if (identityEnabled && !egoEnabled) setActiveTab('identity')
   }, [identityEnabled, egoEnabled])
 
+  // Hide SSR skeleton once this client component mounts
+  useEffect(() => {
+    const skeleton = document.getElementById('random-static-skeleton')
+    if (skeleton) skeleton.style.display = 'none'
+  }, [])
+
   // Load collection code: URL param > localStorage
   // Only auto-enable for explicit ?code= URL param
   useEffect(() => {

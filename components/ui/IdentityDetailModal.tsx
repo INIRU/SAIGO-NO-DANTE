@@ -8,6 +8,7 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { computeSkillImageIndices } from '@/lib/utils/images'
 import SkillDescription from '@/components/skill/SkillDescription'
+import SkillFrame from '@/components/identity/SkillFrame'
 import BaseModal from '@/components/ui/BaseModal'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -103,6 +104,61 @@ const RES_STYLE: Record<string, { color: string; label: string }> = {
 
 
 
+// ── 정신력 이미지 상수 ────────────────────────────────────────────────────
+const PANIC_IMG_URL = `${STORAGE_BASE}/icons/stats/panic.webp`
+const PANIC_LOVE_HATE_URL = `${STORAGE_BASE}/icons/stats/panic_love_hate.webp`
+const SANITY_INCREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_increase_bg.webp`
+const SANITY_DECREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_decrease_bg.webp`
+
+// ── 정신력 텍스트 파서 ────────────────────────────────────────────────────
+function parseMarkupTags(text: string): React.ReactNode[] {
+  const cleaned = text
+    .replace(/<size=\d+%>/g, '')
+    .replace(/<\/size>/g, '')
+
+  const parts: React.ReactNode[] = []
+  let remaining = cleaned
+  let key = 0
+
+  const colorRegex = /<color=([^>]+)>([\s\S]*?)<\/color>/
+  let match = colorRegex.exec(remaining)
+  while (match) {
+    if (match.index > 0) parts.push(remaining.slice(0, match.index))
+    parts.push(<span key={key++} style={{ color: match[1], fontWeight: 600 }}>{match[2]}</span>)
+    remaining = remaining.slice(match.index + match[0].length)
+    match = colorRegex.exec(remaining)
+  }
+  if (remaining) parts.push(remaining)
+  return parts
+}
+
+function renderSanityText(text: string, bulletColor?: string): React.ReactNode {
+  const lines = text.split('\n')
+  const items: React.ReactNode[] = []
+  lines.forEach((line, i) => {
+    const trimmed = line.trim()
+    if (!trimmed) return
+    const isBullet = trimmed.startsWith('·')
+    const isSub = trimmed.startsWith('(')
+    const content = isBullet ? trimmed.slice(1) : trimmed
+    if (isSub) {
+      items.push(
+        <div key={i} style={{ paddingLeft: '1rem', color: '#999', fontSize: '0.6875rem', lineHeight: 1.7 }}>
+          {parseMarkupTags(content)}
+        </div>
+      )
+    } else {
+      items.push(
+        <div key={i} className="flex gap-2" style={{ lineHeight: 1.8, marginTop: i > 0 && !lines[i - 1]?.trim().startsWith('(') ? '2px' : '0' }}>
+          <div style={{ width: '5px', height: '5px', borderRadius: '1px', backgroundColor: bulletColor ?? '#666', flexShrink: 0, marginTop: '0.5rem' }} />
+          <span>{parseMarkupTags(content)}</span>
+        </div>
+      )
+    }
+  })
+  return <div>{items}</div>
+}
+
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 function sinColor(sin: string): string {
   return SIN_COLORS[sin as SinType] ?? '#cccccc'
@@ -196,9 +252,18 @@ function LoadingSkeleton() {
   )
 }
 
+// ── 탭 정의 ───────────────────────────────────────────────────────────────
+const MODAL_TABS = [
+  { key: 'skill', label: '스킬' },
+  { key: 'passive', label: '패시브' },
+  { key: 'sanity', label: '정신력' },
+] as const
+type ModalTab = typeof MODAL_TABS[number]['key']
+
 // ── 모달 본문 ─────────────────────────────────────────────────────────────
 function ModalContent({ data }: { data: ApiResponse }) {
   const { identity, sinner_name, skills, passives, sanity_conditions: sanityConditions = [], panic_info: panicInfo = null } = data
+  const [activeTab, setActiveTab] = useState<ModalTab>('skill')
 
   // 4동기화 우선 스킬
   const sortedSkills = bestUptie(skills, s => `${s.skill_order}:${s.variant_order ?? 0}`)
@@ -330,79 +395,191 @@ function ModalContent({ data }: { data: ApiResponse }) {
         )}
       </div>
 
-      {/* ── 스킬 섹션 ────────────────────────────────────────── */}
-      <Section title="스킬">
-        {atkSkills.length === 0 && defSkills.length === 0 ? (
-          <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>스킬 정보 없음</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {atkSkills.map(skill => (
-              <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} atkSkills={atkSkills} />
-            ))}
-            {defSkills.map(skill => (
-              <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} isDefense />
-            ))}
-          </div>
-        )}
-      </Section>
+      {/* ── 탭 바 ────────────────────────────────────────────── */}
+      <div className="flex" style={{ borderBottom: '1px solid rgba(32,20,8,0.7)', overflowX: 'auto' }}>
+        {MODAL_TABS.map(tab => {
+          const active = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '0.625rem 1rem',
+                fontSize: '0.8125rem',
+                fontWeight: active ? 700 : 400,
+                color: active ? '#e8dcc8' : '#555',
+                background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
 
-      {/* ── 패시브 섹션 ──────────────────────────────────────── */}
-      <Section title="패시브">
-        {sortedPassives.length === 0 ? (
-          <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>패시브 정보 없음</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {sortedPassives.map(passive => (
-              <PassiveCard key={passive.id} passive={passive} />
-            ))}
-          </div>
-        )}
-      </Section>
+      {/* ── 스킬 탭 ──────────────────────────────────────────── */}
+      {activeTab === 'skill' && (
+        <div className="px-5 py-3">
+          {atkSkills.length === 0 && defSkills.length === 0 ? (
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>스킬 정보 없음</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {atkSkills.map(skill => (
+                <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} atkSkills={atkSkills} />
+              ))}
+              {defSkills.map(skill => (
+                <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} isDefense />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* ── 정신력 / 패닉 ─────────────────────────────────────── */}
-      {(panicInfo || sanityConditions.length > 0) && (
-        <Section title="정신력">
-          <div className="flex flex-col gap-2">
-            {panicInfo && (
-              <div className="flex items-center gap-2 p-2 rounded" style={{ background: 'rgba(200,64,80,0.08)', border: '1px solid rgba(200,64,80,0.2)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(200,64,80,0.15)', color: '#c84050', border: '1px solid rgba(200,64,80,0.3)' }}>
-                  패닉
-                </span>
-                <span style={{ color: '#c84050', fontSize: '0.75rem', fontWeight: 600 }}>
-                  {panicInfo.name} — {panicInfo.description}
-                </span>
-              </div>
-            )}
-            {sanityConditions.filter(c => c.condition_type === 'increase').length > 0 && (
-              <div className="p-2 rounded" style={{ background: 'rgba(136,168,48,0.08)', border: '1px solid rgba(136,168,48,0.2)' }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(136,168,48,0.15)', color: '#88a830', border: '1px solid rgba(136,168,48,0.3)' }}>
-                    증가
-                  </span>
-                </div>
-                {sanityConditions.filter(c => c.condition_type === 'increase').map((c, i) => (
-                  <div key={`inc-${i}`} style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#88a830' }}>
-                    ·{c.text.replace(/<[^>]+>/g, '')}
+      {/* ── 패시브 탭 ────────────────────────────────────────── */}
+      {activeTab === 'passive' && (
+        <div className="px-5 py-3">
+          {sortedPassives.length === 0 ? (
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>패시브 정보 없음</p>
+          ) : (
+            <>
+              {/* 배틀 패시브 */}
+              {sortedPassives.filter(p => p.passive_type === 'battle').length > 0 && (
+                <>
+                  <div className="flex items-center gap-3 my-3">
+                    <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(200,144,10,0.3) 100%)' }} />
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>패시브</span>
+                    <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3) 0%, transparent 100%)' }} />
                   </div>
-                ))}
-              </div>
-            )}
-            {sanityConditions.filter(c => c.condition_type === 'decrease').length > 0 && (
-              <div className="p-2 rounded" style={{ background: 'rgba(224,96,112,0.08)', border: '1px solid rgba(224,96,112,0.2)' }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', fontWeight: 600, background: 'rgba(224,96,112,0.15)', color: '#e06070', border: '1px solid rgba(224,96,112,0.3)' }}>
-                    감소
-                  </span>
-                </div>
-                {sanityConditions.filter(c => c.condition_type === 'decrease').map((c, i) => (
-                  <div key={`dec-${i}`} style={{ fontSize: '0.6875rem', lineHeight: 1.7, color: '#e06070' }}>
-                    ·{c.text.replace(/<[^>]+>/g, '')}
+                  <div className="flex flex-col gap-2">
+                    {sortedPassives.filter(p => p.passive_type === 'battle').map(passive => (
+                      <PassiveCard key={passive.id} passive={passive} />
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Section>
+                </>
+              )}
+              {/* 서포트 패시브 */}
+              {sortedPassives.filter(p => p.passive_type === 'support').length > 0 && (
+                <>
+                  <div className="flex items-center gap-3 my-3">
+                    <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(200,144,10,0.3) 100%)' }} />
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>서포트 패시브</span>
+                    <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3) 0%, transparent 100%)' }} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {sortedPassives.filter(p => p.passive_type === 'support').map(passive => (
+                      <PassiveCard key={passive.id} passive={passive} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── 정신력 탭 ────────────────────────────────────────── */}
+      {activeTab === 'sanity' && (
+        <div className="px-5 py-3">
+          {!panicInfo && sanityConditions.length === 0 ? (
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>정신력 정보 없음</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {/* 패닉 타입 */}
+              {panicInfo && (
+                <div>
+                  <div className="mb-2">
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.1em',
+                      color: '#80c9ff', border: '1px solid rgba(128,201,255,0.5)',
+                      padding: '1px 6px', fontFamily: 'var(--font-heading)',
+                    }}>
+                      패닉 타입
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={panicInfo.name === '사랑과 증오' ? PANIC_LOVE_HATE_URL : PANIC_IMG_URL}
+                        alt="패닉"
+                        width={64}
+                        height={64}
+                        style={{ width: '4rem', height: 'auto', filter: 'drop-shadow(0 0 6px rgba(200,60,60,0.5))' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 pt-1">
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.06em', color: '#d4a050', marginBottom: '0.25rem', fontFamily: 'var(--font-heading)' }}>
+                        · 패닉 효과
+                      </div>
+                      {panicInfo.description && (
+                        <p style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.75 }}>
+                          {panicInfo.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="font-serif font-bold" style={{ color: '#e04040', fontSize: '1.125rem', lineHeight: 1.2, textShadow: '0 0 12px rgba(220,60,60,0.35)' }}>
+                    {panicInfo.name}
+                  </div>
+                </div>
+              )}
+
+              {/* 기본 정신력 증가 조건 */}
+              {sanityConditions.filter(c => c.condition_type === 'increase').length > 0 && (
+                <div className="relative overflow-hidden">
+                  <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', opacity: 0.07, pointerEvents: 'none' }}>
+                    <Image src={SANITY_INCREASE_BG} alt="" width={80} height={80} style={{ width: 'auto', height: 'auto' }} />
+                  </div>
+                  <div className="mb-1.5">
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.08em',
+                      color: '#80c9ff', border: '1px solid rgba(128,201,255,0.5)',
+                      padding: '1px 6px', fontFamily: 'var(--font-heading)',
+                    }}>
+                      기본 정신력 증가 조건
+                    </span>
+                  </div>
+                  <div className="relative" style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.85, whiteSpace: 'pre-line' }}>
+                    {sanityConditions.filter(c => c.condition_type === 'increase').map((c, i) => (
+                      <div key={`inc-${i}`}>{renderSanityText(c.text, '#80c9ff')}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 기본 정신력 감소 조건 */}
+              {sanityConditions.filter(c => c.condition_type === 'decrease').length > 0 && (
+                <div className="relative overflow-hidden">
+                  <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', opacity: 0.07, pointerEvents: 'none' }}>
+                    <Image src={SANITY_DECREASE_BG} alt="" width={80} height={80} style={{ width: 'auto', height: 'auto' }} />
+                  </div>
+                  <div className="mb-1.5">
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.08em',
+                      color: '#fe4b48', border: '1px solid rgba(254,75,72,0.5)',
+                      padding: '1px 6px', fontFamily: 'var(--font-heading)',
+                    }}>
+                      기본 정신력 감소 조건
+                    </span>
+                  </div>
+                  <div className="relative" style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.85, whiteSpace: 'pre-line' }}>
+                    {sanityConditions.filter(c => c.condition_type === 'decrease').map((c, i) => (
+                      <div key={`dec-${i}`}>{renderSanityText(c.text, '#fe4b48')}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -420,6 +597,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+// ── sin→frame name 맵 ────────────────────────────────────────────────────
+const SIN_FRAME_MAP: Record<string, string> = {
+  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
+  gloom: 'azure', pride: 'indigo', envy: 'violet',
+}
+
 // ── SkillCard ─────────────────────────────────────────────────────────────
 function SkillCard({
   skill,
@@ -435,8 +618,8 @@ function SkillCard({
   isDefense?: boolean
 }) {
   const sc = sinColor(skill.sin_affinity)
-  const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
-  const maxPower = skill.coin_power < 0 ? skill.base_power : skill.base_power + skill.coins * skill.coin_power
+  const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
+  const frameSize = '3.5rem'
 
   // 스킬 라벨 계산
   let skillLabel: string
@@ -460,46 +643,141 @@ function SkillCard({
   const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
   const iconUrl = identity.game_id
     ? `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imgIdx).padStart(2, '0')}.webp`
-    : null
+    : ''
+
+  // 파괴 불가 코인 파싱
+  const unbreakableCoins = new Set<number>()
+  if (skill.description) {
+    const ubMatches = skill.description.matchAll(/\[코인\s?(\d+)\]\s*파괴 불가 코인/g)
+    for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]))
+  }
+
+  const isAttackSkill = !isDefense
 
   return (
     <div className="p-2.5 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}25` }}>
-      {/* 헤더 */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {iconUrl && (
-            <Image src={iconUrl} alt="" width={20} height={20}
-              style={{ width: '1.25rem', height: '1.25rem', borderRadius: '0.1875rem', border: `1px solid ${sc}40`, flexShrink: 0 }} />
-          )}
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: '0.1875rem', background: `${sc}20`, color: sc, border: `1px solid ${sc}40` }}>
-            {skillLabel}
-          </span>
-          <span className="truncate" style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{skill.name}</span>
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <Image src={sinIconUrl(skill.sin_affinity)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.7 }} />
-          {ATK_TYPE_ICON_MAP[skill.skill_type] && (
-            <Image src={ATK_TYPE_ICON_MAP[skill.skill_type]} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.6 }} />
-          )}
-        </div>
-      </div>
+      {/* 프레임 + 스킬 정보 행 */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.25rem', marginBottom: '0.5rem' }}>
+        {/* 프레임 영역 */}
+        <div className="relative shrink-0 ml-1" style={{ width: frameSize, height: frameSize }}>
+          {/* 죄악 색 삼각형 */}
+          <div className="absolute flex items-center justify-center pointer-events-none" style={{
+            top: '1.5%', left: '50%', transform: 'translateX(-56%)',
+            width: '1rem', height: '1rem', zIndex: 0,
+          }}>
+            <div className="absolute" style={{
+              width: '1.5rem', height: '1rem',
+              backgroundColor: sc,
+              clipPath: 'polygon(5% 20%, 85% 0%, 100% 100%, 10% 100%)',
+            }} />
+          </div>
 
-      {/* 수치 */}
-      <div className="flex items-center gap-3 mb-1" style={{ fontSize: '0.6875rem', color: '#999' }}>
-        <span>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)' }}>{skill.base_power}</strong></span>
-        <span>코인 <strong style={{ color: '#c8900a', fontFamily: 'var(--font-mono)' }}>{skill.coins}</strong></span>
-        <span>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)' }}>{coinPowerStr}</strong></span>
-        {skill.atk_weight != null && skill.atk_weight !== 1 && (
-          <span>가중치 <strong style={{ color: '#d0a020', fontFamily: 'var(--font-mono)' }}>{skill.atk_weight}</strong></span>
-        )}
-        <span style={{ marginLeft: 'auto' }}>최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)' }}>{maxPower}</strong></span>
+          <SkillFrame
+            skillIconUrl={iconUrl}
+            sin={skill.sin_affinity || 'neutral'}
+            skillSlot={skill.skill_order <= 3 ? skill.skill_order : 1}
+            sinColor={sc}
+            label={skillLabel}
+            size={frameSize}
+          />
+
+          {/* 공격 타입 아이콘 (하단) */}
+          {isAttackSkill && skill.skill_type && ['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
+            <div className="absolute z-20 pointer-events-none"
+              style={{ bottom: 0, left: '50%', marginLeft: '-0.625rem', transform: 'translateY(-30%)', width: '1.25rem', height: '1.25rem' }}>
+              <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
+                alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
+                alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <Image src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
+                alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.625rem', height: '0.625rem' }} />
+            </div>
+          )}
+
+          {/* 기본 위력 */}
+          <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
+            <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', fontSize: '1.25rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
+              {skill.base_power}
+            </span>
+          </div>
+
+          {/* 코인 위력 */}
+          <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-40%)' }}>
+            <span style={{
+              fontFamily: 'var(--font-excelsior), sans-serif', fontSize: '0.75rem', fontWeight: 700, lineHeight: 1,
+              color: skill.coin_power >= 0 ? 'oklch(81.35% .0894 69.33)' : '#ff8866',
+              textShadow: '1px 1px 1px black',
+              WebkitTextStroke: '0.01px black',
+            }}>
+              {skill.coin_power >= 0 ? `+${skill.coin_power}` : <><span style={{ fontSize: '0.9rem' }}>-</span>{Math.abs(skill.coin_power)}</>}
+            </span>
+          </div>
+        </div>
+
+        {/* 스킬 정보 */}
+        <div className="flex-1 min-w-0 overflow-hidden pt-0.5">
+          {/* 코인 아이콘 */}
+          <div className="flex items-center gap-0.5 mb-0.5">
+            {Array.from({ length: skill.coins }).map((_, ci) => {
+              const isUb = unbreakableCoins.has(ci + 1)
+              return (
+                <Image key={ci}
+                  src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
+                  alt={isUb ? '파괴 불가 코인' : '코인'} width={16} height={16}
+                  style={{ width: '0.875rem', height: '0.875rem' }}
+                />
+              )
+            })}
+          </div>
+
+          {/* 스킬 이름 (사선 꼬리 디자인) */}
+          <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
+            <div style={{
+              color: '#e8dcc8',
+              backgroundImage: `linear-gradient(255deg, transparent 1.2em, ${sc}30 1.2em)`,
+            }}>
+              <div style={{
+                padding: '0.1em 0 0.1em 0.3em',
+                backgroundImage: `linear-gradient(290deg, transparent 2em, ${sc}40 2em, ${sc}40 2.12em, transparent 2.12em, transparent 2.24em, ${sc}40 2.24em, ${sc}40 2.36em, transparent 2.36em, transparent 2.48em, ${sc}40 2.48em, ${sc}40 2.6em, transparent 2.6em, transparent 2.72em, ${sc}40 2.72em)`,
+                textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
+              }}>
+                <span className="font-bold whitespace-nowrap" style={{
+                  fontSize: '0.75rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
+                  paddingRight: '3.5em',
+                }}>
+                  {skill.name}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 공격 레벨 + 가중치 */}
+          <div className="flex items-center gap-3">
+            {skill.offense_level != null && (
+              <div className="flex items-center gap-0.5">
+                <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} style={{ width: '1rem', height: '1rem' }} />
+                <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: '#e8dcc8', fontSize: '1rem', textDecoration: 'underline', textUnderlineOffset: '2px', textDecorationColor: '#e8dcc8' }}>
+                  {skill.offense_level}
+                </span>
+              </div>
+            )}
+            {isAttackSkill && (
+              <div className="flex items-center gap-1">
+                <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>공격 가중치</span>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
+                    <div key={i} style={{ width: '0.5625rem', height: '0.5625rem', background: '#c8900a', borderRadius: '0.1rem' }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 스킬 설명 */}
       {skill.description && (
-        <div style={{ marginTop: '0.375rem', borderTop: `1px solid ${sc}15`, paddingTop: '0.375rem' }}>
-          <SkillDescription description={skill.description} accentColor={sc} variant="compact" />
-        </div>
+        <SkillDescription description={skill.description} accentColor={sc} variant="compact" />
       )}
     </div>
   )
@@ -507,7 +785,6 @@ function SkillCard({
 
 // ── PassiveCard ───────────────────────────────────────────────────────────
 function PassiveCard({ passive }: { passive: PassiveData }) {
-  const isBattle = passive.passive_type === 'battle'
   const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
   // DB에 영문(pride) 또는 한글(오만) 둘 다 올 수 있음
   const ALL_SINS = new Set(['wrath','lust','sloth','gluttony','gloom','pride','envy'])
@@ -515,37 +792,51 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
   const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
 
   return (
-    <div className="p-2.5 rounded" style={{ background: `${pc}08`, border: `1px solid ${pc}20` }}>
-      {/* 헤더: 타입 + 이름 + 죄악아이콘 x수 보유/공명 — 한 줄 */}
-      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', padding: '0.125rem 0.375rem',
-          borderRadius: '0.1875rem', fontWeight: 600,
-          background: isBattle ? 'rgba(200,64,80,0.15)' : 'rgba(72,120,160,0.15)',
-          color: isBattle ? '#c84050' : '#4898b0',
-          border: `1px solid ${isBattle ? 'rgba(200,64,80,0.3)' : 'rgba(72,120,160,0.3)'}`,
+    <div className="py-1.5">
+      {/* 패시브 이름 — 사선 꼬리 배너 */}
+      <div className="overflow-hidden mb-2" style={{ width: 'fit-content', maxWidth: '100%' }}>
+        <div style={{
+          color: '#e8dcc8',
+          backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${pc}30 1.5em)`,
         }}>
-          {isBattle ? '배틀' : '서포트'}
-        </span>
-        <span style={{ color: pc, fontSize: '0.75rem', fontWeight: 600 }}>{passive.name}</span>
-        {sinTypes.map((st, i) => (
-          <Image key={i} src={sinIconUrl(st)} alt="" width={14} height={14}
-            style={{ width: '0.875rem', height: '0.875rem', filter: `drop-shadow(0 0 3px ${SIN_COLORS[st]}80)` }} />
-        ))}
-        {sinTypes.length > 0 && passive.sin_count != null && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
-        )}
-        {passive.active_cond && (
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: pc, fontFamily: 'var(--font-heading)' }}>
-            {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
-          </span>
-        )}
+          <div style={{
+            padding: '0.25em 0 0.25em 0.4em',
+            backgroundImage: `linear-gradient(290deg, transparent 2.5em, ${pc}35 2.5em, ${pc}35 2.65em, transparent 2.65em, transparent 2.8em, ${pc}35 2.8em, ${pc}35 2.95em, transparent 2.95em, transparent 3.1em, ${pc}35 3.1em, ${pc}35 3.25em, transparent 3.25em, transparent 3.4em, ${pc}35 3.4em)`,
+            textShadow: '1px 1px 3px rgba(0,0,0,0.7)',
+          }}>
+            <span className="font-bold whitespace-nowrap" style={{
+              fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
+              paddingRight: '4em',
+            }}>
+              {passive.name}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {passive.description && (
-        <div style={{ marginTop: '0.25rem', borderTop: `1px solid ${pc}15`, paddingTop: '0.375rem' }}>
-          <SkillDescription description={passive.description} accentColor={pc} variant="compact" />
+      {/* 발동 조건: 죄악 아이콘 + x수 + 공명/보유 */}
+      {(sinTypes.length > 0 || passive.active_cond) && (
+        <div className="flex items-center gap-2 mb-2">
+          {sinTypes.map((st, i) => (
+            <Image key={i} src={sinIconUrl(st)} alt="" width={22} height={22}
+              style={{ width: '1.375rem', height: '1.375rem', filter: `drop-shadow(0 0 4px ${SIN_COLORS[st]}80)` }} />
+          ))}
+          {sinTypes.length > 0 && passive.sin_count != null && (
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.8125rem', fontWeight: 700, color: '#e8dcc8' }}>
+              x{passive.sin_count}
+            </span>
+          )}
+          {passive.active_cond && (
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.8125rem', fontWeight: 700, color: '#e8dcc8' }}>
+              {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
+            </span>
+          )}
         </div>
+      )}
+
+      {/* 설명 */}
+      {passive.description && (
+        <SkillDescription description={passive.description} accentColor={pc} variant="compact" />
       )}
     </div>
   )
