@@ -66,12 +66,17 @@ function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSum
   return { ...d, username: d.profiles?.username ?? undefined }
 }
 
-export default function DecksClient() {
+interface DecksClientProps {
+  initialDecks?: DeckSummary[]
+  initialTotal?: number
+}
+
+export default function DecksClient({ initialDecks, initialTotal }: DecksClientProps = {}) {
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const { status: authStatus } = useSession()
-  const [decks, setDecks] = useState<DeckSummary[]>([])
-  const [loading, setLoading] = useState(true)
+  const [decks, setDecks] = useState<DeckSummary[]>(() => initialDecks ?? [])
+  const [loading, setLoading] = useState(!initialDecks || initialDecks.length === 0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
@@ -246,8 +251,18 @@ export default function DecksClient() {
     })
   }, [])
 
+  // 초기 서버 데이터 사용 여부 추적 (sort=latest 첫 렌더에서 fetch 생략)
+  const initialDataUsed = useRef(Boolean(initialDecks && initialDecks.length > 0))
+
   // 덱 목록 로드 (초기)
   useEffect(() => {
+    // 서버에서 받은 초기 데이터가 있고 아직 사용하지 않은 경우 skip (sort=latest 기본값)
+    if (initialDataUsed.current && sort === 'latest') {
+      initialDataUsed.current = false
+      if (initialDecks && initialDecks.length < PAGE_SIZE) setHasMore(false)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setDecks([])
     setHasMore(true)
@@ -261,7 +276,7 @@ export default function DecksClient() {
       })
       .catch((e) => console.error('덱 목록 로드 실패:', e))
       .finally(() => setLoading(false))
-  }, [sort])
+  }, [sort]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 추가 로드
   const loadMore = useCallback(() => {

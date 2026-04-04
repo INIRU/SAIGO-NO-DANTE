@@ -37,20 +37,29 @@ function getPlanThemeKeywords(plan: PlanSummary): string[] {
   return plan.theme_keywords ?? []
 }
 
-export default function CommunityClient() {
+type CommunityClientProps = {
+  initialPlans?: PlanSummary[]
+  initialTotal?: number
+}
+
+export default function CommunityClient({ initialPlans, initialTotal }: CommunityClientProps) {
   const { status: authStatus } = useSession()
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
-  const [plans, setPlans] = useState<PlanSummary[]>([])
-  const [loading, setLoading] = useState(true)
+  const [plans, setPlans] = useState<PlanSummary[]>(initialPlans ?? [])
+  const [loading, setLoading] = useState(initialPlans === undefined)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(
+    initialPlans !== undefined && initialTotal !== undefined
+      ? initialPlans.length < initialTotal
+      : true
+  )
+  const [total, setTotal] = useState(initialTotal ?? 0)
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
   const [debouncedSearch, setDebouncedSearch] = useState(search)
-  const offsetRef = useRef(0)
+  const offsetRef = useRef(initialPlans?.length ?? 0)
   const searchRef = useRef<HTMLDivElement>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
@@ -207,10 +216,19 @@ export default function CommunityClient() {
     }
   }, [])
 
+  const isInitialDefaultState = useRef(true)
+
   useEffect(() => {
+    // Skip the very first fetch if server already provided initial data with default filters
+    // (sort=latest, no difficulty). Any subsequent change (sort, difficulty) triggers a fresh fetch.
+    if (isInitialDefaultState.current && initialPlans !== undefined && sort === 'latest' && difficulty === null) {
+      isInitialDefaultState.current = false
+      return
+    }
+    isInitialDefaultState.current = false
     offsetRef.current = 0
     fetchPlans({ sort: sort as SortKey, difficulty, offset: 0, replace: true })
-  }, [sort, difficulty, fetchPlans])
+  }, [sort, difficulty, fetchPlans, initialPlans])
 
   const handleLoadMore = () => {
     fetchPlans({ sort: sort as SortKey, difficulty, offset: offsetRef.current, replace: false })
