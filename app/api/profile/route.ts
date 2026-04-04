@@ -201,15 +201,21 @@ export async function DELETE() {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    // 유저의 덱 삭제 (CASCADE로 deck_identities, deck_votes 자동 삭제)
-    await admin.schema('limbus').from('decks').delete().eq('user_id', userId)
+    // Delete app data atomically
+    const { error: deleteDataError } = await admin
+      .schema('limbus')
+      .rpc('delete_user_account', { p_user_id: userId })
 
-    // 프로필 삭제
-    await admin.schema('limbus').from('profiles').delete().eq('id', userId)
+    if (deleteDataError) {
+      return NextResponse.json({ error: deleteDataError.message }, { status: 500 })
+    }
 
-    // Supabase auth 유저 삭제
+    // Delete auth user (must be separate — admin API only)
     const { error } = await admin.auth.admin.deleteUser(userId)
     if (error) {
+      // App data is already deleted but auth user remains
+      // Log this for manual cleanup
+      console.error('Auth user deletion failed after app data cleanup:', error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 

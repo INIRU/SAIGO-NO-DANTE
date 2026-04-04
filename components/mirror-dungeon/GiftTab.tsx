@@ -145,11 +145,13 @@ export default function GiftTab({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
   const animatedCountRef = useRef(0)
+  const filterChangedRef = useRef(false)
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
     animatedCountRef.current = 0
     loadingRef.current = false
+    filterChangedRef.current = true
   }, [filtered])
 
   const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
@@ -186,6 +188,16 @@ export default function GiftTab({
     ;(async () => {
       const gsap = (await import('gsap')).default
       const cards = document.querySelectorAll('.gift-grid .gift-card')
+
+      if (filterChangedRef.current) {
+        // Filter/search changed: snap all cards to final state immediately, no animation
+        filterChangedRef.current = false
+        if (cards.length > 0) gsap.set(cards, { opacity: 1, y: 0, scale: 1 })
+        animatedCountRef.current = cards.length
+        return
+      }
+
+      // Scroll load: only animate newly added cards
       const newCards: Element[] = []
       cards.forEach((card, i) => {
         if (i >= animatedCountRef.current) newCards.push(card)
@@ -365,7 +377,6 @@ export default function GiftTab({
                 border: '1px solid rgba(255,255,255,0.06)',
                 color: '#ccc',
                 outline: 'none',
-                fontFamily: 'var(--font-heading)',
               }}
             />
             {(inputValue || search) && (

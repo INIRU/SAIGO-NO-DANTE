@@ -269,18 +269,31 @@ export default function GiftModal({
               <div className="flex items-center gap-1.5 flex-wrap">
                 {recipe.ingredients.map((ing, i) => (
                   <span key={i} className="flex items-center">
-                    <span
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.6875rem]"
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#bbb',
-                      }}
-                    >
-                      {giftImageMap.get(ing) && (
-                        <Image src={giftImageMap.get(ing)!} alt="" width={16} height={16} className="flex-shrink-0" />
-                      )}
-                      {ing}
-                    </span>
+                    {ing === '조각 중 택 2종' ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.625rem]"
+                        style={{
+                          background: 'rgba(255,255,255,0.03)',
+                          color: '#999',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        업화 · 매혹 · 타성 · 욕망 · 교만 · 마찰 · 인연 · 잠식 조각 중 택 2
+                      </span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.6875rem]"
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          color: '#bbb',
+                        }}
+                      >
+                        {giftImageMap.get(ing) && (
+                          <Image src={giftImageMap.get(ing)!} alt="" width={16} height={16} className="flex-shrink-0" />
+                        )}
+                        {ing}
+                      </span>
+                    )}
                     {i < recipe.ingredients.length - 1 && (
                       <span style={{ color: '#444', margin: '0 2px', fontFamily: 'sans-serif' }}>+</span>
                     )}

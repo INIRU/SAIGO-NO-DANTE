@@ -15,6 +15,7 @@ const S = STORAGE_BASE
 export interface RecipeLookup {
   materials: GiftData[]
   result: GiftData
+  pseudoIngredients?: string[]
 }
 
 interface Props {
@@ -181,6 +182,23 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
                     {i < recipe.materials.length - 1 && (
                       <span style={{ color: '#444', margin: '0 0.125rem', fontFamily: 'sans-serif' }}>+</span>
                     )}
+                  </span>
+                ))}
+                {recipe.pseudoIngredients?.map((pi, i) => (
+                  <span key={`pseudo-${i}`} className="flex items-center">
+                    {(recipe.materials.length > 0 || i > 0) && (
+                      <span style={{ color: '#444', margin: '0 0.125rem', fontFamily: 'sans-serif' }}>+</span>
+                    )}
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[0.625rem]"
+                      style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        color: '#999',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {pi}
+                    </span>
                   </span>
                 ))}
                 <span style={{ color: '#555', margin: '0 0.25rem', fontFamily: 'sans-serif' }}>=</span>
