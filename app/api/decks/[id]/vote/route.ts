@@ -62,27 +62,17 @@ export async function POST(
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    const { error: voteError } = await admin
+    const { data: voted, error: voteError } = await admin
       .schema('limbus')
-      .from('deck_votes')
-      .insert({ deck_id: id, user_id: userId })
+      .rpc('toggle_vote', { p_deck_id: id, p_user_id: userId })
 
     if (voteError) {
-      if (voteError.code === '23505') {
-        await admin.schema('limbus').from('deck_votes')
-          .delete().eq('deck_id', id).eq('user_id', userId)
-        await admin.schema('limbus').rpc('decrement_vote', { deck_id: id })
-        revalidatePath('/decks')
-        revalidatePath(`/decks/${id}`)
-        return NextResponse.json({ voted: false })
-      }
       return NextResponse.json({ error: voteError.message }, { status: 500 })
     }
 
-    await admin.schema('limbus').rpc('increment_vote', { deck_id: id })
     revalidatePath('/decks')
     revalidatePath(`/decks/${id}`)
-    return NextResponse.json({ voted: true })
+    return NextResponse.json({ voted })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })

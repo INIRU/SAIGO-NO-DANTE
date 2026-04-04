@@ -31,6 +31,7 @@ export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Se
           border: `1px solid ${isActive ? 'var(--gold-dim)' : 'rgba(255,255,255,0.1)'}`,
           color: isActive ? 'var(--gold)' : '#777',
           fontFamily: 'var(--font-heading)',
+          fontWeight: 700,
           minWidth: 100,
         }}
       >
@@ -66,6 +67,7 @@ export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Se
                   cursor: 'pointer',
                   color: checked ? 'var(--gold)' : '#777',
                   fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
                 }}
               >
                 <span

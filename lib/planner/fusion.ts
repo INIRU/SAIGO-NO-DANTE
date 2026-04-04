@@ -38,6 +38,7 @@ export function getGiftActivationStatus(
 export interface FusionResult {
   recipe: RecipeData
   materials: GiftData[]
+  pseudoIngredients: string[]
   result: GiftData | null
   canCraft: boolean  // 인벤토리에 재료가 있는지
 }
@@ -57,13 +58,15 @@ export function findAvailableFusions(
   return recipes
     .map(recipe => {
       const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
+      const pseudoIngredients = recipe.ingredients.filter(name => !nameMap.has(name))
       const result = nameMap.get(recipe.result_name) ?? null
       const canCraft = recipe.ingredients.every(name => {
-        const gift = nameMap.get(name)
-        return gift && invSet.has(String(gift.game_id))
+        if (!nameMap.has(name)) return true  // pseudo-ingredient, skip
+        const gift = nameMap.get(name)!
+        return invSet.has(String(gift.game_id))
       })
 
-      return { recipe, materials, result, canCraft }
+      return { recipe, materials, pseudoIngredients, result, canCraft }
     })
     .sort((a, b) => {
       if (a.canCraft !== b.canCraft) return a.canCraft ? -1 : 1
@@ -86,8 +89,9 @@ export function findRecipesFor(
     .filter(r => r.result_name === targetName)
     .map(recipe => {
       const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
+      const pseudoIngredients = recipe.ingredients.filter(name => !nameMap.has(name))
       const result = nameMap.get(targetName) ?? null
-      return { recipe, materials, result, canCraft: false }
+      return { recipe, materials, pseudoIngredients, result, canCraft: false }
     })
 }
 

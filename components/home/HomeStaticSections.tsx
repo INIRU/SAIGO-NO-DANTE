@@ -1,6 +1,5 @@
 import React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Globe, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
   Shield, Layers, Compass, BookOpen, Trophy, Dices, Shuffle, Map,
@@ -291,6 +290,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                   borderRadius: '0.25rem',
                   padding: '1.5rem',
                   minHeight: '10rem',
+                  height: '100%',
                   transition: 'border-color 0.25s, box-shadow 0.25s, background 0.25s',
                   position: 'relative',
                 }}

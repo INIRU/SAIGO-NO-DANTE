@@ -97,10 +97,11 @@ export default function FusionTab({ state, dispatch, recipes, gifts, giftMap }: 
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {availableFusions.map(({ recipe, materials, result, canCraft }) => (
+            {availableFusions.map(({ recipe, materials, pseudoIngredients, result, canCraft }) => (
               <FusionCard
                 key={recipe.id}
                 materials={materials}
+                pseudoIngredients={pseudoIngredients}
                 result={result}
                 canCraft={canCraft}
               />
@@ -199,8 +200,8 @@ export default function FusionTab({ state, dispatch, recipes, gifts, giftMap }: 
 
         {reverseResults.length > 0 && (
           <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {reverseResults.map(({ recipe, materials, result }) => (
-              <FusionCard key={recipe.id} materials={materials} result={result} canCraft={false} />
+            {reverseResults.map(({ recipe, materials, pseudoIngredients, result }) => (
+              <FusionCard key={recipe.id} materials={materials} pseudoIngredients={pseudoIngredients} result={result} canCraft={false} />
             ))}
           </div>
         )}
@@ -216,11 +217,12 @@ export default function FusionTab({ state, dispatch, recipes, gifts, giftMap }: 
 
 interface FusionCardProps {
   materials: GiftData[]
+  pseudoIngredients?: string[]
   result: GiftData | null
   canCraft: boolean
 }
 
-function FusionCard({ materials, result, canCraft }: FusionCardProps) {
+function FusionCard({ materials, pseudoIngredients, result, canCraft }: FusionCardProps) {
   return (
     <div style={{
       display: 'flex',
@@ -237,6 +239,14 @@ function FusionCard({ materials, result, canCraft }: FusionCardProps) {
           <div key={mat.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             {i > 0 && <span style={{ fontSize: '0.6875rem', color: '#4b5563' }}>+</span>}
             <GiftChip gift={mat} />
+          </div>
+        ))}
+        {pseudoIngredients?.map((pi, i) => (
+          <div key={`pseudo-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            {(materials.length > 0 || i > 0) && <span style={{ fontSize: '0.6875rem', color: '#4b5563' }}>+</span>}
+            <span style={{ fontSize: '0.625rem', color: '#999', fontStyle: 'italic' }}>
+              {pi}
+            </span>
           </div>
         ))}
       </div>
