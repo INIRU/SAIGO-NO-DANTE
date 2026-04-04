@@ -309,7 +309,6 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
     model: ai.chat(modelId),
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
-    temperature: 0.7,
     maxOutputTokens: 1500,
     onFinish: async ({ text }) => {
       if (!text) return
