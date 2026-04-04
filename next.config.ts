@@ -13,16 +13,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // Cache-Control for /_next/image — production only (dev mode uses its own caching)
-      ...(process.env.NODE_ENV === 'production' ? [{
-        source: '/_next/image',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      }] : []),
       {
         source: '/(.*)',
         headers: [
@@ -81,4 +71,7 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",
   silent: !process.env.CI,
+  sourcemaps: {
+    disable: process.env.NODE_ENV !== 'production' || !process.env.SENTRY_AUTH_TOKEN,
+  },
 });
