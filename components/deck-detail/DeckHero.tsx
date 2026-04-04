@@ -55,6 +55,7 @@ export default function DeckHero({ slots }: Props) {
                     fill
                     unoptimized
                     priority={i === 0}
+                    sizes="8.33vw"
                     style={{
                       objectFit: 'cover',
                       objectPosition: 'center top',
