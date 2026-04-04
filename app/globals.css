@@ -15,6 +15,9 @@
   line-gap-override: 0%;
 }
 
+/* SSR grid takeover: hide server-rendered grid after client hydration */
+#keywords-ssr-grid[data-hidden="true"] { display: none; }
+
 @import "tailwindcss";
 
 @theme {

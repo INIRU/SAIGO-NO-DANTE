@@ -103,20 +103,26 @@ export default function IdentityDetailClient({
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
+  // SSR 히어로 플레이스홀더 숨기기 (LCP 최적화용 서버 렌더 요소)
+  useEffect(() => {
+    const ssrHero = document.getElementById('identity-hero-ssr')
+    if (ssrHero) ssrHero.style.display = 'none'
+  }, [])
+
   // GSAP 입장 애니메이션
   const animRef = useRef(false)
   useEffect(() => {
     if (animRef.current) return
     animRef.current = true
-    import('gsap').then(({ gsap }) => {
-      gsap.fromTo('.identity-detail-portrait',
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.6, ease: 'power3.out' }
-      )
-      gsap.fromTo('.identity-detail-content',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power3.out' }
-      )
+    import('gsap').then(({ default: gsap }) => {
+      // portrait: slide in from left, no opacity flash (content already visible from SSR)
+      gsap.from('.identity-detail-portrait', {
+        x: -20, duration: 0.5, ease: 'power3.out', clearProps: 'x',
+      })
+      // content: subtle fade+slide in
+      gsap.from('.identity-detail-content', {
+        opacity: 0, y: 16, duration: 0.5, delay: 0.1, ease: 'power3.out', clearProps: 'all',
+      })
     })
   }, [])
 
@@ -358,7 +364,7 @@ export default function IdentityDetailClient({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 좌측: 인격 이미지 + 이름 (1/3) */}
-          <div className="identity-detail-portrait" style={{ opacity: 0 }}>
+          <div className="identity-detail-portrait">
           <IdentityPortraitSection
             sinner={sinner}
             identity={identity}
@@ -374,7 +380,7 @@ export default function IdentityDetailClient({
           </div>
 
           {/* 우측: 스탯 + 스킬 (2/3) */}
-          <div className="identity-detail-content lg:col-span-2 space-y-8" style={{ opacity: 0 }}>
+          <div className="identity-detail-content lg:col-span-2 space-y-8">
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
             <div className="flex" style={{ borderBottom: '0.125rem solid var(--border)' }}>
               {([

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getSinners } from '@/lib/db/queries'
-import SinnersClient from './SinnersClient'
+import SinnersInteractive from './SinnersInteractive'
+import SinnerCard from '@/components/sinners/SinnerCard'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 
 const SITE_URL = 'https://saigo-no-dante.com'
@@ -32,7 +33,19 @@ export default async function SinnersPage() {
   return (
     <>
       <JsonLd data={sinnerListLd} />
-      <SinnersClient sinners={sinners} />
+      <SinnersInteractive>
+        {/* 카드 그리드 — 서버에서 HTML로 렌더링되어 LCP 개선 */}
+        <div
+          className="sinners-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative"
+          style={{ zIndex: 1 }}
+        >
+          {sinners.map((sinner, i) => (
+            <div key={sinner.id} className="sinner-card-item">
+              <SinnerCard sinner={sinner} index={i} priority={i < 6} />
+            </div>
+          ))}
+        </div>
+      </SinnersInteractive>
     </>
   )
 }

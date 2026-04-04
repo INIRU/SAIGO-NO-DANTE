@@ -353,7 +353,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
-          <div className="sinner-info-card lg:sticky lg:top-24 lg:self-start" style={{ opacity: 0 }}>
+          <div className="sinner-info-card lg:sticky lg:top-24 lg:self-start">
             <div className="card p-4 sm:p-6" style={{
               background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
               border: '0.0625rem solid rgba(200,144,10,0.12)',
@@ -442,7 +442,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           </div>
 
           {/* 우측: 탭 콘텐츠 */}
-          <div className="sinner-content-area lg:col-span-2" style={{ opacity: 0 }}>
+          <div className="sinner-content-area lg:col-span-2">
             {/* 탭 */}
             <div
               className="flex gap-0 mb-4 overflow-hidden"
@@ -527,7 +527,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         background: '#1a1510',
                         border: '1px solid var(--border)',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-                        maxHeight: '280px',
+                        maxHeight: '17.5rem',
                         overflowY: 'auto',
                       }}
                     >
@@ -557,7 +557,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 {iconSlug && (
                                   <img
                                     src={`${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`}
-                                    alt="" style={{ width: '14px', height: '14px' }}
+                                    alt="" style={{ width: '0.875rem', height: '0.875rem' }}
                                   />
                                 )}
                                 <span>{kw}</span>
@@ -851,7 +851,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             {ego.grade !== 'ALEPH' ? (
                               <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
                                 width={33} height={13} unoptimized
-                                style={{ height: '13px', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
+                                style={{ height: '0.8125rem', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
                             ) : (
                               <span style={{ fontFamily: 'monospace', fontSize: '0.5rem', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
                             )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, RotateCcw, LayoutList, Grid3X3 } from 'lucide-react'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
@@ -81,6 +81,11 @@ export default function KeywordsClient({
 }) {
   const [selected, setSelected] = useState<Keyword | null>(null)
   const formatSkillDesc = useFormatSkillDesc()
+
+  /* ── SSR 그리드 숨기기: JS 로드 후 즉시 ── */
+  useEffect(() => {
+    document.getElementById('keywords-ssr-grid')?.setAttribute('data-hidden', 'true')
+  }, [])
 
   /* ── nuqs URL 상태 ── */
   const [viewMode, setViewMode] = useQueryState('view', parseAsString.withDefault('detail'))

@@ -9,50 +9,12 @@ import {
 } from '@/lib/data/sinners'
 import SinBadge from '@/components/ui/SinBadge'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import type { MetaData, IdentityStat, KeywordStat, Synergy, EGOStat } from '@/lib/db/meta'
+import { THEME_KEYWORDS, normalizeThemeKeyword, normalizeForStats } from '@/lib/constants/keywords'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Tab = 'identity' | 'keyword' | 'synergy' | 'ego'
 type IdentitySubTab = 'battle' | 'support'
-
-interface IdentityStat {
-  identity_id: string
-  sinner_id: string
-  name_kr: string
-  keywords: string[]
-  rarity: number
-  folder_name: string | null
-  game_id: string | null
-  count: number
-}
-
-interface KeywordStat { keyword: string; count: number }
-
-interface Synergy {
-  a_id: string; a_name: string; a_sinner_id: string; a_folder: string | null; a_game_id: string | null
-  b_id: string; b_name: string; b_sinner_id: string; b_folder: string | null; b_game_id: string | null
-  count: number
-}
-
-interface EGOStat {
-  ego_id: string
-  sinner_id: string
-  name_kr: string
-  grade: string
-  sin_affinity: string | null
-  image_url: string | null
-  count: number
-}
-
-interface MetaData {
-  totalDecks: number
-  battleIdentityStats: IdentityStat[]
-  supportIdentityStats: IdentityStat[]
-  usageBySinner: Record<string, number>
-  usageBySin: Record<string, number>
-  keywordUsage: KeywordStat[]
-  synergies: Synergy[]
-  egoStats: EGOStat[]
-}
 
 // ── 상수 ──────────────────────────────────────────────────────
 const TAB_LIST: { key: Tab; label: string }[] = [
@@ -69,7 +31,6 @@ const GRADE_ICON_URL: Record<string, string> = {
   HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
   WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
 }
-import { THEME_KEYWORDS, normalizeThemeKeyword, normalizeForStats } from '@/lib/constants/keywords'
 const MAIN_KEYWORDS = new Set<string>(THEME_KEYWORDS)
 
 /** 스크롤에 따라 점진적으로 아이템을 표시하는 훅 */
@@ -152,13 +113,15 @@ function KeywordBadge({ keyword }: { keyword: string }) {
 }
 
 // ── 컴포넌트 ──────────────────────────────────────────────────
-interface Props { sinners: Sinner[] }
+interface Props {
+  sinners: Sinner[]
+  initialData: MetaData | null
+}
 
-export default function MetaClient({ sinners }: Props) {
+export default function MetaClient({ sinners, initialData }: Props) {
   const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
   const [identitySubTab, setIdentitySubTab] = useQueryState('sub', parseAsString.withDefault('battle'))
-  const [data, setData] = useState<MetaData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data] = useState<MetaData | null>(initialData)
   const [sinnerFilter, setSinnerFilter] = useQueryState('sinner', parseAsString.withDefault(''))
 
   const sinnerMap = useMemo(() => {
@@ -166,14 +129,6 @@ export default function MetaClient({ sinners }: Props) {
     sinners.forEach(s => m.set(s.id, s))
     return m
   }, [sinners])
-
-  // ── API fetch ───────────────────────────────────────────────
-  useEffect(() => {
-    fetch('/api/meta/usage')
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
 
   // ── GSAP ────────────────────────────────────────────────────
   const runAnimations = useCallback(async () => {
@@ -200,10 +155,10 @@ export default function MetaClient({ sinners }: Props) {
   }, [])
 
   useEffect(() => {
-    if (loading || !data) return
+    if (!data) return
     const timer = setTimeout(runAnimations, 60)
     return () => clearTimeout(timer)
-  }, [loading, data, tab, sinnerFilter, runAnimations])
+  }, [data, tab, sinnerFilter, runAnimations])
 
   // ── 파생 ────────────────────────────────────────────────────
   const filteredBattleStats = useMemo(() => {
@@ -232,72 +187,24 @@ export default function MetaClient({ sinners }: Props) {
     return groups
   }, [data])
 
-  // ── 로딩 ────────────────────────────────────────────────────
-  if (loading) {
+  if (!data) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Background atmospheric glow */}
-        <div style={{
-          position: 'fixed',
-          top: '-10rem',
-          right: '-5rem',
-          width: '35rem',
-          height: '35rem',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }} />
-        <div className="mb-12">
-          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>USAGE ANALYTICS</p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2" style={{ color: 'var(--gold)' }}>
-            메타 분석
-          </h1>
-          <p style={{ color: '#666688' }}>덱 데이터 기반 통계 분석</p>
-          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-        </div>
-        <div className="space-y-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-16 rounded-lg animate-pulse"
-              style={{ background: 'var(--bg-elevated)', opacity: 1 - i * 0.08 }}
-            />
-          ))}
-        </div>
+      <div className="space-y-3 mt-6">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-16 rounded-lg animate-pulse"
+            style={{ background: 'var(--bg-elevated)', opacity: 1 - i * 0.08 }}
+          />
+        ))}
       </div>
     )
   }
 
-  if (!data) return null
   const totalDecks = data.totalDecks || 1
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-3 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Background atmospheric glow */}
-      <div style={{
-        position: 'fixed',
-        top: '-10rem',
-        right: '-5rem',
-        width: '35rem',
-        height: '35rem',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }} />
-      {/* 헤더 */}
-      <div className="mb-6 md:mb-8">
-        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>USAGE ANALYTICS</p>
-        <h1 className="font-serif text-3xl md:text-5xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
-          메타 분석
-        </h1>
-        <p className="text-xs md:text-sm" style={{ color: '#666688' }}>
-          전체 <span className="font-mono" style={{ color: 'var(--gold)' }}>{totalDecks}</span>개 덱 기반 통계
-        </p>
-        <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-      </div>
-
+    <div>
       {/* 탭 */}
       <div className="flex gap-0 mb-6 md:mb-8 rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
         {TAB_LIST.map(t => (
