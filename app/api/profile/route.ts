@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
@@ -105,10 +105,9 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const { session } = auth
 
     const body = await request.json()
     const { username, bio, collection_code, avatar_url } = body as { username?: string; bio?: string; collection_code?: string; avatar_url?: string | null }
@@ -139,7 +138,7 @@ export async function PATCH(request: NextRequest) {
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )

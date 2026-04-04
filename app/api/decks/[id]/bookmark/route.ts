@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 export const dynamic = 'force-dynamic'
@@ -46,15 +46,14 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const { session } = auth
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )

@@ -10,6 +10,7 @@ export default defineConfig({
       'lib/**/*.test.{ts,tsx}',
       'components/**/*.test.{ts,tsx}',
       'scripts/**/*.test.{ts,tsx}',
+      'tests/**/*.test.{ts,tsx}',
     ],
     exclude: ['e2e/**', 'node_modules/**', '.worktrees/**'],
   },
