@@ -871,7 +871,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', border: '2px solid #8a6010', background: '#0a0806' }}>
-                {url && <Image src={url} alt={identity.name_kr} fill unoptimized crossOrigin="anonymous" style={{ objectFit: 'cover', objectPosition: 'center top' }} />}
+                {url && <Image src={url} alt={identity.name_kr} fill unoptimized crossOrigin="anonymous" sizes="(max-width: 640px) 12.5vw, (max-width: 1024px) 12.5vw, 120px" style={{ objectFit: 'cover', objectPosition: 'center top' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{identity.name_kr}</p>
             </div>
@@ -891,7 +891,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: `2px solid ${egoColor}`, background: '#0a0806' }}>
-                {ego.image_url && <Image src={ego.image_url} alt={ego.name_kr ?? ''} fill unoptimized crossOrigin="anonymous" style={{ objectFit: 'cover' }} />}
+                {ego.image_url && <Image src={ego.image_url} alt={ego.name_kr ?? ''} fill unoptimized crossOrigin="anonymous" sizes="(max-width: 640px) 10vw, (max-width: 1024px) 10vw, 100px" style={{ objectFit: 'cover' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{ego.name_kr}</p>
             </div>
