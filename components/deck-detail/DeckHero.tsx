@@ -1,4 +1,4 @@
-import { portraitUrl } from './DeckIdentityCard'
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
 
 // Matches the string-keyed map used in DeckIdentityCard (rarity is number, coerced to string key)
 const RARITY_COLORS: Record<string, string> = {
@@ -40,7 +40,7 @@ export default function DeckHero({ slots }: Props) {
           {slots.map((slot, i) => {
             const id_ = slot?.identities
             const imgUrl = id_
-              ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false)
+              ? getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false)
               : ''
             const rarityColor = id_?.rarity
               ? (RARITY_COLORS[String(id_.rarity) + '성'] ?? null)

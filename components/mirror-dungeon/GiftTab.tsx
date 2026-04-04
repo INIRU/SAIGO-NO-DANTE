@@ -536,7 +536,7 @@ export default function GiftTab({
         <>
           <div
             className="gift-grid"
-            style={{ display: 'grid', gap: '0.5rem', position: 'relative', zIndex: 0 }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))', gap: '0.5rem', position: 'relative', zIndex: 0 }}
           >
             {visibleGifts.map(gift => (
               <GiftCard key={gift.id} gift={gift} onClick={() => onSelectGift(gift)} />
