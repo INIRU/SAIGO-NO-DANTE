@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { streamText } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 
-const AI_API_URL = process.env.INIRU_AI_API_URL || 'https://api.iniru.net/v1/chat/completions'
-const AI_API_KEY = process.env.INIRU_AI_API_KEY || ''
-const AI_MODEL = 'gpt-5.4'
+export const maxDuration = 60
+
+// Strip /chat/completions suffix if present — @ai-sdk/openai appends it automatically
+const rawApiUrl = process.env.INIRU_AI_API_URL || 'https://api.iniru.net/v1/chat/completions'
+const AI_BASE_URL = rawApiUrl.replace(/\/chat\/completions$/, '')
+
+const ai = createOpenAI({
+  baseURL: AI_BASE_URL,
+  apiKey: process.env.INIRU_AI_API_KEY || '',
+})
+
 const CACHE_DAYS = 14
 
 const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석가입니다.
@@ -292,57 +302,33 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
 변형 스킬이 있으면 반드시 변형번호까지 [s:${sinnerName}:순서:변형번호] 형태로 쓰세요.
 수감자명은 "${sinnerName}"을 사용하세요.`
 
-  // 7. AI API 호출
-  try {
-    const aiRes = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      }),
-    })
+  // 7. AI 스트리밍 호출
+  const modelId = process.env.INIRU_AI_MODEL || 'gpt-5.4-mini'
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text()
-      return NextResponse.json({ error: `AI API error: ${aiRes.status}`, detail: errText }, { status: 502 })
-    }
+  const result = streamText({
+    model: ai.chat(modelId),
+    system: SYSTEM_PROMPT,
+    prompt: userPrompt,
+    temperature: 0.7,
+    maxOutputTokens: 1500,
+    onFinish: async ({ text }) => {
+      if (!text) return
+      const { error: upsertErr } = await supabase
+        .schema('limbus')
+        .from('identity_ai_summaries')
+        .upsert({
+          identity_id,
+          summary: text,
+          model: modelId,
+          created_at: new Date().toISOString(),
+        }, { onConflict: 'identity_id' })
+      if (upsertErr) {
+        console.error('AI summary upsert error:', upsertErr)
+      }
+    },
+  })
 
-    const aiData = await aiRes.json()
-    const summary = aiData.choices?.[0]?.message?.content?.trim() || ''
-
-    if (!summary) {
-      return NextResponse.json({ error: 'AI returned empty response' }, { status: 502 })
-    }
-
-    // 8. DB UPSERT
-    const { error: upsertErr } = await supabase
-      .schema('limbus')
-      .from('identity_ai_summaries')
-      .upsert({
-        identity_id,
-        summary,
-        model: AI_MODEL,
-        created_at: new Date().toISOString(),
-      }, { onConflict: 'identity_id' })
-
-    if (upsertErr) {
-      console.error('AI summary upsert error:', upsertErr)
-    }
-
-    return NextResponse.json({ summary, model: AI_MODEL, created_at: new Date().toISOString() })
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: 'AI API request failed', detail: message }, { status: 502 })
-  }
+  return result.toTextStreamResponse()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })

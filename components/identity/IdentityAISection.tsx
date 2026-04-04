@@ -564,21 +564,37 @@ export default function IdentityAISection({
     return () => { cancelled = true }
   }, [identityId])
 
-  // AI 생성
+  // AI 생성 (스트리밍)
   const generate = useCallback(async () => {
     setGenerating(true)
     setError(null)
+    setSummary('') // 스트리밍 시작 전 초기화
     try {
       const res = await fetch('/api/identity-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identity_id: identityId }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'AI 생성 실패')
-      setSummary(data.summary)
-      setCreatedAt(data.created_at)
-      setOpenSections(new Set([0])) // 새 생성 시 첫 섹션만 열기
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: 'AI 생성 실패' }))
+        throw new Error(errData.error || 'AI 생성 실패')
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('Stream not available')
+
+      const decoder = new TextDecoder()
+      let accumulated = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        setSummary(accumulated)
+      }
+
+      // 스트리밍 완료 후 상태 갱신
+      setCreatedAt(new Date().toISOString())
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setError(message || 'AI 생성 중 오류가 발생했습니다.')
@@ -592,6 +608,13 @@ export default function IdentityAISection({
     () => summary ? splitSections(summary) : [],
     [summary]
   )
+
+  // 스트리밍 중 새 섹션 자동 펼침
+  useEffect(() => {
+    if (generating && sections.length > 0) {
+      setOpenSections(new Set(sections.map((_, i) => i)))
+    }
+  }, [generating, sections.length])
 
   const toggleSection = useCallback((idx: number) => {
     setOpenSections(prev => {
@@ -631,7 +654,7 @@ export default function IdentityAISection({
       </div>
 
       {/* 본문: 아코디언 또는 생성 버튼 */}
-      {summary && sections.length > 0 ? (
+      {summary ? (
         <>
           <div style={{ marginBottom: '0.75rem' }}>
             {sections.map((section, idx) => (
@@ -664,43 +687,45 @@ export default function IdentityAISection({
             className="flex items-center justify-between gap-2 pt-3"
             style={{ borderTop: '1px solid var(--border)' }}
           >
-            {(() => {
-              // 재생성 권한: admin은 항상, 로그인 유저는 14일 경과 후
-              const isExpired = createdAt
-                ? Date.now() - new Date(createdAt).getTime() > 14 * 24 * 60 * 60 * 1000
-                : false
-              const canRegenerate = isAdmin || (isLoggedIn && isExpired)
+            {generating ? (
+              <span className="flex items-center gap-1.5" style={{ color: sinColor, fontSize: '0.75rem' }}>
+                <Loader2 className="animate-spin" style={{ width: '0.75rem', height: '0.75rem' }} />
+                스트리밍 중...
+              </span>
+            ) : (
+              (() => {
+                // 재생성 권한: admin은 항상, 로그인 유저는 14일 경과 후
+                const isExpired = createdAt
+                  ? Date.now() - new Date(createdAt).getTime() > 14 * 24 * 60 * 60 * 1000
+                  : false
+                const canRegenerate = isAdmin || (isLoggedIn && isExpired)
 
-              return (
-                <>
-                  <span className="min-w-0" style={{ color: '#555', fontSize: '0.6875rem' }}>
-                    AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.
-                  </span>
-                  {canRegenerate && (
-                    <button
-                      onClick={generate}
-                      disabled={generating}
-                      className="flex items-center gap-1 shrink-0 transition-colors"
-                      style={{
-                        color: generating ? '#444' : '#666',
-                        fontSize: '0.75rem',
-                        cursor: generating ? 'not-allowed' : 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                      onMouseEnter={e => { if (!generating) (e.currentTarget.style.color = sinColor) }}
-                      onMouseLeave={e => { if (!generating) (e.currentTarget.style.color = '#666') }}
-                    >
-                      {generating ? (
-                        <Loader2 className="animate-spin" style={{ width: '0.75rem', height: '0.75rem' }} />
-                      ) : (
+                return (
+                  <>
+                    <span className="min-w-0" style={{ color: '#555', fontSize: '0.6875rem' }}>
+                      AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.
+                    </span>
+                    {canRegenerate && (
+                      <button
+                        onClick={generate}
+                        className="flex items-center gap-1 shrink-0 transition-colors"
+                        style={{
+                          color: '#666',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = sinColor }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#666' }}
+                      >
                         <RefreshCw style={{ width: '0.75rem', height: '0.75rem' }} />
-                      )}
-                      재생성
-                    </button>
-                  )}
-                </>
-              )
-            })()}
+                        재생성
+                      </button>
+                    )}
+                  </>
+                )
+              })()
+            )}
           </div>
         </>
       ) : (

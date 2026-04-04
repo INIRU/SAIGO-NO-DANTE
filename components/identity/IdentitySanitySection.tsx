@@ -143,6 +143,8 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                   width={88}
                   height={88}
                   style={{
+                    width: 'auto',
+                    height: 'auto',
                     filter: 'drop-shadow(0 0 8px rgba(200,60,60,0.5))',
                   }}
                 />
