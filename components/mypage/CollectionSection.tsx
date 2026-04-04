@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo, useRef, forwardRef } from 'react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsString } from 'nuqs'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
@@ -870,8 +871,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', border: '2px solid #8a6010', background: '#0a0806' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {url && <img src={url} alt={identity.name_kr} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />}
+                {url && <Image src={url} alt={identity.name_kr} fill unoptimized crossOrigin="anonymous" style={{ objectFit: 'cover', objectPosition: 'center top' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{identity.name_kr}</p>
             </div>
@@ -891,8 +891,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: `2px solid ${egoColor}`, background: '#0a0806' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {ego.image_url && <img src={ego.image_url} alt={ego.name_kr ?? ''} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                {ego.image_url && <Image src={ego.image_url} alt={ego.name_kr ?? ''} fill unoptimized crossOrigin="anonymous" style={{ objectFit: 'cover' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{ego.name_kr}</p>
             </div>
@@ -927,8 +926,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={sinner.id} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={sinnerLogoUrl(sinner.id)} alt={sinner.name_kr} width={28} height={28} crossOrigin="anonymous" style={{ borderRadius: '50%' }} />
+                <Image src={sinnerLogoUrl(sinner.id)} alt={sinner.name_kr} width={28} height={28} unoptimized crossOrigin="anonymous" style={{ borderRadius: '50%', width: '1.75rem', height: '1.75rem' }} />
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{sinner.name_kr}</span>
                 <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
               </div>

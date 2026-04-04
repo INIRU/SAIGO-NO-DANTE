@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 
 // Matches the string-keyed map used in DeckIdentityCard (rarity is number, coerced to string key)
@@ -48,21 +49,17 @@ export default function DeckHero({ slots }: Props) {
             return (
               <div key={i} className="relative overflow-hidden">
                 {imgUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={imgUrl}
                     alt=""
+                    fill
+                    unoptimized
+                    priority={i === 0}
                     style={{
-                      width: '100%',
-                      height: '100%',
                       objectFit: 'cover',
                       objectPosition: 'center top',
-                      display: 'block',
                       filter: 'brightness(0.65) saturate(0.85)',
                     }}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    // @ts-expect-error fetchpriority is a valid HTML attribute for LCP
-                    fetchpriority={i === 0 ? 'high' : 'low'}
                   />
                 ) : (
                   <div style={{ width: '100%', height: '100%', background: '#08060410' }} />
