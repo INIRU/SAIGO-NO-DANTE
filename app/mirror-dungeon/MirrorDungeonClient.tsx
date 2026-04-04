@@ -403,10 +403,6 @@ export default function MirrorDungeonClient({
     return () => obs.disconnect()
   }, [visibleCount, filtered.length, activeTab])
 
-  // SSR 그리드 takeover: 클라이언트 마운트 시 SSR 정적 그리드 숨기기
-  useEffect(() => {
-    document.getElementById('mirror-ssr-grid')?.setAttribute('data-hidden', 'true')
-  }, [])
 
   // 모달 body 스크롤 잠금
   useEffect(() => {
@@ -506,14 +502,8 @@ export default function MirrorDungeonClient({
         .gift-grid .gift-card {
           opacity: 0;
         }
-        #mirror-ssr-grid .gift-card {
-          opacity: 1;
-        }
         .gift-card:hover .gift-frame {
           filter: brightness(1.15);
-        }
-        #mirror-ssr-grid[data-hidden="true"] {
-          display: none;
         }
       `}</style>
       {/* 헤더 + 탭 통합 */}
