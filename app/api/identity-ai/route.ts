@@ -303,14 +303,13 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
 수감자명은 "${sinnerName}"을 사용하세요.`
 
   // 7. AI 스트리밍 호출
-  const modelId = process.env.INIRU_AI_MODEL || 'gpt-5.4'
+  const modelId = process.env.INIRU_AI_MODEL || 'gpt-5.4-mini'
 
   const result = streamText({
-    model: ai(modelId),
+    model: ai.chat(modelId),
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 1500,
-    temperature: 0.7,
     onFinish: async ({ text }) => {
       if (!text) return
       const { error: upsertErr } = await supabase

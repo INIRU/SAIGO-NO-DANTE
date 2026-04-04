@@ -306,6 +306,19 @@ function collectBuffKeywords(value, keywords) {
     addMappedKeyword(keywords, value.buffKeyword)
   }
 
+  // scriptName에서 키워드 태그 추출
+  // e.g. "SinkingSurgeOnSucceedAttackViaBuffCheck" contains "SinkingSurge"
+  if (typeof value.scriptName === 'string') {
+    const sn = value.scriptName
+    for (const tag of Object.keys(TAG_MAP)) {
+      if (CONDITION_TAG_MAP[tag]) continue  // 조건 태그 제외
+      if (tag.length < 6) continue  // 짧은 태그 오탐 방지
+      if (sn.includes(tag)) {
+        addMappedKeyword(keywords, tag)
+      }
+    }
+  }
+
   for (const child of Object.values(value)) {
     collectBuffKeywords(child, keywords)
   }
