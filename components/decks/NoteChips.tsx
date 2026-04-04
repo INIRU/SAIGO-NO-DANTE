@@ -533,11 +533,12 @@ export function NoteRenderer({
     <p style={{ color: '#2a2535', fontSize: '0.75rem', fontStyle: 'italic' }}>내용이 없습니다.</p>
   )
   // [s:skill] [p:passive] [e:ego] [k:keyword] [i:identity] [g:egogift]
-  const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+)\]|\[p:((?:[^\[\]]|\[[^\]]*\])+)\]|\[e:((?:[^\[\]]|\[[^\]]*\])+)\]|\[k:((?:[^\[\]]|\[[^\]]*\])+)\]|\[i:((?:[^\[\]]|\[[^\]]*\])+)\]|\[g:((?:[^\[\]]|\[[^\]]*\])+)\]/g
+  const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[p:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[e:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[k:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[i:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[g:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]/g
   const elements: React.ReactNode[] = []
   let last = 0
   let m: RegExpExecArray | null
   while ((m = tokenRe.exec(text)) !== null) {
+    for (let gi = 1; gi <= 6; gi++) { if (m[gi]) m[gi] = m[gi].trim() }
     if (m.index > last) elements.push(<span key={`t${last}`}>{formatSkillDesc(text.slice(last, m.index), '#b0a898', undefined, allowedKeywords)}</span>)
     if (m[1]) {
       // 변형 스킬 fallback: "돈키호테:1" → "돈키호테:1:1" 시도
