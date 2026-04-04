@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 export const dynamic = 'force-dynamic'
@@ -79,10 +79,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const session = auth.session
 
     const body = await request.json()
     const isPositive = body.is_positive === true
@@ -90,7 +89,7 @@ export async function POST(
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
-      admin, session.user.email, session.user.name, session.user.image,
+      admin, session.user.email!, session.user.name, session.user.image,
     )
     if (!userId) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
@@ -137,14 +136,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const session = auth.session
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
-      admin, session.user.email, session.user.name, session.user.image,
+      admin, session.user.email!, session.user.name, session.user.image,
     )
     if (!userId) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
