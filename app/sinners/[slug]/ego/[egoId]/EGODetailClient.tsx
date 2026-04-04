@@ -50,16 +50,15 @@ function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
 
 // ─── EGO 스킬 프레임 패널 ────────────────────────────────────────────
 function SkillFramePanel({
-  skill, sinColor, isCor, skillIconUrl,
+  skill, sinColor, skillIconUrl,
 }: {
   skill: EGOSkill
   sinColor: string
-  isCor: boolean
   skillIconUrl: string
 }) {
   const skillSin: SinType | null = (SIN_KR_TO_EN[skill.resource] ?? (skill.resource in SIN_COLORS ? skill.resource as SinType : null))
   const skillSinColor = skillSin ? (SIN_COLORS[skillSin] ?? sinColor) : sinColor
-  const accentColor = isCor ? '#cc4444' : skillSinColor
+  const accentColor = skillSinColor
   const frameSinName = SIN_FRAME_MAP[skillSin ?? ''] ?? 'crimson'
 
   // 코인 효과 배열 (coinNum개만)
@@ -84,7 +83,7 @@ function SkillFramePanel({
   const isAttackSkill = ['slash', 'pierce', 'blunt', '참격', '관통', '타격'].includes(skill.atkType)
   const atkTypeKey = ({ '참격': 'slash', '관통': 'pierce', '타격': 'blunt' } as Record<string, string>)[skill.atkType] ?? skill.atkType
 
-  const frameSize = '5.5rem'
+  const frameSize = '6.5rem'
 
   return (
     <div>
@@ -94,10 +93,10 @@ function SkillFramePanel({
           {/* 죄악 색 삼각형 */}
           <div className="absolute flex items-center justify-center pointer-events-none" style={{
             top: '1.5%', left: '50%', transform: 'translateX(-56%)',
-            width: '1rem', height: '1rem', zIndex: 0,
+            width: '1.5rem', height: '1.25rem', zIndex: 0,
           }}>
             <div className="absolute" style={{
-              width: '1.5rem', height: '1rem',
+              width: '2rem', height: '1.25rem',
               backgroundColor: accentColor,
               clipPath: 'polygon(5% 20%, 85% 0%, 100% 100%, 10% 100%)',
             }} />
@@ -132,7 +131,7 @@ function SkillFramePanel({
           <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
             <span style={{
               fontFamily: 'var(--font-excelsior), sans-serif',
-              fontSize: '1.75rem', lineHeight: 1,
+              fontSize: '2rem', lineHeight: 1,
               color: 'oklch(81.35% .0894 69.33)',
             }}>
               {skill.skillPower}
@@ -143,7 +142,7 @@ function SkillFramePanel({
           <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
             <span style={{
               fontFamily: 'var(--font-excelsior), sans-serif',
-              fontSize: '1rem', fontWeight: 700, lineHeight: 1,
+              fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
               color: skill.coinPower >= 0 ? 'oklch(81.35% .0894 69.33)' : '#ff8866',
               textShadow: '1px 1px 1px black',
               WebkitTextStroke: '0.01px black',
@@ -164,7 +163,7 @@ function SkillFramePanel({
                   src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
                   alt={isUb ? '파괴 불가 코인' : '코인'}
                   width={16} height={16}
-                  style={{ width: '0.875rem', height: '0.875rem' }}
+                  style={{ width: '1.125rem', height: '1.125rem' }}
                 />
               )
             })}
@@ -182,7 +181,7 @@ function SkillFramePanel({
                 textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
               }}>
                 <span className="font-bold whitespace-nowrap" style={{
-                  fontSize: '0.75rem',
+                  fontSize: '1rem',
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 800,
                   paddingRight: '3.5em',
@@ -201,11 +200,11 @@ function SkillFramePanel({
               <Image
                 src={`${STORAGE_BASE}/icons/ui/icon-sword.webp`}
                 alt="" width={22} height={22}
-                style={{ width: '1rem', height: '1rem' }}
+                style={{ width: '1.5rem', height: '1.5rem' }}
               />
               <span style={{
                 fontFamily: 'var(--font-excelsior), sans-serif',
-                color: '#e8dcc8', fontSize: '1rem',
+                color: '#e8dcc8', fontSize: '1.25rem',
                 textDecoration: 'underline', textUnderlineOffset: '2px', textDecorationColor: '#e8dcc8',
               }}>
                 {skill.power.replace(/\(\d+\)/g, '').trim()}
@@ -219,15 +218,10 @@ function SkillFramePanel({
                 </span>
                 <div className="flex gap-0.5">
                   {Array.from({ length: skill.atkWeight }).map((_, i) => (
-                    <div key={i} style={{ width: '0.5625rem', height: '0.5625rem', background: '#c8900a', borderRadius: '0.1rem' }} />
+                    <div key={i} style={{ width: '0.625rem', height: '0.625rem', background: '#c8900a', borderRadius: '0.1rem' }} />
                   ))}
                 </div>
               </div>
-            )}
-            {/* 죄악 자원 */}
-            {skillSin && (
-              <Image src={getSinIconUrl(skillSin)} alt={skill.resource} width={20} height={20}
-                style={{ width: '1rem', height: '1rem', filter: `drop-shadow(0 0 0.1875rem ${SIN_COLORS[skillSin]}70)` }} />
             )}
           </div>
 
@@ -404,6 +398,21 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   }, [])
 
   return (
+    <>
+    <style>{`
+@keyframes ego-cor-scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 -200%; }
+}
+@keyframes ego-cor-glitch {
+  0%, 95% { opacity: 0; }
+  96% { opacity: 0.08; transform: translateX(-2px); }
+  97% { opacity: 0; }
+  98% { opacity: 0.06; transform: translateX(3px); }
+  99% { opacity: 0.04; transform: translateX(-1px); }
+  100% { opacity: 0; }
+}
+`}</style>
     <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
 
       {/* ─── 히어로 배너 ─── */}
@@ -645,7 +654,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                         key={i}
                         skill={skill}
                         sinColor={sinColor}
-                        isCor={false}
                         skillIconUrl={awakenIconUrl}
                       />
                     ))}
@@ -661,6 +669,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               <div
                 className="rounded-lg overflow-hidden"
                 style={{
+                  position: 'relative',
                   border: '1px solid rgba(180,20,20,0.5)',
                   boxShadow: '0 0 2.5rem rgba(160,10,10,0.18), inset 0 0 3.75rem rgba(120,0,0,0.08)',
                   background: 'rgba(20,4,4,0.85)',
@@ -713,7 +722,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                         key={i}
                         skill={skill}
                         sinColor={sinColor}
-                        isCor={true}
                         skillIconUrl={erosionIconUrl}
                       />
                     ))
@@ -721,6 +729,33 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                     <p style={{ color: '#442222', fontSize: '0.8125rem', fontStyle: 'italic' }}>침식 스킬 데이터 없음</p>
                   )}
                 </div>
+
+                {/* 침식 글리치 오버레이 — 하단 가장자리 */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '30%',
+                  pointerEvents: 'none',
+                  background: 'repeating-linear-gradient(0deg, transparent, transparent 0.125rem, rgba(180,20,20,0.03) 0.125rem, rgba(180,20,20,0.03) 0.25rem)',
+                  backgroundSize: '100% 0.25rem',
+                  animation: 'ego-cor-scanline 8s linear infinite',
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%)',
+                  zIndex: 1,
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '15%',
+                  pointerEvents: 'none',
+                  background: 'linear-gradient(90deg, transparent 30%, rgba(200,20,20,0.05) 50%, transparent 70%)',
+                  animation: 'ego-cor-glitch 3s ease-in-out infinite',
+                  zIndex: 1,
+                }} />
               </div>
             )}
 
@@ -769,5 +804,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         </div>
       </div>
     </div>
+    </>
   )
 }

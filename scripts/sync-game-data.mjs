@@ -1201,6 +1201,7 @@ async function main() {
             atk_weight: r.targetNum || 1,
             category,
             construe_level: uptie,
+            offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
           })
         }
       }
