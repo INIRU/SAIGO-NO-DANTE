@@ -120,26 +120,36 @@ export default function SkillFrameBlock({
           />
 
           {/* Attack type icon badge (bottom center) */}
-          {showAtkTypeIcon && (
-            <div className="absolute z-20 pointer-events-none"
-              style={{ bottom: 0, left: '50%', marginLeft: '-0.625rem', transform: 'translateY(-30%)', width: '1.25rem', height: '1.25rem' }}>
-              <Image
-                src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
-                alt="" width={20} height={20} className="absolute inset-0"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-              <Image
-                src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
-                alt="" width={20} height={20} className="absolute inset-0"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-              <Image
-                src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
-                alt="" width={16} height={16} className="absolute inset-0 m-auto z-10"
-                style={{ width: '0.625rem', height: '0.625rem' }}
-              />
-            </div>
-          )}
+          {showAtkTypeIcon && (() => {
+            const badgeSize = frameRem >= 6 ? '1.75rem' : '1.25rem'
+            const innerIconSize = frameRem >= 6 ? '0.875rem' : '0.625rem'
+            return (
+              <div className="absolute z-20 pointer-events-none"
+                style={{
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%) translateY(-20%)',
+                  width: badgeSize,
+                  height: badgeSize,
+                }}>
+                <Image
+                  src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
+                  alt="" width={28} height={28} className="absolute inset-0"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+                <Image
+                  src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
+                  alt="" width={28} height={28} className="absolute inset-0"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+                <Image
+                  src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
+                  alt="" width={16} height={16} className="absolute inset-0 m-auto z-10"
+                  style={{ width: innerIconSize, height: innerIconSize }}
+                />
+              </div>
+            )
+          })()}
 
           {/* Base power (left of frame) */}
           <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
