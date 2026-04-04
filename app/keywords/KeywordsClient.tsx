@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, RotateCcw, LayoutList, Grid3X3 } from 'lucide-react'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
@@ -81,13 +81,6 @@ export default function KeywordsClient({
 }) {
   const [selected, setSelected] = useState<Keyword | null>(null)
   const formatSkillDesc = useFormatSkillDesc()
-
-  // Hide the server-rendered SSR grid once this client component has mounted.
-  // The SSR grid exists purely for LCP — it has no interactivity.
-  useEffect(() => {
-    const ssrGrid = document.getElementById('keywords-ssr-grid')
-    if (ssrGrid) ssrGrid.setAttribute('data-hidden', 'true')
-  }, [])
 
   /* ── nuqs URL 상태 ── */
   const [viewMode, setViewMode] = useQueryState('view', parseAsString.withDefault('detail'))

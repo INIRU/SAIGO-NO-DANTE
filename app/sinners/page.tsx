@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { getSinners } from '@/lib/db/queries'
-import SinnerCard from '@/components/sinners/SinnerCard'
-import SinnersInteractive from './SinnersInteractive'
+import SinnersClient from './SinnersClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 
 const SITE_URL = 'https://saigo-no-dante.com'
@@ -33,19 +32,7 @@ export default async function SinnersPage() {
   return (
     <>
       <JsonLd data={sinnerListLd} />
-      <SinnersInteractive>
-        {/* Server-rendered grid — cards appear in initial HTML for LCP */}
-        <div
-          className="sinners-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative"
-          style={{ zIndex: 1 }}
-        >
-          {sinners.map((sinner, i) => (
-            <div key={sinner.id} className="sinner-card-item">
-              <SinnerCard sinner={sinner} index={i} priority={i < 6} />
-            </div>
-          ))}
-        </div>
-      </SinnersInteractive>
+      <SinnersClient sinners={sinners} />
     </>
   )
 }

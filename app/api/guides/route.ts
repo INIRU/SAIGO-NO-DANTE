@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions, requireActiveUser } from '@/lib/auth'
+import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
@@ -52,11 +52,8 @@ export async function GET(request: NextRequest) {
 // POST — 운영법 생성 (완장/관리자)
 export async function POST(request: Request) {
   try {
-    const auth = await requireActiveUser()
-    if (auth.error) return auth.response
-    const session = auth.session
-
-    if (!session.user?.isWanjang) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isWanjang) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 

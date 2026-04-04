@@ -3,15 +3,17 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Users, Sparkles } from 'lucide-react'
+import { Sinner } from '@/lib/data/sinners'
+import SinnerCard from '@/components/sinners/SinnerCard'
 
-export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
+export default function SinnersClient({ sinners }: { sinners: Sinner[] }) {
+
   const animRef = useRef(false)
-
   useEffect(() => {
     if (animRef.current) return
     animRef.current = true
     const initGSAP = async () => {
-      const gsap = (await import('gsap')).default
+      const { gsap } = await import('gsap')
       const { ScrollTrigger } = await import('gsap/ScrollTrigger')
       gsap.registerPlugin(ScrollTrigger)
 
@@ -37,7 +39,7 @@ export default function SinnersInteractive({ children }: { children: React.React
         { scaleX: 1, duration: 0.6, delay: 0.6, ease: 'power3.inOut' }
       )
 
-      // 카드 스태거 — SSR HTML에서 카드가 이미 보이므로 opacity 1에서 시작
+      // 카드 스태거
       gsap.fromTo('.sinner-card-item',
         { opacity: 0, y: 40, scale: 0.93 },
         {
@@ -151,8 +153,14 @@ export default function SinnersInteractive({ children }: { children: React.React
         </div>
       </div>
 
-      {/* 서버 렌더링된 카드 그리드 */}
-      {children}
+      {/* 카드 그리드 */}
+      <div className="sinners-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative" style={{ zIndex: 1 }}>
+        {sinners.map((sinner, i) => (
+          <div key={sinner.id} className="sinner-card-item" style={i === 0 ? undefined : { opacity: 0 }}>
+            <SinnerCard sinner={sinner} index={i} priority={i === 0} />
+          </div>
+        ))}
+      </div>
 
       {/* 하단 장식 */}
       <div className="mt-16 flex items-center justify-center gap-4">
