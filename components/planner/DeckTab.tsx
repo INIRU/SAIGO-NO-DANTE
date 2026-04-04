@@ -117,14 +117,38 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     return map
   }, [egos])
 
-  // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용)
+  // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용, 스킬 배분 가중치 적용)
   const deckSinCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    const selectedIds = new Set(state.identitySlots.map(s => s.identity_id))
-    for (const skill of skills) {
-      if (!selectedIds.has(skill.identity_id)) continue
-      if (skill.skill_order > 3) continue // 수비/변형 제외, S1~S3만
-      counts[skill.sin_affinity] = (counts[skill.sin_affinity] ?? 0) + 1
+    for (const slot of state.identitySlots) {
+      const dist = skillDistribution[slot.sinner_id] ?? [3, 2, 1]
+      // 각 슬롯(S1,S2,S3)에 대해 최고 업타이 스킬 선택 후 배분 수만큼 가중치 적용
+      for (let order = 1; order <= 3; order++) {
+        const weight = dist[order - 1]
+        if (weight === 0) continue
+        const best = skills
+          .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
+          .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0]
+        if (!best) continue
+        counts[best.sin_affinity] = (counts[best.sin_affinity] ?? 0) + weight
+      }
+    }
+    return counts
+  }, [state.identitySlots, skills, skillDistribution])
+
+  // 기본 배분(3-2-1) 기준 deckSinCounts (패시브 경고 비교용)
+  const deckSinCountsDefault = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const slot of state.identitySlots) {
+      const defaultDist: [number, number, number] = [3, 2, 1]
+      for (let order = 1; order <= 3; order++) {
+        const weight = defaultDist[order - 1]
+        const best = skills
+          .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
+          .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0]
+        if (!best) continue
+        counts[best.sin_affinity] = (counts[best.sin_affinity] ?? 0) + weight
+      }
     }
     return counts
   }, [state.identitySlots, skills])
@@ -820,6 +844,34 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 // Build a fake Identity-like object for getSkillIconUrl
                 const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } as { game_id: string | null; sinner_id: string } : null
 
+                // 각 슬롯(S1,S2,S3)별 최고 업타이 스킬 (죄악 속성 시각화용)
+                const slotBestSkills = [1, 2, 3].map(order =>
+                  skills
+                    .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
+                    .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
+                )
+
+                // 현재 배분 기준 죄악별 기여 점 (색상 배열)
+                const sinDotsCurrentMap: Record<string, number> = {}
+                const sinDotsDefaultMap: Record<string, number> = {}
+                const defaultDist: [number, number, number] = [3, 2, 1]
+                for (let i = 0; i < 3; i++) {
+                  const sk = slotBestSkills[i]
+                  if (!sk) continue
+                  sinDotsCurrentMap[sk.sin_affinity] = (sinDotsCurrentMap[sk.sin_affinity] ?? 0) + dist[i]
+                  sinDotsDefaultMap[sk.sin_affinity] = (sinDotsDefaultMap[sk.sin_affinity] ?? 0) + defaultDist[i]
+                }
+                // 점 배열로 펼치기 (색상 순서 유지)
+                const sinDotsCurrent: string[] = []
+                const sinDotsDefault: string[] = []
+                for (let i = 0; i < 3; i++) {
+                  const sk = slotBestSkills[i]
+                  if (!sk) continue
+                  const color = SIN_COLORS[sk.sin_affinity as keyof typeof SIN_COLORS] ?? '#555'
+                  for (let j = 0; j < dist[i]; j++) sinDotsCurrent.push(color)
+                  for (let j = 0; j < defaultDist[i]; j++) sinDotsDefault.push(color)
+                }
+
                 return (
                   <div key={sinner.id}>
                     {/* 미니 인격 카드 */}
@@ -994,6 +1046,52 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           })}
                         </div>
                       </div>
+
+                      {/* 죄악 기여 점 시각화 */}
+                      <div style={{
+                        borderTop: '1px solid #1a1208',
+                        marginTop: '0.25rem',
+                        paddingTop: '0.25rem',
+                      }}>
+                        {/* 현재 배분 기준 죄악 점 */}
+                        <div style={{ display: 'flex', gap: '0.125rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {sinDotsCurrent.map((color, i) => (
+                            <span
+                              key={i}
+                              style={{
+                                display: 'inline-block',
+                                width: '0.375rem',
+                                height: '0.375rem',
+                                borderRadius: '0.0625rem',
+                                background: color,
+                                flexShrink: 0,
+                              }}
+                            />
+                          ))}
+                          {sinDotsCurrent.length === 0 && (
+                            <span style={{ fontSize: '0.5rem', color: '#333' }}>—</span>
+                          )}
+                        </div>
+                        {/* 기본(3-2-1) 대비 표시 (배분이 변경된 경우에만) */}
+                        {!isDefault && (
+                          <div style={{ display: 'flex', gap: '0.125rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.1875rem', opacity: 0.3 }}>
+                            {sinDotsDefault.map((color, i) => (
+                              <span
+                                key={i}
+                                style={{
+                                  display: 'inline-block',
+                                  width: '0.375rem',
+                                  height: '0.375rem',
+                                  borderRadius: '0.0625rem',
+                                  background: color,
+                                  flexShrink: 0,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   </div>
                 )
@@ -1060,6 +1158,10 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     const required = p.sin_count ?? 1
                     const isMet = current >= required
                     const isResonance = p.active_cond === 'resonance'
+                    // 기본 배분(3-2-1) 기준으로는 충족되지만 현재 배분으로는 미충족인 경우 경고
+                    const defaultCurrent = sinTypes.reduce((sum, st) => sum + (deckSinCountsDefault[st] ?? 0), 0)
+                    const wasMetDefault = p.active_cond != null && defaultCurrent >= required
+                    const distributionWarning = wasMetDefault && !isMet
                     const primarySin = sinTypes[0] ?? null
                     const sinCap = primarySin ? primarySin.charAt(0).toUpperCase() + primarySin.slice(1) : null
                     const pc = primarySin ? (SIN_COLORS[primarySin as keyof typeof SIN_COLORS] ?? '#888') : '#888'
@@ -1122,6 +1224,19 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                               flexShrink: 0,
                             }}>
                               {isResonance ? '공명' : '보유'}
+                            </span>
+                          )}
+                          {distributionWarning && (
+                            <span
+                              title="스킬 배분 변경으로 인해 조건이 미충족됩니다"
+                              style={{
+                                fontSize: '0.625rem',
+                                color: '#e8a020',
+                                flexShrink: 0,
+                                lineHeight: 1,
+                              }}
+                            >
+                              ⚠
                             </span>
                           )}
                           {sinCap && (

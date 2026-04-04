@@ -19,7 +19,7 @@ interface Props {
   identities: IdentityData[]
 }
 
-export default function ThemeSection({ state, dispatch, themes, gifts, giftMap, identities }: Props) {
+export default function ThemeSection({ state, dispatch, themes, giftMap }: Props) {
   const currentLog = state.floorLogs[state.currentFloor - 1]
   const diffKey = DIFFICULTY_FLOOR_KEY[state.difficulty]
   const [showGifts, setShowGifts] = useState(true)
@@ -56,17 +56,25 @@ export default function ThemeSection({ state, dispatch, themes, gifts, giftMap, 
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
     const cond = gift.activation_condition
     if (!cond || !cond.count) return null
-    let formHave = 0, allHave = 0, label = ''
     if (cond.type === 'keyword' && cond.keyword) {
-      formHave = formKw[cond.keyword] ?? 0; allHave = allKw[cond.keyword] ?? 0; label = cond.keyword
+      const formHave = formKw[normalizeThemeKeyword(cond.keyword)] ?? 0
+      const allHave = allKw[normalizeThemeKeyword(cond.keyword)] ?? 0
+      if (formHave >= cond.count) return null
+      if (allHave >= cond.count) return { level: 'warn', text: `${cond.keyword} ${formHave}/${cond.count}` }
+      return { level: 'unmet', text: `${cond.keyword} ${allHave}/${cond.count}` }
     } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      formHave = cond.keywords.reduce((s: number, kw: string) => s + (formKw[kw] ?? 0), 0)
-      allHave = cond.keywords.reduce((s: number, kw: string) => s + (allKw[kw] ?? 0), 0)
-      label = cond.keywords.join('+')
-    } else { return null }
-    if (formHave >= cond.count) return null
-    if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+      const formMet = cond.keywords.some((kw: string) => (formKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+      if (formMet) return null
+      const allMet = cond.keywords.some((kw: string) => (allKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+      const bestKw = cond.keywords.reduce((best: string, kw: string) => {
+        const count = allKw[normalizeThemeKeyword(kw)] ?? 0
+        return count > (allKw[normalizeThemeKeyword(best)] ?? 0) ? kw : best
+      }, cond.keywords[0])
+      if (allMet) return { level: 'warn', text: `${bestKw} (대기석)` }
+      const bestCount = allKw[normalizeThemeKeyword(bestKw)] ?? 0
+      return { level: 'unmet', text: `${bestKw} ${bestCount}/${cond.count}` }
+    }
+    return null
   }
 
   // 기프트 정렬: 보유 → 하단
@@ -84,17 +92,21 @@ export default function ThemeSection({ state, dispatch, themes, gifts, giftMap, 
       <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>
         테마팩 선택 ({available.length}개)
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2" style={{ marginBottom: '1.5rem' }}>
-        {available.map(theme => (
-          <ThemePackCard
-            key={theme.id}
-            theme={theme}
-            onClick={() => dispatch({ type: 'SET_FLOOR_THEME', themeId: theme.id })}
-            isSelected={currentLog?.themeId === theme.id}
-            showGiftCount
-          />
-        ))}
-      </div>
+      {available.length === 0 ? (
+        <p style={{ color: '#555', fontSize: '0.8125rem', padding: '2rem 0' }}>이 층 / 난이도에서 사용 가능한 테마팩이 없습니다</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2" style={{ marginBottom: '1.5rem' }}>
+          {available.map(theme => (
+            <ThemePackCard
+              key={theme.id}
+              theme={theme}
+              onClick={() => dispatch({ type: 'SET_FLOOR_THEME', themeId: theme.id })}
+              isSelected={currentLog?.themeId === theme.id}
+              showGiftCount
+            />
+          ))}
+        </div>
+      )}
 
       {/* 선택된 테마 전용 기프트 — GiftCard 사용 */}
       {selectedTheme && sortedGifts.length > 0 && (

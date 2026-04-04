@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Search, X } from 'lucide-react'
+import { Search } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -41,21 +41,25 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
     const cond = gift.activation_condition
     if (!cond || !cond.count) return null
-    let formHave = 0, allHave = 0, label = ''
     if (cond.type === 'keyword' && cond.keyword) {
-      formHave = formKw[cond.keyword] ?? 0
-      allHave = allKw[cond.keyword] ?? 0
-      label = cond.keyword
+      const formHave = formKw[normalizeThemeKeyword(cond.keyword)] ?? 0
+      const allHave = allKw[normalizeThemeKeyword(cond.keyword)] ?? 0
+      if (formHave >= cond.count) return null
+      if (allHave >= cond.count) return { level: 'warn', text: `${cond.keyword} ${formHave}/${cond.count}` }
+      return { level: 'unmet', text: `${cond.keyword} ${allHave}/${cond.count}` }
     } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      formHave = cond.keywords.reduce((s, kw) => s + (formKw[kw] ?? 0), 0)
-      allHave = cond.keywords.reduce((s, kw) => s + (allKw[kw] ?? 0), 0)
-      label = cond.keywords.join('+')
-    } else {
-      return null
+      const formMet = cond.keywords.some(kw => (formKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+      if (formMet) return null
+      const allMet = cond.keywords.some(kw => (allKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
+      const bestKw = cond.keywords.reduce((best, kw) => {
+        const count = allKw[normalizeThemeKeyword(kw)] ?? 0
+        return count > (allKw[normalizeThemeKeyword(best)] ?? 0) ? kw : best
+      }, cond.keywords[0])
+      if (allMet) return { level: 'warn', text: `${bestKw} (대기석)` }
+      const bestCount = allKw[normalizeThemeKeyword(bestKw)] ?? 0
+      return { level: 'unmet', text: `${bestKw} ${bestCount}/${cond.count}` }
     }
-    if (formHave >= cond.count) return null
-    if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+    return null
   }
 
   // 현재 테마 전용 기프트 (specific_ego_gift_ids = 이 층에서만 얻을 수 있는 기프트)

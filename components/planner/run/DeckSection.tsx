@@ -59,7 +59,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
     setLongPressProgress(null)
   }
   // long press 후 click 이벤트 무시
-  const handleCardClick = (sinnerId: string, fallback: () => void) => {
+  const handleCardClick = (_sinnerId: string, fallback: () => void) => {
     if (didLongPress.current) { didLongPress.current = false; return }
     fallback()
   }
@@ -100,19 +100,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
     return map
   }, [egos])
 
-  // 수감자별 스킬 그룹
-  const sinnerSkills = useMemo(() => {
-    const map = new Map<string, SkillSummary[]>()
-    const selectedIds = new Set(state.identitySlots.map(s => s.identity_id))
-    for (const skill of skills) {
-      if (!selectedIds.has(skill.identity_id)) continue
-      const slot = state.identitySlots.find(s => s.identity_id === skill.identity_id)
-      if (!slot) continue
-      if (!map.has(slot.sinner_id)) map.set(slot.sinner_id, [])
-      map.get(slot.sinner_id)!.push(skill)
-    }
-    return map
-  }, [skills, state.identitySlots])
+
 
   // 편성 슬롯 → 기프트 이미지 매핑 (플래너 디테일 패턴: 효과 텍스트에서 "[편성 N번 전용 효과]" 파싱)
   const slotGiftImages = useMemo(() => {
@@ -197,6 +185,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
 
       {/* ── 인격 탭 ── */}
       {subTab === 'identity' && (<>
+        <style>{`@keyframes longpress-fill { from { width: 0% } to { width: 100% } }`}</style>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-x-3 gap-y-4" style={{ position: 'relative', zIndex: 0 }}>
           {sinners.map(sinner => {
             const slot = getSelected(sinner.id)
@@ -226,7 +215,6 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                         height: '100%', background: '#c8900a', borderRadius: '0.09375rem',
                         animation: `longpress-fill ${LONG_PRESS_MS}ms linear forwards`,
                       }} />
-                      <style>{`@keyframes longpress-fill { from { width: 0% } to { width: 100% } }`}</style>
                     </div>
                   )}
                   {slot && identData ? (
@@ -432,7 +420,6 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                       borderRadius: '0.25rem', padding: '0.375rem',
                     }}>
                       {[0, 1, 2].map(idx => {
-                        const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
                         return (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
                             {identForIcon?.game_id ? (

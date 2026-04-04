@@ -30,13 +30,16 @@ export default async function RandomPage() {
           The header <h1> and ghost card grid are painted in the initial HTML —
           the browser renders them before any JS executes, making them the LCP element.
         */}
-        <RandomStatic sinners={sinners} />
+        {/* SSR skeleton — hidden once interactive client mounts */}
+        <div id="random-static-skeleton">
+          <RandomStatic sinners={sinners} />
+        </div>
 
         {/*
           RandomInteractive uses useSearchParams which requires a Suspense boundary.
           Suspense fallback is null: the static skeleton above is already visible,
           so there is no layout shift or blank flash during hydration.
-          Once hydrated, RandomClient overlays the ghost grid with the interactive UI.
+          Once hydrated, RandomClient hides the skeleton and renders the interactive UI.
         */}
         <Suspense fallback={null}>
           <RandomInteractive sinners={sinners} identities={identities} egos={egos} />
