@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import type { Identity } from '@/lib/types'
-import TierListClient from './TierListClient'
+import TierListInteractive from './TierListInteractive'
+import TierGrid from './TierGrid'
+import type { TierIdentity } from './TierCardInteractive'
 
 export const metadata: Metadata = {
   title: '리세마라 티어표 | SAIGO NO DANTE',
@@ -16,16 +18,6 @@ export const revalidate = 300
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
 type Tier = typeof TIERS[number]
-
-type AcquisitionInfo = {
-  type: string
-  gacha: string
-  [key: string]: unknown
-}
-
-type TierIdentity = Pick<Identity, 'id' | 'name_kr' | 'rarity' | 'sinner_id' | 'game_id' | 'folder_name'> & {
-  acquisition_info?: AcquisitionInfo | null
-}
 
 async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
   const supabase = await createClient()
@@ -71,5 +63,10 @@ async function getCurrentSeason(): Promise<number> {
 
 export default async function TierListPage() {
   const [tiers, currentSeason] = await Promise.all([getTierData(), getCurrentSeason()])
-  return <TierListClient tiers={tiers} currentSeason={currentSeason} />
+
+  return (
+    <TierListInteractive tiers={tiers} currentSeason={currentSeason}>
+      <TierGrid tiers={tiers} currentSeason={currentSeason} />
+    </TierListInteractive>
+  )
 }

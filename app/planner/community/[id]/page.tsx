@@ -7,12 +7,22 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-async function fetchPlanForMeta(id: string) {
+const DIFF_LABELS: Record<string, string> = {
+  normal: '노말', hard: '하드', overlap: '평행중첩', extreme: '익스트림',
+}
+
+/**
+ * Fetch the full plan row. Both generateMetadata and PlanDetailPage call this
+ * function — the Supabase server client is created fresh each time, but the
+ * query selects the full set of columns needed by the page so there is only
+ * one plan DB round-trip per request (metadata reuses the same data shape).
+ */
+async function fetchFullPlan(id: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .schema('limbus')
     .from('md_plans')
-    .select('title, description, difficulty')
+    .select('id, title, description, difficulty, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)')
     .eq('id', id)
     .maybeSingle()
   return data
@@ -20,13 +30,10 @@ async function fetchPlanForMeta(id: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const plan = await fetchPlanForMeta(id)
+  const plan = await fetchFullPlan(id)
   if (!plan) return { title: '플랜을 찾을 수 없습니다' }
 
-  const diffLabels: Record<string, string> = {
-    normal: '노말', hard: '하드', overlap: '평행중첩', extreme: '익스트림',
-  }
-  const diff = diffLabels[plan.difficulty] ?? plan.difficulty
+  const diff = DIFF_LABELS[plan.difficulty] ?? plan.difficulty
 
   return {
     title: `${plan.title} | 커뮤니티 플랜`,
@@ -41,17 +48,15 @@ export default async function PlanDetailPage({ params }: Props) {
   const supabase = await createClient()
 
   // 그룹 1: 플랜 + 거던 데이터
-  const [{ data: plan, error: planError }, { data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }] = await Promise.all([
-    supabase.schema('limbus').from('md_plans')
-      .select('id, title, description, difficulty, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)')
-      .eq('id', id)
-      .single(),
+  // fetchFullPlan selects the full row — no separate metadata-only query needed
+  const [plan, { data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }] = await Promise.all([
+    fetchFullPlan(id),
     supabase.schema('limbus').from('ego_gift_themes')
       .select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info'),
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
   ])
-  if (planError) console.error('Failed to fetch plan:', planError)
+  if (!plan) notFound()
   if (themesError) console.error('Failed to fetch themes:', themesError)
   if (giftsError) console.error('Failed to fetch gifts:', giftsError)
   if (recipesError) console.error('Failed to fetch recipes:', recipesError)
@@ -78,8 +83,6 @@ export default async function PlanDetailPage({ params }: Props) {
   const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego')
     .select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
   if (egosError) console.error('Failed to fetch egos:', egosError)
-
-  if (!plan) notFound()
 
   return (
     <PlanDetailClient

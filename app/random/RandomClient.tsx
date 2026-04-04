@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsString } from 'nuqs'
 import type { Sinner, Identity, EGO } from '@/lib/types'
 import type { SinnerInfo, IdentityInfo, EGOInfo } from '@/lib/collection'
@@ -19,13 +18,14 @@ type Props = {
   sinners: Sinner[]
   identities: Identity[]
   egos: EGO[]
+  /** Pre-resolved ?code= param from the URL (passed by RandomInteractive) */
+  urlCode?: string
 }
 
 const COLLECTION_CODE_KEY = 'random_collection_code'
 
-export default function RandomClient({ sinners, identities, egos }: Props) {
+export default function RandomClient({ sinners, identities, egos, urlCode }: Props) {
   const { data: session } = useSession()
-  const searchParams = useSearchParams()
   // Options
   const [identityEnabled, setIdentityEnabled] = useState(true)
   const [egoEnabled, setEgoEnabled] = useState(true)
@@ -55,10 +55,9 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
     if (identityEnabled && !egoEnabled) setActiveTab('identity')
   }, [identityEnabled, egoEnabled])
 
-  // Load collection code: URL param > logged-in profile > localStorage
-  // Only auto-enable for explicit URL ?code= param
+  // Load collection code: URL param > localStorage
+  // Only auto-enable for explicit ?code= URL param
   useEffect(() => {
-    const urlCode = searchParams.get('code')
     if (urlCode) {
       const decoded = decodeURIComponent(urlCode)
       setCollectionCode(decoded)
@@ -69,11 +68,11 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
     if (saved) {
       setCollectionCode(saved)
     }
-  }, [searchParams])
+  }, [urlCode])
 
   // Pre-load collection code for logged-in users (does not auto-enable)
   useEffect(() => {
-    if (searchParams.get('code')) return
+    if (urlCode) return
     if (collectionCode) return  // already have a code
     if (!session?.user?.email) return
     ;(async () => {
@@ -86,7 +85,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
         }
       } catch { /* ignore */ }
     })()
-  }, [session?.user?.email, searchParams, collectionCode])
+  }, [session?.user?.email, urlCode, collectionCode])
 
   // Decode collection code (debounced)
   useEffect(() => {
@@ -249,16 +248,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
   const showTabs = identityEnabled && egoEnabled
 
   return (
-    <div style={{ paddingTop: '64px' }}>
-      <div className="mx-auto max-w-[80rem] px-[1rem] py-[2rem] pb-[6rem] md:pb-[2rem]">
-        {/* Header */}
-        <div className="mb-[1.5rem] relative" style={{ paddingBottom: '1rem' }}>
-          <h1 className="font-serif text-[1.75rem] text-[#c8900a]" style={{ textShadow: '0 0 2rem rgba(200,144,10,0.15)' }}>랜덤 편성</h1>
-          <p className="text-[0.75rem] mt-[0.25rem]" style={{ color: '#5a4830', letterSpacing: '0.05em' }}>운명의 수감자를 선택하세요</p>
-          {/* Decorative line */}
-          <div className="mt-[0.75rem]" style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.4) 0%, rgba(138,96,16,0.15) 50%, transparent 100%)' }} />
-        </div>
-
+    <>
         {/* Options */}
         <OptionPanel
           identityEnabled={identityEnabled}
@@ -376,9 +366,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
             </button>
           )}
         </div>
-      </div>
-
-    </div>
+    </>
   )
 }
 
