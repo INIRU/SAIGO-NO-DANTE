@@ -3,29 +3,31 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
+import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
-import { User, PackageOpen, Link2 } from 'lucide-react'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import DeckListFilters from '@/components/decks/DeckListFilters'
+import DeckGrid from '@/components/decks/DeckGrid'
+import type { SearchSuggestion } from '@/components/decks/decks-types'
 
 const PAGE_SIZE = 12
 
 type SortKey = 'latest' | 'popular'
-type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
-type IdentityNameEntry = { name_kr: string; sinner_id: string; folder_name: string | null; game_id: string | null }
-
-// DeckCard와 동일한 테마 키워드 상수
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+type IdentityNameEntry = {
+  name_kr: string
+  sinner_id: string
+  folder_name: string | null
+  game_id: string | null
+}
 
 const KEYWORD_THRESHOLD = 5
 
-// 덱에서 테마 키워드 추출 (특수 충전 → 충전으로 매핑)
 function getDeckThemeKeywords(deck: DeckSummary): string[] {
   const freq: Record<string, number> = {}
   for (const slot of deck.deck_identities ?? []) {
@@ -42,7 +44,6 @@ function getDeckThemeKeywords(deck: DeckSummary): string[] {
     .map(([kw]) => kw)
 }
 
-// 덱의 모든 키워드 (검색용, 임계값 없음)
 function getDeckAllKeywords(deck: DeckSummary): string[] {
   const kws = new Set<string>()
   for (const slot of deck.deck_identities ?? []) {
@@ -53,14 +54,11 @@ function getDeckAllKeywords(deck: DeckSummary): string[] {
   return [...kws]
 }
 
-// 덱의 모든 인격 이름 (검색용)
 function getDeckIdentityNames(deck: DeckSummary): string[] {
   return (deck.deck_identities ?? [])
     .map(s => s.identities?.name_kr)
     .filter((n): n is string => Boolean(n))
 }
-
-import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 
 function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
   return { ...d, username: d.profiles?.username ?? undefined }
@@ -71,25 +69,31 @@ interface DecksClientProps {
   initialTotal?: number
 }
 
-export default function DecksClient({ initialDecks, initialTotal }: DecksClientProps = {}) {
+export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const { status: authStatus } = useSession()
+
+  // ── Deck data state ──
   const [decks, setDecks] = useState<DeckSummary[]>(() => initialDecks ?? [])
   const [loading, setLoading] = useState(!initialDecks || initialDecks.length === 0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const initialDataUsed = useRef(Boolean(initialDecks && initialDecks.length > 0))
+
+  // ── URL-synced state ──
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
-  // inputValue: local state for immediate input display (avoids IME composition breaks)
+
+  // ── Search UI state ──
   const [inputValue, setInputValue] = useState(search)
   const [debouncedSearch, setDebouncedSearch] = useState(search)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
+  // ── Identity autocomplete data ──
   const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
   useEffect(() => {
     createBrowserClient()
@@ -107,7 +111,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       })
   }, [])
 
-  // 인격 + 키워드 자동완성 후보
+  // ── Search suggestions ──
   const suggestions = useMemo((): SearchSuggestion[] => {
     const { activeTerm } = getActiveTerm(inputValue)
     if (activeTerm.length === 0) return []
@@ -141,12 +145,10 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return [...idMatches, ...kwMatches].slice(0, 8)
   }, [inputValue, ALL_KEYWORDS, allIdentities])
 
-  // 검색어 변경 시 자동완성 첫 항목 선택
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
-  // 자동완성 키보드 핸들러
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // ArrowDown으로 드롭다운 열기
+  // ── Keyboard handler for autocomplete ──
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
       e.preventDefault()
       setShowSuggestions(true)
@@ -166,22 +168,20 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       e.preventDefault()
       const selected = suggestions[acIndex].label
       const { prefix } = getActiveTerm(inputValue)
-      // IME 조합 강제 종료
       e.currentTarget.blur()
       setShowSuggestions(false)
       setAcIndex(-1)
-      // IME compositionend → onChange 이후 값 설정 (잔재 방지)
       setTimeout(() => {
-        setInputValue(prefix + selected)
-        ;(e.target as HTMLInputElement).focus()
+        setInputValue(prefix + selected);
+        (e.target as HTMLInputElement).focus()
       }, 10)
     } else if (e.key === 'Escape') {
       setShowSuggestions(false)
       setAcIndex(-1)
     }
-  }
+  }, [showSuggestions, suggestions, acIndex, inputValue])
 
-  // 외부 클릭 시 자동완성 닫기
+  // ── Outside click closes suggestions ──
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -193,8 +193,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // 검색 debounce: inputValue → URL(search) + filter(debouncedSearch)
-  // 300ms delay prevents IME composition interruption and reduces URL thrash
+  // ── Search debounce ──
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(inputValue || null)
@@ -203,21 +202,17 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return () => clearTimeout(t)
   }, [inputValue, setSearch])
 
-  // 콘텐츠 유형 필터
-  const [activeContentType, setActiveContentType] = useState<string>('')
-
-  // 멀티 선택 필터
+  // ── Filter state ──
+  const [activeContentType, setActiveContentType] = useState('')
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
-
-  // 상세 필터 토글 (기본 펼침)
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(true)
   const [showTagFilter, setShowTagFilter] = useState(true)
   const [showKeywordFilter, setShowKeywordFilter] = useState(true)
   const [showCollectionFilter, setShowCollectionFilter] = useState(true)
 
-  // 컬렉션 필터
+  // ── Collection filter state ──
   const [filterOwnedIdentity, setFilterOwnedIdentity] = useState(false)
   const [filterOwnedEgo, setFilterOwnedEgo] = useState(false)
   const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
@@ -227,44 +222,24 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState(false)
 
-  // GSAP 진입 애니메이션
+  // ── GSAP entry animation ──
   useEffect(() => {
-    let ctx: any
+    let ctx: { revert?: () => void } | undefined
     ;(async () => {
       const gsap = (await import('gsap')).default
       ctx = gsap.context(() => {
-        // 헤더 시퀀스: line → tag → title → filters
-        gsap.fromTo('.decks-header-line',
-          { scaleX: 0 },
-          { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
-        )
-        gsap.fromTo('.decks-header-tag',
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-        )
-        gsap.fromTo('.decks-header-title',
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
-        )
-        gsap.fromTo('.decks-filters',
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' }
-        )
-        gsap.fromTo('.decks-divider-bottom',
-          { scaleX: 0 },
-          { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' }
-        )
+        gsap.fromTo('.decks-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
+        gsap.fromTo('.decks-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
+        gsap.fromTo('.decks-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
+        gsap.fromTo('.decks-filters', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' })
+        gsap.fromTo('.decks-divider-bottom', { scaleX: 0 }, { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' })
       })
     })()
-    return () => { ctx?.revert() }
+    return () => { ctx?.revert?.() }
   }, [])
 
-  // 초기 서버 데이터 사용 여부 추적 (sort=latest 첫 렌더에서 fetch 생략)
-  const initialDataUsed = useRef(Boolean(initialDecks && initialDecks.length > 0))
-
-  // 덱 목록 로드 (초기)
+  // ── Initial deck load (skip if server data present) ──
   useEffect(() => {
-    // 서버에서 받은 초기 데이터가 있고 아직 사용하지 않은 경우 skip (sort=latest 기본값)
     if (initialDataUsed.current && sort === 'latest') {
       initialDataUsed.current = false
       if (initialDecks && initialDecks.length < PAGE_SIZE) setHasMore(false)
@@ -282,29 +257,26 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
-      .catch((e) => console.error('덱 목록 로드 실패:', e))
+      .catch(e => console.error('덱 목록 로드 실패:', e))
       .finally(() => setLoading(false))
   }, [sort]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 추가 로드
+  // ── Load more ──
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
     fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=${decks.length}`)
       .then(r => r.json())
       .then(data => {
-        if (!Array.isArray(data) || data.length === 0) {
-          setHasMore(false)
-          return
-        }
+        if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => [...prev, ...data.map(mapDeck)])
       })
-      .catch((e) => console.error('덱 추가 로드 실패:', e))
+      .catch(e => console.error('덱 추가 로드 실패:', e))
       .finally(() => setLoadingMore(false))
   }, [sort, decks.length, loadingMore, hasMore])
 
-  // IntersectionObserver로 무한 스크롤
+  // ── Infinite scroll observer ──
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -316,14 +288,14 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     return () => observer.disconnect()
   }, [loadMore])
 
-  // 컬렉션 마스터 데이터 로드 (전체 유저)
+  // ── Collection master data ──
   useEffect(() => {
     fetch('/api/collection').then(r => r.json())
       .then((d: CollectionData) => { if (d.sinners?.length > 0) setCollectionData(d) })
       .catch(() => {})
   }, [])
 
-  // 로그인 유저: 프로필에서 컬렉션 코드 자동 로드
+  // ── Auto-load collection for logged-in user ──
   useEffect(() => {
     if (authStatus !== 'authenticated' || !collectionData) return
     setCollectionLoading(true)
@@ -340,18 +312,14 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       .finally(() => setCollectionLoading(false))
   }, [authStatus, collectionData])
 
-  // 보유 코드 붙여넣기 디코딩
   const applyCollectionCode = useCallback(async (rawInput: string) => {
     if (!collectionData) return
     setCodeError(false)
-    // URL에서 code 파라미터 추출 또는 코드 자체 사용
     let code = rawInput.trim()
     try {
       const url = new URL(code)
       code = url.searchParams.get('code') ?? code
-    } catch {
-      // URL이 아닌 경우 그대로 사용
-    }
+    } catch { /* not a URL, use as-is */ }
     if (!code) return
     try {
       const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
@@ -363,7 +331,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     }
   }, [collectionData])
 
-  // 태그 토글
+  // ── Tag / keyword toggles ──
   const toggleTag = useCallback((tag: string) => {
     setActiveTags(prev => {
       const next = new Set(prev)
@@ -373,7 +341,6 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     })
   }, [])
 
-  // 키워드 토글
   const toggleKeyword = useCallback((kw: string) => {
     setActiveKeywords(prev => {
       const next = new Set(prev)
@@ -383,7 +350,7 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
     })
   }, [])
 
-  // 전체 태그 목록 (빈도순)
+  // ── Derived filter data ──
   const allTags = useMemo(() => {
     const freq: Record<string, number> = {}
     for (const d of decks) {
@@ -397,28 +364,22 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       .map(([tag]) => tag)
   }, [decks])
 
-  // 덱에서 사용되는 테마 키워드 목록
   const availableKeywords = useMemo(() => {
     const found = new Set<string>()
     for (const d of decks) {
-      for (const kw of getDeckThemeKeywords(d)) {
-        found.add(kw)
-      }
+      for (const kw of getDeckThemeKeywords(d)) found.add(kw)
     }
-    // THEME_KEYWORDS 원래 순서 유지
     return THEME_KEYWORDS.filter(kw => found.has(kw))
   }, [decks])
 
-  // 필터 적용
+  // ── Filter application ──
   const filtered = useMemo(() => {
     let list = decks
 
-    // 콘텐츠 유형 필터
     if (activeContentType) {
       list = list.filter(d => d.content_type === activeContentType)
     }
 
-    // 텍스트 검색: 인격 + 제목 + 설명 + 태그 + 키워드 (+: OR, *: AND)
     if (debouncedSearch.trim()) {
       const parsed = parseSearchQuery(debouncedSearch)
       if (parsed.terms.length > 0) {
@@ -430,16 +391,13 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
             ...getDeckAllKeywords(d),
             ...getDeckIdentityNames(d),
           ]
-          if (parsed.mode === 'and') {
-            return parsed.terms.every(term => termMatchesAny(term, searchable))
-          } else {
-            return parsed.terms.some(term => termMatchesAny(term, searchable))
-          }
+          return parsed.mode === 'and'
+            ? parsed.terms.every(term => termMatchesAny(term, searchable))
+            : parsed.terms.some(term => termMatchesAny(term, searchable))
         })
       }
     }
 
-    // 태그 멀티 필터: 선택된 모든 태그를 포함하는 덱
     if (activeTags.size > 0) {
       list = list.filter(d => {
         for (const tag of activeTags) {
@@ -449,7 +407,6 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       })
     }
 
-    // 키워드 멀티 필터: AND(모두 포함) 또는 OR(하나 이상)
     if (activeKeywords.size > 0) {
       list = list.filter(d => {
         const deckKws = getDeckThemeKeywords(d)
@@ -467,30 +424,27 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       })
     }
 
-    // 보유 인격 필터
     if (filterOwnedIdentity && ownedIds) {
       list = list.filter(d => {
         const ids = (d.deck_identities ?? [])
           .map(s => s.identities?.id)
           .filter((id): id is string => Boolean(id))
-        if (ids.length === 0) return true
-        return ids.every(id => ownedIds.has(id))
+        return ids.length === 0 || ids.every(id => ownedIds.has(id))
       })
     }
 
-    // 보유 에고 필터
     if (filterOwnedEgo && ownedIds) {
       list = list.filter(d => {
         const egoIds = (d.deck_egos ?? []).map(e => e.ego_id)
-        if (egoIds.length === 0) return true
-        return egoIds.every(id => ownedIds.has(id))
+        return egoIds.length === 0 || egoIds.every(id => ownedIds.has(id))
       })
     }
 
     return list
   }, [decks, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
-  const hasAnyFilter = inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo
+  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo)
+  const advancedFilterCount = activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto relative">
@@ -508,7 +462,6 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
         zIndex: 0,
       }} />
 
-      {/* 배경 대기감 */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
         <div style={{
           position: 'absolute',
@@ -534,7 +487,6 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       {/* ── 헤더 ── */}
       <div className="decks-header flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 relative" style={{ zIndex: 1 }}>
         <div>
-          {/* 상단 장식 라인 */}
           <div className="decks-header-line" style={{
             width: '4rem',
             height: '0.0625rem',
@@ -543,7 +495,6 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
             transformOrigin: 'left',
             transform: 'scaleX(0)',
           }} />
-
           <p className="decks-header-tag" style={{ opacity: 0, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
             DECK ARCHIVE
           </p>
@@ -567,404 +518,58 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       </div>
 
       {/* ── 필터 패널 ── */}
-      <div
-        className="decks-filters mb-6"
-        style={{
-          opacity: 0,
-          background: 'rgba(10,8,5,0.5)',
-          border: '1px solid var(--border)',
-          borderRadius: '0.375rem',
+      <DeckListFilters
+        inputValue={inputValue}
+        onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}
+        onInputFocus={() => setShowSuggestions(true)}
+        onSearchClear={() => { setInputValue(''); setSearch(null); setDebouncedSearch(''); setShowSuggestions(false) }}
+        onSearchKeyDown={handleSearchKeyDown}
+        searchRef={searchRef}
+        showSuggestions={showSuggestions}
+        suggestions={suggestions}
+        acIndex={acIndex}
+        onSuggestionClick={label => {
+          const { prefix } = getActiveTerm(inputValue)
+          setInputValue(prefix + label)
+          setShowSuggestions(false)
+          setAcIndex(-1)
         }}
-      >
-        {/* 검색 + 정렬 */}
-        <div className="flex flex-col sm:flex-row gap-3 px-4 py-3">
-          <div className="relative flex-1" ref={searchRef}>
-            <svg
-              width="14" height="14" viewBox="0 0 16 16" fill="none"
-              style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none', zIndex: 1 }}
-            >
-              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="인격, 키워드, 제목 검색... (+: OR, *: AND)"
-              value={inputValue}
-              onChange={e => { setInputValue(e.target.value); setShowSuggestions(true) }}
-              onFocus={() => setShowSuggestions(true)}
-              onKeyDown={handleSearchKeyDown}
-              className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border)',
-                borderRadius: '0.25rem',
-                color: '#e8dcc8',
-                fontFamily: 'var(--font-body)',
-              }}
-            />
-            {inputValue && (
-              <button
-                onClick={() => { setInputValue(''); setSearch(null); setDebouncedSearch(''); setShowSuggestions(false) }}
-                style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', cursor: 'pointer', zIndex: 1 }}
-              >
-                ✕
-              </button>
-            )}
-            {showSuggestions && suggestions.length > 0 && (
-              <div
-                className="absolute left-0 right-0 z-50 overflow-hidden"
-                style={{
-                  top: '100%',
-                  marginTop: 4,
-                  background: '#1a1510',
-                  border: '1px solid var(--border)',
-                  borderRadius: '0.25rem',
-                  boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)',
-                }}
-              >
-                <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#444', fontSize: '0.625rem', fontWeight: 600 }}>
-                  인격 / 키워드 <span style={{ color: '#333', fontWeight: 400 }}>Tab으로 선택</span>
-                </div>
-                {suggestions.map((sg, i) => {
-                  const kwIconUrl = sg.type === 'keyword' ? getIconUrl(sg.label) : null
-                  const isFocused = acIndex === i
-                  return (
-                    <div
-                      key={`${sg.type}-${sg.label}-${i}`}
-                      className="flex items-center gap-2 px-3 py-1.5 text-xs"
-                      onClick={() => {
-                        const { prefix } = getActiveTerm(inputValue)
-                        setInputValue(prefix + sg.label)
-                        setShowSuggestions(false)
-                        setAcIndex(-1)
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        color: isFocused ? '#e8b030' : '#c8b890',
-                        fontFamily: 'var(--font-heading)',
-                        background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
-                        borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
-                      }}
-                    >
-                      {sg.type === 'identity' && sg.imageUrl ? (
-                        <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.1875rem', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(200,144,10,0.2)' }}>
-                          <Image src={sg.imageUrl} alt="" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%' }} />
-                        </div>
-                      ) : sg.type === 'identity' ? (
-                        <User size={14} style={{ flexShrink: 0, color: '#8a9bb0' }} />
-                      ) : kwIconUrl ? (
-                        <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
-                      ) : null}
-                      <span>{sg.label}</span>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.5625rem', color: '#555', flexShrink: 0 }}>
-                        {sg.type === 'identity' ? '인격' : '키워드'}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-1.5 flex-shrink-0">
-            {(['latest', 'popular'] as SortKey[]).map(s => (
-              <button
-                key={s}
-                onClick={() => setSort(s)}
-                className="px-4 py-2.5 rounded text-sm font-medium transition-all duration-200"
-                style={{
-                  background: sort === s ? 'var(--gold)' : 'transparent',
-                  color: sort === s ? 'var(--bg-deep)' : '#888899',
-                  border: `1px solid ${sort === s ? 'var(--gold)' : 'var(--border)'}`,
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
-                }}
-              >
-                {s === 'latest' ? '최신순' : '인기순'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 콘텐츠 유형 필터 */}
-        <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-          {CONTENT_TYPES.map(ct => {
-            const active = activeContentType === ct
-            const colors = CONTENT_TYPE_COLORS[ct]
-            return (
-              <button
-                key={ct}
-                onClick={() => setActiveContentType(active ? '' : ct)}
-                className="px-3 py-1 rounded text-xs transition-all duration-150"
-                style={{
-                  background: active ? colors.bg : 'transparent',
-                  color: active ? colors.color : '#555566',
-                  border: `1px solid ${active ? colors.border : 'var(--border)'}`,
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.6875rem',
-                }}
-              >
-                {ct}
-              </button>
-            )
-          })}
-          {activeContentType && (
-            <button
-              onClick={() => setActiveContentType('')}
-              className="px-3 py-1 rounded text-xs transition-all duration-150"
-              style={{ background: 'transparent', color: '#888888', border: '1px solid var(--border)' }}
-            >
-              초기화
-            </button>
-          )}
-        </div>
-
-        {/* 상세 필터 토글 */}
-        <div style={{ borderTop: '1px solid var(--border)' }}>
-          <button
-            onClick={() => setShowAdvancedFilter(v => !v)}
-            className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-colors hover:bg-white/[0.02]"
-            style={{ color: (activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo) ? 'var(--gold)' : 'var(--text-muted)', fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xs)' }}
-          >
-            <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showAdvancedFilter ? '▾' : '▸'}</span>
-            상세 필터
-            {(activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)) > 0 && (
-              <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                {activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)}
-              </span>
-            )}
-          </button>
-        </div>
-        <div style={{ borderTop: '1px solid var(--border)', display: showAdvancedFilter ? 'block' : 'none' }}>
-          {/* 태그 필터 */}
-          {allTags.length > 0 && (
-            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-              <button
-                onClick={() => setShowTagFilter(v => !v)}
-                className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
-                style={{ color: activeTags.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-              >
-                <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showTagFilter ? '▾' : '▸'}</span>
-                태그
-                {activeTags.size > 0 && (
-                  <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                    {activeTags.size}
-                  </span>
-                )}
-              </button>
-              {showTagFilter && (
-                <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-                  {activeTags.size > 0 && (
-                    <button
-                      onClick={() => setActiveTags(new Set())}
-                      className="px-2.5 py-1 rounded-full text-xs"
-                      style={{ color: '#888', border: '1px solid var(--border)' }}
-                    >
-                      초기화
-                    </button>
-                  )}
-                  {allTags.map(tag => {
-                    const isActive = activeTags.has(tag)
-                    return (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className="px-3 py-1 rounded-full text-xs transition-all duration-150"
-                        style={{
-                          background: isActive ? 'rgba(200,144,10,0.2)' : 'transparent',
-                          color: isActive ? 'var(--gold)' : '#555566',
-                          border: `1px solid ${isActive ? 'var(--gold-dim)' : 'var(--border)'}`,
-                        }}
-                      >
-                        #{tag}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 키워드 필터 */}
-          {availableKeywords.length > 0 && (
-            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-              <button
-                onClick={() => setShowKeywordFilter(v => !v)}
-                className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
-                style={{ color: activeKeywords.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-              >
-                <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showKeywordFilter ? '▾' : '▸'}</span>
-                키워드
-                {activeKeywords.size > 0 && (
-                  <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                    {activeKeywords.size}
-                  </span>
-                )}
-                <div className="flex-1" />
-                {activeKeywords.size >= 2 && (
-                  <span
-                    onClick={e => { e.stopPropagation(); setKeywordMode(m => m === 'or' ? 'and' : 'or') }}
-                    className="px-2 py-0.5 rounded transition-all"
-                    style={{
-                      background: keywordMode === 'and' ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
-                      color: keywordMode === 'and' ? '#c8a450' : '#9a9aaa',
-                      border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.3)' : 'rgba(255,255,255,0.12)'}`,
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.5625rem',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    {keywordMode === 'and' ? 'AND' : 'OR'}
-                  </span>
-                )}
-              </button>
-              {showKeywordFilter && (
-                <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
-                  {activeKeywords.size > 0 && (
-                    <button
-                      onClick={() => setActiveKeywords(new Set())}
-                      className="px-2.5 py-1 rounded text-xs"
-                      style={{ color: '#888', border: '1px solid var(--border)' }}
-                    >
-                      초기화
-                    </button>
-                  )}
-                  {availableKeywords.map(kw => {
-                    const isActive = activeKeywords.has(kw)
-                    const iconUrl = getIconUrl(kw)
-                    return (
-                      <button
-                        key={kw}
-                        onClick={() => toggleKeyword(kw)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-all duration-150"
-                        style={{
-                          background: isActive ? 'rgba(136,88,40,0.25)' : 'transparent',
-                          color: isActive ? '#c8a450' : '#555566',
-                          border: `1px solid ${isActive ? 'rgba(136,88,40,0.5)' : 'var(--border)'}`,
-                          fontFamily: 'var(--font-heading)',
-                          fontSize: '0.6875rem',
-                        }}
-                      >
-                        {iconUrl && (
-                          <Image src={iconUrl} alt="" width={13} height={13} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.5 }} />
-                        )}
-                        {kw}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 컬렉션 필터 */}
-          <div>
-            <button
-              onClick={() => setShowCollectionFilter(v => !v)}
-              className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
-              style={{ color: (filterOwnedIdentity || filterOwnedEgo) ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-            >
-              <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showCollectionFilter ? '▾' : '▸'}</span>
-              보유 필터
-              {(filterOwnedIdentity || filterOwnedEgo) && (
-                <span style={{ background: 'rgba(80,160,80,0.2)', color: '#80c880', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                  {(filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)}
-                </span>
-              )}
-            </button>
-            {showCollectionFilter && (
-              <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-                {collectionLoading ? (
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                    컬렉션 로딩 중...
-                  </span>
-                ) : hasCollection ? (
-                  <>
-                    <button
-                      onClick={() => setFilterOwnedIdentity(prev => !prev)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
-                      style={{
-                        background: filterOwnedIdentity ? 'rgba(80,160,80,0.15)' : 'transparent',
-                        color: filterOwnedIdentity ? '#80c880' : '#555566',
-                        border: `1px solid ${filterOwnedIdentity ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: '0.6875rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <User size={12} />
-                      보유 인격 덱
-                    </button>
-                    <button
-                      onClick={() => setFilterOwnedEgo(prev => !prev)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all duration-150"
-                      style={{
-                        background: filterOwnedEgo ? 'rgba(80,160,80,0.15)' : 'transparent',
-                        color: filterOwnedEgo ? '#80c880' : '#555566',
-                        border: `1px solid ${filterOwnedEgo ? 'rgba(80,160,80,0.4)' : 'var(--border)'}`,
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: '0.6875rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <PackageOpen size={12} />
-                      보유 에고 덱
-                    </button>
-                    <button
-                      onClick={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
-                      className="px-2 py-1.5 rounded text-xs transition-all duration-150"
-                      style={{ color: '#888888', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-                    >
-                      초기화
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 w-full">
-                    <Link2 size={13} style={{ color: '#888888', flexShrink: 0 }} />
-                    <input
-                      type="text"
-                      value={codeInput}
-                      onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-                      onKeyDown={e => { if (e.key === 'Enter') applyCollectionCode(codeInput) }}
-                      placeholder="보유 현황 URL 또는 코드 붙여넣기..."
-                      className="flex-1 px-3 py-1.5 rounded text-xs transition-all"
-                      style={{
-                        background: 'rgba(0,0,0,0.3)',
-                        border: `1px solid ${codeError ? 'rgba(200,80,80,0.5)' : 'var(--border)'}`,
-                        color: '#ccc',
-                        outline: 'none',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '0.6875rem',
-                        maxWidth: '25rem',
-                      }}
-                    />
-                    <button
-                      onClick={() => applyCollectionCode(codeInput)}
-                      className="px-3 py-1.5 rounded text-xs transition-all duration-150"
-                      style={{
-                        background: 'rgba(200,144,10,0.12)',
-                        color: 'var(--gold)',
-                        border: '1px solid rgba(200,144,10,0.3)',
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: '0.6875rem',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      적용
-                    </button>
-                    {codeError && (
-                      <span className="text-xs" style={{ color: '#c85050', fontFamily: 'var(--font-mono)' }}>
-                        잘못된 코드
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+        getIconUrl={getIconUrl}
+        sort={sort}
+        onSortChange={s => setSort(s as SortKey)}
+        activeContentType={activeContentType}
+        onContentTypeChange={setActiveContentType}
+        showAdvancedFilter={showAdvancedFilter}
+        onToggleAdvancedFilter={() => setShowAdvancedFilter(v => !v)}
+        advancedFilterCount={advancedFilterCount}
+        allTags={allTags}
+        activeTags={activeTags}
+        showTagFilter={showTagFilter}
+        onToggleTagFilter={() => setShowTagFilter(v => !v)}
+        onToggleTag={toggleTag}
+        onClearTags={() => setActiveTags(new Set())}
+        availableKeywords={availableKeywords}
+        activeKeywords={activeKeywords}
+        keywordMode={keywordMode}
+        showKeywordFilter={showKeywordFilter}
+        onToggleKeywordFilter={() => setShowKeywordFilter(v => !v)}
+        onToggleKeyword={toggleKeyword}
+        onClearKeywords={() => setActiveKeywords(new Set())}
+        onToggleKeywordMode={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
+        showCollectionFilter={showCollectionFilter}
+        onToggleCollectionFilter={() => setShowCollectionFilter(v => !v)}
+        collectionLoading={collectionLoading}
+        hasCollection={hasCollection}
+        filterOwnedIdentity={filterOwnedIdentity}
+        filterOwnedEgo={filterOwnedEgo}
+        onToggleFilterOwnedIdentity={() => setFilterOwnedIdentity(prev => !prev)}
+        onToggleFilterOwnedEgo={() => setFilterOwnedEgo(prev => !prev)}
+        onClearCollection={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
+        codeInput={codeInput}
+        onCodeInputChange={v => { setCodeInput(v); setCodeError(false) }}
+        onApplyCode={() => applyCollectionCode(codeInput)}
+        codeError={codeError}
+      />
 
       {/* 하단 장식 디바이더 */}
       <div className="decks-divider-bottom mx-auto" style={{
@@ -986,56 +591,15 @@ export default function DecksClient({ initialDecks, initialTotal }: DecksClientP
       )}
 
       {/* ── 덱 목록 ── */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.05 }}>
-              <div style={{ padding: '1.25rem' }}>
-                <div style={{ width: '60%', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.625rem' }} />
-                <div style={{ width: '90%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.375rem' }} />
-                <div style={{ width: '70%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
-          <p className="font-serif text-base" style={{ color: '#555570' }}>
-            {hasAnyFilter ? '검색 결과가 없습니다.' : '아직 등록된 덱이 없습니다.'}
-          </p>
-          {!hasAnyFilter && (
-            <Link
-              href="/decks/new"
-              style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
-              className="hover:text-yellow-300 transition-colors underline underline-offset-2"
-            >
-              첫 번째 덱을 만들어보세요 →
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(deck => (
-            <DeckCard key={deck.id} deck={deck} onTagClick={toggleTag} />
-          ))}
-        </div>
-      )}
-
-      {/* 무한 스크롤 센티널 */}
-      {!loading && hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-8">
-          {loadingMore && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: '#888888' }}>
-              <div
-                className="w-4 h-4 rounded-full animate-spin"
-                style={{ border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
-              />
-              불러오는 중...
-            </div>
-          )}
-        </div>
-      )}
+      <DeckGrid
+        filtered={filtered}
+        loading={loading}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        hasAnyFilter={hasAnyFilter}
+        sentinelRef={sentinelRef}
+        onTagClick={toggleTag}
+      />
     </div>
   )
 }

@@ -1,7 +1,20 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckDetailClient from './DeckDetailClient'
+import DeckHero from '@/components/deck-detail/DeckHero'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
+import type { HeroSlot } from '@/components/deck-detail/DeckHero'
+
+type Comment = {
+  id: string
+  content: string
+  created_at: string
+  user_id: string
+  parent_id: string | null
+  username: string | null
+  avatar_url: string | null
+  role?: string
+}
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -53,42 +66,83 @@ export default async function DeckDetailPage({ params }: Props) {
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP
   let initialDeck = null
+  let initialComments: Comment[] = []
+  let heroSlots: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
+
   try {
     const supabase = createAdminClient()
-    const { data } = await supabase
-      .schema('limbus')
-      .from('decks')
-      .select(`
-        id, user_id, title, description, tags, content_type, vote_count, view_count, created_at,
-        profiles!decks_user_id_fkey(username),
-        deck_identities(
-          slot_order, gacksung, s1_count, s2_count, s3_count,
-          identities(
-            id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
-            hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-            skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, uptie_level),
-            passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
-          )
-        ),
-        deck_egos(
-          grade,
-          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url)
-        )
-      `)
-      .eq('id', id)
-      .single()
 
+    const [deckResult, commentsResult] = await Promise.all([
+      supabase
+        .schema('limbus')
+        .from('decks')
+        .select(`
+          id, user_id, title, description, tags, content_type, vote_count, view_count, created_at,
+          profiles!decks_user_id_fkey(username),
+          deck_identities(
+            slot_order, gacksung, s1_count, s2_count, s3_count,
+            identities(
+              id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
+              hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
+              skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, uptie_level),
+              passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
+            )
+          ),
+          deck_egos(
+            grade,
+            ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url)
+          )
+        `)
+        .eq('id', id)
+        .single(),
+      supabase
+        .schema('limbus')
+        .from('deck_comments')
+        .select('id, content, created_at, user_id, parent_id, profiles!deck_comments_user_id_fkey(username, avatar_url, role)')
+        .eq('deck_id', id)
+        .order('created_at', { ascending: true }),
+    ])
+
+    const data = deckResult.data
     if (data) {
-      initialDeck = {
-        ...data,
-        vote_count: data.vote_count ?? 0,
-        view_count: data.view_count ?? 0,
-        deck_identities: (data.deck_identities ?? []).map((slot) => ({
+      const sortedIdentities = (data.deck_identities ?? [])
+        .map((slot) => ({
           ...slot,
           identities: Array.isArray(slot.identities)
             ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
             : (slot.identities as unknown as IdentityDetail | null),
-        })) as IdentitySlot[],
+        })) as IdentitySlot[]
+
+      sortedIdentities.sort((a, b) => {
+        if (a.slot_order === 99 && b.slot_order !== 99) return 1
+        if (b.slot_order === 99 && a.slot_order !== 99) return -1
+        return a.slot_order - b.slot_order
+      })
+
+      // Build hero slots for server-side render
+      heroSlots = Array.from({ length: 12 }, (_, i) => {
+        const slot = sortedIdentities[i]
+        if (!slot) return null
+        const id_ = slot.identities
+        return {
+          slot_order: slot.slot_order,
+          gacksung: slot.gacksung ?? null,
+          identities: id_
+            ? {
+                sinner_id: id_.sinner_id,
+                folder_name: id_.folder_name ?? null,
+                game_id: id_.game_id ?? null,
+                rarity: id_.rarity,
+              }
+            : null,
+        } satisfies HeroSlot
+      })
+
+      initialDeck = {
+        ...data,
+        vote_count: data.vote_count ?? 0,
+        view_count: data.view_count ?? 0,
+        deck_identities: sortedIdentities,
         deck_egos: (data.deck_egos ?? []).map((es) => ({
           ...es,
           ego: Array.isArray(es.ego)
@@ -102,9 +156,30 @@ export default async function DeckDetailPage({ params }: Props) {
         deck_code: undefined,
       } as any
     }
+
+    if (commentsResult.data) {
+      initialComments = commentsResult.data.map((row) => {
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+        return {
+          id: row.id,
+          content: row.content,
+          created_at: row.created_at,
+          user_id: row.user_id,
+          parent_id: row.parent_id,
+          username: profile?.username ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+          role: profile?.role ?? undefined,
+        }
+      })
+    }
   } catch {
     // Fall back to client-side fetch
   }
 
-  return <DeckDetailClient id={id} initialDeck={initialDeck} />
+  return (
+    <>
+      <DeckHero slots={heroSlots} />
+      <DeckDetailClient id={id} initialDeck={initialDeck} initialComments={initialComments} />
+    </>
+  )
 }
