@@ -87,7 +87,7 @@ function SkillFramePanel({
       coinPower={skill.coinPower}
       coins={skill.coinNum}
       atkType={skill.atkType}
-      offenseLevel={skill.power.replace(/\(\d+\)/g, '').trim()}
+      offenseLevel={skill.offenseLevel}
       atkWeight={skill.atkWeight}
       isDefense={!isAttackSkill}
       description={fullDesc || null}

@@ -108,6 +108,7 @@ export type EGOSkill = {
   coinNum: number
   atkWeight: number
   construeLevel: number
+  offenseLevel: number | null
   normalEffect: string
   coin1Effect: string
   coin2Effect: string

@@ -228,6 +228,7 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         coinNum: (s.coins as number) ?? 1,
         atkWeight: (s.atk_weight as number) ?? 1,
         construeLevel: (s.construe_level as number) ?? 4,
+        offenseLevel: (s.offense_level as number) ?? null,
         normalEffect,
         coin1Effect: coinEffects[0] || '',
         coin2Effect: coinEffects[1] || '',
