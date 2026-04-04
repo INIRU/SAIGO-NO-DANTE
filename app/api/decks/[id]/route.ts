@@ -298,7 +298,7 @@ export async function PATCH(
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('user_id')
+      .select('user_id, title, description, tags, content_type')
       .eq('id', id)
       .single()
 
@@ -309,6 +309,14 @@ export async function PATCH(
     const isAdmin = session.user?.isAdmin === true
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
+    }
+
+    // 롤백용 원본 값 저장
+    const originalValues = {
+      title: deck.title,
+      description: deck.description,
+      tags: deck.tags,
+      content_type: deck.content_type,
     }
 
     // decks 테이블 UPDATE (소유자는 변경하지 않음)
@@ -325,6 +333,7 @@ export async function PATCH(
     // deck_identities: 기존 삭제 → 새로 삽입
     const { error: delIdentitiesError } = await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
     if (delIdentitiesError) {
+      await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
       return NextResponse.json({ error: delIdentitiesError.message }, { status: 500 })
     }
     if (identitySlots?.length > 0) {
@@ -339,6 +348,7 @@ export async function PATCH(
       }))
       const { error: insIdentitiesError } = await admin.schema('limbus').from('deck_identities').insert(rows)
       if (insIdentitiesError) {
+        await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
         return NextResponse.json({ error: insIdentitiesError.message }, { status: 500 })
       }
     }
@@ -346,6 +356,7 @@ export async function PATCH(
     // deck_egos: 기존 삭제 → 새로 삽입
     const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
     if (delEgosError) {
+      await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
       return NextResponse.json({ error: delEgosError.message }, { status: 500 })
     }
     if (egoSlots?.length > 0) {
@@ -356,6 +367,7 @@ export async function PATCH(
       }))
       const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
       if (insEgosError) {
+        await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
         return NextResponse.json({ error: insEgosError.message }, { status: 500 })
       }
     }
