@@ -186,15 +186,14 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const auth = await requireActiveUser()
+    if (auth.error) return auth.response
+    const { session } = auth
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
       admin,
-      session.user.email,
+      session.user.email!,
       session.user.name,
       session.user.image,
     )

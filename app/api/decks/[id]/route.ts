@@ -319,6 +319,12 @@ export async function PATCH(
       content_type: deck.content_type,
     }
 
+    // 자식 롤백을 위해 기존 children 미리 저장
+    const [{ data: origIdents }, { data: origEgos }] = await Promise.all([
+      admin.schema('limbus').from('deck_identities').select('*').eq('deck_id', id),
+      admin.schema('limbus').from('deck_egos').select('*').eq('deck_id', id),
+    ])
+
     // decks 테이블 UPDATE (소유자는 변경하지 않음)
     const { error: updateError } = await admin
       .schema('limbus')
@@ -334,6 +340,8 @@ export async function PATCH(
     const { error: delIdentitiesError } = await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
     if (delIdentitiesError) {
       await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+      if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
+      if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
       return NextResponse.json({ error: delIdentitiesError.message }, { status: 500 })
     }
     if (identitySlots?.length > 0) {
@@ -349,6 +357,8 @@ export async function PATCH(
       const { error: insIdentitiesError } = await admin.schema('limbus').from('deck_identities').insert(rows)
       if (insIdentitiesError) {
         await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+        if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
+        if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
         return NextResponse.json({ error: insIdentitiesError.message }, { status: 500 })
       }
     }
@@ -357,6 +367,8 @@ export async function PATCH(
     const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
     if (delEgosError) {
       await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+      if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
+      if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
       return NextResponse.json({ error: delEgosError.message }, { status: 500 })
     }
     if (egoSlots?.length > 0) {
@@ -368,6 +380,8 @@ export async function PATCH(
       const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
       if (insEgosError) {
         await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
+        if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
+        if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
         return NextResponse.json({ error: insEgosError.message }, { status: 500 })
       }
     }
