@@ -306,7 +306,7 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
   const modelId = process.env.INIRU_AI_MODEL || 'gpt-5.4'
 
   const result = streamText({
-    model: ai.chat(modelId),
+    model: ai(modelId),
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 1500,
