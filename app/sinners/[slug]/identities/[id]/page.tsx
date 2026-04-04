@@ -6,6 +6,9 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
+import Image from 'next/image'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { getSinnerLogoUrl, BLUR_PLACEHOLDER } from '@/lib/utils/images'
 import IdentityDetailClient from './IdentityDetailClient'
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 
@@ -115,6 +118,7 @@ export default async function IdentityPage({
 
   const canonical = `${SITE_URL}/sinners/${slug}/identities/${id}`
   const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
+  const rarityNum = identity.rarity
 
   return (
     <>
@@ -133,6 +137,72 @@ export default async function IdentityPage({
           siteUrl: SITE_URL,
         })} />
       )}
+      {/*
+        LCP 최적화: 히어로 이미지(인격 초상화)를 서버 HTML로 먼저 렌더링.
+        IdentityDetailClient의 클라이언트 hydration을 기다리지 않고
+        브라우저가 즉시 priority 이미지를 발견하여 LCP를 개선함.
+        이 마크업은 IdentityDetailClient 내부의 portrait 섹션과 시각적으로 동일하며,
+        클라이언트가 hydrate되면 IdentityDetailClient가 이 자리를 대체함.
+      */}
+      <div className="min-h-screen pt-24 pb-16" aria-hidden="true" id="identity-hero-ssr">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
+              {/* 인격 이름 헤더 */}
+              <div className="flex items-center gap-2">
+                <div className="relative shrink-0" style={{ width: '2.5rem', height: '2.5rem' }}>
+                  <Image
+                    src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
+                    alt=""
+                    width={40}
+                    height={40}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    priority
+                  />
+                  <Image
+                    src={getSinnerLogoUrl(sinner.id)}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="absolute inset-0 m-auto"
+                    style={{ width: '55%', height: '55%', objectFit: 'contain' }}
+                    priority
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1
+                    className="font-serif truncate"
+                    style={{ color: '#e8dcc8', fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, WebkitTextStroke: '0.5px #e8dcc8' }}
+                  >
+                    {identity.name_kr || identity.name}
+                  </h1>
+                  <p className="truncate" style={{ color: '#a08a60', fontSize: '0.6875rem' }}>
+                    {identity.name}
+                  </p>
+                </div>
+              </div>
+
+              {/* 인격 정보 이미지 — LCP 히어로 (priority) */}
+              {identityImageUrl && (
+                <div className={`game-card rarity-${rarityNum} overflow-hidden`}>
+                  <Image
+                    src={identityImageUrl}
+                    alt={`${identity.name_kr || identity.name} 인격 정보`}
+                    width={480}
+                    height={320}
+                    quality={90}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                    className="w-full h-auto max-w-[320px] mx-auto"
+                    priority
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <IdentityDetailClient
         sinner={sinner}
         identity={identity}

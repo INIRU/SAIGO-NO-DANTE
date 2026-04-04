@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
+import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
 export const metadata: Metadata = {
@@ -116,7 +117,8 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
-      <HomeClient latestIdentities={latestIdentities} latestVideo={latestVideo} pinnedAnnouncement={pinnedAnnouncement} />
+      <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
+      <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
     </>
   )
 }

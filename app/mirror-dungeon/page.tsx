@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import MirrorDungeonClient from './MirrorDungeonClient'
+import MirrorDungeonSSRGrid from './MirrorDungeonSSRGrid'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
 export const revalidate = 300
@@ -47,6 +48,26 @@ export default async function MirrorDungeonPage() {
   return (
     <>
       <JsonLd data={faqJsonLd(MIRROR_FAQ)} />
+      {/*
+        SSR Grid: painted immediately as static HTML for LCP.
+        Positioned to overlap the gift grid area using the same layout
+        container as MirrorDungeonClient (pt-24 + header ~10rem ≈ 17rem top).
+        MirrorDungeonClient hides this via data-hidden="true" on mount.
+      */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '17rem',
+          left: 0,
+          right: 0,
+          padding: '0 1rem',
+          maxWidth: '80rem',
+          margin: '0 auto',
+          pointerEvents: 'none',
+        }}
+      >
+        <MirrorDungeonSSRGrid gifts={gifts ?? []} count={40} />
+      </div>
       <MirrorDungeonClient
         gifts={gifts ?? []}
         recipes={recipes ?? []}
