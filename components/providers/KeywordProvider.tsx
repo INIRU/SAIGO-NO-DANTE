@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { createPortal } from 'react-dom'
 
 export type KeywordInfo = {
@@ -156,8 +157,7 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
       >
         <span style={{ color: '#e8dcc8', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px' }}>
           {iconUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={iconUrl} alt="" width={16} height={16} style={{ flexShrink: 0 }} />
+            <Image src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1rem', height: '1rem' }} />
           )}
           {keyword}{info.maxStack ? ` (최대 ${info.maxStack})` : ''}
         </span>

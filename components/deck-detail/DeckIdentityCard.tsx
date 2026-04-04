@@ -359,15 +359,13 @@ export default function DeckIdentityCard({
             const skillLabel = hasVariants ? `S${skill.skill_order}-${varIdx + 1}` : `S${skill.skill_order}`
             const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
             const iconUrl = skillIconUrl(imgIdx)
-            const iconFallback = imgIdx >= 5 ? skillIconUrl(3) : undefined
             return (
               <div key={skill.id} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {iconUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={iconUrl} alt="" width={24} height={24} style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} onError={iconFallback ? (e) => { (e.target as HTMLImageElement).src = iconFallback } : undefined} />
+                      <Image src={iconUrl} alt="" width={24} height={24} unoptimized style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} />
                     )}
                     <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${sc}20`, color: sc, border: `1px solid ${sc}40` }}>
                       {skillLabel}
