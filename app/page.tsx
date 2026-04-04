@@ -96,7 +96,7 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
       const videoId     = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1]
       const title       = entry.match(/<title>([^<]+)<\/title>/)?.[1] ?? ''
       const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? ''
-      if (videoId && /PV|인격 소개|\[0{2,3}\]/i.test(title)) {
+      if (videoId && /PV|Teaser|인격 소개|\[0{2,3}\]/i.test(title)) {
         return { videoId, title, publishedAt }
       }
     }
