@@ -6,11 +6,11 @@ import Image from 'next/image'
 import {
   Sinner, EGO, EGOSkill, STORAGE_BASE,
   SIN_COLORS, SinType,
-  GRADE_COLORS, SIN_KR_TO_EN, ATK_TYPE_ICON_MAP,
+  GRADE_COLORS, SIN_KR_TO_EN,
   getSinIconUrl,
   SIN_ORDER,
 } from '@/lib/data/sinners'
-import SkillFrame from '@/components/identity/SkillFrame'
+import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { getGiftKeywordColor } from '@/lib/constants/gift'
 import { useKeywords } from '@/components/providers/KeywordProvider'
@@ -22,11 +22,6 @@ const RESISTANCE_STYLE: Record<string, { color: string; bg: string }> = {
   '견딤': { color: '#9966cc', bg: 'rgba(120,80,180,0.15)' },
   '보통': { color: '#556677', bg: 'rgba(60,70,80,0.12)' },
   '취약': { color: '#cc4444', bg: 'rgba(160,40,40,0.15)' },
-}
-
-const SIN_FRAME_MAP: Record<string, string> = {
-  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
-  gloom: 'azure', pride: 'indigo', envy: 'violet',
 }
 
 // ─── Grade 이미지 ─────────────────────────────────────────────────────
@@ -58,14 +53,12 @@ function SkillFramePanel({
 }) {
   const skillSin: SinType | null = (SIN_KR_TO_EN[skill.resource] ?? (skill.resource in SIN_COLORS ? skill.resource as SinType : null))
   const skillSinColor = skillSin ? (SIN_COLORS[skillSin] ?? sinColor) : sinColor
-  const accentColor = skillSinColor
-  const frameSinName = SIN_FRAME_MAP[skillSin ?? ''] ?? 'crimson'
 
   // 코인 효과 배열 (coinNum개만)
   const coinEffects = [skill.coin1Effect, skill.coin2Effect, skill.coin3Effect, skill.coin4Effect, skill.coin5Effect]
     .slice(0, skill.coinNum)
 
-  // 파괴 불가 코인 감지
+  // 파괴 불가 코인 감지 (0-based index)
   const unbreakableCoins = new Set<number>()
   coinEffects.forEach((effect, i) => {
     if (effect && effect.startsWith('파괴 불가 코인')) unbreakableCoins.add(i)
@@ -79,168 +72,29 @@ function SkillFramePanel({
   })
   const fullDesc = descParts.join('\n')
 
-  const atkTypeIcon = ATK_TYPE_ICON_MAP[skill.atkType]
   const isAttackSkill = ['slash', 'pierce', 'blunt', '참격', '관통', '타격'].includes(skill.atkType)
-  const atkTypeKey = ({ '참격': 'slash', '관통': 'pierce', '타격': 'blunt' } as Record<string, string>)[skill.atkType] ?? skill.atkType
-
-  const frameSize = '6.5rem'
 
   return (
-    <div>
-      {/* 프레임 + 스킬 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.25rem', marginBottom: '0.5rem' }}>
-        <div className="relative shrink-0 ml-2" style={{ width: frameSize, height: frameSize }}>
-          {/* 죄악 색 삼각형 */}
-          <div className="absolute flex items-center justify-center pointer-events-none" style={{
-            top: '1.5%', left: '50%', transform: 'translateX(-56%)',
-            width: '1.5rem', height: '1.25rem', zIndex: 0,
-          }}>
-            <div className="absolute" style={{
-              width: '2rem', height: '1.25rem',
-              backgroundColor: accentColor,
-              clipPath: 'polygon(5% 20%, 85% 0%, 100% 100%, 10% 100%)',
-            }} />
-          </div>
-
-          <SkillFrame
-            skillIconUrl={skillIconUrl}
-            sin={skillSin ?? 'wrath'}
-            skillSlot={3}
-            sinColor={accentColor}
-            label="EGO"
-            size={frameSize}
-          />
-
-          {/* 공격 타입 아이콘 (하단 배지) */}
-          {isAttackSkill && atkTypeIcon && (
-            <div className="absolute z-20 pointer-events-none"
-              style={{ bottom: 0, left: '50%', marginLeft: '-0.625rem', transform: 'translateY(-30%)', width: '1.25rem', height: '1.25rem' }}>
-              <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSinName}_icon_bg.webp`}
-                alt="" width={20} height={20} className="absolute inset-0"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSinName}_icon_overlay.webp`}
-                alt="" width={20} height={20} className="absolute inset-0"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              <Image src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
-                alt="" width={16} height={16} className="absolute inset-0 m-auto z-10"
-                style={{ width: '0.625rem', height: '0.625rem' }} />
-            </div>
-          )}
-
-          {/* 기본 위력 (왼쪽) */}
-          <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-            <span style={{
-              fontFamily: 'var(--font-excelsior), sans-serif',
-              fontSize: '2rem', lineHeight: 1,
-              color: 'oklch(81.35% .0894 69.33)',
-            }}>
-              {skill.skillPower}
-            </span>
-          </div>
-
-          {/* 코인 위력 (상단) */}
-          <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
-            <span style={{
-              fontFamily: 'var(--font-excelsior), sans-serif',
-              fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-              color: skill.coinPower >= 0 ? 'oklch(81.35% .0894 69.33)' : '#ff8866',
-              textShadow: '1px 1px 1px black',
-              WebkitTextStroke: '0.01px black',
-            }}>
-              {skill.coinPower >= 0 ? `+${skill.coinPower}` : `-${Math.abs(skill.coinPower)}`}
-            </span>
-          </div>
-        </div>
-
-        {/* 스킬 정보 (오른쪽) */}
-        <div className="flex-1 min-w-0 overflow-hidden pt-0.5">
-          {/* 코인 아이콘 */}
-          <div className="flex items-center gap-0.5 mb-0.5">
-            {Array.from({ length: skill.coinNum }).map((_, i) => {
-              const isUb = unbreakableCoins.has(i)
-              return (
-                <Image key={i}
-                  src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
-                  alt={isUb ? '파괴 불가 코인' : '코인'}
-                  width={16} height={16}
-                  style={{ width: '1.125rem', height: '1.125rem' }}
-                />
-              )
-            })}
-          </div>
-
-          {/* 스킬 이름 (사선 꼬리 배너) */}
-          <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
-            <div style={{
-              color: '#e8dcc8',
-              backgroundImage: `linear-gradient(255deg, transparent 1.2em, ${accentColor}30 1.2em)`,
-            }}>
-              <div style={{
-                padding: '0.1em 0 0.1em 0.3em',
-                backgroundImage: `linear-gradient(290deg, transparent 2em, ${accentColor}40 2em, ${accentColor}40 2.12em, transparent 2.12em, transparent 2.24em, ${accentColor}40 2.24em, ${accentColor}40 2.36em, transparent 2.36em, transparent 2.48em, ${accentColor}40 2.48em, ${accentColor}40 2.6em, transparent 2.6em, transparent 2.72em, ${accentColor}40 2.72em)`,
-                textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
-              }}>
-                <span className="font-bold whitespace-nowrap" style={{
-                  fontSize: '1rem',
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 800,
-                  paddingRight: '3.5em',
-                  color: '#e8dcc8',
-                }}>
-                  {skill.name}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 공격 레벨 + 가중치 */}
-          <div className="flex items-center gap-3">
-            {/* 공격 레벨 — EGOSkill에는 offense_level이 없으므로 최대위력 표시 */}
-            <div className="flex items-center gap-0.5">
-              <Image
-                src={`${STORAGE_BASE}/icons/ui/icon-sword.webp`}
-                alt="" width={22} height={22}
-                style={{ width: '1.5rem', height: '1.5rem' }}
-              />
-              <span style={{
-                fontFamily: 'var(--font-excelsior), sans-serif',
-                color: '#e8dcc8', fontSize: '1.25rem',
-                textDecoration: 'underline', textUnderlineOffset: '2px', textDecorationColor: '#e8dcc8',
-              }}>
-                {skill.power.replace(/\(\d+\)/g, '').trim()}
-              </span>
-            </div>
-            {/* 가중치 */}
-            {skill.atkWeight > 0 && (
-              <div className="flex items-center gap-1">
-                <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>
-                  공격 가중치
-                </span>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: skill.atkWeight }).map((_, i) => (
-                    <div key={i} style={{ width: '0.625rem', height: '0.625rem', background: '#c8900a', borderRadius: '0.1rem' }} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 정신력 소모 */}
-          {skill.mentalConsume !== 0 && (
-            <div className="mt-0.5">
-              <span className="font-mono" style={{ color: '#cc6666', fontSize: '0.625rem' }}>
-                정신력 -{skill.mentalConsume}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 스킬 설명 */}
-      {fullDesc && (
-        <SkillDescription description={fullDesc} accentColor={accentColor} variant="detail" />
-      )}
-    </div>
+    <SkillFrameBlock
+      skillIconUrl={skillIconUrl}
+      sin={skillSin ?? 'wrath'}
+      sinColor={skillSinColor}
+      skillSlot={3}
+      label="EGO"
+      size="6.5rem"
+      name={skill.name}
+      basePower={skill.skillPower}
+      coinPower={skill.coinPower}
+      coins={skill.coinNum}
+      atkType={skill.atkType}
+      offenseLevel={skill.power.replace(/\(\d+\)/g, '').trim()}
+      atkWeight={skill.atkWeight}
+      isDefense={!isAttackSkill}
+      description={fullDesc || null}
+      unbreakableCoins={unbreakableCoins}
+      descVariant="detail"
+      mentalConsume={skill.mentalConsume}
+    />
   )
 }
 
@@ -399,20 +253,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
 
   return (
     <>
-    <style>{`
-@keyframes ego-cor-scanline {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 -200%; }
-}
-@keyframes ego-cor-glitch {
-  0%, 95% { opacity: 0; }
-  96% { opacity: 0.08; transform: translateX(-2px); }
-  97% { opacity: 0; }
-  98% { opacity: 0.06; transform: translateX(3px); }
-  99% { opacity: 0.04; transform: translateX(-1px); }
-  100% { opacity: 0; }
-}
-`}</style>
     <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
 
       {/* ─── 히어로 배너 ─── */}
@@ -730,32 +570,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   )}
                 </div>
 
-                {/* 침식 글리치 오버레이 — 하단 가장자리 */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '30%',
-                  pointerEvents: 'none',
-                  background: 'repeating-linear-gradient(0deg, transparent, transparent 0.125rem, rgba(180,20,20,0.03) 0.125rem, rgba(180,20,20,0.03) 0.25rem)',
-                  backgroundSize: '100% 0.25rem',
-                  animation: 'ego-cor-scanline 8s linear infinite',
-                  maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%)',
-                  zIndex: 1,
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '15%',
-                  pointerEvents: 'none',
-                  background: 'linear-gradient(90deg, transparent 30%, rgba(200,20,20,0.05) 50%, transparent 70%)',
-                  animation: 'ego-cor-glitch 3s ease-in-out infinite',
-                  zIndex: 1,
-                }} />
               </div>
             )}
 
