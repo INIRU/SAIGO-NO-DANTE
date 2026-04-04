@@ -213,11 +213,11 @@ function Skeleton() {
 }
 
 // ── 메인 ──────────────────────────────────────────────────────────────────
-export default function DeckDetailClient({ id }: { id: string }) {
+export default function DeckDetailClient({ id, initialDeck }: { id: string; initialDeck?: DeckDetail | null }) {
   const { status: authStatus } = useSession()
 
-  const [deck, setDeck] = useState<DeckDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
+  const [loading, setLoading] = useState(!initialDeck)
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [voting, setVoting] = useState(false)
@@ -289,13 +289,28 @@ export default function DeckDetailClient({ id }: { id: string }) {
               : es.ego as EgoSlot['ego'],
           })),
         }
-        setDeck(fixed)
+        // If we already have initialDeck, only patch the fields the server-side
+        // prefetch doesn't include (deck_code, is_owner, is_admin, all_sinner_egos).
+        // This avoids replacing identity/ego data that is already rendered.
+        if (initialDeck) {
+          setDeck(prev => prev ? {
+            ...prev,
+            deck_code: fixed.deck_code,
+            is_owner: fixed.is_owner,
+            is_admin: fixed.is_admin,
+            all_sinner_egos: fixed.all_sinner_egos ?? [],
+            vote_count: fixed.vote_count,
+            view_count: fixed.view_count,
+          } : fixed)
+        } else {
+          setDeck(fixed)
+        }
         setVoteCount(data.vote_count ?? 0)
       })
       .catch((err) => {
         if (cancelled) return
         console.error('Failed to fetch deck detail:', err)
-        showError('덱 정보를 불러오지 못했습니다.')
+        if (!initialDeck) showError('덱 정보를 불러오지 못했습니다.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -304,7 +319,7 @@ export default function DeckDetailClient({ id }: { id: string }) {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, initialDeck])
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return
@@ -601,7 +616,9 @@ export default function DeckDetailClient({ id }: { id: string }) {
                       src={imgUrl}
                       alt=""
                       style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block', filter: 'brightness(0.65) saturate(0.85)' }}
-                      loading="lazy"
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      // @ts-expect-error fetchpriority is a valid HTML attribute for LCP
+                      fetchpriority={i === 0 ? 'high' : 'low'}
                       onError={e => {
                         if (slot?.gacksung && e.currentTarget.src !== normalImgUrl) {
                           e.currentTarget.src = normalImgUrl

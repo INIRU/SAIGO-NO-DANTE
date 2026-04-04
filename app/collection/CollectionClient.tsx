@@ -13,6 +13,9 @@ import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 import CollectionSection from '@/components/mypage/CollectionSection'
 import { usePretextSingleLineTruncate } from '@/lib/hooks/usePretextTruncate'
 
+// CollectionViewer receives pre-fetched data from the Server Component page.
+// Only the ?code decoding (URL param → owned Set) remains client-side.
+
 const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
   { keyword: '출혈', sin: 'wrath' },
   { keyword: '화상', sin: 'lust' },
@@ -296,52 +299,43 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
 
 // ── 메인 뷰어 ────────────────────────────────────────────────────────────
 
-function CollectionViewer() {
+function CollectionViewer({ data }: { data: CollectionData }) {
   const searchParams = useSearchParams()
   const code = searchParams.get('code')
 
-  const [data, setData] = useState<CollectionData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [owned, setOwned] = useState<Set<string>>(new Set())
-  const [activeSinner, setActiveSinner] = useState('')
+  const [activeSinner, setActiveSinner] = useState(data.sinners[0]?.id ?? '')
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'sinner' | 'all'>('sinner')
   const [showUnowned, setShowUnowned] = useState(true)
   const { sinMap: kwSinMap } = useKeywordData()
   const animatedRef = useRef(false)
 
+  // Decode ?code URL param into owned Set — client-only because it reads searchParams
   useEffect(() => {
-    fetch('/api/collection')
-      .then(r => r.json())
-      .then(async (d: CollectionData) => {
-        setData(d)
-        if (d.sinners.length > 0 && !activeSinner) setActiveSinner(d.sinners[0].id)
-        if (code && d.sinners.length > 0) {
-          const decoded = await decodeCollectionAsync(code, d.sinners, d.identities, d.egos)
-          setOwned(decoded)
-        }
-      })
-      .catch((e) => console.error('컬렉션 로드 실패:', e))
-      .finally(() => {
-        setLoading(false)
-        if (!animatedRef.current) {
-          animatedRef.current = true
-          import('gsap').then(({ gsap }) => {
-            gsap.fromTo('.collection-header',
-              { opacity: 0, y: -20 },
-              { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-            )
-            gsap.fromTo('.collection-content',
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-            )
-          })
-        }
-      })
-  }, [code])
+    if (!code || data.sinners.length === 0) return
+    decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      .then(decoded => setOwned(decoded))
+      .catch(() => {/* ignore malformed codes */})
+  }, [code, data])
+
+  // Entrance animation — runs once after first paint
+  useEffect(() => {
+    if (animatedRef.current) return
+    animatedRef.current = true
+    import('gsap').then(({ gsap }) => {
+      gsap.fromTo('.collection-header',
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+      )
+      gsap.fromTo('.collection-content',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
+      )
+    })
+  }, [])
 
   const stats = useMemo(() => {
-    if (!data) return { ownedIdentities: 0, totalIdentities: 0, ownedEgos: 0, totalEgos: 0 }
     let totalIdentities = 0, ownedIdentities = 0, totalEgos = 0, ownedEgos = 0
     for (const s of data.sinners) {
       const ids = data.identities[s.id] ?? []
@@ -372,27 +366,7 @@ function CollectionViewer() {
     return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen pt-24 pb-16 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div style={{ width: '12.5rem', height: '2rem', background: '#2a2015', borderRadius: '0.25rem', marginBottom: '1rem' }} />
-          <div className="flex gap-2 mb-4 overflow-x-auto">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#2a2015', flexShrink: 0 }} />
-            ))}
-          </div>
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ aspectRatio: '3/4', background: '#2a2015', borderRadius: 6, opacity: 0.4 + i * 0.03 }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data || !code) {
+  if (!code) {
     return (
       <div className="min-h-screen pt-24 pb-16 px-6">
         <div className="max-w-5xl mx-auto">
@@ -649,16 +623,17 @@ function CollectionViewer() {
   )
 }
 
-export default function CollectionClient() {
+export default function CollectionClient({ initialData }: { initialData: CollectionData }) {
   return (
+    // Suspense boundary is required because CollectionViewer uses useSearchParams
     <Suspense fallback={
       <div className="min-h-screen pt-24 pb-16 px-6">
         <div className="max-w-5xl mx-auto">
-          <div style={{ width: 200, height: 32, background: '#2a2015', borderRadius: 4 }} />
+          <div style={{ width: '12.5rem', height: '2rem', background: '#2a2015', borderRadius: '0.25rem' }} />
         </div>
       </div>
     }>
-      <CollectionViewer />
+      <CollectionViewer data={initialData} />
     </Suspense>
   )
 }
