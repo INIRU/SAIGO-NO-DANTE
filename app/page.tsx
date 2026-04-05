@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
+import type { IdentityWithSinner } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: '최애의 관리자 | SAIGO NO DANTE',
@@ -83,42 +85,71 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
   try {
     // channel_id RSS often returns 404; use uploads playlist (UC→UU) instead
     const playlistId = PM_CHANNEL_ID.replace(/^UC/, 'UU')
-    const res = await fetch(
-      `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`,
-      { next: { revalidate: 3600 } }
-    )
-    if (!res.ok) return null
-    const xml = await res.text()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3000)
+    try {
+      const res = await fetch(
+        `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`,
+        { next: { revalidate: 3600 }, signal: controller.signal }
+      )
+      clearTimeout(timeout)
+      if (!res.ok) return null
+      const xml = await res.text()
 
-    // Parse all <entry> blocks and find the latest PV
-    const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(m => m[1])
-    for (const entry of entries) {
-      const videoId     = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1]
-      const title       = entry.match(/<title>([^<]+)<\/title>/)?.[1] ?? ''
-      const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? ''
-      if (videoId && /PV|Teaser|인격 소개|\[0{2,3}\]/i.test(title)) {
-        return { videoId, title, publishedAt }
+      // Parse all <entry> blocks and find the latest PV
+      const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(m => m[1])
+      for (const entry of entries) {
+        const videoId     = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1]
+        const title       = entry.match(/<title>([^<]+)<\/title>/)?.[1] ?? ''
+        const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? ''
+        if (videoId && /PV|Teaser|인격 소개|\[0{2,3}\]/i.test(title)) {
+          return { videoId, title, publishedAt }
+        }
       }
+      return null
+    } catch {
+      clearTimeout(timeout)
+      return null
     }
-    return null
   } catch {
     return null
   }
 }
 
-export const revalidate = 300  // 5분마다 재검증
+export const revalidate = 600  // 10분마다 재검증 (admin 인격 추가 시 즉시 무효화)
+
+async function BelowFoldContent({ latestIdentities }: { latestIdentities: IdentityWithSinner[] }) {
+  const latestVideo = await getLatestYoutubeVideo()
+  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
+}
+
+function BelowFoldSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-16">
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 w-48 rounded" style={{ background: 'rgba(200,144,10,0.1)' }} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="aspect-[3/4] rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default async function HomePage() {
-  const [latestIdentities, latestVideo, pinnedAnnouncement] = await Promise.all([
+  const [latestIdentities, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
-    getLatestYoutubeVideo(),
     getPinnedAnnouncement(),
   ])
   return (
     <>
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
-      <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
+      <Suspense fallback={<BelowFoldSkeleton />}>
+        <BelowFoldContent latestIdentities={latestIdentities} />
+      </Suspense>
     </>
   )
 }
