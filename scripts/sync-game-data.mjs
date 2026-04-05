@@ -1443,6 +1443,35 @@ async function main() {
     console.log(`  패닉 타입 업데이트: ${panicUpdated}개`)
   }
   console.log(`  스킵: 인격 ${totalSkipped}개 / EGO ${egoSkipped}개`)
+
+  if (!dryRun) {
+    await revalidateCache()
+  }
+}
+
+// Revalidate homepage cache after sync
+async function revalidateCache() {
+  const secret = process.env.REVALIDATION_SECRET
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://saigo-no-dante.com'
+  if (!secret) {
+    console.log('⚠️  REVALIDATION_SECRET not set, skipping cache revalidation')
+    return
+  }
+  try {
+    const res = await fetch(`${siteUrl}/api/revalidate?secret=${secret}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: ['/', '/sinners', '/mirror-dungeon'] }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      console.log('✅ Cache revalidated:', data.revalidated)
+    } else {
+      console.log('⚠️  Cache revalidation failed:', res.status)
+    }
+  } catch (err) {
+    console.log('⚠️  Cache revalidation error:', err.message)
+  }
 }
 
 main().catch(err => {
