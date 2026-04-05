@@ -351,6 +351,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     src={getSinnerProfileUrl(sinner.id)}
                     alt={sinner.name_kr}
                     fill
+                    sizes="(max-width: 640px) 5rem, (max-width: 768px) 7rem, 8rem"
                     placeholder="blur"
                     blurDataURL={BLUR_PLACEHOLDER}
                     className="object-cover object-top"

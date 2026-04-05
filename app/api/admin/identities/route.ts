@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, createIdentitySchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,12 +38,10 @@ export async function POST(request: Request) {
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const supabase = createAdminClient()
-    const body = await request.json()
-
-    const { sinner_id, name, rarity } = body
-    if (!sinner_id || !name || !rarity) {
-      return NextResponse.json({ error: 'Missing required fields: sinner_id, name, rarity' }, { status: 400 })
-    }
+    const raw = await request.json()
+    const parsed = validateBody(createIdentitySchema, raw)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data
 
     const { data: identity, error } = await supabase
       .schema('limbus')

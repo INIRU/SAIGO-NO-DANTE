@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, createEgoSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,29 +37,17 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-    const body = await request.json()
-    const { sinner_id, name, grade } = body
-
-    if (!sinner_id || !name || !grade) {
-      return NextResponse.json({ error: 'Missing required fields: sinner_id, name, grade' }, { status: 400 })
-    }
+    const raw = await request.json()
+    const parsed = validateBody(createEgoSchema, raw)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data
 
     const supabase = createAdminClient()
 
     const { data: ego, error } = await supabase
       .schema('limbus')
       .from('ego')
-      .insert({
-        sinner_id,
-        name,
-        name_kr: body.name_kr,
-        grade,
-        sin_affinity: body.sin_affinity,
-        description: body.description,
-        corrosion_risk: body.corrosion_risk,
-        folder_name: body.folder_name,
-        image_url: body.image_url,
-      })
+      .insert(body)
       .select()
       .single()
 

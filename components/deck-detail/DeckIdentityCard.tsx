@@ -215,15 +215,13 @@ export default function DeckIdentityCard({
         <div className="flex-shrink-0 flex flex-col" style={{ width: 88, borderRight: '1px solid rgba(32,20,8,0.7)' }}>
           <div className="relative overflow-hidden" style={{ width: 88, height: 116 }}>
             {imgUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={imgUrl}
                 alt={id_.name_kr}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-                loading="lazy"
-                onError={e => {
-                  if (slot.gacksung && e.currentTarget.src !== normalUrl) e.currentTarget.src = normalUrl
-                }}
+                fill
+                sizes="88px"
+                className="object-cover"
+                style={{ objectPosition: 'center top' }}
               />
             ) : (
               <div style={{ width: '100%', height: '100%', background: '#0a0806' }} />

@@ -159,7 +159,7 @@ export default function DeckPreviewPanel({
                     {/* 수감자 + EGO명 */}
                     <div style={{ minWidth: '140px', flexShrink: 0 }}>
                       <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ height: 'auto', opacity: 0.4 }} />
+                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ height: 'auto', opacity: 0.4 }} unoptimized />
                         <span style={{ color: '#6a5e38', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                       </div>
                       <p style={{ color: sc, fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{ego.name_kr || ego.name}</p>
@@ -168,7 +168,7 @@ export default function DeckPreviewPanel({
                     {/* 공격 유형 */}
                     <div style={{ flexShrink: 0, width: '24px' }}>
                       {atkType && ATK_TYPE_ICON_MAP[atkType] && (
-                        <Image src={ATK_TYPE_ICON_MAP[atkType]} alt={atkType} title={atkType} width={18} height={18} style={{ opacity: 0.85 }} />
+                        <Image src={ATK_TYPE_ICON_MAP[atkType]} alt={atkType} title={atkType} width={18} height={18} style={{ opacity: 0.85 }} unoptimized />
                       )}
                     </div>
 
@@ -178,7 +178,7 @@ export default function DeckPreviewPanel({
                         const cost = ego.cost?.[i] ?? 0
                         return (
                           <div key={sin} className="flex items-center gap-0.5" style={{ opacity: cost === 0 ? 0.15 : 1, minWidth: '28px' }}>
-                            <Image src={SIN_ICON_MAP[sin]} alt="" width={14} height={14} />
+                            <Image src={SIN_ICON_MAP[sin]} alt="" width={14} height={14} unoptimized />
                             <span style={{ color: SIN_COLORS[sin], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{cost}</span>
                           </div>
                         )
@@ -202,7 +202,7 @@ export default function DeckPreviewPanel({
               if (count === 0) return null
               return (
                 <div key={type} className="flex items-center gap-1">
-                  <Image src={ATK_TYPE_ICON_MAP[type]} alt={type} width={16} height={16} />
+                  <Image src={ATK_TYPE_ICON_MAP[type]} alt={type} width={16} height={16} unoptimized />
                   <span style={{ color: '#aaaaaa', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
                 </div>
               )
@@ -244,7 +244,7 @@ export default function DeckPreviewPanel({
                   {/* 수감자 + 인격명 */}
                   <div style={{ minWidth: '150px', flexShrink: 0 }}>
                     <div className="flex items-center gap-1 mb-0.5">
-                      <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ height: 'auto', opacity: 0.4 }} />
+                      <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ height: 'auto', opacity: 0.4 }} unoptimized />
                       <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                     </div>
                     <p style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>
@@ -265,7 +265,7 @@ export default function DeckPreviewPanel({
                               <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#1a1510' }} />
                             )}
                             {atkIcon && (
-                              <Image src={atkIcon} alt="" width={11} height={11} style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
+                              <Image src={atkIcon} alt="" width={11} height={11} style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} unoptimized />
                             )}
                           </div>
                           <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>{label}</span>

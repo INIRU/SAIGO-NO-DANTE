@@ -305,7 +305,7 @@ export function EgoTab({
           >
             {/* 수감자 헤더 */}
             <div className="flex items-center gap-1.5 px-2 py-1.5" style={{ borderBottom: '1px solid #1a1208' }}>
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
+              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} unoptimized />
               <span className="font-serif font-light truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
             {/* 등급 세로 목록 */}

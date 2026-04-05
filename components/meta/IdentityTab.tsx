@@ -237,7 +237,7 @@ export default function IdentityTab({
                       style={{ background: `${resolvedColor}15`, border: `1px solid ${resolvedColor}30` }}
                     >
                       {iconUrl && (
-                        <Image src={iconUrl} alt="" width={14} height={14} />
+                        <Image src={iconUrl} alt="" width={14} height={14} unoptimized />
                       )}
                     </div>
                     <span className="flex-1 text-xs" style={{ color: '#e8e4d8' }}>{kw.keyword}</span>

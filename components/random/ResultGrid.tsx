@@ -175,6 +175,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
                   src={getIdentityInfoUrl(identity)}
                   alt={identity.name_kr}
                   fill
+                  sizes="6rem"
                   unoptimized
                   fallbackType="identity"
                   className="transition-transform duration-500 group-hover:scale-[1.03]"
@@ -285,7 +286,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
             <div className="flex items-center gap-[0.375rem] px-[0.5rem] py-[0.375rem] relative" style={{ borderBottom: `1px solid ${hasAny ? accentColor + '20' : '#1a1208'}` }}>
               {/* Accent line at top */}
               <div className="absolute top-0 inset-x-0 h-[0.0625rem]" style={{ background: hasAny ? `linear-gradient(90deg, transparent, ${accentColor}55, transparent)` : 'none' }} />
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: hasAny ? 0.7 : 0.35 }} />
+              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: hasAny ? 0.7 : 0.35 }} unoptimized />
               <span className="font-serif font-light truncate" style={{ color: hasAny ? '#6a5530' : '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
 
