@@ -4,12 +4,22 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    loader: 'custom',
-    loaderFile: './lib/imageLoader.ts',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lpgqcleszdlldneiwgep.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+    ],
     // deviceSizes/imageSizes control which widths next/image generates in srcset
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [64, 96, 128, 256, 384],
-    qualities: [20, 25, 50, 60, 75, 90],
+    qualities: [20, 25, 40, 50, 60, 75, 90],
+    formats: ['image/avif', 'image/webp'],
   },
   async headers() {
     return [
@@ -46,9 +56,9 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com " + (process.env.NEXT_PUBLIC_IMGPROXY_URL || ''),
+              "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com",
               "font-src 'self'",
-              "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com " + (process.env.NEXT_PUBLIC_IMGPROXY_URL || ''),
+              "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
               "worker-src 'self' blob:",
               "frame-src https://www.youtube.com",
               "media-src 'self'",
