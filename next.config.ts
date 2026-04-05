@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [64, 96, 128, 256, 384],
     qualities: [20, 25, 40, 50, 60, 75, 90],
+    minimumCacheTTL: 2592000, // 30일 — 게임 에셋 이미지는 거의 변경 없음
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
