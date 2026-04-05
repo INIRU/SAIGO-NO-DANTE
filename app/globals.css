@@ -124,13 +124,6 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
 
-/* ── GSAP 애니메이션 대상 — SSR 하이드레이션 일치를 위해 초기 opacity: 0 ── */
-.latest-card,
-.latest-header,
-.feature-card,
-.official-link-card {
-  opacity: 0;
-}
 
 /* ── 포커스 링 (접근성) ───────────────────────────────── */
 :focus-visible {
