@@ -145,42 +145,6 @@ export default function GiftTab({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
 
-  // Track scroll position for viewport-based rendering
-  const [scrollY, setScrollY] = useState(0)
-  const gridRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let ticking = false
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true
-        requestAnimationFrame(() => {
-          setScrollY(window.scrollY)
-          ticking = false
-        })
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // Measure columns from actual rendered grid
-  const [columns, setColumns] = useState(8)
-  useEffect(() => {
-    const el = gridRef.current
-    if (!el) return
-    const measure = () => {
-      const w = el.clientWidth
-      const minPx = 72  // 4.5rem
-      const gapPx = 8   // 0.5rem
-      setColumns(Math.max(1, Math.floor((w + gapPx) / (minPx + gapPx))))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
   // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
@@ -213,19 +177,6 @@ export default function GiftTab({
     obs.observe(el)
     return () => obs.disconnect()
   }, [visibleCount, filtered.length])
-
-  // Calculate which items are in/near viewport
-  const OVERSCAN_PX = 600
-  const estimatedCardHeight = gridRef.current
-    ? (gridRef.current.clientWidth - 8 * (columns - 1)) / columns + 24 // card (aspect 1:1) + text + gap
-    : 96
-  const gridTop = gridRef.current?.offsetTop ?? 0
-  const viewTop = scrollY - gridTop - OVERSCAN_PX
-  const viewBottom = scrollY - gridTop + (typeof window !== 'undefined' ? window.innerHeight : 800) + OVERSCAN_PX
-  const firstVisibleRow = Math.max(0, Math.floor(viewTop / estimatedCardHeight))
-  const lastVisibleRow = Math.ceil(viewBottom / estimatedCardHeight)
-  const firstVisible = firstVisibleRow * columns
-  const lastVisible = Math.min((lastVisibleRow + 1) * columns, filtered.length)
 
   return (
     <div className="space-y-3 mb-8">
@@ -554,7 +505,6 @@ export default function GiftTab({
       ) : (
         <>
           <div
-            ref={gridRef}
             className="gift-grid"
             style={{
               display: 'grid',
@@ -564,28 +514,17 @@ export default function GiftTab({
               zIndex: 0,
             }}
           >
-            {visibleGifts.map((gift, i) => {
-              // Off-screen: lightweight placeholder that maintains grid cell size
-              if (i < firstVisible || i >= lastVisible) {
-                return (
-                  <div key={gift.id} style={{ aspectRatio: '1' }}>
-                    <div style={{ width: '100%', height: '100%' }} />
-                  </div>
-                )
-              }
-              // On-screen: full GiftCard
-              return (
-                <div
-                  key={gift.id}
-                  style={{
-                    contentVisibility: 'auto',
-                    containIntrinsicSize: 'auto 6rem',
-                  }}
-                >
-                  <GiftCard gift={gift} onClick={() => onSelectGift(gift)} />
-                </div>
-              )
-            })}
+            {visibleGifts.map(gift => (
+              <div
+                key={gift.id}
+                style={{
+                  contentVisibility: 'auto',
+                  containIntrinsicSize: 'auto 6rem',
+                }}
+              >
+                <GiftCard gift={gift} onClick={() => onSelectGift(gift)} />
+              </div>
+            ))}
           </div>
           {visibleCount < filtered.length && (
             <div ref={sentinelRef} className="flex justify-center py-8">

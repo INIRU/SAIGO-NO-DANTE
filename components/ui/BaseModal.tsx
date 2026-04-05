@@ -47,6 +47,7 @@ export default function BaseModal({
           onEscapeKeyDown={() => onClose()}
         >
           <Dialog.Title className="sr-only">Modal</Dialog.Title>
+          <Dialog.Description className="sr-only">Modal content</Dialog.Description>
           <div
             className={`relative w-full ${className}`}
             style={{ maxWidth, pointerEvents: 'auto' }}
