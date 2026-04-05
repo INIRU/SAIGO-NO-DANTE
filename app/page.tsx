@@ -6,6 +6,7 @@ import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
+import { getIdentityInfoUrl } from '@/lib/utils/images'
 
 export const metadata: Metadata = {
   title: '최애의 관리자 | SAIGO NO DANTE',
@@ -143,8 +144,20 @@ export default async function HomePage() {
     getLatestIdentities(6),
     getPinnedAnnouncement(),
   ])
+
+  // Preload the first hero slider image to eliminate LCP Resource Load Delay.
+  // Must replicate the same filtering + URL logic as HomeClient's heroIdentities useMemo.
+  const latestDate = latestIdentities[0]?.release_date
+  const heroIdentities = latestDate
+    ? latestIdentities.filter(id => id.release_date === latestDate)
+    : latestIdentities.slice(0, 1)
+  const firstHeroUrl = heroIdentities[0] ? getIdentityInfoUrl(heroIdentities[0], false) : null
+
   return (
     <>
+      {firstHeroUrl && (
+        <link rel="preload" as="image" href={firstHeroUrl} fetchPriority="high" />
+      )}
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
       <Suspense fallback={<BelowFoldSkeleton />}>
