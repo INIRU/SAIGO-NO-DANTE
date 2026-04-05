@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Save, ArrowLeft } from 'lucide-react'
 import {
   AdminInput, AdminSelect, AdminTextarea,
@@ -10,6 +12,7 @@ import {
   AdminFormSection,
 } from '@/components/admin'
 import { showSuccess, showError } from '@/lib/toast'
+import { createEgoSchema } from '@/lib/schemas/admin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,7 +25,12 @@ interface Sinner {
 
 const GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 const SINS = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
-const CORROSION_OPTIONS = ['낮음', '보통', '높음', '매우 높음']
+const CORROSION_OPTIONS = [
+  { value: '0', label: '낮음' },
+  { value: '1', label: '보통' },
+  { value: '2', label: '높음' },
+  { value: '3', label: '매우 높음' },
+]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -30,20 +38,42 @@ export default function NewEGOPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedSinner = searchParams.get('sinner') ?? ''
-  const [form, setForm] = useState({
-    sinner_id: preselectedSinner,
-    name: '',
-    name_kr: '',
-    grade: 'ZAYIN',
-    sin_affinity: '',
-    description: '',
-    corrosion_risk: '',
-    folder_name: '',
-    image_url: '',
-  })
   const [sinners, setSinners] = useState<Sinner[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+
+  interface EgoFormValues {
+    sinner_id: string
+    name: string
+    grade: string
+    name_kr: string
+    sin_affinity: string
+    description: string
+    corrosion_risk: number | null
+    folder_name: string
+    image_url: string
+  }
+
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<EgoFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createEgoSchema) as any,
+    defaultValues: {
+      sinner_id: preselectedSinner,
+      name: '',
+      grade: 'ZAYIN',
+      name_kr: '',
+      sin_affinity: '',
+      description: '',
+      corrosion_risk: null,
+      folder_name: '',
+      image_url: '',
+    },
+  })
 
   useEffect(() => {
     fetch('/api/admin/data')
@@ -59,24 +89,22 @@ export default function NewEGOPage() {
   // Sync sinner_id if searchParam arrives after mount
   useEffect(() => {
     if (preselectedSinner) {
-      setForm(f => ({ ...f, sinner_id: preselectedSinner }))
+      setValue('sinner_id', preselectedSinner)
     }
-  }, [preselectedSinner])
+  }, [preselectedSinner, setValue])
 
-  const handleSave = async () => {
-    if (!form.name.trim()) return
-    setSaving(true)
+  const onSubmit = handleSubmit(async (data) => {
     try {
       const body = {
-        sinner_id: form.sinner_id || null,
-        name: form.name,
-        name_kr: form.name_kr || null,
-        grade: form.grade,
-        sin_affinity: form.sin_affinity || null,
-        description: form.description || null,
-        corrosion_risk: form.corrosion_risk || null,
-        folder_name: form.folder_name || null,
-        image_url: form.image_url || null,
+        sinner_id: data.sinner_id || null,
+        name: data.name,
+        name_kr: data.name_kr || null,
+        grade: data.grade,
+        sin_affinity: data.sin_affinity || null,
+        description: data.description || null,
+        corrosion_risk: data.corrosion_risk ?? null,
+        folder_name: data.folder_name || null,
+        image_url: data.image_url || null,
       }
       const res = await fetch('/api/admin/ego', {
         method: 'POST',
@@ -92,10 +120,10 @@ export default function NewEGOPage() {
       }
     } catch {
       showError('네트워크 오류')
-    } finally {
-      setSaving(false)
     }
-  }
+  })
+
+  const nameValue = watch('name')
 
   if (loading) {
     return (
@@ -121,82 +149,140 @@ export default function NewEGOPage() {
         </div>
       </div>
 
-      <AdminCard
-        title="기본 정보"
-        headerRight={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <AdminButton variant="ghost" onClick={() => router.push('/admin/data')}>돌아가기</AdminButton>
-            <AdminButton onClick={handleSave} loading={saving} disabled={!form.name.trim()}>
-              <Save size={14} /> 추가
-            </AdminButton>
-          </div>
-        }
-      >
-        <AdminFormSection columns={2}>
-          <AdminSelect
-            label="수감자"
-            value={form.sinner_id}
-            onChange={v => setForm(f => ({ ...f, sinner_id: v }))}
-            options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
-            placeholder="-- 선택 --"
-          />
-          <AdminInput
-            label="이름 (영문)"
-            required
-            value={form.name}
-            onChange={v => setForm(f => ({ ...f, name: v }))}
-            placeholder="e.g. Sunshower"
-          />
-          <AdminInput
-            label="이름 (한글)"
-            value={form.name_kr}
-            onChange={v => setForm(f => ({ ...f, name_kr: v }))}
-            placeholder="e.g. 햇빛 소나기"
-          />
-          <AdminSelect
-            label="등급"
-            required
-            value={form.grade}
-            onChange={v => setForm(f => ({ ...f, grade: v }))}
-            options={GRADES.map(g => ({ value: g, label: g }))}
-          />
-          <AdminSelect
-            label="죄악 친화도"
-            value={form.sin_affinity}
-            onChange={v => setForm(f => ({ ...f, sin_affinity: v }))}
-            options={SINS.map(s => ({ value: s, label: s }))}
-            placeholder="-- 없음 --"
-          />
-          <AdminSelect
-            label="부식 위험도"
-            value={form.corrosion_risk}
-            onChange={v => setForm(f => ({ ...f, corrosion_risk: v }))}
-            options={CORROSION_OPTIONS.map(o => ({ value: o, label: o }))}
-            placeholder="-- 선택 --"
-          />
-          <AdminInput
-            label="폴더명"
-            value={form.folder_name}
-            onChange={v => setForm(f => ({ ...f, folder_name: v }))}
-            placeholder="e.g. yi-sang-sunshower"
-          />
-          <AdminInput
-            label="이미지 URL"
-            value={form.image_url}
-            onChange={v => setForm(f => ({ ...f, image_url: v }))}
-            placeholder="https://..."
-          />
-          <div style={{ gridColumn: '1 / -1' }}>
-            <AdminTextarea
-              label="설명"
-              value={form.description}
-              onChange={v => setForm(f => ({ ...f, description: v }))}
-              rows={4}
-              placeholder="E.G.O 설명..."
+      <form onSubmit={onSubmit}>
+        <AdminCard
+          title="기본 정보"
+          headerRight={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <AdminButton variant="ghost" onClick={() => router.push('/admin/data')}>돌아가기</AdminButton>
+              <AdminButton type="submit" loading={isSubmitting} disabled={!nameValue?.trim()}>
+                <Save size={14} /> 추가
+              </AdminButton>
+            </div>
+          }
+        >
+          <AdminFormSection columns={2}>
+            <Controller
+              name="sinner_id"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="수감자"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
+                  placeholder="-- 선택 --"
+                />
+              )}
             />
-          </div>
-        </AdminFormSection>
-      </AdminCard>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="이름 (영문)"
+                  required
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="e.g. Sunshower"
+                  error={errors.name?.message}
+                />
+              )}
+            />
+            <Controller
+              name="name_kr"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="이름 (한글)"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="e.g. 햇빛 소나기"
+                />
+              )}
+            />
+            <Controller
+              name="grade"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="등급"
+                  required
+                  value={field.value ?? 'ZAYIN'}
+                  onChange={field.onChange}
+                  options={GRADES.map(g => ({ value: g, label: g }))}
+                />
+              )}
+            />
+            <Controller
+              name="sin_affinity"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="죄악 친화도"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  options={SINS.map(s => ({ value: s, label: s }))}
+                  placeholder="-- 없음 --"
+                />
+              )}
+            />
+            <Controller
+              name="corrosion_risk"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="부식 위험도"
+                  value={field.value != null ? String(field.value) : ''}
+                  onChange={v => field.onChange(v === '' ? null : Number(v))}
+                  options={CORROSION_OPTIONS}
+                  placeholder="-- 선택 --"
+                />
+              )}
+            />
+            <Controller
+              name="folder_name"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="폴더명"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="e.g. yi-sang-sunshower"
+                />
+              )}
+            />
+            <Controller
+              name="image_url"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="이미지 URL"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="https://..."
+                  error={errors.image_url?.message}
+                />
+              )}
+            />
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <AdminTextarea
+                    label="설명"
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    rows={4}
+                    placeholder="E.G.O 설명..."
+                  />
+                )}
+              />
+            </div>
+          </AdminFormSection>
+        </AdminCard>
+      </form>
 
     </div>
   )

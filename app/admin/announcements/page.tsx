@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Pin, Pencil, X, Loader2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
@@ -8,6 +10,7 @@ import {
   AdminButton, AdminIconButton,
 } from '@/components/admin'
 import { showSuccess, showError } from '@/lib/toast'
+import { createAnnouncementSchema } from '@/lib/schemas/admin'
 
 interface Announcement {
   id: string
@@ -23,9 +26,25 @@ export default function AdminAnnouncementsPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Announcement | null>(null)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ title: '', content: '', pinned: false })
-  const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
+
+  interface AnnouncementFormValues {
+    title: string
+    content: string
+    pinned: boolean
+  }
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<AnnouncementFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createAnnouncementSchema) as any,
+    defaultValues: { title: '', content: '', pinned: false },
+  })
+
   const fetchItems = async () => {
     setLoading(true)
     const res = await fetch('/api/admin/announcements')
@@ -36,13 +55,12 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => { fetchItems() }, [])
 
-  const handleCreate = async () => {
-    setSaving(true)
-    try {
+  const onSubmit = handleSubmit(async (data) => {
+    if (creating) {
       const res = await fetch('/api/admin/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(data),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -50,22 +68,14 @@ export default function AdminAnnouncementsPage() {
         return
       }
       setCreating(false)
-      setForm({ title: '', content: '', pinned: false })
+      reset({ title: '', content: '', pinned: false })
       showSuccess('공지가 작성되었습니다.')
       fetchItems()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleUpdate = async () => {
-    if (!editing) return
-    setSaving(true)
-    try {
+    } else if (editing) {
       const res = await fetch(`/api/admin/announcements/${editing.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(data),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -73,13 +83,11 @@ export default function AdminAnnouncementsPage() {
         return
       }
       setEditing(null)
-      setForm({ title: '', content: '', pinned: false })
+      reset({ title: '', content: '', pinned: false })
       showSuccess('공지가 수정되었습니다.')
       fetchItems()
-    } finally {
-      setSaving(false)
     }
-  }
+  })
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
@@ -93,19 +101,19 @@ export default function AdminAnnouncementsPage() {
   const startEdit = (a: Announcement) => {
     setEditing(a)
     setCreating(false)
-    setForm({ title: a.title, content: a.content, pinned: a.pinned })
+    reset({ title: a.title, content: a.content, pinned: a.pinned })
   }
 
   const startCreate = () => {
     setCreating(true)
     setEditing(null)
-    setForm({ title: '', content: '', pinned: false })
+    reset({ title: '', content: '', pinned: false })
   }
 
   const cancelForm = () => {
     setCreating(false)
     setEditing(null)
-    setForm({ title: '', content: '', pinned: false })
+    reset({ title: '', content: '', pinned: false })
   }
 
   const showForm = creating || editing
@@ -134,41 +142,64 @@ export default function AdminAnnouncementsPage() {
               </button>
             }
           >
-            <div className="space-y-3">
-              <AdminInput
-                label="제목"
-                value={form.title}
-                onChange={title => setForm(f => ({ ...f, title }))}
-                placeholder="제목"
-                required
-              />
-              <AdminTextarea
-                label="내용"
-                value={form.content}
-                onChange={content => setForm(f => ({ ...f, content }))}
-                placeholder="내용"
-                rows={5}
-              />
-              <AdminCheckbox
-                label="상단 고정"
-                checked={form.pinned}
-                onChange={pinned => setForm(f => ({ ...f, pinned }))}
-              />
-              <div className="flex gap-2">
-                <AdminButton
-                  onClick={creating ? handleCreate : handleUpdate}
-                  variant="gold"
-                  size="sm"
-                  loading={saving}
-                  disabled={saving || !form.title.trim()}
-                >
-                  {creating ? '작성' : '수정'}
-                </AdminButton>
-                <AdminButton onClick={cancelForm} variant="ghost" size="sm">
-                  취소
-                </AdminButton>
+            <form onSubmit={onSubmit}>
+              <div className="space-y-3">
+                <div>
+                  <Controller
+                    name="title"
+                    control={control}
+                    render={({ field }) => (
+                      <AdminInput
+                        label="제목"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="제목"
+                        required
+                        error={errors.title?.message}
+                      />
+                    )}
+                  />
+                </div>
+                <Controller
+                  name="content"
+                  control={control}
+                  render={({ field }) => (
+                    <AdminTextarea
+                      label="내용"
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      placeholder="내용"
+                      rows={5}
+                    />
+                  )}
+                />
+                <Controller
+                  name="pinned"
+                  control={control}
+                  render={({ field }) => (
+                    <AdminCheckbox
+                      label="상단 고정"
+                      checked={field.value ?? false}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                <div className="flex gap-2">
+                  <AdminButton
+                    type="submit"
+                    variant="gold"
+                    size="sm"
+                    loading={isSubmitting}
+                    disabled={isSubmitting}
+                  >
+                    {creating ? '작성' : '수정'}
+                  </AdminButton>
+                  <AdminButton onClick={cancelForm} variant="ghost" size="sm">
+                    취소
+                  </AdminButton>
+                </div>
               </div>
-            </div>
+            </form>
           </AdminCard>
         </div>
       )}

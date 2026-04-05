@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { Loader2, Plus, Pencil, Trash2, Search, X, Tags } from 'lucide-react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createKeywordSchema } from '@/lib/schemas/admin'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { AdminButton, AdminIconButton, AdminInput } from '@/components/admin'
 import { AdminTextarea, AdminSelect } from '@/components/admin/AdminInput'
@@ -99,16 +102,41 @@ function SinDot({ sin }: { sin: string }) {
   )
 }
 
+// Form field values type — max_stack is number | null (number input produces numbers)
+interface KeywordFormValues {
+  name: string
+  description: string | null | undefined
+  max_stack: number | null | undefined
+  icon_slug: string | null | undefined
+  sin_affinity: string | null | undefined
+}
+
+const DEFAULT_VALUES: KeywordFormValues = {
+  name: '',
+  description: null,
+  max_stack: null,
+  icon_slug: null,
+  sin_affinity: null,
+}
+
 export default function AdminKeywordsPage() {
   const [rows, setRows] = useState<KeywordRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [editRow, setEditRow] = useState<KeywordRow | null>(null)
   const [addMode, setAddMode] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', max_stack: '', icon_slug: '', sin_affinity: '' })
-  const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [iconPreviewErr, setIconPreviewErr] = useState(false)
+
+  const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } =
+    useForm<KeywordFormValues, unknown, KeywordFormValues>({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      resolver: zodResolver(createKeywordSchema) as any,
+      defaultValues: DEFAULT_VALUES,
+    })
+
+  const iconPreviewSlug = (watch('icon_slug') ?? '').trim()
+
   const fetchRows = useCallback(async (q?: string) => {
     const url = q ? `/api/admin/keywords?q=${encodeURIComponent(q)}` : '/api/admin/keywords'
     const res = await fetch(url)
@@ -126,68 +154,63 @@ export default function AdminKeywordsPage() {
 
   const openAdd = () => {
     setEditRow(null)
-    setForm({ name: '', description: '', max_stack: '', icon_slug: '', sin_affinity: '' })
     setIconPreviewErr(false)
+    reset(DEFAULT_VALUES)
     setAddMode(true)
   }
 
   const openEdit = (row: KeywordRow) => {
     setAddMode(false)
-    setEditRow(row)
     setIconPreviewErr(false)
-    setForm({
+    reset({
       name: row.name,
-      description: row.description ?? '',
-      max_stack: row.max_stack?.toString() ?? '',
-      icon_slug: row.icon_slug ?? '',
-      sin_affinity: row.sin_affinity ?? '',
+      description: row.description ?? null,
+      max_stack: row.max_stack ?? null,
+      icon_slug: row.icon_slug ?? null,
+      sin_affinity: row.sin_affinity ?? null,
     })
+    setEditRow(row)
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      if (addMode) {
-        const res = await fetch('/api/admin/keywords', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: form.name.trim(),
-            description: form.description || null,
-            max_stack: form.max_stack ? parseInt(form.max_stack) : null,
-            icon_slug: form.icon_slug.trim() || null,
-            sin_affinity: form.sin_affinity.trim() || null,
-          }),
-        })
-        if (!res.ok) {
-          const err = await res.json()
-          showError(err.error || '추가 실패')
-          return
-        }
-      } else if (editRow) {
-        const res = await fetch(`/api/admin/keywords/${encodeURIComponent(editRow.name)}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description: form.description || null,
-            max_stack: form.max_stack ? parseInt(form.max_stack) : null,
-            icon_slug: form.icon_slug.trim() || null,
-            sin_affinity: form.sin_affinity.trim() || null,
-          }),
-        })
-        if (!res.ok) {
-          const err = await res.json()
-          showError(err.error || '수정 실패')
-          return
-        }
+  const handleSave = handleSubmit(async (data) => {
+    if (addMode) {
+      const res = await fetch('/api/admin/keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description || null,
+          max_stack: data.max_stack ?? null,
+          icon_slug: data.icon_slug?.trim() || null,
+          sin_affinity: data.sin_affinity || null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        showError(err.error || '추가 실패')
+        return
       }
-      setAddMode(false)
-      setEditRow(null)
-      await fetchRows(search)
-    } finally {
-      setSaving(false)
+    } else if (editRow) {
+      const res = await fetch(`/api/admin/keywords/${encodeURIComponent(editRow.name)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: data.description || null,
+          max_stack: data.max_stack ?? null,
+          icon_slug: data.icon_slug?.trim() || null,
+          sin_affinity: data.sin_affinity || null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        showError(err.error || '수정 실패')
+        return
+      }
     }
-  }
+    setAddMode(false)
+    setEditRow(null)
+    await fetchRows(search)
+  })
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -199,8 +222,6 @@ export default function AdminKeywordsPage() {
   // Stats
   const countWithIcon = rows.filter(r => r.icon_slug).length
   const countWithSin = rows.filter(r => r.sin_affinity).length
-
-  const iconPreviewSlug = form.icon_slug.trim()
 
   return (
     <div>
@@ -304,38 +325,64 @@ export default function AdminKeywordsPage() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {addMode && (
-              <AdminInput
-                label="키워드명"
-                value={form.name}
-                onChange={v => setForm(f => ({ ...f, name: v }))}
-                placeholder="예: 출혈"
-                required
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <AdminInput
+                    label="키워드명"
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder="예: 출혈"
+                    required
+                    error={errors.name?.message}
+                  />
+                )}
               />
             )}
-            <AdminTextarea
-              label="설명"
-              value={form.description}
-              onChange={v => setForm(f => ({ ...f, description: v }))}
-              rows={3}
-              placeholder="키워드 설명"
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <AdminTextarea
+                  label="설명"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  rows={3}
+                  placeholder="키워드 설명"
+                />
+              )}
             />
-            <AdminInput
-              label="최대 스택"
-              type="number"
-              value={form.max_stack}
-              onChange={v => setForm(f => ({ ...f, max_stack: v }))}
-              placeholder="없으면 비워두기"
-              min={0}
+            <Controller
+              name="max_stack"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="최대 스택"
+                  type="number"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="없으면 비워두기"
+                  min={0}
+                  error={errors.max_stack?.message}
+                />
+              )}
             />
             {/* Icon slug with preview */}
             <div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
-                  <AdminInput
-                    label="아이콘 슬러그 (icon_slug)"
-                    value={form.icon_slug}
-                    onChange={v => { setForm(f => ({ ...f, icon_slug: v })); setIconPreviewErr(false) }}
-                    placeholder="예: bleed, tremor-burst"
+                  <Controller
+                    name="icon_slug"
+                    control={control}
+                    render={({ field }) => (
+                      <AdminInput
+                        label="아이콘 슬러그 (icon_slug)"
+                        value={field.value ?? ''}
+                        onChange={v => { field.onChange(v); setIconPreviewErr(false) }}
+                        placeholder="예: bleed, tremor-burst"
+                      />
+                    )}
                   />
                 </div>
                 {iconPreviewSlug && (
@@ -369,15 +416,21 @@ export default function AdminKeywordsPage() {
               </div>
             </div>
             {/* Sin affinity dropdown */}
-            <AdminSelect
-              label="죄악 속성 (sin_affinity)"
-              value={form.sin_affinity}
-              onChange={v => setForm(f => ({ ...f, sin_affinity: v }))}
-              options={SIN_OPTIONS}
-              placeholder="없음"
+            <Controller
+              name="sin_affinity"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="죄악 속성 (sin_affinity)"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  options={SIN_OPTIONS}
+                  placeholder="없음"
+                />
+              )}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <AdminButton onClick={handleSave} loading={saving} size="sm">
+              <AdminButton onClick={handleSave} loading={isSubmitting} size="sm">
                 저장
               </AdminButton>
               <AdminButton onClick={() => { setAddMode(false); setEditRow(null) }} variant="ghost" size="sm">
