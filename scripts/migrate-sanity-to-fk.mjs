@@ -31,7 +31,7 @@ const supabase = createClient(
 )
 
 const FIX = process.argv.includes('--fix')
-const JSON_DIR = resolve(process.env.HOME, 'Downloads/Json')
+const JSON_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
 
 // ── 1. mental_condition_templates 시드 ──
 async function seedTemplates() {

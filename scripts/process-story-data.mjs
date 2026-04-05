@@ -13,7 +13,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 
-const JSON_DIR = path.join(process.env.HOME, 'Downloads/JSON')
+const JSON_DIR = path.join(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
 
 /* ── Chapter config ──────────────────────────── */
 

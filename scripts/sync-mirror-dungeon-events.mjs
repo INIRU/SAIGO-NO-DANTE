@@ -18,7 +18,7 @@ import { join, resolve } from 'path'
 import { createClient } from '@supabase/supabase-js'
 
 const ROOT = process.cwd()
-const DATA_DIR = resolve(process.env.HOME, 'Downloads/JSON')
+const DATA_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
 const KR_DIR = join(DATA_DIR, 'KR')
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
