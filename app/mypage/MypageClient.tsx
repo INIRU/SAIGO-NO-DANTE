@@ -72,30 +72,20 @@ export default function MypageClient() {
     localStorage.setItem('mypage-tab', tab)
 
     // 탭 전환 애니메이션
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      const ctx = gsap.context(() => {
-        gsap.fromTo('.mypage-panel', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' })
-      })
-      setTimeout(() => ctx.revert(), 400)
-    })()
+    const { animate } = require('framer-motion')
+    animate('.mypage-panel', { opacity: [0, 1], y: [8, 0] }, { duration: 0.3, ease: 'easeOut' })
   }, [router])
 
-  // GSAP 초기 진입 애니메이션
+  // 초기 진입 애니메이션
   const animPlayed = useRef(false)
   useEffect(() => {
     if (loading || !data || animPlayed.current) return
     animPlayed.current = true
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.mypage-header', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
-        gsap.fromTo('.mypage-tabs', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.15, ease: 'power2.out' })
-        gsap.fromTo('.mypage-panel', { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.25, ease: 'power2.out' })
-      })
-    })()
-    return () => { ctx?.revert() }
+    const { animate } = require('framer-motion')
+    const c1 = animate('.mypage-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] })
+    const c2 = animate('.mypage-tabs', { opacity: [0, 1], y: [10, 0] }, { duration: 0.4, delay: 0.15, ease: 'easeOut' })
+    const c3 = animate('.mypage-panel', { opacity: [0, 1], y: [15, 0] }, { duration: 0.4, delay: 0.25, ease: 'easeOut' })
+    return () => { c1.stop(); c2.stop(); c3.stop() }
   }, [loading, data])
 
   // 덱 삭제

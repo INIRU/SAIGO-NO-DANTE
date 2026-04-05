@@ -234,21 +234,10 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
   useEffect(() => {
-    let ctx: { revert?: () => void } | undefined
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.ego-detail-header',
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-        )
-        gsap.fromTo('.ego-detail-content',
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-        )
-      })
-    })()
-    return () => { ctx?.revert?.() }
+    const { animate } = require('framer-motion')
+    const c1 = animate('.ego-detail-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] })
+    const c2 = animate('.ego-detail-content', { opacity: [0, 1], y: [20, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
+    return () => { c1.stop(); c2.stop() }
   }, [])
 
   return (

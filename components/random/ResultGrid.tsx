@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { RARITY_COLORS, RARITY_ICON_MAP, GRADE_COLORS, STORAGE_BASE } from '@/lib/constants/game'
@@ -23,64 +24,43 @@ type Props = {
 }
 
 export default function ResultGrid({ sinners, pools, result, activeTab, rollId, rerolledSinnerId, revealed, onRevealDone, onReroll }: Props) {
-  const gridRef = useRef<HTMLDivElement>(null)
   const lastRollId = useRef(0)
   const [rerollingIds, setRerollingIds] = useState<Set<string>>(new Set())
+  // Track which sinners have been rerolled and are ready to animate back in
+  const [rerollRevealIds, setRerollRevealIds] = useState<Set<string>>(new Set())
 
-  // Full roll stagger animation (only on rollId change)
+  // Full roll stagger: track rollId change to trigger entrance animations
   useEffect(() => {
     if (rollId === 0 || rollId === lastRollId.current || !result) return
     lastRollId.current = rollId
     setRerollingIds(new Set())
-
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      const cards = gridRef.current?.querySelectorAll('[data-card]')
-      if (!cards?.length) return
-
-      gsap.fromTo(cards,
-        { opacity: 0, y: 40, scale: 0.88, rotateX: 8 },
-        {
-          opacity: 1, y: 0, scale: 1, rotateX: 0,
-          duration: 0.55,
-          stagger: 0.055,
-          ease: 'back.out(1.6)',
-          onComplete: () => onRevealDone(),
-        },
-      )
-    })()
+    setRerollRevealIds(new Set())
+    // onRevealDone is called after the last card's animation completes
+    // The last card (index 11) has delay 11 * 0.055 = 0.605s + duration 0.55s ≈ 1.16s total
+    const timer = setTimeout(() => onRevealDone(), 1200)
+    return () => clearTimeout(timer)
   }, [rollId, result, onRevealDone])
 
-  // Individual reroll: immediately hide the card, wait for new image to load
+  // Individual reroll: mark sinner as rerolling (hides card via animate prop)
   useEffect(() => {
-    if (!rerolledSinnerId || !gridRef.current) return
+    if (!rerolledSinnerId) return
     setRerollingIds(prev => new Set([...prev, rerolledSinnerId]))
-    const card = gridRef.current.querySelector(`[data-sinner="${rerolledSinnerId}"]`) as HTMLElement | null
-    if (card) {
-      card.style.opacity = '0'
-      card.style.transform = 'scale(0.9) rotateY(90deg)'
-    }
+    setRerollRevealIds(prev => {
+      const next = new Set(prev)
+      next.delete(rerolledSinnerId)
+      return next
+    })
   }, [rerolledSinnerId, result])
 
   // Called when the rerolled card's new image finishes loading
   const handleRerollImageLoad = useCallback((sinnerId: string) => {
-    if (!rerollingIds.has(sinnerId) || !gridRef.current) return
+    if (!rerollingIds.has(sinnerId)) return
     setRerollingIds(prev => {
       const next = new Set(prev)
       next.delete(sinnerId)
       return next
     })
-
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      const card = gridRef.current?.querySelector(`[data-sinner="${sinnerId}"]`)
-      if (!card) return
-
-      gsap.fromTo(card,
-        { opacity: 0, scale: 0.9, rotateY: -90 },
-        { opacity: 1, scale: 1, rotateY: 0, duration: 0.4, ease: 'back.out(1.7)' },
-      )
-    })()
+    setRerollRevealIds(prev => new Set([...prev, sinnerId]))
   }, [rerollingIds])
 
   // No result — ghost cards
@@ -131,21 +111,49 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
 
   // Identity tab
   if (activeTab === 'identity') {
+    const isCurrentRoll = lastRollId.current === rollId
     return (
-      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[0.75rem] gap-y-[1rem]">
-        {sinners.map(sinner => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[0.75rem] gap-y-[1rem]">
+        {sinners.map((sinner, idx) => {
           const identity = result.identities[sinner.id]
           if (!identity) return null
           const pool = pools[sinner.id]
           const canReroll = pool && pool.length > 1
           const colors = RARITY_COLORS[identity.rarity] ?? RARITY_COLORS[1]
+          const isRerolling = rerollingIds.has(sinner.id)
+          const isRevealingReroll = rerollRevealIds.has(sinner.id)
 
           return (
-            <div
+            <motion.div
               key={sinner.id}
               data-card
               data-sinner={sinner.id}
-              style={{ opacity: lastRollId.current === rollId && revealed ? 1 : 0, perspective: '600px' }}
+              // Full roll stagger entrance
+              initial={{ opacity: 0, y: 40, scale: 0.88, rotateX: 8 }}
+              animate={
+                isRerolling
+                  // Hide while rerolling (card spins away)
+                  ? { opacity: 0, scale: 0.9, rotateY: 90 }
+                  : isRevealingReroll
+                  // Flip back in after reroll image loads
+                  ? { opacity: 1, scale: 1, rotateY: 0 }
+                  : isCurrentRoll
+                  // Normal stagger entrance
+                  ? { opacity: 1, y: 0, scale: 1, rotateX: 0 }
+                  : { opacity: revealed ? 1 : 0, y: 0, scale: 1, rotateX: 0 }
+              }
+              transition={
+                isRerolling
+                  ? { duration: 0.2, ease: 'easeIn' }
+                  : isRevealingReroll
+                  ? { duration: 0.4, ease: [0.175, 0.885, 0.32, 1.7] }
+                  : {
+                      duration: 0.55,
+                      delay: isCurrentRoll ? idx * 0.055 : 0,
+                      ease: [0.175, 0.885, 0.32, 1.6],
+                    }
+              }
+              style={{ perspective: '600px' }}
             >
               <div
                 className={`group relative w-full rounded-[0.375rem] overflow-hidden transition-all duration-300 ${revealed ? 'card-shimmer' : ''}`}
@@ -245,7 +253,7 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )
         })}
       </div>

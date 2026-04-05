@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Pin, ChevronDown, ArrowLeft } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface Announcement {
   id: string
@@ -18,30 +19,12 @@ export default function AnnouncementsPage() {
   const [error, setError] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const animRef = useRef(false)
   useEffect(() => {
-    let ctx: any
     fetch('/api/announcements')
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
       .catch(() => setError(true))
-      .finally(async () => {
-        setLoading(false)
-        if (animRef.current) return
-        animRef.current = true
-        const { gsap } = await import('gsap')
-        ctx = gsap.context(() => {
-          gsap.fromTo('.announcements-header',
-            { opacity: 0, y: -20 },
-            { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-          )
-          gsap.fromTo('.announcement-item',
-            { opacity: 0, y: 15 },
-            { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power2.out', delay: 0.2 }
-          )
-        })
-      })
-    return () => { ctx?.revert() }
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -60,7 +43,12 @@ export default function AnnouncementsPage() {
       }} />
       <div className="max-w-3xl mx-auto px-6 pt-28 pb-20" style={{ position: 'relative', zIndex: 1 }}>
         {/* 헤더 */}
-        <div className="announcements-header mb-8" style={{ opacity: 0 }}>
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
+        >
           <Link
             href="/"
             className="flex items-center gap-1.5 mb-4 transition-colors hover:opacity-70"
@@ -77,7 +65,7 @@ export default function AnnouncementsPage() {
             사이트 업데이트 및 안내사항을 확인하세요.
           </p>
           <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-        </div>
+        </motion.div>
 
         <div className="divider-gold mb-8" />
 
@@ -116,13 +104,25 @@ export default function AnnouncementsPage() {
             등록된 공지가 없습니다.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <motion.div
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.06, delayChildren: 0.2 } },
+            }}
+          >
             {items.map(item => {
               const isExpanded = expandedId === item.id
               return (
-                <div
+                <motion.div
                   key={item.id}
-                  className="announcement-item card"
+                  className="card"
+                  variants={{
+                    hidden: { opacity: 0, y: 15 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+                  }}
                   style={{
                     overflow: 'hidden',
                     border: item.pinned ? '1px solid rgba(200,144,10,0.3)' : undefined,
@@ -187,10 +187,10 @@ export default function AnnouncementsPage() {
                       {item.content}
                     </div>
                   )}
-                </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

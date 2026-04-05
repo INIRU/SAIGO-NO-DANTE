@@ -1,6 +1,7 @@
 'use client'
 
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, Check } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData } from '@/lib/planner/types'
@@ -13,38 +14,12 @@ interface Props {
 
 export default memo(function FloorProgress({ state, dispatch, themes }: Props) {
   const isLastFloor = state.currentFloor >= state.maxFloors
-  const containerRef = useRef<HTMLDivElement>(null)
-  const prevFloor = useRef(state.currentFloor)
-
-  // GSAP: 층 전환 시 현재 층 노드 펄스 애니메이션
-  useEffect(() => {
-    if (prevFloor.current === state.currentFloor) return
-    prevFloor.current = state.currentFloor
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      const el = containerRef.current?.querySelector(`[data-floor="${state.currentFloor}"]`)
-      if (el) {
-        gsap.fromTo(el, { scale: 1.3, opacity: 0.5 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' })
-      }
-    })()
-  }, [state.currentFloor])
-
-  // GSAP: 초기 로드 시 스태거 애니메이션
-  useEffect(() => {
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      const nodes = containerRef.current?.querySelectorAll('[data-floor]')
-      if (nodes?.length) {
-        gsap.fromTo(nodes, { x: -10, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out' })
-      }
-    })()
-  }, [])
 
   const completedCount = useMemo(() => state.floorLogs.filter(l => l.completedAt).length, [state.floorLogs])
   const progress = completedCount / state.maxFloors
 
   return (
-    <div ref={containerRef}>
+    <div>
       {/* 헤더 + 진행률 */}
       <div style={{ marginBottom: '0.75rem' }}>
         <p className="font-serif" style={{ fontSize: '0.75rem', color: '#c8900a', marginBottom: '0.375rem' }}>
@@ -52,12 +27,15 @@ export default memo(function FloorProgress({ state, dispatch, themes }: Props) {
         </p>
         {/* 미니 프로그레스 바 */}
         <div style={{ height: '0.1875rem', background: '#2a2015', borderRadius: '0.09375rem', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%', width: `${progress * 100}%`,
-            background: 'linear-gradient(90deg, #8a6010, #c8900a, #e8b030)',
-            borderRadius: '0.09375rem',
-            transition: 'width 0.5s ease',
-          }} />
+          <motion.div
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{
+              height: '100%',
+              background: 'linear-gradient(90deg, #8a6010, #c8900a, #e8b030)',
+              borderRadius: '0.09375rem',
+            }}
+          />
         </div>
         <p style={{ fontSize: '0.5rem', color: '#555', marginTop: '0.1875rem', textAlign: 'right' }}>
           {completedCount}/{state.maxFloors}
@@ -73,15 +51,19 @@ export default memo(function FloorProgress({ state, dispatch, themes }: Props) {
         }} />
 
         <div className="flex flex-col" style={{ gap: '0.125rem' }}>
-          {state.floorLogs.map(log => {
+          {state.floorLogs.map((log, idx) => {
             const isCurrent = log.floor === state.currentFloor
             const isCompleted = !!log.completedAt
             const theme = log.themeId ? themes.find(t => t.id === log.themeId) : null
 
             return (
-              <button
+              // Initial stagger entrance: each node slides in from the left
+              <motion.button
                 key={log.floor}
                 data-floor={log.floor}
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: idx * 0.05, ease: 'easeOut' }}
                 onClick={() => dispatch({ type: 'GO_TO_FLOOR', floor: log.floor })}
                 className="flex items-center gap-1.5 w-full text-left transition-all relative"
                 style={{
@@ -91,20 +73,28 @@ export default memo(function FloorProgress({ state, dispatch, themes }: Props) {
                   minHeight: '1.75rem',
                 }}
               >
-                {/* 노드 원 — 중심이 세로선과 일치 */}
-                <span style={{
-                  width: '1.125rem', height: '1.125rem', borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  background: isCompleted ? 'rgba(34,197,94,0.2)' : isCurrent ? '#c8900a' : '#1a1510',
-                  border: `0.09375rem solid ${isCompleted ? 'rgba(34,197,94,0.6)' : isCurrent ? '#e8b030' : '#333'}`,
-                  color: isCompleted ? '#4ade80' : isCurrent ? '#0d0b08' : '#555',
-                  fontSize: '0.4375rem', fontWeight: 700,
-                  boxShadow: isCurrent ? '0 0 0.5rem rgba(200,144,10,0.5)' : 'none',
-                  transition: 'all 0.3s ease',
-                  zIndex: 2,
-                }}>
-                  {isCompleted ? <Check style={{ width: '0.5rem', height: '0.5rem' }} /> : log.floor}
-                </span>
+                {/* 노드 원 — 현재 층 전환 시 펄스 */}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={`${log.floor}-${isCurrent}-${isCompleted}`}
+                    initial={isCurrent ? { scale: 1.3, opacity: 0.5 } : { scale: 1, opacity: 1 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.4, ease: [0.175, 0.885, 0.32, 1.275] }}
+                    style={{
+                      width: '1.125rem', height: '1.125rem', borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      background: isCompleted ? 'rgba(34,197,94,0.2)' : isCurrent ? '#c8900a' : '#1a1510',
+                      border: `0.09375rem solid ${isCompleted ? 'rgba(34,197,94,0.6)' : isCurrent ? '#e8b030' : '#333'}`,
+                      color: isCompleted ? '#4ade80' : isCurrent ? '#0d0b08' : '#555',
+                      fontSize: '0.4375rem', fontWeight: 700,
+                      boxShadow: isCurrent ? '0 0 0.5rem rgba(200,144,10,0.5)' : 'none',
+                      transition: 'all 0.3s ease',
+                      zIndex: 2,
+                    }}
+                  >
+                    {isCompleted ? <Check style={{ width: '0.5rem', height: '0.5rem' }} /> : log.floor}
+                  </motion.span>
+                </AnimatePresence>
 
                 {/* 텍스트 */}
                 <div className="flex-1 min-w-0">
@@ -117,7 +107,7 @@ export default memo(function FloorProgress({ state, dispatch, themes }: Props) {
                     {theme ? theme.name : `${log.floor}층`}
                   </span>
                 </div>
-              </button>
+              </motion.button>
             )
           })}
         </div>

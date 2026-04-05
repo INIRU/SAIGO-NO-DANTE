@@ -12,6 +12,7 @@ import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 import CollectionSection from '@/components/mypage/CollectionSection'
 import { usePretextSingleLineTruncate } from '@/lib/hooks/usePretextTruncate'
+import { motion } from 'framer-motion'
 
 // CollectionViewer receives pre-fetched data from the Server Component page.
 // Only the ?code decoding (URL param → owned Set) remains client-side.
@@ -309,7 +310,6 @@ function CollectionViewer({ data }: { data: CollectionData }) {
   const [viewMode, setViewMode] = useState<'sinner' | 'all'>('sinner')
   const [showUnowned, setShowUnowned] = useState(true)
   const { sinMap: kwSinMap } = useKeywordData()
-  const animatedRef = useRef(false)
 
   // Decode ?code URL param into owned Set — client-only because it reads searchParams
   useEffect(() => {
@@ -318,25 +318,6 @@ function CollectionViewer({ data }: { data: CollectionData }) {
       .then(decoded => setOwned(decoded))
       .catch(() => {/* ignore malformed codes */})
   }, [code, data])
-
-  // Entrance animation — runs once after first paint
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.collection-header',
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-        )
-        gsap.fromTo('.collection-content',
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [])
 
   const stats = useMemo(() => {
     let totalIdentities = 0, ownedIdentities = 0, totalEgos = 0, ownedEgos = 0
@@ -422,7 +403,12 @@ function CollectionViewer({ data }: { data: CollectionData }) {
       }} />
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
-        <div className="collection-header mb-6" style={{ opacity: 0 }}>
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
+        >
           <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
             MY COLLECTION
           </p>
@@ -435,11 +421,14 @@ function CollectionViewer({ data }: { data: CollectionData }) {
             <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
           </div>
           <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-        </div>
+        </motion.div>
 
         {/* 보기 모드 토글 */}
-        <div
-          className="collection-content flex gap-0 mb-4 rounded overflow-hidden"
+        <motion.div
+          className="flex gap-0 mb-4 rounded overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
           style={{ border: '1px solid var(--border)' }}
         >
           {([['sinner', '수감자별'], ['all', '전체']] as [ViewMode, string][]).map(([mode, label]) => (
@@ -455,9 +444,12 @@ function CollectionViewer({ data }: { data: CollectionData }) {
               {label}
             </button>
           ))}
-        </div>
+        </motion.div>
 
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
           style={{
             background: '#1a1510',
             border: '1px solid var(--border)',
@@ -620,7 +612,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

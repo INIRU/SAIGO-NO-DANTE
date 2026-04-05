@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Map, Calendar, Gift } from 'lucide-react'
 import type { RunState, RunAction, FloorSubTab } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'
@@ -36,22 +37,9 @@ const SUB_TABS: { key: FloorSubTab; label: string; icon: typeof Users }[] = [
 export default function FloorPanel({ state, dispatch, themes, gifts, giftMap, identities, sinners, skills, passives, egos, events }: Props) {
   const currentLog = state.floorLogs[state.currentFloor - 1]
   const isLastFloor = state.currentFloor >= state.maxFloors
-  const contentRef = useRef<HTMLDivElement>(null)
-  const prevTab = useRef(state.activeSubTab)
-  const prevFloor = useRef(state.currentFloor)
 
-  // GSAP: 서브탭 전환 페이드
-  useEffect(() => {
-    if (prevTab.current === state.activeSubTab && prevFloor.current === state.currentFloor) return
-    prevTab.current = state.activeSubTab
-    prevFloor.current = state.currentFloor
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      if (contentRef.current) {
-        gsap.fromTo(contentRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' })
-      }
-    })()
-  }, [state.activeSubTab, state.currentFloor])
+  // Key that changes whenever the tab or floor changes, triggering re-mount of motion.div
+  const contentKey = `${state.activeSubTab}-${state.currentFloor}`
 
   return (
     <div style={{ minHeight: '100%' }}>
@@ -101,21 +89,29 @@ export default function FloorPanel({ state, dispatch, themes, gifts, giftMap, id
         })}
       </div>
 
-      {/* 서브탭 컨텐츠 */}
-      <div ref={contentRef} style={{ padding: '1rem' }}>
-        {state.activeSubTab === 'deck' && (
-          <DeckSection state={state} dispatch={dispatch} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} giftMap={giftMap} />
-        )}
-        {state.activeSubTab === 'theme' && (
-          <ThemeSection state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} identities={identities} />
-        )}
-        {state.activeSubTab === 'event' && (
-          <EventSection state={state} dispatch={dispatch} events={events} giftMap={giftMap} />
-        )}
-        {state.activeSubTab === 'gift' && (
-          <GiftCheckSection state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} themes={themes} />
-        )}
-      </div>
+      {/* 서브탭 컨텐츠 — key triggers re-mount + entrance animation on tab/floor change */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={contentKey}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          style={{ padding: '1rem' }}
+        >
+          {state.activeSubTab === 'deck' && (
+            <DeckSection state={state} dispatch={dispatch} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} giftMap={giftMap} />
+          )}
+          {state.activeSubTab === 'theme' && (
+            <ThemeSection state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} identities={identities} />
+          )}
+          {state.activeSubTab === 'event' && (
+            <EventSection state={state} dispatch={dispatch} events={events} giftMap={giftMap} />
+          )}
+          {state.activeSubTab === 'gift' && (
+            <GiftCheckSection state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} themes={themes} />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* 층 메모 */}
       <div style={{ padding: '0 1rem 1rem' }}>

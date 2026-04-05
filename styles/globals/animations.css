@@ -34,3 +34,9 @@
   0%, 100% { opacity: 0.2; transform: scaleY(1); }
   50%      { opacity: 0.6; transform: scaleY(1.3); }
 }
+
+/* ── 기프트 카드 등장 ───────────────────────────────────── */
+@keyframes giftCardFadeIn {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
