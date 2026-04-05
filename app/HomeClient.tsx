@@ -54,7 +54,7 @@ function RarityIcon({ rarity }: { rarity: number }) {
       width={48}
       height={16}
       unoptimized
-      style={{ objectFit: 'contain', height: '12px', width: 'auto' }}
+      style={{ objectFit: 'contain', height: '0.75rem', width: 'auto' }}
     />
   )
 }
@@ -213,9 +213,9 @@ function HeroGlitchSlider({
               onClick={() => glitchTo(i)}
               title={`${s.identity.name_kr}${s.gacksung ? ' 각성' : ''}`}
               style={{
-                width: i === currentIdx ? '18px' : '5px',
-                height: '5px',
-                borderRadius: '3px',
+                width: i === currentIdx ? '1.125rem' : '0.3125rem',
+                height: '0.3125rem',
+                borderRadius: '0.1875rem',
                 background: i === currentIdx ? 'var(--gold)' : 'rgba(200,164,90,0.25)',
                 border: 'none',
                 cursor: 'pointer',
@@ -279,30 +279,38 @@ export default function HomeClient({
           .fromTo('.hero-cta',      { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.1 }, '-=0.3')
 
         // 최신 인격 카드 — targets server-rendered .latest-card elements
-        gsap.fromTo('.latest-card',
-          { opacity: 0, y: 50, scale: 0.94 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.07, ease: 'power2.out',
-            scrollTrigger: { trigger: '.latest-section', start: 'top 78%' } }
-        )
-        gsap.fromTo('.latest-header',
-          { opacity: 0, x: -20 },
-          { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out',
-            scrollTrigger: { trigger: '.latest-section', start: 'top 85%' } }
-        )
+        if (document.querySelector('.latest-card')) {
+          gsap.fromTo('.latest-card',
+            { opacity: 0, y: 50, scale: 0.94 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.07, ease: 'power2.out',
+              scrollTrigger: { trigger: '.latest-section', start: 'top 78%' } }
+          )
+        }
+        if (document.querySelector('.latest-header')) {
+          gsap.fromTo('.latest-header',
+            { opacity: 0, x: -20 },
+            { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out',
+              scrollTrigger: { trigger: '.latest-section', start: 'top 85%' } }
+          )
+        }
 
         // 공식 링크
-        gsap.fromTo('.official-link-card',
-          { opacity: 0, scale: 0.88, y: 20 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.55, stagger: 0.1, ease: 'back.out(1.4)',
-            scrollTrigger: { trigger: '.official-section', start: 'top 85%' } }
-        )
+        if (document.querySelector('.official-link-card')) {
+          gsap.fromTo('.official-link-card',
+            { opacity: 0, scale: 0.88, y: 20 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.55, stagger: 0.1, ease: 'back.out(1.4)',
+              scrollTrigger: { trigger: '.official-section', start: 'top 85%' } }
+          )
+        }
 
         // 기능 카드 그리드
-        gsap.fromTo('.feature-card',
-          { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out',
-            scrollTrigger: { trigger: '.features-section', start: 'top 80%' } }
-        )
+        if (document.querySelector('.feature-card')) {
+          gsap.fromTo('.feature-card',
+            { opacity: 0, y: 30 },
+            { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out',
+              scrollTrigger: { trigger: '.features-section', start: 'top 80%' } }
+          )
+        }
       })
 
       ScrollTrigger.refresh()
@@ -320,7 +328,7 @@ export default function HomeClient({
       <section
         ref={heroRef}
         className="relative overflow-hidden flex"
-        style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh', background: 'var(--bg-deep)' }}
+        style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 3rem)' : '100dvh', background: 'var(--bg-deep)' }}
       >
         {/* 글리치 슬라이더 (최신 인격 풀 일러스트) */}
         {heroIdentities.length > 0 && (
@@ -339,7 +347,7 @@ export default function HomeClient({
             className="absolute pointer-events-none hidden md:block"
             style={{
               left: '8%', top: '50%', transform: 'translateY(-50%)',
-              width: '320px', height: '320px', zIndex: 2,
+              width: '20rem', height: '20rem', zIndex: 2,
               opacity: 0.045,
               animation: 'heroWatermarkFade 0.6s ease-out',
             }}
@@ -351,7 +359,7 @@ export default function HomeClient({
         {/* 텍스트 콘텐츠 */}
         <div
           className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl"
-          style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 48px)' : '100dvh' }}
+          style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 3rem)' : '100dvh' }}
         >
           <div className="flex items-center gap-3 md:gap-4 mb-2">
             <Image
@@ -396,28 +404,28 @@ export default function HomeClient({
             <Link
               href="/sinners"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
-              style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '4px' }}
+              style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '0.25rem' }}
             >
               수감자 목록
             </Link>
             <Link
               href="/decks"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
-              style={{ border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '4px' }}
+              style={{ border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '0.25rem' }}
             >
               덱 게시판
             </Link>
             <Link
               href="/planner/community"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
-              style={{ border: '1px solid #4898b0', color: '#4898b0', borderRadius: '4px' }}
+              style={{ border: '1px solid #4898b0', color: '#4898b0', borderRadius: '0.25rem' }}
             >
               거던 플래너
             </Link>
             <Link
               href="/bot"
               className="flex items-center gap-2 px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
-              style={{ border: '1px solid #5865f2', color: '#7289da', borderRadius: '4px' }}
+              style={{ border: '1px solid #5865f2', color: '#7289da', borderRadius: '0.25rem' }}
             >
               <DiscordIcon size={16} />
               디스코드 봇
@@ -450,8 +458,8 @@ export default function HomeClient({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                padding: '12px 0',
+                gap: '0.75rem',
+                padding: '0.75rem 0',
                 cursor: 'pointer',
                 userSelect: 'none',
               }}
@@ -491,7 +499,7 @@ export default function HomeClient({
                   border: 'none',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
-                  padding: 4,
+                  padding: '0.25rem',
                   flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
@@ -505,13 +513,13 @@ export default function HomeClient({
             {announcementOpen && pinnedAnnouncement.content && (
               <div
                 style={{
-                  paddingBottom: 14,
-                  paddingLeft: 25,
+                  paddingBottom: '0.875rem',
+                  paddingLeft: '1.5625rem',
                   color: 'var(--text-tertiary)',
                   fontSize: '0.8125rem',
                   lineHeight: 1.7,
                   borderTop: '1px solid rgba(200,144,10,0.1)',
-                  paddingTop: 12,
+                  paddingTop: '0.75rem',
                   whiteSpace: 'pre-wrap',
                 }}
               >

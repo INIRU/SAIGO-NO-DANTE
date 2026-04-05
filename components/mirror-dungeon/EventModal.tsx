@@ -3,13 +3,13 @@
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
+import GiftCard from '@/components/ui/GiftCard'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import type {
   MirrorDungeonEvent,
   EgoGift,
   EgoGiftTheme,
   EventOption,
-  EventRewardBranch,
   EventRewardEffect,
 } from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
@@ -17,32 +17,145 @@ import {
   colorizeEventText,
   replaceEventPlaceholders,
   getOptionEffects,
-  getAbEventEffects,
 } from '@/lib/utils/event-text'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface EventModalProps {
   event: MirrorDungeonEvent
-  allEvents: MirrorDungeonEvent[]
   giftByGameId: Map<number, EgoGift>
   themes: EgoGiftTheme[]
   onClose: () => void
   onSelectGift: (gift: EgoGift) => void
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Get accent color for option based on content */
 function getOptionAccent(messageDesc: string | undefined): string {
   const desc = (messageDesc || '').toLowerCase()
   if (desc.includes('전투')) return '#c04040'
-  if (desc.includes('심판') || desc.includes('판정')) return 'rgba(200,144,10,0.7)'
-  return 'rgba(200,144,10,0.5)'
+  if (desc.includes('심판') || desc.includes('판정')) return 'rgba(200,144,10,0.8)'
+  return 'rgba(200,144,10,0.6)'
 }
 
-// ── Sub-components ──────────────────────────────────────────────────────────
+function formatProbability(prob: number | string): string {
+  if (typeof prob === 'number') return `${Math.round(prob * 100)}%`
+
+  const exactMap: Record<string, string> = {
+    MpAverage_NotLessThan0: '평균 정신력 0 이상',
+    MpAverage_Under0: '평균 정신력 0 미만',
+    MpAverage_NotLessThan25: '평균 정신력 25 이상',
+    MpAverage_Under25: '평균 정신력 25 미만',
+  }
+  if (exactMap[prob]) return exactMap[prob]
+
+  const mpMatch = prob.match(/^MpAverage_(Under|NotLessThan)(\d+)$/)
+  if (mpMatch) {
+    const qualifier = mpMatch[1] === 'Under' ? '미만' : '이상'
+    return `평균 정신력 ${mpMatch[2]} ${qualifier}`
+  }
+
+  const probMatch = prob.match(/^Prob_(\d+)$/)
+  if (probMatch) return `${probMatch[1]}%`
+
+  const repeatMatch = prob.match(/^ProbTimesRepeatCount_(\d+)$/)
+  if (repeatMatch) return `${repeatMatch[1]}% × 반복 횟수`
+
+  return prob
+}
+
+// ── Recursive child-event renderer ───────────────────────────────────────────
+
+function renderNextEventBranches(
+  nextEvent: EventOption['next_event'],
+  giftByGameId: Map<number, EgoGift>,
+  onSelectGift: (g: EgoGift) => void,
+  depth: number = 0
+): ReactNode {
+  if (!nextEvent?.options || nextEvent.options.length === 0 || depth > 3) return null
+  return (
+    <div className="mt-3">
+      {nextEvent.options.map((childOpt, ci) => {
+        const isSuccess = childOpt.message === '성공'
+        const isFail = childOpt.message === '실패'
+        const branchColor = isSuccess
+          ? 'rgba(0,180,100,0.7)'
+          : isFail
+            ? 'rgba(200,60,60,0.6)'
+            : 'rgba(200,144,10,0.5)'
+
+        return (
+          <div
+            key={ci}
+            style={{
+              marginTop: ci > 0 ? '0.625rem' : 0,
+              paddingTop: ci > 0 ? '0.625rem' : 0,
+              borderTop: ci > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            }}
+          >
+            {/* Branch label (성공/실패) */}
+            <span
+              className="font-serif"
+              style={{
+                display: 'inline-block',
+                color: branchColor,
+                fontSize: '0.9375rem',
+                fontWeight: 800,
+                marginBottom: '0.375rem',
+              }}
+            >
+              {childOpt.message}
+            </span>
+
+            {/* Result narrative */}
+            {childOpt.result && childOpt.result[0] && (
+              <div style={{ marginTop: '0.25rem' }}>
+                <p
+                  className="whitespace-pre-line"
+                  style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+                >
+                  {colorizeEventText(childOpt.result[0])}
+                </p>
+              </div>
+            )}
+
+            {/* Reward effects from child branch */}
+            {childOpt.rewards && childOpt.rewards.length > 0 && (
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 0,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'flex-end',
+                  gap: '0.5rem',
+                  marginTop: '0.375rem',
+                }}
+              >
+                {childOpt.rewards.map((branch, bi) =>
+                  branch.effects.map((eff, ei) => (
+                    <EffectBadge
+                      key={`${bi}-${ei}`}
+                      effect={eff}
+                      giftByGameId={giftByGameId}
+                      onSelectGift={onSelectGift}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Recurse into deeper next_event branches */}
+            {renderNextEventBranches(childOpt.next_event, giftByGameId, onSelectGift, depth + 1)}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -51,22 +164,30 @@ function SectionLabel({ children }: { children: ReactNode }) {
         style={{
           width: '0.1875rem',
           height: '0.875rem',
-          background: 'var(--gold)',
+          background: 'linear-gradient(to bottom, var(--gold), rgba(200,144,10,0.4))',
           borderRadius: '0.125rem',
+          flexShrink: 0,
         }}
       />
       <p
         style={{
-          color: '#8a7a60',
+          color: '#9a8a68',
           fontSize: '0.6875rem',
           fontFamily: 'var(--font-heading)',
           fontWeight: 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.12em',
           textTransform: 'uppercase',
         }}
       >
         {children}
       </p>
+      <div
+        style={{
+          flex: 1,
+          height: '1px',
+          background: 'linear-gradient(90deg, rgba(200,144,10,0.15), transparent 60%)',
+        }}
+      />
     </div>
   )
 }
@@ -75,13 +196,14 @@ function EffectPill({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
-        padding: '0.375rem 0.625rem',
-        background: 'rgba(200,144,10,0.04)',
-        border: '1px solid rgba(200,144,10,0.1)',
-        borderLeft: '0.1875rem solid rgba(200,144,10,0.35)',
+        padding: '0.375rem 0.75rem',
+        background: 'rgba(200,144,10,0.03)',
+        border: '1px solid rgba(200,144,10,0.09)',
+        borderLeft: '0.1875rem solid rgba(200,144,10,0.3)',
         borderRadius: '0.25rem',
         fontSize: '0.75rem',
-        lineHeight: 1.5,
+        lineHeight: 1.55,
+        backdropFilter: 'blur(4px)',
       }}
     >
       {children}
@@ -89,493 +211,98 @@ function EffectPill({ children }: { children: ReactNode }) {
   )
 }
 
-// ── Reward badge helpers ─────────────────────────────────────────────────────
-
-interface EffectSpec {
-  label: string
-  color: string
-  bg: string
-  border: string
-}
-
-function getEffectSpec(effect: EventRewardEffect): EffectSpec {
-  const a = effect.amount
-  const c = effect.count
-  switch (effect.type) {
-    case 'cost':
-      return {
-        label: `+${a ?? '?'} 코스트`,
-        color: '#c8900a',
-        bg: 'rgba(200,144,10,0.12)',
-        border: 'rgba(200,144,10,0.3)',
-      }
-    case 'cost_loss':
-      return {
-        label: `-${a ?? '?'} 코스트`,
-        color: '#e04040',
-        bg: 'rgba(224,64,64,0.1)',
-        border: 'rgba(224,64,64,0.3)',
-      }
-    case 'gift':
-      return {
-        label: `기프트 x${c ?? 1}`,
-        color: '#b090d0',
-        bg: 'rgba(176,144,208,0.1)',
-        border: 'rgba(176,144,208,0.3)',
-      }
-    case 'gift_battle':
-      return {
-        label: '전투 승리 시 기프트',
-        color: '#b090d0',
-        bg: 'rgba(176,144,208,0.08)',
-        border: 'rgba(176,144,208,0.4)',
-      }
-    case 'battle':
-    case 'battle_abnormality':
-      return {
-        label: '환상체 전투',
-        color: '#e04040',
-        bg: 'rgba(224,64,64,0.1)',
-        border: 'rgba(224,64,64,0.35)',
-      }
-    case 'hp_loss':
-      return {
-        label: `체력 -${a ?? '?'}%`,
-        color: '#e04040',
-        bg: 'rgba(224,64,64,0.1)',
-        border: 'rgba(224,64,64,0.3)',
-      }
-    case 'hp_recover':
-    case 'hp_recover_ratio':
-      return {
-        label: `체력 +${a ?? '?'}%`,
-        color: '#40a060',
-        bg: 'rgba(64,160,96,0.1)',
-        border: 'rgba(64,160,96,0.3)',
-      }
-    case 'mp_loss':
-      return {
-        label: `정신력 -${a ?? '?'}`,
-        color: '#c04070',
-        bg: 'rgba(192,64,112,0.1)',
-        border: 'rgba(192,64,112,0.3)',
-      }
-    case 'mp_recover':
-      return {
-        label: `정신력 +${a ?? '?'}`,
-        color: '#4080c0',
-        bg: 'rgba(64,128,192,0.1)',
-        border: 'rgba(64,128,192,0.3)',
-      }
-    case 'hp_mp_recover':
-      return {
-        label: `체력/정신력 +${a ?? '?'}%`,
-        color: '#40a060',
-        bg: 'rgba(64,160,96,0.1)',
-        border: 'rgba(64,160,96,0.3)',
-      }
-    case 'hp_mp_loss':
-      return {
-        label: `체력/정신력 -${a ?? '?'}%`,
-        color: '#e04040',
-        bg: 'rgba(224,64,64,0.1)',
-        border: 'rgba(224,64,64,0.3)',
-      }
-    case 'nothing':
-      return {
-        label: '없음',
-        color: '#888',
-        bg: 'rgba(136,136,136,0.1)',
-        border: 'rgba(136,136,136,0.25)',
-      }
-    case 'level_up':
-      return {
-        label: '레벨 업',
-        color: '#c8900a',
-        bg: 'rgba(200,144,10,0.12)',
-        border: 'rgba(200,144,10,0.3)',
-      }
-    case 'get_character':
-      return {
-        label: '수감자 영입',
-        color: '#c8900a',
-        bg: 'rgba(200,144,10,0.12)',
-        border: 'rgba(200,144,10,0.3)',
-      }
-    default:
-      return {
-        label: effect.type,
-        color: '#888',
-        bg: 'rgba(136,136,136,0.1)',
-        border: 'rgba(136,136,136,0.25)',
-      }
-  }
-}
-
-function EffectBadge({ effect }: { effect: EventRewardEffect }) {
-  const spec = getEffectSpec(effect)
-  const showCostIcon = effect.type === 'cost' || effect.type === 'cost_loss'
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.25rem',
-        padding: '0.1875rem 0.5rem',
-        borderRadius: '0.25rem',
-        background: spec.bg,
-        border: `1px solid ${spec.border}`,
-        fontSize: '0.6875rem',
-        fontFamily: 'var(--font-mono)',
-        fontWeight: 700,
-        color: spec.color,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {showCostIcon && (
-        // eslint-disable-next-line @next/next/no-img-element
+function EffectBadge({
+  effect,
+  giftByGameId,
+  onSelectGift,
+}: {
+  effect: EventRewardEffect
+  giftByGameId: Map<number, EgoGift>
+  onSelectGift?: (gift: EgoGift) => void
+}) {
+  if (effect.type === 'cost' || effect.type === 'cost_loss') {
+    const isCost = effect.type === 'cost'
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          padding: '0.21875rem 0.5625rem',
+          borderRadius: '0.3125rem',
+          background: isCost ? 'rgba(200,144,10,0.1)' : 'rgba(224,64,64,0.1)',
+          border: `1px solid ${isCost ? 'rgba(200,144,10,0.3)' : 'rgba(224,64,64,0.3)'}`,
+          fontSize: '0.6875rem',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 700,
+          color: isCost ? '#c8900a' : '#e04040',
+          whiteSpace: 'nowrap',
+          boxShadow: isCost
+            ? '0 0 0.5rem rgba(200,144,10,0.12) inset'
+            : '0 0 0.5rem rgba(224,64,64,0.1) inset',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`${STORAGE_BASE}/icons/ui/credits.webp`}
           alt=""
           style={{ width: '0.75rem', height: '0.75rem' }}
         />
-      )}
-      {spec.label}
-    </span>
-  )
+        {isCost ? '+' : '-'}{effect.amount}
+      </span>
+    )
+  }
+
+  if (effect.type === 'gift' || effect.type === 'gift_battle') {
+    const gift = effect.gift_id ? giftByGameId.get(effect.gift_id) : null
+    if (!gift) return null
+    return (
+      <GiftCard
+        gift={gift}
+        onClick={() => onSelectGift?.(gift)}
+        size="3.5rem"
+        showName={true}
+      />
+    )
+  }
+
+  if (effect.type === 'battle' || effect.type === 'battle_abnormality') return null
+
+  return null
 }
 
-// kept for child-event blocks that still use the flat probability+effects layout
-function RewardBadges({ rewards }: { rewards: EventRewardBranch[] }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.3125rem',
-        marginTop: '0.5rem',
-      }}
-    >
-      {rewards.map((branch, bi) => {
-        const prob = branch.probability
-        const isFullProb = prob === 1 || prob === '1' || prob === 1.0
-        const probNum = typeof prob === 'number' ? prob : null
-
-        return (
-          <div
-            key={bi}
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              gap: '0.25rem',
-            }}
-          >
-            {/* Probability badge — only when not 100% */}
-            {!isFullProb && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.625rem',
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 600,
-                  color: probNum !== null ? '#e8b030' : '#888',
-                  background: probNum !== null ? 'rgba(232,176,48,0.1)' : 'rgba(136,136,136,0.1)',
-                  border: `1px solid ${probNum !== null ? 'rgba(232,176,48,0.3)' : 'rgba(136,136,136,0.25)'}`,
-                  whiteSpace: 'nowrap',
-                  lineHeight: 1.6,
-                }}
-              >
-                {probNum !== null ? `${Math.round(probNum * 100)}%` : String(prob)}
-              </span>
-            )}
-
-            {/* Effect badges */}
-            {branch.effects.map((eff, ei) => (
-              <EffectBadge key={ei} effect={eff} />
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function GiftBadge({
-  gift,
-  onSelect,
-}: {
-  gift: EgoGift
-  onSelect: (g: EgoGift) => void
-}) {
-  const kw = KEYWORD_COLORS[gift.keyword] ?? '#666'
-  return (
-    <button
-      onClick={() => onSelect(gift)}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10"
-      style={{
-        cursor: 'pointer',
-        background: `${kw}12`,
-        border: `1px solid ${kw}20`,
-        fontSize: '0.6875rem',
-      }}
-    >
-      {gift.image_url && (
-        <ImageWithFallback
-          src={gift.image_url}
-          alt=""
-          width={14}
-          height={14}
-          fallbackType="gift"
-          style={{ width: '0.875rem', height: '0.875rem' }}
-        />
-      )}
-      <span style={{ color: '#ccc' }}>{gift.name}</span>
-    </button>
-  )
-}
-
-// ── Child Event Block ───────────────────────────────────────────────────────
-
-function ChildEventBlock({
-  child,
-  giftByGameId,
-  onSelectGift,
-}: {
-  child: MirrorDungeonEvent
-  giftByGameId: Map<number, EgoGift>
-  onSelectGift: (g: EgoGift) => void
-}) {
-  const abEffects = getAbEventEffects(child.id)
-  const successOpts = (child.options || []).filter(co => co.message?.startsWith('성공'))
-  const failureOpts = (child.options || []).filter(co => co.message?.startsWith('실패'))
-  const otherOpts = (child.options || []).filter(
-    co => !co.message?.startsWith('성공') && !co.message?.startsWith('실패'),
-  )
-
-  return (
-    <details
-      className="overflow-hidden mt-2.5"
-      style={{
-        borderRadius: '0.5rem',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(200,144,10,0.1)',
-      }}
-    >
-      <summary
-        className="flex items-center gap-2 px-3.5 py-2.5 cursor-pointer list-none transition-colors"
-        style={{
-          color: '#c8a868',
-          fontSize: '0.75rem',
-          fontFamily: 'var(--font-heading)',
-          fontWeight: 600,
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'rgba(200,144,10,0.04)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'transparent'
-        }}
-      >
-        <span style={{ fontSize: '0.5rem', opacity: 0.5, transition: 'transform 0.2s' }}>
-          &#9654;
-        </span>
-        <span className="flex-1">
-          {child.name ||
-            replaceEventPlaceholders(child.desc_text?.split('\n')[0]?.slice(0, 40)) ||
-            '연계 이벤트'}
-        </span>
-        {(successOpts.length > 0 || failureOpts.length > 0) && (
-          <span
-            style={{
-              fontSize: '0.5625rem',
-              color: '#888',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            판정
-          </span>
-        )}
-      </summary>
-
-      <div
-        className="px-3.5 pb-3.5 pt-2"
-        style={{ borderTop: '1px solid rgba(200,144,10,0.06)' }}
-      >
-        {/* Judgment condition (behaveDesc) */}
-        {child.desc_text && (
-          <p
-            className="whitespace-pre-line mb-3"
-            style={{ color: '#9a8a7a', fontSize: '0.75rem', lineHeight: 1.7 }}
-          >
-            {colorizeEventText(child.desc_text)}
-          </p>
-        )}
-
-        {/* Success block */}
-        {successOpts.map((co, ci) => (
-          <div
-            key={`s${ci}`}
-            className="mb-2.5"
-            style={{ paddingLeft: '0.75rem', borderLeft: '2px solid rgba(0,210,138,0.4)' }}
-          >
-            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#00d48a', marginBottom: '0.375rem' }}>
-              성공
-            </p>
-            {co.result && co.result[0] && (
-              <p
-                className="whitespace-pre-line"
-                style={{ color: '#9a8a7a', fontSize: '0.75rem', lineHeight: 1.7 }}
-              >
-                {colorizeEventText(co.result[0])}
-              </p>
-            )}
-            {/* Success effects from game data */}
-            {abEffects.success.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
-                {abEffects.success.map((eff: React.ReactNode, ei: number) => (
-                  <EffectPill key={ei}>{eff}</EffectPill>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Failure block */}
-        {failureOpts.map((co, ci) => (
-          <div
-            key={`f${ci}`}
-            className="mb-2.5"
-            style={{ paddingLeft: '0.75rem', borderLeft: '2px solid rgba(227,0,0,0.4)' }}
-          >
-            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e30000', marginBottom: '0.375rem' }}>
-              실패
-            </p>
-            {co.result && co.result[0] && (
-              <p
-                className="whitespace-pre-line"
-                style={{ color: '#9a8a7a', fontSize: '0.75rem', lineHeight: 1.7 }}
-              >
-                {colorizeEventText(co.result[0])}
-              </p>
-            )}
-            {/* Failure effects from game data */}
-            {abEffects.failure.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
-                {abEffects.failure.map((eff: React.ReactNode, ei: number) => (
-                  <EffectPill key={ei}>{eff}</EffectPill>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Other options (not success/failure) */}
-        {otherOpts.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {otherOpts.map((co, ci) => (
-              <div
-                key={ci}
-                style={{ paddingLeft: '0.5rem', borderLeft: '2px solid rgba(200,144,10,0.15)' }}
-              >
-                <p style={{ color: '#bbb', fontSize: '0.75rem', lineHeight: 1.5 }}>
-                  {colorizeEventText(co.message)}
-                </p>
-                {co.messageDesc && (
-                  <span
-                    className="inline-block mt-0.5 px-1.5 py-0.5"
-                    style={{
-                      color: '#a08860',
-                      fontSize: '0.625rem',
-                      fontFamily: 'var(--font-heading)',
-                      background: 'rgba(200,144,10,0.06)',
-                      borderRadius: '0.1875rem',
-                      border: '1px solid rgba(200,144,10,0.1)',
-                    }}
-                  >
-                    {colorizeEventText(co.messageDesc)}
-                  </span>
-                )}
-                {co.result && co.result[0] && (
-                  <p
-                    className="mt-1 whitespace-pre-line"
-                    style={{ color: '#706050', fontSize: '0.6875rem', lineHeight: 1.5 }}
-                  >
-                    {colorizeEventText(co.result[0])}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Child event effects (when no success/failure split) */}
-        {successOpts.length === 0 && failureOpts.length === 0 && (abEffects.success.length > 0 || abEffects.failure.length > 0) && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
-            {[...abEffects.success, ...abEffects.failure].map((eff: React.ReactNode, ei: number) => (
-              <EffectPill key={ei}>{eff}</EffectPill>
-            ))}
-          </div>
-        )}
-
-        {/* Child gifts */}
-        {child.gift_ids && child.gift_ids.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1 mt-2.5 pt-2"
-            style={{ borderTop: '1px solid rgba(200,144,10,0.08)' }}
-          >
-            {child.gift_ids.map(gid => {
-              const g = giftByGameId.get(gid)
-              if (!g) return null
-              return <GiftBadge key={gid} gift={g} onSelect={onSelectGift} />
-            })}
-          </div>
-        )}
-      </div>
-    </details>
-  )
-}
-
-// ── Option Card ─────────────────────────────────────────────────────────────
+// ── OptionCard ────────────────────────────────────────────────────────────────
 
 function OptionCard({
   event,
   opt,
   index,
-  children: optChildren,
   giftByGameId,
   onSelectGift,
 }: {
   event: MirrorDungeonEvent
   opt: EventOption
   index: number
-  children: MirrorDungeonEvent[]
   giftByGameId: Map<number, EgoGift>
   onSelectGift: (g: EgoGift) => void
 }) {
   const accentColor = getOptionAccent(opt.messageDesc)
-
-  // 게임 데이터에서 직접 조회 — 추론 없음
   const allEffects = getOptionEffects(event.id, index)
-
-  // Option gifts
-  const optionGiftIds = event.option_gifts?.[index] ?? []
 
   return (
     <div
       className="overflow-hidden"
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.05)',
-        borderRadius: '0.5rem',
+        background:
+          'linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.01) 100%)',
+        border: '1px solid rgba(255,255,255,0.055)',
         borderLeft: `0.1875rem solid ${accentColor}`,
+        borderRadius: '0.5rem',
+        backdropFilter: 'blur(6px)',
+        boxShadow: `inset 0 0 1.5rem rgba(0,0,0,0.15), 0 0 0.75rem ${accentColor}0a`,
       }}
     >
-      <div className="flex items-start gap-3 px-4 py-3">
+      <div className="flex items-start gap-3 px-4 py-3.5">
         {/* Option number badge */}
         <span
           className="flex-shrink-0 flex items-center justify-center"
@@ -584,12 +311,14 @@ function OptionCard({
             height: '1.5rem',
             borderRadius: '50%',
             background: `${accentColor}18`,
-            border: `1px solid ${accentColor}30`,
+            border: `1px solid ${accentColor}38`,
             color: accentColor,
             fontSize: '0.6875rem',
             fontFamily: 'var(--font-mono)',
             fontWeight: 700,
             marginTop: '0.125rem',
+            flexShrink: 0,
+            boxShadow: `0 0 0.625rem ${accentColor}20`,
           }}
         >
           {index + 1}
@@ -597,110 +326,135 @@ function OptionCard({
 
         <div className="flex-1 min-w-0">
           {/* Choice text */}
-          <p style={{ color: '#e8dcc8', fontSize: '0.875rem', lineHeight: 1.6 }}>
+          <p style={{ color: '#e8dcc8', fontSize: '0.875rem', lineHeight: 1.65 }}>
             {colorizeEventText(opt.message)}
           </p>
 
-          {/* Hint text (messageDesc) */}
+          {/* Hint tag (messageDesc) — strip Unity size/color tags */}
           {opt.messageDesc && (
             <span
               className="inline-block mt-1.5 px-2 py-0.5"
               style={{
                 fontSize: '0.6875rem',
-                fontFamily: 'var(--font-heading)',
-                color: accentColor,
-                background: `${accentColor}10`,
-                border: `1px solid ${accentColor}20`,
+                color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '0.25rem',
                 lineHeight: 1.4,
               }}
             >
-              {colorizeEventText(opt.messageDesc)}
+              {opt.messageDesc
+                .replace(/<size=[^>]*>/g, '')
+                .replace(/<\/size>/g, '')
+                .replace(/<color=[^>]*>/g, '')
+                .replace(/<\/color[^>]*>/g, '')}
             </span>
           )}
 
-          {/* Results paired with reward branches */}
+          {/* Reward branches */}
           {opt.rewards && opt.rewards.length > 0 ? (
             opt.rewards.map((branch, bi) => {
               const resultText = opt.result?.[bi]
               const prob = branch.probability
               const isFullProb = prob === 1 || prob === '1' || prob === 1.0
-              const probNum = typeof prob === 'number' ? prob : null
 
               return (
                 <div
                   key={bi}
                   style={{
-                    marginTop: bi === 0 ? '0.5rem' : '0.75rem',
-                    paddingTop: bi > 0 ? '0.75rem' : 0,
-                    borderTop: bi > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                    marginTop: bi === 0 ? '0.625rem' : '0.875rem',
+                    paddingTop: bi > 0 ? '0.875rem' : 0,
+                    borderTop: bi > 0 ? '1px solid rgba(255,255,255,0.055)' : 'none',
                   }}
                 >
-                  {/* Probability header — only when not 100% */}
+                  {/* Probability pill */}
                   {!isFullProb && (
-                    <div
-                      style={{
-                        color: '#e8b030',
-                        fontSize: '0.6875rem',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        marginBottom: '0.375rem',
-                      }}
-                    >
-                      {probNum !== null ? `${Math.round(probNum * 100)}%` : String(prob)}
+                    <div className="mb-1.5">
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3125rem',
+                          padding: '0.1875rem 0.5625rem',
+                          background: 'rgba(232,176,48,0.09)',
+                          border: '1px solid rgba(232,176,48,0.22)',
+                          borderRadius: '0.3125rem',
+                          color: '#e8b030',
+                          fontSize: '0.6875rem',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700,
+                          letterSpacing: '0.02em',
+                          boxShadow: '0 0 0.5rem rgba(232,176,48,0.1) inset',
+                        }}
+                      >
+                        <span style={{ opacity: 0.6, fontSize: '0.5625rem' }}>◆</span>
+                        {formatProbability(prob)}
+                      </span>
                     </div>
                   )}
 
-                  {/* Result narrative text */}
+                  {/* Result narrative */}
                   {resultText && (
                     <div
                       style={{
-                        paddingLeft: '0.75rem',
-                        borderLeft: '1px solid rgba(255,255,255,0.06)',
-                        marginBottom: '0.375rem',
+                        paddingLeft: '0.875rem',
+                        borderLeft: '2px solid rgba(255,255,255,0.07)',
+                        marginBottom: '0.5rem',
                       }}
                     >
                       <p
                         className="whitespace-pre-line"
-                        style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+                        style={{ color: '#7a6e5e', fontSize: '0.75rem', lineHeight: 1.75 }}
                       >
                         {colorizeEventText(resultText)}
                       </p>
                     </div>
                   )}
 
-                  {/* Effect badges for this branch */}
+                  {/* Effect badges — position: relative + zIndex: 0 isolates GiftCard hover */}
                   <div
                     style={{
+                      position: 'relative',
+                      zIndex: 0,
                       display: 'flex',
                       flexWrap: 'wrap',
-                      alignItems: 'center',
-                      gap: '0.375rem',
+                      alignItems: 'flex-end',
+                      gap: '0.5rem',
                     }}
                   >
                     {branch.effects.map((eff, ei) => (
-                      <EffectBadge key={ei} effect={eff} />
+                      <EffectBadge
+                        key={ei}
+                        effect={eff}
+                        giftByGameId={giftByGameId}
+                        onSelectGift={onSelectGift}
+                      />
                     ))}
                   </div>
                 </div>
               )
             })
           ) : (
-            /* Fallback: no rewards data, show result[0] only */
             opt.result && opt.result[0] ? (
               <div
                 className="mt-2"
-                style={{ paddingLeft: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
+                style={{
+                  paddingLeft: '0.875rem',
+                  borderLeft: '2px solid rgba(255,255,255,0.07)',
+                }}
               >
                 <p
                   className="whitespace-pre-line"
-                  style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+                  style={{ color: '#7a6e5e', fontSize: '0.75rem', lineHeight: 1.75 }}
                 >
                   {colorizeEventText(opt.result[0])}
                 </p>
               </div>
             ) : null
           )}
+
+          {/* ── Child event (next_event) branches — recursive ── */}
+          {renderNextEventBranches(opt.next_event, giftByGameId, onSelectGift)}
 
           {/* Game effects */}
           {allEffects.length > 0 && (
@@ -713,38 +467,16 @@ function OptionCard({
               ))}
             </div>
           )}
-
-          {/* Option reward gifts */}
-          {optionGiftIds.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2.5">
-              {optionGiftIds.map(gid => {
-                const g = giftByGameId.get(gid)
-                if (!g) return null
-                return <GiftBadge key={gid} gift={g} onSelect={onSelectGift} />
-              })}
-            </div>
-          )}
-
-          {/* Linked child events for this option */}
-          {optChildren.map(child => (
-            <ChildEventBlock
-              key={child.id}
-              child={child}
-              giftByGameId={giftByGameId}
-              onSelectGift={onSelectGift}
-            />
-          ))}
         </div>
       </div>
     </div>
   )
 }
 
-// ── Main EventModal ─────────────────────────────────────────────────────────
+// ── Main EventModal ───────────────────────────────────────────────────────────
 
 export default function EventModal({
   event,
-  allEvents,
   giftByGameId,
   themes,
   onClose,
@@ -753,78 +485,88 @@ export default function EventModal({
   const evThemeNames = (event.theme_ids || [])
     .map(tid => themes.find(th => th.id === tid))
     .filter(Boolean) as EgoGiftTheme[]
-  const children = allEvents.filter(c => c.parent_id === event.id)
 
-  // Handle gift selection: close modal then select gift
   const handleSelectGift = (gift: EgoGift) => {
     onClose()
     onSelectGift(gift)
   }
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="36rem" padding="1rem">
+    <BaseModal open={true} onClose={onClose} maxWidth="37rem" padding="1rem">
       <div
         className="relative w-full overflow-hidden"
         style={{
-          maxHeight: '85vh',
-          borderRadius: '0.75rem',
-          background: '#131110',
-          border: '1px solid rgba(200,144,10,0.12)',
-          boxShadow: '0 0 3rem rgba(200,144,10,0.06), 0 1.5rem 4rem rgba(0,0,0,0.6)',
+          maxHeight: '88vh',
+          borderRadius: '0.875rem',
+          background: 'linear-gradient(160deg, #161310 0%, #131110 50%, #100e0c 100%)',
+          border: '1px solid rgba(200,144,10,0.14)',
+          boxShadow:
+            '0 0 0 1px rgba(200,144,10,0.04), 0 0 3.5rem rgba(200,144,10,0.08), 0 2rem 5rem rgba(0,0,0,0.7)',
         }}
       >
-        {/* Close button */}
+        {/* ── Close button ─────────────────────────────────────────── */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-30 flex items-center justify-center transition-all duration-200"
+          className="absolute top-3 right-3 z-30 flex items-center justify-center"
           style={{
             cursor: 'pointer',
             color: 'rgba(255,255,255,0.4)',
             width: '2rem',
             height: '2rem',
             borderRadius: '50%',
-            background: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255,255,255,0.08)',
+            transition: 'color 0.2s, background 0.2s, border-color 0.2s',
           }}
           onMouseEnter={e => {
             e.currentTarget.style.color = '#e8d8c0'
-            e.currentTarget.style.background = 'rgba(200,144,10,0.15)'
-            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.3)'
+            e.currentTarget.style.background = 'rgba(200,144,10,0.18)'
+            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
           }}
           onMouseLeave={e => {
             e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
-            e.currentTarget.style.background = 'rgba(0,0,0,0.4)'
+            e.currentTarget.style.background = 'rgba(0,0,0,0.5)'
             e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
           }}
         >
-          <X size={16} />
+          <X size={15} />
         </button>
 
-        {/* Scroll container */}
-        <div style={{ maxHeight: '85vh', overflowY: 'auto' }}>
-          {/* ── Header banner ── */}
+        {/* ── Scroll container ───────────────────────────────────── */}
+        <div style={{ maxHeight: '88vh', overflowY: 'auto' }}>
+
+          {/* ── Header banner ──────────────────────────────────── */}
           {event.image_url ? (
-            <div className="relative overflow-hidden" style={{ height: '13rem' }}>
+            <div className="relative overflow-hidden" style={{ height: '15.5rem' }}>
               <ImageWithFallback
                 src={event.image_url}
                 alt=""
                 fill
                 fallbackType="default"
-                sizes="36rem"
+                sizes="37rem"
                 className="object-cover"
-                style={{ opacity: 0.45 }}
+                style={{ opacity: 0.42, transform: 'scale(1.04)' }}
               />
+              {/* Layered gradient: deep bottom pull, soft top vignette */}
               <div
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.5) 50%, rgba(19,17,16,0.25) 100%)',
+                    'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.9) 25%, rgba(19,17,16,0.4) 55%, rgba(10,8,6,0.55) 100%)',
+                }}
+              />
+              {/* Gold inner vignette on sides */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(ellipse 120% 100% at 50% 110%, rgba(200,144,10,0.06) 0%, transparent 60%)',
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
                 {evThemeNames.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-2">
+                  <div className="flex flex-wrap gap-1.5 mb-2.5">
                     {evThemeNames.slice(0, 3).map(t => (
                       <span
                         key={t.id}
@@ -832,11 +574,12 @@ export default function EventModal({
                         style={{
                           fontSize: '0.625rem',
                           fontFamily: 'var(--font-mono)',
-                          color: 'rgba(200,144,10,0.8)',
-                          background: 'rgba(200,144,10,0.08)',
-                          border: '1px solid rgba(200,144,10,0.15)',
-                          borderRadius: '0.25rem',
-                          letterSpacing: '0.03em',
+                          color: 'rgba(200,144,10,0.85)',
+                          background: 'rgba(200,144,10,0.09)',
+                          border: '1px solid rgba(200,144,10,0.18)',
+                          borderRadius: '0.3125rem',
+                          letterSpacing: '0.04em',
+                          backdropFilter: 'blur(6px)',
                         }}
                       >
                         {t.name}
@@ -847,11 +590,12 @@ export default function EventModal({
                 <h2
                   className="font-serif font-bold"
                   style={{
-                    fontSize: '1.375rem',
-                    color: '#e8d0a0',
+                    fontSize: '1.4375rem',
+                    color: '#f0e2c0',
                     textShadow:
-                      '0 0.125rem 1rem rgba(200,144,10,0.2), 0 0.0625rem 0.25rem rgba(0,0,0,0.8)',
-                    lineHeight: 1.3,
+                      '0 0.125rem 1.25rem rgba(200,144,10,0.25), 0 0.0625rem 0.375rem rgba(0,0,0,0.9)',
+                    lineHeight: 1.25,
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   {event.name ||
@@ -862,21 +606,24 @@ export default function EventModal({
               </div>
             </div>
           ) : (
+            /* No-image header */
             <div
-              className="relative overflow-hidden px-6 pt-6 pb-5"
+              className="relative overflow-hidden px-6 pt-7 pb-5"
               style={{
-                background: 'linear-gradient(135deg, rgba(200,144,10,0.04) 0%, transparent 60%)',
+                background:
+                  'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, transparent 60%)',
               }}
             >
               <div
                 className="absolute top-0 left-0 w-full"
                 style={{
                   height: '0.125rem',
-                  background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent 70%)',
+                  background:
+                    'linear-gradient(90deg, rgba(200,144,10,0.4), rgba(200,144,10,0.1) 55%, transparent)',
                 }}
               />
               {evThemeNames.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
                   {evThemeNames.slice(0, 3).map(t => (
                     <span
                       key={t.id}
@@ -884,11 +631,11 @@ export default function EventModal({
                       style={{
                         fontSize: '0.625rem',
                         fontFamily: 'var(--font-mono)',
-                        color: 'rgba(200,144,10,0.8)',
-                        background: 'rgba(200,144,10,0.08)',
-                        border: '1px solid rgba(200,144,10,0.15)',
-                        borderRadius: '0.25rem',
-                        letterSpacing: '0.03em',
+                        color: 'rgba(200,144,10,0.85)',
+                        background: 'rgba(200,144,10,0.09)',
+                        border: '1px solid rgba(200,144,10,0.18)',
+                        borderRadius: '0.3125rem',
+                        letterSpacing: '0.04em',
                       }}
                     >
                       {t.name}
@@ -898,7 +645,12 @@ export default function EventModal({
               )}
               <h2
                 className="font-serif font-bold"
-                style={{ fontSize: '1.25rem', color: '#e8d0a0', lineHeight: 1.3 }}
+                style={{
+                  fontSize: '1.3125rem',
+                  color: '#f0e2c0',
+                  lineHeight: 1.3,
+                  letterSpacing: '-0.01em',
+                }}
               >
                 {event.name ||
                   (event.desc_text
@@ -908,22 +660,32 @@ export default function EventModal({
             </div>
           )}
 
-          {/* ── Content ── */}
-          <div className="px-6 pb-6 pt-4 relative">
-            {/* Description text (colorized) */}
+          {/* ── Content ──────────────────────────────────────────── */}
+          <div className="px-6 pb-6 pt-5 relative">
+
+            {/* Description paragraphs */}
             {event.desc_text &&
               (() => {
                 const paragraphs = replaceEventPlaceholders(event.desc_text).split('\n\n')
                 return (
-                  <div className="mb-5">
+                  <div
+                    className="mb-5"
+                    style={{
+                      padding: '1rem 1.125rem',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '0.5rem',
+                      backdropFilter: 'blur(4px)',
+                    }}
+                  >
                     {paragraphs.map((para, pi) => (
                       <p
                         key={pi}
                         className="whitespace-pre-line"
                         style={{
-                          color: pi === 0 ? '#c8b898' : '#a89878',
+                          color: pi === 0 ? '#cebf9e' : '#a89070',
                           fontSize: '0.875rem',
-                          lineHeight: 1.8,
+                          lineHeight: 1.85,
                           marginBottom: pi < paragraphs.length - 1 ? '0.75rem' : 0,
                           ...(pi === 0 ? { fontWeight: 500 } : {}),
                         }}
@@ -935,92 +697,93 @@ export default function EventModal({
                 )
               })()}
 
-            {/* ── Options ── */}
+            {/* ── Options ─────────────────────────────────────── */}
             {event.options && event.options.length > 0 && (
               <div className="mb-5">
                 <SectionLabel>선택지</SectionLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                  {event.options.map((opt, i) => {
-                    const optChildren = children.filter(c => c.option_index === i)
-                    return (
-                      <OptionCard
-                        key={i}
-                        event={event}
-                        opt={opt}
-                        index={i}
-                        giftByGameId={giftByGameId}
-                        onSelectGift={handleSelectGift}
-                      >
-                        {optChildren}
-                      </OptionCard>
-                    )
-                  })}
+                  {event.options.map((opt, i) => (
+                    <OptionCard
+                      key={i}
+                      event={event}
+                      opt={opt}
+                      index={i}
+                      giftByGameId={giftByGameId}
+                      onSelectGift={handleSelectGift}
+                    />
+                  ))}
                 </div>
-
-                {/* Unmapped child events (option_index is null) */}
-                {children.filter(c => c.option_index == null).length > 0 && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        style={{
-                          width: '0.1875rem',
-                          height: '0.75rem',
-                          background: 'rgba(200,144,10,0.4)',
-                          borderRadius: '0.125rem',
-                        }}
-                      />
-                      <p
-                        style={{
-                          color: '#a08860',
-                          fontSize: '0.625rem',
-                          fontFamily: 'var(--font-heading)',
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                        }}
-                      >
-                        연계 이벤트
-                      </p>
-                    </div>
-                    {children
-                      .filter(c => c.option_index == null)
-                      .map(child => (
-                        <div key={child.id} className="mb-2">
-                          <ChildEventBlock
-                            child={child}
-                            giftByGameId={giftByGameId}
-                            onSelectGift={handleSelectGift}
-                          />
-                        </div>
-                      ))}
-                  </div>
-                )}
               </div>
             )}
 
-            {/* ── Theme packs ── */}
-            {event.theme_ids && event.theme_ids.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-2.5">
+            {/* ── Acquirable gifts ─────────────────────────────── */}
+            {(() => {
+              const allGiftIds = new Set(event.gift_ids || [])
+              const evGifts = [...allGiftIds]
+                .map(gid => giftByGameId.get(gid))
+                .filter(Boolean) as EgoGift[]
+              if (evGifts.length === 0) return null
+              return (
+                <div
+                  className="mb-5"
+                  style={{
+                    padding: '0.875rem 1rem',
+                    background: 'rgba(200,144,10,0.025)',
+                    border: '1px solid rgba(200,144,10,0.1)',
+                    borderLeft: '0.1875rem solid rgba(200,144,10,0.35)',
+                    borderRadius: '0.5rem',
+                  }}
+                >
+                  <SectionLabel>획득 가능 기프트</SectionLabel>
+                  {/* position: relative + zIndex: 0 isolates GiftCard hover z-index */}
                   <div
-                    style={{
-                      width: '0.1875rem',
-                      height: '0.75rem',
-                      background: 'rgba(200,144,10,0.3)',
-                      borderRadius: '0.125rem',
-                    }}
-                  />
-                  <p
-                    style={{
-                      color: '#8a7a60',
-                      fontSize: '0.625rem',
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 700,
-                      letterSpacing: '0.1em',
-                    }}
+                    className="flex flex-wrap gap-2"
+                    style={{ position: 'relative', zIndex: 0 }}
                   >
-                    출현 테마팩
-                  </p>
+                    {evGifts.map(g => (
+                      <button
+                        key={g.id}
+                        onClick={() => handleSelectGift(g)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                        style={{
+                          cursor: 'pointer',
+                          background: `${KEYWORD_COLORS[g.keyword] ?? '#666'}0c`,
+                          border: `1px solid ${KEYWORD_COLORS[g.keyword] ?? '#666'}22`,
+                          transition: 'background 0.2s, border-color 0.2s, transform 0.2s',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = `${KEYWORD_COLORS[g.keyword] ?? '#666'}18`
+                          e.currentTarget.style.borderColor = `${KEYWORD_COLORS[g.keyword] ?? '#666'}40`
+                          e.currentTarget.style.transform = 'translateY(-0.0625rem)'
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = `${KEYWORD_COLORS[g.keyword] ?? '#666'}0c`
+                          e.currentTarget.style.borderColor = `${KEYWORD_COLORS[g.keyword] ?? '#666'}22`
+                          e.currentTarget.style.transform = 'translateY(0)'
+                        }}
+                      >
+                        {g.image_url && (
+                          <ImageWithFallback
+                            src={g.image_url}
+                            alt=""
+                            width={18}
+                            height={18}
+                            fallbackType="gift"
+                            style={{ width: '1.125rem', height: '1.125rem' }}
+                          />
+                        )}
+                        <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{g.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )
+            })()}
+
+            {/* ── Theme packs ──────────────────────────────────── */}
+            {event.theme_ids && event.theme_ids.length > 0 && event.theme_ids.length <= 8 && (
+              <div className="mb-5">
+                <SectionLabel>출현 테마팩</SectionLabel>
                 <div className="flex flex-wrap gap-1.5">
                   {event.theme_ids.slice(0, 20).map(tid => {
                     const t = themes.find(th => th.id === tid)
@@ -1034,12 +797,13 @@ export default function EventModal({
                     return (
                       <span
                         key={tid}
-                        className="inline-flex items-center gap-1.5 px-2 py-1"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1"
                         style={{
                           background: 'rgba(255,255,255,0.03)',
                           border: '1px solid rgba(255,255,255,0.06)',
-                          borderRadius: '0.375rem',
+                          borderRadius: '0.4375rem',
                           fontSize: '0.6875rem',
+                          backdropFilter: 'blur(4px)',
                         }}
                       >
                         {t.image_url && (
@@ -1066,13 +830,23 @@ export default function EventModal({
                             fontWeight: 600,
                           }}
                         >
-                          {t.difficulty === 'extreme' ? 'EX' : t.difficulty === 'hard' ? 'H' : ''}
+                          {t.difficulty === 'extreme'
+                            ? 'EX'
+                            : t.difficulty === 'hard'
+                              ? 'H'
+                              : ''}
                         </span>
                       </span>
                     )
                   })}
                   {event.theme_ids.length > 20 && (
-                    <span style={{ color: '#555', fontSize: '0.6875rem', alignSelf: 'center' }}>
+                    <span
+                      style={{
+                        color: '#555',
+                        fontSize: '0.6875rem',
+                        alignSelf: 'center',
+                      }}
+                    >
                       +{event.theme_ids.length - 20}개
                     </span>
                   )}
@@ -1080,72 +854,8 @@ export default function EventModal({
               </div>
             )}
 
-            {/* ── Acquirable gifts (when option_gifts not used) ── */}
-            {!event.option_gifts &&
-              (() => {
-                const allGiftIds = new Set(event.gift_ids || [])
-                allEvents
-                  .filter(c => c.parent_id === event.id)
-                  .forEach(c => (c.gift_ids || []).forEach(g => allGiftIds.add(g)))
-                const evGifts = [...allGiftIds]
-                  .map(gid => giftByGameId.get(gid))
-                  .filter(Boolean) as EgoGift[]
-                if (evGifts.length === 0) return null
-                return (
-                  <div style={{ borderTop: '1px solid rgba(200,144,10,0.08)', paddingTop: '1rem' }}>
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <div
-                        style={{
-                          width: '0.1875rem',
-                          height: '0.75rem',
-                          background: 'rgba(200,144,10,0.3)',
-                          borderRadius: '0.125rem',
-                        }}
-                      />
-                      <p
-                        style={{
-                          color: '#8a7a60',
-                          fontSize: '0.625rem',
-                          fontFamily: 'var(--font-heading)',
-                          fontWeight: 700,
-                          letterSpacing: '0.1em',
-                        }}
-                      >
-                        획득 가능 기프트
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {evGifts.map(g => (
-                        <button
-                          key={g.id}
-                          onClick={() => handleSelectGift(g)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors hover:bg-white/10"
-                          style={{
-                            cursor: 'pointer',
-                            background: `${KEYWORD_COLORS[g.keyword] ?? '#666'}10`,
-                            border: `1px solid ${KEYWORD_COLORS[g.keyword] ?? '#666'}20`,
-                          }}
-                        >
-                          {g.image_url && (
-                            <ImageWithFallback
-                              src={g.image_url}
-                              alt=""
-                              width={18}
-                              height={18}
-                              fallbackType="gift"
-                              style={{ width: '1.125rem', height: '1.125rem' }}
-                            />
-                          )}
-                          <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{g.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })()}
           </div>
         </div>
-        {/* End scroll container */}
       </div>
     </BaseModal>
   )

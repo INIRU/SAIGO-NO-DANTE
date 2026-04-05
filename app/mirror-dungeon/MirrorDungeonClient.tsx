@@ -44,6 +44,7 @@ export default function MirrorDungeonClient({
   const [themeDiffParam, setThemeDiffParam] = useQueryState('diff', parseAsString.withDefault('전체'))
   const [slotFilterParam, setSlotFilterParam] = useQueryState('slot', parseAsString.withDefault('전체'))
   const [eventSearchParam, setEventSearchParam] = useQueryState('eq', parseAsString.withDefault(''))
+  const [eventThemeParam, setEventThemeParam] = useQueryState('etheme', parseAsString.withDefault(''))
   const [themeIdParam, setThemeIdParam] = useQueryState('theme', parseAsString.withDefault(''))
 
   // URL 파라미터 → 파생 상태
@@ -111,28 +112,6 @@ export default function MirrorDungeonClient({
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
-
-  // 모달 열릴 때 배경 스크롤 잠금
-  useEffect(() => {
-    const isOpen = !!selected || expandedThemeId !== null || !!selectedEvent
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = '' }
-    }
-  }, [selected, expandedThemeId, selectedEvent])
-
-  // ESC로 모달 닫기
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (expandedThemeId !== null) setExpandedThemeId(null)
-        else if (selected) setSelected(null)
-        else if (selectedEvent) setSelectedEvent(null)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [expandedThemeId, selected, selectedEvent])
 
   // game_id → EgoGift 매핑 (테마팩 필터 + EventTab 공용)
   const giftByGameId = useMemo(() => {
@@ -391,8 +370,11 @@ export default function MirrorDungeonClient({
         <EventTab
           events={events}
           giftByGameId={giftByGameId}
+          themes={themes}
           eventSearch={eventSearch}
           setEventSearch={setEventSearch}
+          eventThemeFilter={eventThemeParam}
+          setEventThemeFilter={(v) => setEventThemeParam(v === '' ? null : v)}
           onSelectEvent={setSelectedEvent}
         />
       )}
@@ -430,7 +412,6 @@ export default function MirrorDungeonClient({
       {selectedEvent && (
         <EventModal
           event={selectedEvent}
-          allEvents={events}
           giftByGameId={giftByGameId}
           themes={themes}
           onClose={() => setSelectedEvent(null)}

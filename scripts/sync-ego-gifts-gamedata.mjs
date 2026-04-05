@@ -35,11 +35,6 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ── 매핑 테이블 ──────────────────────────────────────────────────────────────
-const ATTR_TO_KEYWORD = {
-  CRIMSON: '화상', SCARLET: '출혈', INDIGO: '진동',
-  AMBER: '파열', AZURE: '침잠', SHAMROCK: '호흡', VIOLET: '충전',
-}
-
 const KEYWORD_EN_TO_KR = {
   Combustion: '화상', Laceration: '출혈', Vibration: '진동',
   Burst: '파열', Sinking: '침잠', Breath: '호흡', Charge: '충전',
@@ -51,7 +46,7 @@ const KEYWORD_EN_TO_KR = {
   FusionVibration: '합성 진동', VibrationDistribution: '진동-분배',
   Binding: '속박', DefenseDown: '방어 레벨 감소', AttackUp: '공격 레벨 증가',
   Enhancement: '위력 증가', Vulnerable: '취약', Fragile: '취약',
-  Blunt: '타격', Slash: '참격', Penetrate: '관통',
+  Blunt: '타격',
 }
 
 function parseGrade(tags) {
@@ -94,6 +89,12 @@ function cleanDesc(desc) {
   let cleaned = desc
     .replace(/<style="[^"]*">/g, '')
     .replace(/<\/style>/g, '')
+    .replace(/<noparse>/g, '')
+    .replace(/<\/noparse>/g, '')
+    .replace(/<size=[^>]*>/g, '')
+    .replace(/<\/size>/g, '')
+    .replace(/<color=[^>]*>/g, '')
+    .replace(/<\/color[^>]*>/g, '')
   // 영문 키워드 → 한글 치환 + 대괄호 제거 (키워드 매핑 호환)
   const map = getBattleKeywordMap()
   cleaned = cleaned.replace(/\[([A-Za-z_]+)\]/g, (match, key) => {
@@ -162,6 +163,19 @@ async function main() {
   for (const item of localizeItems) {
     localizeMap.set(item.id, item)
   }
+  // Fallback: kr/ 디렉토리 (최신 패치 KR 로케일)
+  try {
+    const krLatestDir = resolve(DATA_DIR, '..', 'kr')
+    const latestItems = loadJsonGlob(krLatestDir, /^KR_EGOgift.*\.json$/)
+    let added = 0
+    for (const item of latestItems) {
+      if (!localizeMap.has(item.id)) {
+        localizeMap.set(item.id, item)
+        added++
+      }
+    }
+    if (added > 0) console.log(`   kr/ fallback: +${added}개 항목`)
+  } catch { /* kr/ 디렉토리 없으면 무시 */ }
   console.log(`   총 ${localizeMap.size}개 로컬라이즈 항목`)
 
   // 4. 기프트 데이터 변환

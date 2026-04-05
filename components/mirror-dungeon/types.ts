@@ -72,6 +72,7 @@ export interface EventRewardEffect {
     | 'get_character'
   amount?: number
   count?: number
+  gift_id?: number
 }
 
 export interface EventRewardBranch {
@@ -84,6 +85,12 @@ export interface EventOption {
   messageDesc?: string
   result?: string[]
   rewards?: EventRewardBranch[]
+  next_event?: {
+    id: number
+    name: string | null
+    desc: string | null
+    options: EventOption[] | null
+  }
 }
 
 export interface MirrorDungeonEvent {
@@ -94,9 +101,6 @@ export interface MirrorDungeonEvent {
   gift_ids: number[] | null
   source: string | null
   image_url: string | null
-  parent_id: number | null
-  option_gifts: number[][] | null
-  option_index: number | null
   theme_ids: number[] | null
 }
 
