@@ -63,7 +63,7 @@ export default function EGOTab({ data, sinnerMap, egoByGrade }: EGOTabProps) {
               }}
             >
               {GRADE_ICON_URL[grade] ? (
-                <Image src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} />
+                <Image src={GRADE_ICON_URL[grade]} alt={grade} width={28} height={11} style={{ opacity: active ? 1 : 0.5 }} unoptimized />
               ) : (
                 grade
               )}
@@ -108,7 +108,7 @@ export default function EGOTab({ data, sinnerMap, egoByGrade }: EGOTabProps) {
                 {/* 등급 이미지 */}
                 <div className="w-8 flex items-center justify-center shrink-0">
                   {GRADE_ICON_URL[ego.grade] ? (
-                    <Image src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} />
+                    <Image src={GRADE_ICON_URL[ego.grade]} alt={ego.grade} width={30} height={12} unoptimized />
                   ) : (
                     <span
                       className="font-mono text-[0.625rem] font-bold px-1.5 py-0.5 rounded"

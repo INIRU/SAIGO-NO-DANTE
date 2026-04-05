@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, createKeywordSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,24 +40,16 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-    const body = await request.json()
-    const { name, description, max_stack, icon_slug, sin_affinity } = body
-
-    if (!name?.trim()) {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 })
-    }
+    const raw = await request.json()
+    const parsed = validateBody(createKeywordSchema, raw)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('keyword_meta')
-      .insert({
-        name: name.trim(),
-        description: description ?? null,
-        max_stack: max_stack ?? null,
-        icon_slug: icon_slug ?? null,
-        sin_affinity: sin_affinity ?? null,
-      })
+      .insert(body)
       .select()
       .single()
 

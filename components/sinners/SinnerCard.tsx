@@ -31,6 +31,7 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
               src={profileUrl}
               alt={sinner.name}
               fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
               unoptimized
               priority={priorityProp}
               className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"

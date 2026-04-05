@@ -423,8 +423,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   minWidth: '3.25rem',
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={sinnerLogoUrl(s.id)}
                   alt={s.name_kr}
                   width={28}
@@ -487,12 +486,13 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                   }}
                 >
                   {getIconUrl(keyword) && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={getIconUrl(keyword)!}
                       alt={keyword}
+                      width={14}
+                      height={14}
+                      unoptimized
                       style={{
-                        width: '0.875rem', height: '0.875rem',
                         filter: isActive ? `drop-shadow(0 0 3px ${color}80)` : 'grayscale(0.7) brightness(0.5)',
                       }}
                     />
@@ -638,20 +638,17 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                     }}
                   >
                     {url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={url}
                         alt={identity.name_kr}
+                        fill
+                        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
+                        className="object-cover"
                         style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
                           objectPosition: 'center top',
-                          display: 'block',
                           filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
                           transition: 'filter 0.2s',
                         }}
-                        loading="lazy"
                       />
                     )}
                     {/* 체크 표시 */}
@@ -735,19 +732,16 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
                           }}
                         >
                           {ego.image_url && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={ego.image_url}
                               alt={ego.name_kr ?? ''}
+                              fill
+                              sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 16vw, 12vw"
+                              className="object-cover"
                               style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                display: 'block',
                                 filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
                                 transition: 'filter 0.2s',
                               }}
-                              loading="lazy"
                             />
                           )}
                           {isOwned && (

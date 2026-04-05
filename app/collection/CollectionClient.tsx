@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
@@ -79,17 +80,16 @@ function IdentityCard({ identity, isOwned }: { identity: IdentityInfo; isOwned: 
       }}
     >
       {url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={url}
           alt={identity.name_kr}
+          fill
+          sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
+          className="object-cover"
           style={{
-            width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'center top',
-            display: 'block',
+            objectPosition: 'center top',
             filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
           }}
-          loading="lazy"
         />
       )}
       {isOwned && (
@@ -161,16 +161,15 @@ function EgoCard({ ego, isOwned }: { ego: EGOInfo; isOwned: boolean }) {
       }}
     >
       {ego.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={ego.image_url}
           alt={ego.name_kr ?? ''}
+          fill
+          sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 16vw, 12vw"
+          className="object-cover"
           style={{
-            width: '100%', height: '100%',
-            objectFit: 'cover', display: 'block',
             filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
           }}
-          loading="lazy"
         />
       )}
       {isOwned && (
@@ -239,12 +238,13 @@ function KeywordFilterBar({ keywordFilter, setKeywordFilter }: {
             }}
           >
             {getIconUrl(keyword) && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={getIconUrl(keyword)!}
                 alt={keyword}
+                width={14}
+                height={14}
+                unoptimized
                 style={{
-                  width: '14px', height: '14px',
                   filter: isActive ? `drop-shadow(0 0 3px ${color}80)` : 'grayscale(0.7) brightness(0.5)',
                 }}
               />
@@ -479,8 +479,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
                       minWidth: '3.25rem',
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={sinnerLogoUrl(s.id)}
                       alt={s.name_kr}
                       width={28}
@@ -579,8 +578,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
                     <section key={sinner.id}>
                       {/* 수감자 헤더 */}
                       <div className="flex items-center gap-2.5 mb-2.5 pb-2" style={{ borderBottom: '1px solid rgba(58,42,21,0.35)' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={sinnerLogoUrl(sinner.id)}
                           alt=""
                           width={22}

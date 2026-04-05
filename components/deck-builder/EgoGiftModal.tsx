@@ -135,7 +135,7 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
                     border: `1px solid ${isActive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.04)'}`,
                   }}
                 >
-                  {kwIcon && <Image src={kwIcon} alt="" width={11} height={11} style={{ width: '0.6875rem', height: '0.6875rem' }} />}
+                  {kwIcon && <Image src={kwIcon} alt="" width={11} height={11} style={{ width: '0.6875rem', height: '0.6875rem' }} unoptimized />}
                   {kw}
                 </button>
               )
@@ -238,7 +238,7 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
                         <span style={{ fontSize: '0.625rem', color: '#444', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>{g.grade}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
-                        {kwIcon && <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0, width: '0.625rem', height: '0.625rem' }} />}
+                        {kwIcon && <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0, width: '0.625rem', height: '0.625rem' }} unoptimized />}
                         <span style={{ fontSize: '0.6875rem', color: g.met ? '#88a830' : '#666' }}>
                           {condLabel} ({g.current}/{c.count})
                         </span>

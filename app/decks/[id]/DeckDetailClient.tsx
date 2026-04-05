@@ -653,21 +653,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                         }}
                       >
                         {imgUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={imgUrl}
                             alt={id_?.name_kr ?? ''}
+                            fill
+                            sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, 16vw"
+                            className="object-cover"
                             style={{
-                              width: '100%', height: '100%',
-                              objectFit: 'cover', objectPosition: 'center top',
-                              display: 'block',
+                              objectPosition: 'center top',
                               filter: isActive ? 'brightness(0.88)' : 'brightness(0.45) saturate(0.65)',
                               transition: 'filter 0.15s',
-                            }}
-                            onError={e => {
-                              if (firstSlot?.gacksung && e.currentTarget.src !== normalUrl) {
-                                e.currentTarget.src = normalUrl
-                              }
                             }}
                           />
                         ) : (

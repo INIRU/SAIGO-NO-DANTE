@@ -514,12 +514,14 @@ export default function GiftTab({
               zIndex: 0,
             }}
           >
-            {visibleGifts.map(gift => (
+            {visibleGifts.map((gift, i) => (
               <div
                 key={gift.id}
                 style={{
                   contentVisibility: 'auto',
                   containIntrinsicSize: 'auto 6rem',
+                  animation: 'giftCardFadeIn 0.25s ease-out both',
+                  animationDelay: `${(i % PAGE_SIZE) * 0.008}s`,
                 }}
               >
                 <GiftCard gift={gift} onClick={() => onSelectGift(gift)} />

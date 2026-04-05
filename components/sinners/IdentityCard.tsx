@@ -168,7 +168,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
                     }}
                   >
                     {iconUrl && (
-                      <Image src={iconUrl} alt="" width={10} height={10} style={{ display: 'inline-block' }} />
+                      <Image src={iconUrl} alt="" width={10} height={10} style={{ display: 'inline-block' }} unoptimized />
                     )}
                     {kw}
                   </span>

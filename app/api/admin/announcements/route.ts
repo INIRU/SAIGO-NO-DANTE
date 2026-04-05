@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAuditLog } from '@/lib/audit'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { validateBody, createAnnouncementSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,16 +39,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const { title, content, pinned } = await request.json()
-    if (!title?.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
-    }
+    const raw = await request.json()
+    const parsed = validateBody(createAnnouncementSchema, raw)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('announcements')
-      .insert({ title, content: content ?? '', pinned: pinned ?? false })
+      .insert(body)
       .select()
       .single()
 
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user!.email!, session.user!.name, session.user!.image)
-    writeAuditLog({ actorId: userId, action: 'announcement_create', targetType: 'announcement', targetId: data.id, details: { title } })
+    writeAuditLog({ actorId: userId, action: 'announcement_create', targetType: 'announcement', targetId: data.id, details: { title: body.title } })
 
     revalidatePath('/')
     return NextResponse.json(data, { status: 201 })

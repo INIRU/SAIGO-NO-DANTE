@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, createSkillSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,18 +11,16 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-    const body = await request.json()
-    const { identity_id, name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight } = body
-
-    if (!identity_id || !name) {
-      return NextResponse.json({ error: 'identity_id and name are required' }, { status: 400 })
-    }
+    const raw = await request.json()
+    const parsed = validateBody(createSkillSchema, raw)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('skills')
-      .insert({ identity_id, name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight })
+      .insert(body)
       .select()
       .single()
 
