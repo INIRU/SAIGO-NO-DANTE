@@ -44,7 +44,7 @@ function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] 
   const folder = encodeURIComponent(slot.folder_name)
   const url = `${STORAGE_BASE}/sinners/${slot.sinner_id}/identities/${folder}/${slot.game_id}_normal_info.webp`
   return (
-    <Image src={url} alt="" fill sizes="80px" quality={25}
+    <Image src={url} alt="" fill sizes="(max-width: 768px) 17vw, 8vw" quality={60}
       style={{ objectFit: 'cover', objectPosition: 'center top' }}
       onError={() => setFailed(true)} />
   )
