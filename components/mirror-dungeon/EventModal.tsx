@@ -19,6 +19,7 @@ import {
   getOptionEffects,
   getAbEventEffects,
 } from '@/lib/utils/event-text'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -211,39 +212,41 @@ function getEffectSpec(effect: EventRewardEffect): EffectSpec {
   }
 }
 
-function SmallPill({
-  label,
-  color,
-  bg,
-  border,
-}: {
-  label: string
-  color: string
-  bg: string
-  border: string
-}) {
+function EffectBadge({ effect }: { effect: EventRewardEffect }) {
+  const spec = getEffectSpec(effect)
+  const showCostIcon = effect.type === 'cost' || effect.type === 'cost_loss'
+
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        padding: '0.125rem 0.5rem',
-        borderRadius: '9999px',
-        fontSize: '0.625rem',
+        gap: '0.25rem',
+        padding: '0.1875rem 0.5rem',
+        borderRadius: '0.25rem',
+        background: spec.bg,
+        border: `1px solid ${spec.border}`,
+        fontSize: '0.6875rem',
         fontFamily: 'var(--font-mono)',
-        fontWeight: 600,
-        color,
-        background: bg,
-        border: `1px solid ${border}`,
+        fontWeight: 700,
+        color: spec.color,
         whiteSpace: 'nowrap',
-        lineHeight: 1.6,
       }}
     >
-      {label}
+      {showCostIcon && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`${STORAGE_BASE}/icons/ui/credits.webp`}
+          alt=""
+          style={{ width: '0.75rem', height: '0.75rem' }}
+        />
+      )}
+      {spec.label}
     </span>
   )
 }
 
+// kept for child-event blocks that still use the flat probability+effects layout
 function RewardBadges({ rewards }: { rewards: EventRewardBranch[] }) {
   return (
     <div
@@ -271,31 +274,30 @@ function RewardBadges({ rewards }: { rewards: EventRewardBranch[] }) {
           >
             {/* Probability badge — only when not 100% */}
             {!isFullProb && (
-              <SmallPill
-                label={
-                  probNum !== null
-                    ? `${Math.round(probNum * 100)}%`
-                    : String(prob)
-                }
-                color={probNum !== null ? '#e8b030' : '#888'}
-                bg={probNum !== null ? 'rgba(232,176,48,0.1)' : 'rgba(136,136,136,0.1)'}
-                border={probNum !== null ? 'rgba(232,176,48,0.3)' : 'rgba(136,136,136,0.25)'}
-              />
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.625rem',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600,
+                  color: probNum !== null ? '#e8b030' : '#888',
+                  background: probNum !== null ? 'rgba(232,176,48,0.1)' : 'rgba(136,136,136,0.1)',
+                  border: `1px solid ${probNum !== null ? 'rgba(232,176,48,0.3)' : 'rgba(136,136,136,0.25)'}`,
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1.6,
+                }}
+              >
+                {probNum !== null ? `${Math.round(probNum * 100)}%` : String(prob)}
+              </span>
             )}
 
             {/* Effect badges */}
-            {branch.effects.map((eff, ei) => {
-              const spec = getEffectSpec(eff)
-              return (
-                <SmallPill
-                  key={ei}
-                  label={spec.label}
-                  color={spec.color}
-                  bg={spec.bg}
-                  border={spec.border}
-                />
-              )
-            })}
+            {branch.effects.map((eff, ei) => (
+              <EffectBadge key={ei} effect={eff} />
+            ))}
           </div>
         )
       })}
@@ -617,24 +619,87 @@ function OptionCard({
             </span>
           )}
 
-          {/* Reward badges */}
-          {opt.rewards && opt.rewards.length > 0 && (
-            <RewardBadges rewards={opt.rewards} />
-          )}
+          {/* Results paired with reward branches */}
+          {opt.rewards && opt.rewards.length > 0 ? (
+            opt.rewards.map((branch, bi) => {
+              const resultText = opt.result?.[bi]
+              const prob = branch.probability
+              const isFullProb = prob === 1 || prob === '1' || prob === 1.0
+              const probNum = typeof prob === 'number' ? prob : null
 
-          {/* Result narrative */}
-          {opt.result && opt.result[0] && (
-            <div
-              className="mt-2"
-              style={{ paddingLeft: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <p
-                className="whitespace-pre-line"
-                style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+              return (
+                <div
+                  key={bi}
+                  style={{
+                    marginTop: bi === 0 ? '0.5rem' : '0.75rem',
+                    paddingTop: bi > 0 ? '0.75rem' : 0,
+                    borderTop: bi > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  }}
+                >
+                  {/* Probability header — only when not 100% */}
+                  {!isFullProb && (
+                    <div
+                      style={{
+                        color: '#e8b030',
+                        fontSize: '0.6875rem',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        marginBottom: '0.375rem',
+                      }}
+                    >
+                      {probNum !== null ? `${Math.round(probNum * 100)}%` : String(prob)}
+                    </div>
+                  )}
+
+                  {/* Result narrative text */}
+                  {resultText && (
+                    <div
+                      style={{
+                        paddingLeft: '0.75rem',
+                        borderLeft: '1px solid rgba(255,255,255,0.06)',
+                        marginBottom: '0.375rem',
+                      }}
+                    >
+                      <p
+                        className="whitespace-pre-line"
+                        style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+                      >
+                        {colorizeEventText(resultText)}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Effect badges for this branch */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                    }}
+                  >
+                    {branch.effects.map((eff, ei) => (
+                      <EffectBadge key={ei} effect={eff} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            /* Fallback: no rewards data, show result[0] only */
+            opt.result && opt.result[0] ? (
+              <div
+                className="mt-2"
+                style={{ paddingLeft: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
               >
-                {colorizeEventText(opt.result[0])}
-              </p>
-            </div>
+                <p
+                  className="whitespace-pre-line"
+                  style={{ color: '#807060', fontSize: '0.75rem', lineHeight: 1.7 }}
+                >
+                  {colorizeEventText(opt.result[0])}
+                </p>
+              </div>
+            ) : null
           )}
 
           {/* Game effects */}
