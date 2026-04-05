@@ -1,55 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Users, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    let ctx: ReturnType<typeof import('gsap')['gsap']['context']> | undefined
-    const initGSAP = async () => {
-      const gsap = (await import('gsap')).default
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
-      gsap.registerPlugin(ScrollTrigger)
-
-      ctx = gsap.context(() => {
-        // 헤더 시퀀스
-        gsap.fromTo('.sinners-header-line',
-          { scaleX: 0 },
-          { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }
-        )
-        gsap.fromTo('.sinners-header-tag',
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' }
-        )
-        gsap.fromTo('.sinners-header-title',
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' }
-        )
-        gsap.fromTo('.sinners-header-sub',
-          { opacity: 0 },
-          { opacity: 1, duration: 0.5, delay: 0.5, ease: 'power2.out' }
-        )
-        gsap.fromTo('.sinners-header-line-bottom',
-          { scaleX: 0 },
-          { scaleX: 1, duration: 0.6, delay: 0.6, ease: 'power3.inOut' }
-        )
-
-        // 카드 스태거 — 카드는 HTML에서 visible로 렌더링되고 GSAP이 진입 애니메이션만 담당
-        gsap.fromTo('.sinner-card-item',
-          { opacity: 0, y: 40, scale: 0.93 },
-          {
-            opacity: 1, y: 0, scale: 1,
-            duration: 0.55, stagger: 0.06, ease: 'power2.out',
-            scrollTrigger: { trigger: '.sinners-grid', start: 'top 85%' },
-          }
-        )
-      })
-    }
-    initGSAP()
-    return () => { ctx?.revert() }
-  }, [])
-
   return (
     <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto relative">
 
@@ -79,51 +34,79 @@ export default function SinnersInteractive({ children }: { children: React.React
       {/* 헤더 */}
       <div className="mb-12 text-center relative" style={{ zIndex: 1 }}>
         {/* 상단 장식 라인 */}
-        <div className="sinners-header-line mx-auto" style={{
-          width: '6rem',
-          height: '0.0625rem',
-          background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.5), transparent)',
-          marginBottom: '1.25rem',
-          transformOrigin: 'center',
-          transform: 'scaleX(0)',
-        }} />
+        <motion.div
+          className="mx-auto"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.8, ease: [0.65, 0, 0.35, 1] }}
+          style={{
+            width: '6rem',
+            height: '0.0625rem',
+            background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.5), transparent)',
+            marginBottom: '1.25rem',
+            transformOrigin: 'center',
+          }}
+        />
 
         {/* 태그 */}
-        <div className="sinners-header-tag font-mono" style={{
-          opacity: 0,
-          color: 'var(--gold-dim)',
-          fontSize: '0.625rem',
-          letterSpacing: '0.4em',
-          marginBottom: '0.75rem',
-        }}>
+        <motion.div
+          className="font-mono"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+          style={{
+            color: 'var(--gold-dim)',
+            fontSize: '0.625rem',
+            letterSpacing: '0.4em',
+            marginBottom: '0.75rem',
+          }}
+        >
           LIMBUS COMPANY SINNERS
-        </div>
+        </motion.div>
 
         {/* 타이틀 */}
-        <h1
-          className="sinners-header-title font-serif text-4xl md:text-5xl font-bold mb-3"
-          style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
+        <motion.h1
+          className="font-serif text-4xl md:text-5xl font-bold mb-3"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }}
+          style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
         >
           수감자 목록
-        </h1>
+        </motion.h1>
 
         {/* 서브텍스트 */}
-        <p className="sinners-header-sub" style={{ color: '#888888', opacity: 0, fontSize: '0.875rem' }}>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
+          style={{ color: '#888888', fontSize: '0.875rem' }}
+        >
           림버스 컴퍼니의 12인 수감자
-        </p>
+        </motion.p>
 
         {/* 하단 장식 라인 */}
-        <div className="sinners-header-line-bottom mx-auto" style={{
-          width: '12rem',
-          height: '0.0625rem',
-          background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), var(--gold), rgba(200,144,10,0.3), transparent)',
-          marginTop: '1.5rem',
-          transformOrigin: 'center',
-          transform: 'scaleX(0)',
-        }} />
+        <motion.div
+          className="mx-auto"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.6, delay: 0.6, ease: [0.65, 0, 0.35, 1] }}
+          style={{
+            width: '12rem',
+            height: '0.0625rem',
+            background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), var(--gold), rgba(200,144,10,0.3), transparent)',
+            marginTop: '1.5rem',
+            transformOrigin: 'center',
+          }}
+        />
 
         {/* 전체 보기 버튼 */}
-        <div className="sinners-header-sub flex items-center justify-center gap-3 mt-6" style={{ opacity: 0 }}>
+        <motion.div
+          className="flex items-center justify-center gap-3 mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
+        >
           <Link
             href="/sinners/identities"
             className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all duration-300 hover:scale-[1.03]"
@@ -148,11 +131,21 @@ export default function SinnersInteractive({ children }: { children: React.React
             <Sparkles size={16} />
             E.G.O 전체 보기
           </Link>
-        </div>
+        </motion.div>
       </div>
 
       {/* 서버 렌더링된 카드 그리드 — children으로 주입 */}
-      {children}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-15%' }}
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.06 } },
+        }}
+      >
+        {children}
+      </motion.div>
 
       {/* 하단 장식 */}
       <div className="mt-16 flex items-center justify-center gap-4">

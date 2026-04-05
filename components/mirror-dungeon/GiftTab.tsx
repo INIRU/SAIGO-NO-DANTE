@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useMemo, useEffect, useRef, useCallback, useState } from 'react'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
@@ -144,14 +144,47 @@ export default function GiftTab({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
-  const animatedCountRef = useRef(0)
-  const filterChangedRef = useRef(false)
+
+  // Track scroll position for viewport-based rendering
+  const [scrollY, setScrollY] = useState(0)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY)
+          ticking = false
+        })
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Measure columns from actual rendered grid
+  const [columns, setColumns] = useState(8)
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+    const measure = () => {
+      const w = el.clientWidth
+      const minPx = 72  // 4.5rem
+      const gapPx = 8   // 0.5rem
+      setColumns(Math.max(1, Math.floor((w + gapPx) / (minPx + gapPx))))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Reset pagination when filters change
+  useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-    animatedCountRef.current = 0
     loadingRef.current = false
-    filterChangedRef.current = true
   }, [filtered])
 
   const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
@@ -159,6 +192,7 @@ export default function GiftTab({
   const filteredLenRef = useRef(filtered.length)
   filteredLenRef.current = filtered.length
 
+  // IntersectionObserver for lazy loading
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -169,9 +203,7 @@ export default function GiftTab({
           loadingRef.current = true
           setVisibleCount(prev => {
             const next = Math.min(prev + PAGE_SIZE, filteredLenRef.current)
-            setTimeout(() => {
-              loadingRef.current = false
-            }, 100)
+            setTimeout(() => { loadingRef.current = false }, 100)
             return next
           })
         }
@@ -182,42 +214,18 @@ export default function GiftTab({
     return () => obs.disconnect()
   }, [visibleCount, filtered.length])
 
-  // GSAP card entrance animation
-  useEffect(() => {
-    let ctx: ReturnType<typeof import('gsap').gsap.context> | undefined
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      const cards = document.querySelectorAll('.gift-grid .gift-card')
-
-      if (filterChangedRef.current) {
-        // Filter/search changed: snap all cards to final state immediately, no animation
-        filterChangedRef.current = false
-        if (cards.length > 0) gsap.set(cards, { opacity: 1, y: 0, scale: 1 })
-        animatedCountRef.current = cards.length
-        return
-      }
-
-      // Scroll load: only animate newly added cards
-      const newCards: Element[] = []
-      cards.forEach((card, i) => {
-        if (i >= animatedCountRef.current) newCards.push(card)
-      })
-      if (newCards.length > 0) {
-        ctx = gsap.context(() => {
-          gsap.fromTo(
-            newCards,
-            { opacity: 0, y: 16, scale: 0.97 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.008, ease: 'power2.out' }
-          )
-        })
-      }
-      animatedCountRef.current = cards.length
-    })()
-    return () => {
-      ctx?.revert()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, visibleCount])
+  // Calculate which items are in/near viewport
+  const OVERSCAN_PX = 600
+  const estimatedCardHeight = gridRef.current
+    ? (gridRef.current.clientWidth - 8 * (columns - 1)) / columns + 24 // card (aspect 1:1) + text + gap
+    : 96
+  const gridTop = gridRef.current?.offsetTop ?? 0
+  const viewTop = scrollY - gridTop - OVERSCAN_PX
+  const viewBottom = scrollY - gridTop + (typeof window !== 'undefined' ? window.innerHeight : 800) + OVERSCAN_PX
+  const firstVisibleRow = Math.max(0, Math.floor(viewTop / estimatedCardHeight))
+  const lastVisibleRow = Math.ceil(viewBottom / estimatedCardHeight)
+  const firstVisible = firstVisibleRow * columns
+  const lastVisible = Math.min((lastVisibleRow + 1) * columns, filtered.length)
 
   return (
     <div className="space-y-3 mb-8">
@@ -546,12 +554,38 @@ export default function GiftTab({
       ) : (
         <>
           <div
+            ref={gridRef}
             className="gift-grid"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))', gap: '0.5rem', position: 'relative', zIndex: 0 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
+              gap: '0.5rem',
+              position: 'relative',
+              zIndex: 0,
+            }}
           >
-            {visibleGifts.map(gift => (
-              <GiftCard key={gift.id} gift={gift} onClick={() => onSelectGift(gift)} />
-            ))}
+            {visibleGifts.map((gift, i) => {
+              // Off-screen: lightweight placeholder that maintains grid cell size
+              if (i < firstVisible || i >= lastVisible) {
+                return (
+                  <div key={gift.id} style={{ aspectRatio: '1' }}>
+                    <div style={{ width: '100%', height: '100%' }} />
+                  </div>
+                )
+              }
+              // On-screen: full GiftCard
+              return (
+                <div
+                  key={gift.id}
+                  style={{
+                    contentVisibility: 'auto',
+                    containIntrinsicSize: 'auto 6rem',
+                  }}
+                >
+                  <GiftCard gift={gift} onClick={() => onSelectGift(gift)} />
+                </div>
+              )
+            })}
           </div>
           {visibleCount < filtered.length && (
             <div ref={sentinelRef} className="flex justify-center py-8">

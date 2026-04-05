@@ -221,3 +221,34 @@ textarea:focus-visible {
 .trigger-mode footer {
   display: none !important;
 }
+
+/* ── 히어로 슬라이더 CSS 애니메이션 ─────────────────────────────────────── */
+
+/* 켄번즈 줌인 (layerARef에 JS로 직접 적용) */
+@keyframes kenBurns {
+  from { transform: scale(1) translate(0%, 0%); }
+  to   { transform: scale(1.06) translate(-1%, -0.8%); }
+}
+
+/* 글리치 아웃 — 슬라이드 전환 시 현재 이미지에 적용 */
+@keyframes glitchOut {
+  0%   { clip-path: inset(0 0 0 0);      transform: translateX(0);  filter: none; }
+  15%  { clip-path: inset(12% 0 75% 0);  transform: translateX(-7px); filter: brightness(1.8); }
+  30%  { clip-path: inset(50% 0 28% 0);  transform: translateX(9px);  filter: hue-rotate(80deg); }
+  45%  { clip-path: inset(6% 0 82% 0);   transform: translateX(-5px); filter: brightness(2.2); }
+  60%  { clip-path: inset(70% 0 10% 0);  transform: translateX(6px);  filter: hue-rotate(-60deg); }
+  78%  { clip-path: inset(28% 0 52% 0);  transform: translateX(-8px); filter: brightness(1.5); }
+  100% { clip-path: inset(0 0 100% 0);   transform: translateX(0);  filter: none; }
+}
+
+/* 히어로 워터마크 페이드인 */
+@keyframes heroWatermarkFade {
+  from { opacity: 0; }
+  to   { opacity: 0.045; }
+}
+
+/* 스크롤 유도 펄스 */
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(1); }
+  50%       { opacity: 1;   transform: scaleY(1.2); }
+}

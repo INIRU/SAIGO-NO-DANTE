@@ -222,20 +222,15 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState(false)
 
-  // ── GSAP entry animation ──
+  // ── Entry animation ──
   useEffect(() => {
-    let ctx: { revert?: () => void } | undefined
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.decks-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
-        gsap.fromTo('.decks-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
-        gsap.fromTo('.decks-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
-        gsap.fromTo('.decks-filters', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.5, ease: 'power2.out' })
-        gsap.fromTo('.decks-divider-bottom', { scaleX: 0 }, { scaleX: 1, duration: 0.6, delay: 0.7, ease: 'power3.inOut' })
-      })
-    })()
-    return () => { ctx?.revert?.() }
+    const { animate } = require('framer-motion')
+    const c1 = animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] })
+    const c2 = animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
+    const c3 = animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] })
+    const c4 = animate('.decks-filters', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.5, ease: 'easeOut' })
+    const c5 = animate('.decks-divider-bottom', { scaleX: [0, 1] }, { duration: 0.6, delay: 0.7, ease: [0.33, 1, 0.68, 1] })
+    return () => { c1.stop(); c2.stop(); c3.stop(); c4.stop(); c5.stop() }
   }, [])
 
   // ── Initial deck load (skip if server data present) ──

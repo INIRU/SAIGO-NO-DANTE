@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useEffect, useState, useCallback, useRef } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, RotateCcw, ChevronRight, ChevronsRight, ChevronsLeft } from 'lucide-react'
 import { type RunState } from '@/lib/planner/run-types'
@@ -99,22 +100,6 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
 
   const handleReset = useCallback(() => { dispatch({ type: 'RESET' }) }, [dispatch])
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const sidebarRef = useRef<HTMLDivElement>(null)
-
-  // GSAP: 사이드바 열기/닫기 애니메이션
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      if (!sidebarRef.current) return
-      if (sidebarOpen) {
-        ctx = gsap.context(() => {
-          gsap.fromTo(sidebarRef.current!, { x: 50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: 'power2.out' })
-        })
-      }
-    })()
-    return () => { ctx?.revert() }
-  }, [sidebarOpen])
 
   // ── Setup ──
   if (state.phase === 'setup') {
@@ -231,11 +216,20 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           <div className="lg:hidden">
             <InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
           </div>
-          {sidebarOpen && (
-            <div ref={sidebarRef} className="hidden lg:block lg:sticky lg:top-0 lg:overflow-y-auto" style={{ maxHeight: '100vh' }}>
-              <InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
-            </div>
-          )}
+          <AnimatePresence>
+            {sidebarOpen && (
+              <motion.div
+                className="hidden lg:block lg:sticky lg:top-0 lg:overflow-y-auto"
+                style={{ maxHeight: '100vh' }}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              >
+                <InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </aside>
       </div>
     </div>

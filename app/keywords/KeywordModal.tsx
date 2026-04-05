@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useCallback, type ReactNode } from 'react'
+import { useEffect, useCallback, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
 
@@ -49,9 +50,6 @@ export default function KeywordModal({
   keyword: kw, relatedIdentities, relatedEgos, relatedGifts,
   sinnerNameMap, formatSkillDesc, onClose,
 }: KeywordModalProps) {
-  const backdropRef = useRef<HTMLDivElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
-
   const sinColor = kw.sin_affinity
     ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
     : null
@@ -67,44 +65,8 @@ export default function KeywordModal({
     }
   }, [])
 
-  // GSAP 진입 애니메이션
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      ctx = gsap.context(() => {
-        if (backdropRef.current) {
-          gsap.fromTo(backdropRef.current,
-            { opacity: 0 },
-            { opacity: 1, duration: 0.2, ease: 'power2.out' }
-          )
-        }
-        if (modalRef.current) {
-          gsap.fromTo(modalRef.current,
-            { opacity: 0, y: 24, scale: 0.97 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out', delay: 0.05 }
-          )
-        }
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [])
-
-  // 닫기 애니메이션
-  const handleClose = useCallback(async () => {
-    const { gsap } = await import('gsap')
-    const tl = gsap.timeline({
-      onComplete: onClose,
-    })
-    if (modalRef.current) {
-      tl.to(modalRef.current, { opacity: 0, y: 16, scale: 0.97, duration: 0.2, ease: 'power2.in' }, 0)
-    }
-    if (backdropRef.current) {
-      tl.to(backdropRef.current, { opacity: 0, duration: 0.15 }, 0.05)
-    }
-  }, [onClose])
-
   // ESC 키
+  const handleClose = useCallback(() => onClose(), [onClose])
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', handler)
@@ -112,212 +74,219 @@ export default function KeywordModal({
   }, [handleClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-8">
-      {/* Backdrop */}
-      <div
-        ref={backdropRef}
-        className="absolute inset-0"
-        style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.25rem)', opacity: 0 }}
-        onClick={handleClose}
-      />
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-8">
+        {/* Backdrop */}
+        <motion.div
+          className="absolute inset-0"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.25rem)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          onClick={handleClose}
+        />
 
-      {/* Modal */}
-      <div
-        ref={modalRef}
-        className="relative w-full max-w-2xl rounded-lg overflow-hidden"
-        style={{
-          background: '#1a1510',
-          border: `0.0625rem solid ${sinColor ? `${sinColor}20` : 'rgba(200,144,10,0.15)'}`,
-          maxHeight: 'calc(100vh - 7rem)',
-          opacity: 0,
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 상단 죄악 색상 라인 */}
-        {sinColor && (
-          <div className="absolute top-0 left-0 right-0" style={{ height: '0.125rem', background: `${sinColor}40` }} />
-        )}
+        {/* Modal */}
+        <motion.div
+          className="relative w-full max-w-2xl rounded-lg overflow-hidden"
+          style={{
+            background: '#1a1510',
+            border: `0.0625rem solid ${sinColor ? `${sinColor}20` : 'rgba(200,144,10,0.15)'}`,
+            maxHeight: 'calc(100vh - 7rem)',
+          }}
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.97 }}
+          transition={{ duration: 0.3, delay: 0.05, ease: 'easeOut' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* 상단 죄악 색상 라인 */}
+          {sinColor && (
+            <div className="absolute top-0 left-0 right-0" style={{ height: '0.125rem', background: `${sinColor}40` }} />
+          )}
 
-        {/* 헤더 */}
-        <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.08)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {kw.icon_slug && (
-                <div className="flex items-center justify-center rounded"
-                  style={{
-                    width: '2.75rem', height: '2.75rem',
-                    background: sinColor ? `${sinColor}10` : 'rgba(200,144,10,0.06)',
-                    border: `0.0625rem solid ${sinColor ? `${sinColor}25` : 'rgba(200,144,10,0.12)'}`,
-                  }}
-                >
-                  <Image
-                    src={`${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`}
-                    alt={kw.name} width={28} height={28}
-                    style={{ width: '1.75rem', height: 'auto' }}
-                  />
-                </div>
-              )}
-              <div>
-                <h2 className="font-serif text-lg font-bold" style={{ color: '#e8dcc8' }}>
-                  {kw.name}
-                </h2>
-                <div className="flex gap-2 mt-0.5">
-                  {kw.max_stack && (
-                    <span className="text-[0.625rem]" style={{ color: '#7a6845' }}>최대 {kw.max_stack}</span>
-                  )}
-                  {kw.sin_affinity && (
-                    <span className="text-[0.625rem]" style={{ color: sinColor || '#7a6845' }}>
-                      {SIN_LABELS[kw.sin_affinity]}
-                    </span>
-                  )}
+          {/* 헤더 */}
+          <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.08)' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {kw.icon_slug && (
+                  <div className="flex items-center justify-center rounded"
+                    style={{
+                      width: '2.75rem', height: '2.75rem',
+                      background: sinColor ? `${sinColor}10` : 'rgba(200,144,10,0.06)',
+                      border: `0.0625rem solid ${sinColor ? `${sinColor}25` : 'rgba(200,144,10,0.12)'}`,
+                    }}
+                  >
+                    <Image
+                      src={`${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`}
+                      alt={kw.name} width={28} height={28}
+                      style={{ width: '1.75rem', height: 'auto' }}
+                    />
+                  </div>
+                )}
+                <div>
+                  <h2 className="font-serif text-lg font-bold" style={{ color: '#e8dcc8' }}>
+                    {kw.name}
+                  </h2>
+                  <div className="flex gap-2 mt-0.5">
+                    {kw.max_stack && (
+                      <span className="text-[0.625rem]" style={{ color: '#7a6845' }}>최대 {kw.max_stack}</span>
+                    )}
+                    {kw.sin_affinity && (
+                      <span className="text-[0.625rem]" style={{ color: sinColor || '#7a6845' }}>
+                        {SIN_LABELS[kw.sin_affinity]}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <button onClick={handleClose} className="p-2 rounded hover:bg-white/5 transition-colors" style={{ color: '#555' }}>
+                <X size={18} />
+              </button>
             </div>
-            <button onClick={handleClose} className="p-2 rounded hover:bg-white/5 transition-colors" style={{ color: '#555' }}>
-              <X size={18} />
-            </button>
+
+            {/* 설명 */}
+            {kw.description && (
+              <div className="mt-3 text-[0.8125rem] leading-[1.7]" style={{ color: '#a89070' }}>
+                {kw.description.split('\n').filter(Boolean).map((line, i) => (
+                  <p key={i}>{formatSkillDesc(line, '#a89070')}</p>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* 설명 */}
-          {kw.description && (
-            <div className="mt-3 text-[0.8125rem] leading-[1.7]" style={{ color: '#a89070' }}>
-              {kw.description.split('\n').filter(Boolean).map((line, i) => (
-                <p key={i}>{formatSkillDesc(line, '#a89070')}</p>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 바디 — 스크롤 */}
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 18rem)' }}>
-          {/* 관련 인격 */}
-          {relatedIdentities.length > 0 && (
-            <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
-              <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#c8900a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                관련 인격 ({relatedIdentities.length})
-              </h3>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
-                {relatedIdentities.map(id => (
-                  <Link
-                    key={id.id}
-                    href={`/sinners/${id.sinner_id}/identities/${id.id}`}
-                    className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
-                    style={{ border: '0.0625rem solid rgba(200,144,10,0.06)' }}
-                    onClick={handleClose}
-                  >
-                    {id.game_id && id.folder_name && (
-                      <Image
-                        src={`${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`}
-                        alt={id.name_kr} width={36} height={48}
-                        className="rounded shrink-0"
-                        style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{id.name_kr}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {RARITY_ICONS[id.rarity] && (
-                          <Image
-                            src={`${STORAGE_BASE}/icons/Rarity/${RARITY_ICONS[id.rarity]}.webp`}
-                            alt="" width={id.rarity === 1 ? 12 : id.rarity === 2 ? 20 : 28} height={12}
-                            style={{ width: id.rarity === 1 ? '0.75rem' : id.rarity === 2 ? '1.25rem' : '1.75rem', height: 'auto' }}
-                          />
-                        )}
-                        <span className="text-[0.5625rem]" style={{ color: '#555' }}>
-                          {sinnerNameMap[id.sinner_id] || id.sinner_id}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 관련 EGO */}
-          {relatedEgos.length > 0 && (
-            <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
-              <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#b06060', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                관련 E.G.O ({relatedEgos.length})
-              </h3>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
-                {relatedEgos.map(ego => (
-                  <Link
-                    key={ego.id}
-                    href={`/sinners/${ego.sinner_id}/ego/${ego.id}`}
-                    className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
-                    style={{ border: '0.0625rem solid rgba(180,100,100,0.06)' }}
-                    onClick={handleClose}
-                  >
-                    {ego.image_url && (
-                      <Image
-                        src={ego.image_url}
-                        alt={ego.name_kr || ego.name} width={36} height={48}
-                        className="rounded shrink-0"
-                        style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{ego.name_kr || ego.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
+          {/* 바디 — 스크롤 */}
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 18rem)' }}>
+            {/* 관련 인격 */}
+            {relatedIdentities.length > 0 && (
+              <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
+                <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#c8900a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
+                  관련 인격 ({relatedIdentities.length})
+                </h3>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
+                  {relatedIdentities.map(id => (
+                    <Link
+                      key={id.id}
+                      href={`/sinners/${id.sinner_id}/identities/${id.id}`}
+                      className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
+                      style={{ border: '0.0625rem solid rgba(200,144,10,0.06)' }}
+                      onClick={handleClose}
+                    >
+                      {id.game_id && id.folder_name && (
                         <Image
-                          src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`}
-                          alt={ego.grade} width={28} height={12}
-                          style={{ width: '1.75rem', height: 'auto' }}
+                          src={`${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`}
+                          alt={id.name_kr} width={36} height={48}
+                          className="rounded shrink-0"
+                          style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
                         />
-                        <span className="text-[0.5625rem] truncate" style={{ color: '#555' }}>
-                          {sinnerNameMap[ego.sinner_id] || ego.sinner_id}
-                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{id.name_kr}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {RARITY_ICONS[id.rarity] && (
+                            <Image
+                              src={`${STORAGE_BASE}/icons/Rarity/${RARITY_ICONS[id.rarity]}.webp`}
+                              alt="" width={id.rarity === 1 ? 12 : id.rarity === 2 ? 20 : 28} height={12}
+                              style={{ width: id.rarity === 1 ? '0.75rem' : id.rarity === 2 ? '1.25rem' : '1.75rem', height: 'auto' }}
+                            />
+                          )}
+                          <span className="text-[0.5625rem]" style={{ color: '#555' }}>
+                            {sinnerNameMap[id.sinner_id] || id.sinner_id}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 관련 기프트 */}
-          {relatedGifts.length > 0 && (
-            <div className="p-5 pb-4">
-              <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#6a9a6a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                관련 E.G.O 기프트 ({relatedGifts.length})
-              </h3>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
-                {relatedGifts.map(g => (
-                  <Link
-                    key={g.name}
-                    href="/mirror-dungeon"
-                    className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03]"
-                    style={{ border: '0.0625rem solid rgba(100,180,100,0.06)' }}
-                    onClick={handleClose}
-                  >
-                    {g.image_url && (
-                      <Image
-                        src={g.image_url} alt={g.name} width={36} height={36}
-                        className="rounded"
-                        style={{ width: '2.25rem', height: '2.25rem', objectFit: 'contain', background: 'rgba(0,0,0,0.3)' }}
-                      />
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{g.name}</p>
-                      <p className="text-[0.5625rem]" style={{ color: '#555' }}>
-                        등급 {GRADE_LABELS[g.grade] ?? g.grade}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+            {/* 관련 EGO */}
+            {relatedEgos.length > 0 && (
+              <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
+                <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#b06060', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
+                  관련 E.G.O ({relatedEgos.length})
+                </h3>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
+                  {relatedEgos.map(ego => (
+                    <Link
+                      key={ego.id}
+                      href={`/sinners/${ego.sinner_id}/ego/${ego.id}`}
+                      className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
+                      style={{ border: '0.0625rem solid rgba(180,100,100,0.06)' }}
+                      onClick={handleClose}
+                    >
+                      {ego.image_url && (
+                        <Image
+                          src={ego.image_url}
+                          alt={ego.name_kr || ego.name} width={36} height={48}
+                          className="rounded shrink-0"
+                          style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{ego.name_kr || ego.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Image
+                            src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`}
+                            alt={ego.grade} width={28} height={12}
+                            style={{ width: '1.75rem', height: 'auto' }}
+                          />
+                          <span className="text-[0.5625rem] truncate" style={{ color: '#555' }}>
+                            {sinnerNameMap[ego.sinner_id] || ego.sinner_id}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 관련 데이터 없음 */}
-          {relatedIdentities.length === 0 && relatedEgos.length === 0 && relatedGifts.length === 0 && (
-            <div className="p-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
-              관련 인격이나 기프트가 없습니다.
-            </div>
-          )}
-        </div>
+            {/* 관련 기프트 */}
+            {relatedGifts.length > 0 && (
+              <div className="p-5 pb-4">
+                <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#6a9a6a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
+                  관련 E.G.O 기프트 ({relatedGifts.length})
+                </h3>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
+                  {relatedGifts.map(g => (
+                    <Link
+                      key={g.name}
+                      href="/mirror-dungeon"
+                      className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03]"
+                      style={{ border: '0.0625rem solid rgba(100,180,100,0.06)' }}
+                      onClick={handleClose}
+                    >
+                      {g.image_url && (
+                        <Image
+                          src={g.image_url} alt={g.name} width={36} height={36}
+                          className="rounded"
+                          style={{ width: '2.25rem', height: '2.25rem', objectFit: 'contain', background: 'rgba(0,0,0,0.3)' }}
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{g.name}</p>
+                        <p className="text-[0.5625rem]" style={{ color: '#555' }}>
+                          등급 {GRADE_LABELS[g.grade] ?? g.grade}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 관련 데이터 없음 */}
+            {relatedIdentities.length === 0 && relatedEgos.length === 0 && relatedGifts.length === 0 && (
+              <div className="p-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
+                관련 인격이나 기프트가 없습니다.
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   )
 }

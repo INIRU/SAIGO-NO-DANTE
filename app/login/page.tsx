@@ -2,9 +2,10 @@
 
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -93,42 +94,6 @@ export default function LoginPage() {
     if (status === 'authenticated') router.replace('/')
   }, [status, router])
 
-  useEffect(() => {
-    if (status === 'loading' || session) return
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        /* 배경 광원 */
-        gsap.fromTo('.login-bg-glow',
-          { opacity: 0, scale: 0.8 },
-          { opacity: 1, scale: 1, duration: 1.5, ease: 'power2.out' }
-        )
-        /* 구분선 */
-        gsap.fromTo('.login-divider',
-          { scaleX: 0 },
-          { scaleX: 1, duration: 0.8, delay: 0.3, ease: 'power3.inOut' }
-        )
-        /* 로고 */
-        gsap.fromTo('.login-logo',
-          { opacity: 0, y: -30 },
-          { opacity: 1, y: 0, duration: 0.8, delay: 0.1, ease: 'power3.out' }
-        )
-        /* 카드 */
-        gsap.fromTo('.login-card',
-          { opacity: 0, y: 40, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.7, delay: 0.35, ease: 'power2.out' }
-        )
-        /* 하단 링크 */
-        gsap.fromTo('.login-footer',
-          { opacity: 0 },
-          { opacity: 1, duration: 0.5, delay: 0.7, ease: 'power2.out' }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [status, session])
-
   if (status === 'loading' || session) return null
 
   return (
@@ -161,26 +126,35 @@ export default function LoginPage() {
         <Particles />
 
         {/* 중앙 광원 글로우 */}
-        <div className="login-bg-glow" style={{
-          position: 'fixed',
-          top: '30%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '40rem',
-          height: '40rem',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 40%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: 0,
-        }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: 'easeOut' }}
+          style={{
+            position: 'fixed',
+            top: '30%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '40rem',
+            height: '40rem',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 40%, transparent 70%)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
 
         {/* 로고 영역 */}
-        <div className="login-logo flex flex-col items-center relative" style={{
-          opacity: 0,
-          marginBottom: '2rem',
-          zIndex: 1,
-        }}>
+        <motion.div
+          className="flex flex-col items-center relative"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1, ease: [0.33, 1, 0.68, 1] }}
+          style={{
+            marginBottom: '2rem',
+            zIndex: 1,
+          }}
+        >
           {/* 로고 뒤 글로우 */}
           <div style={{
             position: 'absolute',
@@ -221,21 +195,26 @@ export default function LoginPage() {
           </p>
 
           {/* 구분선 */}
-          <div className="login-divider" style={{
-            width: '4rem',
-            height: '0.0625rem',
-            background: 'linear-gradient(90deg, transparent, #c8900a, transparent)',
-            marginTop: '1.25rem',
-            transformOrigin: 'center',
-            transform: 'scaleX(0)',
-          }} />
-        </div>
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.65, 0, 0.35, 1] }}
+            style={{
+              width: '4rem',
+              height: '0.0625rem',
+              background: 'linear-gradient(90deg, transparent, #c8900a, transparent)',
+              marginTop: '1.25rem',
+              transformOrigin: 'center',
+            }}
+          />
+        </motion.div>
 
         {/* 로그인 카드 */}
-        <div
-          className="login-card"
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.35, ease: 'easeOut' }}
           style={{
-            opacity: 0,
             width: '100%',
             maxWidth: '26rem',
             position: 'relative',
@@ -340,10 +319,15 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
               Google로 계속하기
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* 하단 링크 */}
-        <div className="login-footer" style={{ opacity: 0, marginTop: '1.5rem', zIndex: 1 }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
+          style={{ marginTop: '1.5rem', zIndex: 1 }}
+        >
           <Link href="/" style={{
             color: '#444458',
             fontSize: '0.75rem',
@@ -353,7 +337,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
             className="hover:text-yellow-300">
             &larr; 로그인 없이 둘러보기
           </Link>
-        </div>
+        </motion.div>
       </div>
     </>
   )

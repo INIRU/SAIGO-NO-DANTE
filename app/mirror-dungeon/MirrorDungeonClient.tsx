@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { useQueryState, parseAsString } from 'nuqs'
 import dynamic from 'next/dynamic'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
@@ -189,24 +190,6 @@ export default function MirrorDungeonClient({
     return map
   }, [gifts])
 
-  // 헤더 GSAP 진입 애니메이션
-  const headerAnimRef = useRef(false)
-  useEffect(() => {
-    if (headerAnimRef.current) return
-    headerAnimRef.current = true
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.md-header-line', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' })
-        gsap.fromTo('.md-header-tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: 'power2.out' })
-        gsap.fromTo('.md-header-title', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'power3.out' })
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [])
-
   // ThemeModal에서 기프트 선택 시: 테마 모달 닫고 GiftModal 열기
   const handleThemeModalSelectGift = useCallback((gift: EgoGift) => {
     setExpandedThemeId(null)
@@ -232,20 +215,35 @@ export default function MirrorDungeonClient({
       <div className="mb-10">
         <div className="flex items-end justify-between mb-4 md:mb-6" style={{ position: 'relative', zIndex: 1 }}>
           <div>
-            <div className="md-header-line" style={{
-              width: '4rem',
-              height: '0.0625rem',
-              background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
-              marginBottom: '1rem',
-              transformOrigin: 'left',
-              transform: 'scaleX(0)',
-            }} />
-            <p className="md-header-tag" style={{ opacity: 0, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
+              style={{
+                width: '4rem',
+                height: '0.0625rem',
+                background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
+                marginBottom: '1rem',
+                transformOrigin: 'left',
+              }}
+            />
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
+              style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}
+            >
               E.G.O GIFT ARCHIVE
-            </p>
-            <h1 className="md-header-title font-serif text-3xl md:text-4xl font-bold" style={{ opacity: 0, color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }}
+              className="font-serif text-3xl md:text-4xl font-bold"
+              style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
+            >
               거울 던전
-            </h1>
+            </motion.h1>
             <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
               E.G.O 기프트 도감 · 테마팩 · 조합 레시피
             </p>

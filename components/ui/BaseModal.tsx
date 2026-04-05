@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useCallback, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 
 interface BaseModalProps {
   open: boolean
@@ -28,45 +29,32 @@ export default function BaseModal({
   blur = true,
   padding = '1rem',
 }: BaseModalProps) {
-  const handleEsc = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose()
-  }, [onClose])
-
-  useEffect(() => {
-    if (!open) return
-    document.addEventListener('keydown', handleEsc)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', handleEsc)
-      document.body.style.overflow = prev
-    }
-  }, [open, handleEsc])
-
-  if (!open) return null
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 flex items-center justify-center"
-      style={{ zIndex, padding }}
-      onClick={onClose}
-    >
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'rgba(0,0,0,0.75)',
-          ...(blur ? { backdropFilter: 'blur(0.5rem)', WebkitBackdropFilter: 'blur(0.5rem)' } : {}),
-        }}
-      />
-      <div
-        className={`relative w-full ${className}`}
-        style={{ maxWidth }}
-        onClick={e => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
+    <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose() }}>
+      <Dialog.Portal>
+        <Dialog.Overlay
+          className="fixed inset-0"
+          style={{
+            zIndex,
+            background: 'rgba(0,0,0,0.75)',
+            ...(blur ? { backdropFilter: 'blur(0.5rem)', WebkitBackdropFilter: 'blur(0.5rem)' } : {}),
+          }}
+        />
+        <Dialog.Content
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: zIndex + 1, padding, pointerEvents: 'none' }}
+          onPointerDownOutside={() => onClose()}
+          onEscapeKeyDown={() => onClose()}
+        >
+          <Dialog.Title className="sr-only">Modal</Dialog.Title>
+          <div
+            className={`relative w-full ${className}`}
+            style={{ maxWidth, pointerEvents: 'auto' }}
+          >
+            {children}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }

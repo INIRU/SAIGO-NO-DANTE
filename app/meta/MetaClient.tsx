@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import type { Sinner } from '@/lib/data/sinners'
 import type { MetaData, EGOStat } from '@/lib/db/meta'
@@ -36,34 +36,63 @@ export default function MetaClient({ sinners, initialData }: Props) {
     return m
   }, [sinners])
 
-  // ── GSAP ─────────────────────────────────────────────────────
-  const runAnimations = useCallback(async () => {
-    const gsap = (await import('gsap')).default
-    const { ScrollTrigger } = await import('gsap/ScrollTrigger')
-    gsap.registerPlugin(ScrollTrigger)
-    ScrollTrigger.getAll().forEach(t => t.kill())
+  // ── Scroll animations (Web Animations API + IntersectionObserver) ───────
+  const animObserversRef = useRef<IntersectionObserver[]>([])
 
-    gsap.fromTo('.usage-bar', { scaleX: 0 }, {
-      scaleX: 1, duration: 0.8, stagger: 0.04,
-      ease: 'power2.out', transformOrigin: 'left center',
-      scrollTrigger: { trigger: '.usage-chart', start: 'top 85%' },
-    })
+  const runAnimations = useCallback(() => {
+    // Disconnect any previous observers before re-running (tab/filter change)
+    animObserversRef.current.forEach(io => io.disconnect())
+    animObserversRef.current = []
 
-    document.querySelectorAll('.count-up').forEach(el => {
-      const target = parseInt(el.getAttribute('data-target') || '0')
-      const proxy = { val: 0 }
-      gsap.to(proxy, {
-        val: target, duration: 1.2, ease: 'power2.out',
-        onUpdate: () => { el.textContent = Math.round(proxy.val).toString() },
-        scrollTrigger: { trigger: el, start: 'top 90%' },
-      })
+    // Usage bars — scaleX from 0 to 1, staggered, triggered when .usage-chart enters viewport
+    const chart = document.querySelector('.usage-chart')
+    if (chart) {
+      const barIo = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return
+        barIo.disconnect()
+        const bars = Array.from(document.querySelectorAll<HTMLElement>('.usage-bar'))
+        bars.forEach((bar, i) => {
+          bar.style.transformOrigin = 'left'
+          bar.animate(
+            [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+            { duration: 800, delay: i * 40, easing: 'ease-out', fill: 'forwards' },
+          )
+        })
+      }, { threshold: 0.05 })
+      barIo.observe(chart)
+      animObserversRef.current.push(barIo)
+    }
+
+    // Count-up numbers
+    document.querySelectorAll<HTMLElement>('.count-up').forEach(el => {
+      const target = parseInt(el.getAttribute('data-target') || '0', 10)
+      if (!target) return
+      const countIo = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return
+        countIo.disconnect()
+        const start = performance.now()
+        const duration = 1200
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1)
+          // ease-out quad
+          const eased = 1 - (1 - progress) * (1 - progress)
+          el.textContent = Math.round(eased * target).toString()
+          if (progress < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }, { threshold: 0.1 })
+      countIo.observe(el)
+      animObserversRef.current.push(countIo)
     })
   }, [])
 
   useEffect(() => {
     if (!data) return
     const timer = setTimeout(runAnimations, 60)
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      animObserversRef.current.forEach(io => io.disconnect())
+    }
   }, [data, tab, sinnerFilter, runAnimations])
 
   // ── Derived ───────────────────────────────────────────────────

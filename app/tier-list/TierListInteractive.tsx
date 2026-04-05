@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { Calculator, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { SelectionProvider, useSelection } from './SelectionContext'
 import type { TierIdentity } from './TierCardInteractive'
+import { motion } from 'framer-motion'
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
 type Tier = typeof TIERS[number]
@@ -69,24 +70,6 @@ function TierListInner({
   const [calcOpen, setCalcOpen] = useState(false)
   const [qnaOpen, setQnaOpen] = useState(false)
 
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.tier-header',
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
-        )
-        gsap.fromTo('.tier-row',
-          { opacity: 0, x: -30 },
-          { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [])
-
   // identity id → { tier, sinner_id, name_kr } mapping for calculator
   const identityMap = useMemo(() => {
     const map = new Map<string, { tier: Tier; sinner_id: string; name_kr: string }>()
@@ -143,7 +126,11 @@ function TierListInner({
         zIndex: 0,
       }} />
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <div className="tier-header">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
+        >
           <p className="text-center" style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>REROLL TIER LIST</p>
           <h1
             className="font-serif text-center mb-2"
@@ -169,7 +156,7 @@ function TierListInner({
             </a>
           </p>
           <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', marginBottom: '0.5rem', marginLeft: 'auto', marginRight: 'auto' }} />
-        </div>
+        </motion.div>
 
         {/* 범례 */}
         <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
@@ -225,7 +212,16 @@ function TierListInner({
         ) : (
           <>
             {/* Tier grid — rendered by server component passed as children */}
-            {children}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.1, delayChildren: 0.3 } },
+              }}
+            >
+              {children}
+            </motion.div>
 
             {/* 자가진단 계산기 (플로팅) */}
             {selected.size > 0 && (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
@@ -67,24 +68,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     })()
   }, [])
 
-  // GSAP 카드 등장 애니메이션
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const gsap = (await import('gsap')).default
-      ctx = gsap.context(() => {
-        gsap.fromTo('.sinner-info-card',
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
-        )
-        gsap.fromTo('.sinner-content-area',
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power3.out' }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [])
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
   useEffect(() => {
@@ -205,21 +188,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     return result
   }, [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
 
-  // 인격/EGO 카드 스태거 애니메이션 (탭 전환 시)
-  useEffect(() => {
-    let ctx: any
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      const selector = tab === 'identities' ? '.identity-card-item' : '.ego-card-item'
-      ctx = gsap.context(() => {
-        gsap.fromTo(selector,
-          { opacity: 0, y: 20, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.03, ease: 'power2.out' }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [tab, filteredIdentities, filteredEgos])
 
   // 자동완성 드롭다운
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -360,7 +328,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
-          <div className="sinner-info-card lg:sticky lg:top-24 lg:self-start">
+          <motion.div
+            className="lg:sticky lg:top-24 lg:self-start"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
+          >
             <div className="card p-4 sm:p-6" style={{
               background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
               border: '0.0625rem solid rgba(200,144,10,0.12)',
@@ -446,10 +419,15 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
               </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* 우측: 탭 콘텐츠 */}
-          <div className="sinner-content-area lg:col-span-2">
+          <motion.div
+            className="lg:col-span-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
+          >
             {/* 탭 */}
             <div
               className="flex gap-0 mb-4 overflow-hidden"
@@ -756,8 +734,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
-                    {filteredIdentities.map(identity => (
-                      <div key={identity.id} className="identity-card-item">
+                    {filteredIdentities.map((identity, index) => (
+                      <motion.div
+                        key={identity.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.4, delay: index * 0.03, ease: 'easeOut' }}
+                      >
                       <IdentityCard
                         identity={identity}
                         gacksung={gacksung}
@@ -766,7 +749,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
                         }
                       />
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 )}
@@ -821,18 +804,20 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6">
-                    {filteredEgos.map(ego => {
+                    {filteredEgos.map((ego, index) => {
                       const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
                       const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
                       return (
-                        <button
+                        <motion.button
                           key={ego.id}
                           onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
-                          className="ego-card-item group flex flex-col items-center gap-2"
-                          style={{ cursor: 'pointer', transition: 'transform 200ms ease' }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                          className="group flex flex-col items-center gap-2"
+                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.4, delay: index * 0.03, ease: 'easeOut' }}
+                          whileHover={{ scale: 1.05 }}
+                          style={{ cursor: 'pointer' }}
                         >
                           {/* 원형 CG - 메인 포커스 */}
                           <div style={{
@@ -867,14 +852,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                               {ego.name_kr || ego.name}
                             </p>
                           </div>
-                        </button>
+                        </motion.button>
                       )
                     })}
                   </div>
                 )}
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
