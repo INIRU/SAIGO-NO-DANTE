@@ -49,14 +49,14 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
         </div>
       )}
       {theme.image_url ? (
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '380/690', borderRadius: 'var(--radius-md)' }}>
+        <div className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]" style={{ aspectRatio: '380/690', borderRadius: 'var(--radius-md)' }}>
           <ImageWithFallback
             src={theme.image_url}
             alt={theme.name}
             fill
             fallbackType="theme"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover"
           />
           {theme.boss_image_url && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -67,7 +67,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
                   fill
                   fallbackType="default"
                   sizes="(max-width: 640px) 33vw, 20vw"
-                  className="object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
+                  className="object-contain drop-shadow-lg"
                 />
               </div>
             </div>

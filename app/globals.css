@@ -124,17 +124,6 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
 
-/* 모바일 볼드 가독성 — KotraBold는 자체 볼드 서체이므로 font-weight 경감 */
-@media (max-width: 768px) {
-  .font-bold, .font-serif {
-    -webkit-text-stroke: 0;
-    font-synthesis: none;
-  }
-  /* KotraBold 제목: 모바일에서 weight 경감 */
-  [style*="--font-heading"], .font-serif {
-    font-weight: normal;
-  }
-}
 
 /* ── 포커스 링 (접근성) ───────────────────────────────── */
 :focus-visible {
