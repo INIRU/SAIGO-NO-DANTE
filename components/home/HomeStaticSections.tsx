@@ -215,7 +215,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
           />
 
           <div className="relative" style={{ zIndex: 1 }}>
-            <div className="latest-header flex items-end justify-between mb-6">
+            <div className="latest-header flex items-end justify-between mb-6" suppressHydrationWarning>
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles size={11} style={{ color: 'var(--gold)' }} />
@@ -281,7 +281,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((feature) => (
-            <Link key={feature.href} href={feature.href} className="feature-card block">
+            <Link key={feature.href} href={feature.href} className="feature-card block" suppressHydrationWarning>
               <FeatureHoverCard
                 accent={feature.accent}
                 style={{
@@ -414,7 +414,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
             )
 
             return (
-              <div key={href} className="official-link-card">
+              <div key={href} className="official-link-card" suppressHydrationWarning>
                 {isInternal ? (
                   <Link href={href}>{inner}</Link>
                 ) : (

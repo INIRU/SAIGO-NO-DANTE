@@ -29,6 +29,7 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
     <Link
       href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
       className="latest-card group block"
+      suppressHydrationWarning
     >
       <div
         className="relative overflow-hidden"
