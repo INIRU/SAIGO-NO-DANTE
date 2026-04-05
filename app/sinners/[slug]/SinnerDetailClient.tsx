@@ -379,6 +379,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                  
                   className="w-7 h-7 sm:w-10 sm:h-10"
                   style={{
+                    height: 'auto',
                     filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
                     opacity: 0.9,
                   }}

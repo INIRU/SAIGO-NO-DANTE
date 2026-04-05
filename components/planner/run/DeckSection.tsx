@@ -261,7 +261,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                   ) : (
                     <>
                       <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32} style={{ width: '2rem', height: '2rem', opacity: 0.35 }} />
+                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32} style={{ width: '2rem', height: 'auto', opacity: 0.35 }} />
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 text-center z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.25rem', paddingBottom: '0.375rem' }}>
                         <p className="font-serif" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
@@ -336,7 +336,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                 }}
               >
                 <div className="flex items-center gap-1" style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #1a1208' }}>
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: 'auto', opacity: 0.5 }} />
                   <span className="font-serif truncate" style={{ color: slot ? '#8a7a60' : '#3a2a10', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', padding: '0.125rem' }}>
