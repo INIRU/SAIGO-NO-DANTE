@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 
 interface BaseModalProps {
@@ -29,6 +29,22 @@ export default function BaseModal({
   blur = true,
   padding = '1rem',
 }: BaseModalProps) {
+  const scrollYRef = useRef(0)
+
+  useEffect(() => {
+    if (open) {
+      // Save scroll position before Radix locks the body
+      scrollYRef.current = window.scrollY
+    } else {
+      // Restore scroll position after Radix unlocks the body
+      // Use requestAnimationFrame to ensure Radix has already removed its styles
+      const id = requestAnimationFrame(() => {
+        window.scrollTo(0, scrollYRef.current)
+      })
+      return () => cancelAnimationFrame(id)
+    }
+  }, [open])
+
   return (
     <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose() }}>
       <Dialog.Portal>

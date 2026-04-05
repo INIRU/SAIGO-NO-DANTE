@@ -2,28 +2,34 @@
 
 import { useMemo } from 'react'
 import { Search, X } from 'lucide-react'
+import Dropdown from '@/components/ui/Dropdown'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import type { EgoGift, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
+import type { EgoGift, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 
 interface EventTabProps {
   events: MirrorDungeonEvent[]
   giftByGameId: Map<number, EgoGift>
+  themes: EgoGiftTheme[]
   eventSearch: string
   setEventSearch: (v: string) => void
+  eventThemeFilter: string
+  setEventThemeFilter: (v: string) => void
   onSelectEvent: (event: MirrorDungeonEvent) => void
 }
 
 export default function EventTab({
   events,
   giftByGameId,
+  themes,
   eventSearch,
   setEventSearch,
+  eventThemeFilter,
+  setEventThemeFilter,
   onSelectEvent,
 }: EventTabProps) {
-  const { rootEvents, filteredEvents, totalCount } = useMemo(() => {
+  const { filteredEvents, totalCount } = useMemo(() => {
     const seen = new Set<string>()
     const roots = events.filter(ev => {
-      if (ev.parent_id) return false
       const key = ev.desc_text || String(ev.id)
       if (seen.has(key)) return false
       seen.add(key)
@@ -45,22 +51,27 @@ export default function EventTab({
         })
       : roots
 
-    return { rootEvents: roots, filteredEvents: filtered, totalCount: roots.length }
-  }, [events, eventSearch, giftByGameId])
+    const themeFiltered = eventThemeFilter
+      ? filtered.filter(ev => ev.theme_ids?.includes(Number(eventThemeFilter)))
+      : filtered
+
+    return { filteredEvents: themeFiltered, totalCount: roots.length }
+  }, [events, eventSearch, eventThemeFilter, giftByGameId])
 
   return (
     <>
-      {/* 검색 */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-[20rem]">
+      {/* ── Search bar ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="relative flex-1 max-w-[24rem]">
           <Search
             size={14}
             style={{
               position: 'absolute',
-              left: '0.625rem',
+              left: '0.75rem',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#555',
+              color: '#888',
+              pointerEvents: 'none',
             }}
           />
           <input
@@ -68,13 +79,24 @@ export default function EventTab({
             placeholder="이벤트 · 기프트 검색..."
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-1.5 rounded text-xs"
+            className="w-full"
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#ccc',
+              padding: '0.5625rem 2rem 0.5625rem 2.375rem',
+              background: 'rgba(200,144,10,0.03)',
+              border: '1px solid rgba(200,144,10,0.14)',
+              borderRadius: '0.625rem',
+              color: '#d8c8a0',
               outline: 'none',
-              fontFamily: 'var(--font-heading)',
+              fontSize: '0.8125rem',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}
+            onFocus={e => {
+              e.currentTarget.style.borderColor = 'rgba(200,144,10,0.45)'
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(200,144,10,0.06), inset 0 1px 3px rgba(0,0,0,0.3)'
+            }}
+            onBlur={e => {
+              e.currentTarget.style.borderColor = 'rgba(200,144,10,0.14)'
+              e.currentTarget.style.boxShadow = 'none'
             }}
           />
           {eventSearch && (
@@ -82,108 +104,270 @@ export default function EventTab({
               onClick={() => setEventSearch('')}
               style={{
                 position: 'absolute',
-                right: '0.5rem',
+                right: '0.75rem',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#555',
+                color: 'rgba(200,144,10,0.5)',
                 cursor: 'pointer',
+                lineHeight: 1,
+                transition: 'color 0.15s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(200,144,10,0.9)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(200,144,10,0.5)' }}
             >
               <X size={12} />
             </button>
           )}
         </div>
-        <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-          {eventSearch ? `${filteredEvents.length}건` : `${totalCount}건`}
+        <Dropdown
+          value={eventThemeFilter}
+          options={[
+            { value: '', label: '전체 테마' },
+            ...themes
+              .filter(t => !t.is_hidden)
+              .sort((a, b) => a.id - b.id)
+              .map(t => ({ value: String(t.id), label: t.name })),
+          ]}
+          onChange={setEventThemeFilter}
+          prefix="테마:"
+          defaultValue=""
+          minWidth={140}
+        />
+        <span
+          style={{
+            color: 'rgba(200,144,10,0.45)',
+            fontSize: '0.75rem',
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.04em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {eventSearch || eventThemeFilter ? `${filteredEvents.length} / ${totalCount}` : `${totalCount}건`}
         </span>
       </div>
 
-      {/* 카드 그리드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-8">
-        {filteredEvents.map(ev => {
+      {/* ── Card grid ──────────────────────────────────────────────────────── */}
+      {/*
+        position: relative + zIndex: 0 creates a stacking context so that
+        child card hover z-index stays isolated within the grid
+      */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8"
+        style={{ position: 'relative', zIndex: 0 }}
+      >
+        <style>{`
+          .ev-card { transition: border-color 0.28s ease, box-shadow 0.28s ease, transform 0.28s ease; }
+          .ev-card:hover { border-color: rgba(200,144,10,0.55) !important; box-shadow: 0 0 0 1px rgba(200,144,10,0.2), 0 0.625rem 2rem rgba(0,0,0,0.55), 0 0 1.5rem rgba(200,144,10,0.12) !important; transform: translateY(-0.1875rem) !important; }
+          .ev-card:hover .ev-img { transform: scale(1.08); opacity: 0.82; }
+          .ev-card:hover .ev-img-overlay { opacity: 1; }
+          .ev-card:hover .ev-title { color: #f0e0c0 !important; }
+          .ev-card:hover .ev-accent-line { opacity: 1; }
+          .ev-card:hover .ev-corner-glow { opacity: 1; }
+          .ev-img { transition: transform 0.4s ease, opacity 0.28s ease; }
+          .ev-img-overlay { transition: opacity 0.28s ease; }
+          .ev-accent-line { transition: opacity 0.28s ease; }
+          .ev-corner-glow { transition: opacity 0.28s ease; }
+        `}</style>
+
+        {filteredEvents.map((ev, evIdx) => {
           const evGifts = (ev.gift_ids || []).map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
-          const childCount = events.filter(c => c.parent_id === ev.id).length
+          const title = ev.name || (ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `이벤트 #${ev.id}`)
+          const hasImage = Boolean(ev.image_url)
+          const optCount = ev.options?.length ?? 0
+
           return (
             <button
               key={ev.id}
               onClick={() => onSelectEvent(ev)}
-              className="group text-left overflow-hidden transition-all duration-200"
+              className="ev-card group text-left overflow-hidden"
               style={{
-                background: '#1a1714',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 'var(--radius-md)',
+                background: 'linear-gradient(160deg, #1e1b17 0%, #171410 60%, #121008 100%)',
+                border: '1px solid rgba(255,255,255,0.065)',
+                borderRadius: '0.75rem',
                 cursor: 'pointer',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.3)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.35)',
               }}
             >
-              {ev.image_url ? (
-                <div className="relative w-full aspect-square overflow-hidden">
-                  <ImageWithFallback
-                    src={ev.image_url}
-                    alt=""
-                    fill
-                    fallbackType="default"
-                    sizes="(max-width: 640px) 50vw, 20vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    style={{ opacity: 0.8 }}
-                  />
+              {/* ── Image area 3:4 ratio ────────────────────────────────── */}
+              <div
+                className="relative w-full overflow-hidden"
+                style={{ aspectRatio: '1/1', flexShrink: 0 }}
+              >
+                {hasImage ? (
+                  <>
+                    <ImageWithFallback
+                      src={ev.image_url!}
+                      alt=""
+                      fill
+                      fallbackType="default"
+                      sizes="(max-width: 640px) 50vw, 20vw"
+                      className="ev-img object-cover"
+                      style={{ opacity: 0.62 }}
+                      loading={evIdx < 4 ? 'eager' : 'lazy'}
+                    />
+                    {/* Rich gradient — deep bottom, soft vignette edges */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background:
+                          'linear-gradient(to top, #171410 0%, rgba(23,20,16,0.88) 28%, rgba(23,20,16,0.25) 60%, rgba(13,11,8,0.45) 100%)',
+                      }}
+                    />
+                    {/* Hover shimmer overlay */}
+                    <div
+                      className="ev-img-overlay absolute inset-0 pointer-events-none"
+                      style={{
+                        opacity: 0,
+                        background:
+                          'linear-gradient(135deg, rgba(200,144,10,0.07) 0%, transparent 50%, rgba(200,144,10,0.04) 100%)',
+                      }}
+                    />
+                    {/* Top-left ambient glow */}
+                    <div
+                      className="ev-corner-glow absolute top-0 left-0 pointer-events-none"
+                      style={{
+                        width: '70%',
+                        height: '50%',
+                        opacity: 0,
+                        background:
+                          'radial-gradient(ellipse at top left, rgba(200,144,10,0.1) 0%, transparent 65%)',
+                      }}
+                    />
+                  </>
+                ) : (
+                  /* No-image placeholder */
                   <div
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, transparent 60%)' }}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2">
-                    <p
-                      className="font-serif font-medium leading-tight line-clamp-2"
-                      style={{ color: '#e8d8c0', fontSize: '0.75rem', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, rgba(200,144,10,0.07) 0%, rgba(255,255,255,0.01) 50%, rgba(200,144,10,0.04) 100%)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '2.75rem',
+                        height: '2.75rem',
+                        border: '1px solid rgba(200,144,10,0.18)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 0 1.5rem rgba(200,144,10,0.08) inset',
+                      }}
                     >
-                      {ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `이벤트 #${ev.id}`}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      {evGifts.length > 0 && (
-                        <span style={{ color: 'var(--gold)', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                          {evGifts.length}종
-                        </span>
-                      )}
-                      {ev.options && (
-                        <span style={{ color: '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                          선택지 {ev.options.length}
-                        </span>
-                      )}
-                      {childCount > 0 && (
-                        <span style={{ color: '#a08860', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                          +{childCount}
-                        </span>
-                      )}
+                      <span
+                        style={{
+                          color: 'rgba(200,144,10,0.35)',
+                          fontSize: '1.125rem',
+                          fontFamily: 'var(--font-serif)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        ◈
+                      </span>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="px-3 py-3">
-                  <p
-                    className="font-serif font-medium leading-tight line-clamp-2 mb-1.5"
-                    style={{ color: '#ccc', fontSize: '0.75rem' }}
+                )}
+
+                {/* Option count badge — top right */}
+                {optCount > 0 && (
+                  <div
+                    className="absolute top-1.5 right-1.5"
+                    style={{
+                      padding: '0.125rem 0.4375rem',
+                      background: 'rgba(0,0,0,0.65)',
+                      backdropFilter: 'blur(6px)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                      borderRadius: '0.3125rem',
+                      fontSize: '0.5rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'rgba(200,144,10,0.7)',
+                      letterSpacing: '0.04em',
+                      lineHeight: 1.6,
+                    }}
                   >
-                    {ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 40) : `이벤트 #${ev.id}`}
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    {evGifts.length > 0 && (
-                      <span style={{ color: 'var(--gold)', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                        {evGifts.length}종
-                      </span>
-                    )}
-                    {ev.options && (
-                      <span style={{ color: '#888', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                        선택지 {ev.options.length}
-                      </span>
-                    )}
+                    {optCount}선택
                   </div>
+                )}
+              </div>
+
+              {/* ── Text area ──────────────────────────────────────────── */}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.375rem',
+                  padding: '0.625rem 0.6875rem 0.6875rem',
+                }}
+              >
+                <p
+                  className="ev-title font-serif font-medium leading-snug line-clamp-2"
+                  style={{
+                    color: '#ddd0b0',
+                    fontSize: '0.75rem',
+                    minHeight: '2.1rem',
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  {title}
+                </p>
+
+                {/* Bottom meta row */}
+                <div
+                  style={{
+                    marginTop: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.375rem',
+                  }}
+                >
+                  {evGifts.length > 0 && (
+                    <span
+                      style={{
+                        color: '#c8900a',
+                        fontSize: '0.5625rem',
+                        fontFamily: 'var(--font-mono)',
+                        background: 'rgba(200,144,10,0.09)',
+                        border: '1px solid rgba(200,144,10,0.22)',
+                        borderRadius: '0.25rem',
+                        padding: '0.09375rem 0.34375rem',
+                        letterSpacing: '0.03em',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      기프트 {evGifts.length}종
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Bottom gold accent line — reveals on hover */}
+              <div
+                className="ev-accent-line absolute bottom-0 left-0 right-0 pointer-events-none"
+                style={{
+                  height: '0.125rem',
+                  background:
+                    'linear-gradient(90deg, rgba(200,144,10,0.55), rgba(200,144,10,0.2) 55%, transparent)',
+                  opacity: 0,
+                  borderRadius: '0 0 0.75rem 0.75rem',
+                }}
+              />
+
+              {/* Left edge micro-accent always visible */}
+              <div
+                className="absolute top-0 left-0 bottom-0 pointer-events-none"
+                style={{
+                  width: '0.125rem',
+                  background:
+                    'linear-gradient(to bottom, transparent 0%, rgba(200,144,10,0.2) 40%, rgba(200,144,10,0.08) 100%)',
+                  borderRadius: '0.75rem 0 0 0.75rem',
+                }}
+              />
             </button>
           )
         })}
