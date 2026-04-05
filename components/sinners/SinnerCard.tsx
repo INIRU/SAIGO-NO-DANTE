@@ -64,7 +64,7 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
               width={28}
               height={28}
               className="opacity-85 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ filter: 'drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.8))' }}
+              style={{ height: 'auto', filter: 'drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.8))' }}
             />
           </div>
 

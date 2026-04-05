@@ -143,7 +143,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                 alt={s.name_kr}
                 width={28}
                 height={28}
-                style={{ borderRadius: '50%' }}
+                style={{ height: 'auto', borderRadius: '50%' }}
               />
             </button>
           ))}

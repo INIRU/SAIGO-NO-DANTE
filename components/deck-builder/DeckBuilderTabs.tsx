@@ -480,7 +480,7 @@ export function OrderTab({
             ) : (
               <SinnerGhostCard sinner={sinner}>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ height: 'auto', opacity: 0.35 }} />
                 </div>
               </SinnerGhostCard>
             )}
@@ -544,7 +544,7 @@ export function SkillsetTab({
             <div key={sinner.id}>
               <SinnerGhostCard sinner={sinner}>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ opacity: 0.35 }} />
+                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ height: 'auto', opacity: 0.35 }} />
                 </div>
               </SinnerGhostCard>
             </div>

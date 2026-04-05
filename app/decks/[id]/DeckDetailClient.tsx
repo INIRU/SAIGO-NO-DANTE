@@ -695,7 +695,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                           className="absolute bottom-0 left-0 right-0 flex items-end justify-center"
                           style={{ background: 'linear-gradient(to top, rgba(8,6,4,0.92) 0%, transparent 100%)', paddingBottom: 5, paddingTop: 16 }}
                         >
-                          <Image src={getSinnerLogoUrl(sid)} alt="" width={14} height={14} style={{ opacity: isActive ? 0.75 : 0.3, transition: 'opacity 0.15s' }} />
+                          <Image src={getSinnerLogoUrl(sid)} alt="" width={14} height={14} style={{ height: 'auto', opacity: isActive ? 0.75 : 0.3, transition: 'opacity 0.15s' }} />
                         </div>
                       </button>
                     )
@@ -744,7 +744,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                             const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
                             return (
                               <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
-                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ opacity: 0.5, flexShrink: 0 }} />
+                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ height: 'auto', opacity: 0.5, flexShrink: 0 }} />
                                 <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '7.5rem' }}>
                                   {id_.name_kr}
                                 </span>
@@ -816,7 +816,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                             >
                               <div style={{ width: '130px', minWidth: 0, flexShrink: 0 }}>
                                 <div className="flex items-center gap-1 mb-0.5">
-                                  <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={14} height={14} style={{ opacity: 0.4 }} />
+                                  <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={14} height={14} style={{ height: 'auto', opacity: 0.4 }} />
                                   <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
                                 </div>
                                 <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{id_.name_kr}</p>
