@@ -117,6 +117,20 @@ export const createPassiveSchema = z.object({
 
 export type CreatePassiveInput = z.infer<typeof createPassiveSchema>
 
+// ── Update schemas (partial versions of create schemas) ─────────────────────
+
+export const updateIdentitySchema = createIdentitySchema.partial()
+export type UpdateIdentityInput = z.infer<typeof updateIdentitySchema>
+
+export const updateEgoSchema = createEgoSchema.partial()
+export type UpdateEgoInput = z.infer<typeof updateEgoSchema>
+
+export const updateSkillSchema = createSkillSchema.omit({ identity_id: true }).partial()
+export type UpdateSkillInput = z.infer<typeof updateSkillSchema>
+
+export const updatePassiveSchema = createPassiveSchema.omit({ identity_id: true }).partial()
+export type UpdatePassiveInput = z.infer<typeof updatePassiveSchema>
+
 // ── Shared helper: parse with Zod, return { data, error } ──────────────────
 
 export function parseBody<T>(

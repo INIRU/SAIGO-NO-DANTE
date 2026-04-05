@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, updateKeywordSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,18 +13,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ na
 
     const { name } = await params
     const decodedName = decodeURIComponent(name)
-    const body = await request.json()
+    const raw = await request.json()
+    const parsed = validateBody(updateKeywordSchema, raw)
+    if (!parsed.success) return parsed.response
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('keyword_meta')
-      .update({
-        description: body.description,
-        max_stack: body.max_stack ?? null,
-        icon_slug: body.icon_slug ?? null,
-        sin_affinity: body.sin_affinity ?? null,
-      })
+      .update(parsed.data)
       .eq('name', decodedName)
       .select()
       .single()

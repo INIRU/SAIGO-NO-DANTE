@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, updatePassiveSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,13 +12,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const { id } = await params
-    const body = await request.json()
+    const raw = await request.json()
+    const parsed = validateBody(updatePassiveSchema, raw)
+    if (!parsed.success) return parsed.response
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('passives')
-      .update(body)
+      .update(parsed.data)
       .eq('id', id)
       .select()
       .single()

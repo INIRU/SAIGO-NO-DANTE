@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateBody, updateIdentitySchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,12 +42,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { id } = await params
     const supabase = createAdminClient()
-    const body = await request.json()
+    const raw = await request.json()
+    const parsed = validateBody(updateIdentitySchema, raw)
+    if (!parsed.success) return parsed.response
 
     const { data: identity, error } = await supabase
       .schema('limbus')
       .from('identities')
-      .update(body)
+      .update(parsed.data)
       .eq('id', id)
       .select()
       .single()
