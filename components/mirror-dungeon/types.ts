@@ -52,11 +52,45 @@ export interface EgoGiftTheme {
   fixed_reward_gift_ids: number[] | null
 }
 
+export interface EventRewardEffect {
+  type:
+    | 'cost'
+    | 'cost_loss'
+    | 'gift'
+    | 'gift_battle'
+    | 'battle'
+    | 'battle_abnormality'
+    | 'nothing'
+    | 'hp_loss'
+    | 'hp_recover'
+    | 'mp_loss'
+    | 'mp_recover'
+    | 'hp_mp_recover'
+    | 'hp_mp_loss'
+    | 'hp_recover_ratio'
+    | 'level_up'
+    | 'get_character'
+  amount?: number
+  count?: number
+}
+
+export interface EventRewardBranch {
+  probability: number | string
+  effects: EventRewardEffect[]
+}
+
+export interface EventOption {
+  message: string
+  messageDesc?: string
+  result?: string[]
+  rewards?: EventRewardBranch[]
+}
+
 export interface MirrorDungeonEvent {
   id: number
   name: string | null
   desc_text: string | null
-  options: Array<{ message: string; messageDesc?: string; result?: string[] }> | null
+  options: EventOption[] | null
   gift_ids: number[] | null
   source: string | null
   image_url: string | null

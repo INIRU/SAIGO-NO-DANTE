@@ -4,7 +4,14 @@ import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import type { MirrorDungeonEvent, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
+import type {
+  MirrorDungeonEvent,
+  EgoGift,
+  EgoGiftTheme,
+  EventOption,
+  EventRewardBranch,
+  EventRewardEffect,
+} from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
 import {
   colorizeEventText,
@@ -77,6 +84,221 @@ function EffectPill({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+    </div>
+  )
+}
+
+// ── Reward badge helpers ─────────────────────────────────────────────────────
+
+interface EffectSpec {
+  label: string
+  color: string
+  bg: string
+  border: string
+}
+
+function getEffectSpec(effect: EventRewardEffect): EffectSpec {
+  const a = effect.amount
+  const c = effect.count
+  switch (effect.type) {
+    case 'cost':
+      return {
+        label: `+${a ?? '?'} 코스트`,
+        color: '#c8900a',
+        bg: 'rgba(200,144,10,0.12)',
+        border: 'rgba(200,144,10,0.3)',
+      }
+    case 'cost_loss':
+      return {
+        label: `-${a ?? '?'} 코스트`,
+        color: '#e04040',
+        bg: 'rgba(224,64,64,0.1)',
+        border: 'rgba(224,64,64,0.3)',
+      }
+    case 'gift':
+      return {
+        label: `기프트 x${c ?? 1}`,
+        color: '#b090d0',
+        bg: 'rgba(176,144,208,0.1)',
+        border: 'rgba(176,144,208,0.3)',
+      }
+    case 'gift_battle':
+      return {
+        label: '전투 승리 시 기프트',
+        color: '#b090d0',
+        bg: 'rgba(176,144,208,0.08)',
+        border: 'rgba(176,144,208,0.4)',
+      }
+    case 'battle':
+    case 'battle_abnormality':
+      return {
+        label: '환상체 전투',
+        color: '#e04040',
+        bg: 'rgba(224,64,64,0.1)',
+        border: 'rgba(224,64,64,0.35)',
+      }
+    case 'hp_loss':
+      return {
+        label: `체력 -${a ?? '?'}%`,
+        color: '#e04040',
+        bg: 'rgba(224,64,64,0.1)',
+        border: 'rgba(224,64,64,0.3)',
+      }
+    case 'hp_recover':
+    case 'hp_recover_ratio':
+      return {
+        label: `체력 +${a ?? '?'}%`,
+        color: '#40a060',
+        bg: 'rgba(64,160,96,0.1)',
+        border: 'rgba(64,160,96,0.3)',
+      }
+    case 'mp_loss':
+      return {
+        label: `정신력 -${a ?? '?'}`,
+        color: '#c04070',
+        bg: 'rgba(192,64,112,0.1)',
+        border: 'rgba(192,64,112,0.3)',
+      }
+    case 'mp_recover':
+      return {
+        label: `정신력 +${a ?? '?'}`,
+        color: '#4080c0',
+        bg: 'rgba(64,128,192,0.1)',
+        border: 'rgba(64,128,192,0.3)',
+      }
+    case 'hp_mp_recover':
+      return {
+        label: `체력/정신력 +${a ?? '?'}%`,
+        color: '#40a060',
+        bg: 'rgba(64,160,96,0.1)',
+        border: 'rgba(64,160,96,0.3)',
+      }
+    case 'hp_mp_loss':
+      return {
+        label: `체력/정신력 -${a ?? '?'}%`,
+        color: '#e04040',
+        bg: 'rgba(224,64,64,0.1)',
+        border: 'rgba(224,64,64,0.3)',
+      }
+    case 'nothing':
+      return {
+        label: '없음',
+        color: '#888',
+        bg: 'rgba(136,136,136,0.1)',
+        border: 'rgba(136,136,136,0.25)',
+      }
+    case 'level_up':
+      return {
+        label: '레벨 업',
+        color: '#c8900a',
+        bg: 'rgba(200,144,10,0.12)',
+        border: 'rgba(200,144,10,0.3)',
+      }
+    case 'get_character':
+      return {
+        label: '수감자 영입',
+        color: '#c8900a',
+        bg: 'rgba(200,144,10,0.12)',
+        border: 'rgba(200,144,10,0.3)',
+      }
+    default:
+      return {
+        label: effect.type,
+        color: '#888',
+        bg: 'rgba(136,136,136,0.1)',
+        border: 'rgba(136,136,136,0.25)',
+      }
+  }
+}
+
+function SmallPill({
+  label,
+  color,
+  bg,
+  border,
+}: {
+  label: string
+  color: string
+  bg: string
+  border: string
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '0.125rem 0.5rem',
+        borderRadius: '9999px',
+        fontSize: '0.625rem',
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 600,
+        color,
+        background: bg,
+        border: `1px solid ${border}`,
+        whiteSpace: 'nowrap',
+        lineHeight: 1.6,
+      }}
+    >
+      {label}
+    </span>
+  )
+}
+
+function RewardBadges({ rewards }: { rewards: EventRewardBranch[] }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.3125rem',
+        marginTop: '0.5rem',
+      }}
+    >
+      {rewards.map((branch, bi) => {
+        const prob = branch.probability
+        const isFullProb = prob === 1 || prob === '1' || prob === 1.0
+        const probNum = typeof prob === 'number' ? prob : null
+
+        return (
+          <div
+            key={bi}
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.25rem',
+            }}
+          >
+            {/* Probability badge — only when not 100% */}
+            {!isFullProb && (
+              <SmallPill
+                label={
+                  probNum !== null
+                    ? `${Math.round(probNum * 100)}%`
+                    : String(prob)
+                }
+                color={probNum !== null ? '#e8b030' : '#888'}
+                bg={probNum !== null ? 'rgba(232,176,48,0.1)' : 'rgba(136,136,136,0.1)'}
+                border={probNum !== null ? 'rgba(232,176,48,0.3)' : 'rgba(136,136,136,0.25)'}
+              />
+            )}
+
+            {/* Effect badges */}
+            {branch.effects.map((eff, ei) => {
+              const spec = getEffectSpec(eff)
+              return (
+                <SmallPill
+                  key={ei}
+                  label={spec.label}
+                  color={spec.color}
+                  bg={spec.bg}
+                  border={spec.border}
+                />
+              )
+            })}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -327,7 +549,7 @@ function OptionCard({
   onSelectGift,
 }: {
   event: MirrorDungeonEvent
-  opt: { message: string; messageDesc?: string; result?: string[] }
+  opt: EventOption
   index: number
   children: MirrorDungeonEvent[]
   giftByGameId: Map<number, EgoGift>
@@ -393,6 +615,11 @@ function OptionCard({
             >
               {colorizeEventText(opt.messageDesc)}
             </span>
+          )}
+
+          {/* Reward badges */}
+          {opt.rewards && opt.rewards.length > 0 && (
+            <RewardBadges rewards={opt.rewards} />
           )}
 
           {/* Result narrative */}
