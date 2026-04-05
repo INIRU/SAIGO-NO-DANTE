@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Eye, EyeOff } from 'lucide-react'
 import ThemePackCard from '@/components/mirror-dungeon/ThemePackCard'
 import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 
@@ -35,12 +35,23 @@ export default function ThemeTab({
   onThemeClick,
 }: ThemeTabProps) {
   const [searchFocused, setSearchFocused] = useState(false)
+  const [showHidden, setShowHidden] = useState(false)
+
+  // Separate hidden themes from normal themes
+  const normalThemes = useMemo(
+    () => themes.filter(t => !t.is_hidden),
+    [themes]
+  )
+  const hiddenThemes = useMemo(
+    () => themes.filter(t => t.is_hidden === true),
+    [themes]
+  )
 
   const themeSearchSuggestions = useMemo(() => {
     if (!themeSearch.trim() || themeSearch.trim().length < 1) return []
     const q = themeSearch.trim().toLowerCase()
     const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
-    for (const t of themes) {
+    for (const t of normalThemes) {
       if (t.name.toLowerCase().includes(q)) {
         const diff = t.difficulty === 'hard' ? ' [하드]' : t.difficulty === 'extreme' ? ' [익스트림]' : ''
         suggestions.push({ type: 'theme', label: t.name, sub: diff })
@@ -52,7 +63,7 @@ export default function ThemeTab({
       for (const g of gifts) {
         if (g.name.toLowerCase().includes(q) && !seen.has(g.name)) {
           seen.add(g.name)
-          const belongThemes = themes.filter(t => g.game_id && t.ego_gift_ids.includes(g.game_id))
+          const belongThemes = normalThemes.filter(t => g.game_id && t.ego_gift_ids.includes(g.game_id))
           if (belongThemes.length > 0) {
             suggestions.push({ type: 'gift', label: g.name, sub: `${belongThemes.length}개 테마팩` })
           }
@@ -61,10 +72,10 @@ export default function ThemeTab({
       }
     }
     return suggestions
-  }, [themeSearch, themes, gifts])
+  }, [themeSearch, normalThemes, gifts])
 
   const filteredThemes = useMemo(() => {
-    let result = themes
+    let result = normalThemes
     if (themeDiffFilter !== '전체') {
       const diffMap: Record<string, string> = { '노말': 'normal', '하드': 'hard', '익스트림': 'extreme' }
       result = result.filter(t => t.difficulty === diffMap[themeDiffFilter])
@@ -80,7 +91,7 @@ export default function ThemeTab({
       })
     }
     return result
-  }, [themes, themeSearch, themeDiffFilter, giftByGameId])
+  }, [normalThemes, themeSearch, themeDiffFilter, giftByGameId])
 
   const floorGroupedThemes = useMemo(() => {
     const floorKeys: string[] =
@@ -101,7 +112,7 @@ export default function ThemeTab({
     for (const theme of filteredThemes) {
       if (!theme.floor_info) continue
       for (const key of floorKeys) {
-        const floors: number[] | string | undefined = theme.floor_info[key]
+        const floors = theme.floor_info[key]
         if (!floors) continue
         const offset = FLOOR_OFFSET[key] ?? 0
         if (Array.isArray(floors)) {
@@ -310,6 +321,124 @@ export default function ThemeTab({
           {filteredThemes.map(theme => (
             <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} />
           ))}
+        </div>
+      )}
+
+      {/* 히든 테마팩 섹션 */}
+      {hiddenThemes.length > 0 && (
+        <div className="mt-6">
+          {/* 섹션 구분선 */}
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              style={{
+                flex: 1,
+                height: '1px',
+                background: 'linear-gradient(to right, rgba(100,80,140,0.5), transparent)',
+              }}
+            />
+            <span
+              style={{
+                color: '#9070b0',
+                fontSize: '0.6875rem',
+                fontFamily: 'var(--font-heading)',
+                letterSpacing: '0.12em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              히든 테마팩
+            </span>
+            <div
+              style={{
+                flex: 1,
+                height: '1px',
+                background: 'linear-gradient(to left, rgba(100,80,140,0.5), transparent)',
+              }}
+            />
+          </div>
+
+          {/* 스포일러 토글 버튼 */}
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => setShowHidden(v => !v)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200"
+              style={{
+                background: showHidden ? 'rgba(144,112,176,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${showHidden ? 'rgba(144,112,176,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                color: showHidden ? '#b090d0' : '#666',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontFamily: 'var(--font-heading)',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {showHidden ? (
+                <EyeOff size={13} />
+              ) : (
+                <Eye size={13} />
+              )}
+              {showHidden ? '스포일러 숨기기' : '스포일러 보기'}
+            </button>
+          </div>
+
+          {/* 히든 카드 영역 */}
+          {showHidden ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+              {hiddenThemes.map(theme => (
+                <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} />
+              ))}
+            </div>
+          ) : (
+            /* 미공개 플레이스홀더 카드 */
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+              <div
+                className="flex flex-col items-center justify-center rounded-lg"
+                style={{
+                  width: '8rem',
+                  minHeight: '12rem',
+                  background: 'linear-gradient(135deg, rgba(80,60,120,0.15) 0%, rgba(40,30,60,0.3) 100%)',
+                  border: '1px solid rgba(144,112,176,0.2)',
+                  padding: '1.25rem 0.75rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '1.5rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'rgba(144,112,176,0.5)',
+                    letterSpacing: '0.2em',
+                    marginBottom: '0.75rem',
+                  }}
+                >
+                  ???
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(144,112,176,0.6)',
+                    fontSize: '0.625rem',
+                    fontFamily: 'var(--font-heading)',
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                    letterSpacing: '0.03em',
+                  }}
+                >
+                  히든 테마팩이
+                  <br />
+                  존재합니다
+                </div>
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    color: 'rgba(144,112,176,0.35)',
+                    fontSize: '0.5625rem',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {hiddenThemes.length}종
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
