@@ -12,7 +12,7 @@ import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-const JSON_DIR = '/Users/iniru/Downloads/Json-2'
+const JSON_DIR = '/Users/iniru/Documents/Limbus/assets/data/Json-2'
 const dryRun = !process.argv.includes('--fix')
 
 const sb = createClient(

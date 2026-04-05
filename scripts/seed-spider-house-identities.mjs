@@ -12,9 +12,9 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-const TEXT_DIR  = '/Users/iniru/Downloads/Json (Text)'
-const KR_DIR    = '/Users/iniru/Downloads/kr'
-const JSON2_KR  = '/Users/iniru/Downloads/Json-2/KR'
+const TEXT_DIR  = '/Users/iniru/Documents/Limbus/assets/data/Json (Text)'
+const KR_DIR    = '/Users/iniru/Documents/Limbus/assets/data/kr'
+const JSON2_KR  = '/Users/iniru/Documents/Limbus/assets/data/Json-2/KR'
 const dryRun    = !process.argv.includes('--fix')
 
 const sb = createClient(

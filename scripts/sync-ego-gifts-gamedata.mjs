@@ -9,7 +9,7 @@
  * Options:
  *   --dry-run       비교만 (기본값)
  *   --fix           DB 자동 수정
- *   --data-dir PATH 게임 JSON 디렉토리 (기본: ~/Downloads/Json)
+ *   --data-dir PATH 게임 JSON 디렉토리 (기본: ~/Documents/Limbus/assets/data/Json-2)
  *   --verbose       상세 로그
  */
 
@@ -23,7 +23,7 @@ const args = process.argv.slice(2)
 const FIX = args.includes('--fix')
 const VERBOSE = args.includes('--verbose')
 const dataDirArg = args.find((_, i, a) => a[i - 1] === '--data-dir')
-const DATA_DIR = resolve(dataDirArg || join(homedir(), 'Downloads/Json'))
+const DATA_DIR = resolve(dataDirArg || join(homedir(), 'Documents/Limbus/assets/data/Json-2'))
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

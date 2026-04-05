@@ -47,7 +47,7 @@ const verbose = args.includes('--verbose')
 const syncSanityOnly = args.includes('--sync-sanity')
 
 // ── JSON 데이터 경로 ──
-const JSON_DIR = resolve(process.env.HOME, 'Downloads/JSON')
+const JSON_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
 const UPTIE_LEVELS = [3, 4]
 const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 
@@ -150,7 +150,7 @@ function loadKrTagMap() {
     }
   }
   // kr/ 폴더 (신규 패치 KR 데이터)도 로드
-  const newKrDir2 = resolve(process.env.HOME, 'Downloads/kr')
+  const newKrDir2 = resolve(process.env.HOME, 'Documents/Limbus/assets/data/kr')
   if (existsSync(newKrDir2)) {
     for (const f of readdirSync(newKrDir2).filter(f => /^KR_(BattleKeywords|Bufs|BuffAbilities)/i.test(f))) {
       try {
@@ -885,7 +885,7 @@ async function main() {
     .map(f => `KR/${f}`)
   const krPassiveEntries = collectJsonEntries(krPassiveFiles, 'dataList')
   // kr/ 폴더 (신규 패치 KR 데이터)도 로드
-  const newKrDir = resolve(process.env.HOME, 'Downloads/kr')
+  const newKrDir = resolve(process.env.HOME, 'Documents/Limbus/assets/data/kr')
   if (existsSync(newKrDir)) {
     for (const f of readdirSync(newKrDir).filter(f => /^KR_Passives/i.test(f) && !/_Abnormality/i.test(f) && !/_Enemy/i.test(f) && !/_Assist/i.test(f))) {
       try {
@@ -903,7 +903,7 @@ async function main() {
   const passiveFiles = ['passive.json', 'passive-a1c8p1.json', 'passive-a1c8p2.json', 'passive-a1c9p1.json', 'passive-a1c9p2.json', 'passive-extra.json']
   const passiveEntries = collectJsonEntries(passiveFiles)
   // Json (Text) 폴더의 패시브 데이터도 로드 (신규 패치 데이터)
-  const txtDir = resolve(process.env.HOME, 'Downloads/Json (Text)')
+  const txtDir = resolve(process.env.HOME, 'Documents/Limbus/assets/data/Json (Text)')
   for (const txtFile of ['passive.txt', 'passive_check4.txt']) {
     const txtPath = resolve(txtDir, txtFile)
     if (existsSync(txtPath)) {
@@ -1111,7 +1111,7 @@ async function main() {
 
   // EGO 패시브 KR 텍스트 로드
   const krEgoPassiveMap = new Map()
-  const krPassiveEgoDir = resolve(process.env.HOME, 'Downloads/kr')
+  const krPassiveEgoDir = resolve(process.env.HOME, 'Documents/Limbus/assets/data/kr')
   if (existsSync(krPassiveEgoDir)) {
     for (const f of readdirSync(krPassiveEgoDir).filter(f => f.startsWith('KR_Passive_Ego'))) {
       try {

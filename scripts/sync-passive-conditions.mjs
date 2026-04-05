@@ -10,7 +10,7 @@ import fs from 'fs'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-const JSON_DIR = path.join(process.env.HOME, 'Downloads/JSON')
+const JSON_DIR = path.join(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
 const args = process.argv.slice(2)
 const dryRun = !args.includes('--fix')
 
