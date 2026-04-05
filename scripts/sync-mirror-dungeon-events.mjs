@@ -169,6 +169,17 @@ async function main() {
       }
     }
   }
+  // 히든 테마팩 (선택적)
+  try {
+    const hiddenData = loadJson(join(DATA_DIR, 'mirrordungeon-theme-floor-hidden.json'))
+    for (const item of hiddenData.list) {
+      const events = item.mapGenOption?.eventPool || []
+      for (const eid of events) {
+        if (!eventToThemes.has(eid)) eventToThemes.set(eid, new Set())
+        eventToThemes.get(eid).add(item.id)
+      }
+    }
+  } catch {}
 
   // 테마팩 전체 ID를 tier별로 수집
   const themeIdsByTier = {}
@@ -178,6 +189,13 @@ async function main() {
     themeIdsByTier[i] = data.list.map(item => item.id)
     allThemeIds.push(...themeIdsByTier[i])
   }
+  // 히든 테마팩 ID도 추가
+  try {
+    const hiddenData = loadJson(join(DATA_DIR, 'mirrordungeon-theme-floor-hidden.json'))
+    const hiddenIds = hiddenData.list.map(item => item.id)
+    themeIdsByTier['hidden'] = hiddenIds
+    allThemeIds.push(...hiddenIds)
+  } catch {}
 
   // 1차: generatenodepool 파일에서 이벤트 → dungeonId 자동 매핑
   const eventToDungeonIds = new Map()

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { X } from 'lucide-react'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
-import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
+import type { EgoGift, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 
 interface ThemeModalProps {
   theme: EgoGiftTheme
@@ -12,6 +12,7 @@ interface ThemeModalProps {
   getGiftKeywordIcon: (keyword: string) => string | null
   onClose: () => void
   onSelectGift: (gift: EgoGift) => void
+  events?: MirrorDungeonEvent[]
 }
 
 export default function ThemeModal({
@@ -20,9 +21,19 @@ export default function ThemeModal({
   getGiftKeywordIcon,
   onClose,
   onSelectGift,
+  events,
 }: ThemeModalProps) {
+  const isHidden = theme.is_hidden === true
+  const hiddenRate = isHidden && typeof theme.hidden_rate === 'number'
+    ? theme.hidden_rate * 100
+    : null
+
   const specificIds = new Set(theme.specific_ego_gift_ids)
-  const exclusiveGifts = themeGifts.filter(g => g.game_id && specificIds.has(g.game_id))
+  const fixedRewardIds = new Set(theme.fixed_reward_gift_ids ?? [])
+  const fixedRewardGifts = isHidden && fixedRewardIds.size > 0
+    ? themeGifts.filter(g => g.game_id != null && fixedRewardIds.has(g.game_id))
+    : []
+  const exclusiveGifts = themeGifts.filter(g => g.game_id != null && specificIds.has(g.game_id))
   const sharedGifts = themeGifts.filter(g => !g.game_id || !specificIds.has(g.game_id))
 
   const byKeyword: Record<string, EgoGift[]> = {}
@@ -30,6 +41,10 @@ export default function ThemeModal({
     if (!byKeyword[g.keyword]) byKeyword[g.keyword] = []
     byKeyword[g.keyword].push(g)
   }
+
+  const themeEvents = (events ?? []).filter(ev =>
+    !ev.parent_id && ev.theme_ids?.includes(theme.id) && (ev.theme_ids?.length ?? 0) <= 5
+  )
 
   return (
     <div
@@ -94,6 +109,22 @@ export default function ThemeModal({
             />
           )}
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
+            {isHidden && (
+              <div className="mb-1.5">
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold"
+                  style={{
+                    background: 'rgba(144,112,176,0.2)',
+                    border: '1px solid rgba(144,112,176,0.4)',
+                    color: '#b090d0',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  히든 테마팩
+                </span>
+              </div>
+            )}
             <h3
               className="font-serif text-xl md:text-2xl font-bold"
               style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
@@ -101,7 +132,7 @@ export default function ThemeModal({
               {theme.name}
             </h3>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {(() => {
+              {!isHidden && (() => {
                 const diff = theme.difficulty || 'normal'
                 const label = diff === 'extreme' ? '익스트림' : diff === 'hard' ? '하드' : '노말'
                 const color = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : '#999'
@@ -120,6 +151,18 @@ export default function ThemeModal({
                   </span>
                 )
               })()}
+              {isHidden && hiddenRate !== null && (
+                <span
+                  className="px-2 py-0.5 rounded text-[0.6875rem]"
+                  style={{
+                    background: 'rgba(144,112,176,0.12)',
+                    color: '#b090d0',
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                >
+                  출현 확률: {hiddenRate.toFixed(2)}%
+                </span>
+              )}
               <span style={{ color: '#888', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
                 {themeGifts.length}종
               </span>
@@ -223,19 +266,104 @@ export default function ThemeModal({
             }}
           />
 
+          {/* 고정 보상 (히든 테마팩 전용) */}
+          {isHidden && fixedRewardGifts.length > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span style={{ color: '#b090d0', fontSize: '0.875rem' }}>◆</span>
+                <span
+                  className="font-serif font-medium"
+                  style={{ color: '#b090d0', fontSize: '0.875rem' }}
+                >
+                  고정 보상
+                </span>
+                <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                  ({fixedRewardGifts.length})
+                </span>
+              </div>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
+                {fixedRewardGifts.map(g => (
+                  <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
+                ))}
+              </div>
+              <div
+                className="mt-4"
+                style={{ height: '1px', background: 'linear-gradient(90deg, rgba(144,112,176,0.3), transparent)' }}
+              />
+            </div>
+          )}
+
+          {/* 등장 이벤트 */}
+          {themeEvents.length > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>◇</span>
+                <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
+                  등장 이벤트
+                </span>
+                <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                  ({themeEvents.length})
+                </span>
+              </div>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(8rem, 1fr))' }}>
+                {themeEvents.map(ev => (
+                  <div
+                    key={ev.id}
+                    className="overflow-hidden rounded-lg"
+                    style={{
+                      background: '#1a1714',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    {ev.image_url && (
+                      <div className="relative w-full aspect-square overflow-hidden">
+                        <ImageWithFallback
+                          src={ev.image_url}
+                          alt={ev.name ?? ''}
+                          fill
+                          fallbackType="default"
+                          sizes="8rem"
+                          className="object-cover"
+                          style={{ opacity: 0.8 }}
+                        />
+                      </div>
+                    )}
+                    <div className="px-2 py-1.5">
+                      <div
+                        className="font-serif font-bold leading-tight"
+                        style={{ color: '#ddd', fontSize: '0.6875rem' }}
+                      >
+                        {ev.name}
+                      </div>
+                      {ev.options && (
+                        <div style={{ color: '#666', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.125rem' }}>
+                          {ev.options.length}개 선택지
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="mt-4"
+                style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.2), transparent)' }}
+              />
+            </div>
+          )}
+
           {/* 전용 기프트 */}
           {exclusiveGifts.length > 0 && (
             <div className="mb-5">
               <div className="flex items-center gap-1.5 mb-2.5">
                 <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>★</span>
                 <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-                  전용 기프트
+                  전용 E.G.O 기프트
                 </span>
                 <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                   ({exclusiveGifts.length})
                 </span>
               </div>
-              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
                 {exclusiveGifts.map(g => (
                   <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
                 ))}
@@ -270,7 +398,7 @@ export default function ThemeModal({
                   </span>
                   <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({kwGifts.length})</span>
                 </div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(6.5rem, 1fr))' }}>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
                   {kwGifts.map(g => (
                     <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
                   ))}

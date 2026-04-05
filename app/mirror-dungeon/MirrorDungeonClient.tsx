@@ -401,7 +401,8 @@ export default function MirrorDungeonClient({
       {expandedThemeId !== null && (() => {
         const theme = themes.find(t => t.id === expandedThemeId)
         if (!theme) return null
-        const themeGifts = theme.ego_gift_ids.map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
+        const allGiftIds = new Set([...theme.ego_gift_ids, ...theme.specific_ego_gift_ids, ...(theme.fixed_reward_gift_ids ?? [])])
+        const themeGifts = [...allGiftIds].map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
         return (
           <ThemeModal
             theme={theme}
@@ -409,6 +410,7 @@ export default function MirrorDungeonClient({
             getGiftKeywordIcon={getGiftKeywordIcon}
             onClose={() => setExpandedThemeId(null)}
             onSelectGift={handleThemeModalSelectGift}
+            events={events}
           />
         )
       })()}
