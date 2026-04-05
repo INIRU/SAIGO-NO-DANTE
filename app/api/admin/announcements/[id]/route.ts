@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAuditLog } from '@/lib/audit'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { validateBody, updateAnnouncementSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,13 +19,15 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const body = await request.json()
+    const raw = await request.json()
+    const parsed = validateBody(updateAnnouncementSchema, raw)
+    if (!parsed.success) return parsed.response
 
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('announcements')
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...parsed.data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single()
@@ -33,7 +36,7 @@ export async function PATCH(
 
     const adminClient = createAdminClient()
     const userId = await findOrCreateSupabaseUser(adminClient, session.user!.email!, session.user!.name, session.user!.image)
-    writeAuditLog({ actorId: userId, action: 'announcement_update', targetType: 'announcement', targetId: id, details: { title: body.title } })
+    writeAuditLog({ actorId: userId, action: 'announcement_update', targetType: 'announcement', targetId: id, details: { title: parsed.data.title } })
 
     return NextResponse.json(data)
   } catch (err: unknown) {

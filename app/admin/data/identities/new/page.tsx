@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Save, ArrowLeft } from 'lucide-react'
 import {
   AdminInput, AdminSelect, AdminTextarea,
@@ -10,6 +12,7 @@ import {
   AdminFormSection,
 } from '@/components/admin'
 import { showSuccess, showError } from '@/lib/toast'
+import { createIdentitySchema } from '@/lib/schemas/admin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +21,8 @@ interface SinnerOption {
   name_kr: string
 }
 
-interface IdentityForm {
+// All fields kept as strings in the form — Zod coerces numbers on submit
+interface IdentityFormValues {
   sinner_id: string
   name: string
   name_kr: string
@@ -29,7 +33,7 @@ interface IdentityForm {
   speed_max: string
   def_level: string
   sin_affinity: string
-  keywords: string
+  keywords: string        // comma-separated; split to array before sending
   game_id: string
   folder_name: string
   affiliation: string
@@ -46,40 +50,43 @@ interface IdentityForm {
 const SIN_OPTIONS = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
 const RES_OPTIONS = ['내성', '취약', '보통']
 
-// ─── Blank form ───────────────────────────────────────────────────────────────
-
-const BLANK_FORM: IdentityForm = {
-  sinner_id: '',
-  name: '',
-  name_kr: '',
-  rarity: '',
-  tier: '',
-  hp: '',
-  speed_min: '',
-  speed_max: '',
-  def_level: '',
-  sin_affinity: '',
-  keywords: '',
-  game_id: '',
-  folder_name: '',
-  affiliation: '',
-  quote: '',
-  slash_res: '',
-  pierce_res: '',
-  blunt_res: '',
-  release_date: '',
-  acquisition: '',
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function NewIdentityPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [sinners, setSinners] = useState<SinnerOption[]>([])
-  const [form, setForm] = useState<IdentityForm>({ ...BLANK_FORM, sinner_id: searchParams.get('sinner') ?? '' })
-  const [saving, setSaving] = useState(false)
   const [loadingSinners, setLoadingSinners] = useState(true)
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<IdentityFormValues>({
+    resolver: zodResolver(createIdentitySchema) as any,
+    defaultValues: {
+      sinner_id: searchParams.get('sinner') ?? '',
+      name: '',
+      name_kr: '',
+      rarity: '',
+      tier: '',
+      hp: '',
+      speed_min: '',
+      speed_max: '',
+      def_level: '',
+      sin_affinity: '',
+      keywords: '',
+      game_id: '',
+      folder_name: '',
+      affiliation: '',
+      quote: '',
+      slash_res: '',
+      pierce_res: '',
+      blunt_res: '',
+      release_date: '',
+      acquisition: '',
+    },
+  })
 
   useEffect(() => {
     fetch('/api/admin/data')
@@ -88,42 +95,37 @@ export default function NewIdentityPage() {
       .finally(() => setLoadingSinners(false))
   }, [])
 
-  const setF = (k: keyof IdentityForm, v: string) => setForm(prev => ({ ...prev, [k]: v }))
-
-  const numOrNull = (v: string) => v.trim() === '' ? null : Number(v)
   const strOrNull = (v: string) => v.trim() === '' ? null : v.trim()
+  const numOrNull = (v: string) => v.trim() === '' ? null : Number(v)
 
-  const handleCreate = async () => {
-    if (!form.sinner_id || !form.name || !form.rarity) {
-      showError('수감자, 이름, 등급은 필수입니다.')
-      return
-    }
-    setSaving(true)
+  const onSubmit = async (values: IdentityFormValues) => {
     try {
       const res = await fetch('/api/admin/identities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sinner_id: form.sinner_id,
-          name: form.name.trim(),
-          name_kr: strOrNull(form.name_kr),
-          rarity: Number(form.rarity),
-          tier: numOrNull(form.tier),
-          hp: numOrNull(form.hp),
-          speed_min: numOrNull(form.speed_min),
-          speed_max: numOrNull(form.speed_max),
-          def_level: numOrNull(form.def_level),
-          sin_affinity: strOrNull(form.sin_affinity),
-          keywords: strOrNull(form.keywords),
-          game_id: strOrNull(form.game_id),
-          folder_name: strOrNull(form.folder_name),
-          affiliation: strOrNull(form.affiliation),
-          quote: strOrNull(form.quote),
-          slash_res: strOrNull(form.slash_res),
-          pierce_res: strOrNull(form.pierce_res),
-          blunt_res: strOrNull(form.blunt_res),
-          release_date: strOrNull(form.release_date),
-          acquisition: strOrNull(form.acquisition),
+          sinner_id: values.sinner_id,
+          name: values.name.trim(),
+          name_kr: strOrNull(values.name_kr),
+          rarity: values.rarity,
+          tier: numOrNull(values.tier),
+          hp: numOrNull(values.hp),
+          speed_min: numOrNull(values.speed_min),
+          speed_max: numOrNull(values.speed_max),
+          def_level: numOrNull(values.def_level),
+          sin_affinity: strOrNull(values.sin_affinity),
+          keywords: values.keywords.trim()
+            ? values.keywords.split(',').map(k => k.trim()).filter(Boolean)
+            : null,
+          game_id: numOrNull(values.game_id),
+          folder_name: strOrNull(values.folder_name),
+          affiliation: strOrNull(values.affiliation),
+          quote: strOrNull(values.quote),
+          slash_res: strOrNull(values.slash_res),
+          pierce_res: strOrNull(values.pierce_res),
+          blunt_res: strOrNull(values.blunt_res),
+          release_date: strOrNull(values.release_date),
+          acquisition: strOrNull(values.acquisition),
         }),
       })
       if (!res.ok) {
@@ -131,12 +133,11 @@ export default function NewIdentityPage() {
         showError(d.error ?? '생성 실패')
       } else {
         const newIdentity = await res.json()
+        showSuccess('인격이 생성되었습니다.')
         router.push(`/admin/data/identities/${newIdentity.id}`)
       }
     } catch {
       showError('네트워크 오류')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -158,7 +159,7 @@ export default function NewIdentityPage() {
       <AdminCard
         title="기본 정보"
         headerRight={
-          <AdminButton onClick={handleCreate} loading={saving}>
+          <AdminButton onClick={handleSubmit(onSubmit)} loading={isSubmitting}>
             <Save size={13} /> 인격 생성
           </AdminButton>
         }
@@ -170,137 +171,323 @@ export default function NewIdentityPage() {
         )}
 
         <AdminFormSection columns={2}>
-          <AdminSelect
-            label="수감자"
-            required
-            value={form.sinner_id}
-            onChange={v => setF('sinner_id', v)}
-            options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
-            placeholder="선택"
-          />
-          <AdminSelect
-            label="등급"
-            required
-            value={form.rarity}
-            onChange={v => setF('rarity', v)}
-            options={[
-              { value: '1', label: '1성' },
-              { value: '2', label: '2성' },
-              { value: '3', label: '3성' },
-            ]}
-            placeholder="선택"
-          />
-          <AdminInput
-            label="이름 (영문)"
-            required
-            value={form.name}
-            onChange={v => setF('name', v)}
-            placeholder="예: LCB Sinner"
-          />
-          <AdminInput
-            label="이름 (한글)"
-            value={form.name_kr}
-            onChange={v => setF('name_kr', v)}
-            placeholder="예: LCB 수감자"
-          />
-          <AdminInput
-            label="동기화 단계 (1–4)"
-            type="number"
-            min={1}
-            max={4}
-            value={form.tier}
-            onChange={v => setF('tier', v)}
-          />
-          <AdminInput
-            label="HP"
-            type="number"
-            value={form.hp}
-            onChange={v => setF('hp', v)}
-          />
-          <AdminInput
-            label="속도 최소"
-            type="number"
-            value={form.speed_min}
-            onChange={v => setF('speed_min', v)}
-          />
-          <AdminInput
-            label="속도 최대"
-            type="number"
-            value={form.speed_max}
-            onChange={v => setF('speed_max', v)}
-          />
-          <AdminInput
-            label="방어 레벨"
-            type="number"
-            value={form.def_level}
-            onChange={v => setF('def_level', v)}
-          />
-          <AdminSelect
-            label="죄악 속성"
-            value={form.sin_affinity}
-            onChange={v => setF('sin_affinity', v)}
-            options={SIN_OPTIONS.map(s => ({ value: s, label: s }))}
-            placeholder="선택"
-          />
-          <AdminSelect
-            label="참격 내성"
-            value={form.slash_res}
-            onChange={v => setF('slash_res', v)}
-            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
-            placeholder="선택"
-          />
-          <AdminSelect
-            label="관통 내성"
-            value={form.pierce_res}
-            onChange={v => setF('pierce_res', v)}
-            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
-            placeholder="선택"
-          />
-          <AdminSelect
-            label="타격 내성"
-            value={form.blunt_res}
-            onChange={v => setF('blunt_res', v)}
-            options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
-            placeholder="선택"
-          />
-          <AdminInput
-            label="게임 ID"
-            value={form.game_id}
-            onChange={v => setF('game_id', v)}
-          />
-          <AdminInput
-            label="폴더명"
-            value={form.folder_name}
-            onChange={v => setF('folder_name', v)}
-          />
-          <AdminInput
-            label="소속"
-            value={form.affiliation}
-            onChange={v => setF('affiliation', v)}
-          />
-          <AdminInput
-            label="키워드 (쉼표 구분)"
-            value={form.keywords}
-            onChange={v => setF('keywords', v)}
-            placeholder="예: 검계, 출혈"
-          />
-          <AdminInput
-            label="출시일"
-            value={form.release_date}
-            onChange={v => setF('release_date', v)}
-            placeholder="예: 2023-02-27"
-          />
-          <AdminInput
-            label="획득 방법"
-            value={form.acquisition}
-            onChange={v => setF('acquisition', v)}
-          />
+          <div>
+            <Controller
+              name="sinner_id"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="수감자"
+                  required
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={sinners.map(s => ({ value: s.id, label: s.name_kr }))}
+                  placeholder="선택"
+                />
+              )}
+            />
+            {errors.sinner_id && (
+              <p style={{ color: '#cc4444', fontSize: '0.6875rem', marginTop: '4px' }}>{errors.sinner_id.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Controller
+              name="rarity"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="등급"
+                  required
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={[
+                    { value: '1', label: '1성' },
+                    { value: '2', label: '2성' },
+                    { value: '3', label: '3성' },
+                  ]}
+                  placeholder="선택"
+                />
+              )}
+            />
+            {errors.rarity && (
+              <p style={{ color: '#cc4444', fontSize: '0.6875rem', marginTop: '4px' }}>{errors.rarity.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="이름 (영문)"
+                  required
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="예: LCB Sinner"
+                />
+              )}
+            />
+            {errors.name && (
+              <p style={{ color: '#cc4444', fontSize: '0.6875rem', marginTop: '4px' }}>{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Controller
+              name="name_kr"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="이름 (한글)"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="예: LCB 수감자"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="tier"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="동기화 단계 (1–4)"
+                  type="number"
+                  min={1}
+                  max={4}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="hp"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="HP"
+                  type="number"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="speed_min"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="속도 최소"
+                  type="number"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="speed_max"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="속도 최대"
+                  type="number"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="def_level"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="방어 레벨"
+                  type="number"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="sin_affinity"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="죄악 속성"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={SIN_OPTIONS.map(s => ({ value: s, label: s }))}
+                  placeholder="선택"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="slash_res"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="참격 내성"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+                  placeholder="선택"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="pierce_res"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="관통 내성"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+                  placeholder="선택"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="blunt_res"
+              control={control}
+              render={({ field }) => (
+                <AdminSelect
+                  label="타격 내성"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={RES_OPTIONS.map(o => ({ value: o, label: o }))}
+                  placeholder="선택"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="game_id"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="게임 ID"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="folder_name"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="폴더명"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="affiliation"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="소속"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="keywords"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="키워드 (쉼표 구분)"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="예: 검계, 출혈"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="release_date"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="출시일"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="예: 2023-02-27"
+                />
+              )}
+            />
+          </div>
+
+          <div>
+            <Controller
+              name="acquisition"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="획득 방법"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+
           <div style={{ gridColumn: '1 / -1' }}>
-            <AdminTextarea
-              label="대사"
-              value={form.quote}
-              onChange={v => setF('quote', v)}
-              rows={3}
+            <Controller
+              name="quote"
+              control={control}
+              render={({ field }) => (
+                <AdminTextarea
+                  label="대사"
+                  value={field.value}
+                  onChange={field.onChange}
+                  rows={3}
+                />
+              )}
             />
           </div>
         </AdminFormSection>

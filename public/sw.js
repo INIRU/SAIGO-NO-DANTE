@@ -1,45 +1,197 @@
-const CACHE_NAME = 'saigo-v1'
-const PRECACHE = [
+// ============================================================
+// SAIGO NO DANTE — Service Worker
+// Cache version: bump CACHE_VERSION on each deploy to bust stale caches.
+// ============================================================
+
+const CACHE_VERSION = 'v2'
+const CACHE_STATIC   = `saigo-static-${CACHE_VERSION}`   // Next.js chunks, fonts
+const CACHE_IMAGES   = `saigo-images-${CACHE_VERSION}`   // Supabase Storage + /images/*
+const CACHE_PAGES    = `saigo-pages-${CACHE_VERSION}`    // HTML pages (offline fallback)
+
+// Assets to precache on install (shell only — no game images)
+const PRECACHE_URLS = [
   '/',
+  '/offline',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ]
 
+// Cache size limits
+const MAX_IMAGE_ENTRIES = 500
+const MAX_PAGE_ENTRIES  = 50
+const MAX_STATIC_ENTRIES = 300
+
+// Supabase Storage origin for image cache
+const SUPABASE_ORIGIN = 'https://lpgqcleszdlldneiwgep.supabase.co'
+
+// ============================================================
+// INSTALL — precache shell assets
+// ============================================================
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE))
+    caches.open(CACHE_STATIC).then((cache) =>
+      // addAll throws if any URL fails; use individual puts to be resilient
+      Promise.allSettled(
+        PRECACHE_URLS.map((url) =>
+          fetch(url).then((res) => {
+            if (res.ok) cache.put(url, res)
+          })
+        )
+      )
+    )
   )
+  // Activate immediately without waiting for old SW clients to close
   self.skipWaiting()
 })
 
+// ============================================================
+// ACTIVATE — delete caches from previous versions
+// ============================================================
 self.addEventListener('activate', (event) => {
+  const keepCaches = new Set([CACHE_STATIC, CACHE_IMAGES, CACHE_PAGES])
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k.startsWith('saigo-') && !keepCaches.has(k))
+          .map((k) => caches.delete(k))
+      )
     )
   )
+  // Take control of all existing clients immediately
   self.clients.claim()
 })
 
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-  // API/auth 요청은 캐시하지 않음
-  if (request.url.includes('/api/') || request.url.includes('/auth/')) return
-  // 외부 도메인(imgproxy 등)은 브라우저 캐시에 맡김
-  if (!request.url.startsWith(self.location.origin)) return
+// ============================================================
+// Helpers
+// ============================================================
 
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // 성공 응답만 캐시
-        if (response.ok && request.method === 'GET') {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-        }
-        return response
-      })
-      .catch(() =>
-        caches.match(request).then((cached) => cached || new Response('Offline', { status: 503 }))
-      )
-  )
+/**
+ * Trim a cache to at most `maxEntries` entries (FIFO — oldest deleted first).
+ */
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName)
+  const keys = await cache.keys()
+  if (keys.length > maxEntries) {
+    const toDelete = keys.slice(0, keys.length - maxEntries)
+    await Promise.all(toDelete.map((k) => cache.delete(k)))
+  }
+}
+
+/**
+ * Classify a request into a caching strategy.
+ * Returns: 'skip' | 'network-first' | 'cache-first-static' | 'cache-first-image' | 'stale-while-revalidate'
+ */
+function classifyRequest(request) {
+  const url = new URL(request.url)
+  const { pathname, origin } = url
+
+  // Only handle GET — never cache mutations
+  if (request.method !== 'GET') return 'skip'
+
+  // Never cache API or auth routes
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) return 'skip'
+
+  // Never cache admin routes
+  if (pathname.startsWith('/admin')) return 'skip'
+
+  // Never cache monitoring/sentry tunnel
+  if (pathname.startsWith('/monitoring')) return 'skip'
+
+  // Supabase Storage images — cache-first
+  if (origin === SUPABASE_ORIGIN) return 'cache-first-image'
+
+  // Only handle same-origin requests from here on
+  if (origin !== self.location.origin) return 'skip'
+
+  // Next.js build chunks — long-lived hashed filenames, cache-first
+  if (pathname.startsWith('/_next/static/')) return 'cache-first-static'
+
+  // Next.js image optimization endpoint — cache-first (already has versioned URLs)
+  if (pathname.startsWith('/_next/image')) return 'cache-first-image'
+
+  // Font files under /fonts/
+  if (pathname.startsWith('/fonts/')) return 'cache-first-static'
+
+  // Static icon/image assets in public/
+  if (pathname.startsWith('/icons/') || pathname.startsWith('/images/')) return 'cache-first-image'
+
+  // HTML pages — network-first with page cache fallback
+  const acceptsHtml = request.headers.get('accept')?.includes('text/html')
+  if (acceptsHtml || pathname === '/') return 'network-first'
+
+  return 'skip'
+}
+
+// ============================================================
+// Strategy implementations
+// ============================================================
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(CACHE_PAGES)
+      cache.put(request, response.clone())
+      trimCache(CACHE_PAGES, MAX_PAGE_ENTRIES)
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    // Return offline page for HTML navigation requests
+    const offlinePage = await caches.match('/offline')
+    return offlinePage || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
+  }
+}
+
+async function cacheFirstStatic(request) {
+  const cached = await caches.match(request)
+  if (cached) return cached
+
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(CACHE_STATIC)
+      cache.put(request, response.clone())
+      trimCache(CACHE_STATIC, MAX_STATIC_ENTRIES)
+    }
+    return response
+  } catch {
+    return new Response('Asset unavailable offline', { status: 503 })
+  }
+}
+
+async function cacheFirstImage(request) {
+  const cached = await caches.match(request)
+  if (cached) return cached
+
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(CACHE_IMAGES)
+      cache.put(request, response.clone())
+      trimCache(CACHE_IMAGES, MAX_IMAGE_ENTRIES)
+    }
+    return response
+  } catch {
+    return new Response('Image unavailable offline', { status: 503 })
+  }
+}
+
+// ============================================================
+// FETCH — route each request to the right strategy
+// ============================================================
+self.addEventListener('fetch', (event) => {
+  const strategy = classifyRequest(event.request)
+
+  if (strategy === 'skip') return
+
+  if (strategy === 'network-first') {
+    event.respondWith(networkFirst(event.request))
+  } else if (strategy === 'cache-first-static') {
+    event.respondWith(cacheFirstStatic(event.request))
+  } else if (strategy === 'cache-first-image') {
+    event.respondWith(cacheFirstImage(event.request))
+  }
 })

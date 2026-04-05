@@ -5,6 +5,28 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { useDebounce } from '@/hooks/useDebounce'
+
+// Korean consonant (초성) list for fuzzy search
+const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
+
+function getChosung(str: string): string {
+  return [...str].map(ch => {
+    const code = ch.charCodeAt(0) - 0xAC00
+    if (code < 0 || code > 11171) return ch
+    return CHOSUNG[Math.floor(code / 588)]
+  }).join('')
+}
+
+function fuzzyMatch(text: string, query: string): boolean {
+  // Exact substring match (case-sensitive)
+  if (text.includes(query)) return true
+  // Case-insensitive match
+  if (text.toLowerCase().includes(query.toLowerCase())) return true
+  // 초성 search: all chars in query are Korean consonants → match against extracted 초성
+  if (/^[ㄱ-ㅎ]+$/.test(query) && getChosung(text).includes(query)) return true
+  return false
+}
 
 const RARITY_ICONS: Record<number, string> = {
   1: `${STORAGE_BASE}/icons/Rarity/1star.webp`,
@@ -136,18 +158,18 @@ interface Props {
 export default function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [query, setQuery] = useState('')
+  const [rawQuery, setRawQuery] = useState('')
+  const query = useDebounce(rawQuery, 300)
   const [results, setResults] = useState<FlatItem[]>([])
   const [suggestions, setSuggestions] = useState<FlatItem[]>([])
   const [loading, setLoading] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
   // Focus input when opened
   useEffect(() => {
     if (open) {
-      setQuery('')
+      setRawQuery('')
       setResults([])
       setSuggestions([])
       setActiveIndex(0)
@@ -155,7 +177,7 @@ export default function SearchModal({ open, onClose }: Props) {
     }
   }, [open])
 
-  // Debounced search
+  // Search fires on debounced query change
   const search = useCallback(async (q: string) => {
     if (q.length < 1) {
       setResults([])
@@ -168,10 +190,14 @@ export default function SearchModal({ open, onClose }: Props) {
       if (res.ok) {
         const data: SearchResult & { suggestions?: IdentityResult[] } = await res.json()
         const flat = flatten(data)
-        setResults(flat)
+        // Client-side fuzzy filter on top of server results
+        const filtered = flat.filter(item =>
+          fuzzyMatch(item.label, q) || fuzzyMatch(item.sublabel, q)
+        )
+        setResults(filtered)
         setActiveIndex(0)
         // 결과 없으면 suggestions를 FlatItem으로 변환
-        if (flat.length === 0 && data.suggestions?.length) {
+        if (filtered.length === 0 && data.suggestions?.length) {
           const sugItems: FlatItem[] = data.suggestions.map(i => {
             const sinner = Array.isArray(i.sinners) ? i.sinners[0] : i.sinners
             return {
@@ -193,13 +219,13 @@ export default function SearchModal({ open, onClose }: Props) {
   }, [])
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    if (!query.trim()) {
+    const trimmed = query.trim()
+    if (!trimmed) {
       setResults([])
+      setSuggestions([])
       return
     }
-    timerRef.current = setTimeout(() => search(query.trim()), 250)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    search(trimmed)
   }, [query, search])
 
   const displayItems = results.length > 0 ? results : suggestions
@@ -268,8 +294,8 @@ export default function SearchModal({ open, onClose }: Props) {
           <Search size={16} style={{ color: '#999', flexShrink: 0 }} />
           <input
             ref={inputRef}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
+            value={rawQuery}
+            onChange={e => setRawQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="인격, EGO, 수감자, 키워드, 기프트 검색..."
             className="flex-1 py-3.5 text-sm outline-none"
@@ -279,9 +305,9 @@ export default function SearchModal({ open, onClose }: Props) {
               fontFamily: 'var(--font-body)',
             }}
           />
-          {query && (
+          {rawQuery && (
             <button
-              onClick={() => { setQuery(''); inputRef.current?.focus() }}
+              onClick={() => { setRawQuery(''); inputRef.current?.focus() }}
               style={{ color: '#555', cursor: 'pointer', padding: 4 }}
             >
               <X size={14} />
@@ -314,7 +340,7 @@ export default function SearchModal({ open, onClose }: Props) {
             </div>
           )}
 
-          {!loading && query.trim() && results.length === 0 && suggestions.length === 0 && (
+          {!loading && rawQuery.trim() && results.length === 0 && suggestions.length === 0 && (
             <div className="py-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
               검색 결과가 없습니다
             </div>

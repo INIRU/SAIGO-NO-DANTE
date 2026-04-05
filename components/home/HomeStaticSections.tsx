@@ -273,7 +273,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
       <section className="features-section max-w-7xl mx-auto px-6 py-16">
         <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
-          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
+          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
             FEATURES
           </span>
           <div className="divider-gold flex-1" />
@@ -352,6 +352,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
 
                 {/* 쉐브론 */}
                 <ChevronRight
+                  aria-hidden="true"
                   size={14}
                   style={{
                     position: 'absolute',
@@ -370,7 +371,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
       <section className="official-section max-w-7xl mx-auto px-6 pb-16">
         <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
-          <span className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
+          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
           <div className="divider-gold flex-1" />
         </div>
 
@@ -405,6 +406,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                 <div className="font-serif font-light text-sm mb-1" style={{ color: 'var(--gold-light)' }}>{label}</div>
                 <div className="truncate font-mono w-full" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
                 <ExternalLink
+                  aria-hidden="true"
                   size={12}
                   style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', color: '#3a2a15' }}
                 />
@@ -426,10 +428,10 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
         {/* 마무리 */}
         <div className="mt-14 flex flex-col items-center gap-3">
           <div className="divider-gold" style={{ maxWidth: '12rem' }} />
-          <span className="font-logo tracking-widest" style={{ color: 'var(--gold-dim)', fontSize: '1.125rem', opacity: 0.4, letterSpacing: '0.3em' }}>
+          <span aria-hidden="true" className="font-logo tracking-widest" style={{ color: 'var(--gold-dim)', fontSize: '1.125rem', opacity: 0.4, letterSpacing: '0.3em' }}>
             SAIGO NO DANTE
           </span>
-          <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
+          <span aria-hidden="true" className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
             Limbus Company 팬 아카이브
           </span>
         </div>

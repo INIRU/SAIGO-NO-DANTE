@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
+import { validateBody, updateUserRoleSchema, updateUserSuspensionSchema } from '@/lib/schemas/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,18 +19,22 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const body = await request.json()
+    const raw = await request.json()
     const update: Record<string, unknown> = {}
 
-    if ('role' in body) {
-      if (!['user', 'wanjang', 'admin'].includes(body.role)) {
+    if ('role' in raw) {
+      const parsed = validateBody(updateUserRoleSchema, { role: raw.role })
+      if (!parsed.success) return parsed.response
+      if (!['user', 'wanjang', 'admin'].includes(parsed.data.role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
       }
-      update.role = body.role
+      update.role = parsed.data.role
     }
 
-    if ('suspended' in body) {
-      update.suspended = !!body.suspended
+    if ('suspended' in raw) {
+      const parsed = validateBody(updateUserSuspensionSchema, { suspended: raw.suspended })
+      if (!parsed.success) return parsed.response
+      update.suspended = parsed.data.suspended
     }
 
     if (Object.keys(update).length === 0) {

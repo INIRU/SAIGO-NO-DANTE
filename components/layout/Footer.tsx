@@ -72,7 +72,7 @@ export default function Footer() {
           <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)', letterSpacing: '0.05em' }}>
             팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.
           </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             This is a fan site and is not affiliated with Project Moon.
           </p>
         </div>
