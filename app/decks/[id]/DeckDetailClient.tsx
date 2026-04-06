@@ -8,12 +8,12 @@ import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide
 import { showSuccess, showError } from '@/lib/toast'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { getSinnerLogoUrl, computeSkillImageIndices, getIdentityPortraitUrl } from '@/lib/utils/images'
 import type { ActivationCondition } from '@/lib/types'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
-import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry, portraitUrl } from '@/components/deck-detail/DeckIdentityCard'
+import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
 import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
 import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
@@ -632,8 +632,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                   {sinnerIds.map(sid => {
                     const firstSlot = slotsBySinner[sid]?.[0] ?? null
                     const id_ = firstSlot?.identities ?? null
-                    const imgUrl = id_ ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, firstSlot?.gacksung ?? false) : (egoGrouped[sid]?.[0]?.ego.image_url ?? '')
-                    const normalUrl = id_ ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false) : imgUrl
+                    const imgUrl = id_ ? getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, firstSlot?.gacksung ?? false) : (egoGrouped[sid]?.[0]?.ego.image_url ?? '')
                     const rc = id_ ? (RARITY_COLORS[id_.rarity] ?? '#667788') : (GRADE_COLORS[egoGrouped[sid]?.[0]?.grade ?? ''] ?? '#667788')
                     const isActive = activeSinner === sid
                     return (
