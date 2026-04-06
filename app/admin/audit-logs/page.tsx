@@ -87,10 +87,14 @@ export default function AuditLogsPage() {
       header: '시각',
       render: (log: AuditLog) => (
         <span style={{ color: '#888888', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
-          {new Date(log.created_at).toLocaleString('ko-KR', {
-            month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit',
-          })}
+          {(() => {
+            const s = log.created_at
+            const mm = s.slice(5, 7)
+            const dd = s.slice(8, 10)
+            const hh = s.slice(11, 13)
+            const mi = s.slice(14, 16)
+            return `${mm}.${dd} ${hh}:${mi}`
+          })()}
         </span>
       ),
     },

@@ -73,16 +73,16 @@ export default function IdentityDetailClient({
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
   const [showArtTip, setShowArtTip] = useState(false)
-  const [pageTab, setPageTab] = useState<'info' | 'decks'>(() => {
-    if (typeof window !== 'undefined' && window.location.hash === '#decks') return 'decks'
-    return 'info'
-  })
+  const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
-  const [showDiff, setShowDiff] = useState(() => {
-    if (typeof window === 'undefined') return true
-    return localStorage.getItem('uptie-diff') !== 'off'
-  })
+  const [showDiff, setShowDiff] = useState(true)
+  useEffect(() => {
+    if (window.location.hash === '#decks') setPageTab('decks')
+  }, [])
+  useEffect(() => {
+    setShowDiff(localStorage.getItem('uptie-diff') !== 'off')
+  }, [])
   const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity

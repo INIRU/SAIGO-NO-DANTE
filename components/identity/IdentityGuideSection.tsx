@@ -347,7 +347,7 @@ export default function IdentityGuideSection({
                     )}
                     {g.updated_at && (
                       <span style={{ color: '#999', fontSize: '0.75rem' }}>
-                        {new Date(g.updated_at).toLocaleDateString('ko-KR')}
+                        {g.updated_at.slice(0, 10).replace(/-/g, '.')}
                       </span>
                     )}
                   </div>

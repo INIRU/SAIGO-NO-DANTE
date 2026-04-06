@@ -60,7 +60,10 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
 
   const avatarUrl = profile.avatar_url || DEFAULT_AVATAR_URL
   const joinDate = profile.created_at
-    ? new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+    ? (() => {
+        const d = profile.created_at.slice(0, 10) // "YYYY-MM-DD"
+        return d.replace(/-/g, '.')
+      })()
     : null
 
   const saveName = async () => {

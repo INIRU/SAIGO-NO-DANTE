@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import Image from 'next/image'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftCard from '@/components/ui/GiftCard'
@@ -242,10 +243,12 @@ function EffectBadge({
             : '0 0 0.5rem rgba(224,64,64,0.1) inset',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={`${STORAGE_BASE}/icons/ui/credits.webp`}
           alt=""
+          width={12}
+          height={12}
+          unoptimized
           style={{ width: '0.75rem', height: '0.75rem' }}
         />
         {isCost ? '+' : '-'}{effect.amount}

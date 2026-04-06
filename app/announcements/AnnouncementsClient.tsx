@@ -123,11 +123,7 @@ export default function AnnouncementsClient() {
                 {item.title}
               </span>
               <span className="font-mono" style={{ color: '#7a6845', fontSize: '0.625rem', flexShrink: 0 }}>
-                {new Date(item.created_at).toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                })}
+                {item.created_at.slice(0, 10).replace(/-/g, '.')}
               </span>
               <ChevronDown
                 size={14}
