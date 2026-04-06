@@ -202,7 +202,7 @@ export default async function RootLayout({
   const keywords = await getKeywordData()
 
   return (
-    <html lang="ko" data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
+    <html lang="ko" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {/* Preload critical body/heading fonts to minimize CLS from font swap */}
@@ -213,20 +213,20 @@ export default async function RootLayout({
         <JsonLd data={videoGameJsonLd(SITE_URL)} />
       </head>
       <body className="antialiased">
-        <SkipNav />
-        <AprilFoolsWrapper />
-        <NuqsAdapter>
-          <SessionProvider>
-            <SWRProvider>
-              <KeywordProvider keywords={keywords}>
-                <Suspense><Navbar /></Suspense>
-                <Suspense><main id="main-content">{children}</main></Suspense>
-                <Footer />
-                <Suspense><FloatingFontControl /></Suspense>
-              </KeywordProvider>
-            </SWRProvider>
-          </SessionProvider>
-        </NuqsAdapter>
+          <SkipNav />
+          <AprilFoolsWrapper />
+          <NuqsAdapter>
+            <SessionProvider>
+              <SWRProvider>
+                <KeywordProvider keywords={keywords}>
+                  <Suspense><Navbar /></Suspense>
+                  <Suspense><main id="main-content">{children}</main></Suspense>
+                  <Footer />
+                  <Suspense><FloatingFontControl /></Suspense>
+                </KeywordProvider>
+              </SWRProvider>
+            </SessionProvider>
+          </NuqsAdapter>
         <Toaster
           theme="dark"
           position="top-right"

@@ -159,7 +159,7 @@ export default function DeckPreviewPanel({
                     {/* 수감자 + EGO명 */}
                     <div style={{ minWidth: '140px', flexShrink: 0 }}>
                       <div className="flex items-center gap-1 mb-0.5">
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ height: 'auto', opacity: 0.4 }} unoptimized />
+                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={10} height={10} style={{ width: 'auto', height: 'auto', opacity: 0.4 }} unoptimized />
                         <span style={{ color: '#6a5e38', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                       </div>
                       <p style={{ color: sc, fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{ego.name_kr || ego.name}</p>
@@ -244,7 +244,7 @@ export default function DeckPreviewPanel({
                   {/* 수감자 + 인격명 */}
                   <div style={{ minWidth: '150px', flexShrink: 0 }}>
                     <div className="flex items-center gap-1 mb-0.5">
-                      <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ height: 'auto', opacity: 0.4 }} unoptimized />
+                      <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: 'auto', height: 'auto', opacity: 0.4 }} unoptimized />
                       <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sinner.name_kr}</span>
                     </div>
                     <p style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }}>{identity.name_kr || identity.name}</p>

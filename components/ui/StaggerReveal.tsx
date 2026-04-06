@@ -1,0 +1,66 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import type { HTMLMotionProps } from 'framer-motion'
+import { staggerContainer, staggerItem } from '@/lib/animations'
+
+type MotionTag = 'div' | 'section' | 'article' | 'ul' | 'ol' | 'aside'
+
+interface StaggerRevealProps extends Omit<HTMLMotionProps<'div'>, 'variants' | 'initial' | 'whileInView' | 'viewport'> {
+  /** Delay between each child's animation start (seconds). Default 0.08. */
+  staggerDelay?: number
+  /** Initial delay before the first child starts (seconds). Default 0. */
+  delayChildren?: number
+  /** HTML element to render. Defaults to 'div'. */
+  as?: MotionTag
+}
+
+/**
+ * StaggerReveal — a container that staggers its direct children into view
+ * when scrolled to. Each child must use the `staggerItem` variant (or any
+ * variant with matching `initial` / `animate` keys).
+ *
+ * The container itself is invisible (no layout style) — it only orchestrates
+ * the timing of child animations via framer-motion's stagger mechanism.
+ *
+ * Usage:
+ *   import { staggerItem } from '@/lib/animations'
+ *
+ *   <StaggerReveal className="grid grid-cols-3 gap-4">
+ *     {items.map(item => (
+ *       <motion.div key={item.id} variants={staggerItem}>
+ *         <Card item={item} />
+ *       </motion.div>
+ *     ))}
+ *   </StaggerReveal>
+ *
+ * Export staggerItem so consumers can import from the same place.
+ */
+export { staggerItem }
+
+export default function StaggerReveal({
+  children,
+  staggerDelay = 0.08,
+  delayChildren = 0,
+  as = 'div',
+  className,
+  style,
+  ...rest
+}: StaggerRevealProps) {
+  const Tag = motion[as] as typeof motion.div
+  const containerVariant = staggerContainer(staggerDelay, delayChildren)
+
+  return (
+    <Tag
+      className={className}
+      style={style}
+      variants={containerVariant}
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: true, margin: '-50px' }}
+      {...rest}
+    >
+      {children}
+    </Tag>
+  )
+}

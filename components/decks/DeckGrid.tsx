@@ -1,7 +1,9 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import { staggerContainer, staggerItem } from '@/lib/animations'
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -64,13 +66,19 @@ export default function DeckGrid({
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" style={{ position: 'relative', zIndex: 0 }}>
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        style={{ position: 'relative', zIndex: 0 }}
+        variants={staggerContainer(0.06)}
+        initial="initial"
+        animate="animate"
+      >
         {filtered.map(deck => (
-          <div key={deck.id} className="cv-card-lg">
+          <motion.div key={deck.id} variants={staggerItem} className="cv-card-lg">
             <DeckCard deck={deck} onTagClick={onTagClick} />
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* 무한 스크롤 센티널 */}
       {hasMore && (

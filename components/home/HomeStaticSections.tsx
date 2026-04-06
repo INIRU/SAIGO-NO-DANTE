@@ -276,7 +276,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
       <section className="features-section max-w-7xl mx-auto px-6 py-16">
         <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
-          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
+          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#5a4a35', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
             FEATURES
           </span>
           <div className="divider-gold flex-1" />
@@ -361,7 +361,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                     position: 'absolute',
                     bottom: '1rem',
                     right: '1rem',
-                    color: '#3a2a15',
+                    color: '#5a4a35',
                   }}
                 />
               </FeatureHoverCard>
@@ -374,7 +374,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
       <section className="official-section max-w-7xl mx-auto px-6 pb-16">
         <div className="flex items-center gap-4 mb-10">
           <div className="divider-gold flex-1" />
-          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#3a2a15', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
+          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#5a4a35', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
           <div className="divider-gold flex-1" />
         </div>
 
@@ -411,7 +411,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                 <ExternalLink
                   aria-hidden="true"
                   size={12}
-                  style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', color: '#3a2a15' }}
+                  style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', color: '#5a4a35' }}
                 />
               </OfficialHoverCard>
             )

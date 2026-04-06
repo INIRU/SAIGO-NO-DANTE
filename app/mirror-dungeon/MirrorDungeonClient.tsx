@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useQueryState, parseAsString } from 'nuqs'
+import ScrollReveal from '@/components/ui/ScrollReveal'
+import { fadeInUp } from '@/lib/animations'
 import dynamic from 'next/dynamic'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/sinners/KeywordTooltip'
@@ -321,62 +323,68 @@ export default function MirrorDungeonClient({
 
       {/* 기프트 탭 */}
       {activeTab === 'gifts' && (
-        <GiftTab
-          gifts={gifts}
-          themes={themes}
-          search={search}
-          keywords={keywords}
-          grades={grades}
-          tiers={tiers}
-          sortBy={sortBy}
-          sortDesc={sortDesc}
-          slotFilter={slotFilter}
-          selectedThemeId={selectedThemeId}
-          themeGiftNames={themeGiftNames}
-          giftSlotMap={giftSlotMap}
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          setSearch={setSearch}
-          setKeywords={setKeywords}
-          setGrades={setGrades}
-          setTiers={setTiers}
-          setSortBy={setSortBy}
-          setSortDesc={setSortDesc}
-          setSlotFilter={setSlotFilter}
-          setSelectedThemeId={setSelectedThemeId}
-          getGiftKeywordIcon={getGiftKeywordIcon}
-          recipeMap={recipeMap}
-          giftImageMap={giftImageMap}
-          onSelectGift={setSelected}
-        />
+        <ScrollReveal variant={fadeInUp} as="div">
+          <GiftTab
+            gifts={gifts}
+            themes={themes}
+            search={search}
+            keywords={keywords}
+            grades={grades}
+            tiers={tiers}
+            sortBy={sortBy}
+            sortDesc={sortDesc}
+            slotFilter={slotFilter}
+            selectedThemeId={selectedThemeId}
+            themeGiftNames={themeGiftNames}
+            giftSlotMap={giftSlotMap}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            setSearch={setSearch}
+            setKeywords={setKeywords}
+            setGrades={setGrades}
+            setTiers={setTiers}
+            setSortBy={setSortBy}
+            setSortDesc={setSortDesc}
+            setSlotFilter={setSlotFilter}
+            setSelectedThemeId={setSelectedThemeId}
+            getGiftKeywordIcon={getGiftKeywordIcon}
+            recipeMap={recipeMap}
+            giftImageMap={giftImageMap}
+            onSelectGift={setSelected}
+          />
+        </ScrollReveal>
       )}
 
       {/* 테마팩 탭 */}
       {activeTab === 'themes' && themes.length > 0 && (
-        <ThemeTab
-          themes={themes}
-          gifts={gifts}
-          giftByGameId={giftByGameId}
-          themeSearch={themeSearch}
-          themeDiffFilter={themeDiffFilter}
-          setThemeSearch={setThemeSearch}
-          setThemeDiffFilter={setThemeDiffFilter}
-          onThemeClick={setExpandedThemeId}
-        />
+        <ScrollReveal variant={fadeInUp} as="div">
+          <ThemeTab
+            themes={themes}
+            gifts={gifts}
+            giftByGameId={giftByGameId}
+            themeSearch={themeSearch}
+            themeDiffFilter={themeDiffFilter}
+            setThemeSearch={setThemeSearch}
+            setThemeDiffFilter={setThemeDiffFilter}
+            onThemeClick={setExpandedThemeId}
+          />
+        </ScrollReveal>
       )}
 
       {/* 이벤트 탭 */}
       {activeTab === 'events' && events.length > 0 && (
-        <EventTab
-          events={events}
-          giftByGameId={giftByGameId}
-          themes={themes}
-          eventSearch={eventSearch}
-          setEventSearch={setEventSearch}
-          eventThemeFilter={eventThemeParam}
-          setEventThemeFilter={(v) => setEventThemeParam(v === '' ? null : v)}
-          onSelectEvent={setSelectedEvent}
-        />
+        <ScrollReveal variant={fadeInUp} as="div">
+          <EventTab
+            events={events}
+            giftByGameId={giftByGameId}
+            themes={themes}
+            eventSearch={eventSearch}
+            setEventSearch={setEventSearch}
+            eventThemeFilter={eventThemeParam}
+            setEventThemeFilter={(v) => setEventThemeParam(v === '' ? null : v)}
+            onSelectEvent={setSelectedEvent}
+          />
+        </ScrollReveal>
       )}
 
       {/* 테마팩 모달 */}
