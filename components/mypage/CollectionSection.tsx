@@ -111,7 +111,10 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   // 데이터 로드
   useEffect(() => {
     fetch('/api/collection')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Collection API error: ${r.status}`)
+        return r.json()
+      })
       .then(async (d: CollectionData) => {
         setData(d)
         if (d.sinners.length > 0 && !activeSinner) setActiveSinner(d.sinners[0].id)
