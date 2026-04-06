@@ -5,6 +5,8 @@ import { Calculator, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { SelectionProvider, useSelection } from './SelectionContext'
 import type { TierIdentity } from './TierCardInteractive'
 import { motion } from 'framer-motion'
+import ScrollReveal from '@/components/ui/ScrollReveal'
+import { fadeInUp, fadeIn } from '@/lib/animations'
 
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
 type Tier = typeof TIERS[number]
@@ -128,70 +130,72 @@ function TierListInner({
       <div style={{ position: 'relative', zIndex: 1 }}>
         {/* 헤더는 server-rendered page.tsx에서 렌더링 */}
         {/* 추가 설명 */}
-        <div className="text-center mb-4">
-          <p className="text-center mb-1" style={{ color: '#888888', fontSize: '0.8125rem' }}>
-            림버스 컴퍼니 리세마라 추천 인격 티어
-          </p>
-          <p className="text-center mb-2" style={{ color: '#888888', fontSize: '0.6875rem' }}>
-            인격을 눌러 뽑은 인격을 선택하면 이륙 자가진단을 할 수 있습니다
-          </p>
-          <p className="text-center mb-4" style={{ fontSize: '0.6875rem' }}>
-            <a
-              href="https://gall.dcinside.com/mgallery/board/view/?id=limbuscompany&no=375877"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-yellow-300"
-              style={{ color: '#3a3028' }}
-            >
-              원본: 림버스 컴퍼니 갤러리
-            </a>
-          </p>
-        </div>
-
-        {/* 범례 */}
-        <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
-          <span className="flex items-center gap-1.5">
-            <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#60c860', display: 'inline-block' }} />
-            <span style={{ color: '#8a8a8a' }}>발푸르기스 밤</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ffd040', display: 'inline-block' }} />
-            <span style={{ color: '#8a8a8a' }}>추출만 가능</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ff5050', display: 'inline-block' }} />
-            <span style={{ color: '#8a8a8a' }}>이번 시즌 획득 불가</span>
-          </span>
-        </div>
-
-        {/* 점수 기준 */}
-        <div
-          className="flex items-center justify-center gap-3 mb-8 flex-wrap"
-          style={{ fontSize: '0.6875rem' }}
-        >
-          {TIERS.filter(t => TIER_SCORES[t] > 0).map(tier => (
-            <span key={tier} className="flex items-center gap-1">
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '1.5rem',
-                  height: '1.125rem',
-                  borderRadius: '0.1875rem',
-                  background: TIER_COLORS[tier],
-                  color: '#fff',
-                  fontSize: '0.625rem',
-                  fontWeight: 700,
-                  fontFamily: 'var(--font-heading)',
-                }}
+        <ScrollReveal variant={fadeInUp} as="div">
+          <div className="text-center mb-4">
+            <p className="text-center mb-1" style={{ color: '#888888', fontSize: '0.8125rem' }}>
+              림버스 컴퍼니 리세마라 추천 인격 티어
+            </p>
+            <p className="text-center mb-2" style={{ color: '#888888', fontSize: '0.6875rem' }}>
+              인격을 눌러 뽑은 인격을 선택하면 이륙 자가진단을 할 수 있습니다
+            </p>
+            <p className="text-center mb-4" style={{ fontSize: '0.6875rem' }}>
+              <a
+                href="https://gall.dcinside.com/mgallery/board/view/?id=limbuscompany&no=375877"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-yellow-300"
+                style={{ color: '#3a3028' }}
               >
-                {tier}
-              </span>
-              <span style={{ color: '#8a8a8a' }}>+{TIER_SCORES[tier].toFixed(1)}점</span>
+                원본: 림버스 컴퍼니 갤러리
+              </a>
+            </p>
+          </div>
+
+          {/* 범례 */}
+          <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#60c860', display: 'inline-block' }} />
+              <span style={{ color: '#8a8a8a' }}>발푸르기스 밤</span>
             </span>
-          ))}
-        </div>
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ffd040', display: 'inline-block' }} />
+              <span style={{ color: '#8a8a8a' }}>추출만 가능</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '0.125rem', background: '#ff5050', display: 'inline-block' }} />
+              <span style={{ color: '#8a8a8a' }}>이번 시즌 획득 불가</span>
+            </span>
+          </div>
+
+          {/* 점수 기준 */}
+          <div
+            className="flex items-center justify-center gap-3 mb-8 flex-wrap"
+            style={{ fontSize: '0.6875rem' }}
+          >
+            {TIERS.filter(t => TIER_SCORES[t] > 0).map(tier => (
+              <span key={tier} className="flex items-center gap-1">
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '1.5rem',
+                    height: '1.125rem',
+                    borderRadius: '0.1875rem',
+                    background: TIER_COLORS[tier],
+                    color: '#fff',
+                    fontSize: '0.625rem',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-heading)',
+                  }}
+                >
+                  {tier}
+                </span>
+                <span style={{ color: '#8a8a8a' }}>+{TIER_SCORES[tier].toFixed(1)}점</span>
+              </span>
+            ))}
+          </div>
+        </ScrollReveal>
 
         {!hasTiers ? (
           <div className="text-center py-20">
@@ -336,7 +340,7 @@ function TierListInner({
             )}
 
             {/* Q&A */}
-            <div style={{ marginTop: '3rem' }}>
+            <ScrollReveal variant={fadeIn} as="div" style={{ marginTop: '3rem' }}>
               <button
                 onClick={() => setQnaOpen(v => !v)}
                 className="flex items-center gap-2 w-full transition-colors hover:opacity-80"
@@ -384,7 +388,7 @@ function TierListInner({
                   </div>
                 </div>
               )}
-            </div>
+            </ScrollReveal>
 
             {/* 하단 패딩 (플로팅 계산기 겹침 방지) */}
             {selected.size > 0 && <div style={{ height: '5rem' }} />}

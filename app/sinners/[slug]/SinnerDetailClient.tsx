@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
@@ -381,6 +382,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                  
                   className="w-7 h-7 sm:w-10 sm:h-10"
                   style={{
+                    width: 'auto',
                     height: 'auto',
                     filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
                     opacity: 0.9,
@@ -736,25 +738,23 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
-                    {filteredIdentities.map((identity, index) => (
+                  <StaggerReveal className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8" staggerDelay={0.05}>
+                    {filteredIdentities.map((identity) => (
                       <motion.div
                         key={identity.id}
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.4, delay: index * 0.03, ease: 'easeOut' }}
+                        variants={staggerItem}
                       >
-                      <IdentityCard
-                        identity={identity}
-                        gacksung={gacksung}
-                        compact
-                        onClick={() =>
-                          router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
-                        }
-                      />
+                        <IdentityCard
+                          identity={identity}
+                          gacksung={gacksung}
+                          compact
+                          onClick={() =>
+                            router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
+                          }
+                        />
                       </motion.div>
                     ))}
-                  </div>
+                  </StaggerReveal>
                 )}
               </div>
             )}
@@ -806,8 +806,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6">
-                    {filteredEgos.map((ego, index) => {
+                  <StaggerReveal className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6" staggerDelay={0.05}>
+                    {filteredEgos.map((ego) => {
                       const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
                       const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
@@ -816,9 +816,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           key={ego.id}
                           onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
                           className="group flex flex-col items-center gap-2"
-                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.4, delay: index * 0.03, ease: 'easeOut' }}
+                          variants={staggerItem}
                           whileHover={{ scale: 1.05 }}
                           style={{ cursor: 'pointer' }}
                         >
@@ -858,7 +856,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         </motion.button>
                       )
                     })}
-                  </div>
+                  </StaggerReveal>
                 )}
               </div>
             )}

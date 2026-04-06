@@ -130,7 +130,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
     <>
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))' }}>
         {visible.map((kw, i) => (
-          <div key={kw.name} className="cv-card-md">
+          <div key={kw.name} className="cv-card-md h-full">
             <KeywordCard
               keyword={kw}
               identityCount={countMaps.identity[kw.name] || 0}

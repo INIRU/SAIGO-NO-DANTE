@@ -69,7 +69,7 @@ export default function KeywordCard({
   return (
     <button
       onClick={onClick}
-      className="kw-card group text-left rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.02]"
+      className="kw-card group text-left rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.02] w-full h-full flex flex-col"
       style={{
         animation: `kwCardIn 0.3s ease both`,
         animationDelay: `${animationDelay}s`,
@@ -98,7 +98,7 @@ export default function KeywordCard({
         />
       )}
 
-      <div className="p-3 flex items-start gap-2.5">
+      <div className="p-3 flex items-start gap-2.5 flex-1">
         {/* 아이콘 */}
         <div
           className="shrink-0 flex items-center justify-center rounded"

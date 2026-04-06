@@ -228,7 +228,7 @@ export default function DeckIdentityCard({
             )}
           </div>
           <div className="flex items-center justify-center flex-1" style={{ minHeight: 28 }}>
-            <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={18} height={18} style={{ height: 'auto', opacity: 0.3 }} />
+            <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={18} height={18} style={{ width: 'auto', height: 'auto', opacity: 0.3 }} />
           </div>
         </div>
 

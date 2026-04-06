@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { Users, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
+import ScrollReveal from '@/components/ui/ScrollReveal'
+import { fadeIn } from '@/lib/animations'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
   return (
@@ -135,17 +137,9 @@ export default function SinnersInteractive({ children }: { children: React.React
       </div>
 
       {/* 서버 렌더링된 카드 그리드 — children으로 주입 */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-15%' }}
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.06 } },
-        }}
-      >
+      <ScrollReveal variant={fadeIn} as="div">
         {children}
-      </motion.div>
+      </ScrollReveal>
 
       {/* 하단 장식 */}
       <div className="mt-16 flex items-center justify-center gap-4">
