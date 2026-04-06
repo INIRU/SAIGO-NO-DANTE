@@ -241,12 +241,12 @@ export function KeywordWithTooltip({
       style={{ cursor: info ? 'help' : 'default', position: 'relative' }}
     >
       {iconUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={iconUrl}
           alt=""
           width={inline ? 14 : 16}
           height={inline ? 14 : 16}
+          unoptimized
           style={{
             display: 'inline',
             verticalAlign: 'text-bottom',

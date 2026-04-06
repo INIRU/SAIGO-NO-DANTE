@@ -93,9 +93,11 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
 
 export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
   const { getIconUrl } = useKeywordData()
-  const date = new Date(deck.created_at).toLocaleDateString('ko-KR', {
-    month: 'short', day: 'numeric',
-  })
+  const date = (() => {
+    const d = deck.created_at.slice(0, 10) // "YYYY-MM-DD"
+    const [, mm, dd] = d.split('-')
+    return `${parseInt(mm)}월 ${parseInt(dd)}일`
+  })()
 
   // 슬롯 순서로 정렬, slot_order=99는 뒤로
   const sorted = [...(deck.deck_identities ?? [])].sort((a, b) => {

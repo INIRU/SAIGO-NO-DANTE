@@ -868,7 +868,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', border: '2px solid #8a6010', background: '#0a0806' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
                 {url && <img src={url} alt={identity.name_kr} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{identity.name_kr}</p>
@@ -889,7 +889,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: `2px solid ${egoColor}`, background: '#0a0806' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
                 {ego.image_url && <img src={ego.image_url} alt={ego.name_kr ?? ''} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
               <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{ego.name_kr}</p>
@@ -925,7 +925,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={sinner.id} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
                 <img src={sinnerLogoUrl(sinner.id)} alt="" crossOrigin="anonymous" style={{ width: '1.75rem', height: '1.75rem' }} />
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{sinner.name_kr}</span>
                 <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>

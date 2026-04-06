@@ -545,9 +545,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 }}
                               >
                                 {iconSlug && (
-                                  <img
+                                  <Image
                                     src={`${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`}
-                                    alt="" style={{ width: '0.875rem', height: '0.875rem' }}
+                                    alt="" width={14} height={14} unoptimized
+                                    style={{ width: '0.875rem', height: '0.875rem' }}
                                   />
                                 )}
                                 <span>{kw}</span>

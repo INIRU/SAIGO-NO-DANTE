@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
       header: '가입일',
       render: (user: User) => (
         <span style={{ color: '#888888', fontSize: '0.75rem' }}>
-          {new Date(user.created_at).toLocaleDateString('ko-KR')}
+          {user.created_at.slice(0, 10).replace(/-/g, '.')}
         </span>
       ),
     },
