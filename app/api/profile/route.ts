@@ -5,7 +5,6 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {

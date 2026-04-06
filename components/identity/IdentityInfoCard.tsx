@@ -321,7 +321,8 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               />
             )}
             {/* 하단 그라디언트 */}
-            <div className="absolute inset-0" style={{
+            <div className="absolute" style={{
+              inset: '-1px',
               background: `linear-gradient(180deg, rgba(10,9,8,0.2) 0%, transparent 30%, transparent 60%, rgba(10,9,8,0.7) 100%)`,
             }} />
             {/* SD 캐릭터 — 드래그+줌 */}

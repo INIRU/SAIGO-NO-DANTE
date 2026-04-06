@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getAllEGOsForBrowser, getSinners } from '@/lib/db/queries'
 import EGOBrowserClient from './EGOBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
-
-export const revalidate = 300 // 5분 캐시
 
 const SITE_URL = 'https://saigo-no-dante.com'
 
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 }
 
 export default async function EGOBrowsePage() {
+  'use cache'
+  cacheLife('page-5m')
   const [egos, sinners] = await Promise.all([
     getAllEGOsForBrowser(),
     getSinners(),
@@ -37,7 +39,9 @@ export default async function EGOBrowsePage() {
   return (
     <>
       <JsonLd data={egoListLd} />
-      <EGOBrowserClient egos={egos} sinners={sinners} />
+      <Suspense fallback={null}>
+        <EGOBrowserClient egos={egos} sinners={sinners} />
+      </Suspense>
     </>
   )
 }

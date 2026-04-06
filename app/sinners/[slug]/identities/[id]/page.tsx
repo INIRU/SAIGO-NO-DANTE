@@ -1,15 +1,13 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import IdentityDetailClient from './IdentityDetailClient'
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
-
-export const revalidate = 60
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 
@@ -73,7 +71,7 @@ export default async function IdentityPage({
     getEGOs(),
     getEgoGiftsForNotes(),
     (async () => {
-      const supabase = await createClient()
+      const supabase = createAdminClient()
       const { data, error } = await supabase
         .schema('limbus').from('app_config').select('value')
         .eq('key', 'current_season').single()
@@ -133,23 +131,25 @@ export default async function IdentityPage({
           siteUrl: SITE_URL,
         })} />
       )}
-      <IdentityDetailClient
-        sinner={sinner}
-        identity={identity}
-        skills={skills}
-        passives={passives}
-        sanityConditions={sanityConditions}
-        panicInfo={panicInfo}
-        guides={guides}
-        allSinners={allSinners}
-        allIdentities={allIdentities}
-        allEgos={allEgos}
-        egoGifts={egoGifts}
-        canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
-        isAdmin={!!session?.user?.isAdmin}
-        isLoggedIn={!!session}
-        currentSeason={currentSeason}
-      />
+      <Suspense fallback={null}>
+        <IdentityDetailClient
+          sinner={sinner}
+          identity={identity}
+          skills={skills}
+          passives={passives}
+          sanityConditions={sanityConditions}
+          panicInfo={panicInfo}
+          guides={guides}
+          allSinners={allSinners}
+          allIdentities={allIdentities}
+          allEgos={allEgos}
+          egoGifts={egoGifts}
+          canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
+          isAdmin={!!session?.user?.isAdmin}
+          isLoggedIn={!!session}
+          currentSeason={currentSeason}
+        />
+      </Suspense>
     </>
   )
 }

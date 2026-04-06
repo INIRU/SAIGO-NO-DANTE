@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export const dynamic = 'force-dynamic'
 
 // POST /api/planner/[id]/view — 조회수 1회 증가 (전용 엔드포인트, atomic)
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

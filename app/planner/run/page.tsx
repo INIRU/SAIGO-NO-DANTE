@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
-import RunClient from './RunClient'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
+import RunWrapper from './RunWrapper'
 
 export const metadata: Metadata = {
   title: '거울 던전 트리거 모드',
@@ -8,10 +9,10 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://saigo-no-dante.com/planner/run' },
 }
 
-export const revalidate = 300
-
 export default async function RunPage() {
-  const supabase = await createClient()
+  'use cache'
+  cacheLife('page-5m')
+  const supabase = createAdminClient()
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info'),
@@ -34,15 +35,17 @@ export default async function RunPage() {
   ])
   if (e7 || e8) console.error('[RunPage] query group 3:', e7?.message, e8?.message)
 
-  return <RunClient
-    themes={themes ?? []}
-    gifts={gifts ?? []}
-    recipes={recipes ?? []}
-    identities={identities ?? []}
-    sinners={sinners ?? []}
-    skills={skills ?? []}
-    passives={passives ?? []}
-    egos={egos ?? []}
-    events={events ?? []}
-  />
+  return (
+    <RunWrapper
+      themes={themes ?? []}
+      gifts={gifts ?? []}
+      recipes={recipes ?? []}
+      identities={identities ?? []}
+      sinners={sinners ?? []}
+      skills={skills ?? []}
+      passives={passives ?? []}
+      egos={egos ?? []}
+      events={events ?? []}
+    />
+  )
 }

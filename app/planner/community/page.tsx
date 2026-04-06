@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import CommunityClient from './CommunityClient'
@@ -10,16 +12,16 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://saigo-no-dante.com/planner/community' },
 }
 
-export const revalidate = 60
-
 const PAGE_SIZE = 20
 
 export default async function CommunityPage() {
+  'use cache'
+  cacheLife('page-1m')
   let initialPlans: PlanSummary[] = []
   let initialTotal = 0
 
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, count, error } = await supabase
       .schema('limbus')
       .from('md_plans')
@@ -38,5 +40,9 @@ export default async function CommunityPage() {
     // Fall back to client-side fetch if server fetch fails
   }
 
-  return <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
+  return (
+    <Suspense fallback={null}>
+      <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
+    </Suspense>
+  )
 }

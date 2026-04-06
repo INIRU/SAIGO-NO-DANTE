@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateBody, createKeywordSchema } from '@/lib/schemas/admin'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {

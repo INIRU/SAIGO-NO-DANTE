@@ -6,7 +6,6 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 
-export const dynamic = 'force-dynamic'
 
 // ── 덱 코드 인코딩 (DeckBuilderClient와 동일 로직) ─────────────────────────
 const BIT_POS = { identity: 4, formation: 8, ZAYIN: 15, TETH: 22, HE: 29, WAW: 36 } as const

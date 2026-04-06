@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
-export const dynamic = 'force-dynamic'
 
 // GET /api/planner/[id] — 플랜 상세
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

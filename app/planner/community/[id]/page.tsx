@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PlanDetailClient from './PlanDetailClient'
@@ -85,16 +86,18 @@ export default async function PlanDetailPage({ params }: Props) {
   if (egosError) console.error('Failed to fetch egos:', egosError)
 
   return (
-    <PlanDetailClient
-      plan={plan as any}
-      themes={themes ?? []}
-      gifts={gifts ?? []}
-      recipes={recipes ?? []}
-      identities={identities ?? []}
-      sinners={sinners ?? []}
-      skills={skills ?? []}
-      passives={passives ?? []}
-      egos={egos ?? []}
-    />
+    <Suspense fallback={null}>
+      <PlanDetailClient
+        plan={plan as any}
+        themes={themes ?? []}
+        gifts={gifts ?? []}
+        recipes={recipes ?? []}
+        identities={identities ?? []}
+        sinners={sinners ?? []}
+        skills={skills ?? []}
+        passives={passives ?? []}
+        egos={egos ?? []}
+      />
+    </Suspense>
   )
 }

@@ -16,7 +16,8 @@ import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
-import { createClient } from '@/lib/supabase/server'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
 const songMyung = Song_Myung({
@@ -161,13 +162,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  // 서버 사이드: keyword_meta 전체 fetch → KeywordProvider로 전달
-  const supabase = await createClient()
+async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
+  'use cache'
+  cacheLife('page-1h')
+
+  const supabase = createAdminClient()
   let { data, error } = await supabase
     .schema('limbus')
     .from('keyword_meta')
@@ -192,6 +191,15 @@ export default async function RootLayout({
       ...((row.sin_affinity as string) ? { sinAffinity: row.sin_affinity as string } : {}),
     }
   }
+  return keywords
+}
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const keywords = await getKeywordData()
 
   return (
     <html lang="ko" data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
@@ -211,10 +219,10 @@ export default async function RootLayout({
           <SessionProvider>
             <SWRProvider>
               <KeywordProvider keywords={keywords}>
-                <Navbar />
+                <Suspense><Navbar /></Suspense>
                 <Suspense><main id="main-content">{children}</main></Suspense>
                 <Footer />
-                <FloatingFontControl />
+                <Suspense><FloatingFontControl /></Suspense>
               </KeywordProvider>
             </SWRProvider>
           </SessionProvider>

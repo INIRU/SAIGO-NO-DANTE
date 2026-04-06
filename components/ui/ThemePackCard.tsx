@@ -72,7 +72,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
               </div>
             </div>
           )}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
+          <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
           {/* Theme name */}
           <div className="absolute left-0 right-0 flex items-center justify-center px-1" style={{ bottom: '14%', height: '1.75rem' }}>

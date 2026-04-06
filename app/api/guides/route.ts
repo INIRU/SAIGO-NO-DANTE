@@ -4,7 +4,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 
-export const dynamic = 'force-dynamic'
 
 // GET — 운영법 목록 조회 (공개)
 export async function GET(request: NextRequest) {

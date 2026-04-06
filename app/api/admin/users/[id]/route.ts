@@ -6,7 +6,6 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 import { validateBody, updateUserRoleSchema, updateUserSuspensionSchema } from '@/lib/schemas/admin'
 
-export const dynamic = 'force-dynamic'
 
 export async function PATCH(
   request: Request,

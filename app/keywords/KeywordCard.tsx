@@ -77,6 +77,7 @@ export default function KeywordCard({
         border: '0.0625rem solid rgba(200,144,10,0.08)',
         cursor: 'pointer',
         position: 'relative',
+        width: '100%',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget

@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
-export const dynamic = 'force-dynamic'
 
 // GET — 리뷰 목록 + 집계 + 본인 리뷰 여부
 export async function GET(

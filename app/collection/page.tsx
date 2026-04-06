@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import type { CollectionData } from '@/lib/collection'
 import CollectionClient from './CollectionClient'
@@ -41,5 +42,7 @@ async function fetchCollectionData(): Promise<CollectionData> {
 
 export default async function CollectionPage() {
   const data = await fetchCollectionData()
+  // CollectionClient already wraps CollectionViewer (which uses useSearchParams)
+  // in its own Suspense boundary — no additional wrapping needed here.
   return <CollectionClient initialData={data} />
 }

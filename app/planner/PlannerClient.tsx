@@ -141,15 +141,14 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   }, [identities])
 
   return (
-    <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
+    <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
       <div className="max-w-6xl mx-auto px-3 sm:px-6">
-        {/* 헤더 */}
+        {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.75rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 커뮤니티
             </Link>
-            <h1 className="font-serif text-lg sm:text-2xl" style={{ color: '#e8dcc8' }}>거울 던전 플래너</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button

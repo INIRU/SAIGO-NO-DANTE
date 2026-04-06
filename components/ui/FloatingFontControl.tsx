@@ -110,6 +110,7 @@ export default function FloatingFontControl() {
       {mounted && (
         <motion.div
           ref={wrapRef}
+          layout
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
@@ -117,7 +118,7 @@ export default function FloatingFontControl() {
           className="fixed bottom-5 left-4 z-[45] flex items-center justify-center rounded-full overflow-hidden"
           style={sharedStyle}
         >
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="popLayout" initial={false}>
             {!expanded ? (
               // Collapsed: show Aa circle button
               <motion.div
@@ -125,7 +126,7 @@ export default function FloatingFontControl() {
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0 }}
-                transition={{ duration: 0.2, ease: [0.175, 0.885, 0.32, 1.4] }}
+                transition={{ duration: 0.15, ease: [0.175, 0.885, 0.32, 1.4] }}
                 onClick={() => setExpanded(true)}
                 className="flex items-center justify-center cursor-pointer w-[2.25rem] h-[2.25rem] lg:w-[3rem] lg:h-[3rem]"
                 style={{ color: 'var(--gold)' }}
@@ -139,7 +140,7 @@ export default function FloatingFontControl() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.25, ease: [0.175, 0.885, 0.32, 1.2] }}
+                transition={{ duration: 0.2, ease: [0.175, 0.885, 0.32, 1.2] }}
                 className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-1.5 lg:py-2"
                 style={{ whiteSpace: 'nowrap' }}
               >

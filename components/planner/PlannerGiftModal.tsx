@@ -58,7 +58,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
               <Image src={kwIconUrl} alt="" fill sizes="160px" className="object-contain" />
             </div>
           )}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, transparent 100%)' }} />
+          <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, #131110 0%, transparent 100%)' }} />
 
           <div className="absolute bottom-0 left-0 right-0 flex items-end gap-4 px-5 pb-3">
             {/* 기프트 카드 */}

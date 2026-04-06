@@ -105,7 +105,7 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
                   <ImageWithFallback src={ev.image_url} alt="" fill fallbackType="default" sizes="(max-width:640px) 50vw, 25vw"
                     className="object-cover transition-transform group-hover:scale-105" style={{ opacity: 0.8 }}
                     placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, transparent 60%)' }} />
+                  <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, rgba(13,11,8,0.9) 0%, transparent 60%)' }} />
                   <div className="absolute bottom-0 left-0 right-0" style={{ padding: '0 0.5rem 0.5rem' }}>
                     <p className="font-serif leading-tight line-clamp-2" style={{ color: '#e8d8c0', fontSize: '0.6875rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.8)' }}>
                       {ev.name || replaceEventPlaceholders(ev.desc_text?.split('\n')[0]?.slice(0, 30)) || `이벤트 #${ev.id}`}
@@ -151,7 +151,7 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
               <div className="relative" style={{ height: '10rem' }}>
                 <ImageWithFallback src={ev.image_url} alt="" fill fallbackType="default" sizes="40rem" className="object-cover" style={{ opacity: 0.4 }}
                   placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.5) 50%, rgba(19,17,16,0.25) 100%)' }} />
+                <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.5) 50%, rgba(19,17,16,0.25) 100%)' }} />
                 <div className="absolute bottom-0 left-0 right-0" style={{ padding: '0 1.25rem 1rem' }}>
                   <h3 className="font-serif" style={{ fontSize: '1.125rem', color: '#e8d0a0', textShadow: '0 0.125rem 0.5rem rgba(200,144,10,0.2)' }}>
                     {ev.name || replaceEventPlaceholders(ev.desc_text?.split('\n')[0]?.slice(0, 50)) || `이벤트 #${ev.id}`}

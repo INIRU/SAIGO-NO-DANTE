@@ -4,7 +4,6 @@ import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET(
   _request: NextRequest,

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type LegalSection = {
   heading: string
@@ -16,7 +16,7 @@ export type LegalDoc = {
 
 export async function getLegalDoc(type: 'privacy' | 'terms'): Promise<LegalDoc | null> {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .schema('limbus')
       .from('legal_docs')

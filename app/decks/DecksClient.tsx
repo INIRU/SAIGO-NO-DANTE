@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
-import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
@@ -442,7 +441,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const advancedFilterCount = activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto relative">
+    <div className="min-h-screen pt-0 pb-20 px-6 max-w-7xl mx-auto relative">
 
       {/* Background atmospheric glow */}
       <div style={{
@@ -479,40 +478,8 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
         }} />
       </div>
 
-      {/* ── 헤더 ── */}
-      <div className="decks-header flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 relative" style={{ zIndex: 1 }}>
-        <div>
-          <div className="decks-header-line" style={{
-            width: '4rem',
-            height: '0.0625rem',
-            background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
-            marginBottom: '1rem',
-            transformOrigin: 'left',
-            transform: 'scaleX(0)',
-          }} />
-          <p className="decks-header-tag" style={{ opacity: 0, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}>
-            DECK ARCHIVE
-          </p>
-          <h1 className="decks-header-title font-serif text-3xl sm:text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)', opacity: 0, textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}>
-            덱 게시판
-          </h1>
-          <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
-            관리자들의 편성을 공유하는 공간
-          </p>
-        </div>
-        <Link
-          href="/decks/new"
-          className="flex items-center gap-2 px-5 py-2.5 font-medium text-sm transition-all duration-200 hover:brightness-110 active:scale-95"
-          style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '4px', fontFamily: 'var(--font-heading)' }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          새 덱 만들기
-        </Link>
-      </div>
-
       {/* ── 필터 패널 ── */}
+      <div className="decks-filters" suppressHydrationWarning>
       <DeckListFilters
         inputValue={inputValue}
         onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}
@@ -565,6 +532,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
         onApplyCode={() => applyCollectionCode(codeInput)}
         codeError={codeError}
       />
+      </div>
 
       {/* 하단 장식 디바이더 */}
       <div className="decks-divider-bottom mx-auto" style={{

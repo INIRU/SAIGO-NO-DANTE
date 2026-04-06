@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckDetailClient from './DeckDetailClient'
 import DeckHero from '@/components/deck-detail/DeckHero'
@@ -179,7 +180,16 @@ export default async function DeckDetailPage({ params }: Props) {
   return (
     <>
       <DeckHero slots={heroSlots} />
-      <DeckDetailClient id={id} initialDeck={initialDeck} initialComments={initialComments} />
+      <Suspense fallback={
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
+            <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '20rem', marginBottom: '1rem' }} />
+            <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '10rem' }} />
+          </div>
+        </div>
+      }>
+        <DeckDetailClient id={id} initialDeck={initialDeck} initialComments={initialComments} />
+      </Suspense>
     </>
   )
 }

@@ -95,8 +95,8 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
         )}
 
         <div
-          className="absolute bottom-0 left-0 right-0 z-10"
-          style={{ height: '60%', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }}
+          className="absolute z-10"
+          style={{ bottom: '-1px', left: '-1px', right: '-1px', height: 'calc(60% + 1px)', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }}
         />
 
         <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 z-20">

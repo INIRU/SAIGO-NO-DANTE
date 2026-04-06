@@ -123,7 +123,9 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
           ) : (
             <div role="list" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
               {filtered.map(ego => (
-                <EGOBrowserCard key={ego.id} ego={ego} />
+                <div key={ego.id}>
+                  <EGOBrowserCard ego={ego} />
+                </div>
               ))}
             </div>
           )}

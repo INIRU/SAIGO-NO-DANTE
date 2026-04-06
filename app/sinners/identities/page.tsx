@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getAllIdentitiesForBrowser, getSinners } from '@/lib/db/queries'
 import IdentityBrowserClient from './IdentityBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
-
-export const revalidate = 300 // 5분 캐시
 
 const SITE_URL = 'https://saigo-no-dante.com'
 
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 }
 
 export default async function IdentitiesPage() {
+  'use cache'
+  cacheLife('page-5m')
   const [identities, sinners] = await Promise.all([
     getAllIdentitiesForBrowser(),
     getSinners(),
@@ -37,7 +39,9 @@ export default async function IdentitiesPage() {
   return (
     <>
       <JsonLd data={identityListLd} />
-      <IdentityBrowserClient identities={identities} sinners={sinners} />
+      <Suspense fallback={null}>
+        <IdentityBrowserClient identities={identities} sinners={sinners} />
+      </Suspense>
     </>
   )
 }

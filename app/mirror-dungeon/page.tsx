@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 import MirrorDungeonClient from './MirrorDungeonClient'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
-
-export const revalidate = 300
 
 export const metadata: Metadata = {
   title: '거울 던전 — E.G.O 기프트 도감 | 림버스 컴퍼니',
@@ -31,7 +31,9 @@ const MIRROR_FAQ = [
 ]
 
 export default async function MirrorDungeonPage() {
-  const supabase = await createClient()
+  'use cache'
+  cacheLife('page-5m')
+  const supabase = createAdminClient()
 
   const [{ data: gifts, error: giftsError }, { data: recipes, error: recipesError }, { data: themes, error: themesError }, { data: events, error: eventsError }] = await Promise.all([
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
@@ -47,12 +49,16 @@ export default async function MirrorDungeonPage() {
   return (
     <>
       <JsonLd data={faqJsonLd(MIRROR_FAQ)} />
-      <MirrorDungeonClient
-        gifts={gifts ?? []}
-        recipes={recipes ?? []}
-        themes={themes ?? []}
-        events={events ?? []}
-      />
+      {/* MirrorDungeonClient uses nuqs (useSearchParams internally), requiring Suspense
+          to prevent CSR bailout from de-opting the entire page to client rendering. */}
+      <Suspense fallback={null}>
+        <MirrorDungeonClient
+          gifts={gifts ?? []}
+          recipes={recipes ?? []}
+          themes={themes ?? []}
+          events={events ?? []}
+        />
+      </Suspense>
     </>
   )
 }

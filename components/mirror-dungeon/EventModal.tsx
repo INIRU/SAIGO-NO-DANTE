@@ -550,8 +550,9 @@ export default function EventModal({
               />
               {/* Layered gradient: deep bottom pull, soft top vignette */}
               <div
-                className="absolute inset-0"
+                className="absolute"
                 style={{
+                  inset: '-1px',
                   background:
                     'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.9) 25%, rgba(19,17,16,0.4) 55%, rgba(10,8,6,0.55) 100%)',
                 }}

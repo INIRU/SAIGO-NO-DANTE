@@ -5,7 +5,6 @@ import { authOptions } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import type { LegalSection } from '@/lib/data/legal'
 
-export const dynamic = 'force-dynamic'
 
 export async function PUT(request: Request) {
   try {

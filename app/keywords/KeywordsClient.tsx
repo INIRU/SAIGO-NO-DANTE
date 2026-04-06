@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, RotateCcw, LayoutList, Grid3X3 } from 'lucide-react'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Identity } from '@/lib/types'
 import TierListInteractive from './TierListInteractive'
 import TierGrid from './TierGrid'
@@ -14,13 +16,11 @@ export const metadata: Metadata = {
     description: '림버스 컴퍼니 리세마라 추천 인격 티어표 — S+/S/A/B/C/F 등급, 커뮤니티 투표 기반.',
   },
 }
-export const revalidate = 300
-
 const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
 type Tier = typeof TIERS[number]
 
 async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .schema('limbus')
@@ -50,7 +50,7 @@ async function getTierData(): Promise<Record<Tier, TierIdentity[]>> {
 }
 
 async function getCurrentSeason(): Promise<number> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .schema('limbus')
     .from('app_config')
@@ -61,12 +61,47 @@ async function getCurrentSeason(): Promise<number> {
   return data?.value?.season ?? 7
 }
 
+function TierListSkeleton() {
+  return (
+    <div className="animate-pulse" style={{ minHeight: '60vh', padding: '1rem 0' }}>
+      {['S+', 'S', 'A', 'B', 'C', 'F'].map((tier) => (
+        <div key={tier} style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
+          <div style={{ background: '#1a1510', borderRadius: '0.25rem', width: '3.5rem', height: '5rem', flexShrink: 0 }} />
+          <div style={{ flex: 1, background: '#1a1510', borderRadius: '0.25rem', height: '5rem' }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default async function TierListPage() {
+  'use cache'
+  cacheLife('page-5m')
   const [tiers, currentSeason] = await Promise.all([getTierData(), getCurrentSeason()])
 
   return (
-    <TierListInteractive tiers={tiers} currentSeason={currentSeason}>
-      <TierGrid tiers={tiers} currentSeason={currentSeason} />
-    </TierListInteractive>
+    <div style={{ background: 'var(--bg-deep)', minHeight: '100dvh' }}>
+      {/* Server-rendered header — instant paint */}
+      <div className="max-w-5xl mx-auto text-center" style={{ padding: '7rem 1.5rem 2rem' }}>
+        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>TIER LIST</p>
+        <h1 className="font-serif text-3xl font-bold" style={{ color: 'var(--gold)' }}>
+          리세마라 티어표
+        </h1>
+        <p style={{ color: '#888888', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+          커뮤니티 투표 기반 인격 등급표 — S+/S/A/B/C/F
+        </p>
+        <div className="mx-auto" style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, var(--gold), transparent)', marginTop: '1rem' }} />
+      </div>
+      {/* Client component — streams in */}
+      <Suspense fallback={
+        <div className="max-w-5xl mx-auto" style={{ padding: '0 1.5rem 4rem' }}>
+          <TierListSkeleton />
+        </div>
+      }>
+        <TierListInteractive tiers={tiers}>
+          <TierGrid tiers={tiers} currentSeason={currentSeason} />
+        </TierListInteractive>
+      </Suspense>
+    </div>
   )
 }
