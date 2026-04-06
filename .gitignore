@@ -46,3 +46,8 @@ next-env.d.ts
 /docs
 # sentry
 .env.sentry-build-plugin
+
+# Tool/plugin state (not project code)
+.bkit/
+.playwright-mcp/
+.serena/
