@@ -92,7 +92,7 @@ export default function DeckNoteEditor({
                     const btnOrderCount: Record<number, number> = {}
                     return (
                       <div key={identity.id} className="flex items-center gap-1.5">
-                        <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ width: 'auto', height: 'auto', opacity: 0.3, flexShrink: 0 }} unoptimized />
+                        <Image src={getSinnerLogoUrl(identity.sinner_id)} alt="" width={10} height={10} style={{ height: '0.625rem', width: 'auto', opacity: 0.3, flexShrink: 0 }} unoptimized />
                         <div className="flex items-center gap-1">
                           {idSkills.map(sk => {
                             const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order

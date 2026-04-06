@@ -139,7 +139,7 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
   return (
     <div
-      className="group relative flex flex-col overflow-hidden"
+      className="group relative flex flex-col h-full overflow-hidden"
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
