@@ -131,6 +131,7 @@ export default function FloatingFontControl() {
           className="fixed bottom-5 left-4 z-[45] flex items-center rounded-full"
           style={{
             padding: expanded ? '0.375rem 0.625rem' : '0.375rem',
+            height: '2.5rem',
             gap: '0.5rem',
             background: 'rgba(20, 16, 12, 0.92)',
             border: '1px solid rgba(200, 144, 10, 0.25)',
