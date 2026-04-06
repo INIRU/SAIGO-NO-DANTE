@@ -534,7 +534,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
               {sanityConditions.filter(c => c.condition_type === 'increase').length > 0 && (
                 <div className="relative overflow-hidden">
                   <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', opacity: 0.07, pointerEvents: 'none' }}>
-                    <Image src={SANITY_INCREASE_BG} alt="" width={80} height={80} style={{ width: 'auto', height: 'auto' }} />
+                    <Image src={SANITY_INCREASE_BG} alt="" width={80} height={80} style={{ height: '5rem', width: 'auto' }} />
                   </div>
                   <div className="mb-1.5">
                     <span style={{
@@ -558,7 +558,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
               {sanityConditions.filter(c => c.condition_type === 'decrease').length > 0 && (
                 <div className="relative overflow-hidden">
                   <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', opacity: 0.07, pointerEvents: 'none' }}>
-                    <Image src={SANITY_DECREASE_BG} alt="" width={80} height={80} style={{ width: 'auto', height: 'auto' }} />
+                    <Image src={SANITY_DECREASE_BG} alt="" width={80} height={80} style={{ height: '5rem', width: 'auto' }} />
                   </div>
                   <div className="mb-1.5">
                     <span style={{

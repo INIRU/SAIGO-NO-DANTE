@@ -74,7 +74,7 @@ export default function DeckGrid({
         animate="animate"
       >
         {filtered.map(deck => (
-          <motion.div key={deck.id} variants={staggerItem} className="cv-card-lg">
+          <motion.div key={deck.id} variants={staggerItem} className="cv-card-lg h-full">
             <DeckCard deck={deck} onTagClick={onTagClick} />
           </motion.div>
         ))}

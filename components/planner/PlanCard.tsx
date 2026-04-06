@@ -71,7 +71,7 @@ export default function PlanCard({ plan }: { plan: PlanSummary }) {
 
   return (
     <div
-      className="group relative flex flex-col transition-all duration-200 overflow-hidden"
+      className="group relative flex flex-col h-full transition-all duration-200 overflow-hidden"
       style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.375rem' }}
     >
       <div className="h-px w-0 group-hover:w-full transition-all duration-300" style={{ background: `linear-gradient(to right, ${diffStyle.color}, transparent)` }} />

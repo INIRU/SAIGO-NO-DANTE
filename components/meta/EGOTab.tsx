@@ -125,7 +125,7 @@ export default function EGOTab({ data, sinnerMap, egoByGrade }: EGOTabProps) {
                     <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 15%' }} sizes="60px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} style={{ width: 'auto', height: 'auto', opacity: 0.5 }} />
+                      <Image src={getSinnerLogoUrl(ego.sinner_id)} alt="" width={18} height={18} style={{ height: '1.125rem', width: 'auto', opacity: 0.5 }} />
                     </div>
                   )}
                 </div>
