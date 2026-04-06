@@ -130,7 +130,7 @@ export default function IdentitySkillsTab({
               {/* 스킬 프레임 + 정보 영역 */}
               <div className="flex items-start gap-1 mb-2">
                 {/* 프레임 + 오버레이 */}
-                <div className="relative shrink-0 ml-4" style={{ width: '6.5rem', height: '6.5rem' }}>
+                <div className="relative shrink-0 ml-1 sm:ml-4 w-[5rem] h-[5rem] sm:w-[6.5rem] sm:h-[6.5rem]">
                   {/* 죄악 색 삼각형 */}
                   <div className="absolute flex items-center justify-center pointer-events-none" style={{
                     top: '1.5%', left: '50%', transform: 'translateX(-56%)',
@@ -149,7 +149,7 @@ export default function IdentitySkillsTab({
                     skillSlot={baseOrder <= 3 ? baseOrder : 1}
                     sinColor={skillSinColor}
                     label={skillLabel}
-                    size="6.5rem"
+                    size="100%"
                   />
                   {/* 공격 타입 (하단 중앙) */}
                   {isAttackSkill && skill.skill_type && ['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
@@ -165,7 +165,7 @@ export default function IdentitySkillsTab({
                   )}
                   {/* 기본 위력 (좌측) */}
                   <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-                    <span style={{ fontFamily: "var(--font-excelsior), sans-serif", fontSize: '2.125rem', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
+                    <span style={{ fontFamily: "var(--font-excelsior), sans-serif", fontSize: 'clamp(1.375rem, 4vw, 2.125rem)', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
                       {skill.base_power}
                     </span>
                   </div>
@@ -203,7 +203,7 @@ export default function IdentitySkillsTab({
                         <Image key={ci}
                           src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
                           alt={isUb ? '파괴 불가 코인' : '코인'} width={16} height={16}
-                          style={{ width: '1rem', height: '1rem' }}
+                          className="w-3 h-3 sm:w-4 sm:h-4"
                         />
                       )
                     })}
@@ -221,7 +221,7 @@ export default function IdentitySkillsTab({
                       }}>
                         <span className="font-bold whitespace-nowrap" style={{
                           fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
-                          paddingRight: '4.5em',
+                          paddingRight: '2em',
                         }}>
                           {skill.name}
                         </span>
@@ -229,11 +229,11 @@ export default function IdentitySkillsTab({
                     </div>
                   </div>
                   {/* 공격 레벨 + 가중치 */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
                     {skill.offense_level != null && (
                       <div className="flex items-center gap-1">
-                        <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} style={{ width: '1.375rem', height: '1.375rem' }} />
-                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: '1.375rem', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
+                        <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
+                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
                           {skill.offense_level}
                           {diff?.offense_level && <DiffBadge from={diff.offense_level.from} to={diff.offense_level.to} />}
                         </span>
@@ -242,10 +242,10 @@ export default function IdentitySkillsTab({
                     )}
                     {isAttackSkill && (
                       <div className="flex items-center gap-1.5">
-                        <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.8125rem', fontWeight: 700 }}>공격 가중치</span>
+                        <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>공격 가중치</span>
                         <div className="flex gap-0.5">
                           {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
-                            <div key={i} style={{ width: '0.75rem', height: '0.75rem', background: '#c8900a', borderRadius: '0.15rem' }} />
+                            <div key={i} style={{ width: '0.5rem', height: '0.5rem', background: '#c8900a', borderRadius: '0.1rem' }} />
                           ))}
                         </div>
                       </div>

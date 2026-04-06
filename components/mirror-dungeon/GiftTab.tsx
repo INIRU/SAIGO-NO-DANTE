@@ -191,14 +191,17 @@ export default function GiftTab({
             <button
               key={kw.key}
               onClick={() => toggleKeyword(kw.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all duration-200"
               style={{
                 cursor: 'pointer',
-                background: active ? kwColor : 'rgba(255,255,255,0.04)',
-                color: active ? '#0d0b08' : '#666',
-                border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.06)'}`,
+                background: active ? kwColor : 'rgba(255,255,255,0.06)',
+                color: active ? '#0d0b08' : '#888',
+                border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.1)'}`,
                 fontFamily: 'var(--font-heading)',
-                boxShadow: active && !isAll ? `0 0 0.75rem ${KEYWORD_COLORS[kw.key] ?? '#666'}30` : 'none',
+                backdropFilter: 'blur(4px)',
+                boxShadow: active && !isAll
+                  ? `0 0 0.75rem ${KEYWORD_COLORS[kw.key] ?? '#666'}40, inset 0 1px 0 rgba(255,255,255,0.15)`
+                  : 'none',
               }}
             >
               {iconUrl && (
@@ -218,15 +221,19 @@ export default function GiftTab({
 
       {/* 컨트롤 바 */}
       <div
-        className="flex items-center gap-3 flex-wrap rounded-lg"
+        className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg"
         style={{
-          padding: '0.5rem 0.75rem',
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.05)',
+          padding: '0.625rem 1rem',
+          background: 'rgba(255,255,255,0.035)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0.25rem rgba(0,0,0,0.3)',
+          position: 'relative',
+          zIndex: 10,
         }}
       >
         {/* 필터 드롭다운 그룹 */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
           <Dropdown
             value={tiers.size === 0 ? '전체' : [...tiers][0]}
@@ -275,11 +282,11 @@ export default function GiftTab({
         />
 
         {/* 정렬 + 검색 그룹 */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 sm:ml-auto w-full sm:w-auto">
           {/* 세그먼트 정렬 */}
           <div
             className="flex items-center overflow-hidden rounded-md"
-            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ border: '1px solid rgba(255,255,255,0.09)' }}
           >
             {(['default', 'name', 'grade'] as const).map((key, i, arr) => {
               const labels = { default: '기본', name: '이름', grade: '등급' }
@@ -296,13 +303,14 @@ export default function GiftTab({
                   }}
                   className="transition-colors"
                   style={{
-                    padding: '0.375rem 0.625rem',
+                    padding: '0.4375rem 0.75rem',
                     fontSize: '0.6875rem',
-                    background: isSort ? 'rgba(200,144,10,0.12)' : 'transparent',
-                    color: isSort ? 'var(--gold)' : '#555',
+                    background: isSort ? 'rgba(200,144,10,0.18)' : 'transparent',
+                    color: isSort ? 'var(--gold)' : '#666',
                     fontFamily: 'var(--font-heading)',
                     cursor: 'pointer',
-                    borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                    borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                    borderBottom: isSort ? '2px solid var(--gold)' : '2px solid transparent',
                   }}
                 >
                   {labels[key]}
@@ -330,12 +338,21 @@ export default function GiftTab({
               placeholder="기프트 검색..."
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
-              className="pl-8 pr-7 py-1.5 rounded-md text-xs w-36 sm:w-44"
+              onFocus={e => {
+                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
+                e.currentTarget.style.boxShadow = '0 0 0 0.125rem rgba(200,144,10,0.08)'
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+              className="pl-8 pr-7 py-1.5 rounded-md text-xs flex-1 sm:flex-none sm:w-44 min-w-0 placeholder:text-[#555]"
               style={{
-                background: 'rgba(0,0,0,0.2)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.09)',
                 color: '#ccc',
                 outline: 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
               }}
             />
             {(inputValue || search) && (
@@ -361,7 +378,7 @@ export default function GiftTab({
           {/* 결과 수 */}
           <span
             className="flex-shrink-0 tabular-nums"
-            style={{ color: '#555', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}
+            style={{ color: '#777', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}
           >
             {filtered.length}
             <span style={{ fontSize: '0.5625rem', marginLeft: '1px' }}>건</span>
@@ -374,10 +391,12 @@ export default function GiftTab({
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
             style={{
-              color: '#3a3530',
-              fontSize: '0.625rem',
+              color: '#666',
+              fontSize: '0.5625rem',
               fontFamily: 'var(--font-heading)',
               marginRight: '0.125rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
             }}
           >
             필터
@@ -508,7 +527,7 @@ export default function GiftTab({
             className="gift-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))',
               gap: '0.5rem',
               position: 'relative',
               zIndex: 0,
