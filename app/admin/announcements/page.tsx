@@ -227,7 +227,7 @@ export default function AdminAnnouncementsPage() {
                   </p>
                 )}
                 <p style={{ color: '#6a6a80', fontSize: '0.6875rem', marginTop: '6px' }}>
-                  {new Date(a.created_at).toLocaleDateString('ko-KR')}
+                  {a.created_at.slice(0, 10).replace(/-/g, '.')}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">

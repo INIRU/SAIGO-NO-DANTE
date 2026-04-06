@@ -37,22 +37,23 @@ type ProfileData = {
   stats: Stats
 }
 
-function resolveInitialTab(searchParams: URLSearchParams): MypageTab {
-  const param = searchParams.get('tab')
-  if (param && ['profile', 'decks', 'planner', 'collection'].includes(param)) return param as MypageTab
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('mypage-tab')
-    if (saved && ['profile', 'decks', 'planner', 'collection'].includes(saved)) return saved as MypageTab
-  }
-  return 'profile'
-}
-
 export default function MypageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState<MypageTab>(() => resolveInitialTab(searchParams))
+  const [activeTab, setActiveTab] = useState<MypageTab>(() => {
+    const param = searchParams.get('tab')
+    if (param && ['profile', 'decks', 'planner', 'collection'].includes(param)) return param as MypageTab
+    return 'profile'
+  })
+
+  useEffect(() => {
+    const saved = localStorage.getItem('mypage-tab')
+    if (saved && ['profile', 'decks', 'planner', 'collection'].includes(saved)) {
+      setActiveTab(saved as MypageTab)
+    }
+  }, [])
 
   // SWR: 프로필 로드 (인증 시에만)
   const { data, isLoading: loading, mutate } = useSWR<ProfileData>(

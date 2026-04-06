@@ -161,12 +161,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
   )
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('ko-KR', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    d.slice(5, 7) + '.' + d.slice(8, 10) + ' ' + d.slice(11, 16)
 
   const rootComments = comments.filter(c => !c.parent_id)
   const repliesMap = new Map<string, Comment[]>()

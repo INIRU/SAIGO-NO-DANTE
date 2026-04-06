@@ -481,9 +481,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   const activeEgos = activeSinner ? (egoGrouped[activeSinner] ?? []) : []
 
   const isGeodun = GEODUN_TYPES.has(deck.content_type ?? '')
-  const date = new Date(deck.created_at).toLocaleDateString('ko-KR', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+  const date = deck.created_at.slice(0, 10).replace(/-/g, '.')
 
   // 공통 props for header components
   const headerProps = {

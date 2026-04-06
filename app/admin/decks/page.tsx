@@ -93,7 +93,7 @@ export default function AdminDecksPage() {
       header: '날짜',
       render: (deck: Deck) => (
         <span style={{ color: '#888888', fontSize: '0.75rem' }}>
-          {new Date(deck.created_at).toLocaleDateString('ko-KR')}
+          {deck.created_at.slice(0, 10).replace(/-/g, '.')}
         </span>
       ),
     },
