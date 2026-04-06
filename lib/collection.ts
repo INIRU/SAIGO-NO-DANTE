@@ -26,9 +26,16 @@ export async function decodeCollectionAsync(
     const compressed = Uint8Array.from(atob(code), c => c.charCodeAt(0))
     const ds = new DecompressionStream('gzip')
     const writer = ds.writable.getWriter()
-    writer.write(compressed)
-    writer.close()
-    const decompressed = new Uint8Array(await new Response(ds.readable).arrayBuffer())
+    // Fire-and-forget write; catch writer errors to prevent unhandled rejection
+    const writePromise = writer.write(compressed).then(() => writer.close()).catch(() => {})
+    let decompressedBuf: ArrayBuffer
+    try {
+      decompressedBuf = await new Response(ds.readable).arrayBuffer()
+    } catch {
+      await writePromise
+      return owned
+    }
+    const decompressed = new Uint8Array(decompressedBuf)
 
     for (let si = 0; si < 12; si++) {
       const sinner = sinners[si]

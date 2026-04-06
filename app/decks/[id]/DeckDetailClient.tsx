@@ -547,7 +547,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
               <span style={{ color: 'var(--text-secondary)' }}>{deck.profiles.username}</span>
             )}
             {deck.profiles?.username && <span style={{ fontFamily: 'sans-serif' }}>·</span>}
-            <span>{date}</span>
+            <span suppressHydrationWarning>{date}</span>
             <span style={{ fontFamily: 'sans-serif' }}>·</span>
             <span className="flex items-center gap-1">
               <svg width="9" height="9" viewBox="0 0 16 16" fill="none">

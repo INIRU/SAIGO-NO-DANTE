@@ -20,6 +20,11 @@ Sentry.init({
     "AbortError",
     "ChunkLoadError",
     /Loading chunk \d+ failed/,
+    // YouTube iframe cross-origin SecurityError (Sentry BrowserApiErrors instrumentation)
+    /Blocked a frame with origin.*from accessing a cross-origin frame/,
+    "SecurityError: Blocked a frame",
+    // Invalid deck code gzip decompression
+    /compressed data was not valid/,
   ],
 });
 

@@ -40,11 +40,18 @@ export async function decodeDeckCode(
   try {
     // 1) base64 decode → compressed bytes
     const compressed = Uint8Array.from(atob(code), c => c.charCodeAt(0))
-    // 2) gzip decompress
+    // 2) gzip decompress — catch stream errors that may escape as unhandled rejections
     const ds = new DecompressionStream('gzip')
     const w = ds.writable.getWriter()
-    w.write(compressed); w.close()
-    const decompBuf = await new Response(ds.readable).arrayBuffer()
+    // Fire-and-forget write; catch writer errors to prevent unhandled rejection
+    const writePromise = w.write(compressed).then(() => w.close()).catch(() => {})
+    let decompBuf: ArrayBuffer
+    try {
+      decompBuf = await new Response(ds.readable).arrayBuffer()
+    } catch {
+      await writePromise
+      return null
+    }
     const b64str = new TextDecoder().decode(decompBuf)
     // 3) base64 decode → bytes
     const bytes = Uint8Array.from(atob(b64str), c => c.charCodeAt(0))
