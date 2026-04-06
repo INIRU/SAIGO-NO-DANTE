@@ -112,7 +112,7 @@ function TierListInner({
   const hasTiers = TIERS.some(t => tiers[t].length > 0)
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 pt-28 pb-16" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16" style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Background atmospheric glow */}
       <div style={{
         position: 'fixed',
@@ -126,18 +126,9 @@ function TierListInner({
         zIndex: 0,
       }} />
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
-        >
-          <p className="text-center" style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>REROLL TIER LIST</p>
-          <h1
-            className="font-serif text-center mb-2"
-            style={{ color: 'var(--gold)', fontSize: '1.5rem', fontWeight: 700 }}
-          >
-            리세마라 티어표
-          </h1>
+        {/* 헤더는 server-rendered page.tsx에서 렌더링 */}
+        {/* 추가 설명 */}
+        <div className="text-center mb-4">
           <p className="text-center mb-1" style={{ color: '#888888', fontSize: '0.8125rem' }}>
             림버스 컴퍼니 리세마라 추천 인격 티어
           </p>
@@ -155,8 +146,7 @@ function TierListInner({
               원본: 림버스 컴퍼니 갤러리
             </a>
           </p>
-          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', marginBottom: '0.5rem', marginLeft: 'auto', marginRight: 'auto' }} />
-        </motion.div>
+        </div>
 
         {/* 범례 */}
         <div className="flex items-center justify-center gap-5 mb-6" style={{ fontSize: '0.6875rem' }}>
@@ -407,11 +397,9 @@ function TierListInner({
 
 export default function TierListInteractive({
   tiers,
-  currentSeason,
   children,
 }: {
   tiers: Record<Tier, TierIdentity[]>
-  currentSeason: number
   children: ReactNode
 }) {
   return (

@@ -6,7 +6,6 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 
-export const dynamic = 'force-dynamic'
 
 // GET /api/planner — 플랜 목록
 export async function GET(req: NextRequest) {

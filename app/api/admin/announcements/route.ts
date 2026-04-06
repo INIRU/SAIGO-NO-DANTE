@@ -7,7 +7,6 @@ import { writeAuditLog } from '@/lib/audit'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { validateBody, createAnnouncementSchema } from '@/lib/schemas/admin'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {

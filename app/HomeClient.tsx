@@ -1,17 +1,24 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useRef, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { XIcon, Pin, ChevronDown } from 'lucide-react'
+import dynamic from 'next/dynamic'
 
 import GlitchText from '@/components/ui/GlitchText'
-import heroStyles from '@/styles/components/HeroGlitch.module.css'
+import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
+import ScrollAnimations from '@/components/home/ScrollAnimations'
 import {
-  IdentityWithSinner,
-  getSinnerLogoUrl, getIdentityInfoUrl,
-  RARITY_ICON_MAP, BLUR_PLACEHOLDER,
+  type IdentityWithSinner,
+  getSinnerLogoUrl,
+  RARITY_ICON_MAP,
 } from '@/lib/data/sinners'
+
+// Heavy slider — dynamically imported for code splitting
+const HeroGlitchSlider = dynamic(
+  () => import('@/components/home/HeroGlitchSlider'),
+  { ssr: false }
+)
 
 // ── SVG icons ─────────────────────────────────────────────────────────────
 
@@ -30,19 +37,7 @@ function DiscordIcon({ size = 16, style }: { size?: number; style?: React.CSSPro
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-function formatDate(d: string) {
-  const dateOnly = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (dateOnly) {
-    const [, year, month, day] = dateOnly
-    return `${year}.${month}.${day}`
-  }
-  const timestamp = Date.parse(d)
-  if (Number.isNaN(timestamp)) return d
-  const kst = new Date(timestamp + 9 * 60 * 60 * 1000)
-  return `${kst.getUTCFullYear()}.${String(kst.getUTCMonth() + 1).padStart(2, '0')}.${String(kst.getUTCDate()).padStart(2, '0')}`
-}
+// ── Rarity icon (small helper, no own file needed) ─────────────────────────
 
 function RarityIcon({ rarity }: { rarity: number }) {
   const src = RARITY_ICON_MAP[rarity]
@@ -59,201 +54,28 @@ function RarityIcon({ rarity }: { rarity: number }) {
   )
 }
 
-// ── 히어로 글리치 슬라이더 ────────────────────────────────────────────────
+// ── Props ──────────────────────────────────────────────────────────────────
 
-type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
-
-function HeroGlitchSlider({
-  identities,
-  onSlideChange,
-}: {
-  identities: IdentityWithSinner[]
-  onSlideChange: (identity: IdentityWithSinner) => void
-}) {
-  const [validGacksung, setValidGacksung] = useState<Set<string>>(new Set())
-  const [currentIdx, setCurrentIdx]       = useState(0)
-  const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
-  const layerARef        = useRef<HTMLDivElement>(null)
-  const chromaRRef       = useRef<HTMLDivElement>(null)
-  const chromaBRef       = useRef<HTMLDivElement>(null)
-  const sliderRef        = useRef<HTMLDivElement>(null)
-  const isTransitionRef  = useRef(false)
-  const advanceRef       = useRef<() => void>(() => {})
-
-  // 각성 이미지 존재 여부 확인 (404 → 스킵)
-  useEffect(() => {
-    identities.forEach(identity => {
-      const url = getIdentityInfoUrl(identity, true)
-      if (!url) return
-      const img = new window.Image()
-      img.onload = () => setValidGacksung(prev => new Set([...prev, identity.id]))
-      img.src = url
-    })
-  }, [identities])
-
-  const slides = useMemo<HeroSlide[]>(() => {
-    const result: HeroSlide[] = []
-    identities.forEach(identity => {
-      const normalUrl = getIdentityInfoUrl(identity, false)
-      if (normalUrl) result.push({ url: normalUrl, identity, gacksung: false })
-      if (validGacksung.has(identity.id)) {
-        const gUrl = getIdentityInfoUrl(identity, true)
-        if (gUrl) result.push({ url: gUrl, identity, gacksung: true })
-      }
-    })
-    return result
-  }, [identities, validGacksung])
-
-  // 부모에 현재 슬라이드 알림
-  useEffect(() => {
-    const s = slides[currentIdx]
-    if (s) onSlideChange(s.identity)
-  }, [currentIdx, slides, onSlideChange])
-
-  // 켄번즈 효과 — 슬라이드마다 천천히 줌인
-  useEffect(() => {
-    const el = layerARef.current
-    if (!el) return
-    let ctx: any
-    ;(async () => {
-      const { gsap } = await import('gsap')
-      gsap.killTweensOf(el)
-      ctx = gsap.context(() => {
-        gsap.fromTo(el,
-          { scale: 1, x: '0%', y: '0%' },
-          { scale: 1.06, x: '-1%', y: '-0.8%', duration: 8, ease: 'none', transformOrigin: 'right center' }
-        )
-      })
-    })()
-    return () => { ctx?.revert() }
-  }, [currentIdx])
-
-  // 글리치 전환
-  const glitchTo = useCallback(async (nextIdx: number) => {
-    if (isTransitionRef.current || slides.length < 2) return
-    isTransitionRef.current = true
-    setPendingIdx(nextIdx)
-
-    await new Promise(r => setTimeout(r, 16))
-
-    const { gsap } = await import('gsap')
-    const a = layerARef.current
-    const rCh = chromaRRef.current
-    const bCh = chromaBRef.current
-    if (!a) { isTransitionRef.current = false; return }
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setCurrentIdx(nextIdx)
-        setPendingIdx(null)
-        gsap.set(a, { clipPath: '', x: 0, filter: 'none' })
-        if (rCh) gsap.set(rCh, { opacity: 0, x: 0, clipPath: 'none' })
-        if (bCh) gsap.set(bCh, { opacity: 0, x: 0, clipPath: 'none' })
-        isTransitionRef.current = false
-      },
-    })
-
-    tl.to(a, { clipPath: 'inset(12% 0 75% 0)', x: -7, filter: 'brightness(1.8)',     duration: 0.05 })
-      .to(a, { clipPath: 'inset(50% 0 28% 0)', x: 9,  filter: 'hue-rotate(80deg)',   duration: 0.04 })
-      .to(a, { clipPath: 'inset(6%  0 82% 0)', x: -5, filter: 'brightness(2.2)',     duration: 0.05 })
-      .to(a, { clipPath: 'inset(70% 0 10% 0)', x: 6,  filter: 'hue-rotate(-60deg)',  duration: 0.04 })
-      .to(a, { clipPath: 'inset(28% 0 52% 0)', x: -8, filter: 'brightness(1.5)',     duration: 0.04 })
-      .to(a, { clipPath: 'inset(0 0 100% 0)',   x: 0,  filter: 'none',               duration: 0.06 })
-  }, [slides.length])
-
-  // advance ref 최신화
-  useEffect(() => {
-    advanceRef.current = () => glitchTo((currentIdx + 1) % slides.length)
-  }, [currentIdx, slides.length, glitchTo])
-
-  // 자동 슬라이드
-  useEffect(() => {
-    if (slides.length < 2) return
-    const nextIdx = (currentIdx + 1) % slides.length
-    const isSameIdentity = slides[currentIdx]?.identity.id === slides[nextIdx]?.identity.id
-    const delay = isSameIdentity ? 2500 : 5000
-    const id = setTimeout(() => advanceRef.current(), delay)
-    return () => clearTimeout(id)
-  }, [currentIdx, slides])
-
-  const current = slides[currentIdx]
-  const pending = pendingIdx !== null ? slides[pendingIdx] : null
-
-  if (!current) return null
-
-  return (
-    <div ref={sliderRef} className="absolute inset-0 md:inset-y-0 md:left-auto md:right-0 w-full md:w-[62%] overflow-hidden" style={{ zIndex: 1 }}>
-      {/* Layer B: 다음 이미지 (아래) */}
-      {pending && (
-        <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          <Image src={pending.url} alt="" fill placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" quality={90} />
-        </div>
-      )}
-      {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
-      <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image src={current.url} alt={current.identity.name_kr} fill priority placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} className="object-cover object-top" sizes="(max-width: 768px) 100vw, 62vw" quality={90} />
-        {/* RGB Chromatic Aberration 오버레이 */}
-        <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" quality={60} />
-        </div>
-        <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
-          <Image src={current.url} alt="" fill loading="lazy" className="object-cover object-top" style={{ filter: 'grayscale(1)' }} sizes="(max-width: 768px) 100vw, 62vw" quality={60} />
-        </div>
-      </div>
-      {/* 그라디언트 오버레이 */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 15, background: 'linear-gradient(to right, var(--bg-deep) 0%, rgba(13,11,8,0.9) 25%, rgba(13,11,8,0.5) 55%, transparent 85%)' }} />
-      <div className="absolute inset-0 pointer-events-none md:hidden" style={{ zIndex: 15, background: 'linear-gradient(to right, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.7) 50%, rgba(13,11,8,0.3) 100%)' }} />
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 15, background: 'linear-gradient(to top, var(--bg-deep) 0%, transparent 30%)' }} />
-      {/* 슬라이드 인디케이터 */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-5 right-5 flex gap-2" style={{ zIndex: 20 }}>
-          {slides.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => glitchTo(i)}
-              title={`${s.identity.name_kr}${s.gacksung ? ' 각성' : ''}`}
-              style={{
-                width: i === currentIdx ? '1.125rem' : '0.3125rem',
-                height: '0.3125rem',
-                borderRadius: '0.1875rem',
-                background: i === currentIdx ? 'var(--gold)' : 'rgba(200,164,90,0.25)',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'all 0.3s ease',
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
+interface HomeClientProps {
+  latestIdentities: IdentityWithSinner[]
+  pinnedAnnouncement?: AnnouncementData | null
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────
-
-type YoutubeIconVideo = { videoId: string; title: string; publishedAt: string }
-type Announcement = { id: string; title: string; content: string; pinned: boolean; created_at: string }
-
-export default function HomeClient({
-  latestIdentities,
-  pinnedAnnouncement,
-}: {
-  latestIdentities: IdentityWithSinner[]
-  latestVideo?: YoutubeIconVideo | null
-  pinnedAnnouncement?: Announcement | null
-}) {
+export default function HomeClient({ latestIdentities, pinnedAnnouncement }: HomeClientProps) {
   const heroRef = useRef<HTMLDivElement>(null)
-  const [heroIdentity, setHeroIdentity] = useState<IdentityWithSinner | null>(latestIdentities[0] ?? null)
-  const [announcementOpen, setAnnouncementOpen] = useState(false)
-  const [announcementDismissed, setAnnouncementDismissed] = useState(false)
+  const [heroIdentity, setHeroIdentity] = useState<IdentityWithSinner | null>(
+    latestIdentities[0] ?? null
+  )
+
+  const hasAnnouncement = Boolean(pinnedAnnouncement)
 
   // 최신 출시일과 동일한 인격만 히어로 슬라이더에 사용
-  const latestDate     = latestIdentities[0]?.release_date
-  const heroIdentities = useMemo(() =>
-    latestDate
-      ? latestIdentities.filter(id => id.release_date === latestDate)
-      : latestIdentities.slice(0, 1),
+  const latestDate = latestIdentities[0]?.release_date
+  const heroIdentities = useMemo(
+    () =>
+      latestDate
+        ? latestIdentities.filter(id => id.release_date === latestDate)
+        : latestIdentities.slice(0, 1),
     [latestIdentities, latestDate]
   )
 
@@ -261,74 +83,18 @@ export default function HomeClient({
     setHeroIdentity(identity)
   }, [])
 
-  // GSAP scroll animations — target classes on server-rendered below-fold sections
-  const scrollAnimRef = useRef(false)
-  useEffect(() => {
-    if (scrollAnimRef.current) return
-    scrollAnimRef.current = true
-    const init = async () => {
-      const { gsap } = await import('gsap')
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
-      gsap.registerPlugin(ScrollTrigger)
-
-      const ctx = gsap.context(() => {
-        // 히어로 텍스트
-        gsap.timeline({ defaults: { ease: 'power3.out' } })
-          .fromTo('.hero-subtitle', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.3 })
-          .fromTo('.hero-desc',     { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.6 }, '-=0.4')
-          .fromTo('.hero-cta',      { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.1 }, '-=0.3')
-
-        // 최신 인격 카드 — targets server-rendered .latest-card elements
-        if (document.querySelector('.latest-card')) {
-          gsap.fromTo('.latest-card',
-            { opacity: 0, y: 50, scale: 0.94 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.07, ease: 'power2.out',
-              scrollTrigger: { trigger: '.latest-section', start: 'top 78%' } }
-          )
-        }
-        if (document.querySelector('.latest-header')) {
-          gsap.fromTo('.latest-header',
-            { opacity: 0, x: -20 },
-            { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out',
-              scrollTrigger: { trigger: '.latest-section', start: 'top 85%' } }
-          )
-        }
-
-        // 공식 링크
-        if (document.querySelector('.official-link-card')) {
-          gsap.fromTo('.official-link-card',
-            { opacity: 0, scale: 0.88, y: 20 },
-            { opacity: 1, scale: 1, y: 0, duration: 0.55, stagger: 0.1, ease: 'back.out(1.4)',
-              scrollTrigger: { trigger: '.official-section', start: 'top 85%' } }
-          )
-        }
-
-        // 기능 카드 그리드
-        if (document.querySelector('.feature-card')) {
-          gsap.fromTo('.feature-card',
-            { opacity: 0, y: 30 },
-            { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out',
-              scrollTrigger: { trigger: '.features-section', start: 'top 80%' } }
-          )
-        }
-      })
-
-      ScrollTrigger.refresh()
-      return () => ctx.revert()
-    }
-
-    let cleanup: (() => void) | undefined
-    init().then(fn => { cleanup = fn })
-    return () => { cleanup?.() }
-  }, [])
+  const heroMinHeight = hasAnnouncement ? 'calc(100dvh - 3rem)' : '100dvh'
 
   return (
     <>
+      {/* Scroll animations — targets server-rendered class names */}
+      <ScrollAnimations />
+
       {/* ── 히어로 ─────────────────────────────────────────────── */}
       <section
         ref={heroRef}
         className="relative overflow-hidden flex"
-        style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 3rem)' : '100dvh', background: 'var(--bg-deep)' }}
+        style={{ minHeight: heroMinHeight, background: 'var(--bg-deep)' }}
       >
         {/* 글리치 슬라이더 (최신 인격 풀 일러스트) */}
         {heroIdentities.length > 0 && (
@@ -337,7 +103,10 @@ export default function HomeClient({
 
         {/* 이미지 없을 때 ambient glow */}
         {heroIdentities.length === 0 && (
-          <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(200,164,90,0.08) 0%, transparent 60%)' }} />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(200,164,90,0.08) 0%, transparent 60%)' }}
+          />
         )}
 
         {/* 수감자 아이콘 워터마크 */}
@@ -352,14 +121,20 @@ export default function HomeClient({
               animation: 'heroWatermarkFade 0.6s ease-out',
             }}
           >
-            <Image src={getSinnerLogoUrl(heroIdentity.sinner_id)} alt="" fill sizes="60px" style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }} />
+            <Image
+              src={getSinnerLogoUrl(heroIdentity.sinner_id)}
+              alt=""
+              fill
+              sizes="60px"
+              style={{ objectFit: 'contain', filter: 'brightness(4) saturate(0)' }}
+            />
           </div>
         )}
 
         {/* 텍스트 콘텐츠 */}
         <div
           className="relative z-10 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-xl"
-          style={{ minHeight: pinnedAnnouncement && !announcementDismissed ? 'calc(100dvh - 3rem)' : '100dvh' }}
+          style={{ minHeight: heroMinHeight }}
         >
           <div className="flex items-center gap-3 md:gap-4 mb-2">
             <Image
@@ -380,17 +155,26 @@ export default function HomeClient({
             />
           </div>
 
-          <p className="hero-subtitle text-lg mb-4 tracking-wider" style={{ color: 'rgba(232,196,120,0.5)', opacity: 0, fontWeight: 300 }}>
-            <span style={{ fontFamily: "'Song Myung', Georgia, serif", fontStyle: 'italic' }}>Limbus Company</span>{' '}
+          <p
+            className="hero-subtitle text-lg mb-4 tracking-wider"
+            style={{ color: 'rgba(232,196,120,0.5)', opacity: 0, fontWeight: 300 }}
+            suppressHydrationWarning
+          >
+            <span style={{ fontFamily: "'Song Myung', Georgia, serif", fontStyle: 'italic' }}>
+              Limbus Company
+            </span>{' '}
             <span className="font-serif">팬 아카이브</span>
           </p>
 
           {/* 현재 슬라이드 인격 정보 */}
           {heroIdentity && (
-            <div className="hero-desc mb-8" style={{ opacity: 0 }}>
+            <div className="hero-desc mb-8" style={{ opacity: 0 }} suppressHydrationWarning>
               <div className="flex items-center gap-2 flex-wrap">
                 <RarityIcon rarity={heroIdentity.rarity} />
-                <span className="font-serif font-bold" style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}>
+                <span
+                  className="font-serif font-bold"
+                  style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}
+                >
                   {heroIdentity.name_kr}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem', fontFamily: 'var(--font-title)' }}>
@@ -400,7 +184,7 @@ export default function HomeClient({
             </div>
           )}
 
-          <div className="hero-cta flex flex-wrap gap-3 md:gap-4" style={{ opacity: 0 }}>
+          <div className="hero-cta flex flex-wrap gap-3 md:gap-4" style={{ opacity: 0 }} suppressHydrationWarning>
             <Link
               href="/sinners"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
@@ -434,100 +218,30 @@ export default function HomeClient({
         </div>
 
         {/* 스크롤 유도 */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10" style={{ color: 'rgba(200,164,90,0.25)' }}>
-          <span className="text-xs tracking-widest font-mono" style={{ letterSpacing: '0.3em', fontSize: '0.5625rem' }}>SCROLL</span>
-          <div style={{
-            width: '0.0625rem',
-            height: '1.5rem',
-            background: 'linear-gradient(to bottom, rgba(200,144,10,0.4), transparent)',
-            animation: 'scrollPulse 2s ease-in-out infinite',
-          }} />
+        <div
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
+          style={{ color: 'rgba(200,164,90,0.25)' }}
+        >
+          <span
+            className="text-xs tracking-widest font-mono"
+            style={{ letterSpacing: '0.3em', fontSize: '0.5625rem' }}
+          >
+            SCROLL
+          </span>
+          <div
+            style={{
+              width: '0.0625rem',
+              height: '1.5rem',
+              background: 'linear-gradient(to bottom, rgba(200,144,10,0.4), transparent)',
+              animation: 'scrollPulse 2s ease-in-out infinite',
+            }}
+          />
         </div>
       </section>
 
       {/* ── 공지 띠 배너 ───────────────────────────────────────── */}
-      {pinnedAnnouncement && !announcementDismissed && (
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(200,144,10,0.1) 0%, rgba(13,11,8,0.98) 100%)',
-            borderBottom: '1px solid rgba(200,144,10,0.2)',
-          }}
-        >
-          <div className="max-w-7xl mx-auto px-6">
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 0',
-                cursor: 'pointer',
-                userSelect: 'none',
-              }}
-              onClick={() => setAnnouncementOpen(prev => !prev)}
-            >
-              <Pin size={13} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
-              <span
-                className="font-serif font-light"
-                style={{ color: 'var(--gold-light)', fontSize: '0.875rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-              >
-                {pinnedAnnouncement.title}
-              </span>
-              <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem', flexShrink: 0 }}>
-                {formatDate(pinnedAnnouncement.created_at)}
-              </span>
-              <Link
-                href="/announcements"
-                onClick={e => e.stopPropagation()}
-                className="font-mono transition-colors hover:opacity-70"
-                style={{ color: '#8a6010', fontSize: '0.625rem', flexShrink: 0, letterSpacing: '0.05em' }}
-              >
-                전체보기
-              </Link>
-              <ChevronDown
-                size={14}
-                style={{
-                  color: '#8a6010',
-                  flexShrink: 0,
-                  transform: announcementOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.25s ease',
-                }}
-              />
-              <button
-                onClick={e => { e.stopPropagation(); setAnnouncementDismissed(true) }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                title="닫기"
-              >
-                <XIcon size={13} />
-              </button>
-            </div>
-
-            {announcementOpen && pinnedAnnouncement.content && (
-              <div
-                style={{
-                  paddingBottom: '0.875rem',
-                  paddingLeft: '1.5625rem',
-                  color: 'var(--text-tertiary)',
-                  fontSize: '0.8125rem',
-                  lineHeight: 1.7,
-                  borderTop: '1px solid rgba(200,144,10,0.1)',
-                  paddingTop: '0.75rem',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {pinnedAnnouncement.content}
-              </div>
-            )}
-          </div>
-        </div>
+      {pinnedAnnouncement && (
+        <AnnouncementBanner announcement={pinnedAnnouncement} />
       )}
     </>
   )

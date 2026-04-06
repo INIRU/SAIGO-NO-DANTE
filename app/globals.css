@@ -124,6 +124,19 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
 
+/* ── content-visibility 유틸리티 (오프스크린 렌더링 지연) ── */
+.cv-card-sm {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 6rem;
+}
+.cv-card-md {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 14rem;
+}
+.cv-card-lg {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 20rem;
+}
 
 /* ── 포커스 링 (접근성) ───────────────────────────────── */
 :focus-visible {

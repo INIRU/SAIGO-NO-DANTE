@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import PlannerClient from './PlannerClient'
 
@@ -37,14 +38,32 @@ export default async function PlannerPage() {
   const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
   if (egosError) console.error('Failed to fetch egos:', egosError)
 
-  return <PlannerClient
-    themes={themes ?? []}
-    gifts={gifts ?? []}
-    recipes={recipes ?? []}
-    identities={identities ?? []}
-    sinners={sinners ?? []}
-    passives={passives ?? []}
-    skills={skills ?? []}
-    egos={egos ?? []}
-  />
+  return (
+    <>
+      {/* Server-rendered page header — paints in initial HTML before JS loads */}
+      <div className="pt-20 sm:pt-24 pb-4 px-3 md:px-6 max-w-[90rem] mx-auto">
+        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
+          MIRROR DUNGEON PLANNER
+        </p>
+        <h1 className="font-serif text-2xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
+          거울 던전 플래너
+        </h1>
+        <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '0.75rem' }} />
+      </div>
+      {/* PlannerClient uses nuqs (useSearchParams internally), requiring Suspense
+          to prevent CSR bailout from de-opting the entire page to client rendering. */}
+      <Suspense fallback={null}>
+        <PlannerClient
+          themes={themes ?? []}
+          gifts={gifts ?? []}
+          recipes={recipes ?? []}
+          identities={identities ?? []}
+          sinners={sinners ?? []}
+          passives={passives ?? []}
+          skills={skills ?? []}
+          egos={egos ?? []}
+        />
+      </Suspense>
+    </>
+  )
 }

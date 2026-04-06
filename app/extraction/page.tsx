@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import ExtractionScene from './ExtractionScene'
+import ExtractionWrapper from './ExtractionWrapper'
 
 export const metadata: Metadata = {
   title: '추출 시뮬레이션',
@@ -11,5 +11,5 @@ export const metadata: Metadata = {
 }
 
 export default function ExtractionPage() {
-  return <ExtractionScene />
+  return <ExtractionWrapper />
 }

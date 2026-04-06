@@ -82,9 +82,10 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
 
           {/* 하단 그라디언트 오버레이 */}
           <div
-            className="absolute bottom-0 left-0 right-0 z-10"
+            className="absolute z-10"
             style={{
-              height: '65%',
+              bottom: '-1px', left: '-1px', right: '-1px',
+              height: 'calc(65% + 1px)',
               background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.9) 35%, rgba(13,11,8,0.3) 70%, transparent 100%)',
             }}
           />

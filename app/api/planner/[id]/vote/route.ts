@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
-export const dynamic = 'force-dynamic'
 
 // GET /api/planner/[id]/vote — 추천 상태 확인
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

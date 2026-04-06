@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
 import RandomStatic from './RandomStatic'
 import RandomInteractive from './RandomInteractive'
@@ -13,9 +14,9 @@ export const metadata: Metadata = {
   },
 }
 
-export const revalidate = 300
-
 export default async function RandomPage() {
+  'use cache'
+  cacheLife('page-5m')
   const [sinners, identities, egos] = await Promise.all([
     getSinners(),
     getIdentities(),

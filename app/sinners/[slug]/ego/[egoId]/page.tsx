@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getSinnerById, getEGOById, getEGOs } from '@/lib/db/queries'
 import { notFound } from 'next/navigation'
 import EGODetailClient from './EGODetailClient'
-
-export const revalidate = 60
 
 export async function generateMetadata({
   params,
@@ -36,8 +36,14 @@ export async function generateStaticParams() {
 }
 
 export default async function EGODetailPage({ params }: { params: Promise<{ slug: string; egoId: string }> }) {
+  'use cache'
+  cacheLife('page-1m')
   const { slug, egoId } = await params
   const [sinner, ego] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
   if (!sinner || !ego) notFound()
-  return <EGODetailClient sinner={sinner} ego={ego} />
+  return (
+    <Suspense fallback={null}>
+      <EGODetailClient sinner={sinner} ego={ego} />
+    </Suspense>
+  )
 }

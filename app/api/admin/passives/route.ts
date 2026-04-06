@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateBody, createPassiveSchema } from '@/lib/schemas/admin'
 
-export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {

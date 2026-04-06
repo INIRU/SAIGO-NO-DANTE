@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
@@ -117,7 +118,6 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
   }
 }
 
-export const revalidate = 600  // 10분마다 재검증 (admin 인격 추가 시 즉시 무효화)
 
 async function BelowFoldContent({ latestIdentities }: { latestIdentities: IdentityWithSinner[] }) {
   const latestVideo = await getLatestYoutubeVideo()
@@ -140,6 +140,8 @@ function BelowFoldSkeleton() {
 }
 
 export default async function HomePage() {
+  'use cache'
+  cacheLife('page-10m')
   const [latestIdentities, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
     getPinnedAnnouncement(),

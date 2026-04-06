@@ -83,7 +83,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
               <button
                 key={kw.name}
                 onClick={() => onSelect(kw)}
-                className="flex flex-col items-center gap-1.5 p-2.5 rounded-lg transition-all duration-200 hover:scale-[1.04]"
+                className="cv-card-sm flex flex-col items-center gap-1.5 p-2.5 rounded-lg transition-all duration-200 hover:scale-[1.04]"
                 style={{
                   animation: `kwCardIn 0.25s ease both`,
                   animationDelay: `${(i % COMPACT_PAGE_SIZE) * 0.008}s`,
@@ -130,15 +130,16 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
     <>
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))' }}>
         {visible.map((kw, i) => (
-          <KeywordCard
-            key={kw.name}
-            keyword={kw}
-            identityCount={countMaps.identity[kw.name] || 0}
-            egoCount={countMaps.ego[kw.name] || 0}
-            giftCount={countMaps.gift[kw.name] || 0}
-            animationDelay={(i % PAGE_SIZE) * 0.015}
-            onClick={() => onSelect(kw)}
-          />
+          <div key={kw.name} className="cv-card-md">
+            <KeywordCard
+              keyword={kw}
+              identityCount={countMaps.identity[kw.name] || 0}
+              egoCount={countMaps.ego[kw.name] || 0}
+              giftCount={countMaps.gift[kw.name] || 0}
+              animationDelay={(i % PAGE_SIZE) * 0.015}
+              onClick={() => onSelect(kw)}
+            />
+          </div>
         ))}
       </div>
 

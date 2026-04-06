@@ -1,7 +1,7 @@
 import Link from 'next/link'
+import { cacheLife } from 'next/cache'
 import { getLegalDoc, type LegalSection } from '@/lib/data/legal'
 
-export const revalidate = 3600
 export const metadata = { title: '이용약관 | 최애의 관리자' }
 
 function SectionBlock({ section }: { section: LegalSection }) {
@@ -31,6 +31,8 @@ function SectionBlock({ section }: { section: LegalSection }) {
 }
 
 export default async function TermsPage() {
+  'use cache'
+  cacheLife('page-1h')
   const doc = await getLegalDoc('terms')
 
   const title = doc?.title ?? '이용약관'

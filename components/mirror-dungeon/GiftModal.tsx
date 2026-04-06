@@ -59,7 +59,7 @@ export default function GiftModal({
               return iconUrl ? <Image src={iconUrl} alt="" fill sizes="160px" className="object-contain" /> : null
             })()}
           </div>
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #131110 0%, transparent 100%)' }} />
+          <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, #131110 0%, transparent 100%)' }} />
 
           <div className="absolute bottom-0 left-0 right-0 flex items-end gap-4 px-5 pb-3">
             <div

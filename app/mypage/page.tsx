@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import MypageClient from './MypageClient'
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function MyPage() {
-  return <MypageClient />
+  return (
+    <Suspense fallback={null}>
+      <MypageClient />
+    </Suspense>
+  )
 }

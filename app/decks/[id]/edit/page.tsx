@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
-import DeckBuilderClient from '../../new/DeckBuilderClient'
+import EditWrapper from './EditWrapper'
 
 export default async function EditDeckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -92,7 +92,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <DeckBuilderClient
+    <EditWrapper
       sinners={sinners}
       identities={identities}
       egos={egos}

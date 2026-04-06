@@ -97,16 +97,18 @@ export default function DeckHero({ slots }: Props) {
 
         {/* 그라디언트 오버레이 */}
         <div
-          className="absolute inset-0"
+          className="absolute"
           style={{
+            inset: '-1px',
             background:
               'linear-gradient(to bottom, rgba(13,11,8,0.1) 0%, rgba(13,11,8,0.0) 25%, rgba(13,11,8,0.55) 60%, rgba(13,11,8,0.96) 90%, rgba(13,11,8,1) 100%)',
             pointerEvents: 'none',
           }}
         />
         <div
-          className="absolute inset-0"
+          className="absolute"
           style={{
+            inset: '-1px',
             background:
               'linear-gradient(to right, rgba(13,11,8,0.65) 0%, transparent 18%, transparent 82%, rgba(13,11,8,0.65) 100%)',
             pointerEvents: 'none',

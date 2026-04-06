@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getSinners } from '@/lib/db/queries'
 import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
@@ -47,7 +48,10 @@ export default async function MetaPage() {
         <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
       </div>
 
-      <MetaClient sinners={sinners} initialData={initialData} />
+      {/* MetaClient uses GSAP and framer-motion; Suspense prevents CSR bailout. */}
+      <Suspense fallback={null}>
+        <MetaClient sinners={sinners} initialData={initialData} />
+      </Suspense>
     </div>
   )
 }

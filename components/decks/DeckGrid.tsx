@@ -66,7 +66,9 @@ export default function DeckGrid({
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" style={{ position: 'relative', zIndex: 0 }}>
         {filtered.map(deck => (
-          <DeckCard key={deck.id} deck={deck} onTagClick={onTagClick} />
+          <div key={deck.id} className="cv-card-lg">
+            <DeckCard deck={deck} onTagClick={onTagClick} />
+          </div>
         ))}
       </div>
 

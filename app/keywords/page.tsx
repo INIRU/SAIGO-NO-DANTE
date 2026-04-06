@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 import KeywordsClient from './KeywordsClient'
-
-export const revalidate = 300
 
 export const metadata: Metadata = {
   title: '키워드 도감 — 상태이상·버프·디버프',
@@ -16,7 +16,9 @@ export const metadata: Metadata = {
 
 
 export default async function KeywordsPage() {
-  const supabase = await createClient()
+  'use cache'
+  cacheLife('page-5m')
+  const supabase = createAdminClient()
 
   const [
     { data: keywords, error: keywordsError },
@@ -73,7 +75,9 @@ export default async function KeywordsPage() {
   })
 
   return (
-    <>
+    /* KeywordsClient uses nuqs (useSearchParams internally), requiring Suspense
+       to prevent CSR bailout from de-opting the entire page to client rendering. */
+    <Suspense fallback={null}>
       <KeywordsClient
         keywords={safeKeywords}
         identities={safeIdentities}
@@ -81,6 +85,6 @@ export default async function KeywordsPage() {
         gifts={safeGifts}
         egos={safeEgos}
       />
-    </>
+    </Suspense>
   )
 }

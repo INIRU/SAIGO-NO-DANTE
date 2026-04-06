@@ -1,8 +1,6 @@
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
-import { createClient } from '@/lib/supabase/server'
-import DeckBuilderClient from './DeckBuilderClient'
-
-export const revalidate = 300
+import { createAdminClient } from '@/lib/supabase/admin'
+import DeckBuilderWrapper from './DeckBuilderWrapper'
 
 export default async function NewDeckPage({ searchParams }: { searchParams: Promise<{ fork?: string }> }) {
   const { fork: forkId } = await searchParams
@@ -12,7 +10,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
 
   // 포크 모드: 원본 덱 데이터 로드
   if (forkId) {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data: deck } = await supabase
       .schema('limbus')
       .from('decks')
@@ -58,7 +56,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
       }
 
       return (
-        <DeckBuilderClient
+        <DeckBuilderWrapper
           sinners={sinners}
           identities={identities}
           egos={egos}
@@ -82,5 +80,5 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
     }
   }
 
-  return <DeckBuilderClient sinners={sinners} identities={identities} egos={egos} skills={skills} passives={passives} egoGifts={egoGifts} />
+  return <DeckBuilderWrapper sinners={sinners} identities={identities} egos={egos} skills={skills} passives={passives} egoGifts={egoGifts} />
 }
