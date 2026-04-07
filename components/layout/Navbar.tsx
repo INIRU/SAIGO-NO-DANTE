@@ -71,10 +71,17 @@ export default function Navbar() {
 
   // 스크롤 숨김
   useEffect(() => {
+    let ticking = false
     const onScroll = () => {
-      const current = window.scrollY
-      setHidden(current > lastScrollY.current && current > 80)
-      lastScrollY.current = current
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const current = window.scrollY
+        const shouldHide = current > lastScrollY.current && current > 80
+        lastScrollY.current = current
+        setHidden(prev => prev === shouldHide ? prev : shouldHide)
+        ticking = false
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
