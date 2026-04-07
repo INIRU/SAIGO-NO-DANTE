@@ -81,7 +81,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
               style={{
                 color: nameColor,
                 fontSize: `${fontSize}rem`,
-                lineHeight: '1.75rem',
+                lineHeight: 1.2,
                 textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
                 maxWidth: '92%',
                 whiteSpace: 'nowrap',
