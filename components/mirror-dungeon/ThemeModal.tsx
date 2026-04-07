@@ -81,11 +81,11 @@ export default function ThemeModal({
                   fill
                   fallbackType="theme"
                   sizes="(max-width: 768px) 100vw, 48rem"
-                  className="object-cover object-top"
+                  className="object-cover object-center"
                   style={{ opacity: 0.4 }}
                 />
                 {theme.boss_image_url && (
-                  <div className="absolute right-0 bottom-0 z-10" style={{ width: '50%', aspectRatio: '391/432' }}>
+                  <div className="absolute z-10" style={{ right: '1rem', bottom: 0, width: '30%', aspectRatio: '391/432' }}>
                     <ImageWithFallback
                       src={theme.boss_image_url}
                       alt=""
@@ -93,7 +93,7 @@ export default function ThemeModal({
                       fallbackType="default"
                       sizes="200px"
                       className="object-contain object-bottom drop-shadow-lg"
-                      style={{ opacity: 0.6 }}
+                      style={{ opacity: 0.7 }}
                     />
                   </div>
                 )}

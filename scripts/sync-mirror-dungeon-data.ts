@@ -94,7 +94,10 @@ const ThemeRawSchema = z.object({
     bossSpriteId: z.string().optional(),
   }).optional(),
   unlockCondition: z.object({ unlockCode: z.number() }).optional(),
-  exceptionConditions: z.array(z.object({ dungeonIdx: z.number() })).optional(),
+  exceptionConditions: z.array(z.object({
+    dungeonIdx: z.number(),
+    selectableFloors: z.array(z.number()).optional(),
+  })).optional(),
   difficulty: z.string().optional(),
   mapGenSequence: z.any().optional(),
 })
@@ -206,8 +209,10 @@ function loadGlobList(dir: string, pattern: RegExp): unknown[] {
 }
 
 function parseGrade(tags: string[] | undefined): string {
-  for (const tag of tags ?? []) {
-    if (tag === 'TIER_EX') return 'EX'
+  const t = tags ?? []
+  // TIER_EX takes priority over TIER_N (some gifts have both)
+  if (t.includes('TIER_EX')) return 'EX'
+  for (const tag of t) {
     const m = tag.match(/^TIER_(\d)$/)
     if (m) return m[1]
   }
@@ -405,6 +410,30 @@ async function syncGifts(): Promise<void> {
   }
   console.log(`  변환 완료: ${gifts.length}종 (로컬라이즈 누락: ${missingLocalize})`)
 
+  // 1d-2. Mark is_synthesis: load recipe result IDs from common data files
+  const synthesisIds = new Set<number>()
+  const recipeCommonFiles = [
+    'mirror-dungeon-common-data-md7.txt',
+    'mirror-dungeon-common-data-md7-nextupdate.txt',
+    'mirror-dungeon-common-data-md6.txt',
+    'mirror-dungeon-common-data.txt',
+  ]
+  for (const fn of recipeCommonFiles) {
+    const data = safeLoadJson(join(DATA_DIR, fn))
+    if (!data) continue
+    const table = (data as Record<string, unknown>).egoGiftCombineFixedTable as Record<string, unknown> | undefined
+    if (!table?.combineFixed) continue
+    for (const item of table.combineFixed as unknown[]) {
+      const parsed = RecipeRawSchema.safeParse(item)
+      if (parsed.success) synthesisIds.add(parsed.data.resultEgoGiftId)
+    }
+    break
+  }
+  for (const gift of gifts) {
+    if (synthesisIds.has(gift.game_id)) gift.is_synthesis = true
+  }
+  console.log(`  합성 기프트: ${gifts.filter(g => g.is_synthesis).length}종`)
+
   // 1e. Droppool difficulty
   // Sort by numeric suffix: droppool-7.txt > droppool-6.txt > droppool.txt (no suffix = 0)
   const droppoolFiles = globFiles(DATA_DIR, /^mirrordungeon-egogift-droppool.*\.txt$/)
@@ -481,6 +510,10 @@ async function syncGifts(): Promise<void> {
       if (existing.effect_plusplus !== gift.effect_plusplus) changes.push('effect_plusplus 변경')
       if ((existing.price ?? null) !== gift.price) changes.push(`price: ${existing.price} → ${gift.price}`)
       if ((existing.sell_price ?? null) !== gift.sell_price) changes.push(`sell_price: ${existing.sell_price} → ${gift.sell_price}`)
+      if (existing.buy_disabled !== gift.buy_disabled) changes.push(`buy_disabled: ${existing.buy_disabled} → ${gift.buy_disabled}`)
+      if (existing.enhancement !== gift.enhancement) changes.push(`enhancement: ${existing.enhancement} → ${gift.enhancement}`)
+      if ((existing.convert_to ?? null) !== (gift.convert_to ?? null)) changes.push(`convert_to: ${existing.convert_to} → ${gift.convert_to}`)
+      if (existing.is_synthesis !== gift.is_synthesis) changes.push(`is_synthesis: ${existing.is_synthesis} → ${gift.is_synthesis}`)
       if (existing.difficulty !== gift.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${gift.difficulty}`)
       if (existing.game_id !== gift.game_id) changes.push(`game_id: ${existing.game_id} → ${gift.game_id}`)
 
@@ -543,12 +576,14 @@ interface ThemeRow {
   id: number
   name: string
   dungeon_id: null
+  unlock_code: number | null
   ego_gift_ids: number[]
   specific_ego_gift_ids: number[]
   image_url?: string | null
   boss_image_url?: string | null
   difficulty?: string | null
   floor_info?: Record<string, number[]> | null
+  is_hidden?: boolean
 }
 
 async function syncThemes(): Promise<void> {
@@ -580,6 +615,7 @@ async function syncThemes(): Promise<void> {
 
   const themes: ThemeRow[] = []
   for (const f of themeFiles) {
+    const isHiddenFile = f.includes('hidden')
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
       const parsed = ThemeRawSchema.safeParse(item)
@@ -594,24 +630,40 @@ async function syncThemes(): Promise<void> {
       const floorInfo: Record<string, number[]> = {}
       for (const cond of t.exceptionConditions ?? []) {
         const label = DUNGEON_LABELS[cond.dungeonIdx]
-        if (label) {
+        if (label && cond.selectableFloors) {
+          floorInfo[label] = cond.selectableFloors.map((f: number) => f + 1)
+        } else if (label) {
+          // dungeonIdx without selectableFloors (e.g. extreme) — just mark presence
           if (!floorInfo[label]) floorInfo[label] = []
         }
       }
 
-      // Image URLs from packSpriteId / bossSpriteId
-      const packSpriteId = t.uiConfigs?.packSpriteId
+      // Derive difficulty from exceptionConditions
+      const dungeonIndices = (t.exceptionConditions ?? []).map(c => c.dungeonIdx)
+      let difficulty: string
+      if (dungeonIndices.length === 1 && dungeonIndices[0] === 3) {
+        difficulty = 'extreme'
+      } else if (t.difficulty === 'DIFFICULT') {
+        difficulty = 'hard'
+      } else {
+        difficulty = 'normal'
+      }
+
+      // Image URLs: theme pack uses numeric ID, boss uses bossSpriteId
       const bossSpriteId = t.uiConfigs?.bossSpriteId
 
       themes.push({
         id: t.id,
         name,
         dungeon_id: null,
+        unlock_code: t.unlockCondition?.unlockCode ?? null,
         ego_gift_ids: t.egoGiftPool ?? [],
         specific_ego_gift_ids: t.specificEgoGiftPool ?? [],
-        image_url: packSpriteId ? `${STORAGE_BASE}/icons/theme-packs/${packSpriteId}.webp` : null,
+        image_url: `${STORAGE_BASE}/icons/theme-packs/${t.id}.webp`,
         boss_image_url: bossSpriteId ? `${STORAGE_BASE}/icons/theme-packs/boss/${bossSpriteId}.webp` : null,
+        difficulty,
         floor_info: Object.keys(floorInfo).length > 0 ? floorInfo : null,
+        is_hidden: isHiddenFile,
       })
     }
   }
@@ -646,16 +698,18 @@ async function syncThemes(): Promise<void> {
       const existSpec = JSON.stringify((existing.specific_ego_gift_ids ?? []).sort())
       const newSpec = JSON.stringify((theme.specific_ego_gift_ids ?? []).sort())
       if (existSpec !== newSpec) changes.push('specific_ego_gift_ids 변경')
+      if (existing.difficulty !== theme.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${theme.difficulty}`)
+      if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
+      if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)
 
       if (changes.length > 0) {
         updateCount++
         console.log(YELLOW(`  🔄 ${theme.name}: ${changes.join(', ')}`))
-        // Preserve existing image_url / boss_image_url if already set
+        // Preserve existing image_url / boss_image_url if already set; use derived difficulty
         toUpsert.push({
           ...theme,
           image_url: theme.image_url ?? existing.image_url,
           boss_image_url: theme.boss_image_url ?? existing.boss_image_url,
-          difficulty: existing.difficulty ?? theme.difficulty,
         })
       } else {
         matchCount++
@@ -683,7 +737,7 @@ interface RecipeRow {
   result_name: string
   keyword: string
   ingredients: string[]
-  final_result: number | null
+  final_result: string | null
 }
 
 async function syncRecipes(): Promise<void> {
@@ -741,6 +795,24 @@ async function syncRecipes(): Promise<void> {
   // Keyword map for result gift keyword lookup
   const categoryMap = new Map<string, string>(Object.entries(KEYWORD_FALLBACK))
 
+  // Build gift keyword lookup (game_id → Korean keyword) from raw gift files
+  const rawGiftKeywordMap = new Map<number, string>()
+  const GIFT_PATTERN_RECIPE = /^ego-gift-mirrordungeon.*\.txt$/
+  const SKIP_PATTERN_RECIPE = /^ego-gift-(buff|story-|a1c|walpu|hellschicken)/
+  for (const f of globFiles(DATA_DIR, GIFT_PATTERN_RECIPE).filter(f => !SKIP_PATTERN_RECIPE.test(f))) {
+    const data = loadJson(join(DATA_DIR, f))
+    for (const item of extractList(data)) {
+      const parsed = RawGiftSchema.safeParse(item)
+      if (parsed.success && parsed.data.keyword) {
+        const kw = parsed.data.keyword
+        if (kw !== 'None' && kw !== 'Common') {
+          const krKeyword = categoryMap.get(kw) ?? KEYWORD_FALLBACK[kw] ?? kw
+          rawGiftKeywordMap.set(parsed.data.id, krKeyword)
+        }
+      }
+    }
+  }
+
   // Deduplicate recipes by (resultEgoGiftId + sorted requiredEgoGiftIds)
   const seen = new Set<string>()
   const recipes: RecipeRow[] = []
@@ -764,9 +836,9 @@ async function syncRecipes(): Promise<void> {
 
     recipes.push({
       result_name: resultName,
-      keyword: '공통', // keyword determined by result gift's keyword field
+      keyword: rawGiftKeywordMap.get(r.resultEgoGiftId) ?? '공통',
       ingredients,
-      final_result: null,
+      final_result: resultName,
     })
   }
 
@@ -796,9 +868,13 @@ async function syncRecipes(): Promise<void> {
     } else {
       const existIngr = JSON.stringify([...(existing.ingredients ?? [])].sort())
       const newIngr = JSON.stringify([...recipe.ingredients].sort())
-      if (existIngr !== newIngr) {
+      const changes: string[] = []
+      if (existIngr !== newIngr) changes.push('재료 변경')
+      if (existing.keyword !== recipe.keyword) changes.push(`keyword: ${existing.keyword} → ${recipe.keyword}`)
+      if ((existing.final_result ?? null) !== recipe.final_result) changes.push(`final_result: ${existing.final_result} → ${recipe.final_result}`)
+      if (changes.length > 0) {
         updateCount++
-        console.log(YELLOW(`  🔄 ${recipe.result_name}: 재료 변경`))
+        console.log(YELLOW(`  🔄 ${recipe.result_name}: ${changes.join(', ')}`))
         toUpdate.push({ ...recipe, id: existing.id })
       } else {
         matchCount++
@@ -817,7 +893,7 @@ async function syncRecipes(): Promise<void> {
     }
     for (const recipe of toUpdate) {
       const { error } = await supabase.schema('limbus').from('ego_gift_recipes')
-        .update({ ingredients: recipe.ingredients })
+        .update({ ingredients: recipe.ingredients, keyword: recipe.keyword, final_result: recipe.final_result })
         .eq('id', recipe.id!)
       if (error) console.error(`  ❌ ${recipe.result_name} 업데이트 실패: ${error.message}`)
       else if (VERBOSE) console.log(`  ✅ ${recipe.result_name} 업데이트`)
