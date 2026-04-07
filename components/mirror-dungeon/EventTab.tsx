@@ -4,59 +4,83 @@ import { useMemo } from 'react'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import type { EgoGift, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
+import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 
 interface EventTabProps {
-  events: MirrorDungeonEvent[]
+  events: MdEvent[]
   giftByGameId: Map<number, EgoGift>
   themes: EgoGiftTheme[]
+  choicesByEventId: Map<number, MdEventChoice[]>
   eventSearch: string
   setEventSearch: (v: string) => void
   eventThemeFilter: string
   setEventThemeFilter: (v: string) => void
-  onSelectEvent: (event: MirrorDungeonEvent) => void
+  eventCategoryFilter: string
+  setEventCategoryFilter: (v: string) => void
+  onSelectEvent: (event: MdEvent) => void
 }
 
 export default function EventTab({
   events,
   giftByGameId,
   themes,
+  choicesByEventId,
   eventSearch,
   setEventSearch,
   eventThemeFilter,
   setEventThemeFilter,
+  eventCategoryFilter,
+  setEventCategoryFilter,
   onSelectEvent,
 }: EventTabProps) {
   const { filteredEvents, totalCount } = useMemo(() => {
-    const seen = new Set<string>()
-    const roots = events.filter(ev => {
-      const key = ev.desc_text || String(ev.id)
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+    // events prop includes ALL events (root + variants + children) for FK chain traversal in EventModal.
+    // The card grid only shows root events:
+    // 1. Hide variant events (variant_of !== null)
+    // 2. Hide child events referenced via next_event_id in any choice
+    const childEventIds = new Set<number>()
+    for (const choices of choicesByEventId.values()) {
+      for (const c of choices) {
+        if (c.next_event_id != null) childEventIds.add(c.next_event_id)
+      }
+    }
+    // Additional child detection: 8-digit IDs that are children of 6-digit parents
+    for (const ev of events) {
+      const idStr = String(ev.id)
+      if (idStr.length === 8) {
+        const parentId = Math.floor(ev.id / 100)
+        if (events.some(e => e.id === parentId)) {
+          childEventIds.add(ev.id)
+        }
+      }
+    }
+    const rootEvents = events.filter(ev => ev.variant_of === null && !childEventIds.has(ev.id))
 
     const q = eventSearch.trim().toLowerCase()
     const filtered = q
-      ? roots.filter(ev => {
+      ? rootEvents.filter(ev => {
           if (ev.name?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
-          if (ev.options?.some(o => o.message?.toLowerCase().includes(q) || o.messageDesc?.toLowerCase().includes(q)))
-            return true
+          if (choicesByEventId.get(ev.id)?.some(c =>
+            c.message?.toLowerCase().includes(q) || c.message_desc?.toLowerCase().includes(q)
+          )) return true
           if (ev.gift_ids?.some(gid => {
             const g = giftByGameId.get(gid)
             return g && g.name.toLowerCase().includes(q)
-          }))
-            return true
+          })) return true
           return false
         })
-      : roots
+      : rootEvents
 
     const themeFiltered = eventThemeFilter
       ? filtered.filter(ev => ev.theme_ids?.includes(Number(eventThemeFilter)))
       : filtered
 
-    return { filteredEvents: themeFiltered, totalCount: roots.length }
-  }, [events, eventSearch, eventThemeFilter, giftByGameId])
+    const categoryFiltered = eventCategoryFilter
+      ? themeFiltered.filter(ev => ev.category === eventCategoryFilter)
+      : themeFiltered
+
+    return { filteredEvents: categoryFiltered, totalCount: rootEvents.length }
+  }, [events, eventSearch, eventThemeFilter, eventCategoryFilter, giftByGameId, choicesByEventId])
 
   return (
     <>
@@ -133,6 +157,19 @@ export default function EventTab({
           defaultValue=""
           minWidth={140}
         />
+        <Dropdown
+          value={eventCategoryFilter}
+          options={[
+            { value: '', label: '전체 카테고리' },
+            { value: 'NORMAL', label: '상시 이벤트' },
+            { value: 'SEASONAL', label: '시즌 이벤트' },
+            { value: 'GLOBAL_EVENT_HEAL', label: '자판기' },
+          ]}
+          onChange={setEventCategoryFilter}
+          prefix="분류:"
+          defaultValue=""
+          minWidth={120}
+        />
         <span
           style={{
             color: 'rgba(200,144,10,0.45)',
@@ -142,7 +179,7 @@ export default function EventTab({
             whiteSpace: 'nowrap',
           }}
         >
-          {eventSearch || eventThemeFilter ? `${filteredEvents.length} / ${totalCount}` : `${totalCount}건`}
+          {eventSearch || eventThemeFilter || eventCategoryFilter ? `${filteredEvents.length} / ${totalCount}` : `${totalCount}건`}
         </span>
       </div>
 
@@ -173,7 +210,7 @@ export default function EventTab({
           const evGifts = (ev.gift_ids || []).map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
           const title = ev.name || (ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `이벤트 #${ev.id}`)
           const hasImage = Boolean(ev.image_url)
-          const optCount = ev.options?.length ?? 0
+          const optCount = choicesByEventId.get(ev.id)?.length ?? 0
 
           return (
             <button

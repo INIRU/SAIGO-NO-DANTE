@@ -104,6 +104,44 @@ export interface MirrorDungeonEvent {
   theme_ids: number[] | null
 }
 
+// ── New event types for redesigned 2-table DB ────────────────────────────────
+
+export interface MdEvent {
+  id: number
+  name: string | null
+  desc_text: string | null
+  event_type: 'ACTION' | 'COIN_EVENT' | null
+  source: string | null
+  image_url: string | null
+  theme_ids: number[] | null
+  gift_ids: number[] | null
+  variant_of: number | null
+  category: string | null
+}
+
+export interface MdEventChoice {
+  id: number
+  event_id: number
+  sort_order: number
+  message: string | null
+  message_desc: string | null
+  result_text: string | null
+  probability: string | null
+  next_event_id: number | null
+  effects: ChoiceEffect[] | null
+}
+
+export interface ChoiceEffect {
+  type: string
+  amount?: number
+  hp?: number
+  mp?: number
+  gift_id?: number | null
+  count?: number
+  battle_id?: number | null
+  effect?: string
+}
+
 export const KEYWORD_COLORS: Record<string, string> = {
   화상: '#e85830',
   출혈: '#c83030',

@@ -9,6 +9,7 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+// import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
 type NavGroup = {
   label: string
@@ -293,6 +294,8 @@ export default function Navbar() {
               )
             })}
 
+            {/* <LanguageSwitcher /> */}
+
             {/* 검색 버튼 */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -463,6 +466,11 @@ export default function Navbar() {
           }}
         >
           <div className="flex flex-col px-6 py-4" style={{ overflowY: 'auto', flex: 1 }}>
+            {/* 언어 전환 */}
+            {/* <div style={{ padding: '0.5rem 0 0.875rem', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
+              <LanguageSwitcher />
+            </div> */}
+
             {navGroups.map(group => {
               const isOpen = mobileOpenGroups.has(group.label)
 
