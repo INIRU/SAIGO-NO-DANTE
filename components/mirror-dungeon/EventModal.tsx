@@ -961,6 +961,25 @@ export default function EventModal({
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="58rem" padding="1rem">
+      {/* Responsive styles for sidebar layout */}
+      <style>{`
+        @media (min-width: 768px) {
+          .event-modal-sidebar {
+            width: 17rem !important;
+            flex-shrink: 0 !important;
+            border-bottom: none !important;
+            border-right: 1px solid rgba(200,144,10,0.1) !important;
+            padding: 1.5rem 1.25rem 1.5rem 1.5rem !important;
+            gap: 1.25rem !important;
+          }
+          .event-modal-image-wrap {
+            aspect-ratio: 4 / 3 !important;
+          }
+          .event-modal-content {
+            padding: 1.5rem 1.5rem 1.5rem 1.25rem !important;
+          }
+        }
+      `}</style>
       <div
         className="relative w-full overflow-hidden"
         style={{
@@ -1004,35 +1023,29 @@ export default function EventModal({
         {/* Scroll container */}
         <div style={{ maxHeight: '90vh', overflowY: 'auto' }}>
 
-          {/* ── Two-column layout ─────────────────────────── */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: 0,
-              minHeight: 0,
-            }}
-          >
+          {/* ── Two-column layout (stacks on mobile) ──────── */}
+          <div className="flex flex-col md:flex-row" style={{ gap: 0, minHeight: 0 }}>
             {/* ── LEFT SIDEBAR ─────────────────────────────── */}
             <div
+              className="event-modal-sidebar"
               style={{
-                width: '17rem',
-                flexShrink: 0,
-                borderRight: '1px solid rgba(200,144,10,0.1)',
-                padding: '1.5rem 1.25rem 1.5rem 1.5rem',
+                width: '100%',
+                borderBottom: '1px solid rgba(200,144,10,0.1)',
+                padding: '1rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1.25rem',
+                gap: '1rem',
                 background: 'rgba(0,0,0,0.15)',
               }}
             >
               {/* Event image */}
               {event.image_url ? (
                 <div
+                  className="event-modal-image-wrap"
                   style={{
                     borderRadius: '0.5rem',
                     overflow: 'hidden',
-                    aspectRatio: '4 / 3',
+                    aspectRatio: '16 / 9',
                     position: 'relative',
                     background: '#0d0b08',
                     border: '1px solid rgba(200,144,10,0.12)',
@@ -1043,7 +1056,7 @@ export default function EventModal({
                     alt=""
                     fill
                     fallbackType="default"
-                    sizes="17rem"
+                    sizes="(max-width: 767px) 100vw, 17rem"
                     className="object-cover"
                     style={{ opacity: 0.85 }}
                   />
@@ -1058,9 +1071,10 @@ export default function EventModal({
                 </div>
               ) : (
                 <div
+                  className="event-modal-image-wrap"
                   style={{
                     borderRadius: '0.5rem',
-                    aspectRatio: '4 / 3',
+                    aspectRatio: '16 / 9',
                     background: 'rgba(200,144,10,0.04)',
                     border: '1px solid rgba(200,144,10,0.1)',
                     display: 'flex',
@@ -1131,7 +1145,7 @@ export default function EventModal({
                         key={g.id}
                         gift={g}
                         onClick={() => handleSelectGift(g)}
-                        size="3rem"
+                        size="2.5rem"
                         showName={true}
                       />
                     ))}
@@ -1208,12 +1222,11 @@ export default function EventModal({
 
             {/* ── RIGHT CONTENT: Choices ──────────────────── */}
             <div
+              className="event-modal-content"
               style={{
                 flex: 1,
                 minWidth: 0,
-                padding: '1.5rem 1.5rem 1.5rem 1.25rem',
-                overflowY: 'auto',
-                maxHeight: '90vh',
+                padding: '1rem',
               }}
             >
               {choices.length > 0 ? (
