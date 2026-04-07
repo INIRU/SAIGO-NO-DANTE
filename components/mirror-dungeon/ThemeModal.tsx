@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
-import type { EgoGift, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
+import type { EgoGift, EgoGiftTheme, MdEvent } from '@/components/mirror-dungeon/types'
 
 interface ThemeModalProps {
   theme: EgoGiftTheme
@@ -13,7 +13,8 @@ interface ThemeModalProps {
   getGiftKeywordIcon: (keyword: string) => string | null
   onClose: () => void
   onSelectGift: (gift: EgoGift) => void
-  events?: MirrorDungeonEvent[]
+  events?: MdEvent[]
+  choiceCountByEventId?: Map<number, number>
 }
 
 export default function ThemeModal({
@@ -23,6 +24,7 @@ export default function ThemeModal({
   onClose,
   onSelectGift,
   events,
+  choiceCountByEventId,
 }: ThemeModalProps) {
   const isHidden = theme.is_hidden === true
   const hiddenRate = isHidden && typeof theme.hidden_rate === 'number'
@@ -334,9 +336,9 @@ export default function ThemeModal({
                         >
                           {ev.name}
                         </div>
-                        {ev.options && (
+                        {(choiceCountByEventId?.get(ev.id) ?? 0) > 0 && (
                           <div style={{ color: '#666', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.125rem' }}>
-                            {ev.options.length}개 선택지
+                            {choiceCountByEventId?.get(ev.id) ?? 0}개 선택지
                           </div>
                         )}
                       </div>
