@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import MirrorDungeonClient from './MirrorDungeonClient'
+import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
 export const metadata: Metadata = {
@@ -35,16 +36,24 @@ export default async function MirrorDungeonPage() {
   cacheLife('page-5m')
   const supabase = createAdminClient()
 
-  const [{ data: gifts, error: giftsError }, { data: recipes, error: recipesError }, { data: themes, error: themesError }, { data: events, error: eventsError }] = await Promise.all([
+  const [
+    { data: gifts, error: giftsError },
+    { data: recipes, error: recipesError },
+    { data: themes, error: themesError },
+    { data: events, error: eventsError },
+    { data: choices, error: choicesError },
+  ] = await Promise.all([
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, boss_image_url, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
-    supabase.schema('limbus').from('mirror_dungeon_events').select('id, name, desc_text, options, gift_ids, source, image_url, theme_ids').order('id'),
+    supabase.schema('limbus').from('md_events').select('*').order('id'),
+    supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
   ])
   if (giftsError) console.error('Failed to fetch gifts:', giftsError)
   if (recipesError) console.error('Failed to fetch recipes:', recipesError)
   if (themesError) console.error('Failed to fetch themes:', themesError)
   if (eventsError) console.error('Failed to fetch events:', eventsError)
+  if (choicesError) console.error('Failed to fetch event choices:', choicesError)
 
   return (
     <>
@@ -56,7 +65,8 @@ export default async function MirrorDungeonPage() {
           gifts={gifts ?? []}
           recipes={recipes ?? []}
           themes={themes ?? []}
-          events={events ?? []}
+          events={(events ?? []) as MdEvent[]}
+          choices={(choices ?? []) as MdEventChoice[]}
         />
       </Suspense>
     </>

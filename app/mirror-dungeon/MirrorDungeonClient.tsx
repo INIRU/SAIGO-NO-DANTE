@@ -8,7 +8,7 @@ import { fadeInUp } from '@/lib/animations'
 import dynamic from 'next/dynamic'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/sinners/KeywordTooltip'
-import type { EgoGift, Recipe, EgoGiftTheme, MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
+import type { EgoGift, Recipe, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import GiftTab from '@/components/mirror-dungeon/GiftTab'
 import ThemeTab from '@/components/mirror-dungeon/ThemeTab'
 import EventTab from '@/components/mirror-dungeon/EventTab'
@@ -22,11 +22,13 @@ export default function MirrorDungeonClient({
   recipes,
   themes = [],
   events = [],
+  choices = [],
 }: {
   gifts: EgoGift[]
   recipes: Recipe[]
   themes?: EgoGiftTheme[]
-  events?: MirrorDungeonEvent[]
+  events?: MdEvent[]
+  choices?: MdEventChoice[]
 }) {
   const { getIconUrl } = useKeywordData()
   const getGiftKeywordIcon = useCallback(
@@ -47,6 +49,7 @@ export default function MirrorDungeonClient({
   const [slotFilterParam, setSlotFilterParam] = useQueryState('slot', parseAsString.withDefault('전체'))
   const [eventSearchParam, setEventSearchParam] = useQueryState('eq', parseAsString.withDefault(''))
   const [eventThemeParam, setEventThemeParam] = useQueryState('etheme', parseAsString.withDefault(''))
+  const [eventCategoryParam, setEventCategoryParam] = useQueryState('ecat', parseAsString.withDefault(''))
   const [themeIdParam, setThemeIdParam] = useQueryState('theme', parseAsString.withDefault(''))
 
   // URL 파라미터 → 파생 상태
@@ -108,12 +111,37 @@ export default function MirrorDungeonClient({
   const setThemeDiffFilter = useCallback((v: string) => setThemeDiffParam(v === '전체' ? null : v), [setThemeDiffParam])
   const setSlotFilter = useCallback((v: string) => setSlotFilterParam(v === '전체' ? null : v), [setSlotFilterParam])
   const setEventSearch = useCallback((v: string) => setEventSearchParam(v || null), [setEventSearchParam])
+  const setEventCategory = useCallback((v: string) => setEventCategoryParam(v || null), [setEventCategoryParam])
   const setSelectedThemeId = useCallback((v: number | null) => setThemeIdParam(v !== null ? String(v) : null), [setThemeIdParam])
+
+  // 이벤트 조회 맵 (EventModal + EventTab 공용)
+  const eventById = useMemo(() => {
+    const map = new Map<number, MdEvent>()
+    for (const ev of events) map.set(ev.id, ev)
+    return map
+  }, [events])
+
+  const choicesByEventId = useMemo(() => {
+    const map = new Map<number, MdEventChoice[]>()
+    for (const c of choices) {
+      const arr = map.get(c.event_id)
+      if (arr) arr.push(c)
+      else map.set(c.event_id, [c])
+    }
+    return map
+  }, [choices])
+
+  // ThemeModal용 선택지 수 맵 (choices 배열 직접 순회, choicesByEventId 파생)
+  const choiceCountByEventId = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const [id, arr] of choicesByEventId) map.set(id, arr.length)
+    return map
+  }, [choicesByEventId])
 
   // 로컬 상태 (모달/UI)
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<MirrorDungeonEvent | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<MdEvent | null>(null)
 
   // game_id → EgoGift 매핑 (테마팩 필터 + EventTab 공용)
   const giftByGameId = useMemo(() => {
@@ -376,12 +404,15 @@ export default function MirrorDungeonClient({
         <ScrollReveal variant={fadeInUp} as="div">
           <EventTab
             events={events}
+            choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
             themes={themes}
             eventSearch={eventSearch}
             setEventSearch={setEventSearch}
             eventThemeFilter={eventThemeParam}
             setEventThemeFilter={(v) => setEventThemeParam(v === '' ? null : v)}
+            eventCategoryFilter={eventCategoryParam}
+            setEventCategoryFilter={setEventCategory}
             onSelectEvent={setSelectedEvent}
           />
         </ScrollReveal>
@@ -401,6 +432,7 @@ export default function MirrorDungeonClient({
             onClose={() => setExpandedThemeId(null)}
             onSelectGift={handleThemeModalSelectGift}
             events={events}
+            choiceCountByEventId={choiceCountByEventId}
           />
         )
       })()}
@@ -420,6 +452,8 @@ export default function MirrorDungeonClient({
       {selectedEvent && (
         <EventModal
           event={selectedEvent}
+          eventById={eventById}
+          choicesByEventId={choicesByEventId}
           giftByGameId={giftByGameId}
           themes={themes}
           onClose={() => setSelectedEvent(null)}
