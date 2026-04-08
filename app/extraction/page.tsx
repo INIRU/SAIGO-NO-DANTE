@@ -1,21 +1,14 @@
 import type { Metadata } from 'next'
 import { cacheLife } from 'next/cache'
 import ExtractionWrapper from './ExtractionWrapper'
-import { getServerLang, serverT } from '@/lib/i18n/server'
-import type { TranslationKey } from '@/lib/i18n/translations'
 
-export async function generateMetadata(): Promise<Metadata> {
-  const lang = await getServerLang()
-  const title = serverT('extraction.title' as TranslationKey, lang)
-  const description = serverT('extraction.description' as TranslationKey, lang)
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-    },
-  }
+export const metadata: Metadata = {
+  title: '추출 시뮬레이션',
+  description: '림버스 컴퍼니 추출 시뮬레이션 — 인격·EGO 뽑기 확률을 직접 체험해보세요.',
+  openGraph: {
+    title: '추출 시뮬레이션 | 최애의 관리자',
+    description: '림버스 컴퍼니 추출 시뮬레이션 — 인격·EGO 뽑기 확률을 직접 체험해보세요.',
+  },
 }
 
 export default async function ExtractionPage() {

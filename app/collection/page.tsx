@@ -3,16 +3,11 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import type { CollectionData } from '@/lib/collection'
 import CollectionClient from './CollectionClient'
-import { getServerLang, serverT } from '@/lib/i18n/server'
-import type { TranslationKey } from '@/lib/i18n/translations'
 
-export async function generateMetadata(): Promise<Metadata> {
-  const lang = await getServerLang()
-  return {
-    title: serverT('collection.title' as TranslationKey, lang),
-    description: serverT('collection.description' as TranslationKey, lang),
-    alternates: { canonical: 'https://saigo-no-dante.com/collection' },
-  }
+export const metadata: Metadata = {
+  title: '보유 현황',
+  description: '림버스 컴퍼니 인격·EGO 보유 현황을 체크하고 URL로 공유하세요.',
+  alternates: { canonical: 'https://saigo-no-dante.com/collection' },
 }
 
 async function fetchCollectionData(): Promise<CollectionData> {
