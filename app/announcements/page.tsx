@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { cacheLife } from 'next/cache'
 import AnnouncementsClient from './AnnouncementsClient'
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://saigo-no-dante.com/announcements' },
 }
 
-export default function AnnouncementsPage() {
+export default async function AnnouncementsPage() {
+  'use cache'
+  cacheLife('page-5m')
   return (
     <div style={{ background: 'var(--bg-deep)', minHeight: '100dvh', position: 'relative', overflow: 'hidden' }}>
       {/* Background atmospheric glow */}
