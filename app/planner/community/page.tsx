@@ -5,11 +5,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import CommunityClient from './CommunityClient'
+import { getServerLang, serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '커뮤니티 플랜 | 거울 던전 플래너',
-  description: '림버스 컴퍼니 거울 던전 플래너 — 다른 유저들의 플랜을 둘러보고 추천하세요.',
-  alternates: { canonical: 'https://saigo-no-dante.com/planner/community' },
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return {
+    title: serverT('planner.community' as TranslationKey, lang),
+    description: serverT('planner.community' as TranslationKey, lang),
+    alternates: { canonical: 'https://saigo-no-dante.com/planner/community' },
+  }
 }
 
 const PAGE_SIZE = 20

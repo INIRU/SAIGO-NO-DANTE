@@ -4,11 +4,16 @@ import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { cacheLife } from 'next/cache'
 import AnnouncementsClient from './AnnouncementsClient'
+import { getServerLang, serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '공지사항 | SAIGO NO DANTE',
-  description: '사이트 업데이트 및 안내사항을 확인하세요.',
-  alternates: { canonical: 'https://saigo-no-dante.com/announcements' },
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return {
+    title: serverT('announcements.title' as TranslationKey, lang),
+    description: serverT('announcements.description' as TranslationKey, lang),
+    alternates: { canonical: 'https://saigo-no-dante.com/announcements' },
+  }
 }
 
 export default async function AnnouncementsPage() {

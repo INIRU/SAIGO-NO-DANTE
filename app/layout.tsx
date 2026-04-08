@@ -11,6 +11,7 @@ import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
+import { LanguageProvider } from '@/lib/i18n'
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
@@ -219,10 +220,12 @@ export default async function RootLayout({
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  <Suspense><Navbar /></Suspense>
-                  <Suspense><main id="main-content">{children}</main></Suspense>
-                  <Footer />
-                  <Suspense><FloatingFontControl /></Suspense>
+                  <LanguageProvider>
+                    <Suspense><Navbar /></Suspense>
+                    <Suspense><main id="main-content">{children}</main></Suspense>
+                    <Footer />
+                    <Suspense><FloatingFontControl /></Suspense>
+                  </LanguageProvider>
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>

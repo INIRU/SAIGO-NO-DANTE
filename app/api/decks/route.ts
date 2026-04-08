@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
     const identityId = searchParams.get('identity_id')
+    const lang = searchParams.get('lang') // 'ko' | 'en' | 'ja' | null (null = all)
 
     const orderColumn = sort === 'popular' ? 'vote_count' : 'created_at'
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       .schema('limbus')
       .from('decks')
       .select(`
-        id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
+        id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at, lang,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
         deck_egos(ego_id)
@@ -42,6 +43,10 @@ export async function GET(request: NextRequest) {
 
       const deckIds = [...new Set(matches.map(m => m.deck_id))]
       query = query.in('id', deckIds)
+    }
+
+    if (lang && ['ko', 'en', 'ja'].includes(lang)) {
+      query = query.eq('lang', lang)
     }
 
     query = query.range(offset, offset + limit - 1)
@@ -67,6 +72,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
+    const lang = body.lang
     // identitySlots: [{ identity_id, gacksung, slot_order }]
     // egoSlots: [{ ego_id, grade }]
 
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
     const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
-      .insert({ user_id: userId, title, description, tags: tags || [], content_type: content_type || '없음' })
+      .insert({ user_id: userId, title, description, tags: tags || [], content_type: content_type || '없음', lang: lang || 'ko' })
       .select()
       .single()
 

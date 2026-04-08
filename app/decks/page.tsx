@@ -5,11 +5,16 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DecksClient from './DecksClient'
 import type { DeckSummary } from '@/components/decks/DeckCard'
+import { getServerLang, serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '덱 게시판',
-  description: '림버스 컴퍼니 커뮤니티 덱 빌드를 탐색하고 공유하세요.',
-  alternates: { canonical: 'https://saigo-no-dante.com/decks' },
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return {
+    title: serverT('deck.title' as TranslationKey, lang),
+    description: serverT('deck.title' as TranslationKey, lang),
+    alternates: { canonical: 'https://saigo-no-dante.com/decks' },
+  }
 }
 
 const PAGE_SIZE = 12
