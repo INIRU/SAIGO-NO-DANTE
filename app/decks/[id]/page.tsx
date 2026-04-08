@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckDetailClient from './DeckDetailClient'
 import DeckHero from '@/components/deck-detail/DeckHero'
@@ -63,6 +64,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DeckDetailPage({ params }: Props) {
+  'use cache'
+  cacheLife('page-1m')
   const { id } = await params
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP

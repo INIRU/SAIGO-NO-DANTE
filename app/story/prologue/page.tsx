@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { cacheLife } from 'next/cache'
 import { ArrowLeft } from 'lucide-react'
 import type { PrologueIndex } from '@/lib/story/types'
 import EpisodeList from '@/components/story/EpisodeList'
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
 }
 
 export default async function ProloguePage() {
+  'use cache'
+  cacheLife('page-1h')
   const filePath = path.join(
     process.cwd(),
     'public',

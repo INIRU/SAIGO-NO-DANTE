@@ -202,13 +202,32 @@ limbus-assets/
 
 ## 렌더링 전략
 
+### Cache Components (`'use cache'`)
+
+`cacheComponents: true`가 활성화되어 있으며, 서버 페이지에 `'use cache'` + `cacheLife` 적용.
+
+| 프로필 | stale | revalidate | 적용 페이지 |
+|--------|-------|------------|------------|
+| `page-1m` | 60s | 60s | `/decks/[id]` |
+| `page-5m` | 300s | 300s | `/`, `/sinners`, `/sinners/[slug]`, `/decks`, `/keywords`, `/mirror-dungeon`, `/tier-list`, `/announcements` |
+| `page-10m` | 600s | 600s | (예비) |
+| `page-1h` | 3600s | 3600s | `/bot`, `/offline`, `/story/*`, `/extraction`, `/privacy`, `/terms`, `/random` |
+
+### 렌더링 유형
+
 | 전략 | 적용 페이지 | 이유 |
 |------|------------|------|
-| **Static (SSG)** | `/sinners`, `/privacy`, `/terms` | 데이터 변경 빈도 낮음 |
-| **Dynamic (SSR)** | `/decks`, `/mypage`, `/admin/*` | 유저별 데이터, 실시간 반영 |
-| **ISR** | `/sinners/[slug]`, `/tier-list` | 데이터 변경 시 재생성 |
+| **Cached (use cache)** | `/sinners`, `/story/*`, `/decks`, `/bot` 등 | 정적 데이터, 캐시 프로필로 revalidation |
+| **Dynamic (SSR)** | `/meta`, `/mypage`, `/admin/*`, `/planner` | `cookies()` 사용, 유저별 데이터 |
 | **Client-side** | `/extraction`, `/random`, `/collection` | 클라이언트 전용 인터랙션 |
 | **force-dynamic** | `api/ego-gifts` | 항상 최신 데이터 보장 |
+
+### Server/Client 컴포넌트 분리 원칙
+
+- **기본은 Server Component** — `'use client'` 없이 작성
+- **Client가 필요한 경우만** `'use client'` 추가: `useState`, `useEffect`, `useContext`, 이벤트 핸들러, 브라우저 API
+- **Server Component에서 Client Component를 children으로 렌더링 가능** — 경계를 트리 하단으로 밀어내기
+- 순수 디스플레이 컴포넌트 (`SinBadge`, `KeywordChip`, `GlitchText` 등)는 Server Component로 유지
 
 ---
 

@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { SinType, SIN_COLORS, SIN_LABELS_KR, getSinIconUrl } from '@/lib/data/sinners'
 

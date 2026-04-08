@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { cacheLife } from 'next/cache'
 
 export const metadata: Metadata = {
   title: '오프라인 | 최애의 관리자',
   description: '인터넷 연결을 확인해 주세요.',
 }
 
-export default function OfflinePage() {
+export default async function OfflinePage() {
+  'use cache'
+  cacheLife('page-1h')
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex flex-col items-center gap-4">

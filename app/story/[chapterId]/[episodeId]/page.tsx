@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import path from 'path'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { cacheLife } from 'next/cache'
 import StoryReader from '@/components/story/StoryReader'
 import type { EpisodeData, PrologueIndex } from '@/lib/story/types'
 
@@ -19,6 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EpisodePage({ params }: Props) {
+  'use cache'
+  cacheLife('page-1h')
   const { chapterId, episodeId } = await params
 
   const dataDir = path.join(process.cwd(), 'public', 'data', 'story', chapterId)

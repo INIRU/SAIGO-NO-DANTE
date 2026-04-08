@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import BotClient from './BotClient'
 
 export const metadata: Metadata = {
@@ -8,7 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://saigo-no-dante.com/bot' },
 }
 
-export default function BotPage() {
+export default async function BotPage() {
+  'use cache'
+  cacheLife('page-1h')
   return (
     <Suspense fallback={null}>
       <BotClient />

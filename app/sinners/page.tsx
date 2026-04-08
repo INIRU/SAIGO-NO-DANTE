@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
 import SinnersInteractive from './SinnersInteractive'
 import SinnerCard from '@/components/sinners/SinnerCard'
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
 }
 
 export default async function SinnersPage() {
+  'use cache'
+  cacheLife('page-5m')
   const sinners = await getSinners()
 
   const sinnerListLd = itemListJsonLd({

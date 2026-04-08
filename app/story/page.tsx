@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { cacheLife } from 'next/cache'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
 export const metadata: Metadata = {
@@ -59,7 +60,9 @@ const CHAPTERS = [
   },
 ]
 
-export default function StoryPage() {
+export default async function StoryPage() {
+  'use cache'
+  cacheLife('page-1h')
   return (
     <div
       className="min-h-screen"

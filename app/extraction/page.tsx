@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cacheLife } from 'next/cache'
 import ExtractionWrapper from './ExtractionWrapper'
 
 export const metadata: Metadata = {
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
   },
 }
 
-export default function ExtractionPage() {
+export default async function ExtractionPage() {
+  'use cache'
+  cacheLife('page-1h')
   return <ExtractionWrapper />
 }

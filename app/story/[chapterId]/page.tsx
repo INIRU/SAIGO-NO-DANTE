@@ -4,6 +4,7 @@ import path from 'path'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { cacheLife } from 'next/cache'
 import { ArrowLeft } from 'lucide-react'
 import type { PrologueIndex } from '@/lib/story/types'
 import EpisodeList from '@/components/story/EpisodeList'
@@ -30,6 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ChapterPage({ params }: Props) {
+  'use cache'
+  cacheLife('page-1h')
   const { chapterId } = await params
   const meta = CHAPTER_META[chapterId]
   if (!meta) notFound()
