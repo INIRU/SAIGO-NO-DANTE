@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') ?? '0')
     const difficulty = searchParams.get('difficulty')
     const tag = searchParams.get('tag')
-    const lang = searchParams.get('lang') // 'ko' | 'en' | 'ja' | null
     // Design Ref: §4.2 — 마이페이지용 파라미터
     const userIdParam = searchParams.get('userId')
     const votedBy = searchParams.get('votedBy')
@@ -50,13 +49,12 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .schema('limbus')
       .from('md_plans')
-      .select('id, title, description, difficulty, deck, egos, tags, vote_count, view_count, comment_count, lang, created_at, user_id, profiles:user_id(username, avatar_url)', { count: 'exact' })
+      .select('id, title, description, difficulty, deck, egos, tags, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)', { count: 'exact' })
 
     if (userIdParam === 'me' && resolvedUserId) query = query.eq('user_id', resolvedUserId)
     if (votedPlanIds) query = query.in('id', votedPlanIds)
     if (difficulty) query = query.eq('difficulty', difficulty)
     if (tag) query = query.contains('tags', [tag])
-    if (lang && ['ko', 'en', 'ja'].includes(lang)) query = query.eq('lang', lang)
 
     if (sort === 'popular') {
       query = query.order('vote_count', { ascending: false }).order('created_at', { ascending: false })
@@ -88,7 +86,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
-    const lang = body.lang
 
     if (!title?.trim()) return NextResponse.json({ error: '제목을 입력하세요' }, { status: 400 })
 
@@ -105,7 +102,6 @@ export async function POST(req: NextRequest) {
         floor_plan: floor_plan ?? [],
         gift_inventory: gift_inventory ?? [],
         tags: tags ?? [],
-        lang: lang || 'ko',
       })
       .select('id')
       .single()

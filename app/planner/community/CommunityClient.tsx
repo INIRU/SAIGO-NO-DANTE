@@ -14,8 +14,6 @@ import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
-import LanguageFilter, { type LangFilterValue } from '@/components/ui/LanguageFilter'
-import { useLanguage } from '@/lib/i18n'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
@@ -172,9 +170,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     return () => clearTimeout(t)
   }, [inputValue, setSearch])
 
-  const { lang: userLang } = useLanguage()
-  const [langFilter, setLangFilter] = useState<LangFilterValue>(() => userLang)
-
   // 키워드 필터
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
@@ -207,7 +202,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         offset: String(offset),
       })
       if (difficulty) params.set('difficulty', difficulty)
-      if (langFilter !== 'all') params.set('lang', langFilter)
 
       const res = await fetch(`/api/planner?${params}`)
       if (!res.ok) return
@@ -225,7 +219,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       if (replace) setLoading(false)
       else setLoadingMore(false)
     }
-  }, [langFilter])
+  }, [])
 
   const isInitialDefaultState = useRef(true)
 
@@ -239,7 +233,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     isInitialDefaultState.current = false
     offsetRef.current = 0
     fetchPlans({ sort: sort as SortKey, difficulty, offset: 0, replace: true })
-  }, [sort, difficulty, langFilter, fetchPlans, initialPlans])
+  }, [sort, difficulty, fetchPlans, initialPlans])
 
   const handleLoadMore = () => {
     fetchPlans({ sort: sort as SortKey, difficulty, offset: offsetRef.current, replace: false })
@@ -503,9 +497,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 </button>
               ))}
             </div>
-
-            {/* 언어 필터 */}
-            <LanguageFilter value={langFilter} onChange={setLangFilter} />
           </div>
 
           {/* 난이도 필터 */}

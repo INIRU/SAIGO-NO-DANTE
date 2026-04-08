@@ -109,7 +109,6 @@ export async function GET(req: NextRequest) {
   try {
     const identityId = req.nextUrl.searchParams.get('identity_id')
     if (!identityId) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
-    const lang = req.nextUrl.searchParams.get('lang') || 'ko'
 
     const supabase = createAdminClient()
     const { data } = await supabase
@@ -117,7 +116,6 @@ export async function GET(req: NextRequest) {
       .from('identity_ai_summaries')
       .select('summary, model, created_at')
       .eq('identity_id', identityId)
-      .eq('lang', lang)
       .gte('created_at', new Date(Date.now() - CACHE_DAYS * 86400000).toISOString())
       .single()
 
@@ -148,8 +146,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { identity_id, lang: requestLang } = body
-  const lang = requestLang || 'ko'
+  const { identity_id } = body
   if (!identity_id) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
 
   const supabase = createAdminClient()
@@ -320,11 +317,10 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
         .from('identity_ai_summaries')
         .upsert({
           identity_id,
-          lang,
           summary: text,
           model: modelId,
           created_at: new Date().toISOString(),
-        }, { onConflict: 'identity_id,lang' })
+        }, { onConflict: 'identity_id' })
       if (upsertErr) {
         console.error('AI summary upsert error:', upsertErr)
       }
