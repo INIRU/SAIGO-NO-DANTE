@@ -14,6 +14,8 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckListFilters from '@/components/decks/DeckListFilters'
 import DeckGrid from '@/components/decks/DeckGrid'
 import type { SearchSuggestion } from '@/components/decks/decks-types'
+import LanguageFilter, { type LangFilterValue } from '@/components/ui/LanguageFilter'
+import { useLanguage } from '@/lib/i18n'
 
 const PAGE_SIZE = 12
 
@@ -201,6 +203,10 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     return () => clearTimeout(t)
   }, [inputValue, setSearch])
 
+  // ── Language filter state ──
+  const { lang: userLang } = useLanguage()
+  const [langFilter, setLangFilter] = useState<LangFilterValue>(() => userLang)
+
   // ── Filter state ──
   const [activeContentType, setActiveContentType] = useState('')
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
@@ -243,7 +249,8 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     setLoading(true)
     setDecks([])
     setHasMore(true)
-    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=0`)
+    const langParam = langFilter !== 'all' ? `&lang=${langFilter}` : ''
+    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=0${langParam}`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -253,13 +260,14 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
       })
       .catch(e => console.error('덱 목록 로드 실패:', e))
       .finally(() => setLoading(false))
-  }, [sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sort, langFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load more ──
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
-    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=${decks.length}`)
+    const langParam = langFilter !== 'all' ? `&lang=${langFilter}` : ''
+    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=${decks.length}${langParam}`)
       .then(r => r.json())
       .then(data => {
         if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
@@ -268,7 +276,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
       })
       .catch(e => console.error('덱 추가 로드 실패:', e))
       .finally(() => setLoadingMore(false))
-  }, [sort, decks.length, loadingMore, hasMore])
+  }, [sort, langFilter, decks.length, loadingMore, hasMore])
 
   // ── Infinite scroll observer ──
   useEffect(() => {
@@ -480,6 +488,9 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
 
       {/* ── 필터 패널 ── */}
       <div className="decks-filters" suppressHydrationWarning>
+      <div className="flex justify-end mb-2">
+        <LanguageFilter value={langFilter} onChange={setLangFilter} />
+      </div>
       <DeckListFilters
         inputValue={inputValue}
         onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}

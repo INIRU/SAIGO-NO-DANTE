@@ -12,13 +12,15 @@ export async function GET(request: NextRequest) {
     if (!identityId) {
       return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
     }
+    const lang = request.nextUrl.searchParams.get('lang') || 'ko'
 
     const admin = createAdminClient()
     const { data, error } = await admin
       .schema('limbus')
       .from('identity_guides')
-      .select('id, identity_id, author_id, title, content, updated_at, created_at')
+      .select('id, identity_id, author_id, title, content, lang, updated_at, created_at')
       .eq('identity_id', identityId)
+      .eq('lang', lang)
       .order('created_at', { ascending: true })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const { identity_id, title, content } = await request.json()
+    const { identity_id, title, content, lang: bodyLang } = await request.json()
     if (!identity_id || typeof content !== 'string' || typeof title !== 'string') {
       return NextResponse.json({ error: 'identity_id, title, and content required' }, { status: 400 })
     }
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
     const { data, error } = await admin
       .schema('limbus')
       .from('identity_guides')
-      .insert({ identity_id, author_id: userId, title, content })
+      .insert({ identity_id, author_id: userId, title, content, lang: bodyLang || 'ko' })
       .select('id')
       .single()
 

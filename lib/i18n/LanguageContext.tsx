@@ -21,6 +21,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('preferred_lang') as SupportedLang | null;
     if (stored && (['ko', 'en', 'ja'] as SupportedLang[]).includes(stored)) {
       setLangState(stored);
+      document.cookie = `preferred_lang=${stored};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
     }
     setMounted(true);
   }, []);
@@ -28,6 +29,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLang = useCallback((newLang: SupportedLang) => {
     setLangState(newLang);
     localStorage.setItem('preferred_lang', newLang);
+    document.cookie = `preferred_lang=${newLang};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
   }, []);
 
   const t = useCallback(

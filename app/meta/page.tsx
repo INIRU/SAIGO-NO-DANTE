@@ -3,10 +3,15 @@ import { Suspense } from 'react'
 import { getSinners } from '@/lib/db/queries'
 import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
+import { getServerLang, serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '메타 분석 | SAIGO NO DANTE',
-  description: '덱 데이터 기반 인격·키워드·시너지·EGO 채용률 통계',
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return {
+    title: serverT('meta.title' as TranslationKey, lang),
+    description: serverT('meta.description' as TranslationKey, lang),
+  }
 }
 
 export default async function MetaPage() {

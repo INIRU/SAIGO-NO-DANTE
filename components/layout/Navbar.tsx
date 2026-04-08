@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -9,49 +9,64 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-// import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import { useLanguage } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 type NavGroup = {
   label: string
   items: { href: string; label: string }[]
 }
 
-const navGroups: NavGroup[] = [
+type NavGroupDef = {
+  labelKey: TranslationKey
+  items: { href: string; labelKey: TranslationKey }[]
+}
+
+const NAV_GROUPS: NavGroupDef[] = [
   {
-    label: '스토리',
+    labelKey: 'nav.story',
     items: [
-      { href: '/story', label: '메인 스토리' },
+      { href: '/story', labelKey: 'nav.story.main' },
     ],
   },
   {
-    label: 'DB',
+    labelKey: 'nav.db',
     items: [
-      { href: '/sinners',        label: '수감자' },
-      { href: '/mirror-dungeon', label: '거던' },
-      { href: '/keywords',       label: '키워드' },
+      { href: '/sinners',        labelKey: 'nav.db.sinners' },
+      { href: '/mirror-dungeon', labelKey: 'nav.db.mirrorDungeon' },
+      { href: '/keywords',       labelKey: 'nav.db.keywords' },
     ],
   },
   {
-    label: '커뮤니티',
+    labelKey: 'nav.community',
     items: [
-      { href: '/decks',               label: '덱 게시판' },
-      { href: '/planner/community',   label: '거던 플래너' },
-      { href: '/tier-list',           label: '티어표' },
-      { href: '/collection',          label: '보유 현황' },
+      { href: '/decks',               labelKey: 'nav.community.decks' },
+      { href: '/planner/community',   labelKey: 'nav.community.planner' },
+      { href: '/tier-list',           labelKey: 'nav.community.tierList' },
+      { href: '/collection',          labelKey: 'nav.community.collection' },
     ],
   },
   {
-    label: '기타',
+    labelKey: 'nav.other',
     items: [
-      { href: '/meta',       label: '분석' },
-      { href: '/extraction', label: '추출' },
-      { href: '/random',     label: '랜덤 편성' },
+      { href: '/meta',       labelKey: 'nav.other.meta' },
+      { href: '/extraction', labelKey: 'nav.other.extraction' },
+      { href: '/random',     labelKey: 'nav.other.random' },
     ],
   },
 ]
 
 
 export default function Navbar() {
+  const { t } = useLanguage()
+  const navGroups: NavGroup[] = useMemo(() => NAV_GROUPS.map(g => ({
+    label: t(g.labelKey),
+    items: g.items.map(item => ({
+      href: item.href,
+      label: t(item.labelKey),
+    })),
+  })), [t])
   const [hidden, setHidden] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -301,7 +316,7 @@ export default function Navbar() {
               )
             })}
 
-            {/* <LanguageSwitcher /> */}
+            <LanguageSwitcher />
 
             {/* 검색 버튼 */}
             <button
@@ -474,9 +489,9 @@ export default function Navbar() {
         >
           <div className="flex flex-col px-6 py-4" style={{ overflowY: 'auto', flex: 1 }}>
             {/* 언어 전환 */}
-            {/* <div style={{ padding: '0.5rem 0 0.875rem', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
+            <div style={{ padding: '0.5rem 0 0.875rem', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
               <LanguageSwitcher />
-            </div> */}
+            </div>
 
             {navGroups.map(group => {
               const isOpen = mobileOpenGroups.has(group.label)

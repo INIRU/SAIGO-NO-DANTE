@@ -4,14 +4,21 @@ import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
 import RandomStatic from './RandomStatic'
 import RandomInteractive from './RandomInteractive'
 import type { Metadata } from 'next'
+import { getServerLang, serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '랜덤 편성',
-  description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
-  openGraph: {
-    title: '랜덤 편성 | 최애의 관리자',
-    description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  const title = serverT('random.title' as TranslationKey, lang)
+  const description = serverT('random.description' as TranslationKey, lang)
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+  }
 }
 
 export default async function RandomPage() {
