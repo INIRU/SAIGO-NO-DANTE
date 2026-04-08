@@ -3,7 +3,7 @@
  * 프롤로그 스토리 데이터 처리
  * 게임 JSON (스크립트 + 한국어 텍스트) → public/data/story/prologue/ 로 병합 출력
  *
- * Usage: node scripts/process-prologue-data.mjs
+ * Usage: node scripts/process/prologue-data.mjs
  */
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import path from 'path'

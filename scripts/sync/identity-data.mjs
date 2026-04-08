@@ -8,7 +8,7 @@
  *   3. DB에 없는 신규 인격 + 스킬을 삽입 (--fix)
  *
  * 사용법:
- *   node --env-file=.env.local scripts/sync-identity-data.mjs [options]
+ *   node --env-file=.env.local scripts/sync/identity-data.mjs [options]
  *
  * 옵션:
  *   --dry-run        비교만, DB 수정 안 함 (기본값)

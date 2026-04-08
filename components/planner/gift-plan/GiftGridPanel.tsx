@@ -116,13 +116,21 @@ export default function GiftGridPanel({
                 {gradeGifts.map(gift => {
                   const isSelected = selectedIds.has(gift.game_id)
                   return (
-                    <GiftCard
+                    <div
                       key={gift.id}
-                      gift={gift}
-                      isSelected={isSelected}
-                      disabled={atLimit && !isSelected}
-                      onClick={() => onToggle(gift)}
-                    />
+                      style={{
+                        contentVisibility: 'auto',
+                        contain: 'layout style paint',
+                        containIntrinsicSize: '4.5rem',
+                      }}
+                    >
+                      <GiftCard
+                        gift={gift}
+                        isSelected={isSelected}
+                        disabled={atLimit && !isSelected}
+                        onClick={() => onToggle(gift)}
+                      />
+                    </div>
                   )
                 })}
               </div>

@@ -1,8 +1,8 @@
 /**
- * scripts/seed-keyword-icons.mjs
+ * scripts/seed/keyword-icons.mjs
  * keyword_meta 테이블에 icon_slug, sin_affinity 컬럼을 PATCH로 업데이트
  *
- * 실행: node --env-file=.env.local scripts/seed-keyword-icons.mjs
+ * 실행: node --env-file=.env.local scripts/seed/keyword-icons.mjs
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL

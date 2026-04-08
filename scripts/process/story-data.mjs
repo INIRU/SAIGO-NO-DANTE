@@ -4,10 +4,10 @@
  * 게임 JSON (스크립트 + 한국어 텍스트) → public/data/story/{slug}/ 로 병합 출력
  *
  * Usage:
- *   node scripts/process-story-data.mjs --chapter 100   # 프롤로그
- *   node scripts/process-story-data.mjs --chapter 101   # 1장
- *   node scripts/process-story-data.mjs --chapter 102   # 2장
- *   node scripts/process-story-data.mjs --all            # 전체
+ *   node scripts/process/story-data.mjs --chapter 100   # 프롤로그
+ *   node scripts/process/story-data.mjs --chapter 101   # 1장
+ *   node scripts/process/story-data.mjs --chapter 102   # 2장
+ *   node scripts/process/story-data.mjs --all            # 전체
  */
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -191,8 +191,8 @@ async function main() {
     await processChapter(id)
   } else {
     console.log('Usage:')
-    console.log('  node scripts/process-story-data.mjs --chapter 100')
-    console.log('  node scripts/process-story-data.mjs --all')
+    console.log('  node scripts/process/story-data.mjs --chapter 100')
+    console.log('  node scripts/process/story-data.mjs --all')
     console.log(`\nAvailable chapters: ${Object.entries(CHAPTERS).map(([id, c]) => `${id} (${c.slug})`).join(', ')}`)
   }
 }

@@ -538,7 +538,8 @@ export default function GiftTab({
                 key={gift.id}
                 style={{
                   contentVisibility: 'auto',
-                  containIntrinsicSize: 'auto 6rem',
+                  contain: 'layout style paint',
+                  containIntrinsicSize: '4.5rem',
                   animation: 'giftCardFadeIn 0.25s ease-out both',
                   animationDelay: `${(i % PAGE_SIZE) * 0.008}s`,
                 }}

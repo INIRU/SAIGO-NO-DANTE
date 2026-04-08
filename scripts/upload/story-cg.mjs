@@ -2,7 +2,7 @@
 /**
  * 프롤로그 CG 이미지 → Supabase Storage 업로드
  *
- * Usage: node --env-file=.env.local scripts/upload-story-cg.mjs
+ * Usage: node --env-file=.env.local scripts/upload/story-cg.mjs
  */
 import { readFile, readdir } from 'fs/promises'
 import path from 'path'

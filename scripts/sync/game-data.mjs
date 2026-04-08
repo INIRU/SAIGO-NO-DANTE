@@ -6,7 +6,7 @@
  * 코인 수, 위력, 스킬 타입, 죄악 속성, 설명 모두 100% 정확.
  *
  * 사용법:
- *   node --env-file=.env.local scripts/sync-game-data.mjs [옵션]
+ *   node --env-file=.env.local scripts/sync/game-data.mjs [옵션]
  *
  * 옵션:
  *   --sinner <slug>   특정 수감자만 (기본: 전체 12명)

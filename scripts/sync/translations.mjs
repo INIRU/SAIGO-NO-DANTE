@@ -5,10 +5,10 @@
  * them into the limbus.game_translations Supabase table.
  *
  * Usage:
- *   node --env-file=.env.local scripts/sync-translations.mjs
- *   node --env-file=.env.local scripts/sync-translations.mjs --dry-run
- *   node --env-file=.env.local scripts/sync-translations.mjs --lang en
- *   node --env-file=.env.local scripts/sync-translations.mjs --lang jp
+ *   node --env-file=.env.local scripts/sync/translations.mjs
+ *   node --env-file=.env.local scripts/sync/translations.mjs --dry-run
+ *   node --env-file=.env.local scripts/sync/translations.mjs --lang en
+ *   node --env-file=.env.local scripts/sync/translations.mjs --lang jp
  */
 
 import { createClient } from '@supabase/supabase-js';
