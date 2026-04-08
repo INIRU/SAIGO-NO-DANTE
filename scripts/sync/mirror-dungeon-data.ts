@@ -4,7 +4,7 @@
  * 거울 던전 관련 전체 데이터 동기화 (TypeScript + Zod)
  *
  * Usage:
- *   npx tsx scripts/sync-mirror-dungeon-data.ts [options]
+ *   npx tsx scripts/sync/mirror-dungeon-data.ts [options]
  *
  * Options:
  *   --dry-run        비교만 (기본값)

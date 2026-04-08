@@ -4,7 +4,7 @@
  * 게임 클라이언트 JSON → DB 인격/스킬/패시브 동기화 (TypeScript + Zod)
  *
  * Usage:
- *   npx tsx scripts/sync-identity-data.ts [options]
+ *   npx tsx scripts/sync/identity-data.ts [options]
  *
  * Options:
  *   --dry-run          비교만, DB 수정 안 함 (기본값)

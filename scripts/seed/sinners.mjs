@@ -1,8 +1,8 @@
 /**
- * scripts/seed-sinners.mjs
+ * scripts/seed/sinners.mjs
  * data/sinners.json → Supabase limbus.sinners 동기화
  *
- * 실행: node scripts/seed-sinners.mjs
+ * 실행: node scripts/seed/sinners.mjs
  */
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'

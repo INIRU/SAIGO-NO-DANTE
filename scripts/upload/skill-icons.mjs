@@ -4,7 +4,7 @@
  * 경로: icons/skills/{sinnerId}/{gameId}{NN}.webp
  *
  * Usage:
- *   node --env-file=.env.local scripts/upload-skill-icons.mjs [--dry-run] [--force]
+ *   node --env-file=.env.local scripts/upload/skill-icons.mjs [--dry-run] [--force]
  *
  * --dry-run: 업로드하지 않고 파일 목록만 출력
  * --force:   이미 존재하는 파일도 덮어쓰기

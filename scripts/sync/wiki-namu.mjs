@@ -3,7 +3,7 @@
  * 나무위키 → DB 동기화 스크립트 (인격 + EGO 통합)
  *
  * 사용법:
- *   node --env-file=.env.local scripts/sync-wiki-namu.mjs [옵션]
+ *   node --env-file=.env.local scripts/sync/wiki-namu.mjs [옵션]
  *
  * 옵션:
  *   --sinner <slug>   특정 수감자만 (기본: 전체 12명)

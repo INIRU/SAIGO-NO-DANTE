@@ -182,59 +182,67 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
             <div
               key={gift.id}
               style={{
-                position: 'relative',
-                background: '#1a1510',
-                border: '1px solid #222',
-                borderRadius: '0.375rem',
-                padding: '0.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.25rem',
+                contentVisibility: 'auto',
+                contain: 'layout style paint',
+                containIntrinsicSize: '5rem',
               }}
             >
-              {gift.image_url ? (
-                <Image
-                  src={gift.image_url}
-                  alt={gift.name}
-                  width={48}
-                  height={48}
-                  style={{ width: '3rem', height: '3rem', objectFit: 'contain' }}
-                />
-              ) : (
-                <div style={{ width: '3rem', height: '3rem', background: '#222', borderRadius: '0.25rem' }} />
-              )}
-              <span style={{
-                fontSize: '0.6rem',
-                color: '#9ca3af',
-                textAlign: 'center',
-                lineHeight: 1.3,
-                wordBreak: 'keep-all',
-                maxWidth: '100%',
-              }}>
-                {gift.name}
-              </span>
-              <button
-                onClick={() => onRemove(String(gift.game_id))}
+              <div
                 style={{
-                  position: 'absolute',
-                  top: '0.125rem',
-                  right: '0.125rem',
-                  background: 'rgba(220,38,38,0.8)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '1rem',
-                  height: '1rem',
+                  position: 'relative',
+                  background: '#1a1510',
+                  border: '1px solid #222',
+                  borderRadius: '0.375rem',
+                  padding: '0.5rem',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  padding: 0,
+                  gap: '0.25rem',
                 }}
-                title="제거"
               >
-                <X size={10} color="#fff" />
-              </button>
+                {gift.image_url ? (
+                  <Image
+                    src={gift.image_url}
+                    alt={gift.name}
+                    width={48}
+                    height={48}
+                    style={{ width: '3rem', height: '3rem', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <div style={{ width: '3rem', height: '3rem', background: '#222', borderRadius: '0.25rem' }} />
+                )}
+                <span style={{
+                  fontSize: '0.6rem',
+                  color: '#9ca3af',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                  wordBreak: 'keep-all',
+                  maxWidth: '100%',
+                }}>
+                  {gift.name}
+                </span>
+                <button
+                  onClick={() => onRemove(String(gift.game_id))}
+                  style={{
+                    position: 'absolute',
+                    top: '0.125rem',
+                    right: '0.125rem',
+                    background: 'rgba(220,38,38,0.8)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '1rem',
+                    height: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  title="제거"
+                >
+                  <X size={10} color="#fff" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

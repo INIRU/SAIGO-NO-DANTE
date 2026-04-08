@@ -109,7 +109,11 @@ limbus-archive/
 │   ├── constants/          # 게임 상수 (STORAGE_BASE 등)
 │   ├── utils/              # 이미지 URL 헬퍼, 공통 유틸
 │   └── supabase/           # Supabase 클라이언트
-├── scripts/                # 데이터 동기화 스크립트 (MJS)
+├── scripts/                # 데이터 동기화/업로드/시딩 스크립트
+│   ├── sync/               # DB 동기화 (게임 데이터 → Supabase)
+│   ├── upload/             # 에셋 업로드 (이미지 → Storage)
+│   ├── seed/               # DB 시딩 (초기 데이터 삽입)
+│   └── process/            # 데이터 가공 (스토리 등)
 ├── public/                 # 정적 에셋 (폰트 등)
 ├── docs/                   # 프로젝트 문서
 └── proxy.ts                # Next.js 라우트 미들웨어

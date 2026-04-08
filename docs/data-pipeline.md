@@ -62,17 +62,16 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 
 | 스크립트 | 런타임 | 설명 | 대상 테이블 |
 |----------|--------|------|-------------|
-| `sync-mirror-dungeon-data.ts` | tsx | 거울 던전 전체 동기화 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `mirror_dungeon_events` |
-| `sync-game-data.mjs` | Node.js | 인격 + EGO 스킬 동기화 | `skills`, `ego_skills` |
-| `sync-wiki-namu.mjs` | Node.js | Namuwiki 레거시 동기화 (유지보수 전용) | `identities`, `ego`, `keyword_meta` |
-| `sync-ego-gifts.mjs` | Node.js | EGO 기프트 동기화 | `ego_gifts` |
+| `sync/mirror-dungeon-data.ts` | tsx | 거울 던전 전체 동기화 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `mirror_dungeon_events` |
+| `sync/game-data.mjs` | Node.js | 인격 + EGO 스킬 동기화 | `skills`, `ego_skills` |
+| `sync/wiki-namu.mjs` | Node.js | Namuwiki 레거시 동기화 (유지보수 전용) | `identities`, `ego`, `keyword_meta` |
 
 ### sync-mirror-dungeon-data.ts (거울 던전 통합 동기화)
 
 TypeScript + Zod 기반 통합 동기화 스크립트. 4개 동기화 단계를 순차 실행.
 
 ```bash
-npx tsx scripts/sync-mirror-dungeon-data.ts [options]
+npx tsx scripts/sync/mirror-dungeon-data.ts [options]
 ```
 
 **옵션:**
@@ -121,7 +120,7 @@ npx tsx scripts/sync-mirror-dungeon-data.ts [options]
 게임 클라이언트 JSON에서 스킬 수치를 추출하여 DB에 동기화.
 
 ```bash
-node --env-file=.env.local scripts/sync-game-data.mjs [options]
+node --env-file=.env.local scripts/sync/game-data.mjs [options]
 ```
 
 **옵션:**
@@ -145,8 +144,8 @@ node --env-file=.env.local scripts/sync-game-data.mjs [options]
 Namuwiki에서 인격/EGO 데이터를 추출. **신규 스크래핑 금지** - 기존 스크립트 유지보수만.
 
 ```bash
-node --env-file=.env.local scripts/sync-wiki-namu.mjs --sinner ryoshu --dry-run
-node --env-file=.env.local scripts/sync-wiki-namu.mjs --fix
+node --env-file=.env.local scripts/sync/wiki-namu.mjs --sinner ryoshu --dry-run
+node --env-file=.env.local scripts/sync/wiki-namu.mjs --fix
 ```
 
 **옵션:** `--sinner <slug>`, `--dry-run` (기본값), `--fix`, `--identity-only`, `--ego-only`, `--verbose`
@@ -157,15 +156,13 @@ node --env-file=.env.local scripts/sync-wiki-namu.mjs --fix
 
 | 스크립트 | 설명 |
 |----------|------|
-| `seed-sinners.mjs` | 12 수감자 기본 데이터 |
-| `seed-ego-gifts.mjs` | 거울 던전 EGO 기프트 (로컬 JSON → DB) |
-| `seed-keyword-icons.mjs` | 키워드 icon_slug + sin_affinity 매핑 |
-| `seed-legal-docs.mjs` | 법적 문서 (개인정보처리방침/이용약관) |
-| `seed-spider-house-identities.mjs` | 신규 인격 삽입 템플릿 |
+| `seed/sinners.mjs` | 12 수감자 기본 데이터 |
+| `seed/keyword-icons.mjs` | 키워드 icon_slug + sin_affinity 매핑 |
+| `seed/spider-house-identities.mjs` | 신규 인격 삽입 템플릿 |
 
 **실행:**
 ```bash
-node --env-file=.env.local scripts/seed-sinners.mjs
+node --env-file=.env.local scripts/seed/sinners.mjs
 ```
 
 ---
@@ -272,11 +269,11 @@ Supabase Storage (limbus-assets 버킷)
 
 | 스크립트 | 설명 |
 |----------|------|
-| `upload-assets.mjs` | 범용 이미지 업로드 |
-| `upload-keyword-icons.mjs` | 키워드 아이콘 업로드 |
-| `upload-missing-assets.mjs` | 누락 에셋 탐지 및 업로드 |
-| `upload-sinner-numbers.mjs` | 수감자 번호 이미지 업로드 |
-| `upload-skill-icons.mjs` | 스킬 아이콘 업로드 |
+| `upload/assets.mjs` | 범용 이미지 업로드 |
+| `upload/keyword-icons.mjs` | 키워드 아이콘 업로드 |
+| `upload/missing-assets.mjs` | 누락 에셋 탐지 및 업로드 |
+| `upload/sinner-numbers.mjs` | 수감자 번호 이미지 업로드 |
+| `upload/skill-icons.mjs` | 스킬 아이콘 업로드 |
 | `scrape-keyword-icons.mjs` | Namuwiki에서 전용 키워드 아이콘 수집 + 업로드 |
 
 ### Google Drive 에셋 소스
@@ -344,10 +341,10 @@ Base URL: `https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/lim
 스크립트 실행 시 `.env.local`에서 환경 변수를 로드:
 ```bash
 # .mjs 스크립트
-node --env-file=.env.local scripts/sync-game-data.mjs --dry-run
+node --env-file=.env.local scripts/sync/game-data.mjs --dry-run
 
 # .ts 스크립트 (dotenv 내장)
-npx tsx scripts/sync-mirror-dungeon-data.ts --dry-run
+npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 ```
 
 ---
@@ -358,8 +355,8 @@ npx tsx scripts/sync-mirror-dungeon-data.ts --dry-run
 2. `~/Documents/Limbus/assets/data/` 경로에 배치
 3. 신규 인격 확인: `KR_Personalities.json` 비교
 4. 신규 인격 삽입: 시딩 스크립트 (--dry-run 먼저)
-5. 스킬 동기화: `sync-game-data.mjs --dry-run` → `--fix`
-6. 거울 던전 동기화: `npx tsx scripts/sync-mirror-dungeon-data.ts --dry-run` → `--fix`
+5. 스킬 동기화: `scripts/sync/game-data.mjs --dry-run` → `--fix`
+6. 거울 던전 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → `--fix`
 7. 수동 필드 업데이트 (affiliation, acquisition 등)
 8. 에셋 업로드 (Google Drive → sharp → Supabase Storage)
 9. 프론트엔드 확인

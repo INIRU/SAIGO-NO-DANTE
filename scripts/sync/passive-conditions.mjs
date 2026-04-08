@@ -3,7 +3,7 @@
  * passive.json의 attributeResonanceCondition/attributeStockCondition을
  * DB passives.active_cond + sin_affinity + sin_count에 반영
  *
- * Usage: node --env-file=.env.local scripts/sync-passive-conditions.mjs [--dry-run|--fix]
+ * Usage: node --env-file=.env.local scripts/sync/passive-conditions.mjs [--dry-run|--fix]
  */
 
 import fs from 'fs'

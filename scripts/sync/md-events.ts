@@ -12,7 +12,7 @@
  *   acquirable-egogifts-in-event-01.txt           (gift mapping)
  *
  * Usage:
- *   npx tsx --env-file=.env.local scripts/sync-md-events.ts [--dry-run|--fix] [--verbose]
+ *   npx tsx --env-file=.env.local scripts/sync/md-events.ts [--dry-run|--fix] [--verbose]
  *
  * Default: --dry-run (no DB writes). Use --fix to apply.
  */

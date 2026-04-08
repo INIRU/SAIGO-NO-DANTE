@@ -3,8 +3,8 @@
  * 스토리 CG 이미지 → WebP 변환 + Supabase Storage 업로드
  * 기존 PNG 삭제 후 WebP로 교체
  *
- * Usage: node --env-file=.env.local scripts/upload-story-cg-webp.mjs --chapter prologue
- *        node --env-file=.env.local scripts/upload-story-cg-webp.mjs --all
+ * Usage: node --env-file=.env.local scripts/upload/story-cg-webp.mjs --chapter prologue
+ *        node --env-file=.env.local scripts/upload/story-cg-webp.mjs --all
  */
 import { readdir, readFile } from 'fs/promises'
 import path from 'path'
@@ -99,8 +99,8 @@ async function main() {
     await processChapter(args[idx + 1])
   } else {
     console.log('Usage:')
-    console.log('  node --env-file=.env.local scripts/upload-story-cg-webp.mjs --chapter canto-1')
-    console.log('  node --env-file=.env.local scripts/upload-story-cg-webp.mjs --all')
+    console.log('  node --env-file=.env.local scripts/upload/story-cg-webp.mjs --chapter canto-1')
+    console.log('  node --env-file=.env.local scripts/upload/story-cg-webp.mjs --all')
     console.log(`\nAvailable: ${Object.keys(CHAPTERS).join(', ')}`)
   }
 }

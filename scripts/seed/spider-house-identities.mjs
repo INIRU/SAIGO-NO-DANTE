@@ -4,8 +4,8 @@
  * 대상: 파우스트 10215 (약지 제자), 홍루 10614 (약지 아비)
  *
  * Usage:
- *   node --env-file=.env.local scripts/seed-spider-house-identities.mjs --dry-run
- *   node --env-file=.env.local scripts/seed-spider-house-identities.mjs --fix
+ *   node --env-file=.env.local scripts/seed/spider-house-identities.mjs --dry-run
+ *   node --env-file=.env.local scripts/seed/spider-house-identities.mjs --fix
  */
 
 import { readFileSync, existsSync, readdirSync } from 'fs'

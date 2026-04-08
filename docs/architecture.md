@@ -112,8 +112,8 @@ limbus-archive/
 ### 2단계: 동기화 스크립트
 
 ```bash
-node --env-file=.env.local scripts/sync-game-data.mjs --dry-run   # 프리뷰
-node --env-file=.env.local scripts/sync-game-data.mjs --fix        # DB 반영
+node --env-file=.env.local scripts/sync/game-data.mjs --dry-run   # 프리뷰
+node --env-file=.env.local scripts/sync/game-data.mjs --fix        # DB 반영
 ```
 
 | 스크립트 | 용도 |

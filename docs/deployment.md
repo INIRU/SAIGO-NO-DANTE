@@ -321,10 +321,10 @@ rm -rf node_modules .next && npm install
 스크립트 실행 시 `SUPABASE_SERVICE_ROLE_KEY` 누락 에러:
 ```bash
 # .mjs 스크립트 — node --env-file 사용
-node --env-file=.env.local scripts/sync-game-data.mjs --dry-run
+node --env-file=.env.local scripts/sync/game-data.mjs --dry-run
 
 # .ts 스크립트 — dotenv 내장 (자동 로드)
-npx tsx scripts/sync-mirror-dungeon-data.ts --dry-run
+npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 ```
 
 ### 이미지 최적화 이슈
