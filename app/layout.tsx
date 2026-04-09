@@ -256,7 +256,7 @@ export default async function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m){document.documentElement.lang=m[1];if(m[1]!=='ko'){var s=document.createElement('style');s.textContent='.lang-fallback{visibility:hidden}';document.head.appendChild(s)}}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m){document.documentElement.lang=m[1];if(m[1]!=='ko'){var s=document.createElement('style');s.textContent='.lang-fallback,.lang-fallback *{color:transparent!important}';document.head.appendChild(s)}}})()` }} />
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {/* Preload critical body/heading fonts to minimize CLS from font swap */}
         <link rel="preload" href="/fonts/SCDream5.otf" as="font" type="font/otf" crossOrigin="anonymous" />
