@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
+import { headers } from 'next/headers'
 import type { Metadata } from 'next'
-import { Black_Han_Sans, Song_Myung } from 'next/font/google'
+import { Black_Han_Sans, Song_Myung, Noto_Sans_JP } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
@@ -11,6 +12,9 @@ import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
+import { LanguageProvider } from '@/lib/i18n'
+import type { SupportedLang } from '@/lib/i18n/types'
+
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import SkipNav from '@/components/a11y/SkipNav'
@@ -103,6 +107,13 @@ const paperlogy = localFont({
   display: 'optional',
 })
 
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-jp',
+  display: 'optional',
+})
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 
 export const metadata: Metadata = {
@@ -167,23 +178,42 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   cacheLife('page-1h')
 
   const supabase = createAdminClient()
-  let { data, error } = await supabase
-    .schema('limbus')
-    .from('keyword_meta')
-    .select('name, description, max_stack, icon_slug, sin_affinity')
+  const allData: any[] = []
+  let fetchError = false
+  let from = 0
 
-  // icon_slug/sin_affinity 컬럼이 아직 없으면 기본 컬럼만으로 재시도
-  if (error) {
-    const fallback = await supabase
+  while (true) {
+    const { data, error } = await supabase
       .schema('limbus')
       .from('keyword_meta')
-      .select('name, description, max_stack')
-    data = fallback.data as typeof data
-    error = fallback.error
+      .select('name, description, max_stack, icon_slug, sin_affinity')
+      .range(from, from + 999)
+    if (error) { fetchError = true; break }
+    if (!data || data.length === 0) break
+    allData.push(...data)
+    if (data.length < 1000) break
+    from += 1000
+  }
+
+  // icon_slug/sin_affinity 컬럼이 아직 없으면 기본 컬럼만으로 재시도
+  if (fetchError) {
+    allData.length = 0
+    from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .schema('limbus')
+        .from('keyword_meta')
+        .select('name, description, max_stack')
+        .range(from, from + 999)
+      if (error || !data || data.length === 0) break
+      allData.push(...data)
+      if (data.length < 1000) break
+      from += 1000
+    }
   }
 
   const keywords: Record<string, KeywordInfo> = {}
-  for (const row of (data ?? []) as Record<string, unknown>[]) {
+  for (const row of allData as Record<string, unknown>[]) {
     keywords[row.name as string] = {
       desc: (row.description as string) ?? '',
       ...(row.max_stack != null ? { maxStack: row.max_stack as number } : {}),
@@ -194,15 +224,41 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   return keywords
 }
 
+/* ── i18n: Suspense 안에서 headers() await (Next.js 16 패턴) ── */
+async function DetectedLangProvider({
+  langPromise,
+  children,
+}: {
+  langPromise: ReturnType<typeof headers>
+  children: React.ReactNode
+}) {
+  const h = await langPromise
+  const lang = (h.get('x-lang') as SupportedLang) || 'en'
+  return <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
+}
+
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const keywords = await getKeywordData()
+  // ⚠️ 의도적으로 await 안 함 — Next.js 16 패턴: Promise만 시작하고 Suspense 안
+  // DetectedLangProvider에서 await. 여기서 await하면 /_not-found 정적 프리렌더 깨짐.
+  // https://nextjs.org/docs/app/building-your-application/rendering/server-components#streaming
+  const langPromise = headers()
+
+  const appContent = (
+    <>
+      <Suspense><Navbar /></Suspense>
+      <Suspense><main id="main-content">{children}</main></Suspense>
+      <Footer />
+      <Suspense><FloatingFontControl /></Suspense>
+    </>
+  )
 
   return (
-    <html lang="ko" data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable}`}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {/* Preload critical body/heading fonts to minimize CLS from font swap */}
@@ -219,10 +275,11 @@ export default async function RootLayout({
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  <Suspense><Navbar /></Suspense>
-                  <Suspense><main id="main-content">{children}</main></Suspense>
-                  <Footer />
-                  <Suspense><FloatingFontControl /></Suspense>
+                  <Suspense fallback={<LanguageProvider>{appContent}</LanguageProvider>}>
+                    <DetectedLangProvider langPromise={langPromise}>
+                      {appContent}
+                    </DetectedLangProvider>
+                  </Suspense>
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>

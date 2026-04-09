@@ -8,6 +8,8 @@ import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
+import { getServerLang } from '@/lib/i18n/server'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 export const metadata: Metadata = {
   title: '최애의 관리자 | SAIGO NO DANTE',
@@ -119,9 +121,9 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
 }
 
 
-async function BelowFoldContent({ latestIdentities }: { latestIdentities: IdentityWithSinner[] }) {
+async function BelowFoldContent({ latestIdentities, lang }: { latestIdentities: IdentityWithSinner[]; lang: SupportedLang }) {
   const latestVideo = await getLatestYoutubeVideo()
-  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
+  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} lang={lang} />
 }
 
 function BelowFoldSkeleton() {
@@ -139,16 +141,21 @@ function BelowFoldSkeleton() {
   )
 }
 
-export default async function HomePage() {
+async function getCachedHomeData() {
   'use cache'
   cacheLife('page-10m')
   const [latestIdentities, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
     getPinnedAnnouncement(),
   ])
+  return { latestIdentities, pinnedAnnouncement }
+}
 
-  // Preload the first hero slider image to eliminate LCP Resource Load Delay.
-  // Must replicate the same filtering + URL logic as HomeClient's heroIdentities useMemo.
+export default async function HomePage() {
+  // cookies() is dynamic — call outside 'use cache'
+  const lang = await getServerLang()
+  const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData()
+
   const latestDate = latestIdentities[0]?.release_date
   const heroIdentities = latestDate
     ? latestIdentities.filter(id => id.release_date === latestDate)
@@ -163,7 +170,7 @@ export default async function HomePage() {
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
       <Suspense fallback={<BelowFoldSkeleton />}>
-        <BelowFoldContent latestIdentities={latestIdentities} />
+        <BelowFoldContent latestIdentities={latestIdentities} lang={lang} />
       </Suspense>
     </>
   )

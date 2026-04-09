@@ -5,6 +5,7 @@ import Image from 'next/image'
 
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityInfoUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { useLanguage } from '@/lib/i18n'
 
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
 
@@ -14,6 +15,14 @@ interface HeroGlitchSliderProps {
 }
 
 export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlitchSliderProps) {
+  const { lang } = useLanguage()
+
+  const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
+    if (lang === 'en') return en ?? kr ?? ''
+    if (lang === 'ja') return jp ?? kr ?? ''
+    return kr ?? ''
+  }
+
   const [validGacksung, setValidGacksung] = useState<Set<string>>(new Set())
   const [currentIdx, setCurrentIdx]       = useState(0)
   const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
@@ -150,7 +159,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
         <Image
           src={current.url}
-          alt={current.identity.name_kr}
+          alt={getName(current.identity.name_kr, current.identity.name_en, current.identity.name_jp)}
           fill
           priority
           placeholder="blur"
@@ -205,7 +214,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
             <button
               key={i}
               onClick={() => glitchTo(i)}
-              title={`${s.identity.name_kr}${s.gacksung ? ' 각성' : ''}`}
+              title={`${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''}`}
               style={{
                 width: i === currentIdx ? '1.125rem' : '0.3125rem',
                 height: '0.3125rem',

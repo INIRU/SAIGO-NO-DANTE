@@ -40,6 +40,9 @@ interface EgoGift {
   keyword: string
   grade: string
   image_url: string | null
+  effect_base: string | null
+  effect_plus: string | null
+  effect_plusplus: string | null
 }
 
 interface EGO {
@@ -135,9 +138,21 @@ export default function KeywordsClient({
 
   const giftCountMap = useMemo(() => {
     const map: Record<string, number> = {}
+    // Count by keyword field (category)
     gifts.forEach(g => { map[g.keyword] = (map[g.keyword] || 0) + 1 })
+    // Count by keyword names found in effect text
+    const kwNames = keywords.map(k => k.name)
+    gifts.forEach(g => {
+      const effectText = [g.effect_base, g.effect_plus, g.effect_plusplus].filter(Boolean).join(' ')
+      if (!effectText) return
+      for (const kwName of kwNames) {
+        if (effectText.includes(kwName) && kwName !== g.keyword) {
+          map[kwName] = (map[kwName] || 0) + 1
+        }
+      }
+    })
     return map
-  }, [gifts])
+  }, [gifts, keywords])
 
   /* ── 카테고리별 카운트 ── */
   const categoryCounts = useMemo(() => {
@@ -176,7 +191,11 @@ export default function KeywordsClient({
 
   const relatedGifts = useMemo(() => {
     if (!selected) return []
-    return gifts.filter(g => g.keyword === selected.name)
+    return gifts.filter(g => {
+      if (g.keyword === selected.name) return true
+      const effectText = [g.effect_base, g.effect_plus, g.effect_plusplus].filter(Boolean).join(' ')
+      return effectText.includes(selected.name)
+    })
   }, [selected, gifts])
 
   const handleClose = useCallback(() => setSelected(null), [])

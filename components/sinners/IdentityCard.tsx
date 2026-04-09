@@ -6,6 +6,7 @@ import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_I
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import styles from '@/styles/components/IdentityCard.module.css'
+import { useLanguage } from '@/lib/i18n'
 
 
 interface IdentityCardProps {
@@ -18,6 +19,12 @@ interface IdentityCardProps {
 
 export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
+  const { lang, t } = useLanguage()
+  const getName = (kr?: string | null, en?: string | null, jp?: string | null) => {
+    if (lang === 'en') return en ?? kr ?? ''
+    if (lang === 'ja') return jp ?? kr ?? ''
+    return kr ?? ''
+  }
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS[1]
   const rarityNum = identity.rarity
@@ -48,7 +55,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           {imgSrc ? (
             <Image
               src={imgSrc}
-              alt={identity.name_kr || identity.name}
+              alt={getName(identity.name_kr, identity.name_en, identity.name_jp)}
               fill
               placeholder="blur"
               blurDataURL={BLUR_PLACEHOLDER}
@@ -80,7 +87,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
 
         {/* 인격명 */}
         <div className={`${styles.name} font-semibold`}>
-          {identity.name_kr || identity.name}
+          {getName(identity.name_kr, identity.name_en, identity.name_jp)}
         </div>
 
         {/* 등급 아이콘 */}
@@ -135,9 +142,9 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
         >
           <div className="grid grid-cols-3 gap-1 text-center">
             {[
-              { label: 'HP', value: identity.hp },
-              { label: '속도', value: `${identity.speed_min}-${identity.speed_max}` },
-              { label: '방어', value: identity.def_level },
+              { label: t('identity.stat.hp'), value: identity.hp },
+              { label: t('identity.stat.speed'), value: `${identity.speed_min}-${identity.speed_max}` },
+              { label: t('identity.stat.defense'), value: identity.def_level },
             ].map(({ label, value }) => (
               <div key={label}>
                 <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: 'var(--text-xs)' }}>

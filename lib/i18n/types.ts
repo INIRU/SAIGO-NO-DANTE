@@ -6,4 +6,4 @@ export const SUPPORTED_LANGS: { value: SupportedLang; label: string; nativeLabel
   { value: 'ja', label: 'Japanese', nativeLabel: '日本語' },
 ];
 
-export const DEFAULT_LANG: SupportedLang = 'ko';
+export const DEFAULT_LANG: SupportedLang = 'en';

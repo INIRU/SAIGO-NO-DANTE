@@ -13,6 +13,8 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import IdentityCard from '@/components/sinners/IdentityCard'
+import { useLanguage } from '@/lib/i18n'
+import { translations } from '@/lib/i18n/translations'
 
 interface Props {
   sinner: Sinner
@@ -26,7 +28,21 @@ type OwnershipFilter = 'all' | 'owned' | 'unowned'
 const LOCAL_STORAGE_KEY = 'limbus-collection'
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
+  const { lang, t } = useLanguage()
   const { sinMap: kwSinMap, iconMap: kwIconMap } = useKeywordData()
+
+  const getName = (kr?: string | null, en?: string | null, jp?: string | null) => {
+    if (lang === 'en') return en ?? kr ?? ''
+    if (lang === 'ja') return jp ?? kr ?? ''
+    return kr ?? ''
+  }
+
+  const literarySource = (() => {
+    const key = `sinner.source.${sinner.id}` as keyof typeof translations
+    const entry = translations[key]
+    if (!entry) return sinner.literary_source
+    return entry[lang] ?? entry['ko'] ?? sinner.literary_source
+  })()
   const router = useRouter()
   const pathname = usePathname()
   const [tab, setTab] = useState<Tab>('identities')
@@ -321,10 +337,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         {/* 브레드크럼 */}
         <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
-            수감자 목록
+            {t('sinners.title')}
           </Link>
           <span style={{ color: '#333344' }}>&rsaquo;</span>
-          <span style={{ color: 'var(--gold)' }}>{sinner.name_kr}</span>
+          <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
@@ -350,7 +366,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 {getSinnerProfileUrl(sinner.id) ? (
                   <Image
                     src={getSinnerProfileUrl(sinner.id)}
-                    alt={sinner.name_kr}
+                    alt={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                     fill
                     sizes="(max-width: 640px) 6rem, 20rem"
                     quality={90}
@@ -391,12 +407,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 <div>
                   <h1
                     className="font-serif text-xl sm:text-3xl font-bold"
-                    style={{ color: 'var(--gold)' }}
+                    style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
                   >
-                    {sinner.name}
+                    {getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                   </h1>
                   <p className="text-xs sm:text-sm" style={{ color: '#666688' }}>
-                    {sinner.name_kr} · #{String(sinner.order_num).padStart(2, '0')}
+                    {sinner.name} · #{String(sinner.order_num).padStart(2, '0')}
                   </p>
                 </div>
               </div>
@@ -406,7 +422,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 className="text-xs sm:text-sm leading-relaxed mb-2 sm:mb-4"
                 style={{ color: '#9e9e9e' }}
               >
-                {sinner.description}
+                {(() => {
+                  const descKey = `sinnerDetail.desc.${sinner.id}` as keyof typeof translations
+                  const entry = translations[descKey]
+                  if (!entry) return sinner.description
+                  return entry[lang] ?? entry['ko'] ?? sinner.description
+                })()}
               </p>
 
               {/* 문학 출처 */}
@@ -419,7 +440,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   color: 'rgba(200,164,90,0.7)',
                 }}
               >
-                {sinner.literary_source}
+                {literarySource}
               </div>
               </div>
               </div>
@@ -441,29 +462,29 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 borderRadius: '0.375rem',
               }}
             >
-              {(['identities', 'ego'] as Tab[]).map(t => (
+              {(['identities', 'ego'] as Tab[]).map(tabKey => (
                 <button
-                  key={t}
-                  onClick={() => changeTab(t)}
+                  key={tabKey}
+                  onClick={() => changeTab(tabKey)}
                   className="flex-1 py-3 text-sm font-medium transition-all duration-200 relative"
                   style={{
-                    background: tab === t
+                    background: tab === tabKey
                       ? 'linear-gradient(180deg, rgba(200,144,10,0.2) 0%, rgba(200,144,10,0.08) 100%)'
                       : 'transparent',
-                    color: tab === t ? 'var(--gold-light)' : '#555566',
-                    borderBottom: tab === t ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
+                    color: tab === tabKey ? 'var(--gold-light)' : '#555566',
+                    borderBottom: tab === tabKey ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
                     letterSpacing: '0.1em',
                   }}
                 >
-                  {t === 'identities' ? '인격' : 'EGO'}
-                  {tab === t && (
+                  {tabKey === 'identities' ? t('sinners.identities') : 'EGO'}
+                  {tab === tabKey && (
                     <span style={{
                       marginLeft: '0.375rem',
                       fontSize: '0.625rem',
                       color: 'var(--gold-dim)',
                       fontFamily: 'var(--font-mono)',
                     }}>
-                      {t === 'identities' ? filteredIdentities.length : filteredEgos.length}
+                      {tabKey === 'identities' ? filteredIdentities.length : filteredEgos.length}
                     </span>
                   )}
                 </button>
@@ -483,7 +504,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   type="text"
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setShowAutocomplete(true) }}
-                  placeholder={tab === 'identities' ? '인격 이름, 소속, 키워드 검색...' : 'EGO 이름, 키워드 검색...'}
+                  placeholder={tab === 'identities' ? t('sinnerDetail.searchIdentity') : t('sinnerDetail.searchEgo')}
                   className="w-full pl-9 pr-8 py-2 rounded text-xs transition-all"
                   style={{
                     background: 'rgba(0,0,0,0.3)',
@@ -499,7 +520,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     onClick={clearFilters}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:opacity-80 transition-opacity"
                     style={{ color: '#666' }}
-                    title="필터 초기화"
+                    title={t('sinnerDetail.resetFilter')}
                   >
                     <X size={14} />
                   </button>
@@ -525,7 +546,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {autocompleteResults.keywords.length > 0 && (
                         <div>
                           <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
-                            키워드 <span style={{ color: '#444', fontWeight: 400 }}>Tab으로 선택</span>
+                            {t('sinnerDetail.keyword')} <span style={{ color: '#444', fontWeight: 400 }}>{t('sinnerDetail.tabSelect')}</span>
                           </div>
                           {autocompleteResults.keywords.map(({ kw, count }, i) => {
                             const idx = kwStart + i
@@ -552,7 +573,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   />
                                 )}
                                 <span>{kw}</span>
-                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{count}개</span>
+                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{count}{t('sinnerDetail.count')}</span>
                                 {isSelected && <span style={{ color: chipColor, fontSize: '0.625rem' }}>ON</span>}
                               </div>
                             )
@@ -564,7 +585,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {autocompleteResults.identities.length > 0 && (
                         <div>
                           <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
-                            인격
+                            {t('sinnerDetail.identity')}
                           </div>
                           {autocompleteResults.identities.map((ident, i) => {
                             const idx = identStart + i
@@ -583,7 +604,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ background: ident.rarity === 3 ? '#c8900a' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
-                                <span>{ident.name_kr}</span>
+                                <span>{getName(ident.name_kr, ident.name_en, ident.name_jp)}</span>
                                 <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{ident.rarity}성</span>
                               </div>
                             )
@@ -615,7 +636,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ background: gradeColor }}
                                 />
-                                <span>{ego.name_kr || ego.name}</span>
+                                <span>{getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name}</span>
                                 <span style={{ color: gradeColor, fontSize: '0.625rem', marginLeft: 'auto' }}>{ego.grade}</span>
                               </div>
                             )
@@ -636,7 +657,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   {/* 등급 필터 */}
                   <div className="flex items-center gap-1 sm:gap-1.5">
                     {[
-                      { value: null, label: '전체', icon: null },
+                      { value: null, label: t('sinnerDetail.allFilter'), icon: null },
                       { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
                       { value: '2성', label: '2성', icon: `${STORAGE_BASE}/icons/Rarity/2star.webp` },
                       { value: '3성', label: '3성', icon: `${STORAGE_BASE}/icons/Rarity/3star.webp` },
@@ -683,9 +704,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         value={ownershipFilter}
                         defaultValue="all"
                         options={[
-                          { value: 'all', label: '전체 보기' },
-                          { value: 'owned', label: '보유 인격' },
-                          { value: 'unowned', label: '미보유 인격' },
+                          { value: 'all', label: t('sinnerDetail.viewAll') },
+                          { value: 'owned', label: t('sinnerDetail.ownedIdentity') },
+                          { value: 'unowned', label: t('sinnerDetail.unownedIdentity') },
                         ]}
                         onChange={v => setOwnershipFilter(v as OwnershipFilter)}
                         minWidth={110}
@@ -709,7 +730,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
                         )}
                       </svg>
-                      {sortOrder === 'newest' ? '최신순' : '오래된순'}
+                      {sortOrder === 'newest' ? t('sinnerDetail.newest') : t('sinnerDetail.oldest')}
                     </button>
 
                   {/* 일반/각성 토글 */}
@@ -726,7 +747,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       className="inline-block w-2 h-2 rounded-full transition-colors"
                       style={{ background: gacksung ? '#ff6b6b' : '#555' }}
                     />
-                    {gacksung ? '3동기화' : '일반'}
+                    {gacksung ? t('sinnerDetail.uptie3') : t('sinnerDetail.normal')}
                   </button>
                   </div>
                 </div>
@@ -736,10 +757,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     className="text-center py-16"
                     style={{ color: '#888888' }}
                   >
-                    {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 인격이 없습니다.'}
+                    {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noIdentities')}
                   </div>
                 ) : (
-                  <StaggerReveal className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8" staggerDelay={0.05}>
                     {filteredIdentities.map((identity) => (
                       <motion.div
                         key={identity.id}
@@ -781,7 +802,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
                       )}
                     </svg>
-                    {sortOrder === 'newest' ? '최신순' : '오래된순'}
+                    {sortOrder === 'newest' ? t('sinnerDetail.newest') : t('sinnerDetail.oldest')}
                   </button>
 
                   {/* 보유 필터 드롭다운 */}
@@ -790,9 +811,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       value={ownershipFilter}
                       defaultValue="all"
                       options={[
-                        { value: 'all', label: '전체 보기' },
-                        { value: 'owned', label: '보유 EGO' },
-                        { value: 'unowned', label: '미보유 EGO' },
+                        { value: 'all', label: t('sinnerDetail.viewAll') },
+                        { value: 'owned', label: t('sinnerDetail.ownedEgo') },
+                        { value: 'unowned', label: t('sinnerDetail.unownedEgo') },
                       ]}
                       onChange={v => setOwnershipFilter(v as OwnershipFilter)}
                       minWidth={110}
@@ -802,12 +823,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
                 {filteredEgos.length === 0 ? (
                   <div className="card p-8 text-center" style={{ color: '#888888' }}>
-                    <p className="font-serif text-lg">
-                      {hasActiveFilters ? '검색 결과가 없습니다.' : '등록된 EGO가 없습니다.'}
+                    <p style={{ fontFamily: 'var(--font-heading)', fontSize: '1.125rem' }}>
+                      {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noEgo')}
                     </p>
                   </div>
                 ) : (
-                  <StaggerReveal className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6" staggerDelay={0.05}>
                     {filteredEgos.map((ego) => {
                       const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
                       const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
@@ -851,7 +872,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             )}
                             <p className="font-serif font-light text-center leading-snug"
                               style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: '1.35' }}>
-                              {ego.name_kr || ego.name}
+                              {getName(ego.name_kr, ego.name_en, ego.name_jp)}
                             </p>
                           </div>
                         </motion.button>

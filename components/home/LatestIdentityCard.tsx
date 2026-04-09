@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { IdentityWithSinner } from '@/lib/types'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import { useLanguage } from '@/lib/i18n'
 
 function formatDate(d: string) {
   const dateOnly = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -25,6 +26,14 @@ interface LatestIdentityCardProps {
 }
 
 export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconSrc }: LatestIdentityCardProps) {
+  const { lang } = useLanguage()
+
+  const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
+    if (lang === 'en') return en ?? kr ?? ''
+    if (lang === 'ja') return jp ?? kr ?? ''
+    return kr ?? ''
+  }
+
   return (
     <Link
       href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
@@ -104,11 +113,11 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
             className="font-serif font-light leading-tight group-hover:text-yellow-300 transition-colors"
             style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}
           >
-            {identity.name_kr}
+            {getName(identity.name_kr, identity.name_en, identity.name_jp)}
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: '0.125rem' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)' }}>
-              {identity.sinner?.name_kr ?? identity.sinner_id}
+              {getName(identity.sinner?.name_kr, identity.sinner?.name_en, identity.sinner?.name_jp) || identity.sinner_id}
             </span>
             {identity.release_date && (
               <>

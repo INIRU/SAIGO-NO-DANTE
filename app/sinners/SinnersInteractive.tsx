@@ -5,8 +5,10 @@ import { Users, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeIn } from '@/lib/animations'
+import { useLanguage } from '@/lib/i18n'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage()
   return (
     <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto relative">
 
@@ -68,13 +70,13 @@ export default function SinnersInteractive({ children }: { children: React.React
 
         {/* 타이틀 */}
         <motion.h1
-          className="font-serif text-4xl md:text-5xl font-bold mb-3"
+          className="text-4xl md:text-5xl font-bold mb-3"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }}
-          style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
+          style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)', fontFamily: 'var(--font-heading)' }}
         >
-          수감자 목록
+          {t('sinners.title' as any)}
         </motion.h1>
 
         {/* 서브텍스트 */}
@@ -84,7 +86,7 @@ export default function SinnersInteractive({ children }: { children: React.React
           transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
           style={{ color: '#888888', fontSize: '0.875rem' }}
         >
-          림버스 컴퍼니의 12인 수감자
+          {t('sinners.subtitle' as any)}
         </motion.p>
 
         {/* 하단 장식 라인 */}
@@ -119,7 +121,7 @@ export default function SinnersInteractive({ children }: { children: React.React
             }}
           >
             <Users size={16} />
-            인격 전체 보기
+            {t('sinners.viewAllIdentities' as any)}
           </Link>
           <Link
             href="/sinners/ego"
@@ -131,7 +133,7 @@ export default function SinnersInteractive({ children }: { children: React.React
             }}
           >
             <Sparkles size={16} />
-            E.G.O 전체 보기
+            {t('sinners.viewAllEgo' as any)}
           </Link>
         </motion.div>
       </div>

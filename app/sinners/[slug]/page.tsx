@@ -9,6 +9,8 @@ import SinnerDetailClient from './SinnerDetailClient'
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getSinnerProfileUrl } from '@/lib/utils/images'
 import type { Identity, EGO } from '@/lib/types'
+import { getServerLang } from '@/lib/i18n/server'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 export function generateStaticParams() {
   return SINNER_SLUGS.map(slug => ({ slug }))
@@ -30,34 +32,39 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function SinnerPage({ params }: { params: Promise<{ slug: string }> }) {
+async function getCachedSinnerData(slug: string) {
   'use cache'
   cacheLife('page-1m')
-  const { slug } = await params
   const supabase = createAdminClient()
 
   const [sinner, identitiesRes, egosRes] = await Promise.all([
     getSinnerById(slug),
-    // Select only fields needed for the listing card — detail pages fetch full data on demand
     supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, folder_name, game_id')
+      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, folder_name, game_id')
       .eq('sinner_id', slug)
       .order('rarity')
       .order('name'),
     supabase
       .schema('limbus')
       .from('ego')
-      .select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url')
+      .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url')
       .eq('sinner_id', slug)
       .order('grade')
       .order('name'),
   ])
-  if (!sinner) notFound()
 
-  const identities = (identitiesRes.data ?? []) as unknown as Identity[]
-  const egos = (egosRes.data ?? []) as unknown as EGO[]
+  return { sinner, identities: (identitiesRes.data ?? []) as unknown as Identity[], egos: (egosRes.data ?? []) as unknown as EGO[] }
+}
+
+export default async function SinnerPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const [{ sinner, identities, egos }, lang] = await Promise.all([
+    getCachedSinnerData(slug),
+    getServerLang(),
+  ])
+  if (!sinner) notFound()
 
   const siteUrl = 'https://saigo-no-dante.com'
   const profileUrl = getSinnerProfileUrl(sinner.id)
@@ -78,8 +85,6 @@ export default async function SinnerPage({ params }: { params: Promise<{ slug: s
           siteUrl,
         })} />
       )}
-      {/* SinnerDetailClient uses usePathname, requiring a Suspense boundary
-          to avoid a CSR bailout that would de-opt the entire page to client rendering. */}
       <Suspense fallback={null}>
         <SinnerDetailClient sinner={sinner} identities={identities} egos={egos} />
       </Suspense>

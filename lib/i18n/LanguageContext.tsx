@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { SupportedLang, DEFAULT_LANG } from './types';
+import { SupportedLang, DEFAULT_LANG, SUPPORTED_LANGS } from './types';
 import { translations, TranslationKey } from './translations';
 
 interface LanguageContextType {
@@ -12,22 +12,56 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<SupportedLang>(DEFAULT_LANG);
-  const [mounted, setMounted] = useState(false);
+const VALID_LANGS = SUPPORTED_LANGS.map(l => l.value);
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
+
+function detectBrowserLang(): SupportedLang {
+  if (typeof navigator === 'undefined') return 'en';
+  const browserLang = navigator.language?.toLowerCase() ?? '';
+  if (browserLang.startsWith('ko')) return 'ko';
+  if (browserLang.startsWith('ja')) return 'ja';
+  return 'en'; // fallback for all other languages
+}
+
+function setCookieAndAttr(lang: SupportedLang) {
+  document.cookie = `preferred_lang=${lang};path=/;max-age=${COOKIE_MAX_AGE};samesite=lax`;
+  document.documentElement.lang = lang;
+}
+
+interface LanguageProviderProps {
+  children: ReactNode;
+  /** Server-detected language from cookie. Enables SSR in the correct language (no flash). */
+  initialLang?: SupportedLang;
+}
+
+export function LanguageProvider({ children, initialLang }: LanguageProviderProps) {
+  // Use server-provided lang as initial state → SSR matches client first render → no flash
+  const [lang, setLangState] = useState<SupportedLang>(initialLang ?? DEFAULT_LANG);
 
   useEffect(() => {
-    // Read from localStorage on mount (hydration-safe)
-    const stored = localStorage.getItem('preferred_lang') as SupportedLang | null;
-    if (stored && (['ko', 'en', 'ja'] as SupportedLang[]).includes(stored)) {
-      setLangState(stored);
+    // On mount: sync localStorage/cookie. If no stored pref, detect browser language.
+    const stored = localStorage.getItem('preferred_lang');
+    if (stored && VALID_LANGS.includes(stored as SupportedLang)) {
+      const validLang = stored as SupportedLang;
+      if (validLang !== lang) setLangState(validLang);
+      setCookieAndAttr(validLang);
+    } else if (!initialLang || initialLang === DEFAULT_LANG) {
+      // First visit without cookie: detect browser language
+      const detected = detectBrowserLang();
+      setLangState(detected);
+      localStorage.setItem('preferred_lang', detected);
+      setCookieAndAttr(detected);
+    } else {
+      // Server already detected from Accept-Language → persist it
+      localStorage.setItem('preferred_lang', lang);
+      setCookieAndAttr(lang);
     }
-    setMounted(true);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLang = useCallback((newLang: SupportedLang) => {
     setLangState(newLang);
     localStorage.setItem('preferred_lang', newLang);
+    setCookieAndAttr(newLang);
   }, []);
 
   const t = useCallback(
@@ -39,14 +73,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [lang],
   );
 
-  // During SSR, always render 'ko' to avoid hydration mismatch
-  const contextValue: LanguageContextType = {
-    lang: mounted ? lang : DEFAULT_LANG,
-    setLang,
-    t,
-  };
-
-  return <LanguageContext.Provider value={contextValue}>{children}</LanguageContext.Provider>;
+  return <LanguageContext.Provider value={{ lang, setLang, t }}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {

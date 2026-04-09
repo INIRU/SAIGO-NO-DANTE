@@ -147,7 +147,37 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 6. API 프록시 보호 ──
-  if (!pathname.startsWith('/api/')) return NextResponse.next()
+  if (!pathname.startsWith('/api/')) {
+    // ── i18n: Detect language and forward to Server Components via x-lang header ──
+    const langCookie = request.cookies.get('preferred_lang')?.value
+    let detectedLang = langCookie
+
+    if (!detectedLang) {
+      const acceptLang = request.headers.get('accept-language') ?? ''
+      if (acceptLang.includes('ko')) detectedLang = 'ko'
+      else if (acceptLang.includes('ja')) detectedLang = 'ja'
+      else detectedLang = 'en'
+    }
+
+    // Forward language to Server Components (layout.tsx reads this via headers())
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-lang', detectedLang)
+
+    const pageResponse = NextResponse.next({
+      request: { headers: requestHeaders },
+    })
+
+    // Set cookie for first-time visitors
+    if (!langCookie) {
+      pageResponse.cookies.set('preferred_lang', detectedLang, {
+        path: '/',
+        maxAge: 365 * 24 * 60 * 60,
+        sameSite: 'lax',
+      })
+    }
+
+    return pageResponse
+  }
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
 
   const origin = request.headers.get('origin')

@@ -44,7 +44,7 @@ export async function getLatestIdentities(limit = 6): Promise<IdentityWithSinner
   const { data, error } = await supabase()
     .schema('limbus')
     .from('identities')
-    .select('*, sinner:sinners(*)')
+    .select('*, sinner:sinners(id, name_kr, name_en, name_jp, order_num, description, literary_source)')
     .not('release_date', 'is', null)
     .order('release_date', { ascending: false })
     .limit(limit)
