@@ -153,8 +153,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Static files → pass through (don't rewrite assets)
-    if (/\.(png|jpe?g|gif|svg|ico|webp|webm|mp4|woff2?|ttf|otf|css|js|json|xml|txt|webmanifest|map)$/.test(pathname)) {
+    // Static files + special paths → pass through (don't rewrite)
+    if (/\.(png|jpe?g|gif|svg|ico|webp|webm|mp4|woff2?|ttf|otf|css|js|json|xml|txt|webmanifest|map)$/.test(pathname) ||
+        pathname.startsWith('/monitoring') || pathname.startsWith('/auth')) {
       return NextResponse.next()
     }
 
