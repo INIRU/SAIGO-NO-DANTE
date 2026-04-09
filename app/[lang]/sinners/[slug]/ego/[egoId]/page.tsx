@@ -31,8 +31,9 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
+  const langs = ['ko', 'en', 'ja']
   const egos = await getEGOs()
-  return egos.map(e => ({ slug: e.sinner_id, egoId: e.id }))
+  return langs.flatMap(lang => egos.map(e => ({ lang, slug: e.sinner_id, egoId: e.id })))
 }
 
 export default async function EGODetailPage({ params }: { params: Promise<{ slug: string; egoId: string }> }) {

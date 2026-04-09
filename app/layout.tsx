@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung, Noto_Sans_JP } from 'next/font/google'
 import localFont from 'next/font/local'
@@ -6,20 +5,12 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
-import { LanguageProvider } from '@/lib/i18n'
-import type { SupportedLang } from '@/lib/i18n/types'
-import { headers } from 'next/headers'
 
-import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
-import SkipNav from '@/components/a11y/SkipNav'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
-import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -224,41 +215,18 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   return keywords
 }
 
-async function DetectedLangProvider({
-  langPromise,
-  children,
-}: {
-  langPromise: ReturnType<typeof headers>
-  children: React.ReactNode
-}) {
-  const h = await langPromise
-  const lang = (h.get('x-lang') as SupportedLang) || 'ko'
-  return <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
-}
-
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const keywords = await getKeywordData()
-  const langPromise = headers()
-
-  const appContent = (
-    <>
-      <Suspense><Navbar /></Suspense>
-      <Suspense><main id="main-content">{children}</main></Suspense>
-      <Footer />
-      <Suspense><FloatingFontControl /></Suspense>
-    </>
-  )
 
   return (
     <html lang="ko" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m){document.documentElement.lang=m[1];if(m[1]!=='ko'){var s=document.createElement('style');s.textContent='.lang-fallback,.lang-fallback *{color:transparent!important}';document.head.appendChild(s)}}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m)document.documentElement.lang=m[1]})()` }} />
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
-        {/* Preload critical body/heading fonts to minimize CLS from font swap */}
         <link rel="preload" href="/fonts/SCDream5.otf" as="font" type="font/otf" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/KOTRA_BOLD.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
@@ -266,17 +234,11 @@ export default async function RootLayout({
         <JsonLd data={videoGameJsonLd(SITE_URL)} />
       </head>
       <body className="antialiased">
-          <SkipNav />
-          <AprilFoolsWrapper />
           <NuqsAdapter>
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  <Suspense fallback={<LanguageProvider initialLang="ko"><div className="lang-fallback">{appContent}</div></LanguageProvider>}>
-                    <DetectedLangProvider langPromise={langPromise}>
-                      {appContent}
-                    </DetectedLangProvider>
-                  </Suspense>
+                  {children}
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>

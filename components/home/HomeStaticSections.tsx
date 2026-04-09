@@ -5,7 +5,7 @@ import {
   Shield, Layers, Compass, BookOpen, Trophy, Dices, Shuffle, Map,
 } from 'lucide-react'
 import type { IdentityWithSinner } from '@/lib/types'
-import type { YoutubeVideo } from '@/app/page'
+import type { YoutubeVideo } from '@/app/[lang]/page'
 import { getSinnerLogoUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { FeatureHoverCard, OfficialHoverCard } from './HomeHoverCard'
