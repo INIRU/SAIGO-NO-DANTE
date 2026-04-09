@@ -79,8 +79,8 @@ const LocalizedGiftSchema = z.object({
   name: z.string(),
   desc: z.string().optional(),
   simpleDesc: z.array(z.object({
-    abilityID: z.number(),
-    simpleDesc: z.string(),
+    abilityID: z.number().optional(),
+    simpleDesc: z.string().optional(),
   })).optional(),
 })
 
@@ -308,7 +308,7 @@ async function syncGifts(): Promise<void> {
 
   // Hidden boss gift IDs
   const hiddenBossIds = new Set<number>()
-  for (const f of globFiles(DATA_DIR, /^(ego-gift-mirrordungeon6-hb|hidden-ego-gift-mirrordungeon).*\.txt$/)) {
+  for (const f of globFiles(DATA_DIR, /^(ego-gift-mirrordungeon\d*-hb|hidden-ego-gift-mirrordungeon).*\.txt$/)) {
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
       const parsed = z.object({ id: z.number() }).safeParse(item)
@@ -547,23 +547,29 @@ async function syncGifts(): Promise<void> {
 
   if (FIX && toUpsert.length > 0) {
     console.log('  DB 업데이트 중...')
-    for (let i = 0; i < toUpsert.length; i += 50) {
-      const batch = toUpsert.slice(i, i + 50)
-      const { error } = await supabase.schema('limbus').from('ego_gifts')
-        .upsert(batch, { onConflict: 'id' })
+    const toInsertNew = toUpsert.filter(item => !item.id)
+    const toUpdate = toUpsert.filter(item => !!item.id)
+
+    // Insert new gifts
+    if (toInsertNew.length > 0) {
+      const { error } = await supabase.schema('limbus').from('ego_gifts').insert(toInsertNew)
       if (error) {
-        for (const item of batch) {
-          if (!item.id) {
-            const { error: insertErr } = await supabase.schema('limbus').from('ego_gifts').insert(item)
-            if (insertErr) console.error(`  ❌ ${item.name}: ${insertErr.message}`)
-            else console.log(`  ✅ 신규: ${item.name}`)
-          } else {
-            console.error(`  ❌ upsert 실패 (${item.name}): ${error.message}`)
-          }
+        for (const item of toInsertNew) {
+          const { error: e } = await supabase.schema('limbus').from('ego_gifts').insert(item)
+          if (e) console.error(`  ❌ ${item.name}: ${e.message}`)
+          else console.log(`  ✅ 신규: ${item.name}`)
         }
       } else {
-        console.log(`  ✅ 배치 ${i + 1}~${Math.min(i + 50, toUpsert.length)} upsert 완료`)
+        console.log(`  ✅ 신규 ${toInsertNew.length}종 추가`)
       }
+    }
+
+    // Update existing gifts
+    for (const item of toUpdate) {
+      const { error } = await supabase.schema('limbus').from('ego_gifts')
+        .update(item).eq('id', item.id)
+      if (error) console.error(`  ❌ ${item.name}: ${error.message}`)
+      else console.log(`  ✅ 변경: ${item.name}`)
     }
   } else if (!FIX) {
     console.log('  --dry-run 모드. DB 수정 없음.')
