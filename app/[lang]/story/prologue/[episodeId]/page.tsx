@@ -21,7 +21,8 @@ interface Props {
 }
 
 export function generateStaticParams() {
-  return EPISODE_ORDER.map((id) => ({ episodeId: id }))
+  const langs = ['ko', 'en', 'ja']
+  return langs.flatMap(lang => EPISODE_ORDER.map((id) => ({ lang, episodeId: id })))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

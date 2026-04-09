@@ -148,7 +148,17 @@ export async function proxy(request: NextRequest) {
 
   // ── 6. API 프록시 보호 ──
   if (!pathname.startsWith('/api/')) {
-    // ── i18n: Detect language and forward to Server Components via x-lang header ──
+    // Already has lang prefix → pass through (internal rewrite or direct access)
+    if (/^\/(ko|en|ja)(\/|$)/.test(pathname)) {
+      return NextResponse.next()
+    }
+
+    // Static files → pass through (don't rewrite assets)
+    if (/\.(png|jpe?g|gif|svg|ico|webp|webm|mp4|woff2?|ttf|otf|css|js|json|xml|txt|webmanifest|map)$/.test(pathname)) {
+      return NextResponse.next()
+    }
+
+    // ── i18n: Detect language and rewrite to [lang] route ──
     const langCookie = request.cookies.get('preferred_lang')?.value
     let detectedLang = langCookie
 
@@ -159,13 +169,10 @@ export async function proxy(request: NextRequest) {
       else detectedLang = 'en'
     }
 
-    // Forward language to Server Components (layout.tsx reads this via headers())
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-lang', detectedLang)
-
-    const pageResponse = NextResponse.next({
-      request: { headers: requestHeaders },
-    })
+    // Rewrite to [lang] route — URL stays clean, server reads lang from params
+    const url = request.nextUrl.clone()
+    url.pathname = `/${detectedLang}${pathname === '/' ? '' : pathname}`
+    const pageResponse = NextResponse.rewrite(url)
 
     // Set cookie for first-time visitors
     if (!langCookie) {
