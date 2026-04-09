@@ -13,8 +13,7 @@ import { getServerLang } from '@/lib/i18n/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 export function generateStaticParams() {
-  const langs = ['ko', 'en', 'ja']
-  return langs.flatMap(lang => SINNER_SLUGS.map(slug => ({ lang, slug })))
+  return SINNER_SLUGS.map(slug => ({ slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
