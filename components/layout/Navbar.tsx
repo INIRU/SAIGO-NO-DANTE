@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -9,43 +9,50 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-// import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import { useLanguage } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 type NavGroup = {
   label: string
   items: { href: string; label: string }[]
 }
 
-const navGroups: NavGroup[] = [
+type NavGroupDef = {
+  labelKey: string
+  items: { href: string; labelKey: string }[]
+}
+
+const NAV_GROUPS: NavGroupDef[] = [
   {
-    label: '스토리',
+    labelKey: 'nav.story',
     items: [
-      { href: '/story', label: '메인 스토리' },
+      { href: '/story', labelKey: 'nav.story.main' },
     ],
   },
   {
-    label: 'DB',
+    labelKey: 'nav.db',
     items: [
-      { href: '/sinners',        label: '수감자' },
-      { href: '/mirror-dungeon', label: '거던' },
-      { href: '/keywords',       label: '키워드' },
+      { href: '/sinners',        labelKey: 'nav.sinners' },
+      { href: '/mirror-dungeon', labelKey: 'nav.db.mirrorDungeon' },
+      { href: '/keywords',       labelKey: 'nav.db.keywords' },
     ],
   },
   {
-    label: '커뮤니티',
+    labelKey: 'nav.community',
     items: [
-      { href: '/decks',               label: '덱 게시판' },
-      { href: '/planner/community',   label: '거던 플래너' },
-      { href: '/tier-list',           label: '티어표' },
-      { href: '/collection',          label: '보유 현황' },
+      { href: '/decks',               labelKey: 'nav.decks' },
+      { href: '/planner/community',   labelKey: 'nav.community.planner' },
+      { href: '/tier-list',           labelKey: 'nav.community.tierList' },
+      { href: '/collection',          labelKey: 'nav.community.collection' },
     ],
   },
   {
-    label: '기타',
+    labelKey: 'nav.other',
     items: [
-      { href: '/meta',       label: '분석' },
-      { href: '/extraction', label: '추출' },
-      { href: '/random',     label: '랜덤 편성' },
+      { href: '/meta',       labelKey: 'nav.other.meta' },
+      { href: '/extraction', labelKey: 'nav.other.extraction' },
+      { href: '/random',     labelKey: 'nav.other.random' },
     ],
   },
 ]
@@ -126,6 +133,15 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
+  const { t } = useLanguage()
+  const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
+    label: t(g.labelKey as TranslationKey),
+    items: g.items.map(item => ({
+      href: item.href,
+      label: t(item.labelKey as TranslationKey),
+    })),
+  })), [t])
+
   const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean; isWanjang?: boolean; isSuspended?: boolean } | undefined
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
   const userEmail = user?.email
@@ -176,10 +192,10 @@ export default function Navbar() {
           <Link
             href="/"
             className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
-            style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
+            style={{ color: 'var(--gold)', fontFamily: 'var(--font-kotra-bold), var(--font-heading)' }}
           >
             <Image src="/images/logo.webp" alt="" width={42} height={42} unoptimized className="w-[34px] md:w-[42px] h-auto -ml-2" />
-            최애의 관리자
+            {t('site.name' as TranslationKey)}
           </Link>
 
           {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
@@ -301,7 +317,7 @@ export default function Navbar() {
               )
             })}
 
-            {/* <LanguageSwitcher /> */}
+            <LanguageSwitcher />
 
             {/* 검색 버튼 */}
             <button
@@ -325,7 +341,7 @@ export default function Navbar() {
               title="검색 (Ctrl+K)"
             >
               <Search size={13} style={{ opacity: 0.7 }} />
-              <span style={{ fontSize: '0.75rem', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>검색</span>
+              <span style={{ fontSize: '0.75rem', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>{t('common.search' as TranslationKey)}</span>
               <div className="flex items-center gap-0.5" style={{ marginLeft: '0.25rem' }}>
                 <kbd style={{
                   padding: '0.125rem 0.3125rem',
@@ -408,7 +424,7 @@ export default function Navbar() {
                       className="block w-full text-left transition-colors hover:bg-white/5"
                       style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem' }}
                     >
-                      마이 페이지
+                      {t('mypage.title' as TranslationKey)}
                     </Link>
                     {user.isAdmin && (
                       <Link
@@ -425,7 +441,7 @@ export default function Navbar() {
                       className="w-full text-left transition-colors hover:bg-white/5"
                       style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
                     >
-                      로그아웃
+                      {t('common.logout' as TranslationKey)}
                     </button>
                   </div>
                 )}
@@ -445,7 +461,7 @@ export default function Navbar() {
                   <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.548 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
                   <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
-                로그인
+                {t('common.login' as TranslationKey)}
               </Link>
             )}
           </div>
@@ -474,9 +490,9 @@ export default function Navbar() {
         >
           <div className="flex flex-col px-6 py-4" style={{ overflowY: 'auto', flex: 1 }}>
             {/* 언어 전환 */}
-            {/* <div style={{ padding: '0.5rem 0 0.875rem', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
+            <div style={{ padding: '0.5rem 0 0.875rem', borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
               <LanguageSwitcher />
-            </div> */}
+            </div>
 
             {navGroups.map(group => {
               const isOpen = mobileOpenGroups.has(group.label)
@@ -576,7 +592,7 @@ export default function Navbar() {
                   className="block transition-colors duration-200 hover:text-yellow-300"
                   style={mobileLinkStyle('/mypage')}
                 >
-                  마이 페이지
+                  {t('mypage.title' as TranslationKey)}
                 </Link>
                 {user.isAdmin && (
                   <Link
@@ -598,7 +614,7 @@ export default function Navbar() {
                     cursor: 'pointer',
                   }}
                 >
-                  로그아웃
+                  {t('common.logout' as TranslationKey)}
                 </button>
               </>
             ) : (
@@ -616,7 +632,7 @@ export default function Navbar() {
                   <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.548 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
                   <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
-                로그인
+                {t('common.login' as TranslationKey)}
               </Link>
             )}
           </div>

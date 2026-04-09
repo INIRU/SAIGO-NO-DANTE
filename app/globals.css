@@ -94,6 +94,19 @@
   --text-3xl: 3rem;
 }
 
+/* Japanese font override — Noto Sans JP for all text, no Korean-only fonts */
+html[lang="ja"] {
+  --font-body: var(--font-noto-jp), sans-serif;
+  --font-heading: var(--font-noto-jp), sans-serif;
+  --font-serif: var(--font-noto-jp), sans-serif;
+}
+
+/* English font override */
+html[lang="en"] {
+  --font-body: var(--font-scdream), 'Inter', 'Segoe UI', sans-serif;
+  --font-heading: var(--font-kotra-bold), var(--font-scdream), sans-serif;
+}
+
 * {
   box-sizing: border-box;
   text-rendering: optimizeLegibility;
@@ -132,6 +145,12 @@ body {
 .cv-card-md {
   content-visibility: auto;
   contain-intrinsic-size: auto 14rem;
+  position: relative;
+  z-index: 0;
+}
+.cv-card-md:hover {
+  content-visibility: visible;
+  z-index: 10;
 }
 .cv-card-lg {
   content-visibility: auto;

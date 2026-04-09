@@ -1,14 +1,23 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Sinner, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE } from '@/lib/data/sinners'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { serverT } from '@/lib/i18n/server'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 interface SinnerCardProps {
   sinner: Sinner
   index?: number
   priority?: boolean
+  lang?: SupportedLang
 }
 
-export default function SinnerCard({ sinner, index = 0, priority: priorityProp = false }: SinnerCardProps) {
+export default function SinnerCard({ sinner, index = 0, priority: priorityProp = false, lang }: SinnerCardProps) {
+  const displayName = lang === 'en'
+    ? (sinner.name_en ?? sinner.name_kr)
+    : lang === 'ja'
+      ? (sinner.name_jp ?? sinner.name_kr)
+      : sinner.name_kr
   const profileUrl = getSinnerProfileUrl(sinner.id)
 
   return (
@@ -93,10 +102,10 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
           {/* 이름 오버레이 */}
           <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-20">
             <div
-              className="font-serif font-light leading-tight mb-0.5 transition-colors duration-300 group-hover:text-yellow-300"
-              style={{ color: 'var(--gold-light)', fontSize: 'var(--text-md)' }}
+              className="font-light leading-tight mb-0.5 transition-colors duration-300 group-hover:text-yellow-300"
+              style={{ color: 'var(--gold-light)', fontSize: 'var(--text-md)', fontFamily: 'var(--font-heading)' }}
             >
-              {sinner.name_kr}
+              {displayName}
             </div>
             <div
               className="transition-colors duration-300"
@@ -119,7 +128,9 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
             className="italic truncate"
             style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', letterSpacing: '0.02em' }}
           >
-            {sinner.literary_source}
+            {lang && lang !== 'ko'
+              ? serverT(`sinner.source.${sinner.id}` as TranslationKey, lang)
+              : sinner.literary_source}
           </p>
         </div>
       </div>

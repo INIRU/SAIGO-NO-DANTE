@@ -7,14 +7,21 @@ async function getCachedKeywordMeta() {
   cacheLife('page-5m')
 
   const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .schema('limbus')
-    .from('keyword_meta')
-    .select('name, description, max_stack')
-    .order('name')
-
-  if (error) return []
-  return data ?? []
+  const allData: Array<{ name: string; description: string | null; max_stack: number | null }> = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .select('name, description, max_stack')
+      .order('name')
+      .range(from, from + 999)
+    if (error || !data || data.length === 0) break
+    allData.push(...data)
+    if (data.length < 1000) break
+    from += 1000
+  }
+  return allData
 }
 
 export async function GET() {

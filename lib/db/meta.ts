@@ -68,10 +68,22 @@ export async function getMetaData(): Promise<MetaData> {
       .schema('limbus')
       .from('decks')
       .select('*', { count: 'exact', head: true }),
-    supabase
-      .schema('limbus')
-      .from('keyword_meta')
-      .select('name, sin_affinity'),
+    (async () => {
+      const all: any[] = []
+      let from = 0
+      while (true) {
+        const { data, error } = await supabase
+          .schema('limbus')
+          .from('keyword_meta')
+          .select('name, sin_affinity')
+          .range(from, from + 999)
+        if (error || !data || data.length === 0) break
+        all.push(...data)
+        if (data.length < 1000) break
+        from += 1000
+      }
+      return { data: all, error: null }
+    })(),
   ])
 
   const totalDecks = deckCountResult.count ?? 0

@@ -10,6 +10,9 @@ import { getSinnerLogoUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { FeatureHoverCard, OfficialHoverCard } from './HomeHoverCard'
 import { LatestIdentityCard } from './LatestIdentityCard'
+import { serverT } from '@/lib/i18n/server'
+import type { SupportedLang } from '@/lib/i18n/types'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 // ── SVG icons (defined here so they work in Server Components) ────────────
 
@@ -49,23 +52,27 @@ function DiscordIcon({ size = 18, style }: { size?: number; style?: React.CSSPro
 
 // ── Static data ───────────────────────────────────────────────────────────
 
-const FEATURES = [
-  { href: '/sinners',            Icon: Shield,  tag: 'SINNER DB',        title: '수감자 DB',   desc: '12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서.', accent: '#c8900a' },
-  { href: '/decks',              Icon: Layers,  tag: 'DECK BOARD',       title: '덱 게시판',   desc: '커뮤니티 덱 빌드를 탐색하고 나만의 덱을 등록.',     accent: '#4898b0' },
-  { href: '/mirror-dungeon',     Icon: Compass, tag: 'MIRROR DUNGEON',   title: '거울 던전',   desc: 'EGO 기프트 도감, 키워드 필터, 조합 레시피.',        accent: '#8058a8' },
-  { href: '/collection',         Icon: BookOpen,tag: 'COLLECTION',       title: '보유 현황',   desc: '나의 인격·EGO 체크리스트, URL로 공유.',             accent: '#d4b830' },
-  { href: '/tier-list',          Icon: Trophy,  tag: 'TIER LIST',        title: '티어표',      desc: '커뮤니티 투표 기반 리세마라 티어 랭킹.',             accent: '#d06030' },
-  { href: '/extraction',         Icon: Dices,   tag: 'EXTRACTION SIM',   title: '추출 시뮬',  desc: '뽑기 확률 시뮬레이션으로 운명을 시험.',              accent: '#c83030' },
-  { href: '/random',             Icon: Shuffle, tag: 'RANDOM COMP',      title: '랜덤 편성',  desc: '슬롯머신 UI로 무작위 편성, 키워드 필터.',            accent: '#3870b0' },
-  { href: '/planner',            Icon: Map,     tag: 'DUNGEON PLANNER',  title: '거던 플래너', desc: '층별 테마팩 선택, 전략 시뮬레이션.',                accent: '#8b1a1a' },
-] as const
+function getFeatures(lang: SupportedLang) {
+  return [
+    { href: '/sinners',        Icon: Shield,   tag: 'SINNER DB',       title: serverT('home.feat.sinnerDb' as TranslationKey, lang),       desc: serverT('home.feat.sinnerDbDesc' as TranslationKey, lang),       accent: '#c8900a' },
+    { href: '/decks',          Icon: Layers,   tag: 'DECK BOARD',      title: serverT('home.feat.deckBoard' as TranslationKey, lang),       desc: serverT('home.feat.deckBoardDesc' as TranslationKey, lang),      accent: '#4898b0' },
+    { href: '/mirror-dungeon', Icon: Compass,  tag: 'MIRROR DUNGEON',  title: serverT('home.feat.mirrorDungeon' as TranslationKey, lang),   desc: serverT('home.feat.mirrorDungeonDesc' as TranslationKey, lang),  accent: '#8058a8' },
+    { href: '/collection',     Icon: BookOpen, tag: 'COLLECTION',      title: serverT('home.feat.collection' as TranslationKey, lang),      desc: serverT('home.feat.collectionDesc' as TranslationKey, lang),     accent: '#d4b830' },
+    { href: '/tier-list',      Icon: Trophy,   tag: 'TIER LIST',       title: serverT('home.feat.tierList' as TranslationKey, lang),        desc: serverT('home.feat.tierListDesc' as TranslationKey, lang),       accent: '#d06030' },
+    { href: '/extraction',     Icon: Dices,    tag: 'EXTRACTION SIM',  title: serverT('home.feat.extraction' as TranslationKey, lang),      desc: serverT('home.feat.extractionDesc' as TranslationKey, lang),     accent: '#c83030' },
+    { href: '/random',         Icon: Shuffle,  tag: 'RANDOM COMP',     title: serverT('home.feat.random' as TranslationKey, lang),          desc: serverT('home.feat.randomDesc' as TranslationKey, lang),         accent: '#3870b0' },
+    { href: '/planner',        Icon: Map,      tag: 'DUNGEON PLANNER', title: serverT('home.feat.planner' as TranslationKey, lang),         desc: serverT('home.feat.plannerDesc' as TranslationKey, lang),        accent: '#8b1a1a' },
+  ]
+}
 
-const OFFICIAL_LINKS = [
-  { label: '공식 사이트',  sub: 'limbuscompany.com',      href: 'https://limbuscompany.com',                     Icon: Globe,       color: '#4898b0', isInternal: false },
-  { label: 'YouTube',     sub: '공식 채널',               href: 'https://www.youtube.com/@ProjectMoonOfficial',  Icon: YoutubeIcon, color: '#c83030', isInternal: false },
-  { label: 'Twitter / X', sub: '@LimbusCompany_B',        href: 'https://x.com/LimbusCompany_B',                Icon: XIcon,       color: '#3870b0', isInternal: false },
-  { label: '팬 디스코드',  sub: '봇 소개 · 서버 참여',     href: '/bot',                                         Icon: DiscordIcon,  color: '#5865f2', isInternal: true  },
-] as const
+function getOfficialLinks(lang: SupportedLang) {
+  return [
+    { label: serverT('home.official.site' as TranslationKey, lang),    sub: 'limbuscompany.com',   href: 'https://limbuscompany.com',                    Icon: Globe,        color: '#4898b0', isInternal: false },
+    { label: 'YouTube',                                                  sub: serverT('home.official.youtubeSub' as TranslationKey, lang), href: 'https://www.youtube.com/@ProjectMoonOfficial', Icon: YoutubeIcon,  color: '#c83030', isInternal: false },
+    { label: 'Twitter / X',                                              sub: '@LimbusCompany_B',    href: 'https://x.com/LimbusCompany_B',                Icon: XIcon,        color: '#3870b0', isInternal: false },
+    { label: serverT('home.official.discord' as TranslationKey, lang),  sub: serverT('home.official.discordSub' as TranslationKey, lang), href: '/bot', Icon: DiscordIcon, color: '#5865f2', isInternal: true  },
+  ]
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -86,12 +93,15 @@ function formatDate(d: string) {
 interface HomeStaticSectionsProps {
   latestIdentities: IdentityWithSinner[]
   latestVideo: YoutubeVideo | null
+  lang: SupportedLang
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function HomeStaticSections({ latestIdentities, latestVideo }: HomeStaticSectionsProps) {
+export default function HomeStaticSections({ latestIdentities, latestVideo, lang }: HomeStaticSectionsProps) {
   const latestDate = latestIdentities[0]?.release_date
+  const features = getFeatures(lang)
+  const officialLinks = getOfficialLinks(lang)
 
   return (
     <div style={{ background: 'var(--bg-deep)' }}>
@@ -121,7 +131,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                   </span>
                 </div>
                 <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>
-                  최신 영상
+                  {serverT('home.latestVideo' as TranslationKey, lang)}
                 </h2>
               </div>
               <a
@@ -131,7 +141,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                 className="flex items-center gap-1.5 text-sm transition-all hover:gap-2.5 mb-1"
                 style={{ color: '#c83030', opacity: 0.7 }}
               >
-                채널 더보기 <ChevronRight size={14} />
+                {serverT('home.viewChannel' as TranslationKey, lang)} <ChevronRight size={14} />
               </a>
             </div>
 
@@ -222,7 +232,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                   <Sparkles size={11} style={{ color: 'var(--gold)' }} />
                   <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '0.625rem', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
                 </div>
-                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>최신 인격</h2>
+                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>{serverT('home.latestIdentity' as TranslationKey, lang)}</h2>
               </div>
               {latestDate && (
                 <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -262,7 +272,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
                   borderRadius: '0.125rem',
                 }}
               >
-                전체 수감자 보기
+                {serverT('home.viewAllSinners' as TranslationKey, lang)}
                 <ChevronRight size={14} />
               </Link>
             </div>
@@ -281,7 +291,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((feature) => (
+          {features.map((feature) => (
             <Link key={feature.href} href={feature.href} className="feature-card block" suppressHydrationWarning>
               <FeatureHoverCard
                 accent={feature.accent}
@@ -377,7 +387,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {OFFICIAL_LINKS.map(({ label, sub, href, Icon, color, isInternal }) => {
+          {officialLinks.map(({ label, sub, href, Icon, color, isInternal }) => {
             const inner = (
               <OfficialHoverCard
                 color={color}
@@ -433,7 +443,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo }: Ho
             SAIGO NO DANTE
           </span>
           <span aria-hidden="true" className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
-            Limbus Company 팬 아카이브
+            {serverT('home.fanArchiveFooter' as TranslationKey, lang)}
           </span>
         </div>
       </section>

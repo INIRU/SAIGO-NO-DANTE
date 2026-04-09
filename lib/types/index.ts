@@ -6,6 +6,8 @@ export type Sinner = {
   id: string
   name: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   order_num: number
   description: string
   literary_source: string
@@ -29,6 +31,8 @@ export type Identity = {
   sinner_id: string
   name: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   tier: number
   hp: number
   speed_min: number
@@ -122,6 +126,8 @@ export type EGO = {
   sinner_id: string
   name: string
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: SinType | null
   description: string | null

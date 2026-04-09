@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
+import { useLanguage } from '@/lib/i18n'
 import GlitchText from '@/components/ui/GlitchText'
 import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
 import ScrollAnimations from '@/components/home/ScrollAnimations'
@@ -62,6 +63,14 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ latestIdentities, pinnedAnnouncement }: HomeClientProps) {
+  const { t, lang } = useLanguage()
+
+  const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
+    if (lang === 'en') return en ?? kr ?? ''
+    if (lang === 'ja') return jp ?? kr ?? ''
+    return kr ?? ''
+  }
+
   const heroRef = useRef<HTMLDivElement>(null)
   const [heroIdentity, setHeroIdentity] = useState<IdentityWithSinner | null>(
     latestIdentities[0] ?? null
@@ -163,7 +172,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
             <span style={{ fontFamily: "'Song Myung', Georgia, serif", fontStyle: 'italic' }}>
               Limbus Company
             </span>{' '}
-            <span className="font-serif">팬 아카이브</span>
+            <span style={{ fontFamily: 'var(--font-body)' }}>{t('home.fanArchive')}</span>
           </p>
 
           {/* 현재 슬라이드 인격 정보 */}
@@ -175,10 +184,10 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
                   className="font-serif font-bold"
                   style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}
                 >
-                  {heroIdentity.name_kr}
+                  {getName(heroIdentity.name_kr, heroIdentity.name_en, heroIdentity.name_jp)}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem', fontFamily: 'var(--font-title)' }}>
-                  — {heroIdentity.sinner?.name_kr}
+                  — {getName(heroIdentity.sinner?.name_kr, heroIdentity.sinner?.name_en, heroIdentity.sinner?.name_jp)}
                 </span>
               </div>
             </div>
@@ -190,21 +199,21 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
               style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '0.25rem' }}
             >
-              수감자 목록
+              {t('home.cta.sinners')}
             </Link>
             <Link
               href="/decks"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
               style={{ border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '0.25rem' }}
             >
-              덱 게시판
+              {t('home.cta.decks')}
             </Link>
             <Link
               href="/planner/community"
               className="px-5 md:px-8 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all duration-300 hover:scale-105"
               style={{ border: '1px solid #4898b0', color: '#4898b0', borderRadius: '0.25rem' }}
             >
-              거던 플래너
+              {t('home.cta.planner')}
             </Link>
             <Link
               href="/bot"
@@ -212,7 +221,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
               style={{ border: '1px solid #5865f2', color: '#7289da', borderRadius: '0.25rem' }}
             >
               <DiscordIcon size={16} />
-              디스코드 봇
+              {t('home.cta.discordBot')}
             </Link>
           </div>
         </div>

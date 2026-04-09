@@ -33,6 +33,7 @@ const DRY_RUN = !FIX
 const VERBOSE = args.includes('--verbose')
 const NEW_ONLY = args.includes('--new-only')
 const UPDATE_KEYWORDS = args.includes('--keywords')
+const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
@@ -345,17 +346,55 @@ function sleep(ms: number): Promise<void> {
 
 function loadKrTagMap(): Record<string, string> {
   const map: Record<string, string> = { ...CONDITION_TAG_MAP }
-  if (!existsSync(KR_DIR)) return map
 
-  const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
-    .filter(f => f.endsWith('.txt'))
+  // Latest first: kr/ (.json files) — 최신 패치 데이터 우선
+  if (existsSync(KR_LATEST_DIR)) {
+    const latestFiles = globFiles(KR_LATEST_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+      .filter(f => f.endsWith('.json'))
+    for (const f of latestFiles) {
+      const data = readTxt(join(KR_LATEST_DIR, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
+        if (parsed.success && !map[parsed.data.id]) {
+          map[parsed.data.id] = parsed.data.name
+        }
+      }
+    }
+  }
 
-  for (const f of kwFiles) {
-    const data = readTxt(join(KR_DIR, f))
-    for (const item of extractList(data)) {
-      const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
-      if (parsed.success && !map[parsed.data.id]) {
-        map[parsed.data.id] = parsed.data.name
+  // Fallback: Json (Text)/KR/ (.txt files) — 구버전, 최신에 없는 것만
+  if (existsSync(KR_DIR)) {
+    const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+      .filter(f => f.endsWith('.txt'))
+    for (const f of kwFiles) {
+      const data = readTxt(join(KR_DIR, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
+        if (parsed.success && !map[parsed.data.id]) {
+          map[parsed.data.id] = parsed.data.name
+        }
+      }
+    }
+  }
+
+  return map
+}
+
+function loadKrKeywordDescriptions(): Map<string, { id: string; description: string | null }> {
+  const map = new Map<string, { id: string; description: string | null }>()
+  const dirs: Array<{ dir: string; ext: string }> = []
+  if (existsSync(KR_LATEST_DIR)) dirs.push({ dir: KR_LATEST_DIR, ext: '.json' })
+  if (existsSync(KR_DIR)) dirs.push({ dir: KR_DIR, ext: '.txt' })
+
+  for (const { dir, ext } of dirs) {
+    const files = globFiles(dir, /^KR_(BattleKeywords|Bufs)/i).filter(f => f.endsWith(ext))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string(), desc: z.string().optional() }).safeParse(item)
+        if (parsed.success && !map.has(parsed.data.name)) {
+          map.set(parsed.data.name, { id: parsed.data.id, description: parsed.data.desc ?? null })
+        }
       }
     }
   }
@@ -930,6 +969,90 @@ async function supaInsertBatch(table: string, rows: unknown[]): Promise<void> {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+async function rebuildKeywordMeta(): Promise<void> {
+  console.log(BOLD('\n══════════════════════════════════════════════════════════════'))
+  console.log(BOLD('  keyword_meta 재구축 (게임 데이터 기준)'))
+  console.log('══════════════════════════════════════════════════════════════\n')
+
+  // Load KR keyword data with descriptions
+  const krKeywords = loadKrKeywordDescriptions()
+  console.log(`  KR 키워드/버프 데이터: ${krKeywords.size}개`)
+
+  // Fetch actually used keywords from DB (identities, ego, ego_gifts)
+  console.log('  DB에서 실제 사용 키워드 수집 중...')
+  const usedKeywords = new Set<string>()
+
+  // Identity keywords (paginated)
+  let from = 0
+  while (true) {
+    const { data } = await supabase.from('identities').select('keywords').range(from, from + 999)
+    if (!data?.length) break
+    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
+    if (data.length < 1000) break
+    from += 1000
+  }
+
+  // EGO keywords (paginated)
+  from = 0
+  while (true) {
+    const { data } = await supabase.from('ego').select('keywords').range(from, from + 999)
+    if (!data?.length) break
+    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
+    if (data.length < 1000) break
+    from += 1000
+  }
+
+  // EGO gift keywords (paginated)
+  from = 0
+  while (true) {
+    const { data } = await supabase.from('ego_gifts').select('keyword').range(from, from + 999)
+    if (!data?.length) break
+    for (const r of data) { if (r.keyword) usedKeywords.add((r.keyword as string).normalize('NFC')) }
+    if (data.length < 1000) break
+    from += 1000
+  }
+
+  console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (인격+EGO+기프트)`)
+
+  // Build insert rows
+  const rows: Array<{ name: string; description: string | null }> = []
+  for (const name of usedKeywords) {
+    const krData = krKeywords.get(name)
+    rows.push({ name, description: krData?.description ?? null })
+  }
+  rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+
+  console.log(`  삽입 예정: ${rows.length}개\n`)
+
+  if (DRY_RUN) {
+    // Show sample
+    for (const row of rows.slice(0, 20)) {
+      const desc = row.description ? GRAY(` — ${row.description.slice(0, 40)}...`) : ''
+      console.log(`  ${GREEN('+')} ${row.name}${desc}`)
+    }
+    if (rows.length > 20) console.log(GRAY(`  ... 외 ${rows.length - 20}개`))
+    console.log(CYAN('\n  (DRY RUN — DB 미변경. 반영하려면 --fix 옵션 사용)'))
+    return
+  }
+
+  // Insert in batches of 100
+  let inserted = 0
+  for (let i = 0; i < rows.length; i += 100) {
+    const batch = rows.slice(i, i + 100)
+    const { error } = await supabase
+      .from('keyword_meta')
+      .upsert(batch, { onConflict: 'name' })
+
+    if (error) {
+      console.error(RED(`  [ERROR] Batch ${i}-${i + batch.length}: ${error.message}`))
+    } else {
+      inserted += batch.length
+      console.log(GREEN(`  ✓ Batch ${i + 1}-${i + batch.length} 삽입`))
+    }
+  }
+  console.log(GREEN(`\n  keyword_meta 재구축 완료: ${inserted}개 삽입`))
+}
+
 async function main(): Promise<void> {
   console.log(BOLD('╔══════════════════════════════════════════════════════════╗'))
   console.log(BOLD('║  인격/스킬/패시브 게임 데이터 → DB 동기화                ║'))
@@ -944,6 +1067,11 @@ async function main(): Promise<void> {
 
   TAG_MAP = loadKrTagMap()
   console.log(`  KR 태그 맵: ${Object.keys(TAG_MAP).length}개`)
+
+  if (REBUILD_KEYWORD_META) {
+    await rebuildKeywordMeta()
+    return
+  }
 
   const krPersonMap = loadKrPersonalities()
   console.log(`  KR 인격 이름: ${krPersonMap.size}개`)

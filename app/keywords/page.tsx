@@ -15,41 +15,54 @@ export const metadata: Metadata = {
 }
 
 
+async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>) {
+  const all: any[] = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase.schema('limbus').from('keyword_meta')
+      .select('name, description, max_stack, icon_slug, sin_affinity, category')
+      .order('name')
+      .range(from, from + 999)
+    if (error || !data || data.length === 0) break
+    all.push(...data)
+    if (data.length < 1000) break
+    from += 1000
+  }
+  return all
+}
+
 export default async function KeywordsPage() {
   'use cache'
   cacheLife('page-5m')
   const supabase = createAdminClient()
 
+  const keywords = await fetchAllKeywords(supabase)
+
   const [
-    { data: keywords, error: keywordsError },
     { data: identities, error: identitiesError },
     { data: sinners, error: sinnersError },
     { data: gifts, error: giftsError },
     { data: egos, error: egosError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('keyword_meta')
-      .select('name, description, max_stack, icon_slug, sin_affinity, category')
-      .order('name'),
     supabase.schema('limbus').from('identities')
       .select('id, name, name_kr, sinner_id, keywords, rarity, game_id, folder_name')
       .order('name'),
     supabase.schema('limbus').from('sinners')
       .select('id, name_kr'),
     supabase.schema('limbus').from('ego_gifts')
-      .select('name, keyword, grade, image_url')
+      .select('name, keyword, grade, image_url, effect_base, effect_plus, effect_plusplus')
       .order('name'),
     supabase.schema('limbus').from('ego')
       .select('id, name, name_kr, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
       .order('name'),
   ])
 
-  if (keywordsError) console.error('Failed to fetch keywords:', keywordsError)
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
   if (sinnersError) console.error('Failed to fetch sinners:', sinnersError)
   if (giftsError) console.error('Failed to fetch gifts:', giftsError)
   if (egosError) console.error('Failed to fetch egos:', egosError)
 
-  const safeKeywords = keywords ?? []
+  const safeKeywords = keywords
   const safeIdentities = identities ?? []
   const safeGifts = gifts ?? []
   const safeEgos = egos ?? []

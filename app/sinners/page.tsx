@@ -5,6 +5,7 @@ import { getSinners } from '@/lib/db/queries'
 import SinnersInteractive from './SinnersInteractive'
 import SinnerCard from '@/components/sinners/SinnerCard'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
+import { getServerLang } from '@/lib/i18n/server'
 
 const SITE_URL = 'https://saigo-no-dante.com'
 
@@ -18,10 +19,15 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function SinnersPage() {
+async function getCachedSinners() {
   'use cache'
   cacheLife('page-5m')
-  const sinners = await getSinners()
+  return getSinners()
+}
+
+export default async function SinnersPage() {
+  const lang = await getServerLang()
+  const sinners = await getCachedSinners()
 
   const sinnerListLd = itemListJsonLd({
     name: '림버스 컴퍼니 수감자 목록',
@@ -46,7 +52,7 @@ export default async function SinnersPage() {
           >
             {sinners.map((sinner, i) => (
               <div key={sinner.id} className="sinner-card-item">
-                <SinnerCard sinner={sinner} index={i} priority={i < 6} />
+                <SinnerCard sinner={sinner} index={i} priority={i < 6} lang={lang} />
               </div>
             ))}
           </div>
