@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { headers } from 'next/headers'
 import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung, Noto_Sans_JP } from 'next/font/google'
 import localFont from 'next/font/local'
@@ -14,6 +13,7 @@ import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import { LanguageProvider } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { getServerLang } from '@/lib/i18n/server'
 
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
@@ -224,29 +224,18 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   return keywords
 }
 
-/* ── i18n: Suspense 안에서 headers() await (Next.js 16 패턴) ── */
-async function DetectedLangProvider({
-  langPromise,
-  children,
-}: {
-  langPromise: ReturnType<typeof headers>
-  children: React.ReactNode
-}) {
-  const h = await langPromise
-  const lang = (h.get('x-lang') as SupportedLang) || 'en'
-  return <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
-}
-
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const keywords = await getKeywordData()
-  // ⚠️ 의도적으로 await 안 함 — Next.js 16 패턴: Promise만 시작하고 Suspense 안
-  // DetectedLangProvider에서 await. 여기서 await하면 /_not-found 정적 프리렌더 깨짐.
-  // https://nextjs.org/docs/app/building-your-application/rendering/server-components#streaming
-  const langPromise = headers()
+  let lang: SupportedLang = 'ko'
+  try {
+    lang = await getServerLang()
+  } catch {
+    // Static prerender fallback (e.g., /_not-found)
+  }
 
   const appContent = (
     <>
@@ -258,7 +247,7 @@ export default async function RootLayout({
   )
 
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
+    <html lang={lang} suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {/* Preload critical body/heading fonts to minimize CLS from font swap */}
@@ -275,11 +264,9 @@ export default async function RootLayout({
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  <Suspense fallback={<LanguageProvider>{appContent}</LanguageProvider>}>
-                    <DetectedLangProvider langPromise={langPromise}>
-                      {appContent}
-                    </DetectedLangProvider>
-                  </Suspense>
+                  <LanguageProvider initialLang={lang}>
+                    {appContent}
+                  </LanguageProvider>
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>
