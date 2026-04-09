@@ -227,8 +227,6 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m)document.documentElement.lang=m[1]})()` }} />
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
-        <link rel="preload" href="/fonts/SCDream5.otf" as="font" type="font/otf" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/KOTRA_BOLD.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(SITE_URL)} />
