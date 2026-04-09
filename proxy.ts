@@ -148,43 +148,26 @@ export async function proxy(request: NextRequest) {
 
   // ── 6. API 프록시 보호 ──
   if (!pathname.startsWith('/api/')) {
-    // Already has lang prefix → pass through (internal rewrite or direct access)
-    if (/^\/(ko|en|ja)(\/|$)/.test(pathname)) {
-      return NextResponse.next()
-    }
-
-    // Static files + special paths → pass through (don't rewrite)
-    if (/\.(png|jpe?g|gif|svg|ico|webp|webm|mp4|woff2?|ttf|otf|css|js|json|xml|txt|webmanifest|map)$/.test(pathname) ||
-        pathname.startsWith('/monitoring') || pathname.startsWith('/auth')) {
-      return NextResponse.next()
-    }
-
-    // ── i18n: Detect language and rewrite to [lang] route ──
+    // ── i18n: Detect language and set cookie (rewrite is in next.config.ts) ──
     const langCookie = request.cookies.get('preferred_lang')?.value
-    let detectedLang = langCookie
 
-    if (!detectedLang) {
+    if (!langCookie) {
       const acceptLang = request.headers.get('accept-language') ?? ''
+      let detectedLang = 'ko'
       if (acceptLang.includes('ko')) detectedLang = 'ko'
       else if (acceptLang.includes('ja')) detectedLang = 'ja'
       else detectedLang = 'en'
-    }
 
-    // Rewrite to [lang] route — URL stays clean, server reads lang from params
-    const url = request.nextUrl.clone()
-    url.pathname = `/${detectedLang}${pathname === '/' ? '' : pathname}`
-    const pageResponse = NextResponse.rewrite(url)
-
-    // Set cookie for first-time visitors
-    if (!langCookie) {
+      const pageResponse = NextResponse.next()
       pageResponse.cookies.set('preferred_lang', detectedLang, {
         path: '/',
         maxAge: 365 * 24 * 60 * 60,
         sameSite: 'lax',
       })
+      return pageResponse
     }
 
-    return pageResponse
+    return NextResponse.next()
   }
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
 

@@ -47,6 +47,22 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 2592000, // 30일 — 게임 에셋 이미지는 거의 변경 없음
     formats: ['image/avif', 'image/webp'],
   },
+  async rewrites() {
+    const exclude = '(?!api|auth|_next|monitoring|ko|en|ja|icons|fonts).*';
+    return {
+      afterFiles: [
+        { source: '/', destination: '/ko', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ko' }] },
+        { source: `/:path(${exclude}.*)`, destination: '/ko/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ko' }] },
+        { source: '/', destination: '/en', has: [{ type: 'cookie', key: 'preferred_lang', value: 'en' }] },
+        { source: `/:path(${exclude}.*)`, destination: '/en/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'en' }] },
+        { source: '/', destination: '/ja', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ja' }] },
+        { source: `/:path(${exclude}.*)`, destination: '/ja/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ja' }] },
+        // Default (no cookie yet)
+        { source: '/', destination: '/ko' },
+        { source: `/:path(${exclude}.*)`, destination: '/ko/:path*' },
+      ],
+    }
+  },
   async headers() {
     return [
       {
