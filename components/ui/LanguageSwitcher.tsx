@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Languages, ChevronDown, Check } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { SUPPORTED_LANGS } from '@/lib/i18n/types';
 
 export default function LanguageSwitcher() {
   const { lang, setLang } = useLanguage();
-  const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = SUPPORTED_LANGS.find(l => l.value === lang);
@@ -68,7 +67,7 @@ export default function LanguageSwitcher() {
                 key={l.value}
                 role="option"
                 aria-selected={isActive}
-                onClick={() => { setLang(l.value); setOpen(false); router.refresh(); }}
+                onClick={() => { setLang(l.value); setOpen(false); }}
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 transition-colors"
                 style={{
                   color: isActive ? 'var(--gold-light)' : '#a08a60',
