@@ -13,7 +13,7 @@ import SWRProvider from '@/components/providers/SWRProvider'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import { LanguageProvider } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getServerLang } from '@/lib/i18n/server'
+import { headers } from 'next/headers'
 
 import FloatingFontControl from '@/components/ui/FloatingFontControl'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
@@ -224,18 +224,25 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   return keywords
 }
 
+async function DetectedLangProvider({
+  langPromise,
+  children,
+}: {
+  langPromise: ReturnType<typeof headers>
+  children: React.ReactNode
+}) {
+  const h = await langPromise
+  const lang = (h.get('x-lang') as SupportedLang) || 'ko'
+  return <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
+}
+
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const keywords = await getKeywordData()
-  let lang: SupportedLang = 'ko'
-  try {
-    lang = await getServerLang()
-  } catch {
-    // Static prerender fallback (e.g., /_not-found)
-  }
+  const langPromise = headers()
 
   const appContent = (
     <>
@@ -247,8 +254,9 @@ export default async function RootLayout({
   )
 
   return (
-    <html lang={lang} suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
+    <html lang="ko" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m)document.documentElement.lang=m[1]})()` }} />
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {/* Preload critical body/heading fonts to minimize CLS from font swap */}
         <link rel="preload" href="/fonts/SCDream5.otf" as="font" type="font/otf" crossOrigin="anonymous" />
@@ -264,9 +272,11 @@ export default async function RootLayout({
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  <LanguageProvider initialLang={lang}>
-                    {appContent}
-                  </LanguageProvider>
+                  <Suspense fallback={<LanguageProvider initialLang="ko">{appContent}</LanguageProvider>}>
+                    <DetectedLangProvider langPromise={langPromise}>
+                      {appContent}
+                    </DetectedLangProvider>
+                  </Suspense>
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>
