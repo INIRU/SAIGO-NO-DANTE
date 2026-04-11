@@ -9,6 +9,10 @@ export type KeywordInfo = {
   maxStack?: number
   iconSlug?: string
   sinAffinity?: string
+  nameEn?: string | null
+  nameJp?: string | null
+  descEn?: string | null
+  descJp?: string | null
 }
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
@@ -34,18 +38,42 @@ export function useKeywords() {
 /** formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출 */
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
-  const allKeywords = useMemo(
-    () => Object.keys(keywords).sort((a, b) => b.length - a.length),
-    [keywords],
-  )
+  const { lang } = useLanguage()
+
+  const { localKeywords, localToKr } = useMemo(() => {
+    if (lang === 'ko') {
+      const krKeys = Object.keys(keywords).sort((a, b) => b.length - a.length)
+      return { localKeywords: krKeys, localToKr: {} as Record<string, string> }
+    }
+    const map: Record<string, string> = {} // localName → krName
+    const list: string[] = []
+    for (const [krName, info] of Object.entries(keywords)) {
+      const localName = lang === 'en' ? info.nameEn : info.nameJp
+      if (localName) {
+        map[localName] = krName
+        list.push(localName)
+      }
+      // KR name as fallback (some descriptions mix languages)
+      map[krName] = krName
+      list.push(krName)
+    }
+    return {
+      localKeywords: [...new Set(list)].sort((a, b) => b.length - a.length),
+      localToKr: map,
+    }
+  }, [keywords, lang])
+
   return useCallback(
     (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>) => {
       const filtered = allowedKeywords
-        ? allKeywords.filter(kw => allowedKeywords.has(kw))
-        : allKeywords
-      return formatSkillDescInner(text, color, filtered, skillNameColors)
+        ? localKeywords.filter(kw => {
+            const krName = localToKr[kw] ?? kw
+            return allowedKeywords.has(krName) || allowedKeywords.has(kw)
+          })
+        : localKeywords
+      return formatSkillDescInner(text, color, filtered, skillNameColors, localToKr)
     },
-    [allKeywords],
+    [localKeywords, localToKr],
   )
 }
 
@@ -54,6 +82,7 @@ export function useFormatSkillDesc() {
 
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { useLanguage, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
 import type { SinType } from '@/lib/types'
 import { useState, useRef, useEffect } from 'react'
 
@@ -116,6 +145,10 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
 }) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [overflowing, setOverflowing] = useState(false)
+  const { lang, t } = useLanguage()
+
+  const localName = getLocalizedKeywordName(keyword, info, lang)
+  const localDesc = getLocalizedKeywordDesc(info.desc, info, lang)
 
   const spaceAbove = rect.top
   const spaceBelow = window.innerHeight - rect.bottom
@@ -159,10 +192,10 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
           {iconUrl && (
             <Image src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1rem', height: '1rem' }} />
           )}
-          {keyword}{info.maxStack ? ` (최대 ${info.maxStack})` : ''}
+          {localName}{info.maxStack ? ` (${t('keyword.maxStack')} ${info.maxStack})` : ''}
         </span>
         <span style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
-          {info.desc}
+          {localDesc}
         </span>
       </div>
       {overflowing && (
@@ -184,10 +217,13 @@ let activeKwClose: (() => void) | null = null
 /** 키워드 아이콘 + 툴팁 (context에서 키워드 데이터 사용) */
 export function KeywordWithTooltip({
   keyword,
+  krKey,
   inline,
   children,
 }: {
   keyword: string
+  /** KR key for lookup when keyword is an EN/JP name */
+  krKey?: string
   inline?: boolean
   children?: React.ReactNode
 }) {
@@ -195,8 +231,9 @@ export function KeywordWithTooltip({
   const [rect, setRect] = useState<DOMRect | null>(null)
   const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
   const keywords = useKeywords()
-  const info = keywords[keyword]
-  const iconUrl = getKeywordIconUrl(keyword, info?.iconSlug)
+  const lookupKey = krKey ?? keyword
+  const info = keywords[lookupKey]
+  const iconUrl = getKeywordIconUrl(lookupKey, info?.iconSlug)
 
   const hide = useCallback(() => setRect(null), [])
   const show = useCallback(() => {
@@ -258,7 +295,7 @@ export function KeywordWithTooltip({
       )}
       {children}
       {rect && info && typeof document !== 'undefined' && createPortal(
-        <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={keyword} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
+        <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={lookupKey} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
         document.body,
       )}
     </span>
@@ -270,11 +307,13 @@ function formatSkillDescInner(
   color: string,
   allKeywords: string[],
   skillNameColors?: Record<string, string>,
+  localToKr?: Record<string, string>,
 ) {
   const parts: {
     text: string
     type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname'
     skillColor?: string
+    krKey?: string
   }[] = []
   let remaining = text
   let prevChar = ''
@@ -300,7 +339,7 @@ function formatSkillDescInner(
       const afterBoundary = afterHangul && !isParticleAfter(remaining, kw.length)
       const beforeBoundary = kw.length <= 2 && isHangul(prevChar)
       if (remaining.startsWith(kw) && !afterBoundary && !beforeBoundary) {
-        parts.push({ text: kw, type: 'keyword' })
+        parts.push({ text: kw, type: 'keyword', krKey: localToKr?.[kw] })
         prevChar = kw[kw.length - 1]
         remaining = remaining.slice(kw.length)
         const numMatch = remaining.match(/^( 횟수)?( \d+)/)
@@ -362,7 +401,7 @@ function formatSkillDescInner(
         return <span key={i} style={{ color, fontWeight: 600 }}>{p.text}</span>
       case 'keyword':
         return (
-          <KeywordWithTooltip key={i} keyword={p.text} inline>
+          <KeywordWithTooltip key={i} keyword={p.text} krKey={p.krKey} inline>
             <span style={{ color: '#e8dcc8', fontWeight: 600 }}>{p.text}</span>
           </KeywordWithTooltip>
         )

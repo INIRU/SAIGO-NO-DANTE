@@ -67,23 +67,27 @@ export async function getSanityConditions(identityId: string): Promise<SanityCon
   const { data, error } = await supabase()
     .schema('limbus')
     .from('identity_sanity_conditions')
-    .select('template_id, condition_type, params, sort_order, mental_condition_templates(add_text, min_text)')
+    .select('template_id, condition_type, params, sort_order, mental_condition_templates(add_text, min_text, add_text_en, add_text_jp, min_text_en, min_text_jp)')
     .eq('identity_id', identityId)
     .order('condition_type')
     .order('sort_order')
   if (error || !data) return []
   return data.map((row: Record<string, unknown>) => {
-    const tpl = row.mental_condition_templates as { add_text: string; min_text: string } | null
-    const rawText = row.condition_type === 'increase' ? tpl?.add_text : tpl?.min_text
+    const tpl = row.mental_condition_templates as { add_text: string; min_text: string; add_text_en?: string | null; add_text_jp?: string | null; min_text_en?: string | null; min_text_jp?: string | null } | null
+    const isIncrease = row.condition_type === 'increase'
+    const rawText = isIncrease ? tpl?.add_text : tpl?.min_text
+    const rawTextEn = isIncrease ? tpl?.add_text_en : tpl?.min_text_en
+    const rawTextJp = isIncrease ? tpl?.add_text_jp : tpl?.min_text_jp
     const params = (row.params ?? []) as number[]
-    const text = params.reduce<string>(
-      (t, val, i) => t.replaceAll(`{${i}}`, String(val)),
-      rawText ?? '',
-    )
+    const fillParams = (t: string | null | undefined) =>
+      t ? params.reduce<string>((s, val, i) => s.replaceAll(`{${i}}`, String(val)), t) : null
+    const text = fillParams(rawText) ?? ''
     return {
       template_id: row.template_id as string,
       condition_type: row.condition_type as 'increase' | 'decrease',
       text,
+      text_en: fillParams(rawTextEn),
+      text_jp: fillParams(rawTextJp),
       sort_order: row.sort_order as number,
     }
   })
@@ -93,7 +97,7 @@ export async function getPanicInfo(panicTypeId: number): Promise<PanicType | nul
   const { data, error } = await supabase()
     .schema('limbus')
     .from('panic_types')
-    .select('id, name, description')
+    .select('id, name, name_en, name_jp, description, description_en, description_jp')
     .eq('id', panicTypeId)
     .single()
   if (error || !data) return null

@@ -27,10 +27,10 @@ function formatEndTime(iso: string) {
 
 function MaintenanceContent() {
   const searchParams = useSearchParams()
-  const from = searchParams.get('from')
-  const message = searchParams.get('message')
-  const reason = searchParams.get('reason')
-  const ends_at = searchParams.get('ends_at')
+  const from = searchParams?.get('from') ?? null
+  const message = searchParams?.get('message') ?? null
+  const reason = searchParams?.get('reason') ?? null
+  const ends_at = searchParams?.get('ends_at') ?? null
 
   const [line] = useState(() => CHARON_LINES[Math.floor(Math.random() * CHARON_LINES.length)])
   const [typed, setTyped] = useState('')

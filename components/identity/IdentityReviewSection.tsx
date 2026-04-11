@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { ThumbsUp, ThumbsDown, Trash2, Send } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 
 interface Review {
   id: string
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function IdentityReviewSection({ identityId, sinColor }: Props) {
+  const { t } = useLanguage()
   const { data: session } = useSession()
   const [reviewData, setReviewData] = useState<ReviewData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -98,7 +100,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
         className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
-        유저 평가
+        {t('identity.review.userRating')}
       </h2>
 
       {/* 개추/비추 집계 바 */}
@@ -111,7 +113,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
             </span>
           </div>
           <span className="text-xs" style={{ color: '#999' }}>
-            {loading ? '...' : `${total}명 참여`}
+            {loading ? '...' : `${total}${t('identity.review.participants')}`}
           </span>
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-sm font-bold" style={{ color: '#f87171' }}>
@@ -160,7 +162,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   : <ThumbsDown size={14} style={{ color: '#f87171' }} />
                 }
                 <span className="text-xs" style={{ color: '#999' }}>
-                  {myReview.is_positive ? '추천함' : '비추천함'}
+                  {myReview.is_positive ? t('identity.review.recommended') : t('identity.review.notRecommended')}
                   {myReview.content && ` — "${myReview.content}"`}
                 </span>
               </div>
@@ -170,7 +172,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   className="text-xs px-2 py-1 rounded transition-colors"
                   style={{ color: '#aaa', background: '#ffffff08' }}
                 >
-                  수정
+                  {t('identity.review.modify')}
                 </button>
                 <button
                   onClick={handleDelete}
@@ -194,7 +196,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                 }}
               >
                 <ThumbsUp size={15} />
-                개추
+                {t('identity.review.upvote')}
               </button>
               <button
                 onClick={() => { setShowForm(true); setSelectedVote(false) }}
@@ -206,7 +208,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                 }}
               >
                 <ThumbsDown size={15} />
-                비추
+                {t('identity.review.downvote')}
               </button>
             </div>
           ) : null}
@@ -226,7 +228,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   }}
                 >
                   <ThumbsUp size={14} />
-                  개추
+                  {t('identity.review.upvote')}
                 </button>
                 <button
                   onClick={() => setSelectedVote(false)}
@@ -238,7 +240,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   }}
                 >
                   <ThumbsDown size={14} />
-                  비추
+                  {t('identity.review.downvote')}
                 </button>
               </div>
               {/* 한줄평 입력 */}
@@ -247,7 +249,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   type="text"
                   value={content}
                   onChange={e => setContent(e.target.value.slice(0, 100))}
-                  placeholder="한줄평 (선택, 최대 100자)"
+                  placeholder={t('identity.review.inputPlaceholder')}
                   className="flex-1 px-3 py-2 rounded text-sm"
                   style={{
                     background: '#0d0b08',
@@ -282,7 +284,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                   className="text-xs"
                   style={{ color: '#999' }}
                 >
-                  취소
+                  {t('identity.review.cancel')}
                 </button>
               </div>
             </div>
@@ -296,7 +298,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
           className="text-center py-3 mb-4 rounded text-xs"
           style={{ color: '#999', background: '#ffffff05', border: '1px solid #ffffff08' }}
         >
-          로그인하면 평가에 참여할 수 있습니다
+          {t('identity.review.loginPrompt')}
         </div>
       )}
 
@@ -304,7 +306,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
       {(reviewData?.reviews?.length ?? 0) > 0 && (
         <div className="space-y-0">
           <div className="text-xs font-semibold mb-2" style={{ color: '#aaa' }}>
-            한줄평
+            {t('identity.review.oneLineReviews')}
           </div>
           {reviewData!.reviews.slice(0, 20).map(review => (
             <div
@@ -330,7 +332,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
                     color: review.role === 'wanjang' ? 'var(--gold)' : review.role === 'admin' ? '#f87171' : '#555',
                   }}
                 >
-                  {review.username ?? '익명'}
+                  {review.username ?? t('identity.review.anonymous')}
                   {review.role === 'wanjang' && ' ★'}
                 </span>
               </div>
@@ -342,7 +344,7 @@ export default function IdentityReviewSection({ identityId, sinColor }: Props) {
       {/* 빈 상태 */}
       {!loading && total === 0 && (
         <div className="text-center py-4" style={{ color: '#444', fontSize: '0.75rem' }}>
-          아직 평가가 없습니다
+          {t('identity.review.empty')}
         </div>
       )}
     </div>

@@ -109,6 +109,7 @@ export async function GET(req: NextRequest) {
   try {
     const identityId = req.nextUrl.searchParams.get('identity_id')
     if (!identityId) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
+    const lang = req.nextUrl.searchParams.get('lang') || 'ko'
 
     const supabase = createAdminClient()
     const { data } = await supabase
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
       .from('identity_ai_summaries')
       .select('summary, model, created_at')
       .eq('identity_id', identityId)
+      .eq('lang', lang)
       .gte('created_at', new Date(Date.now() - CACHE_DAYS * 86400000).toISOString())
       .single()
 
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { identity_id } = body
+  const { identity_id, lang = 'ko' } = body
   if (!identity_id) return NextResponse.json({ error: 'identity_id required' }, { status: 400 })
 
   const supabase = createAdminClient()
@@ -305,9 +307,91 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
   // 7. AI 스트리밍 호출
   const modelId = process.env.INIRU_AI_MODEL || 'gpt-5.4-mini'
 
+  const SYSTEM_PROMPT_EN = `You are a "Limbus Company" game expert.
+Analyze the given Identity data and provide a strategic summary.
+
+## Output Format Rules
+
+### Section Structure (Required)
+Divide into exactly 4 sections. Each section must start with the format:
+---section:Section Title---
+
+---section:Overview---
+---section:Skill Analysis---
+---section:Passive Analysis---
+---section:Recommendations---
+
+### Chip Syntax (Inline References) — Mandatory
+When mentioning skills, identities, or passives, you MUST use chip syntax. Never write plain text like "Don Quixote S1".
+
+- Identity: [i:SinnerName:IdentityName] (e.g., [i:Yi Sang:LCB Sinner])
+- Normal Skill: [s:SinnerName:SkillOrder] (e.g., [s:Yi Sang:1] = S1)
+- Variant Skill: [s:SinnerName:SkillOrder:VariantNumber] (e.g., [s:Don Quixote:1:1] = S1 first variant)
+- Defense Skill: [s:SinnerName:4] (single defense), [s:SinnerName:4:1] / [s:SinnerName:4:2] (multiple)
+- Passive: [p:PassiveName]
+
+### Component Syntax (UI Embeds)
+When explaining skills/passives, insert frames using:
+- {{skill:1}} — Skill 1 frame
+- {{skill:2}} — Skill 2 frame
+- {{skill:3}} — Skill 3 frame
+- {{skill:4}} — Defense skill frame
+- {{passive:battle}} — Battle passive card
+- {{passive:support}} — Support passive card
+Component syntax must be on its own line.
+
+### Writing Rules
+- Keywords (Bleed, Tremor, etc.) should be plain text, no chip syntax
+- When mentioning keywords, use the exact full name from the "Keyword List"
+- No markdown formatting, no brackets except chip/component syntax
+- Keep analysis concise and practical
+- Write in English`
+
+  const SYSTEM_PROMPT_JA = `あなたは「リンバスカンパニー」の専門家です。
+与えられた人格（Identity）のデータを分析し、戦略的な要約を提供してください。
+
+## 出力形式ルール
+
+### セクション構成（必須）
+必ず以下の4つのセクションに分けて記述してください。各セクションは必ず以下の形式で始めてください：
+---section:セクションタイトル---
+
+---section:概要---
+---section:スキル分析---
+---section:パッシブ分析---
+---section:おすすめ運用---
+
+### チップ構文（インライン参照）— 必須
+スキル、人格、パッシブに言及する際は、必ず以下のチップ構文を使用してください。「ドンキホーテ S1」のような通常テキストは禁止です。
+
+- 人格: [i:囚人名:人格名]（例: [i:イサン:LCB囚人]）
+- 通常スキル: [s:囚人名:スキル順序]（例: [s:イサン:1] = S1）
+- 変形スキル: [s:囚人名:スキル順序:変形番号]（例: [s:ドンキホーテ:1:1] = S1第1変形）
+- 防御スキル: [s:囚人名:4]（1つの場合）、[s:囚人名:4:1] / [s:囚人名:4:2]（複数の場合）
+- パッシブ: [p:パッシブ名]
+
+### コンポーネント構文（UIエンベッド）
+スキル/パッシブを説明する際、以下の構文でフレームを挿入してください：
+- {{skill:1}} — スキル1フレーム
+- {{skill:2}} — スキル2フレーム
+- {{skill:3}} — スキル3フレーム
+- {{skill:4}} — 防御スキルフレーム
+- {{passive:battle}} — バトルパッシブカード
+- {{passive:support}} — サポートパッシブカード
+コンポーネント構文は必ず単独行で記述してください。
+
+### 記述ルール
+- キーワード（出血、振動など）はチップ構文なしの通常テキスト
+- キーワードに言及する際は、「キーワード一覧」の正確な名前を使用
+- マークダウン形式禁止、チップ/コンポーネント構文以外の括弧禁止
+- 分析は簡潔かつ実用的に
+- 日本語で記述`
+
+  const systemPrompt = lang === 'en' ? SYSTEM_PROMPT_EN : lang === 'ja' ? SYSTEM_PROMPT_JA : SYSTEM_PROMPT
+
   const result = streamText({
     model: ai.chat(modelId),
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 1500,
     onFinish: async ({ text }) => {
@@ -319,8 +403,9 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
           identity_id,
           summary: text,
           model: modelId,
+          lang,
           created_at: new Date().toISOString(),
-        }, { onConflict: 'identity_id' })
+        }, { onConflict: 'identity_id,lang' })
       if (upsertErr) {
         console.error('AI summary upsert error:', upsertErr)
       }

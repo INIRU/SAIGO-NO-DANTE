@@ -34,6 +34,8 @@ import type { SanityCondition, PanicType } from '@/lib/types'
 import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
 import IdentityAISection from '@/components/identity/IdentityAISection'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useLanguage } from '@/lib/i18n'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface Props {
   sinner: Sinner
@@ -83,6 +85,11 @@ export default function IdentityDetailClient({
   useEffect(() => {
     setShowDiff(localStorage.getItem('uptie-diff') !== 'off')
   }, [])
+  const { lang, t } = useLanguage()
+  const localSkillName = (s: Skill) =>
+    lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
+  const localPassiveName = (p: Passive) =>
+    lang === 'en' && p.name_en ? p.name_en : lang === 'ja' && p.name_jp ? p.name_jp : p.name
   const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
@@ -198,28 +205,28 @@ export default function IdentityDetailClient({
         ? `${sinner.name_kr}:${base}:${v.idx}`
         : `${sinner.name_kr}:${base}`
       map[key] = {
-        name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
+        name: localSkillName(sk), skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
         skill_order: sk.skill_order, description: sk.description,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
         iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
-        identityName: identity.name_kr, sinnerName: sinner.name_kr,
+        identityName: getLocalizedName(identity, lang), sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
       }
     }
     return map
-  }, [filteredSkills, sinner.name_kr, identity, skillImgIdxMap, variantMap])
+  }, [filteredSkills, sinner.name_kr, sinner.name, sinner.name_jp, identity, skillImgIdxMap, variantMap, lang])
 
   const egoTokenLookup = useMemo(() => {
     const map: Record<string, NoteEgoEntry> = {}
     for (const ego of allEgos) {
       const name = ego.name_kr || ego.name
-      const sinnerName = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
+      const sinnerName = sinnerNameMap[ego.sinner_id] ?? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
       map[`${sinnerName}:${name}`] = {
         name, grade: ego.grade, sin_affinity: ego.sin_affinity,
         image_url: ego.image_url, sinnerName,
       }
     }
     return map
-  }, [allEgos, sinnerNameMap, sinner.name_kr])
+  }, [allEgos, sinnerNameMap, sinner.name_kr, sinner.name, sinner.name_jp, lang])
 
   const identityTokenLookup = useMemo(() => {
     const map: Record<string, NoteIdentityEntry> = {}
@@ -236,7 +243,7 @@ export default function IdentityDetailClient({
       }
     }
     return map
-  }, [allIdentities, sinnerNameMap, sinner.name_kr])
+  }, [allIdentities, sinnerNameMap, sinner.name_kr, lang])
 
   const egoGiftLookup = useMemo(() => {
     const map: Record<string, NoteEgoGiftEntry> = {}
@@ -251,17 +258,17 @@ export default function IdentityDetailClient({
     for (const ps of filteredPassives) {
       const sinEn = ps.sin_affinity ? (SIN_KR_TO_EN[ps.sin_affinity] ?? ps.sin_affinity) : null
       map[ps.name] = {
-        name: ps.name,
+        name: localPassiveName(ps),
         sin_affinity: sinEn,
         sin_count: ps.sin_count ?? null,
         active_cond: ps.active_cond ?? null,
         description: ps.description ?? null,
-        sinnerName: sinner.name_kr,
+        sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
         imageUrl: getIdentityInfoUrl(identity) || undefined,
       }
     }
     return map
-  }, [filteredPassives, sinner.name_kr])
+  }, [filteredPassives, sinner.name_kr, sinner.name, sinner.name_jp, lang])
 
   // 자동완성 풀
   const acPool = useMemo((): AutocompleteSuggestion[] => {
@@ -280,7 +287,7 @@ export default function IdentityDetailClient({
         ? `[s:${sinner.name_kr}:${base}:${v.idx}]`
         : `[s:${sinner.name_kr}:${base}]`
       pool.push({
-        label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
+        label: `${orderLabel} ${localSkillName(sk)}`, type: 'skill', typeLabel: t('identity.tab.skills'), color: sc,
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
         iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
         token,
@@ -290,9 +297,9 @@ export default function IdentityDetailClient({
       const sinEn = ps.sin_affinity ? (SIN_KR_TO_EN[ps.sin_affinity] ?? ps.sin_affinity) : null
       const sc = sinEn ? (SIN_COLORS[sinEn] ?? '#88a830') : '#88a830'
       pool.push({
-        label: ps.name,
+        label: localPassiveName(ps),
         type: 'passive' as const,
-        typeLabel: ps.passive_type === 'battle' ? '배틀' : '서포트',
+        typeLabel: ps.passive_type === 'battle' ? t('identity.passiveType.battle') : t('identity.passiveType.support'),
         color: sc,
         iconUrl: sinEn ? getSinIconUrl(sinEn) : undefined,
         token: `[p:${ps.name}]`,
@@ -304,7 +311,7 @@ export default function IdentityDetailClient({
       const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
       const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
       pool.push({
-        label: ident.name_kr, type: 'identity', typeLabel: sinnerName || '인격', color: sc,
+        label: ident.name_kr, type: 'identity', typeLabel: sinnerName || t('sinners.identities'), color: sc,
         imageUrl: getIdentityProfileUrl(ident, false),
         token: `[i:${sinnerName}:${ident.name_kr}]`,
       })
@@ -312,7 +319,7 @@ export default function IdentityDetailClient({
     for (const ego of allEgos) {
       const name = ego.name_kr || ego.name
       const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity] ?? '#c8900a') : '#c8900a'
-      const sinnerName = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
+      const sinnerName = sinnerNameMap[ego.sinner_id] ?? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
       pool.push({
         label: name, type: 'ego', typeLabel: sinnerName || 'E.G.O', color: sc,
         imageUrl: ego.image_url ?? undefined,
@@ -322,7 +329,7 @@ export default function IdentityDetailClient({
     pool.push(...buildKeywordPool(kwContext))
     pool.push(...buildEgoGiftPool(egoGifts))
     return pool
-  }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, identity, skillImgIdxMap, variantMap, egoGifts])
+  }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, sinner.name, sinner.name_jp, identity, skillImgIdxMap, variantMap, egoGifts, lang, t])
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -330,14 +337,14 @@ export default function IdentityDetailClient({
         {/* 브레드크럼 */}
         <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
-            수감자 목록
+            {t('sinners.title')}
           </Link>
           <span>›</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors">
-            {sinner.name_kr}
+            {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)}
           </Link>
           <span>›</span>
-          <span style={{ color: sinColor }}>{identity.name_kr || identity.name}</span>
+          <span style={{ color: sinColor }}>{getLocalizedName(identity, lang) || identity.name}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -362,8 +369,8 @@ export default function IdentityDetailClient({
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
             <div className="flex" style={{ borderBottom: '0.125rem solid var(--border)' }}>
               {([
-                { key: 'info' as const, label: '인격 정보' },
-                { key: 'decks' as const, label: '덱' },
+                { key: 'info' as const, label: t('identity.pageTab.info') },
+                { key: 'decks' as const, label: t('identity.pageTab.decks') },
               ]).map(tab => {
                 const isActive = pageTab === tab.key
                 return (
@@ -406,8 +413,8 @@ export default function IdentityDetailClient({
               <div>
                 <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
                   {([
-                    { key: 'ai' as const, label: 'AI 분석' },
-                    { key: 'guide' as const, label: '운영법' },
+                    { key: 'ai' as const, label: t('identity.ai') },
+                    { key: 'guide' as const, label: t('identity.guide') },
                   ]).map(tab => {
                     const active = guideTab === tab.key
                     return (
@@ -475,8 +482,8 @@ export default function IdentityDetailClient({
                     }}
                   >
                     {[
-                      { key: 'skills' as const, label: '스킬', count: filteredSkills.length },
-                      { key: 'passives' as const, label: '패시브', count: filteredPassives.length },
+                      { key: 'skills' as const, label: t('identity.tab.skills'), count: filteredSkills.length },
+                      { key: 'passives' as const, label: t('identity.tab.passives'), count: filteredPassives.length },
                     ].map(tab => {
                       const isActive = activeTab === tab.key
                       return (
@@ -534,7 +541,7 @@ export default function IdentityDetailClient({
                               borderRight: level === 3 ? `1px solid var(--border)` : 'none',
                             }}
                           >
-                            {level === 3 ? '3동기화' : '4동기화'}
+                            {level === 3 ? t('identity.uptie.level3') : t('identity.uptie.level4')}
                           </button>
                         )
                       })}
@@ -596,7 +603,7 @@ export default function IdentityDetailClient({
                   e.currentTarget.style.background = 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)'
                 }}
               >
-                &larr; {sinner.name_kr}의 인격 목록으로
+                {t('identity.backToSinner')}
               </Link>
             </>)}
           </div>

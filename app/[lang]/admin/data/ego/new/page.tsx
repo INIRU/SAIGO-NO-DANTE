@@ -37,7 +37,7 @@ const CORROSION_OPTIONS = [
 export default function NewEGOPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const preselectedSinner = searchParams.get('sinner') ?? ''
+  const preselectedSinner = searchParams?.get('sinner') ?? ''
   const [sinners, setSinners] = useState<Sinner[]>([])
   const [loading, setLoading] = useState(true)
 

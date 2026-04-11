@@ -177,7 +177,7 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
     const { data, error } = await supabase
       .schema('limbus')
       .from('keyword_meta')
-      .select('name, description, max_stack, icon_slug, sin_affinity')
+      .select('name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp')
       .range(from, from + 999)
     if (error) { fetchError = true; break }
     if (!data || data.length === 0) break
@@ -194,7 +194,7 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
       const { data, error } = await supabase
         .schema('limbus')
         .from('keyword_meta')
-        .select('name, description, max_stack')
+        .select('name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp')
         .range(from, from + 999)
       if (error || !data || data.length === 0) break
       allData.push(...data)
@@ -210,6 +210,10 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
       ...(row.max_stack != null ? { maxStack: row.max_stack as number } : {}),
       ...((row.icon_slug as string) ? { iconSlug: row.icon_slug as string } : {}),
       ...((row.sin_affinity as string) ? { sinAffinity: row.sin_affinity as string } : {}),
+      nameEn: (row.name_en as string) ?? null,
+      nameJp: (row.name_jp as string) ?? null,
+      descEn: (row.description_en as string) ?? null,
+      descJp: (row.description_jp as string) ?? null,
     }
   }
   return keywords

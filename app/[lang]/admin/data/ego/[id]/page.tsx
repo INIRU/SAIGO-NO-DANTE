@@ -173,7 +173,7 @@ function EgoSkillForm({
 
 export default function EditEGOPage() {
   const params = useParams()
-  const id = params.id as string
+  const id = params?.id as string
   const router = useRouter()
   const [form, setForm] = useState<Omit<EGO, 'id' | 'ego_skills'>>({
     sinner_id: '',

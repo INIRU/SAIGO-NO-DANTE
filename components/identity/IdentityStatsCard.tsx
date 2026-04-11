@@ -1,5 +1,8 @@
+'use client'
+
 import Image from 'next/image'
 import { Identity, STORAGE_BASE } from '@/lib/data/sinners'
+import { useLanguage } from '@/lib/i18n'
 
 interface IdentityStatsCardProps {
   identity: Identity
@@ -7,13 +10,14 @@ interface IdentityStatsCardProps {
 }
 
 export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsCardProps) {
+  const { t } = useLanguage()
   const defCorr = identity.def_level - 60
   const defCorrStr = defCorr === 0 ? '' : defCorr > 0 ? `(+${defCorr})` : `(${defCorr})`
 
   const stats = [
     { label: 'HP', value: String(identity.hp), iconUrl: `${STORAGE_BASE}/icons/stats/health.webp` },
-    { label: '속도', value: `${identity.speed_min}-${identity.speed_max}`, iconUrl: `${STORAGE_BASE}/icons/stats/speed.webp` },
-    { label: '방어 레벨', value: `${identity.def_level}${defCorrStr}`, iconUrl: `${STORAGE_BASE}/icons/stats/defense.webp` },
+    { label: t('identity.stats.speed'), value: `${identity.speed_min}-${identity.speed_max}`, iconUrl: `${STORAGE_BASE}/icons/stats/speed.webp` },
+    { label: t('identity.stats.defLevel'), value: `${identity.def_level}${defCorrStr}`, iconUrl: `${STORAGE_BASE}/icons/stats/defense.webp` },
   ]
 
   const breakSection = identity.break_section
@@ -25,7 +29,7 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
         className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
-        스탯
+        {t('identity.stats.title')}
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -49,17 +53,17 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
         ))}
       </div>
 
-      {/* 흐트러짐 구간 */}
+      {/* {t('identity.stats.breakSection')} */}
       {breakSection && breakSection.length > 0 && (
         <div className="mt-5">
           <h3 className="font-serif font-light mb-3" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-            흐트러짐 구간
+            {t('identity.stats.breakSection')}
           </h3>
           <div className="relative rounded-lg overflow-hidden" style={{ height: '2.5rem', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border)' }}>
             {/* HP 바 — 왼쪽=100%(빨간, 체력 꽉 참) → 오른쪽=0%(sinColor, 체력 없음) */}
             <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, rgba(200,60,60,0.3), ${sinColor}20)` }} />
 
-            {/* 흐트러짐 구간 마커 */}
+            {/* {t('identity.stats.breakSection')} 마커 */}
             {breakSection.map((pct, i) => (
               <div key={i}>
                 {/* 구간선 */}
@@ -114,7 +118,7 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
                 <div key={i} className="flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#e04040', opacity: 0.5 + i * 0.2 }} />
                   <span style={{ color: '#aaa', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                    {i + 1}차 <span style={{ color: '#e04040' }}>{pct}%</span>
+                    {t('identity.stats.breakPhase').replace('{n}', String(i + 1))}{' '}<span style={{ color: '#e04040' }}>{pct}%</span>
                     <span style={{ color: '#666' }}> ({hpVal})</span>
                   </span>
                 </div>

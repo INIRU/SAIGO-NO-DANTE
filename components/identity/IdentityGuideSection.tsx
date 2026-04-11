@@ -5,6 +5,7 @@ import { Swords, Pencil, X, Check, ChevronDown, Plus, Trash2 } from 'lucide-reac
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry, type NotePassiveEntry } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, NoteAutocompleteDropdown, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
+import { useLanguage } from '@/lib/i18n'
 
 export interface GuideData {
   id: string
@@ -178,6 +179,8 @@ export default function IdentityGuideSection({
     deleteConfirm,
   } = useGuideEditor(identityId, initialGuides)
 
+  const { t } = useLanguage()
+
   const ac = useNoteAutocomplete({
     text: guideContent,
     setText: setGuideContent,
@@ -218,7 +221,7 @@ export default function IdentityGuideSection({
 
   const previewBlock = (
     <div className="mt-3 p-3 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-      <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>미리보기</div>
+      <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>{t('identity.guide.preview')}</div>
       <div style={{ color: '#b0a898', fontSize: '0.75rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
         <NoteRenderer
           text={guideContent}
@@ -241,7 +244,7 @@ export default function IdentityGuideSection({
         style={{ background: sinColor, color: '#0d0b08', opacity: guideSaving || !guideTitle.trim() || !guideContent.trim() ? 0.4 : 1 }}
       >
         <Check size={12} />
-        {guideSaving ? '저장 중...' : '저장'}
+        {guideSaving ? t('identity.guide.saving') : t('identity.guide.save')}
       </button>
       <button
         onClick={cancelEdit}
@@ -249,7 +252,7 @@ export default function IdentityGuideSection({
         style={{ background: 'transparent', border: '1px solid var(--border)', color: '#aaa' }}
       >
         <X size={12} />
-        취소
+        {t('identity.guide.cancel')}
       </button>
     </div>
   )
@@ -279,7 +282,7 @@ export default function IdentityGuideSection({
             className="font-serif font-light"
             style={{ color: 'var(--gold)', fontSize: '1rem' }}
           >
-            운영법
+            {t('identity.guide.title')}
           </h2>
           {guides.length > 0 && (
             <span style={{ color: '#999', fontSize: '0.6875rem' }}>({guides.length})</span>
@@ -296,7 +299,7 @@ export default function IdentityGuideSection({
             }}
           >
             <Plus size={12} />
-            추가하기
+            {t('identity.guide.addNew')}
           </button>
         )}
       </div>
@@ -304,8 +307,8 @@ export default function IdentityGuideSection({
       {/* 새 운영법 작성 폼 */}
       {editingGuideId === 'new' && (
         <div className="mb-4 p-4 pb-5 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-          {titleInput('운영법 제목을 입력하세요')}
-          {editorForm('이 인격의 운영법을 작성하세요. 키워드/스킬/인격/에고 이름을 입력하면 자동완성됩니다.')}
+          {titleInput(t('identity.guide.newTitlePlaceholder'))}
+          {editorForm(t('identity.guide.newContentPlaceholder'))}
           {guideContent.trim() && previewBlock}
           {saveButtons}
         </div>
@@ -336,7 +339,7 @@ export default function IdentityGuideSection({
                       }}
                     />
                     <span className="font-serif text-sm truncate" style={{ color: 'var(--gold)' }}>
-                      {g.title || '제목 없음'}
+                      {g.title || t('identity.guide.untitled')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -358,8 +361,8 @@ export default function IdentityGuideSection({
                   <div className="px-4 pb-5" style={{ borderTop: '1px solid var(--border)' }}>
                     {isEditing ? (
                       <div className="pt-3">
-                        {titleInput('운영법 제목')}
-                        {editorForm('운영법 내용을 작성하세요.')}
+                        {titleInput(t('identity.guide.editTitlePlaceholder'))}
+                        {editorForm(t('identity.guide.editContentPlaceholder'))}
                         {guideContent.trim() && previewBlock}
                         {saveButtons}
                       </div>
@@ -383,7 +386,7 @@ export default function IdentityGuideSection({
                               style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid var(--gold-dim)', color: 'var(--gold)' }}
                             >
                               <Pencil size={11} />
-                              수정
+                              {t('identity.guide.edit')}
                             </button>
                             <button
                               onClick={() => requestGuideDelete(g.id)}
@@ -391,7 +394,7 @@ export default function IdentityGuideSection({
                               style={{ background: 'rgba(200,50,50,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#c85050' }}
                             >
                               <Trash2 size={11} />
-                              삭제
+                              {t('identity.guide.delete')}
                             </button>
                           </div>
                         )}
@@ -405,7 +408,7 @@ export default function IdentityGuideSection({
         </div>
       ) : editingGuideId !== 'new' && (
         <div className="text-center py-6" style={{ color: '#999' }}>
-          <p className="text-sm italic">아직 운영법이 작성되지 않았습니다.</p>
+          <p className="text-sm italic">{t('identity.guide.emptyState')}</p>
           <a
             href="https://discord.com/users/340124004599988234"
             target="_blank"
@@ -418,7 +421,7 @@ export default function IdentityGuideSection({
               fontFamily: 'var(--font-heading)',
             }}
           >
-            운영법 작성 지원하기 (Discord)
+            {t('identity.guide.discordSupport')}
           </a>
         </div>
       )}
@@ -426,9 +429,9 @@ export default function IdentityGuideSection({
       <ConfirmModal
         open={!!deleteConfirm}
         variant="danger"
-        title="운영법 삭제"
-        message="이 운영법을 삭제하시겠습니까?"
-        confirmLabel="삭제"
+        title={t('identity.guide.confirmDeleteTitle')}
+        message={t('identity.guide.confirmDeleteMsg')}
+        confirmLabel={t('identity.guide.confirmDeleteLabel')}
         onConfirm={confirmGuideDelete}
         onCancel={cancelGuideDelete}
       />

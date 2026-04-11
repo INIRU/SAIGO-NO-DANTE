@@ -13,6 +13,8 @@ import {
   getSinnerLogoUrl,
   BLUR_PLACEHOLDER,
 } from '@/lib/data/sinners'
+import { useLanguage } from '@/lib/i18n'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface IdentityPortraitSectionProps {
   sinner: Sinner
@@ -39,6 +41,8 @@ export default function IdentityPortraitSection({
   sinColor,
   rarityNum,
 }: IdentityPortraitSectionProps) {
+  const { lang, t } = useLanguage()
+  const localizedName = getLocalizedName(identity, lang)
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackInfoUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
 
@@ -92,7 +96,7 @@ export default function IdentityPortraitSection({
           <img
             key={fullArtSrc}
             src={fullArtSrc}
-            alt={identity.name_kr || identity.name}
+            alt={localizedName}
             className="max-w-full max-h-[90vh] object-contain"
             style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
             onLoad={(ev) => { (ev.target as HTMLImageElement).style.opacity = '1' }}
@@ -130,7 +134,7 @@ export default function IdentityPortraitSection({
               className="font-serif truncate"
               style={{ color: '#e8dcc8', fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, WebkitTextStroke: '0.5px #e8dcc8' }}
             >
-              {identity.name_kr || identity.name}
+              {localizedName}
             </h1>
             <p className="truncate" style={{ color: '#a08a60', fontSize: '0.6875rem' }}>
               {identity.name}
@@ -149,7 +153,7 @@ export default function IdentityPortraitSection({
               border: `1px solid ${!gacksung ? sinColor : 'var(--border)'}`,
             }}
           >
-            일러스트
+            {t('identity.portrait.illustration')}
           </button>
           <button
             onClick={() => setGacksung(true)}
@@ -160,7 +164,7 @@ export default function IdentityPortraitSection({
               border: `1px solid ${gacksung ? '#ff6b6b' : 'var(--border)'}`,
             }}
           >
-            동기화 일러스트
+            {t('identity.portrait.uptieIllustration')}
           </button>
         </div>
 
@@ -177,7 +181,7 @@ export default function IdentityPortraitSection({
                 }
               }
             }}
-            title={infoSrc ? '클릭하면 풀 일러스트 보기' : undefined}
+            title={infoSrc ? `${t('identity.portrait.artTipTitle')} ${t('identity.portrait.artTipDesc')}` : undefined}
           >
             {infoSrc ? (
               <Image
@@ -209,7 +213,7 @@ export default function IdentityPortraitSection({
                 }}
               >
                 <span className="font-serif font-light" style={{ fontSize: '4rem', color: `${sinColor}18`, lineHeight: 1 }}>
-                  {(identity.name_kr || identity.name)[0]}
+                  {localizedName[0]}
                 </span>
               </div>
             )}
@@ -249,13 +253,13 @@ export default function IdentityPortraitSection({
                   color: 'var(--gold)',
                   marginBottom: '0.25rem',
                 }}>
-                  이미지를 탭하면
+                  {t('identity.portrait.artTipTitle')}
                 </p>
                 <p style={{
                   fontSize: '0.6875rem',
                   color: '#9e9e9e',
                 }}>
-                  풀 일러스트를 볼 수 있어요
+                  {t('identity.portrait.artTipDesc')}
                 </p>
               </div>
             </div>

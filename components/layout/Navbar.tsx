@@ -201,7 +201,7 @@ export default function Navbar() {
           {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
           <div className="hidden md:flex items-center gap-5">
             {navGroups.map(group => {
-              const isActive = group.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+              const isActive = group.items.some(i => pathname === i.href || pathname?.startsWith(i.href + '/'))
               const isSingleItem = group.items.length === 1
 
               // 아이템 1개 → 바로 이동
@@ -277,7 +277,7 @@ export default function Navbar() {
                         background: 'linear-gradient(to right, transparent, rgba(200,144,10,0.3), transparent)',
                       }} />
                       {group.items.map(item => {
-                        const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                        const active = pathname === item.href || pathname?.startsWith(item.href + '/')
                         return (
                           <Link
                             key={item.href}

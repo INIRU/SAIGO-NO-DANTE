@@ -302,7 +302,7 @@ function EgoSection({ egoList, owned, compact }: { egoList: EGOInfo[]; owned: Se
 
 function CollectionViewer({ data }: { data: CollectionData }) {
   const searchParams = useSearchParams()
-  const code = searchParams.get('code')
+  const code = searchParams?.get('code') ?? null
 
   const [owned, setOwned] = useState<Set<string>>(new Set())
   const [activeSinner, setActiveSinner] = useState(data.sinners[0]?.id ?? '')

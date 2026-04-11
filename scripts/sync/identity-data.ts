@@ -39,6 +39,10 @@ const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
 const KR_DIR = join(DATA_DIR, 'KR')
 const KR_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/kr'))
+const EN_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/en'))
+const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp'))
+const EN_DIR = join(DATA_DIR, 'EN')
+const JP_DIR = join(DATA_DIR, 'JP')
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -280,6 +284,8 @@ interface ComputedIdentity {
 interface SkillRow {
   identity_id: string | null
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   skill_type: string | null
   sin_affinity: string | null
   base_power: number | null
@@ -287,6 +293,8 @@ interface SkillRow {
   coins: number
   offense_level: number | null
   description: string
+  description_en?: string | null
+  description_jp?: string | null
   skill_order: number
   atk_weight: number
   variant_order: number
@@ -296,11 +304,15 @@ interface SkillRow {
 interface PassiveRow {
   identity_id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   passive_type: 'battle' | 'support'
   sin_affinity: string | null
   sin_count: number | null
   active_cond: 'stock' | 'resonance' | null
   description: string
+  description_en?: string | null
+  description_jp?: string | null
   passive_order: number
   uptie_level: number
 }
@@ -549,6 +561,195 @@ function loadKrPassives(): Map<number, KrPassive> {
   return map
 }
 
+// ── EN/JP locale helpers ──────────────────────────────────────────────────────
+
+const CONDITION_TAG_EN: Record<string, string> = {
+  OnSucceedAttack: 'On Hit', OnSucceedAttackHead: 'Heads Hit', OnSucceedAttackTail: 'Tails Hit',
+  WhenUse: 'On Use', WhenUse_Force: 'On Use', BeforeUse: 'Before Use',
+  WinDuel: 'On Clash Win', WinDuelAttack: 'On Clash Win (Attack)', DefeatDuel: 'On Clash Lose',
+  StartBattle: 'Combat Start', StartBattle_Force: 'Combat Start',
+  EndSkill: 'After Attack', EndSkillAll: 'After Attack', BeforeAttack: 'Before Attack',
+  EnemyKill: 'On Kill', OnSucceedEvade: 'On Evade', CriticalOnSucceedAttack: 'On Crit',
+  TurnStartBattle: 'Turn Start', UnBrokenCoinOnSucceedAttack: 'Unbreakable Coin Hit',
+  AlwaysUse: 'Always', BeforeHit: 'Before Hit', OnStartCoin: 'Coin Start',
+  OnDirectAttack: 'On Direct Attack', StartDuel: 'Clash Start',
+  EndBattle: 'Combat End', AllyKill: 'On Ally Kill', TargetKill: 'On Target Kill',
+  CantDuel: 'Cannot Clash', CantIdentify: 'Unidentifiable', TabExplain: 'Info',
+  DuelCounter: 'Counter (Clashable)', DuelGuard: 'Guard (Clashable)',
+  ReUseOnSucceedAttack: 'Reuse: On Hit', ReUseOnSucceedAttackHead: 'Reuse: Heads Hit',
+  EndCoin: 'After Coin', EndSkillHead: 'After Heads Attack', EndSkillTail: 'After Tails Attack',
+  OnDefeatEvade: 'On Evade Fail', DefeatDuelAttack: 'On Clash Loss (Attack)',
+  WhenUseEvade: 'On Evade Use', CriticalEndSkill: 'On Crit: After Attack',
+  CriticalActivated: 'On Crit', CriticalTargetKill: 'On Crit: Target Kill',
+  CriticalEnemyTargetKill: 'On Crit: Kill', CantChangeTarget: 'Cannot Retarget',
+}
+
+const CONDITION_TAG_JP: Record<string, string> = {
+  OnSucceedAttack: '的中時', OnSucceedAttackHead: '表面的中時', OnSucceedAttackTail: '裏面的中時',
+  WhenUse: '使用時', WhenUse_Force: '使用時', BeforeUse: '使用前',
+  WinDuel: 'マッチ勝利時', WinDuelAttack: 'マッチ攻撃勝利時', DefeatDuel: 'マッチ敗北時',
+  StartBattle: '戦闘開始時', StartBattle_Force: '戦闘開始時',
+  EndSkill: '攻撃終了時', EndSkillAll: '攻撃終了時', BeforeAttack: '攻撃開始前',
+  EnemyKill: '敵処置時', OnSucceedEvade: '回避成功時', CriticalOnSucceedAttack: 'クリティカル的中時',
+  TurnStartBattle: 'ターン開始時', UnBrokenCoinOnSucceedAttack: '破壊不可コイン的中時',
+  AlwaysUse: '常時', BeforeHit: '被撃前', OnStartCoin: 'コイン開始時',
+  OnDirectAttack: '直接攻撃時', StartDuel: 'マッチ開始時',
+  EndBattle: '戦闘終了時', AllyKill: '味方処置時', TargetKill: '対象処置時',
+  CantDuel: 'マッチ不可', CantIdentify: '敵味方識別不可', TabExplain: '説明',
+  DuelCounter: 'マッチ可能カウンター', DuelGuard: 'マッチ可能ガード',
+  ReUseOnSucceedAttack: '再使用:的中時', ReUseOnSucceedAttackHead: '再使用:表面的中時',
+  EndCoin: 'コイン攻撃終了時', EndSkillHead: '表面攻撃終了時', EndSkillTail: '裏面攻撃終了時',
+  OnDefeatEvade: '回避失敗時', DefeatDuelAttack: 'マッチ攻撃敗北時',
+  WhenUseEvade: '回避使用時', CriticalEndSkill: 'クリティカル攻撃終了時',
+  CriticalActivated: 'クリティカル発動時', CriticalTargetKill: 'クリティカル対象処置時',
+  CriticalEnemyTargetKill: 'クリティカル敵処置時', CantChangeTarget: 'ターゲット変更不可',
+}
+
+function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
+  const prefix = lang.toUpperCase()
+  const condTags = lang === 'en' ? CONDITION_TAG_EN : CONDITION_TAG_JP
+  const map: Record<string, string> = { ...condTags }
+  const latestDir = lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
+  const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
+
+  // Latest dir (.json files)
+  if (existsSync(latestDir)) {
+    const latestFiles = globFiles(latestDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+      .filter(f => f.endsWith('.json'))
+    for (const f of latestFiles) {
+      const data = readTxt(join(latestDir, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
+        if (!parsed.success) continue
+        if (!map[parsed.data.id]) map[parsed.data.id] = parsed.data.name
+      }
+    }
+  }
+
+  // Fallback dir (.txt files)
+  if (existsSync(fallbackDir)) {
+    const fallbackFiles = globFiles(fallbackDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+      .filter(f => f.endsWith('.txt'))
+    for (const f of fallbackFiles) {
+      const data = readTxt(join(fallbackDir, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
+        if (!parsed.success) continue
+        if (!map[parsed.data.id]) map[parsed.data.id] = parsed.data.name
+      }
+    }
+  }
+
+  console.log(`  ${prefix} 태그 맵: ${Object.keys(map).length}개`)
+  return map
+}
+
+type LangLocaleData = {
+  skillMap: Map<number, { name: string; desc: string; coinlist?: any[] }>
+  passiveMap: Map<number, { name: string; desc: string }>
+}
+
+function loadLangLocale(lang: 'en' | 'jp'): LangLocaleData {
+  const prefix = lang.toUpperCase()
+  const latestDir = lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
+  const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
+
+  const skillMap = new Map<number, { name: string; desc: string; coinlist?: any[] }>()
+  const passiveMap = new Map<number, { name: string; desc: string }>()
+
+  // Load skills — pattern: {LANG}_Skills*.{json|txt}
+  for (const dir of [latestDir, fallbackDir]) {
+    if (!existsSync(dir)) continue
+    const files = globFiles(dir, new RegExp(`^${prefix}_Skills`, 'i'))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const id = (item as any)?.id as number
+        if (!id || skillMap.has(id)) continue
+        const levelList = (item as any).levelList ?? []
+        // Get highest level entry (same logic as KR)
+        const best = levelList.length > 0
+          ? levelList.reduce((a: any, b: any) => ((b.level ?? 0) > (a.level ?? 0) ? b : a))
+          : null
+        if (best) {
+          skillMap.set(id, { name: best.name ?? '', desc: best.desc ?? '', coinlist: best.coinlist })
+        }
+      }
+    }
+  }
+
+  // Load passives — pattern: {LANG}_Passives*.{json|txt}
+  for (const dir of [latestDir, fallbackDir]) {
+    if (!existsSync(dir)) continue
+    const files = globFiles(dir, new RegExp(`^${prefix}_Passive`, 'i'))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const id = (item as any)?.id as number
+        if (!id || passiveMap.has(id)) continue
+        passiveMap.set(id, { name: (item as any).name ?? '', desc: (item as any).desc ?? '' })
+      }
+    }
+  }
+
+  console.log(`  ${prefix} locale: ${skillMap.size} skills, ${passiveMap.size} passives`)
+  return { skillMap, passiveMap }
+}
+
+function translateDescLang(
+  desc: string | undefined,
+  tagMap: Record<string, string>,
+  conditionTags: Record<string, string>,
+  lang: 'en' | 'jp' = 'en',
+): string {
+  if (!desc) return ''
+  // {0} → Potency/威力, {1} → Count/回数
+  const potency = lang === 'jp' ? '威力' : 'Potency'
+  const count = lang === 'jp' ? '回数' : 'Count'
+  return desc
+    .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
+    .replace(/<\/?noparse>/g, '')
+    .replace(/<\/?u>/g, '')
+    .replace(/<color=[^>]*>/g, '').replace(/<\/color>/g, '')
+    .replace(/<link=[^>]*>/g, '').replace(/<\/link>/g, '')
+    .replace(/<sprite[^>]*\/?>/g, '')
+    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
+    .replace(/\{0\}/g, potency)
+    .replace(/\{1\}/g, count)
+    .replace(/\[([A-Za-z_][A-Za-z0-9_]*)\]/g, (match, tag) => {
+      const name = tagMap[tag]
+      if (!name) return match
+      if (conditionTags[tag]) return `[${name}]`
+      return name
+    })
+    .trim()
+}
+
+function buildDescriptionLang(
+  langSkillEntry: { name: string; desc: string; coinlist?: any[] } | undefined,
+  tagMap: Record<string, string>,
+  conditionTags: Record<string, string>,
+  lang: 'en' | 'jp',
+): string {
+  if (!langSkillEntry) return ''
+  const parts: string[] = []
+  const globalDesc = translateDescLang(langSkillEntry.desc, tagMap, conditionTags, lang).trim()
+  if (globalDesc) parts.push(globalDesc)
+
+  for (let i = 0; i < (langSkillEntry.coinlist ?? []).length; i++) {
+    const coin = langSkillEntry.coinlist![i]
+    const descs = (coin.coindescs ?? [])
+      .map((cd: any) => translateDescLang(cd.desc ?? '', tagMap, conditionTags, lang).trim())
+      .filter(Boolean)
+    if (descs.length > 0) {
+      const coinLabel = lang === 'en' ? `[Coin ${i + 1}]` : `[コイン ${i + 1}]`
+      parts.push(`${coinLabel} ${descs[0]}`)
+      for (let j = 1; j < descs.length; j++) parts.push(descs[j])
+    }
+  }
+  return parts.join('\n')
+}
+
 // ── Stat computation ──────────────────────────────────────────────────────────
 
 function getResistance(p: Personality, atkType: string): string | null {
@@ -688,6 +889,10 @@ function buildSkillRows(
   skillMap: Map<number, PersonalitySkill>,
   krSkillMap: Map<number, KrSkill>,
   identityId: string | null,
+  enLocale?: LangLocaleData,
+  jpLocale?: LangLocaleData,
+  enTagMap?: Record<string, string>,
+  jpTagMap?: Record<string, string>,
 ): SkillRow[] {
   const attackSkillIds = (gamePerson.attributeList ?? []).map(a => a.skillId)
   const defenseSkillIds = gamePerson.defenseSkillIDList ?? []
@@ -712,6 +917,8 @@ function buildSkillRows(
       rows.push({
         identity_id: identityId,
         name,
+        name_en: enLocale?.skillMap.get(sid)?.name ?? null,
+        name_jp: jpLocale?.skillMap.get(sid)?.name ?? null,
         skill_type: isDefense ? (DEF_TYPE_MAP[r.defType!] ?? null) : (ATK_TYPE_MAP[r.atkType ?? ''] ?? null),
         sin_affinity: SIN_MAP[r.attributeType ?? ''] ?? null,
         base_power: r.defaultValue ?? null,
@@ -721,6 +928,8 @@ function buildSkillRows(
         coins: coinList.length || 1,
         offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
         description,
+        description_en: enLocale ? buildDescriptionLang(enLocale.skillMap.get(sid), enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
+        description_jp: jpLocale ? buildDescriptionLang(jpLocale.skillMap.get(sid), jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         skill_order: skillOrder,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -745,6 +954,8 @@ function buildSkillRows(
       rows.push({
         identity_id: identityId,
         name,
+        name_en: enLocale?.skillMap.get(gs.id)?.name ?? null,
+        name_jp: jpLocale?.skillMap.get(gs.id)?.name ?? null,
         skill_type: isDefense ? (DEF_TYPE_MAP[r.defType!] ?? null) : (ATK_TYPE_MAP[r.atkType ?? ''] ?? null),
         sin_affinity: SIN_MAP[r.attributeType ?? ''] ?? null,
         base_power: r.defaultValue ?? null,
@@ -754,6 +965,8 @@ function buildSkillRows(
         coins: coinList.length || 1,
         offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
         description,
+        description_en: enLocale ? buildDescriptionLang(enLocale.skillMap.get(gs.id), enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
+        description_jp: jpLocale ? buildDescriptionLang(jpLocale.skillMap.get(gs.id), jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         skill_order: 4,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -771,6 +984,10 @@ function buildPassiveRows(
   identityId: string,
   krPassiveMap: Map<number, KrPassive>,
   passiveDetailMap: Map<number, PassiveDetail>,
+  enLocale?: LangLocaleData,
+  jpLocale?: LangLocaleData,
+  enTagMap?: Record<string, string>,
+  jpTagMap?: Record<string, string>,
 ): PassiveRow[] {
   const rows: PassiveRow[] = []
 
@@ -785,18 +1002,24 @@ function buildPassiveRows(
       for (const pid of battleLevel.passiveIDList) {
         const kr = krPassiveMap.get(pid)
         const detail = passiveDetailMap.get(pid)
+        // Skip placeholder passives with no KR name (game data incomplete)
+        if (!kr?.name) continue
         const hasStock = (detail?.attributeStockCondition?.length ?? 0) > 0
         const hasResonance = (detail?.attributeResonanceCondition?.length ?? 0) > 0
         const conds = detail?.attributeStockCondition ?? detail?.attributeResonanceCondition ?? []
         const sinCond = conds[0]
         rows.push({
           identity_id: identityId,
-          name: kr?.name ?? `패시브${pid}`,
+          name: kr.name,
+          name_en: enLocale?.passiveMap.get(pid)?.name ?? null,
+          name_jp: jpLocale?.passiveMap.get(pid)?.name ?? null,
           passive_type: 'battle',
           sin_affinity: sinCond ? (SIN_MAP[sinCond.type ?? ''] ?? null) : null,
           sin_count: sinCond?.value ?? null,
           active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
           description: translateDesc(kr?.desc ?? ''),
+          description_en: enLocale ? translateDescLang(enLocale.passiveMap.get(pid)?.desc, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
+          description_jp: jpLocale ? translateDescLang(jpLocale.passiveMap.get(pid)?.desc, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
           passive_order: ++passiveOrder,
           uptie_level: uptie,
         })
@@ -811,18 +1034,24 @@ function buildPassiveRows(
       for (const pid of supportLevel.passiveIDList) {
         const kr = krPassiveMap.get(pid)
         const detail = passiveDetailMap.get(pid)
+        // Skip placeholder passives with no KR name (game data incomplete)
+        if (!kr?.name) continue
         const hasStock = (detail?.attributeStockCondition?.length ?? 0) > 0
         const hasResonance = (detail?.attributeResonanceCondition?.length ?? 0) > 0
         const conds = detail?.attributeStockCondition ?? detail?.attributeResonanceCondition ?? []
         const sinCond = conds[0]
         rows.push({
           identity_id: identityId,
-          name: kr?.name ?? `패시브${pid}`,
+          name: kr.name,
+          name_en: enLocale?.passiveMap.get(pid)?.name ?? null,
+          name_jp: jpLocale?.passiveMap.get(pid)?.name ?? null,
           passive_type: 'support',
           sin_affinity: sinCond ? (SIN_MAP[sinCond.type ?? ''] ?? null) : null,
           sin_count: sinCond?.value ?? null,
           active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
           description: translateDesc(kr?.desc ?? ''),
+          description_en: enLocale ? translateDescLang(enLocale.passiveMap.get(pid)?.desc, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
+          description_jp: jpLocale ? translateDescLang(jpLocale.passiveMap.get(pid)?.desc, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
           passive_order: ++passiveOrder,
           uptie_level: uptie,
         })
@@ -1092,7 +1321,14 @@ async function main(): Promise<void> {
   console.log(`  패시브 상세: ${passiveDetailMap.size}개`)
 
   const krPassiveMap = loadKrPassives()
-  console.log(`  KR 패시브: ${krPassiveMap.size}개\n`)
+  console.log(`  KR 패시브: ${krPassiveMap.size}개`)
+
+  // Load EN/JP locale data
+  const enTagMap = loadLangTagMap('en')
+  const jpTagMap = loadLangTagMap('jp')
+  const enLocale = loadLangLocale('en')
+  const jpLocale = loadLangLocale('jp')
+  console.log('')
 
   // ── Load DB data ──────────────────────────────────────────────────────────
   console.log('  DB 데이터 로드 중...')
@@ -1218,7 +1454,7 @@ async function main(): Promise<void> {
 
           // Insert skills
           if (!NEW_ONLY) {
-            const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, newIdentityId)
+            const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, newIdentityId, enLocale, jpLocale, enTagMap, jpTagMap)
             if (skillRows.length > 0) {
               await supaInsertBatch('skills', skillRows)
               totalSkillsInserted += skillRows.length
@@ -1243,7 +1479,7 @@ async function main(): Promise<void> {
         } else {
           // Dry-run: skill preview
           if (!NEW_ONLY) {
-            const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, null)
+            const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, null, enLocale, jpLocale, enTagMap, jpTagMap)
             console.log(GREEN(`    스킬 예정: ${skillRows.length}개 (uptie 3+4)`))
             if (VERBOSE) {
               for (const s of skillRows.filter(r => r.uptie_level === 4)) {
@@ -1275,6 +1511,26 @@ async function main(): Promise<void> {
 
       if (changeCount === 0) {
         totalUnchanged++
+        // Backfill EN/JP skill translations for existing identities
+        if (!DRY_RUN && enLocale && jpLocale) {
+          const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, (dbRow as { id: string }).id, enLocale, jpLocale, enTagMap, jpTagMap)
+          for (const sr of skillRows) {
+            if (!sr.name_en && !sr.name_jp) continue
+            const updateFields: Record<string, unknown> = {}
+            if (sr.name_en) updateFields.name_en = sr.name_en
+            if (sr.name_jp) updateFields.name_jp = sr.name_jp
+            if (sr.description_en) updateFields.description_en = sr.description_en
+            if (sr.description_jp) updateFields.description_jp = sr.description_jp
+            if (Object.keys(updateFields).length === 0) continue
+            await supabase
+              .from('skills')
+              .update(updateFields)
+              .eq('identity_id', (dbRow as { id: string }).id)
+              .eq('name', sr.name)
+              .eq('skill_order', sr.skill_order)
+              .eq('uptie_level', sr.uptie_level)
+          }
+        }
         if (VERBOSE) console.log(GRAY(`  [${i + 1}/${sinnerPersonalities.length}] [OK] ${displayName} (변경 없음)`))
         continue
       }
@@ -1324,7 +1580,7 @@ async function main(): Promise<void> {
       const pm = passiveMappings.find(p => String(p.personalityID) === gameId)
       if (!pm) continue
 
-      const newPassives = buildPassiveRows(pm, identity.id as string, krPassiveMap, passiveDetailMap)
+      const newPassives = buildPassiveRows(pm, identity.id as string, krPassiveMap, passiveDetailMap, enLocale, jpLocale, enTagMap, jpTagMap)
       if (newPassives.length === 0) continue
 
       // Collect passive KR texts for keyword extraction
