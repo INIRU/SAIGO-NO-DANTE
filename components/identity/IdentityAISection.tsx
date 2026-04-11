@@ -453,7 +453,7 @@ function RichContentRenderer({
                 egoLookup={egoLookup}
                 identityLookup={identityLookup}
                 egoGiftLookup={egoGiftLookup}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
               />
             )
           case 'skill':
@@ -465,7 +465,7 @@ function RichContentRenderer({
                 skills={skills}
                 identity={identity}
                 sinColor={sinColor}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
                 lang={lang}
               />
             )
@@ -475,7 +475,7 @@ function RichContentRenderer({
                 key={i}
                 passiveType={node.passiveType}
                 passives={passives}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
                 t={t}
                 lang={lang}
                 index={node.index}
