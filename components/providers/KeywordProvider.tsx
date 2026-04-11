@@ -400,6 +400,14 @@ function formatSkillDescInner(
   return parts.map((p, i) => {
     switch (p.type) {
       case 'bracket':
+        if (p.krKey) {
+          const inner = p.text.replace(/^[\[【]|[\]】]$/g, '')
+          return (
+            <KeywordWithTooltip key={i} keyword={inner} krKey={p.krKey} inline>
+              <span style={{ color: '#e8dcc8', fontWeight: 600 }}>{p.text}</span>
+            </KeywordWithTooltip>
+          )
+        }
         return <span key={i} style={{ color, fontWeight: 600 }}>{p.text}</span>
       case 'keyword':
         return (
