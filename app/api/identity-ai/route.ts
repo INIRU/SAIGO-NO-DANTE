@@ -71,6 +71,11 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
 - 서포트 패시브를 설명할 때 {{passive:battle}} 절대 금지
 - 각 패시브는 반드시 해당 타입의 프레임을 사용하세요
 
+중요: 아래 패시브 데이터에 같은 타입의 패시브가 여러 개 있으면 (예: [전투-1], [전투-2], [전투-3]) 반드시 인덱스 프레임 문법을 사용하세요:
+- {{passive:battle:1}} — 첫 번째 전투 패시브
+- {{passive:battle:2}} — 두 번째 전투 패시브
+{{passive:battle}} 인덱스 없이 사용 절대 금지 (복수 패시브 시)
+
 컴포넌트 문법은 반드시 줄 시작에 단독으로 배치하세요. 같은 줄에 다른 텍스트를 넣지 마세요.
 
 ### 작성 규칙
@@ -538,6 +543,12 @@ When explaining skills/passives, insert frames using:
 - NEVER use {{passive:battle}} when discussing the support passive
 - Each passive type must use its own frame syntax
 
+IMPORTANT: When the passive data below lists multiple passives of the same type (e.g., [Battle-1], [Battle-2], [Battle-3]), you MUST use indexed frame syntax for EACH passive:
+- {{passive:battle:1}} for the first battle passive
+- {{passive:battle:2}} for the second battle passive
+- {{passive:battle:3}} for the third battle passive
+NEVER use {{passive:battle}} without an index when multiple passives of the same type exist.
+
 Component syntax must be on its own line.
 
 ### Writing Rules
@@ -596,6 +607,12 @@ Component syntax must be on its own line.
 - パッシブが1つだけの場合は {{passive:battle}} または {{passive:support}} で可
 - サポートパッシブの説明に {{passive:battle}} を使用しないでください
 - 各パッシブは必ず該当タイプのフレームを使用してください
+
+重要：以下のパッシブデータに同じタイプのパッシブが複数ある場合（例：[バトル-1]、[バトル-2]、[バトル-3]）、各パッシブに必ずインデックス付きフレーム構文を使用してください：
+- {{passive:battle:1}} — 最初のバトルパッシブ
+- {{passive:battle:2}} — 2番目のバトルパッシブ
+- {{passive:battle:3}} — 3番目のバトルパッシブ
+複数のパッシブが存在する場合、インデックスなしで {{passive:battle}} を使用することは絶対禁止です。
 
 コンポーネント構文は必ず単独行で記述してください。
 

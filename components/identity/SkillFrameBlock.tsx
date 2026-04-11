@@ -4,6 +4,7 @@ import Image from 'next/image'
 import SkillFrame from './SkillFrame'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { useLanguage } from '@/lib/i18n'
 
 const SIN_FRAME_MAP: Record<string, string> = {
   wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
@@ -72,6 +73,7 @@ export default function SkillFrameBlock({
   allowedKeywords,
   mentalConsume,
 }: SkillFrameBlockProps) {
+  const { t } = useLanguage()
   const isAttackSkill = !isDefense
   const frameSin = SIN_FRAME_MAP[sin] ?? 'crimson'
 
@@ -250,7 +252,7 @@ export default function SkillFrameBlock({
             {isAttackSkill && atkWeight > 0 && (
               <div className="flex items-center gap-1">
                 <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>
-                  공격 가중치
+                  {t('identity.skills.atkWeight')}
                 </span>
                 <div className="flex gap-0.5">
                   {Array.from({ length: atkWeight }).map((_, i) => (
