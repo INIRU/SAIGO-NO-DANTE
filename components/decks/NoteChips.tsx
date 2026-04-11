@@ -529,9 +529,7 @@ export function NoteRenderer({
   allowedKeywords?: Set<string>
 }) {
   const formatSkillDesc = useFormatSkillDesc()
-  if (!text.trim()) return (
-    <p style={{ color: '#2a2535', fontSize: '0.75rem', fontStyle: 'italic' }}>내용이 없습니다.</p>
-  )
+  if (!text.trim()) return null
   // [s:skill] [p:passive] [e:ego] [k:keyword] [i:identity] [g:egogift]
   const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[p:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[e:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[k:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[i:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[g:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]/g
   const elements: React.ReactNode[] = []

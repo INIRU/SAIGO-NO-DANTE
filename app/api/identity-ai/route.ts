@@ -45,14 +45,37 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
 - 인격을 언급할 때는 절대 일반 텍스트로 쓰지 말고 반드시 [i:수감자명:인격명] 형식으로 쓰세요.
 - 덱 편성에 나오는 "수감자명:인격명" 형태는 반드시 [i:수감자명:인격명]으로 변환하세요.
 
+### 중요: 변형 스킬 프레임 (반드시 준수)
+스킬 슬롯에 변형이 있으면 (예: S3-1, S3-2) 반드시 변형 프레임 문법을 사용하세요:
+- {{skill:3:1}} — 변형 1
+- {{skill:3:2}} — 변형 2
+절대 {{skill:3}}으로 변형 스킬을 보여주지 마세요. 각 변형은 반드시 개별 프레임을 사용하세요.
+스킬 데이터에 S3-1, S3-2 같은 레이블이 있으면 반드시 {{skill:3:1}}, {{skill:3:2}}를 따로 사용해야 합니다.
+
 ### 컴포넌트 문법 (UI 임베드)
 스킬/패시브를 설명할 때 아래 문법으로 해당 프레임을 삽입하세요:
-- {{skill:1}} — 스킬 1 프레임
-- {{skill:2}} — 스킬 2 프레임
-- {{skill:3}} — 스킬 3 프레임
+- {{skill:1}} — 스킬 1 프레임 (변형 없을 때)
+- {{skill:2}} — 스킬 2 프레임 (변형 없을 때)
+- {{skill:3}} — 스킬 3 프레임 (변형 없을 때만 사용)
+- {{skill:3:1}} — 스킬 3 변형 1 프레임 (S3-1이 있으면 반드시 이것을 사용)
+- {{skill:3:2}} — 스킬 3 변형 2 프레임 (S3-2이 있으면 반드시 이것을 사용)
 - {{skill:4}} — 수비 스킬 프레임 (있는 경우)
-- {{passive:battle}} — 전투 패시브 카드
-- {{passive:support}} — 서포트 패시브 카드
+- {{passive:battle}} — 전투 패시브 카드 (1개일 때)
+- {{passive:support}} — 서포트 패시브 카드 (1개일 때)
+- {{passive:battle:1}}, {{passive:battle:2}} — 전투 패시브가 여러 개일 때 각각 표시
+- {{passive:support:1}}, {{passive:support:2}} — 서포트 패시브가 여러 개일 때 각각 표시
+
+### 중요: 패시브 프레임 사용
+- 같은 타입의 패시브가 여러 개일 때는 {{passive:TYPE:N}} 형식을 사용 (예: {{passive:battle:1}}, {{passive:battle:2}})
+- 패시브가 1개뿐이면 {{passive:battle}} 또는 {{passive:support}} 사용 가능
+- 서포트 패시브를 설명할 때 {{passive:battle}} 절대 금지
+- 각 패시브는 반드시 해당 타입의 프레임을 사용하세요
+
+중요: 아래 패시브 데이터에 같은 타입의 패시브가 여러 개 있으면 (예: [전투-1], [전투-2], [전투-3]) 반드시 인덱스 프레임 문법을 사용하세요:
+- {{passive:battle:1}} — 첫 번째 전투 패시브
+- {{passive:battle:2}} — 두 번째 전투 패시브
+{{passive:battle}} 인덱스 없이 사용 절대 금지 (복수 패시브 시)
+
 컴포넌트 문법은 반드시 줄 시작에 단독으로 배치하세요. 같은 줄에 다른 텍스트를 넣지 마세요.
 
 ### 작성 규칙
@@ -190,6 +213,56 @@ export async function POST(req: NextRequest) {
     : lang === 'jp' ? (sinner?.name_jp || sinner?.name_kr || identity.sinner_id)
     : (sinner?.name_kr || identity.sinner_id)
 
+  // 2-b. 키워드 로컬라이즈 + 설명문 내 [한국어키워드] 치환 함수
+  const keywordNames = (identity.keywords || []) as string[]
+  let localizedKeywords = keywordNames
+  let kwReplaceFn = (text: string) => text  // no-op for ko
+
+  if (lang !== 'ko') {
+    const { data: allKw, error: kwErr } = await supabase
+      .schema('limbus')
+      .from('keyword_meta')
+      .select('name, name_en, name_jp')
+
+    if (kwErr) {
+      console.error('keyword_meta fetch error:', kwErr)
+    } else if (allKw && allKw.length > 0) {
+      const kwMap = new Map(allKw.map((k: { name: string; name_en: string | null; name_jp: string | null }) => [k.name, k]))
+
+      // Localize identity keyword list
+      localizedKeywords = keywordNames.map((kr: string) => {
+        const kw = kwMap.get(kr)
+        if (!kw) return kr
+        if (lang === 'en') return kw.name_en || kr
+        if (lang === 'jp') return kw.name_jp || kr
+        return kr
+      })
+
+      // Build replacement function: [한국어키워드] → [LocalizedKeyword] in description text
+      // Also replaces plain-text Korean keyword names (longest first to avoid partial matches)
+      kwReplaceFn = (text: string) => {
+        if (!text) return text
+        // First pass: bracket keywords [한국어] → [English]
+        let result = text.replace(/\[([^\]]+)\]/g, (match, kwName) => {
+          const kw = kwMap.get(kwName)
+          if (!kw) return match
+          const localized = lang === 'en' ? kw.name_en : lang === 'jp' ? kw.name_jp : null
+          return localized ? localized : match
+        })
+        // Second pass: plain text keywords (longest first to avoid partial matches)
+        const sortedKr = [...kwMap.keys()].sort((a, b) => b.length - a.length)
+        for (const kr of sortedKr) {
+          const kw = kwMap.get(kr)!
+          const localized = lang === 'en' ? kw.name_en : lang === 'jp' ? kw.name_jp : null
+          if (localized && kr !== localized) {
+            result = result.split(kr).join(localized)
+          }
+        }
+        return result
+      }
+    }
+  }
+
   // 3. 스킬 (4동기화)
   const { data: skillsRaw } = await supabase
     .schema('limbus')
@@ -299,7 +372,7 @@ export async function POST(req: NextRequest) {
       : (hasVariants ? `S${base}-${idx}` : `S${base}`)
     const chipToken = hasVariants ? `[s:${sinnerName}:${base}:${idx}]` : `[s:${sinnerName}:${base}]`
     const skillName = lang === 'en' ? (s.name_en || s.name) : lang === 'jp' ? (s.name_jp || s.name) : s.name
-    const skillDesc = lang === 'en' ? (s.description_en || s.description) : lang === 'jp' ? (s.description_jp || s.description) : s.description
+    const skillDesc = kwReplaceFn(lang === 'en' ? (s.description_en || s.description) : lang === 'jp' ? (s.description_jp || s.description) : s.description)
     const typeLabel = typeMap[s.skill_type] || s.skill_type
     const sinLabel = sinMap[s.sin_affinity] || s.sin_affinity
     const coinSign = s.coin_power >= 0 ? `+${s.coin_power}` : `${s.coin_power}`
@@ -314,16 +387,33 @@ export async function POST(req: NextRequest) {
     return `[${orderLabel}] ${skillName} (${chipLabel}: ${chipToken})\n${typeHeader}: ${typeLabel} / ${sinHeader}: ${sinLabel} / ${powerHeader}: ${s.base_power} / ${coinsHeader}: ${s.coins}${coinsUnit} (${coinSign}) / ${offHeader}: ${s.offense_level || '-'}\n${descHeader}: ${skillDesc || noneLabel}`
   }).join('\n\n')
 
+  // Group passives by type and add sequential index
+  const passivesByType = new Map<string, typeof passives>()
+  for (const p of passives) {
+    const key = p.passive_type || 'battle'
+    if (!passivesByType.has(key)) passivesByType.set(key, [])
+    passivesByType.get(key)!.push(p)
+  }
+
   const passivesText = passives.map(p => {
     const passiveName = lang === 'en' ? (p.name_en || p.name) : lang === 'jp' ? (p.name_jp || p.name) : p.name
-    const passiveDesc = lang === 'en' ? (p.description_en || p.description) : lang === 'jp' ? (p.description_jp || p.description) : p.description
-    const pTypeLabel = p.passive_type === 'battle'
+    const passiveDesc = kwReplaceFn(lang === 'en' ? (p.description_en || p.description) : lang === 'jp' ? (p.description_jp || p.description) : p.description)
+    const pType = p.passive_type || 'battle'
+    const pTypeLabel = pType === 'battle'
       ? (lang === 'en' ? 'Battle' : lang === 'jp' ? 'バトル' : '전투')
       : (lang === 'en' ? 'Support' : lang === 'jp' ? 'サポート' : '서포트')
+    const typeGroup = passivesByType.get(pType) || []
+    const idx = typeGroup.indexOf(p) + 1
+    const indexedLabel = `${pTypeLabel}-${idx}`
+    const frameHint = lang === 'en'
+      ? `embed with {{passive:${pType}:${idx}}}`
+      : lang === 'jp'
+      ? `フレーム: {{passive:${pType}:${idx}}}`
+      : `프레임: {{passive:${pType}:${idx}}}`
     const pSinLabel = sinMap[p.sin_affinity] || p.sin_affinity || noneLabel
     const condHeader = lang === 'en' ? 'Condition' : lang === 'jp' ? '条件' : '조건'
     const descHeader = lang === 'en' ? 'Desc' : lang === 'jp' ? '説明' : '설명'
-    return `[${pTypeLabel}] ${passiveName}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
+    return `[${indexedLabel}] ${passiveName} — ${frameHint}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
   }).join('\n\n')
 
   const resSlash = RES_KR[identity.slash_res] || identity.slash_res || '-'
@@ -339,11 +429,11 @@ export async function POST(req: NextRequest) {
   const userPrompt = lang === 'en' ? `# Analysis Target
 Sinner: ${sinnerName}
 Identity: ${identityName} (${identity.rarity}★, Tier ${identity.tier})
-Keywords: ${(identity.keywords || []).join(', ')}
+Keywords: ${localizedKeywords.join(', ')}
 Resistance: ${resSlashLabel} ${resSlash} / ${resPierceLabel} ${resPierce} / ${resBluntLabel} ${resBlunt}
 
 # Keyword List (always use exact names from this list when mentioning keywords)
-${((identity.keywords || []) as string[]).map((kw: string) => `- ${kw}`).join('\n')}
+${localizedKeywords.map((kw: string) => `- ${kw}`).join('\n')}
 HP: ${identity.hp} / Speed: ${identity.speed_min}~${identity.speed_max} / Defense Level: ${identity.def_level}
 
 # Skills (Uptie 4)
@@ -362,11 +452,11 @@ Use "${sinnerName}" for the sinner name.`
   : lang === 'jp' ? `# 分析対象
 囚人: ${sinnerName}
 人格: ${identityName} (${identity.rarity}星, ティア ${identity.tier})
-キーワード: ${(identity.keywords || []).join(', ')}
+キーワード: ${localizedKeywords.join(', ')}
 耐性: ${resSlashLabel} ${resSlash} / ${resPierceLabel} ${resPierce} / ${resBluntLabel} ${resBlunt}
 
 # キーワード一覧 (キーワードに言及する際は必ずこのリストの正確な名前を使用してください)
-${((identity.keywords || []) as string[]).map((kw: string) => `- ${kw}`).join('\n')}
+${localizedKeywords.map((kw: string) => `- ${kw}`).join('\n')}
 HP: ${identity.hp} / 速度: ${identity.speed_min}~${identity.speed_max} / 防御レベル: ${identity.def_level}
 
 # スキル (4同期化)
@@ -432,19 +522,45 @@ When mentioning skills, identities, or passives, you MUST use chip syntax. Never
 - Defense Skill: [s:SinnerName:4] (single defense), [s:SinnerName:4:1] / [s:SinnerName:4:2] (multiple)
 - Passive: [p:PassiveName]
 
+### CRITICAL: Variant Skill Frames
+If a skill slot has multiple variants (e.g., S3-1 and S3-2), you MUST use variant frame syntax:
+- {{skill:3:1}} for the first variant
+- {{skill:3:2}} for the second variant
+NEVER use {{skill:3}} to show a variant skill. Each variant MUST have its own frame.
+When analyzing variant skills, always use the specific variant frame, not the generic slot frame.
+If the skill data labels a skill as S3-1 or S3-2, you MUST use {{skill:3:1}} or {{skill:3:2}} respectively.
+
 ### Component Syntax (UI Embeds)
 When explaining skills/passives, insert frames using:
-- {{skill:1}} — Skill 1 frame
-- {{skill:2}} — Skill 2 frame
-- {{skill:3}} — Skill 3 frame
+- {{skill:1}} — Skill 1 frame (no variants)
+- {{skill:2}} — Skill 2 frame (no variants)
+- {{skill:3}} — Skill 3 frame (only when NO variants exist)
+- {{skill:3:1}} — Skill 3 variant 1 frame (use this when S3-1 exists)
+- {{skill:3:2}} — Skill 3 variant 2 frame (use this when S3-2 exists)
 - {{skill:4}} — Defense skill frame
-- {{passive:battle}} — Battle passive card
-- {{passive:support}} — Support passive card
+- {{passive:battle}} — Battle passive card (when only one)
+- {{passive:support}} — Support passive card (when only one)
+- {{passive:battle:1}}, {{passive:battle:2}} — When an identity has multiple battle passives, use indexed syntax
+- {{passive:support:1}}, {{passive:support:2}} — When an identity has multiple support passives, use indexed syntax
+
+### CRITICAL: Passive Frame Usage
+- When an identity has multiple battle or support passives, use {{passive:TYPE:N}} to show each one (e.g., {{passive:battle:1}}, {{passive:battle:2}})
+- When only one passive of a type exists, {{passive:battle}} or {{passive:support}} is fine
+- NEVER use {{passive:battle}} when discussing the support passive
+- Each passive type must use its own frame syntax
+
+IMPORTANT: When the passive data below lists multiple passives of the same type (e.g., [Battle-1], [Battle-2], [Battle-3]), you MUST use indexed frame syntax for EACH passive:
+- {{passive:battle:1}} for the first battle passive
+- {{passive:battle:2}} for the second battle passive
+- {{passive:battle:3}} for the third battle passive
+NEVER use {{passive:battle}} without an index when multiple passives of the same type exist.
+
 Component syntax must be on its own line.
 
 ### Writing Rules
 - Keywords (Bleed, Tremor, etc.) should be plain text, no chip syntax
 - When mentioning keywords, use the exact full name from the "Keyword List"
+- IMPORTANT: Skill descriptions may contain Korean keyword names. Always translate them to the English names from the Keyword List. Never output Korean keyword names in your analysis.
 - No markdown formatting, no brackets except chip/component syntax
 - Keep analysis concise and practical
 - Write in English`
@@ -472,19 +588,44 @@ Component syntax must be on its own line.
 - 防御スキル: [s:囚人名:4]（1つの場合）、[s:囚人名:4:1] / [s:囚人名:4:2]（複数の場合）
 - パッシブ: [p:パッシブ名]
 
+### 重要：変形スキルフレーム（必ず遵守）
+スキルスロットに変形がある場合（例：S3-1、S3-2）、必ず変形フレーム構文を使用してください：
+- {{skill:3:1}} — 変形1
+- {{skill:3:2}} — 変形2
+{{skill:3}}で変形スキルを表示しないでください。各変形は必ず個別のフレームを使用してください。
+スキルデータにS3-1、S3-2のようなラベルがある場合、必ず{{skill:3:1}}、{{skill:3:2}}をそれぞれ使用してください。
+
 ### コンポーネント構文（UIエンベッド）
 スキル/パッシブを説明する際、以下の構文でフレームを挿入してください：
-- {{skill:1}} — スキル1フレーム
-- {{skill:2}} — スキル2フレーム
-- {{skill:3}} — スキル3フレーム
+- {{skill:1}} — スキル1フレーム（変形なし）
+- {{skill:2}} — スキル2フレーム（変形なし）
+- {{skill:3}} — スキル3フレーム（変形がない場合のみ使用）
+- {{skill:3:1}} — スキル3変形1フレーム（S3-1がある場合はこれを使用）
+- {{skill:3:2}} — スキル3変形2フレーム（S3-2がある場合はこれを使用）
 - {{skill:4}} — 防御スキルフレーム
-- {{passive:battle}} — バトルパッシブカード
-- {{passive:support}} — サポートパッシブカード
+- {{passive:battle}} — バトルパッシブカード（1つの場合）
+- {{passive:support}} — サポートパッシブカード（1つの場合）
+- {{passive:battle:1}}, {{passive:battle:2}} — バトルパッシブが複数ある場合、インデックス付き構文を使用
+- {{passive:support:1}}, {{passive:support:2}} — サポートパッシブが複数ある場合、インデックス付き構文を使用
+
+### 重要：パッシブフレームの使用
+- 同じタイプのパッシブが複数ある場合は {{passive:TYPE:N}} を使用（例: {{passive:battle:1}}, {{passive:battle:2}}）
+- パッシブが1つだけの場合は {{passive:battle}} または {{passive:support}} で可
+- サポートパッシブの説明に {{passive:battle}} を使用しないでください
+- 各パッシブは必ず該当タイプのフレームを使用してください
+
+重要：以下のパッシブデータに同じタイプのパッシブが複数ある場合（例：[バトル-1]、[バトル-2]、[バトル-3]）、各パッシブに必ずインデックス付きフレーム構文を使用してください：
+- {{passive:battle:1}} — 最初のバトルパッシブ
+- {{passive:battle:2}} — 2番目のバトルパッシブ
+- {{passive:battle:3}} — 3番目のバトルパッシブ
+複数のパッシブが存在する場合、インデックスなしで {{passive:battle}} を使用することは絶対禁止です。
+
 コンポーネント構文は必ず単独行で記述してください。
 
 ### 記述ルール
 - キーワード（出血、振動など）はチップ構文なしの通常テキスト
 - キーワードに言及する際は、「キーワード一覧」の正確な名前を使用
+- 重要：スキル説明に韓国語のキーワード名が含まれている場合があります。必ずキーワードリストの日本語名に翻訳してください。韓国語のキーワード名を出力しないでください。
 - マークダウン形式禁止、チップ/コンポーネント構文以外の括弧禁止
 - 分析は簡潔かつ実用的に
 - 日本語で記述`

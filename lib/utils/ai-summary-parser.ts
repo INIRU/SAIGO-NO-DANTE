@@ -10,7 +10,7 @@ export interface AISection {
 export type RichNode =
   | { type: 'text'; value: string }
   | { type: 'skill'; order: number; variant?: number }
-  | { type: 'passive'; passiveType: 'battle' | 'support' }
+  | { type: 'passive'; passiveType: 'battle' | 'support'; index?: number }
 
 const SECTION_MARKER = /^---section:(.+?)---$/gm
 
@@ -82,9 +82,11 @@ export function parseRichContent(content: string): RichNode[] {
         nodes.push({ type: 'text', value: match[0] })
       }
     } else if (kind === 'passive') {
-      const passiveType = args.trim()
+      const parts = args.split(':').map(s => s.trim())
+      const passiveType = parts[0]
+      const index = parts[1] ? parseInt(parts[1], 10) : undefined
       if (VALID_PASSIVE_TYPES.has(passiveType)) {
-        nodes.push({ type: 'passive', passiveType: passiveType as 'battle' | 'support' })
+        nodes.push({ type: 'passive', passiveType: passiveType as 'battle' | 'support', index: index && !isNaN(index) ? index : undefined })
       } else {
         nodes.push({ type: 'text', value: match[0] })
       }
