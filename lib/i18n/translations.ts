@@ -306,6 +306,7 @@ export const translations = {
 
   // Identity Passives Tab
   'identity.passives.preparing': { ko: '패시브 정보는 준비 중입니다.', en: 'Passive information is being prepared.', ja: 'パッシブ情報は準備中です。' },
+  'identity.passives.label': { ko: '패시브', en: 'Passive', ja: 'パッシブ' },
   'identity.passives.resonance': { ko: '공명', en: 'Resonance', ja: '共鳴' },
   'identity.passives.stock': { ko: '보유', en: 'Owned', ja: '保有' },
   'identity.passives.typeBattle': { ko: '전투', en: 'Battle', ja: '戦闘' },
