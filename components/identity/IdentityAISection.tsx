@@ -430,6 +430,8 @@ export default function IdentityAISection({
   isLoggedIn,
 }: IdentityAISectionProps) {
   const { lang, t } = useLanguage()
+  const langRef = useRef(lang)
+  langRef.current = lang
   const [summary, setSummary] = useState<string | null>(null)
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -471,7 +473,7 @@ export default function IdentityAISection({
       const res = await fetch('/api/identity-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identity_id: identityId, lang }),
+        body: JSON.stringify({ identity_id: identityId, lang: langRef.current }),
       })
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: 'AI generation failed' }))
@@ -499,7 +501,7 @@ export default function IdentityAISection({
     } finally {
       setGenerating(false)
     }
-  }, [identityId, lang])
+  }, [identityId]) // lang은 langRef로 접근 — deps에서 제외하여 무한 루프 방지
 
   // 섹션 파싱
   const sections = useMemo<AISection[]>(
