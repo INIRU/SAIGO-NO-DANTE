@@ -60,7 +60,7 @@ function AccordionSection({
     if (contentRef.current) {
       setMaxH(contentRef.current.scrollHeight)
     }
-  }, [children, isOpen])
+  }, [isOpen])
 
   return (
     <div style={{ marginBottom: '0.375rem' }}>
