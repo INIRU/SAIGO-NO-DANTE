@@ -299,7 +299,7 @@ function PassiveForm({
 
 export default function EditIdentityPage() {
   const params = useParams()
-  const id = params.id as string
+  const id = params?.id as string
   const router = useRouter()
   // Identity form state
   const [identity, setIdentity] = useState<Identity | null>(null)

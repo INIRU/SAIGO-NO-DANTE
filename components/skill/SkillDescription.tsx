@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
+import { useLanguage } from '@/lib/i18n'
 import CoinBadge from './CoinBadge'
 import { SKILL_DESC_STYLES, type SkillDescVariant } from './tokens'
 
@@ -10,6 +11,19 @@ interface CoinSection {
   coinNum: number
   isUnbreakable: boolean
   lines: string[]
+}
+
+const UNBREAKABLE_PATTERNS = ['파괴 불가 코인', 'Unbreakable Coin', '破壊不可コイン']
+
+function isUnbreakableText(text: string): boolean {
+  return UNBREAKABLE_PATTERNS.some(p => text === p || text.startsWith(p))
+}
+
+function stripUnbreakablePrefix(text: string): string {
+  for (const p of UNBREAKABLE_PATTERNS) {
+    if (text.startsWith(p)) return text.slice(p.length).trim()
+  }
+  return text
 }
 
 function parseDescription(description: string) {
@@ -21,15 +35,15 @@ function parseDescription(description: string) {
   let sawEmptyLine = false
 
   for (const line of lines) {
-    const coinMatch = line.match(/^\[코인\s?(\d+)\]\s*(.*)/)
+    const coinMatch = line.match(/^\[(코인|Coin|コイン)\s?(\d+)\]\s*(.*)/)
     if (coinMatch) {
-      currentCoin = { coinNum: parseInt(coinMatch[1]), isUnbreakable: false, lines: [] }
+      currentCoin = { coinNum: parseInt(coinMatch[2]), isUnbreakable: false, lines: [] }
       coinSections.push(currentCoin)
       sawEmptyLine = false
-      const content = coinMatch[2].trim()
-      if (content === '파괴 불가 코인' || content.startsWith('파괴 불가 코인')) {
+      const content = coinMatch[3].trim()
+      if (isUnbreakableText(content)) {
         currentCoin.isUnbreakable = true
-        const rest = content.replace(/^파괴 불가 코인\s*/, '').trim()
+        const rest = stripUnbreakablePrefix(content)
         if (rest) currentCoin.lines.push(rest)
       } else if (content) {
         currentCoin.lines.push(content)
@@ -71,6 +85,7 @@ export default function SkillDescription({
   level4Desc,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
+  const { t } = useLanguage()
   const styles = SKILL_DESC_STYLES[variant]
   const showBadges = showCoinBadges ?? variant !== 'tooltip'
 
@@ -144,7 +159,7 @@ export default function SkillDescription({
                       height={12}
                       style={{ width: '0.75rem', height: '0.75rem', filter: `drop-shadow(0 0 2px ${accentColor}60)` }}
                     />
-                    파괴 불가 코인
+                    {t('identity.skills.unbreakableCoin')}
                   </span>
                 )}
                 {coin.lines.map((line, li) => {
@@ -180,9 +195,9 @@ export default function SkillDescription({
                 return (
                   <div key={li}>
                     <div>
-                      {li === 0 && <span style={{ color: accentColor, fontWeight: 600 }}>[코인 {coin.coinNum}] </span>}
+                      {li === 0 && <span style={{ color: accentColor, fontWeight: 600 }}>[{t('identity.skills.coin')} {coin.coinNum}] </span>}
                       {coin.isUnbreakable && li === 0 && (
-                        <span style={{ fontWeight: 600 }}>파괴 불가 코인 </span>
+                        <span style={{ fontWeight: 600 }}>{t('identity.skills.unbreakableCoin')} </span>
                       )}
                       {formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}
                     </div>
@@ -201,8 +216,8 @@ export default function SkillDescription({
               })}
               {coin.lines.length === 0 && coin.isUnbreakable && (
                 <div>
-                  <span style={{ color: accentColor, fontWeight: 600 }}>[코인 {coin.coinNum}] </span>
-                  <span style={{ fontWeight: 600 }}>파괴 불가 코인</span>
+                  <span style={{ color: accentColor, fontWeight: 600 }}>[{t('identity.skills.coin')} {coin.coinNum}] </span>
+                  <span style={{ fontWeight: 600 }}>{t('identity.skills.unbreakableCoin')}</span>
                 </div>
               )}
             </>

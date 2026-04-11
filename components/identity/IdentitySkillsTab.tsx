@@ -12,6 +12,32 @@ import {
 import SkillDescription from '@/components/skill/SkillDescription'
 import SkillFrame from '@/components/identity/SkillFrame'
 import type { SkillDiff } from '@/lib/utils/uptie-diff'
+import { useLanguage } from '@/lib/i18n'
+
+/** 스킬명 배너 — SkillFrameBlock와 동일 패턴 (paddingRight + fit-content) */
+function SkillNameBanner({ name, sinColor }: { name: string; sinColor: string }) {
+  return (
+    <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
+      <div style={{
+        color: '#e8dcc8',
+        backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${sinColor}30 1.5em)`,
+      }}>
+        <div style={{
+          padding: '0.1em 0 0.1em 0.3em',
+          backgroundImage: `linear-gradient(290deg, transparent 2em, ${sinColor}40 2em, ${sinColor}40 2.12em, transparent 2.12em, transparent 2.24em, ${sinColor}40 2.24em, ${sinColor}40 2.36em, transparent 2.36em, transparent 2.48em, ${sinColor}40 2.48em, ${sinColor}40 2.6em, transparent 2.6em, transparent 2.72em, ${sinColor}40 2.72em)`,
+          textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
+        }}>
+          <span className="font-bold whitespace-nowrap" style={{
+            fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
+            paddingRight: '3.5em',
+          }}>
+            {name}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const SIN_FRAME_MAP: Record<string, string> = {
   wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
@@ -54,6 +80,11 @@ export default function IdentitySkillsTab({
   showDiff,
   onToggleDiff,
 }: IdentitySkillsTabProps) {
+  const { lang, t } = useLanguage()
+  const localSkillName = (s: Skill) =>
+    lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
+  const localSkillDesc = (s: Skill) =>
+    lang === 'en' && s.description_en ? s.description_en : lang === 'ja' && s.description_jp ? s.description_jp : s.description
 
   if (filteredSkills.length === 0) {
     return (
@@ -61,7 +92,7 @@ export default function IdentitySkillsTab({
         className="card p-8 text-center"
         style={{ color: '#999', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
       >
-        <p className="font-serif text-lg">스킬 정보는 준비 중입니다.</p>
+        <p className="font-serif text-lg">{t('identity.skills.preparing')}</p>
       </div>
     )
   }
@@ -70,7 +101,7 @@ export default function IdentitySkillsTab({
     <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
-          스킬
+          {t('identity.skills')}
         </h2>
         {onToggleDiff && (
           <button
@@ -89,7 +120,7 @@ export default function IdentitySkillsTab({
               height={157}
               style={{ width: '0.5625rem', height: 'auto', opacity: showDiff ? 0.9 : 0.4 }}
             />
-            4동기화 변경점
+            {t('identity.skills.uptie4Diff')}
           </button>
         )}
       </div>
@@ -202,32 +233,14 @@ export default function IdentitySkillsTab({
                       return (
                         <Image key={ci}
                           src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
-                          alt={isUb ? '파괴 불가 코인' : '코인'} width={16} height={16}
+                          alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')} width={16} height={16}
                           className="w-3 h-3 sm:w-4 sm:h-4"
                         />
                       )
                     })}
                   </div>
-                  {/* 스킬명 배너 (사선 꼬리, fit-content) */}
-                  <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
-                    <div style={{
-                      color: '#e8dcc8',
-                      backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${skillSinColor}30 1.5em)`,
-                    }}>
-                      <div style={{
-                        padding: '0.1em 0 0.1em 0.3em',
-                        backgroundImage: `linear-gradient(290deg, transparent 2.5em, ${skillSinColor}40 2.5em, ${skillSinColor}40 2.65em, transparent 2.65em, transparent 2.8em, ${skillSinColor}40 2.8em, ${skillSinColor}40 2.95em, transparent 2.95em, transparent 3.1em, ${skillSinColor}40 3.1em, ${skillSinColor}40 3.25em, transparent 3.25em, transparent 3.4em, ${skillSinColor}40 3.4em)`,
-                        textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
-                      }}>
-                        <span className="font-bold whitespace-nowrap" style={{
-                          fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
-                          paddingRight: '2em',
-                        }}>
-                          {skill.name}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* 스킬명 배너 (사선 꼬리, pretext 기반 동적 너비) */}
+                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} />
                   {/* 공격 레벨 + 가중치 */}
                   <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
                     {skill.offense_level != null && (
@@ -242,7 +255,7 @@ export default function IdentitySkillsTab({
                     )}
                     {isAttackSkill && (
                       <div className="flex items-center gap-1.5">
-                        <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>공격 가중치</span>
+                        <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>{t('identity.skills.atkWeight')}</span>
                         <div className="flex gap-0.5">
                           {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
                             <div key={i} style={{ width: '0.5rem', height: '0.5rem', background: '#c8900a', borderRadius: '0.1rem' }} />
@@ -257,7 +270,7 @@ export default function IdentitySkillsTab({
               {/* 스킬 설명 */}
               {skill.description && (
                 <SkillDescription
-                  description={skill.description}
+                  description={localSkillDesc(skill)}
                   accentColor={skillSinColor}
                   variant="detail"
                   skillNameColors={skillNameColors}
@@ -291,11 +304,11 @@ export default function IdentitySkillsTab({
                   />
                 </div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold" style={{ color: skillSinColor }}>{skill.name}</span>
+                  <span className="text-xs font-bold" style={{ color: skillSinColor }}>{localSkillName(skill)}</span>
                   <span className="text-xs" style={{ color: '#555' }}>{SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}</span>
                 </div>
                 <SkillDescription
-                  description={skill.description}
+                  description={localSkillDesc(skill)}
                   accentColor={skillSinColor}
                   variant="detail"
                   skillNameColors={skillNameColors}

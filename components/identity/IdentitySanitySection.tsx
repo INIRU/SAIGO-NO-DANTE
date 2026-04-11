@@ -1,6 +1,9 @@
+'use client'
+
 import Image from 'next/image'
 import type { SanityCondition, PanicType } from '@/lib/types'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { useLanguage } from '@/lib/i18n'
 
 interface IdentitySanitySectionProps {
   sanityConditions: SanityCondition[]
@@ -94,6 +97,15 @@ function renderSanityText(text: string, bulletColor?: string): React.ReactNode {
 }
 
 export default function IdentitySanitySection({ sanityConditions, panicInfo }: IdentitySanitySectionProps) {
+  const { t, lang } = useLanguage()
+
+  /** Pick the localized string, falling back to KR. */
+  const localText = (kr: string, en?: string | null, jp?: string | null) => {
+    if (lang === 'en' && en) return en
+    if (lang === 'ja' && jp) return jp
+    return kr
+  }
+
   if (!panicInfo && sanityConditions.length === 0) {
     return null
   }
@@ -101,6 +113,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
   const increaseConditions = sanityConditions.filter(c => c.condition_type === 'increase')
   const decreaseConditions = sanityConditions.filter(c => c.condition_type === 'decrease')
 
+  // Use KR name for image check (ID 9994 is always '사랑과 증오' in DB)
   const panicImageUrl =
     panicInfo?.name === '사랑과 증오' ? BRAIN_LOVE_HATE_URL : BRAIN_URL
 
@@ -111,7 +124,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
         className="font-serif font-light mb-5"
         style={{ color: 'var(--gold)', fontSize: '1rem', letterSpacing: '0.08em' }}
       >
-        패닉
+        {t('identity.panic')}
       </h2>
 
       <div className="space-y-4">
@@ -131,7 +144,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                   fontFamily: 'var(--font-heading)',
                 }}
               >
-                패닉 타입
+                {t('identity.sanity.panicType')}
               </span>
             </div>
 
@@ -139,7 +152,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
               <div className="flex-shrink-0">
                 <Image
                   src={panicImageUrl}
-                  alt="패닉"
+                  alt="panic"
                   width={88}
                   height={88}
                   style={{
@@ -161,7 +174,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                     fontFamily: 'var(--font-heading)',
                   }}
                 >
-                  · 패닉 효과
+                  · {t('identity.sanity.panicEffect')}
                 </div>
                 {panicInfo.description && (
                   <p
@@ -171,7 +184,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                       lineHeight: 1.75,
                     }}
                   >
-                    {panicInfo.description}
+                    {localText(panicInfo.description, panicInfo.description_en, panicInfo.description_jp)}
                   </p>
                 )}
               </div>
@@ -186,7 +199,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                 textShadow: '0 0 16px rgba(220,60,60,0.35)',
               }}
             >
-              {panicInfo.name}
+              {localText(panicInfo.name, panicInfo.name_en, panicInfo.name_jp)}
             </div>
           </div>
         )}
@@ -225,7 +238,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                   fontFamily: 'var(--font-heading)',
                 }}
               >
-                기본 정신력 증가 조건
+                {t('identity.sanity.increaseCondition')}
               </span>
             </div>
 
@@ -240,7 +253,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
             >
               {increaseConditions.map((c, i) => (
                 <div key={`inc-${i}`}>
-                  {renderSanityText(c.text, '#80c9ff')}
+                  {renderSanityText(localText(c.text, c.text_en, c.text_jp), '#80c9ff')}
                 </div>
               ))}
             </div>
@@ -281,7 +294,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                   fontFamily: 'var(--font-heading)',
                 }}
               >
-                기본 정신력 감소 조건
+                {t('identity.sanity.decreaseCondition')}
               </span>
             </div>
 
@@ -296,7 +309,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
             >
               {decreaseConditions.map((c, i) => (
                 <div key={`dec-${i}`}>
-                  {renderSanityText(c.text, '#fe4b48')}
+                  {renderSanityText(localText(c.text, c.text_en, c.text_jp), '#fe4b48')}
                 </div>
               ))}
             </div>

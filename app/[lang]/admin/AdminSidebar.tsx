@@ -24,7 +24,7 @@ export default function AdminSidebar() {
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
-    return pathname.startsWith(href)
+    return pathname?.startsWith(href) ?? false
   }
 
   // 경로 변경 시 모바일 드로어 닫기

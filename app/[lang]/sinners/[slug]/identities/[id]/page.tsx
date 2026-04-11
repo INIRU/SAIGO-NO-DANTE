@@ -8,27 +8,34 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import IdentityDetailClient from './IdentityDetailClient'
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import { serverT } from '@/lib/i18n/server'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string; id: string }>
+  params: Promise<{ lang: string; slug: string; id: string }>
 }): Promise<Metadata> {
-  const { slug, id } = await params
+  const { lang: rawLang, slug, id } = await params
+  const lang = (['ko', 'en', 'ja'].includes(rawLang) ? rawLang : 'ko') as SupportedLang
   const [sinner, identity] = await Promise.all([
     getSinnerById(slug),
     getIdentityById(id),
   ])
-  if (!sinner || !identity) return { title: '인격을 찾을 수 없습니다', robots: { index: false } }
+  if (!sinner || !identity) return { title: serverT('identity.notFound', lang), robots: { index: false } }
 
-  const rarityStr = identity.rarity === 3 ? '000등급' : identity.rarity === 2 ? '00등급' : '0등급'
+  const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
+  const identityName = getLocalizedName(identity, lang)
+  const rarityStr = identity.rarity === 3 ? serverT('identity.rarity.3', lang) : identity.rarity === 2 ? serverT('identity.rarity.2', lang) : serverT('identity.rarity.1', lang)
   const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
-  const description = `${sinner.name_kr} ${identity.name_kr} — ${rarityStr}${keywordsStr ? `, 키워드: ${keywordsStr}` : ''}. 스킬, 패시브, 스탯 정보.`
+  const descSuffix = serverT('identity.meta.description', lang)
+  const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
   const imageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
-  const canonical = `${SITE_URL}/sinners/${slug}/identities/${id}`
-  const pageTitle = `${identity.name_kr} | ${sinner.name_kr} | SAIGO NO DANTE`
+  const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
+  const pageTitle = `${identityName} | ${sinnerName} | SAIGO NO DANTE`
 
   return {
     title: { absolute: pageTitle },
@@ -39,7 +46,7 @@ export async function generateMetadata({
       description,
       url: canonical,
       type: 'article',
-      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512, alt: `${identity.name_kr} — ${sinner.name_kr} 인격 이미지` }] } : {}),
+      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512, alt: `${identityName} — ${sinnerName}` }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
@@ -53,9 +60,10 @@ export async function generateMetadata({
 export default async function IdentityPage({
   params,
 }: {
-  params: Promise<{ slug: string; id: string }>
+  params: Promise<{ lang: string; slug: string; id: string }>
 }) {
-  const { slug, id } = await params
+  const { lang: rawLang, slug, id } = await params
+  const lang = (['ko', 'en', 'ja'].includes(rawLang) ? rawLang : 'ko') as SupportedLang
   const [sinner, identity] = await Promise.all([
     getSinnerById(slug),
     getIdentityById(id),
@@ -91,6 +99,7 @@ export default async function IdentityPage({
       .from('identity_guides')
       .select('id, title, content, updated_at, author_id')
       .eq('identity_id', identity.id)
+      .eq('lang', lang)
       .order('created_at', { ascending: true })
     if (guidesError) console.error('Failed to fetch identity guides:', guidesError)
     if (data && data.length > 0) {
@@ -111,21 +120,23 @@ export default async function IdentityPage({
     }
   } catch { /* guide fetch failed, continue without it */ }
 
-  const canonical = `${SITE_URL}/sinners/${slug}/identities/${id}`
+  const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
   const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
+  const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
+  const identityName = getLocalizedName(identity, lang)
 
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
-        { name: '홈', url: SITE_URL },
-        { name: '수감자', url: `${SITE_URL}/sinners` },
-        { name: sinner.name_kr, url: `${SITE_URL}/sinners/${slug}` },
-        { name: identity.name_kr, url: canonical },
+        { name: serverT('nav.home', lang), url: SITE_URL },
+        { name: serverT('nav.sinners', lang), url: `${SITE_URL}/${lang}/sinners` },
+        { name: sinnerName, url: `${SITE_URL}/${lang}/sinners/${slug}` },
+        { name: identityName, url: canonical },
       ])} />
       {identityImageUrl && (
         <JsonLd data={gameCharacterJsonLd({
-          name: `${identity.name_kr} — ${sinner.name_kr}`,
-          description: `${sinner.name_kr}의 ${identity.name_kr} 인격. Limbus Company 수감자 인격 정보.`,
+          name: `${identityName} — ${sinnerName}`,
+          description: `${sinnerName} ${identityName}. Limbus Company.`,
           image: identityImageUrl,
           url: canonical,
           siteUrl: SITE_URL,

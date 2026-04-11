@@ -10,6 +10,8 @@ import SkillDescription from '@/components/skill/SkillDescription'
 import { splitSections, parseRichContent, type AISection } from '@/lib/utils/ai-summary-parser'
 import { SIN_COLORS, SKILL_TYPE_LABELS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import { getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { useLanguage } from '@/lib/i18n'
+import type { TranslationKey } from '@/lib/i18n/translations'
 import type { Skill, Passive, Identity } from '@/lib/types'
 
 interface IdentityAISectionProps {
@@ -30,15 +32,15 @@ interface IdentityAISectionProps {
   isLoggedIn?: boolean
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (key: TranslationKey) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '방금 전'
-  if (mins < 60) return `${mins}분 전`
+  if (mins < 1) return t('identity.timeAgo.justNow')
+  if (mins < 60) return `${mins}${t('identity.timeAgo.minutesAgo')}`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}시간 전`
+  if (hours < 24) return `${hours}${t('identity.timeAgo.hoursAgo')}`
   const days = Math.floor(hours / 24)
-  return `${days}일 전`
+  return `${days}${t('identity.timeAgo.daysAgo')}`
 }
 
 /* ─── 아코디언 섹션 ─── */
@@ -427,6 +429,7 @@ export default function IdentityAISection({
   identity,
   isLoggedIn,
 }: IdentityAISectionProps) {
+  const { lang, t } = useLanguage()
   const [summary, setSummary] = useState<string | null>(null)
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -434,12 +437,13 @@ export default function IdentityAISection({
   const [error, setError] = useState<string | null>(null)
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0]))
 
-  // 캐시 조회
+  // 캐시 조회 (lang 변경 시에도 재조회)
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
     ;(async () => {
       try {
-        const res = await fetch(`/api/identity-ai?identity_id=${identityId}`)
+        const res = await fetch(`/api/identity-ai?identity_id=${identityId}&lang=${lang}`)
         if (!res.ok) throw new Error('fetch failed')
         const data = await res.json()
         if (!cancelled) {
@@ -447,13 +451,16 @@ export default function IdentityAISection({
           setCreatedAt(data.created_at)
         }
       } catch {
-        // 캐시 없으면 무시
+        if (!cancelled) {
+          setSummary(null)
+          setCreatedAt(null)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     })()
     return () => { cancelled = true }
-  }, [identityId])
+  }, [identityId, lang])
 
   // AI 생성 (스트리밍)
   const generate = useCallback(async () => {
@@ -464,11 +471,11 @@ export default function IdentityAISection({
       const res = await fetch('/api/identity-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identity_id: identityId }),
+        body: JSON.stringify({ identity_id: identityId, lang }),
       })
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: 'AI 생성 실패' }))
-        throw new Error(errData.error || 'AI 생성 실패')
+        const errData = await res.json().catch(() => ({ error: 'AI generation failed' }))
+        throw new Error(errData.error || 'AI generation failed')
       }
 
       const reader = res.body?.getReader()
@@ -488,11 +495,11 @@ export default function IdentityAISection({
       setCreatedAt(new Date().toISOString())
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      setError(message || 'AI 생성 중 오류가 발생했습니다.')
+      setError(message || 'AI generation error')
     } finally {
       setGenerating(false)
     }
-  }, [identityId])
+  }, [identityId, lang])
 
   // 섹션 파싱
   const sections = useMemo<AISection[]>(
@@ -520,7 +527,7 @@ export default function IdentityAISection({
       <div className="card p-6" style={{ border: `1px solid ${sinColor}15` }}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles style={{ width: '1rem', height: '1rem', color: sinColor }} />
-          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>AI 분석</span>
+          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai')}</span>
         </div>
         <div className="flex items-center justify-center py-6" style={{ color: '#555' }}>
           <Loader2 className="animate-spin" style={{ width: '1.25rem', height: '1.25rem' }} />
@@ -535,11 +542,11 @@ export default function IdentityAISection({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sparkles style={{ width: '1rem', height: '1rem', color: sinColor }} />
-          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>AI 분석</span>
+          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai')}</span>
         </div>
         {createdAt && (
           <span style={{ color: '#555', fontSize: '0.75rem' }}>
-            {timeAgo(createdAt)} 생성
+            {timeAgo(createdAt, t)} {t('identity.ai.created')}
           </span>
         )}
       </div>
@@ -581,7 +588,7 @@ export default function IdentityAISection({
             {generating ? (
               <span className="flex items-center gap-1.5" style={{ color: sinColor, fontSize: '0.75rem' }}>
                 <Loader2 className="animate-spin" style={{ width: '0.75rem', height: '0.75rem' }} />
-                스트리밍 중...
+                {t('identity.ai.streaming')}
               </span>
             ) : (
               (() => {
@@ -594,7 +601,7 @@ export default function IdentityAISection({
                 return (
                   <>
                     <span className="min-w-0" style={{ color: '#555', fontSize: '0.6875rem' }}>
-                      AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.
+                      {t('identity.ai.disclaimer')}
                     </span>
                     {canRegenerate && (
                       <button
@@ -610,7 +617,7 @@ export default function IdentityAISection({
                         onMouseLeave={e => { e.currentTarget.style.color = '#666' }}
                       >
                         <RefreshCw style={{ width: '0.75rem', height: '0.75rem' }} />
-                        재생성
+                        {t('identity.ai.regenerate')}
                       </button>
                     )}
                   </>
@@ -622,7 +629,7 @@ export default function IdentityAISection({
       ) : (
         <div className="text-center py-6">
           <p style={{ color: '#666', fontSize: '0.8125rem', marginBottom: '1rem' }}>
-            AI가 이 인격의 스킬, 운영법, 추천 편성을 분석하여 요약합니다.
+            {t('identity.ai.description')}
           </p>
 
           {error && (
@@ -648,12 +655,12 @@ export default function IdentityAISection({
             {generating ? (
               <>
                 <Loader2 className="animate-spin" style={{ width: '1rem', height: '1rem' }} />
-                AI 분석 중...
+                {t('identity.ai.generating')}
               </>
             ) : (
               <>
                 <Sparkles style={{ width: '1rem', height: '1rem' }} />
-                AI 분석 생성하기
+                {t('identity.ai.generate')}
               </>
             )}
           </button>

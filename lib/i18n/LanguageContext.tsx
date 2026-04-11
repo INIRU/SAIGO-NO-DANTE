@@ -39,24 +39,23 @@ export function LanguageProvider({ children, initialLang }: LanguageProviderProp
   const [lang, setLangState] = useState<SupportedLang>(initialLang ?? DEFAULT_LANG);
 
   useEffect(() => {
-    // On mount: sync localStorage/cookie. If no stored pref, detect browser language.
-    const stored = localStorage.getItem('preferred_lang');
-    if (stored && VALID_LANGS.includes(stored as SupportedLang)) {
-      const validLang = stored as SupportedLang;
-      if (validLang !== lang) setLangState(validLang);
-      setCookieAndAttr(validLang);
-    } else if (!initialLang || initialLang === DEFAULT_LANG) {
-      // First visit without cookie: detect browser language
-      const detected = detectBrowserLang();
-      setLangState(detected);
-      localStorage.setItem('preferred_lang', detected);
-      setCookieAndAttr(detected);
+    // [lang] URL param is the source of truth.
+    // Sync localStorage/cookie TO the URL lang, not the other way around.
+    if (initialLang && VALID_LANGS.includes(initialLang)) {
+      localStorage.setItem('preferred_lang', initialLang);
+      setCookieAndAttr(initialLang);
     } else {
-      // Server already detected from Accept-Language → persist it
-      localStorage.setItem('preferred_lang', lang);
-      setCookieAndAttr(lang);
+      // No valid [lang] in URL (shouldn't happen, but fallback)
+      const stored = localStorage.getItem('preferred_lang');
+      if (stored && VALID_LANGS.includes(stored as SupportedLang)) {
+        setCookieAndAttr(stored as SupportedLang);
+      } else {
+        const detected = detectBrowserLang();
+        localStorage.setItem('preferred_lang', detected);
+        setCookieAndAttr(detected);
+      }
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialLang]);
 
   const setLang = useCallback((newLang: SupportedLang) => {
     setLangState(newLang);

@@ -17,13 +17,19 @@ export type SanityCondition = {
   template_id: string
   condition_type: 'increase' | 'decrease'
   text: string
+  text_en?: string | null
+  text_jp?: string | null
   sort_order: number
 }
 
 export type PanicType = {
   id: number
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   description: string
+  description_en?: string | null
+  description_jp?: string | null
 }
 
 export type Identity = {
@@ -86,6 +92,10 @@ export type Skill = {
   quantity?: number
   uptie_level?: number
   variant_order?: number
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 
 export type Passive = {
@@ -99,6 +109,10 @@ export type Passive = {
   description: string
   passive_order: number
   uptie_level?: number
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 
 export type EGOSkill = {

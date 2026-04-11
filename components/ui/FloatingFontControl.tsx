@@ -25,7 +25,7 @@ const layoutSpring = { type: 'spring', stiffness: 500, damping: 35 } as const
 
 export default function FloatingFontControl() {
   const pathname = usePathname()
-  const allowed = isAllowedPage(pathname)
+  const allowed = isAllowedPage(pathname ?? '')
   const [fontSize, setFontSize] = useState<FontSize>('default')
   // Controls whether the panel is visible at all (entrance delay)
   const [mounted, setMounted] = useState(false)

@@ -43,7 +43,7 @@ export default function MypageClient() {
   const searchParams = useSearchParams()
 
   const [activeTab, setActiveTab] = useState<MypageTab>(() => {
-    const param = searchParams.get('tab')
+    const param = searchParams?.get('tab')
     if (param && ['profile', 'decks', 'planner', 'collection'].includes(param)) return param as MypageTab
     return 'profile'
   })

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, STORAGE_BASE } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
 import type { PassiveDiff } from '@/lib/utils/uptie-diff'
+import { useLanguage } from '@/lib/i18n'
 
 interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
@@ -15,6 +16,11 @@ interface IdentityPassivesTabProps {
 }
 
 export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives }: IdentityPassivesTabProps) {
+  const { lang, t } = useLanguage()
+  const localPassiveName = (p: Passive) =>
+    lang === 'en' && p.name_en ? p.name_en : lang === 'ja' && p.name_jp ? p.name_jp : p.name
+  const localPassiveDesc = (p: Passive) =>
+    lang === 'en' && p.description_en ? p.description_en : lang === 'ja' && p.description_jp ? p.description_jp : p.description
 
   if (filteredPassives.length === 0) {
     return (
@@ -23,7 +29,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
         style={{ color: '#999', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
       >
         <p className="font-serif text-lg">
-          패시브 정보는 준비 중입니다.
+          {t('identity.passives.preparing')}
         </p>
       </div>
     )
@@ -54,7 +60,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
                 fontSize: '1.0625rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
                 paddingRight: '5.5em',
               }}>
-                {p.name}
+                {localPassiveName(p)}
               </span>
             </div>
           </div>
@@ -87,7 +93,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
                 className="font-bold"
                 style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}
               >
-                {p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : p.active_cond}
+                {p.active_cond === 'resonance' ? t('identity.passives.resonance') : p.active_cond === 'stock' ? t('identity.passives.stock') : p.active_cond}
               </span>
             )}
           </div>
@@ -96,7 +102,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
         {/* 설명 */}
         {p.description && (
           <SkillDescription
-            description={p.description}
+            description={localPassiveDesc(p)}
             accentColor={primaryColor}
             variant="detail"
             skillNameColors={skillNameColors}
@@ -140,7 +146,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
 
       {battlePassives.length > 0 && (
         <div className="mb-6">
-          <SectionBadge>패시브</SectionBadge>
+          <SectionBadge>{t('identity.passives.battle')}</SectionBadge>
           <div className="divide-y divide-white/5 space-y-4">
             {battlePassives.map(renderPassive)}
           </div>
@@ -149,7 +155,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
 
       {supportPassives.length > 0 && (
         <div>
-          <SectionBadge>서포트 패시브</SectionBadge>
+          <SectionBadge>{t('identity.passives.support')}</SectionBadge>
           <div className="divide-y divide-white/5 space-y-4">
             {supportPassives.map(renderPassive)}
           </div>
@@ -177,11 +183,11 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
                   />
                 </div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold" style={{ color: pColor }}>{p.name}</span>
-                  <span className="text-xs" style={{ color: '#555' }}>{p.passive_type === 'battle' ? '전투' : '서포트'}</span>
+                  <span className="text-xs font-bold" style={{ color: pColor }}>{localPassiveName(p)}</span>
+                  <span className="text-xs" style={{ color: '#555' }}>{p.passive_type === 'battle' ? t('identity.passives.typeBattle') : t('identity.passives.typeSupport')}</span>
                 </div>
                 <SkillDescription
-                  description={p.description}
+                  description={localPassiveDesc(p)}
                   accentColor={pColor}
                   variant="detail"
                   skillNameColors={skillNameColors}

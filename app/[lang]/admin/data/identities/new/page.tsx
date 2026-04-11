@@ -65,7 +65,7 @@ export default function NewIdentityPage() {
   } = useForm<IdentityFormValues>({
     resolver: zodResolver(createIdentitySchema) as any,
     defaultValues: {
-      sinner_id: searchParams.get('sinner') ?? '',
+      sinner_id: searchParams?.get('sinner') ?? '',
       name: '',
       name_kr: '',
       rarity: '',

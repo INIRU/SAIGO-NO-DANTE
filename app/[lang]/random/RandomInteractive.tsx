@@ -17,7 +17,7 @@ type Props = {
  */
 export default function RandomInteractive({ sinners, identities, egos }: Props) {
   const searchParams = useSearchParams()
-  const urlCode = searchParams.get('code') ?? undefined
+  const urlCode = searchParams?.get('code') ?? undefined
 
   return (
     <RandomClient

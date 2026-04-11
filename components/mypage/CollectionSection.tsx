@@ -144,7 +144,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
           }
         } else {
           // db 모드: URL 파라미터 또는 DB 저장값
-          const code = searchParams.get('collection') || savedCode
+          const code = searchParams?.get('collection') || savedCode
           if (code && d.sinners.length > 0) {
             const decoded = await decodeCollectionAsync(code, d.sinners, d.identities, d.egos)
             setOwned(decoded)
