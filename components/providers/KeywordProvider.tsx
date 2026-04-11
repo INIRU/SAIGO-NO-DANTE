@@ -326,7 +326,9 @@ function formatSkillDescInner(
     // 1. [대괄호] / 【대괄호】 패턴
     const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
-      parts.push({ text: bracketMatch[0], type: 'bracket' })
+      const inner = bracketMatch[1] || bracketMatch[2]
+      const krKey = localToKr?.[inner] ?? (localToKr?.[bracketMatch[0]] ? localToKr[bracketMatch[0]] : undefined)
+      parts.push({ text: bracketMatch[0], type: 'bracket', krKey })
       prevChar = bracketMatch[0][bracketMatch[0].length - 1]
       remaining = remaining.slice(bracketMatch[0].length)
       continue
