@@ -60,12 +60,14 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
 - {{skill:3:1}} — 스킬 3 변형 1 프레임 (S3-1이 있으면 반드시 이것을 사용)
 - {{skill:3:2}} — 스킬 3 변형 2 프레임 (S3-2이 있으면 반드시 이것을 사용)
 - {{skill:4}} — 수비 스킬 프레임 (있는 경우)
-- {{passive:battle}} — 전투 패시브 카드
-- {{passive:support}} — 서포트 패시브 카드
+- {{passive:battle}} — 전투 패시브 카드 (1개일 때)
+- {{passive:support}} — 서포트 패시브 카드 (1개일 때)
+- {{passive:battle:1}}, {{passive:battle:2}} — 전투 패시브가 여러 개일 때 각각 표시
+- {{passive:support:1}}, {{passive:support:2}} — 서포트 패시브가 여러 개일 때 각각 표시
 
 ### 중요: 패시브 프레임 사용
-- {{passive:battle}} 은 전투 패시브에만 사용
-- {{passive:support}} 는 서포트 패시브에만 사용
+- 같은 타입의 패시브가 여러 개일 때는 {{passive:TYPE:N}} 형식을 사용 (예: {{passive:battle:1}}, {{passive:battle:2}})
+- 패시브가 1개뿐이면 {{passive:battle}} 또는 {{passive:support}} 사용 가능
 - 서포트 패시브를 설명할 때 {{passive:battle}} 절대 금지
 - 각 패시브는 반드시 해당 타입의 프레임을 사용하세요
 
@@ -380,16 +382,27 @@ export async function POST(req: NextRequest) {
     return `[${orderLabel}] ${skillName} (${chipLabel}: ${chipToken})\n${typeHeader}: ${typeLabel} / ${sinHeader}: ${sinLabel} / ${powerHeader}: ${s.base_power} / ${coinsHeader}: ${s.coins}${coinsUnit} (${coinSign}) / ${offHeader}: ${s.offense_level || '-'}\n${descHeader}: ${skillDesc || noneLabel}`
   }).join('\n\n')
 
+  // Group passives by type and add sequential index
+  const passivesByType = new Map<string, typeof passives>()
+  for (const p of passives) {
+    const key = p.passive_type || 'battle'
+    if (!passivesByType.has(key)) passivesByType.set(key, [])
+    passivesByType.get(key)!.push(p)
+  }
+
   const passivesText = passives.map(p => {
     const passiveName = lang === 'en' ? (p.name_en || p.name) : lang === 'jp' ? (p.name_jp || p.name) : p.name
     const passiveDesc = kwReplaceFn(lang === 'en' ? (p.description_en || p.description) : lang === 'jp' ? (p.description_jp || p.description) : p.description)
     const pTypeLabel = p.passive_type === 'battle'
       ? (lang === 'en' ? 'Battle' : lang === 'jp' ? 'バトル' : '전투')
       : (lang === 'en' ? 'Support' : lang === 'jp' ? 'サポート' : '서포트')
+    const typeGroup = passivesByType.get(p.passive_type || 'battle') || []
+    const idx = typeGroup.indexOf(p) + 1
+    const indexedLabel = typeGroup.length > 1 ? `${pTypeLabel}-${idx}` : pTypeLabel
     const pSinLabel = sinMap[p.sin_affinity] || p.sin_affinity || noneLabel
     const condHeader = lang === 'en' ? 'Condition' : lang === 'jp' ? '条件' : '조건'
     const descHeader = lang === 'en' ? 'Desc' : lang === 'jp' ? '説明' : '설명'
-    return `[${pTypeLabel}] ${passiveName}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
+    return `[${indexedLabel}] ${passiveName}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
   }).join('\n\n')
 
   const resSlash = RES_KR[identity.slash_res] || identity.slash_res || '-'
@@ -514,12 +527,14 @@ When explaining skills/passives, insert frames using:
 - {{skill:3:1}} — Skill 3 variant 1 frame (use this when S3-1 exists)
 - {{skill:3:2}} — Skill 3 variant 2 frame (use this when S3-2 exists)
 - {{skill:4}} — Defense skill frame
-- {{passive:battle}} — Battle passive card
-- {{passive:support}} — Support passive card
+- {{passive:battle}} — Battle passive card (when only one)
+- {{passive:support}} — Support passive card (when only one)
+- {{passive:battle:1}}, {{passive:battle:2}} — When an identity has multiple battle passives, use indexed syntax
+- {{passive:support:1}}, {{passive:support:2}} — When an identity has multiple support passives, use indexed syntax
 
 ### CRITICAL: Passive Frame Usage
-- Use {{passive:battle}} ONCE for the battle passive
-- Use {{passive:support}} ONCE for the support passive
+- When an identity has multiple battle or support passives, use {{passive:TYPE:N}} to show each one (e.g., {{passive:battle:1}}, {{passive:battle:2}})
+- When only one passive of a type exists, {{passive:battle}} or {{passive:support}} is fine
 - NEVER use {{passive:battle}} when discussing the support passive
 - Each passive type must use its own frame syntax
 
@@ -571,12 +586,14 @@ Component syntax must be on its own line.
 - {{skill:3:1}} — スキル3変形1フレーム（S3-1がある場合はこれを使用）
 - {{skill:3:2}} — スキル3変形2フレーム（S3-2がある場合はこれを使用）
 - {{skill:4}} — 防御スキルフレーム
-- {{passive:battle}} — バトルパッシブカード
-- {{passive:support}} — サポートパッシブカード
+- {{passive:battle}} — バトルパッシブカード（1つの場合）
+- {{passive:support}} — サポートパッシブカード（1つの場合）
+- {{passive:battle:1}}, {{passive:battle:2}} — バトルパッシブが複数ある場合、インデックス付き構文を使用
+- {{passive:support:1}}, {{passive:support:2}} — サポートパッシブが複数ある場合、インデックス付き構文を使用
 
 ### 重要：パッシブフレームの使用
-- {{passive:battle}} はバトルパッシブにのみ使用
-- {{passive:support}} はサポートパッシブにのみ使用
+- 同じタイプのパッシブが複数ある場合は {{passive:TYPE:N}} を使用（例: {{passive:battle:1}}, {{passive:battle:2}}）
+- パッシブが1つだけの場合は {{passive:battle}} または {{passive:support}} で可
 - サポートパッシブの説明に {{passive:battle}} を使用しないでください
 - 各パッシブは必ず該当タイプのフレームを使用してください
 

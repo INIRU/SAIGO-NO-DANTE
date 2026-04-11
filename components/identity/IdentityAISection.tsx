@@ -313,15 +313,17 @@ function SkillEmbed({
 
 /* ─── 패시브 임베드 (원본 IdentityPassivesTab 구조 재사용) ─── */
 function PassiveEmbed({
-  passiveType, passives, allowedKeywords, t, lang,
+  passiveType, passives, allowedKeywords, t, lang, index,
 }: {
   passiveType: 'battle' | 'support'
   passives: Passive[]
   allowedKeywords?: Set<string>
   t: (key: TranslationKey) => string
   lang?: string
+  index?: number
 }) {
-  const passive = passives.find(p => p.passive_type === passiveType)
+  const typePassives = passives.filter(p => p.passive_type === passiveType)
+  const passive = index ? typePassives[index - 1] : typePassives[0]
   if (!passive) {
     return <span style={{ color: '#666', fontSize: '0.75rem' }}>[{passiveType} {t('identity.passives.label')}]</span>
   }
@@ -476,6 +478,7 @@ function RichContentRenderer({
                 allowedKeywords={allowedKeywords}
                 t={t}
                 lang={lang}
+                index={node.index}
               />
             )
         }
