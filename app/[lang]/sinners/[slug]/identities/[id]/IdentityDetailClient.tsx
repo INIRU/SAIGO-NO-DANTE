@@ -195,6 +195,23 @@ export default function IdentityDetailClient({
     return map
   }, [allSinners])
 
+  // sinner_id → name_en / name_jp 매핑 (chip token EN/JP 룩업용)
+  const sinnerNameMapEn = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const s of allSinners) {
+      if (s.name_en) map[s.id] = s.name_en
+    }
+    return map
+  }, [allSinners])
+
+  const sinnerNameMapJp = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const s of allSinners) {
+      if (s.name_jp) map[s.id] = s.name_jp
+    }
+    return map
+  }, [allSinners])
+
   // 토큰 룩업 맵들 (NoteRenderer / 자동완성용)
   const skillTokenLookup = useMemo(() => {
     const map: Record<string, NoteSkillEntry> = {}
@@ -211,39 +228,88 @@ export default function IdentityDetailClient({
         iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
         identityName: getLocalizedName(identity, lang), sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
       }
+      // EN key alias
+      if (sinner.name_en) {
+        const enKey = v && v.total > 1
+          ? `${sinner.name_en}:${base}:${v.idx}`
+          : `${sinner.name_en}:${base}`
+        map[enKey] = map[key]
+      }
+      // JP key alias
+      if (sinner.name_jp) {
+        const jpKey = v && v.total > 1
+          ? `${sinner.name_jp}:${base}:${v.idx}`
+          : `${sinner.name_jp}:${base}`
+        map[jpKey] = map[key]
+      }
     }
     return map
-  }, [filteredSkills, sinner.name_kr, sinner.name, sinner.name_jp, identity, skillImgIdxMap, variantMap, lang])
+  }, [filteredSkills, sinner.name_kr, sinner.name, sinner.name_en, sinner.name_jp, identity, skillImgIdxMap, variantMap, lang])
 
   const egoTokenLookup = useMemo(() => {
     const map: Record<string, NoteEgoEntry> = {}
     for (const ego of allEgos) {
-      const name = ego.name_kr || ego.name
-      const sinnerName = sinnerNameMap[ego.sinner_id] ?? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
-      map[`${sinnerName}:${name}`] = {
-        name, grade: ego.grade, sin_affinity: ego.sin_affinity,
+      const nameKr = ego.name_kr || ego.name
+      const localizedName = lang === 'en' ? (ego.name_en || nameKr) : lang === 'ja' ? (ego.name_jp || nameKr) : nameKr
+      const sinnerKr = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
+      const sinnerEn = sinnerNameMapEn[ego.sinner_id]
+      const sinnerJp = sinnerNameMapJp[ego.sinner_id]
+      const sinnerName = sinnerKr
+      const entry: NoteEgoEntry = {
+        name: localizedName, grade: ego.grade, sin_affinity: ego.sin_affinity,
         image_url: ego.image_url, sinnerName,
       }
+      // KR key (primary — AI writes Korean names)
+      map[`${sinnerKr}:${nameKr}`] = entry
+      // EN key alias
+      if (sinnerEn) map[`${sinnerEn}:${nameKr}`] = entry
+      if (sinnerEn && ego.name_en) map[`${sinnerEn}:${ego.name_en}`] = entry
+      // JP key alias
+      if (sinnerJp) map[`${sinnerJp}:${nameKr}`] = entry
+      if (sinnerJp && ego.name_jp) map[`${sinnerJp}:${ego.name_jp}`] = entry
     }
     return map
-  }, [allEgos, sinnerNameMap, sinner.name_kr, sinner.name, sinner.name_jp, lang])
+  }, [allEgos, sinnerNameMap, sinnerNameMapEn, sinnerNameMapJp, sinner.name_kr, sinner.name, sinner.name_jp, lang])
 
   const identityTokenLookup = useMemo(() => {
     const map: Record<string, NoteIdentityEntry> = {}
     for (const ident of allIdentities) {
-      const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
+      const sinnerKr = sinnerNameMap[ident.sinner_id] ?? ''
+      const sinnerEn = sinnerNameMapEn[ident.sinner_id]
+      const sinnerJp = sinnerNameMapJp[ident.sinner_id]
       const entry: NoteIdentityEntry = {
-        name: ident.name_kr, rarity: ident.rarity,
+        name: getLocalizedName(ident, lang), rarity: ident.rarity,
         imageUrl: getIdentityProfileUrl(ident, false),
-        sinnerName, keywords: ident.keywords,
+        sinnerName: sinnerKr, keywords: ident.keywords,
       }
-      map[`${sinnerName}:${ident.name_kr}`] = entry
-      if (sinnerName === sinner.name_kr || !map[ident.name_kr]) {
+      // KR key
+      map[`${sinnerKr}:${ident.name_kr}`] = entry
+      if (sinnerKr === sinner.name_kr || !map[ident.name_kr]) {
         map[ident.name_kr] = entry
+      }
+      // EN key aliases
+      if (sinnerEn && ident.name_en) {
+        map[`${sinnerEn}:${ident.name_en}`] = entry
+      }
+      // sinnerEn:name_kr fallback (AI might mix languages)
+      if (sinnerEn) map[`${sinnerEn}:${ident.name_kr}`] = entry
+      // EN identity name only
+      if (ident.name_en && (sinnerKr === sinner.name_kr || !map[ident.name_en])) {
+        map[ident.name_en] = entry
+      }
+      // JP key aliases
+      if (sinnerJp && ident.name_jp) {
+        map[`${sinnerJp}:${ident.name_jp}`] = entry
+      }
+      // sinnerJp:name_kr fallback (AI might mix languages)
+      if (sinnerJp) map[`${sinnerJp}:${ident.name_kr}`] = entry
+      // JP identity name only
+      if (ident.name_jp && (sinnerKr === sinner.name_kr || !map[ident.name_jp])) {
+        map[ident.name_jp] = entry
       }
     }
     return map
-  }, [allIdentities, sinnerNameMap, sinner.name_kr, lang])
+  }, [allIdentities, sinnerNameMap, sinnerNameMapEn, sinnerNameMapJp, sinner.name_kr, lang])
 
   const egoGiftLookup = useMemo(() => {
     const map: Record<string, NoteEgoGiftEntry> = {}
@@ -257,7 +323,7 @@ export default function IdentityDetailClient({
     const map: Record<string, NotePassiveEntry> = {}
     for (const ps of filteredPassives) {
       const sinEn = ps.sin_affinity ? (SIN_KR_TO_EN[ps.sin_affinity] ?? ps.sin_affinity) : null
-      map[ps.name] = {
+      const entry: NotePassiveEntry = {
         name: localPassiveName(ps),
         sin_affinity: sinEn,
         sin_count: ps.sin_count ?? null,
@@ -266,6 +332,13 @@ export default function IdentityDetailClient({
         sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
         imageUrl: getIdentityInfoUrl(identity) || undefined,
       }
+      map[ps.name] = entry
+      // EN key
+      const nameEn = (ps as Record<string, unknown>).name_en as string | undefined
+      if (nameEn) map[nameEn] = entry
+      // JP key
+      const nameJp = (ps as Record<string, unknown>).name_jp as string | undefined
+      if (nameJp) map[nameJp] = entry
     }
     return map
   }, [filteredPassives, sinner.name_kr, sinner.name, sinner.name_jp, lang])
