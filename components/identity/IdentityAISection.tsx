@@ -11,6 +11,7 @@ import { splitSections, parseRichContent, type AISection } from '@/lib/utils/ai-
 import { SIN_COLORS, SKILL_TYPE_LABELS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import { getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import { useLanguage } from '@/lib/i18n'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
 import type { TranslationKey } from '@/lib/i18n/translations'
 import type { Skill, Passive, Identity } from '@/lib/types'
 
@@ -57,10 +58,14 @@ function AccordionSection({
   const [maxH, setMaxH] = useState<number>(0)
 
   useEffect(() => {
-    if (contentRef.current) {
-      setMaxH(contentRef.current.scrollHeight)
-    }
-  }, [isOpen])
+    const el = contentRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      setMaxH(el.scrollHeight)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   return (
     <div style={{ marginBottom: '0.375rem' }}>
@@ -113,7 +118,7 @@ function AccordionSection({
 
 /* ─── 단일 스킬 프레임 렌더 헬퍼 (SkillEmbed와 변형 모두에서 사용) ─── */
 function SkillFrameBlockWrapper({
-  skill, skills, identity, sinColor, allowedKeywords, variantIndex,
+  skill, skills, identity, sinColor, allowedKeywords, variantIndex, lang,
 }: {
   skill: Skill
   skills: Skill[]
@@ -121,6 +126,7 @@ function SkillFrameBlockWrapper({
   sinColor: string
   allowedKeywords?: Set<string>
   variantIndex?: number
+  lang?: string
 }) {
   const skillImgIdx = computeSkillImageIndices(skills)
   const imgIdx = skillImgIdx[skill.id] ?? 0
@@ -133,6 +139,18 @@ function SkillFrameBlockWrapper({
     : variantIndex
       ? `S${baseOrder}-${variantIndex}`
       : `S${baseOrder}`
+
+  const localizedName = lang === 'en'
+    ? (skill.name_en || skill.name)
+    : lang === 'ja'
+      ? (skill.name_jp || skill.name)
+      : skill.name
+
+  const localizedDescription = lang === 'en'
+    ? (skill.description_en || skill.description)
+    : lang === 'ja'
+      ? (skill.description_jp || skill.description)
+      : skill.description
 
   const unbreakableCoins = new Set<number>()
   if (skill.description) {
@@ -148,7 +166,7 @@ function SkillFrameBlockWrapper({
       skillSlot={baseOrder <= 3 ? baseOrder : 1}
       label={skillLabel}
       size="4.5rem"
-      name={skill.name}
+      name={localizedName}
       basePower={skill.base_power}
       coinPower={skill.coin_power}
       coins={skill.coins}
@@ -156,7 +174,7 @@ function SkillFrameBlockWrapper({
       offenseLevel={skill.offense_level}
       atkWeight={skill.atk_weight || 1}
       isDefense={isDefense}
-      description={skill.description}
+      description={localizedDescription}
       unbreakableCoins={unbreakableCoins}
       descVariant="compact"
       allowedKeywords={allowedKeywords}
@@ -166,13 +184,15 @@ function SkillFrameBlockWrapper({
 
 /* ─── 스킬 임베드 (대표 + 변형 토글) ─── */
 function SkillEmbed({
-  order, skills, identity, sinColor, allowedKeywords,
+  order, variant, skills, identity, sinColor, allowedKeywords, lang,
 }: {
   order: number
+  variant?: number
   skills: Skill[]
   identity?: Identity
   sinColor: string
   allowedKeywords?: Set<string>
+  lang?: string
 }) {
   const [showVariants, setShowVariants] = useState(false)
 
@@ -184,6 +204,34 @@ function SkillEmbed({
   const mainSkill = slotSkills[0]
   if (!mainSkill) {
     return <span style={{ color: '#666', fontSize: '0.75rem' }}>[스킬 {order}]</span>
+  }
+
+  // variant 지정 시: 해당 변형만 단독 렌더
+  if (variant !== undefined) {
+    // variant=1 → slotSkills[0] (주 스킬), variant=2 → slotSkills[1] (첫 번째 변형), ...
+    const targetSkill = slotSkills[variant - 1] ?? mainSkill
+    const skillSinColorSingle = SIN_COLORS[targetSkill.sin_affinity] || sinColor
+    return (
+      <div
+        style={{
+          padding: '0.75rem',
+          background: `${skillSinColorSingle}08`,
+          borderRadius: '0.5rem',
+          border: `1px solid ${skillSinColorSingle}30`,
+          marginBlock: '0.5rem',
+        }}
+      >
+        <SkillFrameBlockWrapper
+          skill={targetSkill}
+          skills={skills}
+          identity={identity}
+          sinColor={sinColor}
+          allowedKeywords={allowedKeywords}
+          variantIndex={variant > 1 ? variant : undefined}
+          lang={lang}
+        />
+      </div>
+    )
   }
 
   // 변형 스킬 = 같은 slot의 나머지
@@ -208,6 +256,7 @@ function SkillEmbed({
         identity={identity}
         sinColor={sinColor}
         allowedKeywords={allowedKeywords}
+        lang={lang}
       />
 
       {/* 변형 토글 */}
@@ -251,6 +300,7 @@ function SkillEmbed({
                   sinColor={sinColor}
                   allowedKeywords={allowedKeywords}
                   variantIndex={i + 2}
+                  lang={lang}
                 />
               ))}
             </div>
@@ -263,16 +313,32 @@ function SkillEmbed({
 
 /* ─── 패시브 임베드 (원본 IdentityPassivesTab 구조 재사용) ─── */
 function PassiveEmbed({
-  passiveType, passives, allowedKeywords,
+  passiveType, passives, allowedKeywords, t, lang, index,
 }: {
   passiveType: 'battle' | 'support'
   passives: Passive[]
   allowedKeywords?: Set<string>
+  t: (key: TranslationKey) => string
+  lang?: string
+  index?: number
 }) {
-  const passive = passives.find(p => p.passive_type === passiveType)
+  const typePassives = passives.filter(p => p.passive_type === passiveType)
+  const passive = index ? typePassives[index - 1] : typePassives[0]
   if (!passive) {
-    return <span style={{ color: '#666', fontSize: '0.75rem' }}>[{passiveType} 패시브]</span>
+    return <span style={{ color: '#666', fontSize: '0.75rem' }}>[{passiveType} {t('identity.passives.label')}]</span>
   }
+
+  const localizedName = lang === 'en'
+    ? ((passive as Record<string, unknown>).name_en as string | undefined || passive.name)
+    : lang === 'ja'
+    ? ((passive as Record<string, unknown>).name_jp as string | undefined || passive.name)
+    : passive.name
+
+  const localizedDesc = lang === 'en'
+    ? ((passive as Record<string, unknown>).description_en as string | undefined || passive.description)
+    : lang === 'ja'
+    ? ((passive as Record<string, unknown>).description_jp as string | undefined || passive.description)
+    : passive.description
 
   // sin 파싱 (원본과 동일: ", " 구분)
   const sinNames = passive.sin_affinity ? passive.sin_affinity.split(', ').map(s => s.trim()) : []
@@ -306,7 +372,7 @@ function PassiveEmbed({
               fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
               paddingRight: '4em',
             }}>
-              {passive.name}
+              {localizedName}
             </span>
           </div>
         </div>
@@ -331,16 +397,16 @@ function PassiveEmbed({
           )}
           {passive.active_cond && (
             <span className="font-bold" style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>
-              {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
+              {passive.active_cond === 'resonance' ? t('identity.passives.resonance') : passive.active_cond === 'stock' ? t('identity.passives.stock') : passive.active_cond}
             </span>
           )}
         </div>
       )}
 
       {/* 설명 */}
-      {passive.description && (
+      {localizedDesc && (
         <SkillDescription
-          description={passive.description}
+          description={localizedDesc}
           accentColor={primaryColor}
           variant="compact"
           showCoinBadges={false}
@@ -355,6 +421,7 @@ function PassiveEmbed({
 function RichContentRenderer({
   content, skills, passives, identity, sinColor, allowedKeywords,
   skillLookup, passiveLookup, egoLookup, identityLookup, egoGiftLookup,
+  lang, t,
 }: {
   content: string
   skills: Skill[]
@@ -367,6 +434,8 @@ function RichContentRenderer({
   egoLookup: Record<string, NoteEgoEntry>
   identityLookup: Record<string, NoteIdentityEntry>
   egoGiftLookup: Record<string, NoteEgoGiftEntry>
+  lang?: string
+  t: (key: TranslationKey) => string
 }) {
   const nodes = useMemo(() => parseRichContent(content), [content])
 
@@ -384,7 +453,7 @@ function RichContentRenderer({
                 egoLookup={egoLookup}
                 identityLookup={identityLookup}
                 egoGiftLookup={egoGiftLookup}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
               />
             )
           case 'skill':
@@ -392,10 +461,12 @@ function RichContentRenderer({
               <SkillEmbed
                 key={i}
                 order={node.order}
+                variant={node.variant}
                 skills={skills}
                 identity={identity}
                 sinColor={sinColor}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
+                lang={lang}
               />
             )
           case 'passive':
@@ -404,7 +475,10 @@ function RichContentRenderer({
                 key={i}
                 passiveType={node.passiveType}
                 passives={passives}
-                allowedKeywords={allowedKeywords}
+                allowedKeywords={undefined}
+                t={t}
+                lang={lang}
+                index={node.index}
               />
             )
         }
@@ -432,6 +506,22 @@ export default function IdentityAISection({
   const { lang, t } = useLanguage()
   const langRef = useRef(lang)
   langRef.current = lang
+  const { keywords: keywordData } = useKeywordData()
+
+  const localizedAllowedKeywords = useMemo(() => {
+    if (!allowedKeywords || lang === 'ko') return allowedKeywords
+    const localized = new Set<string>()
+    for (const kwKr of allowedKeywords) {
+      // Always keep Korean name for fallback matching
+      localized.add(kwKr)
+      const info = keywordData[kwKr]
+      if (info) {
+        if (lang === 'en' && info.nameEn) localized.add(info.nameEn)
+        if (lang === 'ja' && info.nameJp) localized.add(info.nameJp)
+      }
+    }
+    return localized
+  }, [allowedKeywords, lang, keywordData])
   const [summary, setSummary] = useState<string | null>(null)
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -571,12 +661,14 @@ export default function IdentityAISection({
                   passives={passives}
                   identity={identity}
                   sinColor={sinColor}
-                  allowedKeywords={allowedKeywords}
+                  allowedKeywords={localizedAllowedKeywords}
                   skillLookup={skillLookup}
                   passiveLookup={passiveLookup}
                   egoLookup={egoLookup}
                   identityLookup={identityLookup}
                   egoGiftLookup={egoGiftLookup}
+                  lang={lang}
+                  t={t}
                 />
               </AccordionSection>
             ))}

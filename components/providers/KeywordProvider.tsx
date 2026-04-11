@@ -326,7 +326,9 @@ function formatSkillDescInner(
     // 1. [대괄호] / 【대괄호】 패턴
     const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
-      parts.push({ text: bracketMatch[0], type: 'bracket' })
+      const inner = bracketMatch[1] || bracketMatch[2]
+      const krKey = localToKr?.[inner] ?? (localToKr?.[bracketMatch[0]] ? localToKr[bracketMatch[0]] : undefined)
+      parts.push({ text: bracketMatch[0], type: 'bracket', krKey })
       prevChar = bracketMatch[0][bracketMatch[0].length - 1]
       remaining = remaining.slice(bracketMatch[0].length)
       continue
@@ -398,6 +400,14 @@ function formatSkillDescInner(
   return parts.map((p, i) => {
     switch (p.type) {
       case 'bracket':
+        if (p.krKey) {
+          const inner = p.text.replace(/^[\[【]|[\]】]$/g, '')
+          return (
+            <KeywordWithTooltip key={i} keyword={inner} krKey={p.krKey} inline>
+              <span style={{ color: '#e8dcc8', fontWeight: 600 }}>{p.text}</span>
+            </KeywordWithTooltip>
+          )
+        }
         return <span key={i} style={{ color, fontWeight: 600 }}>{p.text}</span>
       case 'keyword':
         return (
