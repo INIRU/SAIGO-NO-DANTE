@@ -398,16 +398,22 @@ export async function POST(req: NextRequest) {
   const passivesText = passives.map(p => {
     const passiveName = lang === 'en' ? (p.name_en || p.name) : lang === 'jp' ? (p.name_jp || p.name) : p.name
     const passiveDesc = kwReplaceFn(lang === 'en' ? (p.description_en || p.description) : lang === 'jp' ? (p.description_jp || p.description) : p.description)
-    const pTypeLabel = p.passive_type === 'battle'
+    const pType = p.passive_type || 'battle'
+    const pTypeLabel = pType === 'battle'
       ? (lang === 'en' ? 'Battle' : lang === 'jp' ? 'バトル' : '전투')
       : (lang === 'en' ? 'Support' : lang === 'jp' ? 'サポート' : '서포트')
-    const typeGroup = passivesByType.get(p.passive_type || 'battle') || []
+    const typeGroup = passivesByType.get(pType) || []
     const idx = typeGroup.indexOf(p) + 1
-    const indexedLabel = typeGroup.length > 1 ? `${pTypeLabel}-${idx}` : pTypeLabel
+    const indexedLabel = `${pTypeLabel}-${idx}`
+    const frameHint = lang === 'en'
+      ? `embed with {{passive:${pType}:${idx}}}`
+      : lang === 'jp'
+      ? `フレーム: {{passive:${pType}:${idx}}}`
+      : `프레임: {{passive:${pType}:${idx}}}`
     const pSinLabel = sinMap[p.sin_affinity] || p.sin_affinity || noneLabel
     const condHeader = lang === 'en' ? 'Condition' : lang === 'jp' ? '条件' : '조건'
     const descHeader = lang === 'en' ? 'Desc' : lang === 'jp' ? '説明' : '설명'
-    return `[${indexedLabel}] ${passiveName}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
+    return `[${indexedLabel}] ${passiveName} — ${frameHint}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
   }).join('\n\n')
 
   const resSlash = RES_KR[identity.slash_res] || identity.slash_res || '-'

@@ -323,32 +323,10 @@ function PassiveEmbed({
   index?: number
 }) {
   const typePassives = passives.filter(p => p.passive_type === passiveType)
-  if (typePassives.length === 0) {
+  const passive = index ? typePassives[index - 1] : typePassives[0]
+  if (!passive) {
     return <span style={{ color: '#666', fontSize: '0.75rem' }}>[{passiveType} {t('identity.passives.label')}]</span>
   }
-  // index 지정 시 해당 패시브만, 미지정 시 전체 렌더
-  const targets = index ? [typePassives[index - 1]].filter(Boolean) : typePassives
-  if (targets.length === 0) {
-    return <span style={{ color: '#666', fontSize: '0.75rem' }}>[{passiveType} {t('identity.passives.label')}]</span>
-  }
-
-  return (
-    <>
-      {targets.map((passive, ti) => (
-        <PassiveEmbedSingle key={ti} passive={passive} allowedKeywords={allowedKeywords} lang={lang} t={t} />
-      ))}
-    </>
-  )
-}
-
-function PassiveEmbedSingle({
-  passive, allowedKeywords, lang, t,
-}: {
-  passive: Passive
-  allowedKeywords?: Set<string>
-  lang?: string
-  t: (key: TranslationKey) => string
-}) {
 
   const localizedName = lang === 'en'
     ? ((passive as Record<string, unknown>).name_en as string | undefined || passive.name)
