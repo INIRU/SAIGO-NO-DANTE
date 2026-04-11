@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
           const kw = kwMap.get(kwName)
           if (!kw) return match
           const localized = lang === 'en' ? kw.name_en : lang === 'jp' ? kw.name_jp : null
-          return localized ? `[${localized}]` : match
+          return localized ? localized : match
         })
         // Second pass: plain text keywords (longest first to avoid partial matches)
         const sortedKr = [...kwMap.keys()].sort((a, b) => b.length - a.length)
