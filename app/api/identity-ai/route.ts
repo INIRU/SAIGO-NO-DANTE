@@ -96,9 +96,25 @@ const SKILL_TYPE_KR: Record<string, string> = {
   slash: '참격', pierce: '관통', blunt: '타격',
   evade: '회피', defense: '수비', counter: '반격',
 }
+const SKILL_TYPE_EN: Record<string, string> = {
+  slash: 'Slash', pierce: 'Pierce', blunt: 'Blunt',
+  evade: 'Evade', defense: 'Defense', counter: 'Counter',
+}
+const SKILL_TYPE_JP: Record<string, string> = {
+  slash: '斬撃', pierce: '貫通', blunt: '打撃',
+  evade: '回避', defense: '防御', counter: '反撃',
+}
 const SIN_KR: Record<string, string> = {
   wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식',
   gloom: '우울', pride: '오만', envy: '질투',
+}
+const SIN_EN: Record<string, string> = {
+  wrath: 'Wrath', lust: 'Lust', sloth: 'Sloth', gluttony: 'Gluttony',
+  gloom: 'Gloom', pride: 'Pride', envy: 'Envy',
+}
+const SIN_JP: Record<string, string> = {
+  wrath: '憤怒', lust: '色欲', sloth: '怠惰', gluttony: '暴食',
+  gloom: '憂鬱', pride: '傲慢', envy: '嫉妬',
 }
 const RES_KR: Record<string, string> = {
   fatal: '치명', weak: '취약', normal: '보통', resist: '내성', immune: '면역',
@@ -157,7 +173,7 @@ export async function POST(req: NextRequest) {
   const { data: identity, error: idErr } = await supabase
     .schema('limbus')
     .from('identities')
-    .select('id, sinner_id, name, name_kr, tier, hp, speed_min, speed_max, def_level, keywords, rarity, slash_res, pierce_res, blunt_res')
+    .select('id, sinner_id, name, name_kr, name_en, name_jp, tier, hp, speed_min, speed_max, def_level, keywords, rarity, slash_res, pierce_res, blunt_res')
     .eq('id', identity_id)
     .single()
 
@@ -167,16 +183,18 @@ export async function POST(req: NextRequest) {
   const { data: sinner } = await supabase
     .schema('limbus')
     .from('sinners')
-    .select('name_kr')
+    .select('name, name_kr, name_jp')
     .eq('id', identity.sinner_id)
     .single()
-  const sinnerName = sinner?.name_kr || identity.sinner_id
+  const sinnerName = lang === 'en' ? (sinner?.name || sinner?.name_kr || identity.sinner_id)
+    : lang === 'jp' ? (sinner?.name_jp || sinner?.name_kr || identity.sinner_id)
+    : (sinner?.name_kr || identity.sinner_id)
 
   // 3. 스킬 (4동기화)
   const { data: skillsRaw } = await supabase
     .schema('limbus')
     .from('skills')
-    .select('name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, offense_level, atk_weight, uptie_level, variant_order')
+    .select('name, name_en, name_jp, skill_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, offense_level, atk_weight, uptie_level, variant_order')
     .eq('identity_id', identity_id)
     .eq('uptie_level', 4)
     .order('skill_order')
@@ -186,7 +204,7 @@ export async function POST(req: NextRequest) {
   const { data: passivesRaw } = await supabase
     .schema('limbus')
     .from('passives')
-    .select('name, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level')
+    .select('name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level')
     .eq('identity_id', identity_id)
     .eq('uptie_level', 4)
   const passives = passivesRaw ?? []
@@ -216,7 +234,7 @@ export async function POST(req: NextRequest) {
         const { data: slots } = await supabase
           .schema('limbus')
           .from('deck_identities')
-          .select('slot_order, identities(name_kr, sinner_id)')
+          .select('slot_order, identities(name_kr, name_en, name_jp, sinner_id)')
           .eq('deck_id', deck.id)
           .order('slot_order')
 
@@ -226,23 +244,29 @@ export async function POST(req: NextRequest) {
         const { data: sinners } = await supabase
           .schema('limbus')
           .from('sinners')
-          .select('id, name_kr')
+          .select('id, name, name_kr, name_jp')
           .in('id', sinnerIds)
         const sinnerMap: Record<string, string> = {}
-        for (const s of sinners || []) sinnerMap[s.id] = s.name_kr
+        for (const s of sinners || []) {
+          sinnerMap[s.id] = lang === 'en' ? (s.name || s.name_kr) : lang === 'jp' ? (s.name_jp || s.name_kr) : s.name_kr
+        }
 
         const composition = (slots || [])
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .filter((s: any) => s.identities)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((s: any) => {
-            const ident = s.identities as { name_kr: string; sinner_id: string }
-            return `${sinnerMap[ident.sinner_id] || ident.sinner_id}:${ident.name_kr}`
+            const ident = s.identities as { name_kr: string; name_en?: string; name_jp?: string; sinner_id: string }
+            const identName = lang === 'en' ? (ident.name_en || ident.name_kr) : lang === 'jp' ? (ident.name_jp || ident.name_kr) : ident.name_kr
+            return `${sinnerMap[ident.sinner_id] || ident.sinner_id}:${identName}`
           })
           .join(', ')
 
-        deckContextStr += `\n"${deck.title}" (추천 ${deck.vote_count})\n편성: ${composition}\n`
-        if (deck.description) deckContextStr += `설명: ${deck.description.slice(0, 200)}\n`
+        const deckLabel = lang === 'en' ? 'votes' : lang === 'jp' ? '推薦' : '추천'
+        const compLabel = lang === 'en' ? 'Composition' : lang === 'jp' ? '編成' : '편성'
+        const descLabel = lang === 'en' ? 'Description' : lang === 'jp' ? '説明' : '설명'
+        deckContextStr += `\n"${deck.title}" (${deckLabel} ${deck.vote_count})\n${compLabel}: ${composition}\n`
+        if (deck.description) deckContextStr += `${descLabel}: ${deck.description.slice(0, 200)}\n`
       }
     }
   }
@@ -255,34 +279,112 @@ export async function POST(req: NextRequest) {
     variantGroups.get(base)!.push(s)
   }
 
+  // i18n maps
+  const sinMap = lang === 'en' ? SIN_EN : lang === 'jp' ? SIN_JP : SIN_KR
+  const typeMap = lang === 'en' ? SKILL_TYPE_EN : lang === 'jp' ? SKILL_TYPE_JP : SKILL_TYPE_KR
+  const id_ = identity as any
+  const identityName = lang === 'en' ? (id_.name_en || identity.name_kr)
+    : lang === 'jp' ? (id_.name_jp || identity.name_kr)
+    : (identity.name_kr || identity.name)
+  const noneLabel = lang === 'en' ? 'none' : lang === 'jp' ? 'なし' : '없음'
+  const defLabel = lang === 'en' ? 'Defense' : lang === 'jp' ? '防御' : '수비'
+
   const skillsText = skills.map(s => {
     const base = s.skill_order >= 5 ? 3 : s.skill_order
     const group = variantGroups.get(base) || [s]
     const idx = group.indexOf(s) + 1
     const hasVariants = group.length > 1
     const orderLabel = base === 4
-      ? (hasVariants ? `수비-${idx}` : '수비')
+      ? (hasVariants ? `${defLabel}-${idx}` : defLabel)
       : (hasVariants ? `S${base}-${idx}` : `S${base}`)
     const chipToken = hasVariants ? `[s:${sinnerName}:${base}:${idx}]` : `[s:${sinnerName}:${base}]`
-    const typeKr = SKILL_TYPE_KR[s.skill_type] || s.skill_type
-    const sinKr = SIN_KR[s.sin_affinity] || s.sin_affinity
+    const skillName = lang === 'en' ? (s.name_en || s.name) : lang === 'jp' ? (s.name_jp || s.name) : s.name
+    const skillDesc = lang === 'en' ? (s.description_en || s.description) : lang === 'jp' ? (s.description_jp || s.description) : s.description
+    const typeLabel = typeMap[s.skill_type] || s.skill_type
+    const sinLabel = sinMap[s.sin_affinity] || s.sin_affinity
     const coinSign = s.coin_power >= 0 ? `+${s.coin_power}` : `${s.coin_power}`
-    return `[${orderLabel}] ${s.name} (칩: ${chipToken})\n타입: ${typeKr} / 죄악: ${sinKr} / 위력: ${s.base_power} / 코인: ${s.coins}개 (${coinSign}) / 공격레벨: ${s.offense_level || '-'}\n설명: ${s.description || '없음'}`
+    const chipLabel = lang === 'en' ? 'chip' : lang === 'jp' ? 'チップ' : '칩'
+    const typeHeader = lang === 'en' ? 'Type' : lang === 'jp' ? 'タイプ' : '타입'
+    const sinHeader = lang === 'en' ? 'Sin' : lang === 'jp' ? '罪悪' : '죄악'
+    const powerHeader = lang === 'en' ? 'Power' : lang === 'jp' ? '威力' : '위력'
+    const coinsHeader = lang === 'en' ? 'Coins' : lang === 'jp' ? 'コイン' : '코인'
+    const offHeader = lang === 'en' ? 'Offense Level' : lang === 'jp' ? '攻撃レベル' : '공격레벨'
+    const descHeader = lang === 'en' ? 'Desc' : lang === 'jp' ? '説明' : '설명'
+    const coinsUnit = lang === 'en' ? '' : lang === 'jp' ? '枚' : '개'
+    return `[${orderLabel}] ${skillName} (${chipLabel}: ${chipToken})\n${typeHeader}: ${typeLabel} / ${sinHeader}: ${sinLabel} / ${powerHeader}: ${s.base_power} / ${coinsHeader}: ${s.coins}${coinsUnit} (${coinSign}) / ${offHeader}: ${s.offense_level || '-'}\n${descHeader}: ${skillDesc || noneLabel}`
   }).join('\n\n')
 
   const passivesText = passives.map(p => {
-    const typeKr = p.passive_type === 'battle' ? '전투' : '서포트'
-    const sinKr = SIN_KR[p.sin_affinity] || p.sin_affinity || '없음'
-    return `[${typeKr}] ${p.name}\n조건: ${sinKr} x${p.sin_count || 0}\n설명: ${p.description || '없음'}`
+    const passiveName = lang === 'en' ? (p.name_en || p.name) : lang === 'jp' ? (p.name_jp || p.name) : p.name
+    const passiveDesc = lang === 'en' ? (p.description_en || p.description) : lang === 'jp' ? (p.description_jp || p.description) : p.description
+    const pTypeLabel = p.passive_type === 'battle'
+      ? (lang === 'en' ? 'Battle' : lang === 'jp' ? 'バトル' : '전투')
+      : (lang === 'en' ? 'Support' : lang === 'jp' ? 'サポート' : '서포트')
+    const pSinLabel = sinMap[p.sin_affinity] || p.sin_affinity || noneLabel
+    const condHeader = lang === 'en' ? 'Condition' : lang === 'jp' ? '条件' : '조건'
+    const descHeader = lang === 'en' ? 'Desc' : lang === 'jp' ? '説明' : '설명'
+    return `[${pTypeLabel}] ${passiveName}\n${condHeader}: ${pSinLabel} x${p.sin_count || 0}\n${descHeader}: ${passiveDesc || noneLabel}`
   }).join('\n\n')
 
   const resSlash = RES_KR[identity.slash_res] || identity.slash_res || '-'
   const resPierce = RES_KR[identity.pierce_res] || identity.pierce_res || '-'
   const resBlunt = RES_KR[identity.blunt_res] || identity.blunt_res || '-'
 
-  const userPrompt = `# 분석 대상
+  // Localized resistance type labels
+  const resSlashLabel = typeMap['slash'] || 'Slash'
+  const resPierceLabel = typeMap['pierce'] || 'Pierce'
+  const resBluntLabel = typeMap['blunt'] || 'Blunt'
+
+  // Build userPrompt based on lang
+  const userPrompt = lang === 'en' ? `# Analysis Target
+Sinner: ${sinnerName}
+Identity: ${identityName} (${identity.rarity}★, Tier ${identity.tier})
+Keywords: ${(identity.keywords || []).join(', ')}
+Resistance: ${resSlashLabel} ${resSlash} / ${resPierceLabel} ${resPierce} / ${resBluntLabel} ${resBlunt}
+
+# Keyword List (always use exact names from this list when mentioning keywords)
+${((identity.keywords || []) as string[]).map((kw: string) => `- ${kw}`).join('\n')}
+HP: ${identity.hp} / Speed: ${identity.speed_min}~${identity.speed_max} / Defense Level: ${identity.def_level}
+
+# Skills (Uptie 4)
+${skillsText}
+
+# Passives (Uptie 4)
+${passivesText}
+
+# Popular Decks Containing This Identity (up to 10)
+${deckContextStr || '(No decks contain this identity)'}
+
+Based on the data above, write an operation guide for this identity.
+Actively use chip syntax ([i:], [s:], [p:]). Never write plain text like "Don Quixote S1" — always use [s:${sinnerName}:1] format.
+If variant skills exist, always include the variant number: [s:${sinnerName}:order:variant].
+Use "${sinnerName}" for the sinner name.`
+  : lang === 'jp' ? `# 分析対象
+囚人: ${sinnerName}
+人格: ${identityName} (${identity.rarity}星, ティア ${identity.tier})
+キーワード: ${(identity.keywords || []).join(', ')}
+耐性: ${resSlashLabel} ${resSlash} / ${resPierceLabel} ${resPierce} / ${resBluntLabel} ${resBlunt}
+
+# キーワード一覧 (キーワードに言及する際は必ずこのリストの正確な名前を使用してください)
+${((identity.keywords || []) as string[]).map((kw: string) => `- ${kw}`).join('\n')}
+HP: ${identity.hp} / 速度: ${identity.speed_min}~${identity.speed_max} / 防御レベル: ${identity.def_level}
+
+# スキル (4同期化)
+${skillsText}
+
+# パッシブ (4同期化)
+${passivesText}
+
+# この人格が含まれる人気デッキ (最大10個)
+${deckContextStr || '(この人格が含まれるデッキはありません)'}
+
+上記データに基づいて、この人格の運用ガイドを作成してください。
+チップ構文([i:], [s:], [p:])を積極的に活用してください。「ドンキホーテ S1」のような一般テキストは絶対禁止、必ず[s:${sinnerName}:1]形式で書いてください。
+変形スキルがある場合は必ず変形番号まで[s:${sinnerName}:順序:変形番号]形式で書いてください。
+囚人名は「${sinnerName}」を使用してください。`
+  : `# 분석 대상
 수감자: ${sinnerName}
-인격: ${identity.name_kr || identity.name} (${identity.rarity}성, 등급 ${identity.tier})
+인격: ${identityName} (${identity.rarity}성, 등급 ${identity.tier})
 보유 키워드: ${(identity.keywords || []).join(', ')}
 내성: 참격 ${resSlash} / 관통 ${resPierce} / 타격 ${resBlunt}
 
