@@ -90,6 +90,10 @@ export default function IdentityDetailClient({
     lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
   const localPassiveName = (p: Passive) =>
     lang === 'en' && p.name_en ? p.name_en : lang === 'ja' && p.name_jp ? p.name_jp : p.name
+  const localSkillDesc = (s: Skill) =>
+    lang === 'en' && s.description_en ? s.description_en : lang === 'ja' && s.description_jp ? s.description_jp : s.description
+  const localPassiveDesc = (p: Passive) =>
+    lang === 'en' && p.description_en ? p.description_en : lang === 'ja' && p.description_jp ? p.description_jp : p.description
   const { sinMap: kwSinMap, keywords: kwContext } = useKeywordData()
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
@@ -223,7 +227,7 @@ export default function IdentityDetailClient({
         : `${sinner.name_kr}:${base}`
       map[key] = {
         name: localSkillName(sk), skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
-        skill_order: sk.skill_order, description: sk.description,
+        skill_order: sk.skill_order, description: localSkillDesc(sk),
         iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
         iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
         identityName: getLocalizedName(identity, lang), sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
@@ -254,7 +258,7 @@ export default function IdentityDetailClient({
       const sinnerKr = sinnerNameMap[ego.sinner_id] ?? sinner.name_kr
       const sinnerEn = sinnerNameMapEn[ego.sinner_id]
       const sinnerJp = sinnerNameMapJp[ego.sinner_id]
-      const sinnerName = sinnerKr
+      const sinnerName = lang === 'en' ? (sinnerEn || sinnerKr) : lang === 'ja' ? (sinnerJp || sinnerKr) : sinnerKr
       const entry: NoteEgoEntry = {
         name: localizedName, grade: ego.grade, sin_affinity: ego.sin_affinity,
         image_url: ego.image_url, sinnerName,
@@ -280,7 +284,7 @@ export default function IdentityDetailClient({
       const entry: NoteIdentityEntry = {
         name: getLocalizedName(ident, lang), rarity: ident.rarity,
         imageUrl: getIdentityProfileUrl(ident, false),
-        sinnerName: sinnerKr, keywords: ident.keywords,
+        sinnerName: lang === 'en' ? (sinnerEn || sinnerKr) : lang === 'ja' ? (sinnerJp || sinnerKr) : sinnerKr, keywords: ident.keywords,
       }
       // KR key
       map[`${sinnerKr}:${ident.name_kr}`] = entry
@@ -328,7 +332,7 @@ export default function IdentityDetailClient({
         sin_affinity: sinEn,
         sin_count: ps.sin_count ?? null,
         active_cond: ps.active_cond ?? null,
-        description: ps.description ?? null,
+        description: localPassiveDesc(ps) ?? null,
         sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
         imageUrl: getIdentityInfoUrl(identity) || undefined,
       }
@@ -384,19 +388,20 @@ export default function IdentityDetailClient({
       const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
       const sinnerName = sinnerNameMap[ident.sinner_id] ?? ''
       pool.push({
-        label: ident.name_kr, type: 'identity', typeLabel: sinnerName || t('sinners.identities'), color: sc,
+        label: getLocalizedName(ident, lang), type: 'identity', typeLabel: sinnerName || t('sinners.identities'), color: sc,
         imageUrl: getIdentityProfileUrl(ident, false),
         token: `[i:${sinnerName}:${ident.name_kr}]`,
       })
     }
     for (const ego of allEgos) {
-      const name = ego.name_kr || ego.name
+      const nameKr = ego.name_kr || ego.name
+      const localEgoName = getLocalizedName({ name_kr: ego.name_kr || ego.name, name_en: ego.name_en, name_jp: ego.name_jp }, lang)
       const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity] ?? '#c8900a') : '#c8900a'
       const sinnerName = sinnerNameMap[ego.sinner_id] ?? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
       pool.push({
-        label: name, type: 'ego', typeLabel: sinnerName || 'E.G.O', color: sc,
+        label: localEgoName, type: 'ego', typeLabel: sinnerName || 'E.G.O', color: sc,
         imageUrl: ego.image_url ?? undefined,
-        token: `[e:${sinnerName}:${name}]`,
+        token: `[e:${sinnerName}:${nameKr}]`,
       })
     }
     pool.push(...buildKeywordPool(kwContext))

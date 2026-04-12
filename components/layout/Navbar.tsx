@@ -133,7 +133,8 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const langPrefix = useMemo(() => (lang === 'ko' ? '' : `/${lang}`), [lang])
   const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
     label: t(g.labelKey as TranslationKey),
     items: g.items.map(item => ({
@@ -167,10 +168,15 @@ export default function Navbar() {
   const avatarUrl = profileAvatar || DEFAULT_AVATAR_URL
   const displayName = user?.name ?? user?.email ?? ''
 
+  // Strip lang prefix from pathname so active-state checks work regardless of prefix
+  const strippedPathname = langPrefix && pathname?.startsWith(langPrefix)
+    ? pathname.slice(langPrefix.length) || '/'
+    : pathname
+
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
     fontSize: '1.0625rem',
-    color: pathname === href ? 'var(--gold)' : '#a08a60',
+    color: strippedPathname === href ? 'var(--gold)' : '#a08a60',
     padding: '0.875rem 0',
     borderBottom: '1px solid rgba(58,42,21,0.3)',
   })
@@ -190,7 +196,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-[64px] flex items-center justify-between">
           {/* 로고 — 모바일 축소 */}
           <Link
-            href="/"
+            href={langPrefix || '/'}
             className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
             style={{ color: 'var(--gold)', fontFamily: 'var(--font-kotra-bold), var(--font-heading)' }}
           >
@@ -201,7 +207,7 @@ export default function Navbar() {
           {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
           <div className="hidden md:flex items-center gap-5">
             {navGroups.map(group => {
-              const isActive = group.items.some(i => pathname === i.href || pathname?.startsWith(i.href + '/'))
+              const isActive = group.items.some(i => strippedPathname === i.href || strippedPathname?.startsWith(i.href + '/'))
               const isSingleItem = group.items.length === 1
 
               // 아이템 1개 → 바로 이동
@@ -209,7 +215,7 @@ export default function Navbar() {
                 return (
                   <Link
                     key={group.label}
-                    href={group.items[0].href}
+                    href={`${langPrefix}${group.items[0].href}`}
                     className="flex items-center transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
@@ -277,11 +283,11 @@ export default function Navbar() {
                         background: 'linear-gradient(to right, transparent, rgba(200,144,10,0.3), transparent)',
                       }} />
                       {group.items.map(item => {
-                        const active = pathname === item.href || pathname?.startsWith(item.href + '/')
+                        const active = strippedPathname === item.href || strippedPathname?.startsWith(item.href + '/')
                         return (
                           <Link
                             key={item.href}
-                            href={item.href}
+                            href={`${langPrefix}${item.href}`}
                             role="menuitem"
                             className="block transition-all duration-150"
                             style={{
@@ -502,7 +508,7 @@ export default function Navbar() {
                 return (
                   <div key={group.label}>
                     <Link
-                      href={group.items[0].href}
+                      href={`${langPrefix}${group.items[0].href}`}
                       onClick={() => setMobileMenuOpen(false)}
                       style={{
                         fontFamily: 'var(--font-heading)',
@@ -549,7 +555,7 @@ export default function Navbar() {
                   {isOpen && group.items.map(item => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={`${langPrefix}${item.href}`}
                       className="block transition-colors duration-200 hover:text-yellow-300"
                       style={mobileLinkStyle(item.href)}
                     >
