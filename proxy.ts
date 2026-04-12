@@ -158,6 +158,24 @@ export async function proxy(request: NextRequest) {
       else if (acceptLang.includes('ja')) detectedLang = 'ja'
       else detectedLang = 'en'
 
+      // For EN/JA: redirect directly to /{lang}{pathname} so the correct [lang]
+      // segment is resolved on the first request (no rewrite cookie timing issue).
+      // For KO: the fallback rewrites in next.config.ts already map to /ko, so
+      // just set the cookie and continue to avoid an extra round-trip.
+      // Guard: skip redirect if the path already has a lang prefix to prevent loops.
+      const alreadyPrefixed = /^\/(en|ja|ko)(\/|$)/.test(pathname)
+      if (detectedLang !== 'ko' && !alreadyPrefixed) {
+        const redirectUrl = request.nextUrl.clone()
+        redirectUrl.pathname = `/${detectedLang}${pathname}`
+        const redirectResponse = NextResponse.redirect(redirectUrl)
+        redirectResponse.cookies.set('preferred_lang', detectedLang, {
+          path: '/',
+          maxAge: 365 * 24 * 60 * 60,
+          sameSite: 'lax',
+        })
+        return redirectResponse
+      }
+
       const pageResponse = NextResponse.next()
       pageResponse.cookies.set('preferred_lang', detectedLang, {
         path: '/',
