@@ -48,6 +48,8 @@ const syncSanityOnly = args.includes('--sync-sanity')
 
 // ── JSON 데이터 경로 ──
 const JSON_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/Json-2')
+const EN_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/en')
+const JP_DIR = resolve(process.env.HOME, 'Documents/Limbus/assets/data/jp')
 const UPTIE_LEVELS = [3, 4]
 const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 
@@ -180,6 +182,22 @@ function collectJsonEntries(files, listKey = 'list') {
   const items = []
   for (const file of files) {
     const data = readJson(file)
+    if (!data?.[listKey]) continue
+    items.push(...data[listKey])
+  }
+  return items
+}
+
+function readJsonFromDir(dir, filename) {
+  const path = resolve(dir, filename)
+  if (!existsSync(path)) return null
+  return JSON.parse(readFileSync(path, 'utf-8'))
+}
+
+function collectJsonEntriesFromDir(dir, files, listKey = 'dataList') {
+  const items = []
+  for (const file of files) {
+    const data = readJsonFromDir(dir, file)
     if (!data?.[listKey]) continue
     items.push(...data[listKey])
   }
@@ -386,6 +404,48 @@ function buildDescription(krText) {
   }
 
   return parts.join('\n')
+}
+
+// Unity 마크업 태그 제거 (EN/JP 텍스트 전용 — TAG_MAP 번역 없이 태그만 제거)
+function stripMarkup(text) {
+  if (!text) return ''
+  return text
+    .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
+    .replace(/<\/?noparse>/g, '')
+    .replace(/<\/?u>/g, '')
+    .replace(/<color=[^>]*>/g, '').replace(/<\/color>/g, '')
+    .replace(/<link=[^>]*>/g, '').replace(/<\/link>/g, '')
+    .replace(/<sprite[^>]*\/?>/g, '')
+    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
+    .trim()
+}
+
+// 스킬 설명 조립 (EN/JP 전용 — translateDesc 호출 안 함)
+function buildDescriptionLang(localeText, lang) {
+  if (!localeText) return null
+  const levels = localeText.levelList || []
+  const best = getBestLevelEntry(levels)
+  if (!best) return null
+
+  const coinLabel = lang === 'ja' ? 'コイン' : 'Coin'
+  const parts = []
+
+  const globalDesc = stripMarkup(best.desc || '').trim()
+  if (globalDesc) parts.push(globalDesc)
+
+  const coinlist = best.coinlist || []
+  for (let i = 0; i < coinlist.length; i++) {
+    const coin = coinlist[i]
+    const descs = (coin.coindescs || []).map(cd => stripMarkup(cd.desc || '').trim()).filter(Boolean)
+    if (descs.length > 0) {
+      parts.push(`[${coinLabel} ${i + 1}] ${descs[0]}`)
+      for (let j = 1; j < descs.length; j++) {
+        parts.push(descs[j])
+      }
+    }
+  }
+
+  return parts.length > 0 ? parts.join('\n') : null
 }
 
 // ── Supabase REST ──
@@ -711,6 +771,33 @@ async function main() {
   const krSkillMap = buildIdMap(collectJsonEntries(krFiles, 'dataList'))
   console.log(`  KR 스킬 텍스트: ${krSkillMap.size}개 로드`)
 
+  // EN 스킬 텍스트 로드
+  const enSkillFiles = [
+    'EN_Skills_personality-01.json', 'EN_Skills_personality-02.json',
+    'EN_Skills_personality-03.json', 'EN_Skills_personality-04.json',
+    'EN_Skills_personality-05.json', 'EN_Skills_personality-06.json',
+    'EN_Skills_personality-07.json', 'EN_Skills_personality-08.json',
+    'EN_Skills_personality-09.json', 'EN_Skills_personality-10.json',
+    'EN_Skills_personality-11.json', 'EN_Skills_personality-12.json',
+    'EN_Skills_personality-x1p1c1.json',
+  ]
+  const enSkillMap = buildIdMap(collectJsonEntriesFromDir(EN_DIR, enSkillFiles, 'dataList'))
+  console.log(`  EN 스킬 텍스트: ${enSkillMap.size}개 로드`)
+
+  // JP 스킬 텍스트 로드
+  const jpSkillFiles = [
+    'JP_Skills_personality-01.json', 'JP_Skills_personality-02.json',
+    'JP_Skills_personality-03.json', 'JP_Skills_personality-04.json',
+    'JP_Skills_personality-05.json', 'JP_Skills_personality-06.json',
+    'JP_Skills_personality-07.json', 'JP_Skills_personality-08.json',
+    'JP_Skills_personality-09.json', 'JP_Skills_personality-10.json',
+    'JP_Skills_personality-11.json', 'JP_Skills_personality-12.json',
+    'JP_Skills_personality-a1c9p2.json',
+    'JP_Skills_personality-x1p1c1.json',
+  ]
+  const jpSkillMap = buildIdMap(collectJsonEntriesFromDir(JP_DIR, jpSkillFiles, 'dataList'))
+  console.log(`  JP 스킬 텍스트: ${jpSkillMap.size}개 로드`)
+
   // KR 태그 매핑 로드 (BattleKeywords + Bufs)
   TAG_MAP = loadKrTagMap()
   console.log(`  KR 태그 매핑: ${Object.keys(TAG_MAP).length}개 로드\n`)
@@ -790,6 +877,11 @@ async function main() {
         const description = buildDescription(krText ? { ...krText, levelList: [bestForLevel].filter(Boolean) } : null)
         const isDefense = r.defType && r.defType !== 'ATTACK'
 
+        const enText = enSkillMap.get(gs.id)
+        const jpText = jpSkillMap.get(gs.id)
+        const description_en = buildDescriptionLang(enText, 'en')
+        const description_jp = buildDescriptionLang(jpText, 'ja')
+
         return {
           identity_id: identity.id,
           name,
@@ -800,6 +892,8 @@ async function main() {
           coins: coinList.length || 1,
           offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
           description,
+          description_en,
+          description_jp,
           skill_order: skillOrder,
           atk_weight: r.targetNum || 1,
           variant_order: vOrder,
@@ -899,6 +993,27 @@ async function main() {
     krPassiveEntries.filter(item => item?.id && item?.name)
   )
 
+  // EN 패시브 텍스트 로드
+  const enPassiveFiles = [
+    'EN_Passives.json', 'EN_Passives_check4.json', 'EN_Passives_fools.json',
+    'EN_Passives-a1c9116.json', 'EN_Passives-x1p1c1.json', 'EN_Passives-ycgd.json',
+  ]
+  const enPassiveMap = buildIdMap(
+    collectJsonEntriesFromDir(EN_DIR, enPassiveFiles, 'dataList').filter(item => item?.id && item?.name)
+  )
+  console.log(`  EN 패시브 텍스트: ${enPassiveMap.size}개 로드`)
+
+  // JP 패시브 텍스트 로드
+  const jpPassiveFiles = [
+    'JP_Passives.json', 'JP_Passives_check4.json', 'JP_Passives_fools.json',
+    'JP_Passives-a1c9116.json', 'JP_Passives-a1c9p2.json',
+    'JP_Passives-x1p1c1.json', 'JP_Passives-ycgd.json',
+  ]
+  const jpPassiveMap = buildIdMap(
+    collectJsonEntriesFromDir(JP_DIR, jpPassiveFiles, 'dataList').filter(item => item?.id && item?.name)
+  )
+  console.log(`  JP 패시브 텍스트: ${jpPassiveMap.size}개 로드`)
+
   // 패시브 상세 데이터 (공명 조건)
   const passiveFiles = ['passive.json', 'passive-a1c8p1.json', 'passive-a1c8p2.json', 'passive-a1c9p1.json', 'passive-a1c9p2.json', 'passive-extra.json']
   const passiveEntries = collectJsonEntries(passiveFiles)
@@ -984,6 +1099,10 @@ async function main() {
             const activeCond = hasStock ? 'stock' : hasResonance ? 'resonance' : null
             let desc = kr?.desc || ''
             desc = translateDesc(desc)
+            const en = enPassiveMap.get(pid)
+            const jp = jpPassiveMap.get(pid)
+            const description_en = en?.desc ? stripMarkup(en.desc) : null
+            const description_jp = jp?.desc ? stripMarkup(jp.desc) : null
 
             newPassives.push({
               identity_id: identity.id,
@@ -993,6 +1112,8 @@ async function main() {
               sin_count: sinCount,
               active_cond: activeCond,
               description: desc,
+              description_en,
+              description_jp,
               passive_order: ++passiveOrder,
               uptie_level: uptie,
             })
@@ -1016,6 +1137,10 @@ async function main() {
             const activeCond = hasStock ? 'stock' : hasResonance ? 'resonance' : null
             let desc = kr?.desc || ''
             desc = translateDesc(desc)
+            const en = enPassiveMap.get(pid)
+            const jp = jpPassiveMap.get(pid)
+            const description_en = en?.desc ? stripMarkup(en.desc) : null
+            const description_jp = jp?.desc ? stripMarkup(jp.desc) : null
 
             newPassives.push({
               identity_id: identity.id,
@@ -1025,6 +1150,8 @@ async function main() {
               sin_count: sinCount,
               active_cond: activeCond,
               description: desc,
+              description_en,
+              description_jp,
               passive_order: ++passiveOrder,
               uptie_level: uptie,
             })
@@ -1135,6 +1262,22 @@ async function main() {
   }
   console.log(`  KR_Passive_Ego: ${krEgoPassiveMap.size}개 항목 로드`)
 
+  // EN EGO 패시브 텍스트 로드
+  const enEgoPassiveMap = buildIdMap(
+    collectJsonEntriesFromDir(EN_DIR, [
+      'EN_Passive_Ego.json', 'EN_Passive_Ego-a1c5p2.json', 'EN_Passive_Ego-a1c9p3.json',
+    ], 'dataList').filter(item => item?.id && item?.name)
+  )
+  console.log(`  EN_Passive_Ego: ${enEgoPassiveMap.size}개 항목 로드`)
+
+  // JP EGO 패시브 텍스트 로드
+  const jpEgoPassiveMap = buildIdMap(
+    collectJsonEntriesFromDir(JP_DIR, [
+      'JP_Passive_Ego.json', 'JP_Passive_Ego-a1c5p2.json', 'JP_Passive_Ego-a1c9p2.json',
+    ], 'dataList').filter(item => item?.id && item?.name)
+  )
+  console.log(`  JP_Passive_Ego: ${jpEgoPassiveMap.size}개 항목 로드`)
+
   const allEgoKeywords = new Set()
 
   for (const sinner of targetSinners) {
@@ -1192,6 +1335,11 @@ async function main() {
           const name = bestForLevel?.name || (category === 'awakening' ? '각성 스킬' : '침식 스킬')
           const description = buildDescription(krText ? { ...krText, levelList: [bestForLevel].filter(Boolean) } : null)
 
+          const enText = enSkillMap.get(sid)
+          const jpText = jpSkillMap.get(sid)
+          const description_en = buildDescriptionLang(enText, 'en')
+          const description_jp = buildDescriptionLang(jpText, 'ja')
+
           newEgoSkills.push({
             ego_id: ego.id,
             name,
@@ -1201,6 +1349,8 @@ async function main() {
             coin_power: coinList.length > 0 ? (coinList[0].operatorType === 'SUB' ? -coinList[0].scale : coinList[0].scale) : null,
             coins: coinList.length || 1,
             description,
+            description_en,
+            description_jp,
             skill_order: 1,
             atk_weight: r.targetNum || 1,
             category,
@@ -1246,12 +1396,18 @@ async function main() {
         if (krPassive) {
           const passiveName = krPassive.name
           const passiveContent = translateDesc(krPassive.desc || '')
+          const enPassive = enEgoPassiveMap.get(passiveId)
+          const jpPassive = jpEgoPassiveMap.get(passiveId)
+          const passiveContentEn = enPassive?.desc ? stripMarkup(enPassive.desc) : null
+          const passiveContentJp = jpPassive?.desc ? stripMarkup(jpPassive.desc) : null
           if (dryRun) {
             console.log(`    패시브: "${passiveName}" — ${passiveContent.slice(0, 60)}...`)
           } else {
             await supaPatch('ego', `id=eq.${ego.id}`, {
               passive_name: passiveName,
               passive_content: passiveContent,
+              passive_content_en: passiveContentEn,
+              passive_content_jp: passiveContentJp,
             })
           }
         }
