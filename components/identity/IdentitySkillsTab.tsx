@@ -12,7 +12,7 @@ import {
 import SkillDescription from '@/components/skill/SkillDescription'
 import SkillFrame from '@/components/identity/SkillFrame'
 import type { SkillDiff } from '@/lib/utils/uptie-diff'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 
 /** 스킬명 배너 — SkillFrameBlock와 동일 패턴 (paddingRight + fit-content) */
 function SkillNameBanner({ name, sinColor }: { name: string; sinColor: string }) {
@@ -80,11 +80,12 @@ export default function IdentitySkillsTab({
   showDiff,
   onToggleDiff,
 }: IdentitySkillsTabProps) {
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   const localSkillName = (s: Skill) =>
-    lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
+    locale === 'en' && s.name_en ? s.name_en : locale === 'ja' && s.name_jp ? s.name_jp : s.name
   const localSkillDesc = (s: Skill) =>
-    lang === 'en' && s.description_en ? s.description_en : lang === 'ja' && s.description_jp ? s.description_jp : s.description
+    locale === 'en' && s.description_en ? s.description_en : locale === 'ja' && s.description_jp ? s.description_jp : s.description
 
   if (filteredSkills.length === 0) {
     return (
@@ -101,7 +102,7 @@ export default function IdentitySkillsTab({
     <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
-          {t('identity.skills')}
+          {t('identity.skills.title')}
         </h2>
         {onToggleDiff && (
           <button
@@ -275,7 +276,11 @@ export default function IdentitySkillsTab({
                   variant="detail"
                   skillNameColors={skillNameColors}
                   allowedKeywords={allowedKeywords}
-                  level4Desc={diff?.hasDescDiff ? diff.level4Desc : undefined}
+                  level4Desc={diff?.hasDescDiff ? (
+                    locale === 'en' && diff.level4Desc_en ? diff.level4Desc_en
+                    : locale === 'ja' && diff.level4Desc_jp ? diff.level4Desc_jp
+                    : diff.level4Desc
+                  ) : undefined}
                 />
               )}
             </div>

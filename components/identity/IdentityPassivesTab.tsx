@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, STORAGE_BASE } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
 import type { PassiveDiff } from '@/lib/utils/uptie-diff'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
@@ -16,11 +16,12 @@ interface IdentityPassivesTabProps {
 }
 
 export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives }: IdentityPassivesTabProps) {
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   const localPassiveName = (p: Passive) =>
-    lang === 'en' && p.name_en ? p.name_en : lang === 'ja' && p.name_jp ? p.name_jp : p.name
+    locale === 'en' && p.name_en ? p.name_en : locale === 'ja' && p.name_jp ? p.name_jp : p.name
   const localPassiveDesc = (p: Passive) =>
-    lang === 'en' && p.description_en ? p.description_en : lang === 'ja' && p.description_jp ? p.description_jp : p.description
+    locale === 'en' && p.description_en ? p.description_en : locale === 'ja' && p.description_jp ? p.description_jp : p.description
 
   if (filteredPassives.length === 0) {
     return (
@@ -108,7 +109,12 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             skillNameColors={skillNameColors}
             showCoinBadges={false}
             allowedKeywords={allowedKeywords}
-            level4Desc={passiveDiffs?.get(p.id)?.hasDescDiff ? passiveDiffs.get(p.id)!.level4Desc : undefined}
+            level4Desc={passiveDiffs?.get(p.id)?.hasDescDiff ? (() => {
+              const pd = passiveDiffs.get(p.id)!
+              return locale === 'en' && pd.level4Desc_en ? pd.level4Desc_en
+                : locale === 'ja' && pd.level4Desc_jp ? pd.level4Desc_jp
+                : pd.level4Desc
+            })() : undefined}
           />
         )}
       </div>

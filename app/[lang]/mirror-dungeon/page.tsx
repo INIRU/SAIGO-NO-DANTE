@@ -2,18 +2,28 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
 import MirrorDungeonClient from './MirrorDungeonClient'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
-export const metadata: Metadata = {
-  title: '거울 던전 — E.G.O 기프트 도감 | 림버스 컴퍼니',
-  description: '림버스 컴퍼니 거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피, 테마팩, 이벤트 정보까지 한 곳에서.',
-  alternates: { canonical: 'https://saigo-no-dante.com/mirror-dungeon' },
-  openGraph: {
-    title: '거울 던전 E.G.O 기프트 도감 | 최애의 관리자',
-    description: 'Limbus Company 거울 던전 E.G.O 기프트 도감 — 키워드·등급 필터, 효과, 조합 레시피, 테마팩.',
-  },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
+  }
+  return {
+    title: t('mirrorDungeon.meta.title'),
+    description: t('mirrorDungeon.meta.description'),
+    alternates: { canonical: 'https://saigo-no-dante.com/mirror-dungeon' },
+    openGraph: {
+      title: t('mirrorDungeon.meta.title'),
+      description: t('mirrorDungeon.meta.description'),
+    },
+  }
 }
 
 const MIRROR_FAQ = [
@@ -45,7 +55,7 @@ export default async function MirrorDungeonPage() {
   ] = await Promise.all([
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, boss_image_url, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
+    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, boss_image_url, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
     supabase.schema('limbus').from('md_events').select('*').order('id'),
     supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
   ])

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { ThumbsUp, ThumbsDown, Trash2, Send } from 'lucide-react'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations } from 'next-intl'
 
 interface Review {
   id: string
@@ -30,7 +30,7 @@ interface Props {
 }
 
 export default function IdentityReviewSection({ identityId, sinColor }: Props) {
-  const { t } = useLanguage()
+  const t = useTranslations()
   const { data: session } = useSession()
   const [reviewData, setReviewData] = useState<ReviewData | null>(null)
   const [loading, setLoading] = useState(true)

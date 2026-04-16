@@ -9,6 +9,7 @@ import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { IdentityData, SinnerData, SkillSummary, EgoData, PassiveData, GiftData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl, BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 
@@ -219,7 +220,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                   )}
                   {slot && identData ? (
                     <>
-                      <Image src={getInfoImageUrl(identData)} alt={slot.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 33vw, 16vw" placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
+                      <Image src={getInfoImageUrl(identData)} alt={slot.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 33vw, 16vw" placeholder="blur" blurDataURL={getBlurDataURL(getInfoImageUrl(identData)) ?? BLUR_PLACEHOLDER} />
                       <div className="absolute top-0 left-0 z-10" style={{ padding: '0.25rem' }}>
                         <Image src={`${STORAGE_BASE}/icons/Rarity/${slot.rarity}star.webp`} alt="" width={slot.rarity * 24} height={24} style={{ height: '1rem', width: 'auto', objectFit: 'contain' }} />
                       </div>
@@ -402,7 +403,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                       borderRadius: '0.25rem', overflow: 'hidden',
                     }}>
                       {identData && getInfoImageUrl(identData) && (
-                        <Image src={getInfoImageUrl(identData)} alt={slot.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 33vw, 16vw" placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
+                        <Image src={getInfoImageUrl(identData)} alt={slot.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 33vw, 16vw" placeholder="blur" blurDataURL={getBlurDataURL(getInfoImageUrl(identData)) ?? BLUR_PLACEHOLDER} />
                       )}
                       <div className="absolute bottom-0 left-0 right-0 z-10 text-center" style={{
                         background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
@@ -501,7 +502,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                     boxShadow: isSelected ? `0 0 0.75rem ${rc.glow}` : 'none',
                   }}>
                     <div className="relative w-full" style={{ aspectRatio: '2/3', overflow: 'hidden' }}>
-                      {ident.game_id && ident.folder_name && <Image src={getInfoImageUrl(ident)} alt={ident.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 50vw, 25vw" placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />}
+                      {ident.game_id && ident.folder_name && <Image src={getInfoImageUrl(ident)} alt={ident.name_kr} fill className="object-cover object-top" sizes="(max-width:640px) 50vw, 25vw" placeholder="blur" blurDataURL={getBlurDataURL(getInfoImageUrl(ident)) ?? BLUR_PLACEHOLDER} />}
                       <div className="absolute top-0 left-0 z-10" style={{ padding: '0.25rem' }}>
                         <Image src={`${STORAGE_BASE}/icons/Rarity/${ident.rarity}star.webp`} alt="" width={ident.rarity * 18} height={18} style={{ height: '0.75rem', width: 'auto', objectFit: 'contain' }} />
                       </div>

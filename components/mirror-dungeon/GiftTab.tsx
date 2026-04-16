@@ -1,8 +1,12 @@
 'use client'
 
-import { useMemo, useEffect, useRef, useCallback, useState } from 'react'
+import { useMemo, useEffect, useRef, useCallback, useState, useDeferredValue, memo } from 'react'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import Dropdown from '@/components/ui/Dropdown'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
 import GradeMultiDropdown from '@/components/mirror-dungeon/GradeMultiDropdown'
@@ -57,6 +61,23 @@ interface GiftTabProps {
   onSelectGift: (gift: EgoGift) => void
 }
 
+const MemoGiftItem = memo(function MemoGiftItem({
+  gift,
+  onSelect,
+  lang,
+}: {
+  gift: EgoGift
+  onSelect: (gift: EgoGift) => void
+  lang: SupportedLang
+}) {
+  const localizedGift = useMemo(() => ({
+    ...gift,
+    name: getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
+  }), [gift, lang])
+  const handleClick = useCallback(() => onSelect(gift), [gift, onSelect])
+  return <GiftCard gift={localizedGift} onClick={handleClick} />
+})
+
 export default function GiftTab({
   gifts,
   themes,
@@ -83,6 +104,33 @@ export default function GiftTab({
   getGiftKeywordIcon,
   onSelectGift,
 }: GiftTabProps) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return (entry as Record<string, string>)[lang] ?? (entry as Record<string, string>)['ko'] ?? key
+  }
+
+  const keywordLabels = useMemo(() => {
+    const map: Record<string, string> = {
+      '전체': t('mirrorDungeon.filter.all'),
+      '화상': t('mirrorDungeon.filter.combustion'),
+      '출혈': t('mirrorDungeon.filter.laceration'),
+      '진동': t('mirrorDungeon.filter.vibration'),
+      '파열': t('mirrorDungeon.filter.burst'),
+      '침잠': t('mirrorDungeon.filter.sinking'),
+      '호흡': t('mirrorDungeon.filter.breath'),
+      '충전': t('mirrorDungeon.filter.charge'),
+      '참격': t('mirrorDungeon.filter.slash'),
+      '관통': t('mirrorDungeon.filter.pierce'),
+      '타격': t('mirrorDungeon.filter.blunt'),
+      '공통': t('mirrorDungeon.filter.common'),
+    }
+    return map
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
+
   const toggleKeyword = useCallback(
     (key: string) => {
       setKeywords(prev => {
@@ -141,6 +189,9 @@ export default function GiftTab({
     return result
   }, [gifts, keywords, grades, tiers, search, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap])
 
+  const deferredFiltered = useDeferredValue(filtered)
+  const isStale = deferredFiltered !== filtered
+
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
@@ -149,12 +200,12 @@ export default function GiftTab({
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
     loadingRef.current = false
-  }, [filtered])
+  }, [deferredFiltered])
 
-  const visibleGifts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+  const visibleGifts = useMemo(() => deferredFiltered.slice(0, visibleCount), [deferredFiltered, visibleCount])
 
-  const filteredLenRef = useRef(filtered.length)
-  filteredLenRef.current = filtered.length
+  const filteredLenRef = useRef(deferredFiltered.length)
+  filteredLenRef.current = deferredFiltered.length
 
   // IntersectionObserver for lazy loading
   useEffect(() => {
@@ -172,11 +223,11 @@ export default function GiftTab({
           })
         }
       },
-      { rootMargin: '600px' }
+      { rootMargin: '300px' }
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [visibleCount, filtered.length])
+  }, [deferredFiltered, visibleCount])
 
   return (
     <div className="space-y-3 mb-8">
@@ -207,13 +258,13 @@ export default function GiftTab({
               {iconUrl && (
                 <Image
                   src={iconUrl}
-                  alt={kw.label}
+                  alt={keywordLabels[kw.key] ?? kw.key}
                   width={14}
                   height={14}
                   style={{ opacity: active ? 0.9 : 0.4, width: '0.875rem', height: '0.875rem' }}
                 />
               )}
-              {kw.label}
+              {keywordLabels[kw.key] ?? kw.key}
             </button>
           )
         })}
@@ -238,38 +289,38 @@ export default function GiftTab({
           <Dropdown
             value={tiers.size === 0 ? '전체' : [...tiers][0]}
             options={[
-              { value: '전체', label: '전체' },
-              { value: '노말', label: '노말' },
-              { value: '하드', label: '하드' },
-              { value: '익스트림', label: '익스트림' },
+              { value: '전체', label: t('mirrorDungeon.tier.all') },
+              { value: '노말', label: t('mirrorDungeon.tier.normal') },
+              { value: '하드', label: t('mirrorDungeon.tier.hard') },
+              { value: '익스트림', label: t('mirrorDungeon.tier.extreme') },
             ]}
             onChange={v => {
               if (v === '전체') setTiers(new Set())
               else setTiers(new Set([v]))
             }}
-            prefix="난이도:"
+            prefix={t('mirrorDungeon.filter.difficulty')}
             defaultValue="전체"
             minWidth={120}
           />
           <Dropdown
             value={slotFilter}
             options={[
-              { value: '전체', label: '전체' },
-              ...Array.from({ length: 8 }, (_, i) => ({ value: `${i + 1}`, label: `${i + 1}번` })),
+              { value: '전체', label: t('mirrorDungeon.filter.all') },
+              ...Array.from({ length: 8 }, (_, i) => ({ value: `${i + 1}`, label: `${i + 1}${t('mirrorDungeon.filter.slot')}` })),
             ]}
             onChange={v => setSlotFilter(v)}
-            prefix="편성 전용:"
+            prefix={t('mirrorDungeon.filter.slotPrefix')}
             defaultValue="전체"
             minWidth={120}
           />
           <Dropdown
             value={selectedThemeId !== null ? String(selectedThemeId) : '전체'}
             options={[
-              { value: '전체', label: '전체' },
-              ...themes.map(t => ({ value: String(t.id), label: t.name })),
+              { value: '전체', label: t('mirrorDungeon.filter.all') },
+              ...themes.map(theme => ({ value: String(theme.id), label: getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang) })),
             ]}
             onChange={v => setSelectedThemeId(v === '전체' ? null : Number(v))}
-            prefix="테마팩:"
+            prefix={t('mirrorDungeon.filter.themePrefix')}
             defaultValue="전체"
             minWidth={140}
           />
@@ -289,7 +340,7 @@ export default function GiftTab({
             style={{ border: '1px solid rgba(255,255,255,0.09)' }}
           >
             {(['default', 'name', 'grade'] as const).map((key, i, arr) => {
-              const labels = { default: '기본', name: '이름', grade: '등급' }
+              const labels = { default: t('mirrorDungeon.sort.default'), name: t('mirrorDungeon.sort.name'), grade: t('mirrorDungeon.sort.grade') }
               const isSort = sortBy === key
               return (
                 <button
@@ -335,7 +386,7 @@ export default function GiftTab({
             />
             <input
               type="text"
-              placeholder="기프트 검색..."
+              placeholder={t('mirrorDungeon.search.placeholder')}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               onFocus={e => {
@@ -421,7 +472,7 @@ export default function GiftTab({
                 {iconUrl && (
                   <Image src={iconUrl} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />
                 )}
-                {kw}
+                {keywordLabels[kw] ?? kw}
                 <X size={10} style={{ opacity: 0.5 }} />
               </button>
             )
@@ -440,36 +491,36 @@ export default function GiftTab({
                 cursor: 'pointer',
               }}
             >
-              등급 {GRADE_LABELS[g] ?? g}
+              {t('mirrorDungeon.filter.grade')} {GRADE_LABELS[g] ?? g}
               <X size={10} style={{ opacity: 0.5 }} />
             </button>
           ))}
-          {[...tiers].map(t => (
+          {[...tiers].map(tier => (
             <button
-              key={`ft-${t}`}
+              key={`ft-${tier}`}
               onClick={() => setTiers(new Set())}
               className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
               style={{
                 background:
-                  t === '익스트림'
+                  tier === '익스트림'
                     ? 'rgba(224,64,64,0.1)'
-                    : t === '하드'
+                    : tier === '하드'
                     ? 'rgba(232,144,48,0.1)'
                     : 'rgba(255,255,255,0.05)',
                 border: `1px solid ${
-                  t === '익스트림'
+                  tier === '익스트림'
                     ? 'rgba(224,64,64,0.2)'
-                    : t === '하드'
+                    : tier === '하드'
                     ? 'rgba(232,144,48,0.2)'
                     : 'rgba(255,255,255,0.08)'
                 }`,
-                color: t === '익스트림' ? '#e04040' : t === '하드' ? '#e89030' : '#888',
+                color: tier === '익스트림' ? '#e04040' : tier === '하드' ? '#e89030' : '#888',
                 fontSize: '0.6875rem',
                 fontFamily: 'var(--font-heading)',
                 cursor: 'pointer',
               }}
             >
-              {t}
+              {tier === '익스트림' ? t('mirrorDungeon.tier.extreme') : tier === '하드' ? t('mirrorDungeon.tier.hard') : t('mirrorDungeon.tier.normal')}
               <X size={10} style={{ opacity: 0.5 }} />
             </button>
           ))}
@@ -486,7 +537,7 @@ export default function GiftTab({
                 cursor: 'pointer',
               }}
             >
-              {slotFilter}번 전용
+              {slotFilter}{t('mirrorDungeon.filter.slot')}
               <X size={10} style={{ opacity: 0.5 }} />
             </button>
           )}
@@ -508,17 +559,17 @@ export default function GiftTab({
               border: '1px solid rgba(255,255,255,0.04)',
             }}
           >
-            초기화
+            {t('mirrorDungeon.filter.reset')}
           </button>
         </div>
       )}
 
       {/* 그리드 */}
-      {filtered.length === 0 ? (
+      {deferredFiltered.length === 0 ? (
         <div className="text-center py-20" style={{ color: '#555' }}>
-          <p className="text-lg font-serif mb-2">결과 없음</p>
+          <p className="text-lg font-serif mb-2">{t('mirrorDungeon.empty.title')}</p>
           <p className="text-sm" style={{ color: '#3a3530' }}>
-            필터를 변경하거나 검색어를 확인해 보세요.
+            {t('mirrorDungeon.empty.description')}
           </p>
         </div>
       ) : (
@@ -531,20 +582,19 @@ export default function GiftTab({
               gap: '0.5rem',
               position: 'relative',
               zIndex: 0,
+              willChange: 'transform',
+              opacity: isStale ? 0.7 : 1,
+              transition: 'opacity 0.1s ease',
             }}
           >
-            {visibleGifts.map((gift, i) => (
+            {visibleGifts.map((gift) => (
               <div
                 key={gift.id}
                 style={{
-                  contentVisibility: 'auto',
-                  contain: 'layout style paint',
-                  containIntrinsicSize: '4.5rem',
-                  animation: 'giftCardFadeIn 0.25s ease-out both',
-                  animationDelay: `${(i % PAGE_SIZE) * 0.008}s`,
+                  animation: 'giftCardFadeIn 0.15s ease-out forwards',
                 }}
               >
-                <GiftCard gift={gift} onClick={() => onSelectGift(gift)} />
+                <MemoGiftItem gift={gift} onSelect={onSelectGift} lang={lang} />
               </div>
             ))}
           </div>
@@ -562,7 +612,7 @@ export default function GiftTab({
                   }}
                 />
                 <span style={{ color: '#444', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
-                  불러오는 중...
+                  {t('mirrorDungeon.filter.loading')}
                 </span>
               </div>
             </div>

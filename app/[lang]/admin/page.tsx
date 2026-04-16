@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Library, Users, Database, Megaphone, FileText, Loader2, Construction } from 'lucide-react'
 import { AdminCard } from '@/components/admin'
 

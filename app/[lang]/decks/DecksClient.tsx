@@ -14,6 +14,8 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckListFilters from '@/components/decks/DeckListFilters'
 import DeckGrid from '@/components/decks/DeckGrid'
 import type { SearchSuggestion } from '@/components/decks/decks-types'
+import { useLocale } from 'next-intl'
+import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 const PAGE_SIZE = 12
 
@@ -69,6 +71,8 @@ interface DecksClientProps {
 }
 
 export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
+  const lang = useLocale()
+  useRoutePrefetch([`/${lang}/decks/new`, `/${lang}/tier-list`])
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const { status: authStatus } = useSession()

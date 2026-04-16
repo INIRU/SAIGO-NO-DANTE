@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 

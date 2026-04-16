@@ -13,7 +13,9 @@ import {
   getSinnerLogoUrl,
   BLUR_PLACEHOLDER,
 } from '@/lib/data/sinners'
-import { useLanguage } from '@/lib/i18n'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
+import { useTranslations, useLocale } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface IdentityPortraitSectionProps {
@@ -41,8 +43,9 @@ export default function IdentityPortraitSection({
   sinColor,
   rarityNum,
 }: IdentityPortraitSectionProps) {
-  const { lang, t } = useLanguage()
-  const localizedName = getLocalizedName(identity, lang)
+  const t = useTranslations()
+  const locale = useLocale()
+  const localizedName = getLocalizedName(identity, locale as SupportedLang)
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackInfoUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
 
@@ -191,7 +194,7 @@ export default function IdentityPortraitSection({
                 height={320}
                 quality={90}
                 placeholder="blur"
-                blurDataURL={BLUR_PLACEHOLDER}
+                blurDataURL={getBlurDataURL(infoSrc) ?? BLUR_PLACEHOLDER}
                 className="w-full h-auto max-w-[320px] mx-auto"
                 priority
                 onError={() => {

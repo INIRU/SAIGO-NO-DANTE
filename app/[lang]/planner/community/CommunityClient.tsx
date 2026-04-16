@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { PackageOpen, Search, X, Link2, User } from 'lucide-react'

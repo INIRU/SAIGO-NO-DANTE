@@ -2,10 +2,14 @@
 
 import Image from 'next/image'
 import { X } from 'lucide-react'
+import { useLocale } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
 import type { EgoGift, EgoGiftTheme, MdEvent } from '@/components/mirror-dungeon/types'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface ThemeModalProps {
   theme: EgoGiftTheme
@@ -26,6 +30,14 @@ export default function ThemeModal({
   events,
   choiceCountByEventId,
 }: ThemeModalProps) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   const isHidden = theme.is_hidden === true
   const hiddenRate = isHidden && typeof theme.hidden_rate === 'number'
     ? theme.hidden_rate * 100
@@ -48,6 +60,39 @@ export default function ThemeModal({
   const themeEvents = (events ?? []).filter(ev =>
     ev.theme_ids?.includes(theme.id) && (ev.theme_ids?.length ?? 0) <= 5
   )
+
+  const displayName = getLocalizedName(
+    { name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp },
+    lang
+  )
+
+  // Localized display name for dungeon keys (floor_info uses Korean keys as identifiers)
+  const dungeonDisplayMap: Record<string, string> = {
+    '익스트림': t('mirrorDungeon.tier.extreme'),
+    '평행중첩': t('mirrorDungeon.tier.parallel'),
+    '하드': t('mirrorDungeon.tier.hard'),
+    '노말': t('mirrorDungeon.tier.normal'),
+  }
+
+  // Localized difficulty label
+  const getDiffLabel = (diff: string) => {
+    if (diff === 'extreme') return t('mirrorDungeon.tier.extreme')
+    if (diff === 'hard') return t('mirrorDungeon.tier.hard')
+    return t('mirrorDungeon.tier.normal')
+  }
+
+  // Localized floor text for floor_info values
+  const getFloorText = (floors: unknown): string => {
+    if (floors === '전체') return t('mirrorDungeon.theme.allFloors')
+    if (Array.isArray(floors)) {
+      return floors
+        .map((f: number) =>
+          lang === 'ko' ? `${f}층` : `${t('mirrorDungeon.theme.floor')}${f}`
+        )
+        .join(', ')
+    }
+    return String(floors)
+  }
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="48rem" padding="1rem">
@@ -77,7 +122,7 @@ export default function ThemeModal({
               <>
                 <ImageWithFallback
                   src={theme.image_url}
-                  alt={theme.name}
+                  alt={displayName}
                   fill
                   fallbackType="theme"
                   sizes="(max-width: 768px) 100vw, 48rem"
@@ -122,7 +167,7 @@ export default function ThemeModal({
                       letterSpacing: '0.06em',
                     }}
                   >
-                    히든 테마팩
+                    {t('mirrorDungeon.theme.hiddenBadge')}
                   </span>
                 </div>
               )}
@@ -130,12 +175,12 @@ export default function ThemeModal({
                 className="font-serif text-xl md:text-2xl font-bold"
                 style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
               >
-                {theme.name}
+                {displayName}
               </h3>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 {!isHidden && (() => {
                   const diff = theme.difficulty || 'normal'
-                  const label = diff === 'extreme' ? '익스트림' : diff === 'hard' ? '하드' : '노말'
+                  const label = getDiffLabel(diff)
                   const color = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : '#999'
                   const bg =
                     diff === 'extreme'
@@ -161,15 +206,15 @@ export default function ThemeModal({
                       fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    출현 확률: {hiddenRate.toFixed(2)}%
+                    {t('mirrorDungeon.theme.appearanceRate')}: {hiddenRate.toFixed(2)}%
                   </span>
                 )}
                 <span style={{ color: '#888', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                  {themeGifts.length}종
+                  {themeGifts.length}{t('mirrorDungeon.theme.giftCountSuffix')}
                 </span>
                 {exclusiveGifts.length > 0 && (
                   <span style={{ color: 'var(--gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                    ★{exclusiveGifts.length} 전용
+                    ★{exclusiveGifts.length} {t('mirrorDungeon.theme.exclusiveBadge')}
                   </span>
                 )}
               </div>
@@ -185,7 +230,7 @@ export default function ThemeModal({
                     className="text-[0.6875rem] font-bold mb-2"
                     style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}
                   >
-                    출현 정보
+                    {t('mirrorDungeon.theme.appearance')}
                   </p>
                   <div className="space-y-1">
                     {Object.entries(theme.floor_info).map(([dungeon, floors]) => {
@@ -197,19 +242,14 @@ export default function ThemeModal({
                           : dungeon === '하드'
                           ? '#e89030'
                           : '#a0a090'
-                      const floorText =
-                        floors === '전체'
-                          ? '전층'
-                          : Array.isArray(floors)
-                          ? floors.map(f => `${f}층`).join(', ')
-                          : String(floors)
+                      const floorText = getFloorText(floors)
                       return (
                         <div key={dungeon} className="flex items-center gap-2">
                           <span
                             className="inline-block w-16 text-right"
                             style={{ color: dColor, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
                           >
-                            {dungeon}
+                            {dungeonDisplayMap[dungeon] ?? dungeon}
                           </span>
                           <span style={{ color: '#555', fontSize: '0.8125rem' }}>—</span>
                           <span style={{ color: '#bbb', fontSize: '0.8125rem' }}>{floorText}</span>
@@ -225,7 +265,7 @@ export default function ThemeModal({
                   className="text-[0.6875rem] font-bold mb-2"
                   style={{ color: '#666', fontFamily: 'var(--font-heading)', letterSpacing: '0.08em' }}
                 >
-                  키워드 분포
+                  {t('mirrorDungeon.theme.keywordDist')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(byKeyword)
@@ -276,7 +316,7 @@ export default function ThemeModal({
                     className="font-serif font-medium"
                     style={{ color: '#b090d0', fontSize: '0.875rem' }}
                   >
-                    고정 보상
+                    {t('mirrorDungeon.theme.fixedReward')}
                   </span>
                   <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                     ({fixedRewardGifts.length})
@@ -300,7 +340,7 @@ export default function ThemeModal({
                 <div className="flex items-center gap-1.5 mb-2.5">
                   <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>◇</span>
                   <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-                    등장 이벤트
+                    {t('mirrorDungeon.theme.relatedEvents')}
                   </span>
                   <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                     ({themeEvents.length})
@@ -334,11 +374,16 @@ export default function ThemeModal({
                           className="font-serif font-bold leading-tight"
                           style={{ color: '#ddd', fontSize: '0.6875rem' }}
                         >
-                          {ev.name}
+                          {ev.name
+                            ? getLocalizedName(
+                                { name_kr: ev.name, name_en: ev.name_en, name_jp: ev.name_jp },
+                                lang
+                              )
+                            : ev.name}
                         </div>
                         {(choiceCountByEventId?.get(ev.id) ?? 0) > 0 && (
                           <div style={{ color: '#666', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.125rem' }}>
-                            {choiceCountByEventId?.get(ev.id) ?? 0}개 선택지
+                            {choiceCountByEventId?.get(ev.id) ?? 0}{t('mirrorDungeon.theme.choiceCount')}
                           </div>
                         )}
                       </div>
@@ -358,7 +403,7 @@ export default function ThemeModal({
                 <div className="flex items-center gap-1.5 mb-2.5">
                   <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>★</span>
                   <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-                    전용 E.G.O 기프트
+                    {t('mirrorDungeon.theme.exclusiveGifts')}
                   </span>
                   <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                     ({exclusiveGifts.length})

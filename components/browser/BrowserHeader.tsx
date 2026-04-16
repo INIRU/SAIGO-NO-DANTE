@@ -1,7 +1,7 @@
 'use client'
 
 // Design Ref: §5.6 — 브라우저 헤더 (타이틀 + 카운트 + 정렬)
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
 import type { SortOption } from '@/lib/types/browser'

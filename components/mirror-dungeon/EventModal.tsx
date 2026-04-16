@@ -18,6 +18,8 @@ import {
   parseUnityColorTags,
 } from '@/lib/utils/event-text'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { useLocale } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,19 +40,24 @@ function getSinColor(sinKr: string): string {
   return en ? SIN_COLORS[en] : '#aaa'
 }
 
-// English color names used in message_desc → Korean sin names
-const COLOR_TO_KR: Record<string, string> = {
-  CRIMSON: '분노',
-  SCARLET: '색욕',
-  ORANGE: '색욕',
-  VIOLET: '질투',
-  INDIGO: '오만',
-  AZURE: '우울',
-  GREEN: '탐식',
-  SHAMROCK: '탐식',
-  YELLOW: '나태',
-  AMBER: '나태',
+// English color names used in message_desc → sin names per language
+const SIN_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
+  CRIMSON:  { ko: '분노', en: 'Wrath',    ja: '憤怒' },
+  SCARLET:  { ko: '색욕', en: 'Lust',     ja: '色欲' },
+  ORANGE:   { ko: '색욕', en: 'Lust',     ja: '色欲' },
+  VIOLET:   { ko: '질투', en: 'Envy',     ja: '嫉妬' },
+  INDIGO:   { ko: '오만', en: 'Pride',    ja: '傲慢' },
+  AZURE:    { ko: '우울', en: 'Gloom',    ja: '憂鬱' },
+  GREEN:    { ko: '탐식', en: 'Gluttony', ja: '暴食' },
+  SHAMROCK: { ko: '탐식', en: 'Gluttony', ja: '暴食' },
+  YELLOW:   { ko: '나태', en: 'Sloth',    ja: '怠惰' },
+  AMBER:    { ko: '나태', en: 'Sloth',    ja: '怠惰' },
 }
+
+// Derive a flat KR-keyed map for getSinColor (color→KR still needed for sinInfo)
+const COLOR_TO_KR: Record<string, string> = Object.fromEntries(
+  Object.entries(SIN_LABELS).map(([k, v]) => [k, v.ko])
+)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -112,17 +119,15 @@ function formatProb(prob: string | null | undefined): string | null {
 
 // ── Effect renderer (sentence style) ─────────────────────────────────────────
 
-const SIN_NAME: Record<string, string> = {
-  CRIMSON: '분노', SCARLET: '색욕', ORANGE: '색욕',
-  VIOLET: '질투', INDIGO: '오만', AZURE: '우울',
-  GREEN: '탐식', SHAMROCK: '탐식', YELLOW: '나태', AMBER: '나태',
+function sinLabel(key: string, lang: SupportedLang): string {
+  return SIN_LABELS[key]?.[lang] ?? SIN_LABELS[key]?.ko ?? key
 }
 
-function sinList(raw: string): string {
-  return raw.split(',').map(s => SIN_NAME[s.trim()] ?? s.trim()).join('·')
+function sinList(raw: string, lang: SupportedLang): string {
+  return raw.split(',').map(s => sinLabel(s.trim(), lang)).join('·')
 }
 
-function formatTarget(raw: string): string | null {
+function formatTarget(raw: string, lang: SupportedLang = 'ko'): string | null {
   if (!raw) return null
   // strip condition suffix (|SUCCESS, |FAILURE, |IncludeSkillAttribute_*)
   const parts = raw.split('|')
@@ -147,15 +152,15 @@ function formatTarget(raw: string): string | null {
 
   // IncludeSkillAttribute_SIN[,SIN]
   const includeAttr = target.match(/^IncludeSkillAttribute_(.+)$/)
-  if (includeAttr) return `${sinList(includeAttr[1])} 속성 공격 스킬 보유 인격`
+  if (includeAttr) return `${sinList(includeAttr[1], lang)} 속성 공격 스킬 보유 인격`
 
   // NotIncludeSkillAttribute_SIN[,SIN]
   const excludeAttr = target.match(/^NotIncludeSkillAttribute_(.+)$/)
-  if (excludeAttr) return `${sinList(excludeAttr[1])} 속성 공격 스킬 미보유 인격`
+  if (excludeAttr) return `${sinList(excludeAttr[1], lang)} 속성 공격 스킬 미보유 인격`
 
   // AttributePersonality_SIN (legacy pattern)
   const attrPersonality = target.match(/^AttributePersonality_(\w+)$/)
-  if (attrPersonality) return `${SIN_NAME[attrPersonality[1]] ?? attrPersonality[1]} 속성 인격`
+  if (attrPersonality) return `${sinLabel(attrPersonality[1], lang)} 속성 인격`
 
   // Named character targets (Ryosyu, Donquixote etc.) — show as-is
   if (/^[A-Z]/.test(target)) return target
@@ -170,6 +175,8 @@ interface EffectLineProps {
 }
 
 function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
+  const locale = useLocale()
+  const lang = (locale as SupportedLang) ?? 'ko'
   const red = '#e05050'
   const green = '#00c87a'
   const gold = '#c8900a'
@@ -212,7 +219,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
     )
   }
 
-  const targetText = effect.effect ? formatTarget(effect.effect) : null
+  const targetText = effect.effect ? formatTarget(effect.effect, lang) : null
   const subject = targetText ?? '아군 전원'
 
   if (effect.type === 'hp_loss') {
@@ -402,6 +409,8 @@ interface CoinEventProps {
   giftByGameId: Map<number, EgoGift>
   onSelectGift: (g: EgoGift) => void
   depth: number
+  successLabel?: string
+  failureLabel?: string
 }
 
 function CoinEventBlock({
@@ -411,6 +420,8 @@ function CoinEventBlock({
   giftByGameId,
   onSelectGift,
   depth,
+  successLabel = '성공',
+  failureLabel = '실패',
 }: CoinEventProps) {
   if (depth > 5) return null
   const branches = choicesByEventId.get(coinEvent.id) ?? []
@@ -514,6 +525,7 @@ function CoinEventBlock({
           <BranchBlock
             choice={successBranch}
             isSuccess={true}
+            label={successLabel}
             eventById={eventById}
             choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
@@ -525,6 +537,7 @@ function CoinEventBlock({
           <BranchBlock
             choice={failureBranch}
             isSuccess={false}
+            label={failureLabel}
             eventById={eventById}
             choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
@@ -542,6 +555,7 @@ function CoinEventBlock({
 interface BranchBlockProps {
   choice: MdEventChoice
   isSuccess: boolean
+  label: string
   eventById: Map<number, MdEvent>
   choicesByEventId: Map<number, MdEventChoice[]>
   giftByGameId: Map<number, EgoGift>
@@ -552,6 +566,7 @@ interface BranchBlockProps {
 function BranchBlock({
   choice,
   isSuccess,
+  label,
   eventById,
   choicesByEventId,
   giftByGameId,
@@ -562,7 +577,6 @@ function BranchBlock({
   const accentColor = isSuccess ? '#00c87a' : '#e05050'
   const accentBg = isSuccess ? 'rgba(0,200,122,0.06)' : 'rgba(224,80,80,0.06)'
   const accentBorder = isSuccess ? 'rgba(0,200,122,0.18)' : 'rgba(224,80,80,0.18)'
-  const label = isSuccess ? '성공' : '실패'
 
   const childEvent = choice.next_event_id ? eventById.get(choice.next_event_id) : null
 

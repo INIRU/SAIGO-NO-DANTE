@@ -1,5 +1,5 @@
 import React from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import {
   Globe, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
   Shield, Layers, Compass, BookOpen, Trophy, Dices, Shuffle, Map,
@@ -10,9 +10,7 @@ import { getSinnerLogoUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { FeatureHoverCard, OfficialHoverCard } from './HomeHoverCard'
 import { LatestIdentityCard } from './LatestIdentityCard'
-import { serverT } from '@/lib/i18n/server'
-import type { SupportedLang } from '@/lib/i18n/types'
-import type { TranslationKey } from '@/lib/i18n/translations'
+import { getTranslations } from 'next-intl/server'
 
 // ── SVG icons (defined here so they work in Server Components) ────────────
 
@@ -52,25 +50,27 @@ function DiscordIcon({ size = 18, style }: { size?: number; style?: React.CSSPro
 
 // ── Static data ───────────────────────────────────────────────────────────
 
-function getFeatures(lang: SupportedLang) {
+type TFn = Awaited<ReturnType<typeof getTranslations>>
+
+function getFeatures(t: TFn) {
   return [
-    { href: '/sinners',        Icon: Shield,   tag: 'SINNER DB',       title: serverT('home.feat.sinnerDb' as TranslationKey, lang),       desc: serverT('home.feat.sinnerDbDesc' as TranslationKey, lang),       accent: '#c8900a' },
-    { href: '/decks',          Icon: Layers,   tag: 'DECK BOARD',      title: serverT('home.feat.deckBoard' as TranslationKey, lang),       desc: serverT('home.feat.deckBoardDesc' as TranslationKey, lang),      accent: '#4898b0' },
-    { href: '/mirror-dungeon', Icon: Compass,  tag: 'MIRROR DUNGEON',  title: serverT('home.feat.mirrorDungeon' as TranslationKey, lang),   desc: serverT('home.feat.mirrorDungeonDesc' as TranslationKey, lang),  accent: '#8058a8' },
-    { href: '/collection',     Icon: BookOpen, tag: 'COLLECTION',      title: serverT('home.feat.collection' as TranslationKey, lang),      desc: serverT('home.feat.collectionDesc' as TranslationKey, lang),     accent: '#d4b830' },
-    { href: '/tier-list',      Icon: Trophy,   tag: 'TIER LIST',       title: serverT('home.feat.tierList' as TranslationKey, lang),        desc: serverT('home.feat.tierListDesc' as TranslationKey, lang),       accent: '#d06030' },
-    { href: '/extraction',     Icon: Dices,    tag: 'EXTRACTION SIM',  title: serverT('home.feat.extraction' as TranslationKey, lang),      desc: serverT('home.feat.extractionDesc' as TranslationKey, lang),     accent: '#c83030' },
-    { href: '/random',         Icon: Shuffle,  tag: 'RANDOM COMP',     title: serverT('home.feat.random' as TranslationKey, lang),          desc: serverT('home.feat.randomDesc' as TranslationKey, lang),         accent: '#3870b0' },
-    { href: '/planner',        Icon: Map,      tag: 'DUNGEON PLANNER', title: serverT('home.feat.planner' as TranslationKey, lang),         desc: serverT('home.feat.plannerDesc' as TranslationKey, lang),        accent: '#8b1a1a' },
+    { href: '/sinners',        Icon: Shield,   tag: 'SINNER DB',       title: t('home.feat.sinnerDb'),       desc: t('home.feat.sinnerDbDesc'),       accent: '#c8900a' },
+    { href: '/decks',          Icon: Layers,   tag: 'DECK BOARD',      title: t('home.feat.deckBoard'),       desc: t('home.feat.deckBoardDesc'),      accent: '#4898b0' },
+    { href: '/mirror-dungeon', Icon: Compass,  tag: 'MIRROR DUNGEON',  title: t('home.feat.mirrorDungeon'),   desc: t('home.feat.mirrorDungeonDesc'),  accent: '#8058a8' },
+    { href: '/collection',     Icon: BookOpen, tag: 'COLLECTION',      title: t('home.feat.collection'),      desc: t('home.feat.collectionDesc'),     accent: '#d4b830' },
+    { href: '/tier-list',      Icon: Trophy,   tag: 'TIER LIST',       title: t('home.feat.tierList'),        desc: t('home.feat.tierListDesc'),       accent: '#d06030' },
+    { href: '/extraction',     Icon: Dices,    tag: 'EXTRACTION SIM',  title: t('home.feat.extraction'),      desc: t('home.feat.extractionDesc'),     accent: '#c83030' },
+    { href: '/random',         Icon: Shuffle,  tag: 'RANDOM COMP',     title: t('home.feat.random'),          desc: t('home.feat.randomDesc'),         accent: '#3870b0' },
+    { href: '/planner',        Icon: Map,      tag: 'DUNGEON PLANNER', title: t('home.feat.planner'),         desc: t('home.feat.plannerDesc'),        accent: '#8b1a1a' },
   ]
 }
 
-function getOfficialLinks(lang: SupportedLang) {
+function getOfficialLinks(t: TFn) {
   return [
-    { label: serverT('home.official.site' as TranslationKey, lang),    sub: 'limbuscompany.com',   href: 'https://limbuscompany.com',                    Icon: Globe,        color: '#4898b0', isInternal: false },
-    { label: 'YouTube',                                                  sub: serverT('home.official.youtubeSub' as TranslationKey, lang), href: 'https://www.youtube.com/@ProjectMoonOfficial', Icon: YoutubeIcon,  color: '#c83030', isInternal: false },
-    { label: 'Twitter / X',                                              sub: '@LimbusCompany_B',    href: 'https://x.com/LimbusCompany_B',                Icon: XIcon,        color: '#3870b0', isInternal: false },
-    { label: serverT('home.official.discord' as TranslationKey, lang),  sub: serverT('home.official.discordSub' as TranslationKey, lang), href: '/bot', Icon: DiscordIcon, color: '#5865f2', isInternal: true  },
+    { label: t('home.official.site'),    sub: 'limbuscompany.com',   href: 'https://limbuscompany.com',                    Icon: Globe,        color: '#4898b0', isInternal: false },
+    { label: 'YouTube',                   sub: t('home.official.youtubeSub'), href: 'https://www.youtube.com/@ProjectMoonOfficial', Icon: YoutubeIcon,  color: '#c83030', isInternal: false },
+    { label: 'Twitter / X',               sub: '@LimbusCompany_B',    href: 'https://x.com/LimbusCompany_B',                Icon: XIcon,        color: '#3870b0', isInternal: false },
+    { label: t('home.official.discord'),  sub: t('home.official.discordSub'), href: '/bot', Icon: DiscordIcon, color: '#5865f2', isInternal: true  },
   ]
 }
 
@@ -93,15 +93,15 @@ function formatDate(d: string) {
 interface HomeStaticSectionsProps {
   latestIdentities: IdentityWithSinner[]
   latestVideo: YoutubeVideo | null
-  lang: SupportedLang
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function HomeStaticSections({ latestIdentities, latestVideo, lang }: HomeStaticSectionsProps) {
+export default async function HomeStaticSections({ latestIdentities, latestVideo }: HomeStaticSectionsProps) {
+  const t = await getTranslations()
   const latestDate = latestIdentities[0]?.release_date
-  const features = getFeatures(lang)
-  const officialLinks = getOfficialLinks(lang)
+  const features = getFeatures(t)
+  const officialLinks = getOfficialLinks(t)
 
   return (
     <div style={{ background: 'var(--bg-deep)' }}>
@@ -131,7 +131,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo, lang
                   </span>
                 </div>
                 <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>
-                  {serverT('home.latestVideo' as TranslationKey, lang)}
+                  {t('home.latestVideo')}
                 </h2>
               </div>
               <a
@@ -141,7 +141,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo, lang
                 className="flex items-center gap-1.5 text-sm transition-all hover:gap-2.5 mb-1"
                 style={{ color: '#c83030', opacity: 0.7 }}
               >
-                {serverT('home.viewChannel' as TranslationKey, lang)} <ChevronRight size={14} />
+                {t('home.viewChannel')} <ChevronRight size={14} />
               </a>
             </div>
 
@@ -232,7 +232,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo, lang
                   <Sparkles size={11} style={{ color: 'var(--gold)' }} />
                   <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '0.625rem', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
                 </div>
-                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>{serverT('home.latestIdentity' as TranslationKey, lang)}</h2>
+                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>{t('home.latestIdentity')}</h2>
               </div>
               {latestDate && (
                 <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -272,7 +272,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo, lang
                   borderRadius: '0.125rem',
                 }}
               >
-                {serverT('home.viewAllSinners' as TranslationKey, lang)}
+                {t('home.viewAllSinners')}
                 <ChevronRight size={14} />
               </Link>
             </div>
@@ -443,7 +443,7 @@ export default function HomeStaticSections({ latestIdentities, latestVideo, lang
             SAIGO NO DANTE
           </span>
           <span aria-hidden="true" className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
-            {serverT('home.fanArchiveFooter' as TranslationKey, lang)}
+            {t('home.fanArchiveFooter')}
           </span>
         </div>
       </section>

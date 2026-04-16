@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Trash2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {

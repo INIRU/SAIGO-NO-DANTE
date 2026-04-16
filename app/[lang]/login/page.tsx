@@ -1,11 +1,14 @@
 'use client'
 
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { motion } from 'framer-motion'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { useLocale } from 'next-intl'
 
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -89,6 +92,13 @@ function Particles() {
 export default function LoginPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
 
   useEffect(() => {
     if (status === 'authenticated') router.replace('/')
@@ -183,7 +193,7 @@ export default function LoginPage() {
             marginTop: '0.875rem',
             textShadow: '0 0 2rem rgba(200,144,10,0.3)',
           }}>
-            최애의 관리자
+            {t('login.title')}
           </h1>
           <p style={{
             color: '#888888',
@@ -191,7 +201,7 @@ export default function LoginPage() {
             letterSpacing: '0.15em',
             marginTop: '0.5rem',
           }}>
-            수감자 DB &middot; 덱 공유 &middot; 메타 분석
+            {t('login.subtitle')}
           </p>
 
           {/* 구분선 */}
@@ -244,39 +254,28 @@ export default function LoginPage() {
               letterSpacing: '0.15em',
               marginBottom: '1.5rem',
             }}>
-              로그인
+              {t('common.login')}
             </h2>
 
             {/* 약관 아코디언 */}
             <div className="space-y-2" style={{ marginBottom: '1.25rem' }}>
-              <Accordion title="이용약관">
+              <Accordion title={t('login.terms.title')}>
                 <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {`최애의 관리자는 Limbus Company 팬 사이트입니다.
-Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이 운영됩니다.
-
-• 이용자 콘텐츠(덱 등)의 저작권은 작성자에게 있습니다.
-• 타인을 비방하거나 서비스 운영을 방해하는 행위는 금지됩니다.
-• 서비스는 예고 없이 변경되거나 종료될 수 있습니다.`}
+                  {t('login.terms.summary')}
                 </div>
                 <Link href="/terms" target="_blank"
                   style={{ display: 'block', marginTop: '0.625rem', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
-                  전문 보기 &rarr;
+                  {t('login.terms.link')} &rarr;
                 </Link>
               </Accordion>
 
-              <Accordion title="개인정보 처리방침">
+              <Accordion title={t('login.privacy.title')}>
                 <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {`Google OAuth를 통해 다음 정보를 수집합니다.
-• 이메일 주소 (계정 식별)
-• 프로필 이름 · 프로필 사진
-
-수집된 정보는 로그인 및 덱 게시판 운영 목적으로만 사용되며
-제3자에게 제공되지 않습니다.
-회원 탈퇴 시 즉시 삭제됩니다.`}
+                  {t('login.privacy.summary')}
                 </div>
                 <Link href="/privacy" target="_blank"
                   style={{ display: 'block', marginTop: '0.625rem', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
-                  전문 보기 &rarr;
+                  {t('login.privacy.link')} &rarr;
                 </Link>
               </Accordion>
             </div>
@@ -289,7 +288,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
               marginBottom: '1.25rem',
               lineHeight: 1.7,
             }}>
-              로그인 시 이용약관 및 개인정보 처리방침에<br />동의한 것으로 간주됩니다.
+              {t('login.consent')}
             </p>
 
             {/* Google 로그인 버튼 */}
@@ -316,7 +315,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
                 <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.548 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
-              Google로 계속하기
+              {t('login.google')}
             </button>
           </div>
         </motion.div>
@@ -335,7 +334,7 @@ Project Moon과 공식 제휴 관계에 있지 않으며 상업적 목적 없이
             transition: 'color 300ms ease',
           }}
             className="hover:text-yellow-300">
-            &larr; 로그인 없이 둘러보기
+            &larr; {t('login.browse')}
           </Link>
         </motion.div>
       </div>

@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { GRADES, GRADE_LABELS } from './types'
 
 export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Set<string>; toggleGrade: (g: string) => void }) {
@@ -17,8 +20,18 @@ export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Se
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   const isActive = grades.size > 0
-  const label = !isActive ? '전체' : `${grades.size}개 선택`
+  const label = !isActive
+    ? t('mirrorDungeon.filter.all')
+    : `${grades.size}${t('mirrorDungeon.filter.selected')}`
 
   return (
     <div className="relative" ref={ref}>
@@ -35,7 +48,7 @@ export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Se
           minWidth: 100,
         }}
       >
-        등급: {label}
+        {t('mirrorDungeon.filter.grade')}: {label}
         <ChevronDown
           size={14}
           style={{
@@ -83,7 +96,7 @@ export default function GradeMultiDropdown({ grades, toggleGrade }: { grades: Se
                     </svg>
                   )}
                 </span>
-                {isAll ? '전체' : GRADE_LABELS[g] ?? g}
+                {isAll ? t('mirrorDungeon.filter.all') : GRADE_LABELS[g] ?? g}
               </button>
             )
           })}

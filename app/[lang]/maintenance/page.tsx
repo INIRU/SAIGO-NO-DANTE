@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import { Construction } from 'lucide-react'

@@ -1,16 +1,16 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
 
 type NavGroup = {
@@ -25,13 +25,13 @@ type NavGroupDef = {
 
 const NAV_GROUPS: NavGroupDef[] = [
   {
-    labelKey: 'nav.story',
+    labelKey: 'nav.story.title',
     items: [
       { href: '/story', labelKey: 'nav.story.main' },
     ],
   },
   {
-    labelKey: 'nav.db',
+    labelKey: 'nav.db.title',
     items: [
       { href: '/sinners',        labelKey: 'nav.sinners' },
       { href: '/mirror-dungeon', labelKey: 'nav.db.mirrorDungeon' },
@@ -39,7 +39,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     ],
   },
   {
-    labelKey: 'nav.community',
+    labelKey: 'nav.community.title',
     items: [
       { href: '/decks',               labelKey: 'nav.decks' },
       { href: '/planner/community',   labelKey: 'nav.community.planner' },
@@ -48,7 +48,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     ],
   },
   {
-    labelKey: 'nav.other',
+    labelKey: 'nav.other.title',
     items: [
       { href: '/meta',       labelKey: 'nav.other.meta' },
       { href: '/extraction', labelKey: 'nav.other.extraction' },
@@ -133,8 +133,9 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  const { t, lang } = useLanguage()
-  const langPrefix = useMemo(() => (lang === 'ko' ? '' : `/${lang}`), [lang])
+  const t = useTranslations()
+  const locale = useLocale()
+  // next-intl Link handles locale prefix automatically
   const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
     label: t(g.labelKey as TranslationKey),
     items: g.items.map(item => ({
@@ -169,9 +170,7 @@ export default function Navbar() {
   const displayName = user?.name ?? user?.email ?? ''
 
   // Strip lang prefix from pathname so active-state checks work regardless of prefix
-  const strippedPathname = langPrefix && pathname?.startsWith(langPrefix)
-    ? pathname.slice(langPrefix.length) || '/'
-    : pathname
+  const strippedPathname = pathname
 
   const mobileLinkStyle = (href: string) => ({
     fontFamily: 'var(--font-heading)',
@@ -196,7 +195,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-[64px] flex items-center justify-between">
           {/* 로고 — 모바일 축소 */}
           <Link
-            href={langPrefix || '/'}
+            href="/"
             className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
             style={{ color: 'var(--gold)', fontFamily: 'var(--font-kotra-bold), var(--font-heading)' }}
           >
@@ -215,7 +214,7 @@ export default function Navbar() {
                 return (
                   <Link
                     key={group.label}
-                    href={`${langPrefix}${group.items[0].href}`}
+                    href={`${group.items[0].href}`}
                     className="flex items-center transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
@@ -287,7 +286,7 @@ export default function Navbar() {
                         return (
                           <Link
                             key={item.href}
-                            href={`${langPrefix}${item.href}`}
+                            href={`${item.href}`}
                             role="menuitem"
                             className="block transition-all duration-150"
                             style={{
@@ -508,7 +507,7 @@ export default function Navbar() {
                 return (
                   <div key={group.label}>
                     <Link
-                      href={`${langPrefix}${group.items[0].href}`}
+                      href={`${group.items[0].href}`}
                       onClick={() => setMobileMenuOpen(false)}
                       style={{
                         fontFamily: 'var(--font-heading)',
@@ -555,7 +554,7 @@ export default function Navbar() {
                   {isOpen && group.items.map(item => (
                     <Link
                       key={item.href}
-                      href={`${langPrefix}${item.href}`}
+                      href={`${item.href}`}
                       className="block transition-colors duration-200 hover:text-yellow-300"
                       style={mobileLinkStyle(item.href)}
                     >

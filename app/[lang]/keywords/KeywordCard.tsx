@@ -4,11 +4,9 @@ import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
-
-const SIN_LABELS: Record<string, string> = {
-  wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식',
-  gloom: '우울', pride: '오만', envy: '질투',
-}
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 
 interface KeywordCardProps {
   keyword: {
@@ -18,22 +16,51 @@ interface KeywordCardProps {
     icon_slug: string | null
     sin_affinity: string | null
     category: string | null
+    name_en?: string | null
+    name_jp?: string | null
+    description_en?: string | null
+    description_jp?: string | null
   }
   identityCount: number
   egoCount: number
   giftCount: number
   animationDelay: number
   onClick: () => void
+  lang: SupportedLang
 }
 
 export default function KeywordCard({
-  keyword: kw, identityCount, egoCount, giftCount, animationDelay, onClick,
+  keyword: kw, identityCount, egoCount, giftCount, animationDelay, onClick, lang,
 }: KeywordCardProps) {
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   const sinColor = kw.sin_affinity
     ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
     : null
   const iconUrl = kw.icon_slug
     ? `${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`
+    : null
+
+  const displayName = getLocalizedKeywordName(kw.name, {
+    nameEn: kw.name_en,
+    nameJp: kw.name_jp,
+    descEn: null,
+    descJp: null,
+  }, lang)
+
+  const displayDesc = getLocalizedKeywordDesc(kw.description ?? '', {
+    nameEn: null,
+    nameJp: null,
+    descEn: kw.description_en,
+    descJp: kw.description_jp,
+  }, lang)
+
+  const sinLabel = kw.sin_affinity
+    ? (translations[('sin.' + kw.sin_affinity) as keyof typeof translations]?.[lang] ?? kw.sin_affinity)
     : null
 
   return (
@@ -77,7 +104,7 @@ export default function KeywordCard({
           }}
         >
           {iconUrl ? (
-            <Image src={iconUrl} alt={kw.name} width={22} height={22}
+            <Image src={iconUrl} alt={displayName} width={22} height={22}
               style={{ width: '1.375rem', height: 'auto' }} />
           ) : (
             <span style={{ color: '#555', fontSize: '0.75rem' }}>?</span>
@@ -88,11 +115,11 @@ export default function KeywordCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="font-bold text-[0.8125rem] truncate" style={{ color: '#e8dcc8' }}>
-              {kw.name}
+              {displayName}
             </span>
             {kw.max_stack && (
               <span className="text-[0.625rem] shrink-0" style={{ color: '#7a6845' }}>
-                (최대 {kw.max_stack})
+                ({t('keyword.maxStack')} {kw.max_stack})
               </span>
             )}
           </div>
@@ -100,9 +127,9 @@ export default function KeywordCard({
             <p
               className="text-[0.6875rem] leading-relaxed line-clamp-2"
               style={{ color: '#7a6845' }}
-              title={kw.description}
+              title={displayDesc}
             >
-              {kw.description}
+              {displayDesc}
             </p>
           )}
           {/* 카운트 태그 */}
@@ -110,7 +137,7 @@ export default function KeywordCard({
             {identityCount > 0 && (
               <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
                 style={{ background: 'rgba(200,144,10,0.08)', color: '#c8900a' }}>
-                인격 {identityCount}
+                {t('keyword.related.identities')} {identityCount}
               </span>
             )}
             {egoCount > 0 && (
@@ -122,13 +149,13 @@ export default function KeywordCard({
             {giftCount > 0 && (
               <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
                 style={{ background: 'rgba(100,180,100,0.08)', color: '#6a9a6a' }}>
-                기프트 {giftCount}
+                {t('keyword.related.gifts')} {giftCount}
               </span>
             )}
-            {sinColor && (
+            {sinColor && sinLabel && (
               <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
                 style={{ background: `${sinColor}10`, color: sinColor }}>
-                {SIN_LABELS[kw.sin_affinity!]}
+                {t('keyword.sinAffinity')}: {sinLabel}
               </span>
             )}
           </div>

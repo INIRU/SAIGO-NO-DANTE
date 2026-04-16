@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { ArrowLeft, ChevronUp } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import type { EpisodeData, StoryLine } from '@/lib/story/types'

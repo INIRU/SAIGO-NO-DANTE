@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image, { type ImageProps } from 'next/image'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
 type FallbackType = 'identity' | 'skill' | 'ego' | 'gift' | 'theme' | 'default'
 
@@ -24,9 +25,15 @@ export default function ImageWithFallback({
   showPendingText = false,
   alt,
   style,
+  placeholder,
+  blurDataURL,
   ...props
 }: ImageWithFallbackProps) {
   const [errored, setErrored] = useState(false)
+
+  const thumbhashBlur = typeof props.src === 'string' ? getBlurDataURL(props.src) : undefined
+  const effectivePlaceholder = placeholder ?? (thumbhashBlur ? 'blur' : undefined)
+  const effectiveBlurDataURL = blurDataURL ?? thumbhashBlur
 
   if (errored) {
     return (
@@ -82,6 +89,8 @@ export default function ImageWithFallback({
       {...props}
       alt={alt || ''}
       style={style}
+      placeholder={effectivePlaceholder}
+      blurDataURL={effectiveBlurDataURL}
       onError={() => setErrored(true)}
     />
   )

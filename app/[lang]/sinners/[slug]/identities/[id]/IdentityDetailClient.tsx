@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Settings } from 'lucide-react'
 import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
 import {
@@ -32,9 +32,11 @@ import IdentityPassivesTab from '@/components/identity/IdentityPassivesTab'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
 import type { SanityCondition, PanicType } from '@/lib/types'
 import IdentityReviewSection from '@/components/identity/IdentityReviewSection'
-import IdentityAISection from '@/components/identity/IdentityAISection'
+import dynamic from 'next/dynamic'
+const IdentityAISection = dynamic(() => import('@/components/identity/IdentityAISection'))
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface Props {
@@ -85,7 +87,9 @@ export default function IdentityDetailClient({
   useEffect(() => {
     setShowDiff(localStorage.getItem('uptie-diff') !== 'off')
   }, [])
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
+  const lang = locale as SupportedLang
   const localSkillName = (s: Skill) =>
     lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
   const localPassiveName = (p: Passive) =>
@@ -491,8 +495,8 @@ export default function IdentityDetailClient({
               <div>
                 <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
                   {([
-                    { key: 'ai' as const, label: t('identity.ai') },
-                    { key: 'guide' as const, label: t('identity.guide') },
+                    { key: 'ai' as const, label: t('identity.ai.title') },
+                    { key: 'guide' as const, label: t('identity.guide.title') },
                   ]).map(tab => {
                     const active = guideTab === tab.key
                     return (

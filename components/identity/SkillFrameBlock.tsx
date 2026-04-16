@@ -4,7 +4,7 @@ import Image from 'next/image'
 import SkillFrame from './SkillFrame'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations } from 'next-intl'
 
 const SIN_FRAME_MAP: Record<string, string> = {
   wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
@@ -73,7 +73,7 @@ export default function SkillFrameBlock({
   allowedKeywords,
   mentalConsume,
 }: SkillFrameBlockProps) {
-  const { t } = useLanguage()
+  const t = useTranslations()
   const isAttackSkill = !isDefense
   const frameSin = SIN_FRAME_MAP[sin] ?? 'crimson'
 

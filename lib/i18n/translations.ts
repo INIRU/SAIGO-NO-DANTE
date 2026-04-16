@@ -2,9 +2,10 @@ export const translations = {
   // Navigation
   'nav.home': { ko: '홈', en: 'Home', ja: 'ホーム' },
   'nav.sinners': { ko: '수감자', en: 'Sinners', ja: '囚人' },
+  'nav.sinnerList': { ko: '수감자 목록', en: 'Sinner List', ja: '囚人一覧' },
   'nav.decks': { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' },
   'nav.planner': { ko: '거울 던전', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
-  'nav.community': { ko: '커뮤니티', en: 'Community', ja: 'コミュニティ' },
+  'nav.community.title': { ko: '커뮤니티', en: 'Community', ja: 'コミュニティ' },
 
   // Common actions
   'common.search': { ko: '검색', en: 'Search', ja: '検索' },
@@ -66,15 +67,15 @@ export const translations = {
   'sinner.gregor': { ko: '그레고르', en: 'Gregor', ja: 'グレゴール' },
 
   // Navigation groups
-  'nav.story': { ko: '스토리', en: 'Story', ja: 'ストーリー' },
+  'nav.story.title': { ko: '스토리', en: 'Story', ja: 'ストーリー' },
   'nav.story.main': { ko: '메인 스토리', en: 'Main Story', ja: 'メインストーリー' },
-  'nav.db': { ko: 'DB', en: 'DB', ja: 'DB' },
+  'nav.db.title': { ko: 'DB', en: 'DB', ja: 'DB' },
   'nav.db.mirrorDungeon': { ko: '거던', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
   'nav.db.keywords': { ko: '키워드', en: 'Keywords', ja: 'キーワード' },
   'nav.community.planner': { ko: '거던 플래너', en: 'MD Planner', ja: 'ミラダンプランナー' },
   'nav.community.tierList': { ko: '티어표', en: 'Tier List', ja: 'ティアリスト' },
   'nav.community.collection': { ko: '보유 현황', en: 'Collection', ja: 'コレクション' },
-  'nav.other': { ko: '기타', en: 'More', ja: 'その他' },
+  'nav.other.title': { ko: '기타', en: 'More', ja: 'その他' },
   'nav.other.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
   'nav.other.extraction': { ko: '추출', en: 'Extraction', ja: '抽出' },
   'nav.other.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
@@ -195,29 +196,29 @@ export const translations = {
   'identity.stat.defense': { ko: '방어', en: 'DEF', ja: '防御' },
 
   // Identity Detail Page
-  'identity.info': { ko: '기본 정보', en: 'Info', ja: '基本情報' },
-  'identity.stats': { ko: '스탯', en: 'Stats', ja: 'ステータス' },
+  'identity.info.title': { ko: '기본 정보', en: 'Info', ja: '基本情報' },
+  'identity.stats.title': { ko: '스탯', en: 'Stats', ja: 'ステータス' },
   'identity.stats.hp': { ko: 'HP', en: 'HP', ja: 'HP' },
   'identity.stats.speed': { ko: '속도', en: 'Speed', ja: '速度' },
   'identity.stats.defLevel': { ko: '방어 레벨', en: 'Def Level', ja: '防御レベル' },
   'identity.stats.breakSection': { ko: '패닉 구간', en: 'Panic Threshold', ja: 'パニック区間' },
-  'identity.skills': { ko: '스킬', en: 'Skills', ja: 'スキル' },
-  'identity.passives': { ko: '패시브', en: 'Passives', ja: 'パッシブ' },
+  'identity.skills.title': { ko: '스킬', en: 'Skills', ja: 'スキル' },
+  'identity.passives.title': { ko: '패시브', en: 'Passives', ja: 'パッシブ' },
   'identity.passives.battle': { ko: '배틀 패시브', en: 'Battle Passive', ja: 'バトルパッシブ' },
   'identity.passives.support': { ko: '서포트 패시브', en: 'Support Passive', ja: 'サポートパッシブ' },
-  'identity.sanity': { ko: '정신력', en: 'Sanity', ja: '精神力' },
+  'identity.sanity.title': { ko: '정신력', en: 'Sanity', ja: '精神力' },
   'identity.sanity.increase': { ko: '정신력 증가', en: 'Sanity Increase', ja: '精神力増加' },
   'identity.sanity.decrease': { ko: '정신력 감소', en: 'Sanity Decrease', ja: '精神力減少' },
-  'identity.review': { ko: '리뷰', en: 'Reviews', ja: 'レビュー' },
+  'identity.review.title': { ko: '리뷰', en: 'Reviews', ja: 'レビュー' },
   'identity.review.placeholder': { ko: '한줄평을 남겨주세요...', en: 'Leave a one-liner...', ja: '一言レビューを書いてください...' },
   'identity.review.anonymous': { ko: '익명', en: 'Anonymous', ja: '匿名' },
   'identity.review.oneLineReviews': { ko: '한줄평', en: 'One-liners', ja: '一言レビュー' },
   'identity.review.helpful': { ko: '유용해요', en: 'Helpful', ja: '役に立つ' },
   'identity.review.notHelpful': { ko: '아쉬워요', en: 'Not helpful', ja: '残念' },
-  'identity.guide': { ko: '운영법', en: 'Guides', ja: 'ガイド' },
+  'identity.guide.title': { ko: '운영법', en: 'Guides', ja: 'ガイド' },
   'identity.guide.noGuides': { ko: '아직 작성된 가이드가 없습니다.', en: 'No guides available yet.', ja: 'まだガイドがありません。' },
   'identity.guide.write': { ko: '운영법 작성', en: 'Write Guide', ja: 'ガイド作成' },
-  'identity.ai': { ko: 'AI 요약', en: 'AI Summary', ja: 'AI要約' },
+  'identity.ai.title': { ko: 'AI 요약', en: 'AI Summary', ja: 'AI要約' },
   'identity.ai.generate': { ko: 'AI 요약 생성', en: 'Generate AI Summary', ja: 'AI要約を生成' },
   'identity.ai.regenerate': { ko: '재생성', en: 'Regenerate', ja: '再生成' },
   'identity.ai.expired': { ko: '만료됨', en: 'Expired', ja: '期限切れ' },
@@ -256,6 +257,38 @@ export const translations = {
   'identity.skillType.evade': { ko: '회피', en: 'Evade', ja: '回避' },
   'identity.skillType.counter': { ko: '카운터', en: 'Counter', ja: 'カウンター' },
 
+  // EGO Detail Modal
+  'ego.resistance': { ko: '죄악 내성', en: 'Sin Resistance', ja: '罪悪耐性' },
+  'ego.cost': { ko: '코스트', en: 'Cost', ja: 'コスト' },
+  'ego.passive': { ko: '패시브', en: 'Passive', ja: 'パッシブ' },
+  'ego.awakening': { ko: '각성 스킬', en: 'Awakening Skill', ja: '覚醒スキル' },
+  'ego.corrosion': { ko: '침식 스킬', en: 'Corrosion Skill', ja: '侵蝕スキル' },
+  'ego.awakeningLabel': { ko: '각성', en: 'Awakening', ja: '覚醒' },
+  'ego.corrosionLabel': { ko: '침식', en: 'Corrosion', ja: '侵蝕' },
+  'ego.power': { ko: '위력', en: 'Power', ja: '威力' },
+  'ego.coin': { ko: '코인', en: 'Coin', ja: 'コイン' },
+  'ego.coinPower': { ko: '코인위력', en: 'Coin Power', ja: 'コイン威力' },
+  'ego.weight': { ko: '가중치', en: 'Weight', ja: '加重値' },
+  'ego.max': { ko: '최대', en: 'Max', ja: '最大' },
+  'ego.loadError': { ko: '데이터를 불러올 수 없습니다', en: 'Failed to load data', ja: 'データの読み込みに失敗しました' },
+  'ego.res.resist': { ko: '내성', en: 'Resist', ja: '耐性' },
+  'ego.res.endure': { ko: '견딤', en: 'Endure', ja: '耐え' },
+  'ego.res.normal': { ko: '보통', en: 'Normal', ja: '普通' },
+  'ego.res.weak': { ko: '취약', en: 'Weak', ja: '脆弱' },
+  'ego.res.fatal': { ko: '치명', en: 'Fatal', ja: '致命' },
+  'ego.res.null': { ko: '무효', en: 'Ineffective', ja: '無効' },
+  'ego.res.immune': { ko: '면역', en: 'Immune', ja: '免疫' },
+  'ego.egoSkill': { ko: 'EGO 스킬', en: 'EGO Skill', ja: 'EGOスキル' },
+  'ego.corrosionSection': { ko: '침식', en: 'Corrosion', ja: '侵蝕' },
+  'ego.keyword': { ko: '키워드', en: 'Keywords', ja: 'キーワード' },
+  'ego.acquisition': { ko: '입수 방법', en: 'Acquisition', ja: '入手方法' },
+  'ego.fragmentExchange': { ko: '파편 교환', en: 'Fragment Exchange', ja: '破片交換' },
+  'ego.construeLevel': { ko: '해석', en: 'Construe', ja: '解釈' },
+  'ego.noSkillData': { ko: '스킬 데이터 없음', en: 'No skill data', ja: 'スキルデータなし' },
+  'ego.noCorSkillData': { ko: '침식 스킬 데이터 없음', en: 'No corrosion skill data', ja: '侵蝕スキルデータなし' },
+  'ego.backToEgoList': { ko: 'EGO 목록으로', en: 'Back to EGO list', ja: 'EGO一覧へ' },
+  'ego.sinResistance': { ko: '죄악 내성', en: 'Sin Resistance', ja: '罪悪耐性' },
+
   // Identity Info Card
   'identity.info.affiliation': { ko: '소속', en: 'Affiliation', ja: '所属' },
   'identity.info.releaseDate': { ko: '출시시기', en: 'Release Date', ja: 'リリース時期' },
@@ -283,6 +316,44 @@ export const translations = {
 
   // Keyword tooltip
   'keyword.maxStack': { ko: '최대', en: 'Max', ja: '最大' },
+
+  // Keywords page
+  'keyword.title': { ko: '키워드 도감', en: 'Keyword Archive', ja: 'キーワード図鑑' },
+  'keyword.subtitle': { ko: '{count}종의 키워드 — 카테고리별 탐색, 관련 인격·기프트 모아보기', en: '{count} keywords — Browse by category, explore related identities & gifts', ja: '{count}種のキーワード — カテゴリ別検索、関連人格・ギフト一覧' },
+  'keyword.meta.title': { ko: '키워드 도감 — 상태이상·버프·디버프', en: 'Keyword Archive — Status Effects · Buffs · Debuffs', ja: 'キーワード図鑑 — 状態異常・バフ・デバフ' },
+  'keyword.meta.description': { ko: '림버스 컴퍼니 키워드 도감 — 키워드별 설명, 관련 인격, E.G.O 기프트 한눈에.', en: 'Limbus Company keyword archive — descriptions, related identities, and E.G.O gifts at a glance.', ja: 'リンバスカンパニー キーワード図鑑 — キーワード別説明、関連人格、E.G.Oギフト一覧。' },
+  'keyword.label': { ko: 'KEYWORD ARCHIVE', en: 'KEYWORD ARCHIVE', ja: 'KEYWORD ARCHIVE' },
+  'keyword.category.statusEffect': { ko: '상태이상', en: 'Status Effect', ja: '状態異常' },
+  'keyword.category.buff': { ko: '버프', en: 'Buff', ja: 'バフ' },
+  'keyword.category.debuff': { ko: '디버프', en: 'Debuff', ja: 'デバフ' },
+  'keyword.category.unique': { ko: '고유', en: 'Unique', ja: '固有' },
+  'keyword.category.label': { ko: '카테고리', en: 'CATEGORY', ja: 'カテゴリ' },
+  'keyword.sort.frequency': { ko: '사용 빈도순', en: 'By frequency', ja: '使用頻度順' },
+  'keyword.sort.name': { ko: '이름순', en: 'Alphabetical', ja: '名前順' },
+  'keyword.sort.prefix': { ko: '정렬:', en: 'Sort:', ja: 'ソート:' },
+  'keyword.search.label': { ko: '검색', en: 'SEARCH', ja: '検索' },
+  'keyword.search.placeholder': { ko: '이름 또는 설명...', en: 'Name or description...', ja: '名前または説明...' },
+  'keyword.search.aria': { ko: '키워드 검색', en: 'Search keywords', ja: 'キーワード検索' },
+  'keyword.search.clearAria': { ko: '검색 초기화', en: 'Clear search', ja: '検索クリア' },
+  'keyword.filter.reset': { ko: '필터 초기화', en: 'Reset filters', ja: 'フィルターリセット' },
+  'keyword.filter.active': { ko: '{count}개 활성', en: '{count} active', ja: '{count}件有効' },
+  'keyword.filter.resetAria': { ko: '모든 필터 초기화', en: 'Reset all filters', ja: '全フィルターリセット' },
+  'keyword.filter.categoryAria': { ko: '카테고리 필터', en: 'Category filter', ja: 'カテゴリフィルター' },
+  'keyword.count.filtered': { ko: '{filtered}개 / 전체 {total}개', en: '{filtered} / {total} total', ja: '{filtered}個 / 全{total}個' },
+  'keyword.count.total': { ko: '전체 {count}개', en: '{count} total', ja: '全{count}個' },
+  'keyword.view.detail': { ko: '상세 보기', en: 'Detail view', ja: '詳細表示' },
+  'keyword.view.compact': { ko: '아이콘 보기', en: 'Icon view', ja: 'アイコン表示' },
+  'keyword.sinAffinity': { ko: '죄악', en: 'Sin', ja: '罪悪' },
+  'keyword.related.identities': { ko: '관련 인격', en: 'Related Identities', ja: '関連人格' },
+  'keyword.related.ego': { ko: '관련 E.G.O', en: 'Related E.G.O', ja: '関連E.G.O' },
+  'keyword.related.gifts': { ko: '관련 E.G.O 기프트', en: 'Related E.G.O Gifts', ja: '関連E.G.Oギフト' },
+  'keyword.related.empty': { ko: '관련 인격이나 기프트가 없습니다.', en: 'No related identities or gifts.', ja: '関連する人格やギフトはありません。' },
+  'keyword.noResults.title': { ko: '결과 없음', en: 'No results', ja: '結果なし' },
+  'keyword.noResults.subtitle': { ko: '검색어를 변경해 보세요.', en: 'Try different search terms.', ja: '検索語を変更してみてください。' },
+  'keyword.loading': { ko: '불러오는 중...', en: 'Loading...', ja: '読み込み中...' },
+  'keyword.error.quote': { ko: '키워드 정보가 말을 안 들어.', en: "The keyword data won't cooperate.", ja: 'キーワード情報が言うことを聞かない。' },
+  'keyword.error.subQuote': { ko: '다시 한번 불러볼게.', en: "Let me try loading it again.", ja: 'もう一度読み込んでみるね。' },
+
   'identity.info.vendingUnavailable7d': { ko: '교환 불가 (출시 7일 후 개방)', en: 'Unavailable (opens 7 days after release)', ja: '交換不可（リリース7日後に開放）' },
   'identity.info.vendingAvailable': { ko: '교환 가능', en: 'Available', ja: '交換可能' },
   'identity.info.vendingUnavailableNextSeason': { ko: '교환 불가 (다음 시즌부터 가능)', en: 'Unavailable (available next season)', ja: '交換不可（次のシーズンから可能）' },
@@ -339,7 +410,6 @@ export const translations = {
   'identity.info.season': { ko: '시즌', en: 'Season', ja: 'シーズン' },
 
   // Identity Stats Card
-  'identity.stats.title': { ko: '스탯', en: 'Stats', ja: 'ステータス' },
   'identity.stats.breakPhase': { ko: '{n}차', en: 'Phase {n}', ja: '{n}段階' },
 
   // Identity Portrait Section
@@ -349,7 +419,6 @@ export const translations = {
   'identity.portrait.artTipDesc': { ko: '풀 일러스트를 볼 수 있어요', en: 'to view full illustration', ja: 'フルイラストを見ることができます' },
 
   // Identity Guide Section
-  'identity.guide.title': { ko: '운영법', en: 'Guide', ja: 'ガイド' },
   'identity.guide.newTitlePlaceholder': { ko: '운영법 제목을 입력하세요', en: 'Enter guide title', ja: 'ガイドのタイトルを入力してください' },
   'identity.guide.editTitlePlaceholder': { ko: '운영법 제목', en: 'Guide title', ja: 'ガイドタイトル' },
   'identity.guide.newContentPlaceholder': { ko: '이 인격의 운영법을 작성하세요. 키워드/스킬/인격/에고 이름을 입력하면 자동완성됩니다.', en: 'Write a guide for this identity. Type keyword/skill/identity/EGO names for autocomplete.', ja: 'この人格のガイドを作成してください。キーワード/スキル/人格/EGO名を入力すると自動補完されます。' },
@@ -367,6 +436,165 @@ export const translations = {
   'identity.guide.cancel': { ko: '취소', en: 'Cancel', ja: 'キャンセル' },
   'identity.guide.addNew': { ko: '추가하기', en: 'Add new', ja: '追加する' },
   'identity.guide.untitled': { ko: '제목 없음', en: 'Untitled', ja: 'タイトルなし' },
+
+  // Login
+  'login.title': { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' },
+  'login.subtitle': { ko: '당신의 수감자를 관리하세요', en: 'Manage your Sinners', ja: 'あなたの囚人を管理しましょう' },
+  'login.google': { ko: 'Google로 계속하기', en: 'Continue with Google', ja: 'Googleで続ける' },
+  'login.browse': { ko: '로그인 없이 둘러보기', en: 'Browse without login', ja: 'ログインせずに閲覧' },
+  'login.consent': { ko: '로그인 시 아래 약관에 동의하는 것으로 간주합니다', en: 'By logging in, you agree to the following terms', ja: 'ログインすると、以下の規約に同意したものとみなされます' },
+
+  // Login accordion - Terms summary
+  'login.terms.title': { ko: '이용약관', en: 'Terms of Service', ja: '利用規約' },
+  'login.terms.summary': { ko: '본 서비스는 팬 제작 비공식 도구입니다.\n상업적 목적이 아닌 개인 용도로만 사용 가능합니다.\n부적절한 콘텐츠 게시 시 이용이 제한될 수 있습니다.', en: 'This service is a fan-made unofficial tool.\nIt may only be used for personal, non-commercial purposes.\nPosting inappropriate content may result in restricted access.', ja: '本サービスはファンメイドの非公式ツールです。\n個人利用目的のみ使用可能です。\n不適切なコンテンツの投稿により利用が制限される場合があります。' },
+  'login.terms.link': { ko: '전문 보기', en: 'View full terms', ja: '全文を見る' },
+
+  // Login accordion - Privacy summary
+  'login.privacy.title': { ko: '개인정보 처리방침', en: 'Privacy Policy', ja: 'プライバシーポリシー' },
+  'login.privacy.summary': { ko: 'Google OAuth를 통해 다음 정보를 수집합니다.\n• 이메일 주소 (계정 식별)\n• 프로필 이름 · 프로필 사진\n\n수집된 정보는 로그인 및 덱 게시판 운영 목적으로만 사용되며\n제3자에게 제공되지 않습니다.\n회원 탈퇴 시 즉시 삭제됩니다.', en: 'The following information is collected via Google OAuth:\n• Email address (account identification)\n• Profile name · Profile picture\n\nCollected information is used solely for login and deck board operations\nand is not shared with third parties.\nAll data is deleted immediately upon account withdrawal.', ja: 'Google OAuthを通じて以下の情報を収集します。\n• メールアドレス（アカウント識別）\n• プロフィール名・プロフィール写真\n\n収集された情報はログインおよびデッキ掲示板の運営目的のみに使用され\n第三者に提供されません。\n退会時に即座に削除されます。' },
+  'login.privacy.link': { ko: '전문 보기', en: 'View full policy', ja: '全文を見る' },
+
+  // Legal pages (shared between terms and privacy)
+  'legal.breadcrumb.home': { ko: '홈', en: 'Home', ja: 'ホーム' },
+  'legal.terms.title': { ko: '이용약관', en: 'Terms of Service', ja: '利用規約' },
+  'legal.privacy.title': { ko: '개인정보 처리방침', en: 'Privacy Policy', ja: 'プライバシーポリシー' },
+  'legal.lastUpdated': { ko: '최종 수정일', en: 'Last updated', ja: '最終更新日' },
+  'legal.empty': { ko: '문서를 불러올 수 없습니다', en: 'Unable to load document', ja: 'ドキュメントを読み込めません' },
+  'legal.terms.linkToPrivacy': { ko: '개인정보 처리방침 보기', en: 'View Privacy Policy', ja: 'プライバシーポリシーを見る' },
+  'legal.privacy.linkToTerms': { ko: '이용약관 보기', en: 'View Terms of Service', ja: '利用規約を見る' },
+  'legal.backToTop': { ko: '맨 위로', en: 'Back to top', ja: 'トップへ戻る' },
+  'legal.tableOfContents': { ko: '목차', en: 'Table of Contents', ja: '目次' },
+
+  // Mirror Dungeon — Tab labels
+  'mirrorDungeon.tab.gifts': { ko: '기프트', en: 'Gifts', ja: 'ギフト' },
+  'mirrorDungeon.tab.themes': { ko: '테마팩', en: 'Theme Packs', ja: 'テーマパック' },
+  'mirrorDungeon.tab.events': { ko: '이벤트', en: 'Events', ja: 'イベント' },
+
+  // Mirror Dungeon — Page metadata
+  'mirrorDungeon.meta.title': { ko: '거울 던전 — E.G.O 기프트 도감 | 림버스 컴퍼니', en: 'Mirror Dungeon — E.G.O Gift Encyclopedia | Limbus Company', ja: 'ミラーダンジョン — E.G.Oギフト図鑑 | リムバスカンパニー' },
+  'mirrorDungeon.meta.description': { ko: '림버스 컴퍼니 거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피, 테마팩, 이벤트 정보까지 한 곳에서.', en: 'Limbus Company Mirror Dungeon E.G.O Gift encyclopedia with 408 gifts. Filter by keyword, grade, recipes, theme packs, and events.', ja: 'リムバスカンパニー ミラーダンジョン E.G.Oギフト408種図鑑。キーワード別フィルター、等級別検索、合成レシピ、テーマパック、イベント情報。' },
+
+  // Mirror Dungeon — Keyword filters
+  'mirrorDungeon.filter.all': { ko: '전체', en: 'All', ja: 'すべて' },
+  'mirrorDungeon.filter.combustion': { ko: '화상', en: 'Burn', ja: '火傷' },
+  'mirrorDungeon.filter.laceration': { ko: '출혈', en: 'Bleed', ja: '出血' },
+  'mirrorDungeon.filter.vibration': { ko: '진동', en: 'Tremor', ja: '振動' },
+  'mirrorDungeon.filter.burst': { ko: '파열', en: 'Rupture', ja: '破裂' },
+  'mirrorDungeon.filter.sinking': { ko: '침잠', en: 'Sinking', ja: '沈潜' },
+  'mirrorDungeon.filter.breath': { ko: '호흡', en: 'Breath', ja: '呼吸' },
+  'mirrorDungeon.filter.charge': { ko: '충전', en: 'Charge', ja: '充電' },
+  'mirrorDungeon.filter.slash': { ko: '참격', en: 'Slash', ja: '斬撃' },
+  'mirrorDungeon.filter.pierce': { ko: '관통', en: 'Pierce', ja: '貫通' },
+  'mirrorDungeon.filter.blunt': { ko: '타격', en: 'Blunt', ja: '打撃' },
+  'mirrorDungeon.filter.common': { ko: '공통', en: 'Common', ja: '共通' },
+
+  // Mirror Dungeon — Tier/difficulty filters
+  'mirrorDungeon.tier.all': { ko: '전체', en: 'All', ja: 'すべて' },
+  'mirrorDungeon.tier.normal': { ko: '노말', en: 'Normal', ja: 'ノーマル' },
+  'mirrorDungeon.tier.hard': { ko: '하드', en: 'Hard', ja: 'ハード' },
+  'mirrorDungeon.tier.extreme': { ko: '익스트림', en: 'Extreme', ja: 'エクストリーム' },
+  'mirrorDungeon.tier.parallel': { ko: '평행중첩', en: 'Parallel', ja: '並行重畳' },
+
+  // Mirror Dungeon — Slot filter
+  'mirrorDungeon.slot.all': { ko: '전체', en: 'All', ja: 'すべて' },
+
+  // Mirror Dungeon — Sort options
+  'mirrorDungeon.sort.default': { ko: '기본', en: 'Default', ja: 'デフォルト' },
+  'mirrorDungeon.sort.name': { ko: '이름', en: 'Name', ja: '名前' },
+  'mirrorDungeon.sort.grade': { ko: '등급', en: 'Grade', ja: '等級' },
+  'mirrorDungeon.sort.price': { ko: '가격', en: 'Price', ja: '価格' },
+
+  // Mirror Dungeon — Search
+  'mirrorDungeon.search.placeholder': { ko: '기프트 검색...', en: 'Search gifts...', ja: 'ギフト検索...' },
+
+  // Mirror Dungeon — Empty state
+  'mirrorDungeon.empty.title': { ko: '결과 없음', en: 'No Results', ja: '結果なし' },
+  'mirrorDungeon.empty.description': { ko: '필터를 변경하거나 검색어를 확인해 보세요.', en: 'Try changing filters or check your search query.', ja: 'フィルターを変更するか、検索キーワードを確認してください。' },
+
+  // Mirror Dungeon — Theme tab
+  'mirrorDungeon.theme.search': { ko: '테마팩 · 기프트 검색...', en: 'Search theme packs & gifts...', ja: 'テーマパック・ギフト検索...' },
+  'mirrorDungeon.theme.difficulty': { ko: '난이도', en: 'Difficulty', ja: '難易度' },
+  'mirrorDungeon.theme.gifts': { ko: '기프트', en: 'Gifts', ja: 'ギフト' },
+  'mirrorDungeon.theme.floor': { ko: '층', en: 'F', ja: '階' },
+  'mirrorDungeon.theme.hidden': { ko: '히든 테마팩', en: 'Hidden Theme Packs', ja: 'ヒドゥンテーマパック' },
+  'mirrorDungeon.theme.spoilerHide': { ko: '스포일러 숨기기', en: 'Hide Spoilers', ja: 'スポイラーを隠す' },
+  'mirrorDungeon.theme.spoilerShow': { ko: '스포일러 보기', en: 'Show Spoilers', ja: 'スポイラーを表示' },
+  'mirrorDungeon.theme.hiddenExists': { ko: '히든 테마팩이\n존재합니다', en: 'Hidden theme packs\nexist', ja: 'ヒドゥンテーマパックが\n存在します' },
+  'mirrorDungeon.theme.other': { ko: '기타', en: 'Other', ja: 'その他' },
+  'mirrorDungeon.theme.autocompleteTheme': { ko: '테마팩', en: 'Theme', ja: 'テーマ' },
+  'mirrorDungeon.theme.autocompleteGift': { ko: '기프트', en: 'Gift', ja: 'ギフト' },
+
+  // Mirror Dungeon — Event tab
+  'mirrorDungeon.event.search': { ko: '이벤트 · 기프트 검색...', en: 'Search events & gifts...', ja: 'イベント・ギフト検索...' },
+  'mirrorDungeon.event.choices': { ko: '선택지', en: 'Choices', ja: '選択肢' },
+  'mirrorDungeon.event.allThemes': { ko: '전체 테마', en: 'All Themes', ja: 'すべてのテーマ' },
+  'mirrorDungeon.event.allCategories': { ko: '전체 카테고리', en: 'All Categories', ja: 'すべてのカテゴリ' },
+  'mirrorDungeon.event.normal': { ko: '상시 이벤트', en: 'Regular Events', ja: '常時イベント' },
+  'mirrorDungeon.event.seasonal': { ko: '시즌 이벤트', en: 'Seasonal Events', ja: 'シーズンイベント' },
+  'mirrorDungeon.event.vending': { ko: '자판기', en: 'Vending Machine', ja: '自動販売機' },
+  'mirrorDungeon.event.themePrefix': { ko: '테마:', en: 'Theme:', ja: 'テーマ:' },
+  'mirrorDungeon.event.categoryPrefix': { ko: '분류:', en: 'Category:', ja: 'カテゴリ:' },
+  'mirrorDungeon.event.gifts': { ko: '기프트', en: 'Gifts', ja: 'ギフト' },
+
+  // Mirror Dungeon — ThemeModal labels
+  'mirrorDungeon.theme.hiddenBadge': { ko: '히든 테마팩', en: 'Hidden Theme Pack', ja: 'ヒドゥンテーマパック' },
+  'mirrorDungeon.theme.appearance': { ko: '출현 정보', en: 'Appearance', ja: '出現情報' },
+  'mirrorDungeon.theme.keywordDist': { ko: '키워드 분포', en: 'Keyword Distribution', ja: 'キーワード分布' },
+  'mirrorDungeon.theme.fixedReward': { ko: '고정 보상', en: 'Fixed Reward', ja: '固定報酬' },
+  'mirrorDungeon.theme.relatedEvents': { ko: '등장 이벤트', en: 'Related Events', ja: '登場イベント' },
+  'mirrorDungeon.theme.exclusiveGifts': { ko: '전용 E.G.O 기프트', en: 'Exclusive E.G.O Gifts', ja: '専用E.G.Oギフト' },
+  'mirrorDungeon.theme.appearanceRate': { ko: '출현 확률', en: 'Appearance Rate', ja: '出現確率' },
+  'mirrorDungeon.theme.allFloors': { ko: '전층', en: 'All Floors', ja: '全階' },
+  'mirrorDungeon.theme.choiceCount': { ko: '개 선택지', en: ' choices', ja: '個の選択肢' },
+  'mirrorDungeon.theme.giftCountSuffix': { ko: '종', en: '', ja: '種' },
+  'mirrorDungeon.theme.exclusiveBadge': { ko: '전용', en: 'exclusive', ja: '専用' },
+
+  // Mirror Dungeon — EventModal labels
+  'mirrorDungeon.event.fallbackTitle': { ko: '이벤트', en: 'Event', ja: 'イベント' },
+  'mirrorDungeon.event.choicesLabel': { ko: '선택지', en: 'Choices', ja: '選択肢' },
+  'mirrorDungeon.event.noChoices': { ko: '선택지 정보 없음', en: 'No choice data', ja: '選択肢情報なし' },
+  'mirrorDungeon.event.success': { ko: '성공', en: 'Success', ja: '成功' },
+  'mirrorDungeon.event.failure': { ko: '실패', en: 'Failure', ja: '失敗' },
+
+  // Mirror Dungeon — Error page
+  'mirrorDungeon.error.title': { ko: '오류가 발생했습니다', en: 'An error occurred', ja: 'エラーが発生しました' },
+  'mirrorDungeon.error.retry': { ko: '다시 시도', en: 'Retry', ja: '再試行' },
+
+  // Mirror Dungeon — Gift modal
+  'mirrorDungeon.gift.effect': { ko: '효과', en: 'Effect', ja: '効果' },
+  'mirrorDungeon.gift.effectPlus': { ko: '효과+', en: 'Effect+', ja: '効果+' },
+  'mirrorDungeon.gift.effectPlusPlus': { ko: '효과++', en: 'Effect++', ja: '効果++' },
+  'mirrorDungeon.gift.price': { ko: '가격', en: 'Price', ja: '価格' },
+  'mirrorDungeon.gift.sellPrice': { ko: '판매가', en: 'Sell Price', ja: '売値' },
+  'mirrorDungeon.gift.recipe': { ko: '조합 레시피', en: 'Recipe', ja: '合成レシピ' },
+  'mirrorDungeon.gift.condition': { ko: '발동 조건', en: 'Activation Condition', ja: '発動条件' },
+  'mirrorDungeon.gift.enhancement': { ko: '강화 가능', en: 'Enhanceable', ja: '強化可能' },
+  'mirrorDungeon.gift.synthesis': { ko: '합성', en: 'Synthesis', ja: '合成' },
+  'mirrorDungeon.gift.themes': { ko: '소속 테마팩', en: 'Theme Packs', ja: '所属テーマパック' },
+  'mirrorDungeon.gift.acquisition': { ko: '획득 방법', en: 'Acquisition', ja: '獲得方法' },
+  'mirrorDungeon.gift.firstAppearance': { ko: '첫 등장', en: 'First Appearance', ja: '初登場' },
+  'mirrorDungeon.gift.related': { ko: '관련', en: 'Related', ja: '関連' },
+  'mirrorDungeon.gift.purchase': { ko: '구매', en: 'Purchase', ja: '購入' },
+  'mirrorDungeon.gift.unavailable': { ko: '불가', en: 'Unavailable', ja: '不可' },
+  'mirrorDungeon.gift.finalSynthesis': { ko: '최종 합성', en: 'Final Synthesis', ja: '最終合成' },
+  'mirrorDungeon.gift.conditionUnit': { ko: '인', en: '', ja: '人' },
+  'mirrorDungeon.gift.conditionOrMore': { ko: '인 이상', en: '+', ja: '人以上' },
+  'mirrorDungeon.gift.conditionPersonality': { ko: ' 인격', en: ' Identity', ja: ' 人格' },
+  'mirrorDungeon.gift.conditionAffiliation': { ko: ' 소속', en: ' Affiliation', ja: ' 所属' },
+  'mirrorDungeon.gift.recipeFragments': {
+    ko: '업화 · 매혹 · 타성 · 욕망 · 교만 · 마찰 · 인연 · 잠식 조각 중 택 2',
+    en: 'Choose 2 from Waxen, Allure, Inertia, Desire, Pride, Friction, Ties, Erosion fragments',
+    ja: '業火・魅惑・惰性・欲望・驕慢・摩擦・因縁・侵蝕 欠片から2つ選択',
+  },
+  'mirrorDungeon.filter.grade': { ko: '등급', en: 'Grade', ja: '等級' },
+  'mirrorDungeon.filter.slot': { ko: '번 전용', en: ' slot', ja: '番専用' },
+  'mirrorDungeon.filter.reset': { ko: '초기화', en: 'Reset', ja: 'リセット' },
+  'mirrorDungeon.filter.loading': { ko: '불러오는 중...', en: 'Loading...', ja: '読込中...' },
+  'mirrorDungeon.filter.results': { ko: '건', en: '', ja: '件' },
+  'mirrorDungeon.filter.difficulty': { ko: '난이도:', en: 'Difficulty:', ja: '難易度:' },
+  'mirrorDungeon.filter.slotPrefix': { ko: '편성 전용:', en: 'Slot:', ja: '配置専用:' },
+  'mirrorDungeon.filter.themePrefix': { ko: '테마팩:', en: 'Theme:', ja: 'テーマ:' },
+  'mirrorDungeon.filter.selected': { ko: '개 선택', en: ' selected', ja: '個選択' },
 
 } as const;
 

@@ -14,7 +14,7 @@ export type LegalDoc = {
   sections: LegalSection[]
 }
 
-export async function getLegalDoc(type: 'privacy' | 'terms'): Promise<LegalDoc | null> {
+export async function getLegalDoc(type: 'privacy' | 'terms', lang: string = 'ko'): Promise<LegalDoc | null> {
   try {
     const supabase = createAdminClient()
     const { data, error } = await supabase
@@ -22,6 +22,7 @@ export async function getLegalDoc(type: 'privacy' | 'terms'): Promise<LegalDoc |
       .from('legal_docs')
       .select('type, title, last_updated, sections')
       .eq('type', type)
+      .eq('lang', lang)
       .single()
     if (error || !data) return null
     return data as LegalDoc

@@ -1,14 +1,17 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Users, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeIn } from '@/lib/animations'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {
-  const { t } = useLanguage()
+  const t = useTranslations()
+  const lang = useLocale()
+  useRoutePrefetch([`/${lang}/sinners/identities`, `/${lang}/sinners/ego`])
   return (
     <div className="min-h-screen pt-24 pb-16 px-6 max-w-7xl mx-auto relative">
 

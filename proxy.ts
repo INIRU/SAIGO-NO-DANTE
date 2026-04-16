@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { checkRateLimit } from '@/lib/rate-limit'
+import createMiddleware from 'next-intl/middleware'
+import { routing } from './lib/i18n/routing'
+
+const intlMiddleware = createMiddleware(routing)
 
 const ALLOWED_ORIGINS = [
   'https://saigo-no-dante.com',
@@ -146,46 +150,35 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── 6. API 프록시 보호 ──
+  // ── 6. i18n routing (next-intl middleware) ──
   if (!pathname.startsWith('/api/')) {
-    // ── i18n: Detect language and set cookie (rewrite is in next.config.ts) ──
-    const langCookie = request.cookies.get('preferred_lang')?.value
-
-    if (!langCookie) {
-      const acceptLang = request.headers.get('accept-language') ?? ''
-      let detectedLang = 'ko'
-      if (acceptLang.includes('ko')) detectedLang = 'ko'
-      else if (acceptLang.includes('ja')) detectedLang = 'ja'
-      else detectedLang = 'en'
-
-      // For EN/JA: redirect directly to /{lang}{pathname} so the correct [lang]
-      // segment is resolved on the first request (no rewrite cookie timing issue).
-      // For KO: the fallback rewrites in next.config.ts already map to /ko, so
-      // just set the cookie and continue to avoid an extra round-trip.
-      // Guard: skip redirect if the path already has a lang prefix to prevent loops.
-      const alreadyPrefixed = /^\/(en|ja|ko)(\/|$)/.test(pathname)
-      if (detectedLang !== 'ko' && !alreadyPrefixed) {
-        const redirectUrl = request.nextUrl.clone()
-        redirectUrl.pathname = `/${detectedLang}${pathname}`
-        const redirectResponse = NextResponse.redirect(redirectUrl)
-        redirectResponse.cookies.set('preferred_lang', detectedLang, {
-          path: '/',
-          maxAge: 365 * 24 * 60 * 60,
-          sameSite: 'lax',
-        })
-        return redirectResponse
-      }
-
-      const pageResponse = NextResponse.next()
-      pageResponse.cookies.set('preferred_lang', detectedLang, {
+    // Migration: carry over legacy preferred_lang cookie → NEXT_LOCALE so
+    // returning users aren't dropped to the default locale on first visit.
+    const legacyCookie = request.cookies.get('preferred_lang')?.value
+    const nextLocaleCookie = request.cookies.get('NEXT_LOCALE')?.value
+    if (legacyCookie && !nextLocaleCookie && ['ko', 'en', 'ja'].includes(legacyCookie)) {
+      // Clone the request with NEXT_LOCALE set so intlMiddleware picks it up
+      const mutableHeaders = new Headers(request.headers)
+      mutableHeaders.set(
+        'cookie',
+        `${request.headers.get('cookie') ?? ''}; NEXT_LOCALE=${legacyCookie}`,
+      )
+      const patchedRequest = new Request(request.url, {
+        headers: mutableHeaders,
+        method: request.method,
+        body: request.body,
+      }) as unknown as NextRequest
+      const intlResponse = intlMiddleware(patchedRequest)
+      // Also set NEXT_LOCALE on the response to complete the migration
+      intlResponse.cookies.set('NEXT_LOCALE', legacyCookie, {
         path: '/',
         maxAge: 365 * 24 * 60 * 60,
         sameSite: 'lax',
       })
-      return pageResponse
+      return intlResponse
     }
 
-    return NextResponse.next()
+    return intlMiddleware(request)
   }
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
 
@@ -210,5 +203,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|icons|sw\\.js|manifest).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|icons|sw\\.js|manifest|api|.*\\..*).*)'],
 }

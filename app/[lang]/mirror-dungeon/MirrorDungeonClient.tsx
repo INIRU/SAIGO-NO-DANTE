@@ -6,6 +6,11 @@ import { useQueryState, parseAsString } from 'nuqs'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeInUp } from '@/lib/animations'
 import dynamic from 'next/dynamic'
+import { useLocale } from 'next-intl'
+import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import { translations } from '@/lib/i18n/translations'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/sinners/KeywordTooltip'
 import type { EgoGift, Recipe, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
@@ -30,6 +35,15 @@ export default function MirrorDungeonClient({
   events?: MdEvent[]
   choices?: MdEventChoice[]
 }) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  useRoutePrefetch([`/${lang}/keywords`])
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return (entry as Record<string, string>)[lang] ?? (entry as Record<string, string>)['ko'] ?? key
+  }
+
   const { getIconUrl } = useKeywordData()
   const getGiftKeywordIcon = useCallback(
     (keyword: string) => getIconUrl(keyword) ?? ATK_TYPE_ICON_MAP[keyword] ?? null,
@@ -165,6 +179,17 @@ export default function MirrorDungeonClient({
     return names
   }, [selectedThemeId, themes, giftByGameId])
 
+  // game_id → 로컬라이즈된 기프트 이름 (convert_to {0} 치환용)
+  const giftNameByGameId = useMemo(() => {
+    const m = new Map<number, string>()
+    gifts.forEach(g => {
+      if (g.game_id) {
+        m.set(g.game_id, getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang))
+      }
+    })
+    return m
+  }, [gifts, lang])
+
   // 레시피 맵: result_name → Recipe
   const recipeMap = useMemo(() => {
     const map = new Map<string, Recipe>()
@@ -206,7 +231,7 @@ export default function MirrorDungeonClient({
   }, [])
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative' }}>
       {/* Background atmospheric glow */}
       <div style={{
         position: 'fixed',
@@ -251,10 +276,10 @@ export default function MirrorDungeonClient({
               className="font-serif text-3xl md:text-4xl font-bold"
               style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
             >
-              거울 던전
+              {lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'}
             </motion.h1>
             <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
-              E.G.O 기프트 도감 · 테마팩 · 조합 레시피
+              {lang === 'ko' ? 'E.G.O 기프트 도감 · 테마팩 · 조합 레시피' : lang === 'ja' ? 'E.G.Oギフト図鑑 · テーマパック · 合成レシピ' : 'E.G.O Gift Archive · Theme Packs · Recipes'}
             </p>
           </div>
 
@@ -270,14 +295,14 @@ export default function MirrorDungeonClient({
                 gap: '0.125rem',
               }}
             >
-              {(['gifts', 'themes', 'events'] as const).map(t => {
-                const isActive = activeTab === t
-                const label = t === 'gifts' ? '기프트' : t === 'themes' ? '테마팩' : '이벤트'
-                const count = t === 'gifts' ? gifts.length : t === 'themes' ? themes.length : events.length
+              {(['gifts', 'themes', 'events'] as const).map(tab => {
+                const isActive = activeTab === tab
+                const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
+                const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : events.length
                 return (
                   <button
-                    key={t}
-                    onClick={() => setActiveTab(t)}
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
                     className="flex items-center gap-1.5 px-4 py-2 transition-all duration-200"
                     style={{
                       fontFamily: 'var(--font-heading)',
@@ -315,14 +340,14 @@ export default function MirrorDungeonClient({
               gap: '0.125rem',
             }}
           >
-            {(['gifts', 'themes', 'events'] as const).map(t => {
-              const isActive = activeTab === t
-              const label = t === 'gifts' ? '기프트' : t === 'themes' ? '테마팩' : '이벤트'
-              const count = t === 'gifts' ? gifts.length : t === 'themes' ? themes.length : events.length
+            {(['gifts', 'themes', 'events'] as const).map(tab => {
+              const isActive = activeTab === tab
+              const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
+              const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : events.length
               return (
                 <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
                   className="flex flex-1 items-center gap-1.5 px-3 py-2 transition-all duration-200"
                   style={{
                     fontFamily: 'var(--font-heading)',
@@ -438,15 +463,23 @@ export default function MirrorDungeonClient({
       })()}
 
       {/* 기프트 상세 모달 */}
-      {selected && (
-        <GiftModal
-          gift={selected}
-          recipe={recipeMap.get(selected.name) ?? null}
-          giftImageMap={giftImageMap}
-          onClose={() => setSelected(null)}
-          getGiftKeywordIcon={getGiftKeywordIcon}
-        />
-      )}
+      {selected && (() => {
+        const resolvedGift = {
+          ...selected,
+          effect_base: selected.effect_base?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
+          effect_base_en: selected.effect_base_en?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
+          effect_base_jp: selected.effect_base_jp?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
+        }
+        return (
+          <GiftModal
+            gift={resolvedGift}
+            recipe={recipeMap.get(selected.name) ?? null}
+            giftImageMap={giftImageMap}
+            onClose={() => setSelected(null)}
+            getGiftKeywordIcon={getGiftKeywordIcon}
+          />
+        )
+      })()}
 
       {/* 이벤트 상세 모달 */}
       {selectedEvent && (

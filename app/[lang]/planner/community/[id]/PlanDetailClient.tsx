@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Eye, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'

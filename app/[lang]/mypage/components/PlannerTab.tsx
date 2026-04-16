@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import useSWR from 'swr'
 import { Plus, Map } from 'lucide-react'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'

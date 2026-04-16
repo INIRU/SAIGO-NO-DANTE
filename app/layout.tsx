@@ -227,9 +227,8 @@ export default async function RootLayout({
   const keywords = await getKeywordData()
 
   return (
-    <html lang="ko" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var m=document.cookie.match(/preferred_lang=([^;]+)/);if(m)document.documentElement.lang=m[1]})()` }} />
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />

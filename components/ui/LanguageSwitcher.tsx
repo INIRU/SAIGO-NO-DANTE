@@ -2,15 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Languages, ChevronDown, Check } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from '@/lib/i18n/navigation';
 import { SUPPORTED_LANGS } from '@/lib/i18n/types';
 
 export default function LanguageSwitcher() {
-  const { lang, setLang } = useLanguage();
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const current = SUPPORTED_LANGS.find(l => l.value === lang);
+  const current = SUPPORTED_LANGS.find(l => l.value === locale);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -61,13 +64,13 @@ export default function LanguageSwitcher() {
           }}
         >
           {SUPPORTED_LANGS.map(l => {
-            const isActive = l.value === lang;
+            const isActive = l.value === locale;
             return (
               <button
                 key={l.value}
                 role="option"
                 aria-selected={isActive}
-                onClick={() => { setLang(l.value); setOpen(false); }}
+                onClick={() => { router.replace(pathname, { locale: l.value }); setOpen(false); }}
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 transition-colors"
                 style={{
                   color: isActive ? 'var(--gold-light)' : '#a08a60',

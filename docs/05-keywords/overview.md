@@ -85,3 +85,41 @@ KeywordProvider (앱 전역)
 
 - `/admin/keywords` 페이지에서 키워드 CRUD 관리
 - 아이콘 슬러그 지정 시 Supabase Storage `icons/keywords/` 경로에 이미지 업로드 필요
+
+## i18n 지원
+
+### 번역키 네임스페이스
+
+`lib/i18n/translations.ts`의 `keyword.*` 네임스페이스에서 관리한다.
+
+| 키 | 설명 |
+|---|---|
+| `keyword.error.quote` | 키워드 페이지 에러 화면 메인 인용문 |
+| `keyword.error.subQuote` | 키워드 페이지 에러 화면 서브 인용문 |
+
+### DB 컬럼 (다국어 필드)
+
+`limbus.keyword_meta` 테이블에 언어별 컬럼이 추가되어 있다.
+
+| 컬럼 | 설명 |
+|---|---|
+| `name_en` | 영문 키워드 이름 |
+| `name_jp` | 일본어 키워드 이름 |
+| `description_en` | 영문 키워드 설명 |
+| `description_jp` | 일본어 키워드 설명 |
+
+### 로컬라이즈 유틸
+
+`lib/i18n/localize.ts`에 다음 헬퍼 함수가 정의되어 있다.
+
+- `getLocalizedKeywordName(keyword, lang)` — 언어에 맞는 키워드 이름 반환
+- `getLocalizedKeywordDesc(keyword, lang)` — 언어에 맞는 키워드 설명 반환
+
+### 지원 언어
+
+`ko` (한국어), `en` (영어), `ja` (일본어) — `lib/i18n/types.ts`의 `SupportedLang` 참조.
+
+### 주의사항
+
+- 카테고리 `value`는 한국어 문자열 그대로 유지한다 (DB 값이므로 변경 금지). `label`만 로컬라이즈한다.
+- `SIN_LABELS`는 `sin.*` 번역키를 사용한다 (중복 상수 제거됨).

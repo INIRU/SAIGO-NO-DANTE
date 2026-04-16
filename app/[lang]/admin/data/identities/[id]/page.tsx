@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
+import { useParams } from 'next/navigation'
 import { Loader2, Save, ArrowLeft, Plus, Trash2, Pencil } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {

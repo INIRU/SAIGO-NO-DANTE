@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, GitFork } from 'lucide-react'
 import { STORAGE_BASE, SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'

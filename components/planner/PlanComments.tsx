@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { MessageCircle, Send } from 'lucide-react'
 import RelativeTime from '@/components/ui/RelativeTime'

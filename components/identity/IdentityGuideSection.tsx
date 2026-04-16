@@ -5,7 +5,7 @@ import { Swords, Pencil, X, Check, ChevronDown, Plus, Trash2 } from 'lucide-reac
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { NoteRenderer, type NoteSkillEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry, type NotePassiveEntry } from '@/components/decks/NoteChips'
 import { useNoteAutocomplete, NoteAutocompleteDropdown, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations } from 'next-intl'
 
 export interface GuideData {
   id: string
@@ -179,7 +179,7 @@ export default function IdentityGuideSection({
     deleteConfirm,
   } = useGuideEditor(identityId, initialGuides)
 
-  const { t } = useLanguage()
+  const t = useTranslations()
 
   const ac = useNoteAutocomplete({
     text: guideContent,

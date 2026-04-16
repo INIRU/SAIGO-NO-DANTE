@@ -3,10 +3,10 @@
 import { showSuccess, showError } from '@/lib/toast'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { useQueryState, parseAsString } from 'nuqs'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
   Sinner,

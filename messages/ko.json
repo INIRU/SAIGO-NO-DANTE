@@ -1,0 +1,431 @@
+{
+  "nav": {
+    "home": "홈",
+    "sinners": "수감자",
+    "sinnerList": "수감자 목록",
+    "decks": "덱 게시판",
+    "planner": "거울 던전",
+    "community": {
+      "title": "커뮤니티",
+      "planner": "거던 플래너",
+      "tierList": "티어표",
+      "collection": "보유 현황"
+    },
+    "story": {
+      "title": "스토리",
+      "main": "메인 스토리"
+    },
+    "db": {
+      "title": "DB",
+      "mirrorDungeon": "거던",
+      "keywords": "키워드"
+    },
+    "other": {
+      "title": "기타",
+      "meta": "분석",
+      "extraction": "추출",
+      "random": "랜덤 편성"
+    }
+  },
+  "common": {
+    "search": "검색",
+    "filter": "필터",
+    "sort": "정렬",
+    "all": "전체",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "submit": "등록",
+    "loading": "로딩 중...",
+    "noResults": "결과 없음",
+    "login": "로그인",
+    "logout": "로그아웃"
+  },
+  "lang": {
+    "filter": "언어 필터",
+    "all": "모든 언어",
+    "mine": "내 언어만"
+  },
+  "deck": {
+    "title": "덱 게시판",
+    "new": "새 덱 만들기",
+    "votes": "추천",
+    "views": "조회",
+    "comments": "댓글"
+  },
+  "planner": {
+    "title": "거울 던전 플래너",
+    "community": "커뮤니티 플랜",
+    "difficulty": "난이도",
+    "normal": "일반",
+    "hard": "하드",
+    "tags": "태그"
+  },
+  "guide": {
+    "title": "운영법",
+    "write": "운영법 작성"
+  },
+  "ai": {
+    "summary": "AI 요약",
+    "generate": "AI 요약 생성",
+    "generating": "AI 요약 생성 중...",
+    "noSummary": "아직 요약이 없습니다"
+  },
+  "sinner": {
+    "yi-sang": "이상",
+    "faust": "파우스트",
+    "don-quixote": "돈키호테",
+    "ryoshu": "료슈",
+    "meursault": "뫼르소",
+    "hong-lu": "홍루",
+    "heathcliff": "히스클리프",
+    "ishmael": "이스마엘",
+    "rodion": "로쟈",
+    "sinclair": "싱클레어",
+    "outis": "오티스",
+    "gregor": "그레고르",
+    "source": {
+      "yi-sang": "이상(李箱) — 한국 작가, 1910–1937",
+      "faust": "파우스트 — 요한 볼프강 폰 괴테",
+      "don-quixote": "돈키호테 — 미겔 데 세르반테스",
+      "ryoshu": "지옥변(地獄変) — 아쿠타가와 류노스케",
+      "meursault": "이방인 — 알베르 카뮈",
+      "hong-lu": "홍루몽(紅樓夢) — 조설근",
+      "heathcliff": "폭풍의 언덕 — 에밀리 브론테",
+      "ishmael": "모비딕 — 허먼 멜빌",
+      "rodion": "죄와 벌 — 표도르 도스토옙스키",
+      "sinclair": "데미안 — 헤르만 헤세",
+      "outis": "오디세이아 — 호메로스",
+      "gregor": "변신(Die Verwandlung) — 프란츠 카프카"
+    }
+  },
+  "mypage": {
+    "title": "마이 페이지"
+  },
+  "home": {
+    "fanArchive": "팬 아카이브",
+    "cta": {
+      "sinners": "수감자 목록",
+      "decks": "덱 게시판",
+      "planner": "거던 플래너",
+      "discordBot": "디스코드 봇"
+    },
+    "feat": {
+      "sinnerDb": "수감자 DB",
+      "sinnerDbDesc": "12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서.",
+      "deckBoard": "덱 게시판",
+      "deckBoardDesc": "커뮤니티 덱 빌드를 탐색하고 나만의 덱을 등록.",
+      "mirrorDungeon": "거울 던전",
+      "mirrorDungeonDesc": "EGO 기프트 도감, 키워드 필터, 조합 레시피.",
+      "collection": "보유 현황",
+      "collectionDesc": "나의 인격·EGO 체크리스트, URL로 공유.",
+      "tierList": "티어표",
+      "tierListDesc": "커뮤니티 투표 기반 리세마라 티어 랭킹.",
+      "extraction": "추출 시뮬",
+      "extractionDesc": "뽑기 확률 시뮬레이션으로 운명을 시험.",
+      "random": "랜덤 편성",
+      "randomDesc": "슬롯머신 UI로 무작위 편성, 키워드 필터.",
+      "planner": "거던 플래너",
+      "plannerDesc": "층별 테마팩 선택, 전략 시뮬레이션."
+    },
+    "official": {
+      "site": "공식 사이트",
+      "discord": "팬 디스코드",
+      "discordSub": "봇 소개 · 서버 참여",
+      "youtubeSub": "공식 채널"
+    },
+    "latestVideo": "최신 영상",
+    "viewChannel": "채널 더보기",
+    "latestIdentity": "최신 인격",
+    "viewAllSinners": "전체 수감자 보기",
+    "fanArchiveFooter": "Limbus Company 팬 아카이브"
+  },
+  "site": {
+    "name": "최애의 관리자"
+  },
+  "sinners": {
+    "title": "수감자 목록",
+    "subtitle": "림버스 컴퍼니의 12인 수감자",
+    "viewAllIdentities": "인격 전체 보기",
+    "viewAllEgo": "E.G.O 전체 보기",
+    "identities": "인격"
+  },
+  "sinnerDetail": {
+    "searchIdentity": "인격 이름, 소속, 키워드 검색...",
+    "searchEgo": "EGO 이름, 키워드 검색...",
+    "allFilter": "전체",
+    "viewAll": "전체 보기",
+    "ownedIdentity": "보유 인격",
+    "unownedIdentity": "미보유 인격",
+    "ownedEgo": "보유 EGO",
+    "unownedEgo": "미보유 EGO",
+    "newest": "최신순",
+    "oldest": "오래된순",
+    "uptie3": "3동기화",
+    "normal": "일반",
+    "noResults": "검색 결과가 없습니다.",
+    "noIdentities": "등록된 인격이 없습니다.",
+    "noEgo": "등록된 EGO가 없습니다.",
+    "resetFilter": "필터 초기화",
+    "keyword": "키워드",
+    "tabSelect": "Tab으로 선택",
+    "identity": "인격",
+    "count": "개",
+    "desc": {
+      "yi-sang": "날카로운 지성과 분열된 자아를 가진 림버스 컴퍼니의 단장.",
+      "faust": "진리를 향한 탐구욕이 강한 뛰어난 의술의 소유자.",
+      "don-quixote": "정의와 이상을 위해 싸우는 누구보다 열정적인 기사.",
+      "ryoshu": "고통 속에서 아름다움을 찾는 침착하고 과묵한 검사.",
+      "meursault": "세상에 무관심하지만 압도적인 파괴력을 지닌 이방인.",
+      "hong-lu": "화려한 배경과 여유로운 태도를 지닌 우아한 귀공자.",
+      "heathcliff": "어두운 과거와 집착적인 복수심을 품은 거칠고 냉혹한 남자.",
+      "ishmael": "강인한 의지와 생존 본능을 지닌 바다를 떠돌던 선원.",
+      "rodion": "죄책감과 내면의 갈등을 안고 사는 날카로운 지성의 소유자.",
+      "sinclair": "자아를 찾아 방황하는, 순수하지만 복잡한 갈등을 품은 청년.",
+      "outis": "정체를 숨긴 채 행동하는, 뛰어난 전략적 사고를 지닌 신비로운 인물.",
+      "gregor": "기괴하게 변해버렸지만 인간적인 무언가를 간직한 묵묵한 존재."
+    }
+  },
+  "sin": {
+    "wrath": "분노",
+    "lust": "색욕",
+    "sloth": "나태",
+    "gluttony": "탐식",
+    "gloom": "우울",
+    "pride": "오만",
+    "envy": "질투"
+  },
+  "identity": {
+    "stat": {
+      "hp": "HP",
+      "speed": "속도",
+      "defense": "방어"
+    },
+    "info": {
+      "title": "기본 정보",
+      "affiliation": "소속",
+      "releaseDate": "출시시기",
+      "acquisition": "획득 방법",
+      "extraction": "추출",
+      "vendingMachine": "자판기",
+      "fragmentExchange": "파편 교환",
+      "sdDragHint": "드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화",
+      "type": {
+        "default": "기본",
+        "standard": "추출",
+        "event": "이벤트",
+        "walpurgis": "발푸르기스",
+        "attendance": "출석"
+      },
+      "gacha": {
+        "always": "상시 추출",
+        "seasonal": "시즌 한정",
+        "walpurgis": "발푸밤 한정",
+        "none": "추출 불가"
+      },
+      "walpurgisEdition": "회차",
+      "targetExtraction": "특정 추출",
+      "vendingUnavailable7d": "교환 불가 (출시 7일 후 개방)",
+      "vendingAvailable": "교환 가능",
+      "vendingUnavailableNextSeason": "교환 불가 (다음 시즌부터 가능)",
+      "fragmentCost": "자아 파편",
+      "exchangeAlways": "(상시)",
+      "exchangeFromSeason": "~ 상시",
+      "permanent": "상시",
+      "resistance": {
+        "weak": "취약",
+        "resist": "내성"
+      },
+      "slash": "참격",
+      "pierce": "관통",
+      "blunt": "타격",
+      "season": "시즌"
+    },
+    "stats": {
+      "title": "스탯",
+      "hp": "HP",
+      "speed": "속도",
+      "defLevel": "방어 레벨",
+      "breakSection": "패닉 구간",
+      "breakSectionTitle": "흐트러짐 구간",
+      "breakPhase": "{n}차"
+    },
+    "skills": {
+      "title": "스킬",
+      "preparing": "스킬 정보는 준비 중입니다.",
+      "uptie4Changes": "4동기화 변경점",
+      "atkWeight": "공격 가중치",
+      "unbreakableCoin": "파괴 불가 코인",
+      "coin": "코인",
+      "uptie4Diff": "4동기화 변경점"
+    },
+    "passives": {
+      "title": "패시브",
+      "battle": "배틀 패시브",
+      "support": "서포트 패시브",
+      "preparing": "패시브 정보는 준비 중입니다.",
+      "label": "패시브",
+      "resonance": "공명",
+      "stock": "보유",
+      "typeBattle": "전투",
+      "typeSupport": "서포트"
+    },
+    "sanity": {
+      "title": "정신력",
+      "increase": "정신력 증가",
+      "decrease": "정신력 감소",
+      "panicType": "패닉 타입",
+      "panicEffect": "패닉 효과",
+      "increaseCondition": "기본 정신력 증가 조건",
+      "decreaseCondition": "기본 정신력 감소 조건"
+    },
+    "review": {
+      "title": "리뷰",
+      "placeholder": "한줄평을 남겨주세요...",
+      "anonymous": "익명",
+      "oneLineReviews": "한줄평",
+      "helpful": "유용해요",
+      "notHelpful": "아쉬워요",
+      "userRating": "유저 평가",
+      "participants": "명 참여",
+      "recommended": "추천함",
+      "notRecommended": "비추천함",
+      "upvote": "개추",
+      "downvote": "비추",
+      "inputPlaceholder": "한줄평 (선택, 최대 100자)",
+      "loginPrompt": "로그인하면 평가에 참여할 수 있습니다",
+      "empty": "아직 평가가 없습니다",
+      "modify": "변경하기",
+      "cancel": "취소",
+      "delete": "삭제"
+    },
+    "guide": {
+      "title": "운영법",
+      "noGuides": "아직 작성된 가이드가 없습니다.",
+      "write": "운영법 작성",
+      "newTitlePlaceholder": "운영법 제목을 입력하세요",
+      "editTitlePlaceholder": "운영법 제목",
+      "newContentPlaceholder": "이 인격의 운영법을 작성하세요. 키워드/스킬/인격/에고 이름을 입력하면 자동완성됩니다.",
+      "editContentPlaceholder": "운영법 내용을 작성하세요.",
+      "delete": "삭제",
+      "confirmDeleteTitle": "운영법 삭제",
+      "confirmDeleteMsg": "이 운영법을 삭제하시겠습니까?",
+      "confirmDeleteLabel": "삭제",
+      "emptyState": "아직 운영법이 작성되지 않았습니다.",
+      "discordSupport": "운영법 작성 지원하기 (Discord)",
+      "edit": "수정",
+      "preview": "미리보기",
+      "saving": "저장 중...",
+      "save": "저장",
+      "cancel": "취소",
+      "addNew": "추가하기",
+      "untitled": "제목 없음"
+    },
+    "ai": {
+      "title": "AI 요약",
+      "generate": "AI 요약 생성",
+      "regenerate": "재생성",
+      "expired": "만료됨",
+      "generating": "생성 중...",
+      "streaming": "스트리밍 중...",
+      "disclaimer": "AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.",
+      "description": "AI가 이 인격의 스킬, 운영법, 추천 편성을 분석하여 요약합니다.",
+      "created": "생성"
+    },
+    "decks": "등록된 덱",
+    "tab": {
+      "skills": "스킬",
+      "passives": "패시브",
+      "decks": "덱"
+    },
+    "pageTab": {
+      "info": "인격 정보",
+      "decks": "덱"
+    },
+    "passiveType": {
+      "battle": "배틀",
+      "support": "서포트"
+    },
+    "backToSinner": "← 인격 목록으로",
+    "uptie": {
+      "toggle": "동기화 4 비교",
+      "level3": "동기화 3",
+      "level4": "동기화 4"
+    },
+    "rarity": [
+      null,
+      "0등급",
+      "00등급",
+      "000등급"
+    ],
+    "timeAgo": {
+      "justNow": "방금 전",
+      "minutesAgo": "분 전",
+      "hoursAgo": "시간 전",
+      "daysAgo": "일 전"
+    },
+    "notFound": "인격을 찾을 수 없습니다",
+    "meta": {
+      "description": "스탯, 스킬, 패시브, AI 요약, 운영법"
+    },
+    "season": "시즌",
+    "panic": "패닉",
+    "skillType": {
+      "slash": "참격",
+      "pierce": "관통",
+      "blunt": "타격",
+      "defense": "방어",
+      "evade": "회피",
+      "counter": "카운터"
+    },
+    "resistance": {
+      "weak": "취약",
+      "resistant": "내성",
+      "normal": "보통"
+    },
+    "portrait": {
+      "illustration": "일러스트",
+      "uptieIllustration": "동기화 일러스트",
+      "artTipTitle": "이미지를 탭하면",
+      "artTipDesc": "풀 일러스트를 볼 수 있어요"
+    }
+  },
+  "ego": {
+    "resistance": "죄악 내성",
+    "cost": "코스트",
+    "passive": "패시브",
+    "awakening": "각성 스킬",
+    "corrosion": "침식 스킬",
+    "awakeningLabel": "각성",
+    "corrosionLabel": "침식",
+    "power": "위력",
+    "coin": "코인",
+    "coinPower": "코인위력",
+    "weight": "가중치",
+    "max": "최대",
+    "loadError": "데이터를 불러올 수 없습니다",
+    "res": {
+      "resist": "내성",
+      "endure": "견딤",
+      "normal": "보통",
+      "weak": "취약",
+      "fatal": "치명",
+      "null": "무효",
+      "immune": "면역"
+    },
+    "egoSkill": "EGO 스킬",
+    "corrosionSection": "침식",
+    "keyword": "키워드",
+    "acquisition": "입수 방법",
+    "fragmentExchange": "파편 교환",
+    "construeLevel": "해석",
+    "noSkillData": "스킬 데이터 없음",
+    "noCorSkillData": "침식 스킬 데이터 없음",
+    "backToEgoList": "EGO 목록으로",
+    "sinResistance": "죄악 내성"
+  },
+  "keyword": {
+    "maxStack": "최대"
+  }
+}

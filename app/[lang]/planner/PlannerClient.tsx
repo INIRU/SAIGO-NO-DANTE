@@ -1,8 +1,8 @@
 'use client'
 
 import { useMemo, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter } from '@/lib/i18n/navigation'
+import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play } from 'lucide-react'
 import { DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
