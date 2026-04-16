@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { Identity, STORAGE_BASE } from '@/lib/data/sinners'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations } from 'next-intl'
 
 interface IdentityStatsCardProps {
   identity: Identity
@@ -10,7 +10,7 @@ interface IdentityStatsCardProps {
 }
 
 export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsCardProps) {
-  const { t } = useLanguage()
+  const t = useTranslations()
   const defCorr = identity.def_level - 60
   const defCorrStr = defCorr === 0 ? '' : defCorr > 0 ? `(+${defCorr})` : `(${defCorr})`
 
@@ -118,7 +118,7 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
                 <div key={i} className="flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#e04040', opacity: 0.5 + i * 0.2 }} />
                   <span style={{ color: '#aaa', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                    {t('identity.stats.breakPhase').replace('{n}', String(i + 1))}{' '}<span style={{ color: '#e04040' }}>{pct}%</span>
+                    {t('identity.stats.breakPhase', { n: i + 1 })}{' '}<span style={{ color: '#e04040' }}>{pct}%</span>
                     <span style={{ color: '#666' }}> ({hpVal})</span>
                   </span>
                 </div>

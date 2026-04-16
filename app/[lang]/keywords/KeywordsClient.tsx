@@ -3,11 +3,15 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, RotateCcw, LayoutList, Grid3X3 } from 'lucide-react'
+import { useLocale } from 'next-intl'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import FilterSidebar from '@/components/browser/FilterSidebar'
 import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
 import KeywordGrid from './KeywordGrid'
 import KeywordModal from './KeywordModal'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 
 /* ── 타입 ── */
 interface Keyword {
@@ -17,12 +21,18 @@ interface Keyword {
   icon_slug: string | null
   sin_affinity: string | null
   category: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 
 interface Identity {
   id: string
   name: string
   name_kr: string
+  name_en: string | null
+  name_jp: string | null
   sinner_id: string
   keywords: string[] | null
   rarity: number
@@ -33,6 +43,8 @@ interface Identity {
 interface Sinner {
   id: string
   name_kr: string
+  name_en: string | null
+  name_jp: string | null
 }
 
 interface EgoGift {
@@ -49,6 +61,8 @@ interface EGO {
   id: string
   name: string
   name_kr: string | null
+  name_en: string | null
+  name_jp: string | null
   sinner_id: string
   grade: string
   sin_affinity: string | null
@@ -60,18 +74,7 @@ interface EGO {
 /* ── 상수 ── */
 type KeywordCategory = '상태이상' | '버프' | '디버프' | '고유'
 
-const CATEGORIES: { value: KeywordCategory; label: string; color: string }[] = [
-  { value: '상태이상', label: '상태이상', color: '#e05050' },
-  { value: '버프',     label: '버프',     color: '#50b060' },
-  { value: '디버프',   label: '디버프',   color: '#7070c0' },
-  { value: '고유',     label: '고유',     color: '#c8900a' },
-]
-
 type SortKey = 'default' | 'name'
-const SORT_OPTIONS: DropdownOption<SortKey>[] = [
-  { value: 'default', label: '사용 빈도순' },
-  { value: 'name', label: '이름순' },
-]
 
 export default function KeywordsClient({
   keywords, identities, sinners, gifts, egos,
@@ -84,6 +87,28 @@ export default function KeywordsClient({
 }) {
   const [selected, setSelected] = useState<Keyword | null>(null)
   const formatSkillDesc = useFormatSkillDesc()
+
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
+  const CATEGORIES = useMemo(() => [
+    { value: '상태이상' as KeywordCategory, label: t('keyword.category.statusEffect'), color: '#e05050' },
+    { value: '버프' as KeywordCategory, label: t('keyword.category.buff'), color: '#50b060' },
+    { value: '디버프' as KeywordCategory, label: t('keyword.category.debuff'), color: '#7070c0' },
+    { value: '고유' as KeywordCategory, label: t('keyword.category.unique'), color: '#c8900a' },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [lang])
+
+  const sortOptions: DropdownOption<SortKey>[] = useMemo(() => [
+    { value: 'default', label: t('keyword.sort.frequency') },
+    { value: 'name', label: t('keyword.sort.name') },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [lang])
 
   /* ── nuqs URL 상태 ── */
   const [viewMode, setViewMode] = useQueryState('view', parseAsString.withDefault('detail'))
@@ -115,9 +140,9 @@ export default function KeywordsClient({
   /* ── 수감자 이름 맵 ── */
   const sinnerNameMap = useMemo(() => {
     const map: Record<string, string> = {}
-    sinners.forEach(s => { map[s.id] = s.name_kr })
+    sinners.forEach(s => { map[s.id] = getLocalizedName({ name_kr: s.name_kr, name_en: s.name_en, name_jp: s.name_jp }, lang) })
     return map
-  }, [sinners])
+  }, [sinners, lang])
 
   /* ── 카운트 맵 ── */
   const identityCountMap = useMemo(() => {
@@ -168,15 +193,23 @@ export default function KeywordsClient({
   const filtered = useMemo(() => {
     return keywords.filter(kw => {
       if (selectedCategories.size > 0 && !selectedCategories.has((kw.category || '고유') as KeywordCategory)) return false
-      if (search && !kw.name.includes(search) && !kw.description?.includes(search)) return false
+      if (search) {
+        const localName = getLocalizedKeywordName(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null }, lang)
+        const localDesc = getLocalizedKeywordDesc(kw.description ?? '', { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)
+        if (!localName.toLowerCase().includes(search.toLowerCase()) && !localDesc.toLowerCase().includes(search.toLowerCase())) return false
+      }
       return true
     }).sort((a, b) => {
-      if (sort === 'name') return a.name.localeCompare(b.name, 'ko')
+      if (sort === 'name') {
+        const aName = getLocalizedKeywordName(a.name, { nameEn: a.name_en, nameJp: a.name_jp, descEn: null, descJp: null }, lang)
+        const bName = getLocalizedKeywordName(b.name, { nameEn: b.name_en, nameJp: b.name_jp, descEn: null, descJp: null }, lang)
+        return aName.localeCompare(bName, lang === 'ja' ? 'ja' : lang === 'en' ? 'en' : 'ko')
+      }
       const aCount = (identityCountMap[a.name] || 0) + (egoCountMap[a.name] || 0) + (giftCountMap[a.name] || 0)
       const bCount = (identityCountMap[b.name] || 0) + (egoCountMap[b.name] || 0) + (giftCountMap[b.name] || 0)
       return bCount - aCount
     })
-  }, [keywords, selectedCategories, search, sort, identityCountMap, egoCountMap, giftCountMap])
+  }, [keywords, selectedCategories, search, sort, identityCountMap, egoCountMap, giftCountMap, lang])
 
   /* ── 선택된 키워드의 관련 데이터 ── */
   const relatedIdentities = useMemo(() => {
@@ -205,13 +238,13 @@ export default function KeywordsClient({
       {/* ── 헤더 ── */}
       <div className="text-center mb-10">
         <p className="font-mono text-[0.625rem] tracking-[0.3em] mb-2" style={{ color: '#c8900a' }}>
-          KEYWORD ARCHIVE
+          {t('keyword.label')}
         </p>
         <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: '#e8dcc8' }}>
-          키워드 도감
+          {t('keyword.title')}
         </h1>
         <p className="text-[0.8125rem]" style={{ color: '#7a6845' }}>
-          {keywords.length}종의 키워드 — 카테고리별 탐색, 관련 인격·기프트 모아보기
+          {t('keyword.subtitle').replace('{count}', String(keywords.length))}
         </p>
       </div>
 
@@ -226,14 +259,14 @@ export default function KeywordsClient({
       <div className="flex gap-6">
         <FilterSidebar activeCount={activeFilterCount}>
           {/* 카테고리 필터 */}
-          <div role="group" aria-label="카테고리 필터">
+          <div role="group" aria-label={t('keyword.filter.categoryAria')}>
             <div className="font-mono mb-2" style={{
               fontSize: '0.5625rem',
               letterSpacing: '0.15em',
               color: 'var(--gold-dim)',
               textTransform: 'uppercase',
             }}>
-              CATEGORY
+              {t('keyword.category.label')}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {CATEGORIES.map(cat => {
@@ -292,7 +325,7 @@ export default function KeywordsClient({
               color: 'var(--gold-dim)',
               textTransform: 'uppercase',
             }}>
-              SEARCH
+              {t('keyword.search.label')}
             </div>
             <div
               className="relative flex items-center rounded-lg overflow-hidden"
@@ -305,17 +338,17 @@ export default function KeywordsClient({
               <input
                 value={search ?? ''}
                 onChange={e => setSearch(e.target.value || null)}
-                placeholder="이름 또는 설명..."
+                placeholder={t('keyword.search.placeholder')}
                 className="w-full pl-8 pr-8 py-2 text-[0.75rem]"
                 style={{ background: 'transparent', color: '#e8dcc8', outline: 'none' }}
-                aria-label="키워드 검색"
+                aria-label={t('keyword.search.aria')}
               />
               {search && (
                 <button
                   onClick={() => setSearch(null)}
                   className="absolute right-2.5 hover:opacity-80 transition-opacity"
                   style={{ color: '#555', cursor: 'pointer' }}
-                  aria-label="검색 초기화"
+                  aria-label={t('keyword.search.clearAria')}
                 >
                   <X size={12} />
                 </button>
@@ -335,10 +368,10 @@ export default function KeywordsClient({
                   border: '1px solid rgba(255,255,255,0.08)',
                   background: 'transparent',
                 }}
-                aria-label="모든 필터 초기화"
+                aria-label={t('keyword.filter.resetAria')}
               >
                 <RotateCcw size={12} />
-                필터 초기화 ({activeFilterCount}개 활성)
+                {t('keyword.filter.reset')} ({t('keyword.filter.active').replace('{count}', String(activeFilterCount))})
               </button>
             </div>
           )}
@@ -350,9 +383,9 @@ export default function KeywordsClient({
           <div className="flex items-center justify-between mb-5">
             <p aria-live="polite" style={{ color: '#888', fontSize: '0.8125rem' }}>
               {filtered.length !== keywords.length ? (
-                <><span style={{ color: 'var(--gold)' }}>{filtered.length}개</span> / 전체 {keywords.length}개</>
+                <>{t('keyword.count.filtered').replace('{filtered}', String(filtered.length)).replace('{total}', String(keywords.length))}</>
               ) : (
-                <>전체 <span style={{ color: 'var(--gold)' }}>{keywords.length}개</span></>
+                <>{t('keyword.count.total').replace('{count}', String(keywords.length))}</>
               )}
             </p>
             <div className="flex items-center gap-2">
@@ -360,7 +393,7 @@ export default function KeywordsClient({
               <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
                 <button
                   onClick={() => setViewMode('detail')}
-                  aria-label="상세 보기"
+                  aria-label={t('keyword.view.detail')}
                   aria-pressed={viewMode === 'detail'}
                   className="p-1.5 transition-colors"
                   style={{
@@ -373,7 +406,7 @@ export default function KeywordsClient({
                 </button>
                 <button
                   onClick={() => setViewMode('compact')}
-                  aria-label="아이콘 보기"
+                  aria-label={t('keyword.view.compact')}
                   aria-pressed={viewMode !== 'detail'}
                   className="p-1.5 transition-colors"
                   style={{
@@ -388,9 +421,9 @@ export default function KeywordsClient({
               </div>
               <Dropdown
                 value={sort}
-                options={SORT_OPTIONS}
+                options={sortOptions}
                 onChange={(v) => setSortParam(v === 'default' ? null : v)}
-                prefix="정렬:"
+                prefix={t('keyword.sort.prefix')}
                 defaultValue={'default' as SortKey}
               />
             </div>
@@ -400,8 +433,9 @@ export default function KeywordsClient({
           <KeywordGrid
             keywords={filtered}
             countMaps={{ identity: identityCountMap, ego: egoCountMap, gift: giftCountMap }}
-            onSelect={setSelected}
+            onSelect={(kw) => setSelected(kw as Keyword)}
             viewMode={viewMode === 'compact' ? 'compact' : 'detail'}
+            lang={lang}
           />
         </div>
       </div>
@@ -416,6 +450,7 @@ export default function KeywordsClient({
           sinnerNameMap={sinnerNameMap}
           formatSkillDesc={formatSkillDesc}
           onClose={handleClose}
+          lang={lang}
         />
       )}
 

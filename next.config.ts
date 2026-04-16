@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -46,22 +49,6 @@ const nextConfig: NextConfig = {
     qualities: [20, 25, 40, 50, 60, 75, 90],
     minimumCacheTTL: 2592000, // 30일 — 게임 에셋 이미지는 거의 변경 없음
     formats: ['image/avif', 'image/webp'],
-  },
-  async rewrites() {
-    const exclude = '(?!api|auth|_next|monitoring|ko|en|ja|icons|fonts).*';
-    return {
-      afterFiles: [
-        { source: '/', destination: '/ko', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ko' }] },
-        { source: `/:path(${exclude}.*)`, destination: '/ko/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ko' }] },
-        { source: '/', destination: '/en', has: [{ type: 'cookie', key: 'preferred_lang', value: 'en' }] },
-        { source: `/:path(${exclude}.*)`, destination: '/en/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'en' }] },
-        { source: '/', destination: '/ja', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ja' }] },
-        { source: `/:path(${exclude}.*)`, destination: '/ja/:path*', has: [{ type: 'cookie', key: 'preferred_lang', value: 'ja' }] },
-        // Default (no cookie yet)
-        { source: '/', destination: '/ko' },
-        { source: `/:path(${exclude}.*)`, destination: '/ko/:path*' },
-      ],
-    }
   },
   async headers() {
     return [
@@ -116,7 +103,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withNextIntl(withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -126,4 +113,4 @@ export default withSentryConfig(nextConfig, {
   sourcemaps: {
     disable: process.env.NODE_ENV !== 'production' || !process.env.SENTRY_AUTH_TOKEN,
   },
-});
+}));

@@ -1,11 +1,13 @@
 'use client'
 
 import { useRef, useState, useCallback, useMemo } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import type { SupportedLang } from '@/lib/i18n/types'
 import GlitchText from '@/components/ui/GlitchText'
 import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
 import ScrollAnimations from '@/components/home/ScrollAnimations'
@@ -63,7 +65,10 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ latestIdentities, pinnedAnnouncement }: HomeClientProps) {
-  const { t, lang } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  useRoutePrefetch([`/${lang}/decks`, `/${lang}/mirror-dungeon`, `/${lang}/sinners`, `/${lang}/tier-list`, `/${lang}/planner/community`, `/${lang}/keywords`])
 
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
     if (lang === 'en') return en ?? kr ?? ''

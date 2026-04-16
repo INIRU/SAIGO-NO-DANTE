@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Check } from 'lucide-react'
 import type { EpisodeSummary } from '@/lib/story/types'
 

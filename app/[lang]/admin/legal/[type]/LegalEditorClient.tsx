@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import type { LegalDoc, LegalSection } from '@/lib/data/legal'
 import { adminInputStyle, AdminButton } from '@/components/admin'
 import { showSuccess, showError } from '@/lib/toast'

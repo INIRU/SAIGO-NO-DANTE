@@ -1,23 +1,19 @@
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Sinner, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE } from '@/lib/data/sinners'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { serverT } from '@/lib/i18n/server'
-import type { TranslationKey } from '@/lib/i18n/translations'
+import { getLocalizedName } from '@/lib/i18n'
+import { getTranslations, getLocale } from 'next-intl/server'
 
 interface SinnerCardProps {
   sinner: Sinner
   index?: number
   priority?: boolean
-  lang?: SupportedLang
 }
 
-export default function SinnerCard({ sinner, index = 0, priority: priorityProp = false, lang }: SinnerCardProps) {
-  const displayName = lang === 'en'
-    ? (sinner.name_en ?? sinner.name_kr)
-    : lang === 'ja'
-      ? (sinner.name_jp ?? sinner.name_kr)
-      : sinner.name_kr
+export default async function SinnerCard({ sinner, index = 0, priority: priorityProp = false }: SinnerCardProps) {
+  const [t, locale] = await Promise.all([getTranslations(), getLocale()])
+  const displayName = getLocalizedName(sinner, locale as SupportedLang)
   const profileUrl = getSinnerProfileUrl(sinner.id)
 
   return (
@@ -128,9 +124,7 @@ export default function SinnerCard({ sinner, index = 0, priority: priorityProp =
             className="italic truncate"
             style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', letterSpacing: '0.02em' }}
           >
-            {lang && lang !== 'ko'
-              ? serverT(`sinner.source.${sinner.id}` as TranslationKey, lang)
-              : sinner.literary_source}
+            {t(`sinner.source.${sinner.id}`)}
           </p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { X, Camera } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
 type Sinner = { id: string; name_kr: string; order_num: number }
 type AvatarIdentity = {
@@ -199,7 +200,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                       fill
                       sizes="100px"
                       placeholder="blur"
-                      blurDataURL={BLUR_PLACEHOLDER}
+                      blurDataURL={getBlurDataURL(url) ?? BLUR_PLACEHOLDER}
                       style={{ objectFit: 'cover' }}
                       onError={() => {
                         const base = gacksung && !failedGacksung.has(identity.game_id) ? 'gacksung' : 'normal'

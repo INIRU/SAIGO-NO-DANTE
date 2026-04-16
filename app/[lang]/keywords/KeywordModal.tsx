@@ -2,16 +2,15 @@
 
 import { useEffect, useCallback, type ReactNode } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 
-const SIN_LABELS: Record<string, string> = {
-  wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식',
-  gloom: '우울', pride: '오만', envy: '질투',
-}
 const RARITY_ICONS: Record<number, string> = { 1: '1star', 2: '2star', 3: '3star' }
 const GRADE_LABELS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', 'EX': 'EX' }
 
@@ -22,13 +21,19 @@ interface Keyword {
   icon_slug: string | null
   sin_affinity: string | null
   category: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 interface Identity {
   id: string; name: string; name_kr: string; sinner_id: string
+  name_en?: string | null; name_jp?: string | null
   keywords: string[] | null; rarity: number; game_id: string | null; folder_name: string | null
 }
 interface EGO {
   id: string; name: string; name_kr: string | null; sinner_id: string
+  name_en?: string | null; name_jp?: string | null
   grade: string; sin_affinity: string | null; keywords: string[] | null
   folder_name: string | null; image_url: string | null
 }
@@ -44,14 +49,29 @@ interface KeywordModalProps {
   sinnerNameMap: Record<string, string>
   formatSkillDesc: (text: string, color: string) => ReactNode
   onClose: () => void
+  lang: SupportedLang
 }
 
 export default function KeywordModal({
   keyword: kw, relatedIdentities, relatedEgos, relatedGifts,
-  sinnerNameMap, formatSkillDesc, onClose,
+  sinnerNameMap, formatSkillDesc, onClose, lang,
 }: KeywordModalProps) {
   const sinColor = kw.sin_affinity
     ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
+    : null
+
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
+  const sinLabel = (sin: string) =>
+    translations[(`sin.${sin}`) as keyof typeof translations]?.[lang] ?? sin
+
+  const kwName = getLocalizedKeywordName(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null }, lang)
+  const kwDesc = kw.description
+    ? getLocalizedKeywordDesc(kw.description, { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)
     : null
 
   // body 스크롤 잠금
@@ -120,22 +140,22 @@ export default function KeywordModal({
                   >
                     <Image
                       src={`${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`}
-                      alt={kw.name} width={28} height={28}
+                      alt={kwName} width={28} height={28}
                       style={{ width: '1.75rem', height: 'auto' }}
                     />
                   </div>
                 )}
                 <div>
                   <h2 className="font-serif text-lg font-bold" style={{ color: '#e8dcc8' }}>
-                    {kw.name}
+                    {kwName}
                   </h2>
                   <div className="flex gap-2 mt-0.5">
                     {kw.max_stack && (
-                      <span className="text-[0.625rem]" style={{ color: '#7a6845' }}>최대 {kw.max_stack}</span>
+                      <span className="text-[0.625rem]" style={{ color: '#7a6845' }}>{t('keyword.maxStack')} {kw.max_stack}</span>
                     )}
                     {kw.sin_affinity && (
                       <span className="text-[0.625rem]" style={{ color: sinColor || '#7a6845' }}>
-                        {SIN_LABELS[kw.sin_affinity]}
+                        {sinLabel(kw.sin_affinity)}
                       </span>
                     )}
                   </div>
@@ -147,9 +167,9 @@ export default function KeywordModal({
             </div>
 
             {/* 설명 */}
-            {kw.description && (
+            {kwDesc && (
               <div className="mt-3 text-[0.8125rem] leading-[1.7]" style={{ color: '#a89070' }}>
-                {kw.description.split('\n').filter(Boolean).map((line, i) => (
+                {kwDesc.split('\n').filter(Boolean).map((line, i) => (
                   <p key={i}>{formatSkillDesc(line, '#a89070')}</p>
                 ))}
               </div>
@@ -162,42 +182,45 @@ export default function KeywordModal({
             {relatedIdentities.length > 0 && (
               <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
                 <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#c8900a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                  관련 인격 ({relatedIdentities.length})
+                  {t('keyword.related.identities')} ({relatedIdentities.length})
                 </h3>
                 <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
-                  {relatedIdentities.map(id => (
-                    <Link
-                      key={id.id}
-                      href={`/sinners/${id.sinner_id}/identities/${id.id}`}
-                      className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
-                      style={{ border: '0.0625rem solid rgba(200,144,10,0.06)' }}
-                      onClick={handleClose}
-                    >
-                      {id.game_id && id.folder_name && (
-                        <Image
-                          src={`${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`}
-                          alt={id.name_kr} width={36} height={48}
-                          className="rounded shrink-0"
-                          style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{id.name_kr}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {RARITY_ICONS[id.rarity] && (
-                            <Image
-                              src={`${STORAGE_BASE}/icons/Rarity/${RARITY_ICONS[id.rarity]}.webp`}
-                              alt="" width={id.rarity === 1 ? 12 : id.rarity === 2 ? 20 : 28} height={12}
-                              style={{ width: id.rarity === 1 ? '0.75rem' : id.rarity === 2 ? '1.25rem' : '1.75rem', height: 'auto' }}
-                            />
-                          )}
-                          <span className="text-[0.5625rem]" style={{ color: '#555' }}>
-                            {sinnerNameMap[id.sinner_id] || id.sinner_id}
-                          </span>
+                  {relatedIdentities.map(id => {
+                    const idName = getLocalizedName({ name_kr: id.name_kr, name_en: id.name_en, name_jp: id.name_jp }, lang)
+                    return (
+                      <Link
+                        key={id.id}
+                        href={`/sinners/${id.sinner_id}/identities/${id.id}`}
+                        className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
+                        style={{ border: '0.0625rem solid rgba(200,144,10,0.06)' }}
+                        onClick={handleClose}
+                      >
+                        {id.game_id && id.folder_name && (
+                          <Image
+                            src={`${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`}
+                            alt={idName} width={36} height={48}
+                            className="rounded shrink-0"
+                            style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{idName}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {RARITY_ICONS[id.rarity] && (
+                              <Image
+                                src={`${STORAGE_BASE}/icons/Rarity/${RARITY_ICONS[id.rarity]}.webp`}
+                                alt="" width={id.rarity === 1 ? 12 : id.rarity === 2 ? 20 : 28} height={12}
+                                style={{ width: id.rarity === 1 ? '0.75rem' : id.rarity === 2 ? '1.25rem' : '1.75rem', height: 'auto' }}
+                              />
+                            )}
+                            <span className="text-[0.5625rem]" style={{ color: '#555' }}>
+                              {sinnerNameMap[id.sinner_id] || id.sinner_id}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -206,40 +229,43 @@ export default function KeywordModal({
             {relatedEgos.length > 0 && (
               <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
                 <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#b06060', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                  관련 E.G.O ({relatedEgos.length})
+                  {t('keyword.related.ego')} ({relatedEgos.length})
                 </h3>
                 <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
-                  {relatedEgos.map(ego => (
-                    <Link
-                      key={ego.id}
-                      href={`/sinners/${ego.sinner_id}/ego/${ego.id}`}
-                      className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
-                      style={{ border: '0.0625rem solid rgba(180,100,100,0.06)' }}
-                      onClick={handleClose}
-                    >
-                      {ego.image_url && (
-                        <Image
-                          src={ego.image_url}
-                          alt={ego.name_kr || ego.name} width={36} height={48}
-                          className="rounded shrink-0"
-                          style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{ego.name_kr || ego.name}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
+                  {relatedEgos.map(ego => {
+                    const egoName = getLocalizedName({ name_kr: ego.name_kr ?? ego.name, name_en: ego.name_en, name_jp: ego.name_jp }, lang)
+                    return (
+                      <Link
+                        key={ego.id}
+                        href={`/sinners/${ego.sinner_id}/ego/${ego.id}`}
+                        className="flex items-center gap-2.5 p-2 rounded transition-colors hover:bg-white/[0.03] overflow-hidden"
+                        style={{ border: '0.0625rem solid rgba(180,100,100,0.06)' }}
+                        onClick={handleClose}
+                      >
+                        {ego.image_url && (
                           <Image
-                            src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`}
-                            alt={ego.grade} width={28} height={12}
-                            style={{ width: '1.75rem', height: 'auto' }}
+                            src={ego.image_url}
+                            alt={egoName} width={36} height={48}
+                            className="rounded shrink-0"
+                            style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}
                           />
-                          <span className="text-[0.5625rem] truncate" style={{ color: '#555' }}>
-                            {sinnerNameMap[ego.sinner_id] || ego.sinner_id}
-                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{egoName}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Image
+                              src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`}
+                              alt={ego.grade} width={28} height={12}
+                              style={{ width: '1.75rem', height: 'auto' }}
+                            />
+                            <span className="text-[0.5625rem] truncate" style={{ color: '#555' }}>
+                              {sinnerNameMap[ego.sinner_id] || ego.sinner_id}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -248,7 +274,7 @@ export default function KeywordModal({
             {relatedGifts.length > 0 && (
               <div className="p-5 pb-4">
                 <h3 className="text-[0.75rem] font-bold mb-3" style={{ color: '#6a9a6a', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em' }}>
-                  관련 E.G.O 기프트 ({relatedGifts.length})
+                  {t('keyword.related.gifts')} ({relatedGifts.length})
                 </h3>
                 <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
                   {relatedGifts.map(g => (
@@ -269,7 +295,7 @@ export default function KeywordModal({
                       <div className="min-w-0">
                         <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{g.name}</p>
                         <p className="text-[0.5625rem]" style={{ color: '#555' }}>
-                          등급 {GRADE_LABELS[g.grade] ?? g.grade}
+                          {GRADE_LABELS[g.grade] ?? g.grade}
                         </p>
                       </div>
                     </Link>
@@ -281,7 +307,7 @@ export default function KeywordModal({
             {/* 관련 데이터 없음 */}
             {relatedIdentities.length === 0 && relatedEgos.length === 0 && relatedGifts.length === 0 && (
               <div className="p-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
-                관련 인격이나 기프트가 없습니다.
+                {t('keyword.related.empty')}
               </div>
             )}
           </div>

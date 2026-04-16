@@ -13,9 +13,9 @@ export default function EffectBlock({ label, text, color }: { label: string; tex
     <div>
       <p
         className="text-[0.625rem] font-bold mb-1.5"
-        style={{ color: label === '++' ? '#e8b030' : '#666', fontFamily: 'var(--font-heading)' }}
+        style={{ color: label.includes('++') ? '#e8b030' : '#666', fontFamily: 'var(--font-heading)' }}
       >
-        효과 {label}
+        {label}
       </p>
       <div className="text-[0.75rem] leading-[1.7]" style={{ color }}>
         {lines.map((line, i) => {

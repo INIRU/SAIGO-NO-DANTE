@@ -10,12 +10,16 @@ export type SkillDiff = {
   atk_weight?: NumDiff
   hasDescDiff: boolean
   level4Desc?: string
+  level4Desc_en?: string
+  level4Desc_jp?: string
 }
 
 export type PassiveDiff = {
   sin_count?: NumDiff
   hasDescDiff: boolean
   level4Desc?: string
+  level4Desc_en?: string
+  level4Desc_jp?: string
 }
 
 function skillKey(s: Skill): string {
@@ -60,9 +64,22 @@ export function computeSkillDiffs(
     if ((s3.description || '') !== (s4.description || '')) {
       diff.hasDescDiff = true
       diff.level4Desc = s4.description || ''
+      diff.level4Desc_en = s4.description_en || ''
+      diff.level4Desc_jp = s4.description_jp || ''
     }
 
-    const { hasDescDiff, level4Desc, ...rest } = diff
+    // Also check EN/JP description diffs (KR same but EN/JP differs)
+    if (!diff.hasDescDiff) {
+      if ((s3.description_en || '') !== (s4.description_en || '') ||
+          (s3.description_jp || '') !== (s4.description_jp || '')) {
+        diff.hasDescDiff = true
+        diff.level4Desc = s4.description || ''
+        diff.level4Desc_en = s4.description_en || ''
+        diff.level4Desc_jp = s4.description_jp || ''
+      }
+    }
+
+    const { hasDescDiff, level4Desc, level4Desc_en, level4Desc_jp, ...rest } = diff
     if (hasDescDiff || Object.values(rest).some(v => v !== undefined)) {
       diffs.set(s3.id, diff)
     }
@@ -92,6 +109,19 @@ export function computePassiveDiffs(
     if ((p3.description || '') !== (p4.description || '')) {
       diff.hasDescDiff = true
       diff.level4Desc = p4.description || ''
+      diff.level4Desc_en = p4.description_en || ''
+      diff.level4Desc_jp = p4.description_jp || ''
+    }
+
+    // Also check EN/JP description diffs (KR same but EN/JP differs)
+    if (!diff.hasDescDiff) {
+      if ((p3.description_en || '') !== (p4.description_en || '') ||
+          (p3.description_jp || '') !== (p4.description_jp || '')) {
+        diff.hasDescDiff = true
+        diff.level4Desc = p4.description || ''
+        diff.level4Desc_en = p4.description_en || ''
+        diff.level4Desc_jp = p4.description_jp || ''
+      }
     }
 
     if (diff.hasDescDiff || diff.sin_count) {

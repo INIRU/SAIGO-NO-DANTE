@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import styles from '@/styles/components/IdentityCard.module.css'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 
 
 interface IdentityCardProps {
@@ -19,10 +20,11 @@ interface IdentityCardProps {
 
 export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   const getName = (kr?: string | null, en?: string | null, jp?: string | null) => {
-    if (lang === 'en') return en ?? kr ?? ''
-    if (lang === 'ja') return jp ?? kr ?? ''
+    if (locale === 'en') return en ?? kr ?? ''
+    if (locale === 'ja') return jp ?? kr ?? ''
     return kr ?? ''
   }
   const sinColor = getIdentitySinColor(identity, kwSinMap)
@@ -58,7 +60,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
               alt={getName(identity.name_kr, identity.name_en, identity.name_jp)}
               fill
               placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
+              blurDataURL={getBlurDataURL(imgSrc) ?? BLUR_PLACEHOLDER}
               className="object-cover object-top"
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 150px"
               onError={() => {

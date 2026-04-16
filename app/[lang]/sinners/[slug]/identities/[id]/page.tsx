@@ -6,10 +6,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
-import IdentityDetailClient from './IdentityDetailClient'
+import dynamic from 'next/dynamic'
+const IdentityDetailClient = dynamic(() => import('./IdentityDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getLocalizedName } from '@/lib/i18n/localize'
-import { serverT } from '@/lib/i18n/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
@@ -25,13 +26,14 @@ export async function generateMetadata({
     getSinnerById(slug),
     getIdentityById(id),
   ])
-  if (!sinner || !identity) return { title: serverT('identity.notFound', lang), robots: { index: false } }
+  if (!sinner || !identity) return { title: (await getTranslations())('identity.notFound'), robots: { index: false } }
 
+  const t = await getTranslations()
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const identityName = getLocalizedName(identity, lang)
-  const rarityStr = identity.rarity === 3 ? serverT('identity.rarity.3', lang) : identity.rarity === 2 ? serverT('identity.rarity.2', lang) : serverT('identity.rarity.1', lang)
+  const rarityStr = identity.rarity === 3 ? t('identity.rarity.3') : identity.rarity === 2 ? t('identity.rarity.2') : t('identity.rarity.1')
   const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
-  const descSuffix = serverT('identity.meta.description', lang)
+  const descSuffix = t('identity.meta.description')
   const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
   const imageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
@@ -120,6 +122,8 @@ export default async function IdentityPage({
     }
   } catch { /* guide fetch failed, continue without it */ }
 
+  setRequestLocale(lang)
+  const t = await getTranslations()
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
   const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
@@ -128,8 +132,8 @@ export default async function IdentityPage({
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
-        { name: serverT('nav.home', lang), url: SITE_URL },
-        { name: serverT('nav.sinners', lang), url: `${SITE_URL}/${lang}/sinners` },
+        { name: t('nav.home'), url: SITE_URL },
+        { name: t('nav.sinners'), url: `${SITE_URL}/${lang}/sinners` },
         { name: sinnerName, url: `${SITE_URL}/${lang}/sinners/${slug}` },
         { name: identityName, url: canonical },
       ])} />

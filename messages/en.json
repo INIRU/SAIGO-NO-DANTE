@@ -1,0 +1,431 @@
+{
+  "nav": {
+    "home": "Home",
+    "sinners": "Sinners",
+    "sinnerList": "Sinner List",
+    "decks": "Deck Board",
+    "planner": "Mirror Dungeon",
+    "community": {
+      "title": "Community",
+      "planner": "MD Planner",
+      "tierList": "Tier List",
+      "collection": "Collection"
+    },
+    "story": {
+      "title": "Story",
+      "main": "Main Story"
+    },
+    "db": {
+      "title": "DB",
+      "mirrorDungeon": "Mirror Dungeon",
+      "keywords": "Keywords"
+    },
+    "other": {
+      "title": "More",
+      "meta": "Analysis",
+      "extraction": "Extraction",
+      "random": "Random"
+    }
+  },
+  "common": {
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "all": "All",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "lang": {
+    "filter": "Language",
+    "all": "All Languages",
+    "mine": "My Language"
+  },
+  "deck": {
+    "title": "Deck Board",
+    "new": "Create New Deck",
+    "votes": "Votes",
+    "views": "Views",
+    "comments": "Comments"
+  },
+  "planner": {
+    "title": "Mirror Dungeon Planner",
+    "community": "Community Plans",
+    "difficulty": "Difficulty",
+    "normal": "Normal",
+    "hard": "Hard",
+    "tags": "Tags"
+  },
+  "guide": {
+    "title": "Guides",
+    "write": "Write Guide"
+  },
+  "ai": {
+    "summary": "AI Summary",
+    "generate": "Generate AI Summary",
+    "generating": "Generating AI Summary...",
+    "noSummary": "No summary yet"
+  },
+  "sinner": {
+    "yi-sang": "Yi Sang",
+    "faust": "Faust",
+    "don-quixote": "Don Quixote",
+    "ryoshu": "Ryōshū",
+    "meursault": "Meursault",
+    "hong-lu": "Hong Lu",
+    "heathcliff": "Heathcliff",
+    "ishmael": "Ishmael",
+    "rodion": "Rodion",
+    "sinclair": "Sinclair",
+    "outis": "Outis",
+    "gregor": "Gregor",
+    "source": {
+      "yi-sang": "Wings — Yi Sang",
+      "faust": "Faust — Johann Wolfgang von Goethe",
+      "don-quixote": "Don Quixote — Miguel de Cervantes",
+      "ryoshu": "Hell Screen — Ryūnosuke Akutagawa",
+      "meursault": "The Stranger — Albert Camus",
+      "hong-lu": "Dream of the Red Chamber — Cao Xueqin",
+      "heathcliff": "Wuthering Heights — Emily Brontë",
+      "ishmael": "Moby-Dick — Herman Melville",
+      "rodion": "Crime and Punishment — Fyodor Dostoevsky",
+      "sinclair": "Demian — Hermann Hesse",
+      "outis": "Odyssey — Homer",
+      "gregor": "The Metamorphosis — Franz Kafka"
+    }
+  },
+  "mypage": {
+    "title": "My Page"
+  },
+  "home": {
+    "fanArchive": "Fan Archive",
+    "cta": {
+      "sinners": "Sinner List",
+      "decks": "Deck Board",
+      "planner": "MD Planner",
+      "discordBot": "Discord Bot"
+    },
+    "feat": {
+      "sinnerDb": "Sinner DB",
+      "sinnerDbDesc": "All identity, EGO, and skill data for 12 sinners in one place.",
+      "deckBoard": "Deck Board",
+      "deckBoardDesc": "Browse community deck builds and create your own.",
+      "mirrorDungeon": "Mirror Dungeon",
+      "mirrorDungeonDesc": "EGO Gift encyclopedia, keyword filter, fusion recipes.",
+      "collection": "Collection",
+      "collectionDesc": "My identity & EGO checklist, shareable via URL.",
+      "tierList": "Tier List",
+      "tierListDesc": "Community vote-based reroll tier ranking.",
+      "extraction": "Extraction Sim",
+      "extractionDesc": "Test your luck with gacha probability simulation.",
+      "random": "Random Comp",
+      "randomDesc": "Slot machine UI for random compositions with keyword filter.",
+      "planner": "MD Planner",
+      "plannerDesc": "Floor-by-floor theme pack selection and strategy simulation."
+    },
+    "official": {
+      "site": "Official Site",
+      "discord": "Fan Discord",
+      "discordSub": "Bot intro · Join server",
+      "youtubeSub": "Official Channel"
+    },
+    "latestVideo": "Latest Video",
+    "viewChannel": "View Channel",
+    "latestIdentity": "Latest Identity",
+    "viewAllSinners": "View All Sinners",
+    "fanArchiveFooter": "Limbus Company Fan Archive"
+  },
+  "site": {
+    "name": "SAIGO NO DANTE"
+  },
+  "sinners": {
+    "title": "Sinners",
+    "subtitle": "12 Sinners of Limbus Company",
+    "viewAllIdentities": "View All Identities",
+    "viewAllEgo": "View All E.G.O",
+    "identities": "Identity"
+  },
+  "sinnerDetail": {
+    "searchIdentity": "Search identity, affiliation, keyword...",
+    "searchEgo": "Search EGO, keyword...",
+    "allFilter": "All",
+    "viewAll": "View All",
+    "ownedIdentity": "Owned",
+    "unownedIdentity": "Not Owned",
+    "ownedEgo": "Owned EGO",
+    "unownedEgo": "Not Owned EGO",
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "uptie3": "Uptie 3",
+    "normal": "Normal",
+    "noResults": "No results found.",
+    "noIdentities": "No identities registered.",
+    "noEgo": "No EGO registered.",
+    "resetFilter": "Reset Filters",
+    "keyword": "Keyword",
+    "tabSelect": "Tab to select",
+    "identity": "Identity",
+    "count": "",
+    "desc": {
+      "yi-sang": "The manager of Limbus Company, possessing sharp intellect and a fractured self.",
+      "faust": "A brilliant practitioner of medicine with an insatiable thirst for truth.",
+      "don-quixote": "A passionate knight who fights for justice and ideals like no other.",
+      "ryoshu": "A calm and taciturn swordswoman who finds beauty in suffering.",
+      "meursault": "A stranger indifferent to the world, yet wielding overwhelming destructive power.",
+      "hong-lu": "An elegant young noble with a lavish background and leisurely demeanor.",
+      "heathcliff": "A rough and ruthless man harboring a dark past and obsessive vengeance.",
+      "ishmael": "A sailor who wandered the seas, possessing strong will and survival instincts.",
+      "rodion": "A sharp-minded individual living with guilt and inner conflict.",
+      "sinclair": "A pure yet conflicted youth wandering in search of his true self.",
+      "outis": "A mysterious figure acting in concealment, with exceptional strategic thinking.",
+      "gregor": "A silent being who underwent a grotesque transformation, yet retains something human."
+    }
+  },
+  "sin": {
+    "wrath": "Wrath",
+    "lust": "Lust",
+    "sloth": "Sloth",
+    "gluttony": "Gluttony",
+    "gloom": "Gloom",
+    "pride": "Pride",
+    "envy": "Envy"
+  },
+  "identity": {
+    "stat": {
+      "hp": "HP",
+      "speed": "SPD",
+      "defense": "DEF"
+    },
+    "info": {
+      "title": "Info",
+      "affiliation": "Affiliation",
+      "releaseDate": "Release Date",
+      "acquisition": "Acquisition",
+      "extraction": "Extraction",
+      "vendingMachine": "Vending Machine",
+      "fragmentExchange": "Fragment Exchange",
+      "sdDragHint": "Drag to move · Scroll to zoom · Double-click to reset",
+      "type": {
+        "default": "Default",
+        "standard": "Extraction",
+        "event": "Event",
+        "walpurgis": "Walpurgis",
+        "attendance": "Attendance"
+      },
+      "gacha": {
+        "always": "Standard",
+        "seasonal": "Seasonal",
+        "walpurgis": "Walpurgis Night",
+        "none": "Not Available"
+      },
+      "walpurgisEdition": "Edition",
+      "targetExtraction": "Rate-up",
+      "vendingUnavailable7d": "Unavailable (opens 7 days after release)",
+      "vendingAvailable": "Available",
+      "vendingUnavailableNextSeason": "Unavailable (available next season)",
+      "fragmentCost": "Ego Shards",
+      "exchangeAlways": "(Always)",
+      "exchangeFromSeason": "~ Standard",
+      "permanent": "Permanent",
+      "resistance": {
+        "weak": "Weak",
+        "resist": "Resist"
+      },
+      "slash": "Slash",
+      "pierce": "Pierce",
+      "blunt": "Blunt",
+      "season": "Season"
+    },
+    "stats": {
+      "title": "Stats",
+      "hp": "HP",
+      "speed": "Speed",
+      "defLevel": "Def Level",
+      "breakSection": "Panic Threshold",
+      "breakSectionTitle": "Stagger Threshold",
+      "breakPhase": "Phase {n}"
+    },
+    "skills": {
+      "title": "Skills",
+      "preparing": "Skill information is being prepared.",
+      "uptie4Changes": "Uptie 4 Changes",
+      "atkWeight": "Atk Weight",
+      "unbreakableCoin": "Unbreakable Coin",
+      "coin": "Coin",
+      "uptie4Diff": "Uptie IV Changes"
+    },
+    "passives": {
+      "title": "Passives",
+      "battle": "Battle Passive",
+      "support": "Support Passive",
+      "preparing": "Passive information is being prepared.",
+      "label": "Passive",
+      "resonance": "Resonance",
+      "stock": "Owned",
+      "typeBattle": "Battle",
+      "typeSupport": "Support"
+    },
+    "sanity": {
+      "title": "Sanity",
+      "increase": "Sanity Increase",
+      "decrease": "Sanity Decrease",
+      "panicType": "Panic Type",
+      "panicEffect": "Panic Effect",
+      "increaseCondition": "Sanity Increase Conditions",
+      "decreaseCondition": "Sanity Decrease Conditions"
+    },
+    "review": {
+      "title": "Reviews",
+      "placeholder": "Leave a one-liner...",
+      "anonymous": "Anonymous",
+      "oneLineReviews": "One-liners",
+      "helpful": "Helpful",
+      "notHelpful": "Not helpful",
+      "userRating": "User Ratings",
+      "participants": " participated",
+      "recommended": "Recommended",
+      "notRecommended": "Not recommended",
+      "upvote": "Upvote",
+      "downvote": "Downvote",
+      "inputPlaceholder": "One-liner (optional, max 100 chars)",
+      "loginPrompt": "Log in to participate in ratings",
+      "empty": "No ratings yet",
+      "modify": "Change",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "guide": {
+      "title": "Guides",
+      "noGuides": "No guides available yet.",
+      "write": "Write Guide",
+      "newTitlePlaceholder": "Enter guide title",
+      "editTitlePlaceholder": "Guide title",
+      "newContentPlaceholder": "Write a guide for this identity. Type keyword/skill/identity/EGO names for autocomplete.",
+      "editContentPlaceholder": "Write guide content.",
+      "delete": "Delete",
+      "confirmDeleteTitle": "Delete Guide",
+      "confirmDeleteMsg": "Delete this guide?",
+      "confirmDeleteLabel": "Delete",
+      "emptyState": "No guides have been written yet.",
+      "discordSupport": "Contribute a guide (Discord)",
+      "edit": "Edit",
+      "preview": "Preview",
+      "saving": "Saving...",
+      "save": "Save",
+      "cancel": "Cancel",
+      "addNew": "Add new",
+      "untitled": "Untitled"
+    },
+    "ai": {
+      "title": "AI Summary",
+      "generate": "Generate AI Summary",
+      "regenerate": "Regenerate",
+      "expired": "Expired",
+      "generating": "Generating...",
+      "streaming": "Streaming...",
+      "disclaimer": "AI-generated summary. May differ from actual gameplay.",
+      "description": "AI analyzes this identity's skills, strategies, and recommended team compositions.",
+      "created": "generated"
+    },
+    "decks": "Decks",
+    "tab": {
+      "skills": "Skills",
+      "passives": "Passives",
+      "decks": "Decks"
+    },
+    "pageTab": {
+      "info": "Identity Info",
+      "decks": "Decks"
+    },
+    "passiveType": {
+      "battle": "Battle",
+      "support": "Support"
+    },
+    "backToSinner": "← Back to identities",
+    "uptie": {
+      "toggle": "Compare Uptie 4",
+      "level3": "Uptie 3",
+      "level4": "Uptie 4"
+    },
+    "rarity": [
+      null,
+      "S",
+      "SS",
+      "SSS"
+    ],
+    "timeAgo": {
+      "justNow": "just now",
+      "minutesAgo": "m ago",
+      "hoursAgo": "h ago",
+      "daysAgo": "d ago"
+    },
+    "notFound": "Identity not found",
+    "meta": {
+      "description": "Stats, skills, passives, AI summary, guides"
+    },
+    "season": "Season",
+    "panic": "Panic",
+    "skillType": {
+      "slash": "Slash",
+      "pierce": "Pierce",
+      "blunt": "Blunt",
+      "defense": "Defense",
+      "evade": "Evade",
+      "counter": "Counter"
+    },
+    "resistance": {
+      "weak": "Weak",
+      "resistant": "Resist",
+      "normal": "Normal"
+    },
+    "portrait": {
+      "illustration": "Illustration",
+      "uptieIllustration": "Uptie Illustration",
+      "artTipTitle": "Tap the image",
+      "artTipDesc": "to view full illustration"
+    }
+  },
+  "ego": {
+    "resistance": "Sin Resistance",
+    "cost": "Cost",
+    "passive": "Passive",
+    "awakening": "Awakening Skill",
+    "corrosion": "Corrosion Skill",
+    "awakeningLabel": "Awakening",
+    "corrosionLabel": "Corrosion",
+    "power": "Power",
+    "coin": "Coin",
+    "coinPower": "Coin Power",
+    "weight": "Weight",
+    "max": "Max",
+    "loadError": "Failed to load data",
+    "res": {
+      "resist": "Resist",
+      "endure": "Endure",
+      "normal": "Normal",
+      "weak": "Weak",
+      "fatal": "Fatal",
+      "null": "Ineffective",
+      "immune": "Immune"
+    },
+    "egoSkill": "EGO Skill",
+    "corrosionSection": "Corrosion",
+    "keyword": "Keywords",
+    "acquisition": "Acquisition",
+    "fragmentExchange": "Fragment Exchange",
+    "construeLevel": "Construe",
+    "noSkillData": "No skill data",
+    "noCorSkillData": "No corrosion skill data",
+    "backToEgoList": "Back to EGO list",
+    "sinResistance": "Sin Resistance"
+  },
+  "keyword": {
+    "maxStack": "Max"
+  }
+}

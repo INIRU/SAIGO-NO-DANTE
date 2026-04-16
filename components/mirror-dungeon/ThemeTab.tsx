@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { Search, X, Eye, EyeOff } from 'lucide-react'
+import { useLocale } from 'next-intl'
 import ThemePackCard from '@/components/mirror-dungeon/ThemePackCard'
 import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 const FLOOR_OFFSET: Record<string, number> = { '노말': 0, '하드': 0, '평행중첩': 5, '익스트림': 10 }
 const FLOOR_RANGE: Record<string, [number, number]> = {
@@ -37,13 +41,21 @@ export default function ThemeTab({
   const [searchFocused, setSearchFocused] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
 
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   // Separate hidden themes from normal themes
   const normalThemes = useMemo(
-    () => themes.filter(t => !t.is_hidden),
+    () => themes.filter(th => !th.is_hidden),
     [themes]
   )
   const hiddenThemes = useMemo(
-    () => themes.filter(t => t.is_hidden === true),
+    () => themes.filter(th => th.is_hidden === true),
     [themes]
   )
 
@@ -51,47 +63,60 @@ export default function ThemeTab({
     if (!themeSearch.trim() || themeSearch.trim().length < 1) return []
     const q = themeSearch.trim().toLowerCase()
     const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
-    for (const t of normalThemes) {
-      if (t.name.toLowerCase().includes(q)) {
-        const diff = t.difficulty === 'hard' ? ' [하드]' : t.difficulty === 'extreme' ? ' [익스트림]' : ''
-        suggestions.push({ type: 'theme', label: t.name, sub: diff })
+    for (const th of normalThemes) {
+      const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
+      if (displayName.toLowerCase().includes(q)) {
+        const diff =
+          th.difficulty === 'hard'
+            ? ` [${t('mirrorDungeon.tier.hard')}]`
+            : th.difficulty === 'extreme'
+            ? ` [${t('mirrorDungeon.tier.extreme')}]`
+            : ''
+        suggestions.push({ type: 'theme', label: displayName, sub: diff })
       }
       if (suggestions.length >= 8) break
     }
     if (suggestions.length < 8) {
       const seen = new Set<string>()
       for (const g of gifts) {
-        if (g.name.toLowerCase().includes(q) && !seen.has(g.name)) {
-          seen.add(g.name)
-          const belongThemes = normalThemes.filter(t => g.game_id && t.ego_gift_ids.includes(g.game_id))
+        const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
+        if (gName.toLowerCase().includes(q) && !seen.has(gName)) {
+          seen.add(gName)
+          const belongThemes = normalThemes.filter(th => g.game_id && th.ego_gift_ids.includes(g.game_id))
           if (belongThemes.length > 0) {
-            suggestions.push({ type: 'gift', label: g.name, sub: `${belongThemes.length}개 테마팩` })
+            const countLabel = lang === 'ko'
+              ? `${belongThemes.length}개 ${t('mirrorDungeon.theme.autocompleteTheme')}`
+              : `${belongThemes.length} ${t('mirrorDungeon.theme.autocompleteTheme')}`
+            suggestions.push({ type: 'gift', label: gName, sub: countLabel })
           }
           if (suggestions.length >= 8) break
         }
       }
     }
     return suggestions
-  }, [themeSearch, normalThemes, gifts])
+  }, [themeSearch, normalThemes, gifts, lang])
 
   const filteredThemes = useMemo(() => {
     let result = normalThemes
     if (themeDiffFilter !== '전체') {
       const diffMap: Record<string, string> = { '노말': 'normal', '하드': 'hard', '익스트림': 'extreme' }
-      result = result.filter(t => t.difficulty === diffMap[themeDiffFilter])
+      result = result.filter(th => th.difficulty === diffMap[themeDiffFilter])
     }
     if (themeSearch.trim()) {
       const q = themeSearch.trim().toLowerCase()
-      result = result.filter(t => {
-        if (t.name.toLowerCase().includes(q)) return true
-        return t.ego_gift_ids.some(gid => {
+      result = result.filter(th => {
+        const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
+        if (displayName.toLowerCase().includes(q)) return true
+        return th.ego_gift_ids.some(gid => {
           const g = giftByGameId.get(gid)
-          return g && g.name.toLowerCase().includes(q)
+          if (!g) return false
+          const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
+          return gName.toLowerCase().includes(q)
         })
       })
     }
     return result
-  }, [normalThemes, themeSearch, themeDiffFilter, giftByGameId])
+  }, [normalThemes, themeSearch, themeDiffFilter, giftByGameId, lang])
 
   const floorGroupedThemes = useMemo(() => {
     const floorKeys: string[] =
@@ -126,18 +151,18 @@ export default function ThemeTab({
       }
     }
 
-    const unassigned = filteredThemes.filter(t => {
-      if (!t.floor_info) return true
-      return !floorKeys.some(k => t.floor_info?.[k])
+    const unassigned = filteredThemes.filter(th => {
+      if (!th.floor_info) return true
+      return !floorKeys.some(k => th.floor_info?.[k])
     })
 
     const sorted = [...floorMap.entries()].sort((a, b) => a[0] - b[0])
     const merged: [number, number, EgoGiftTheme[]][] = []
     for (const [floor, floorThemes] of sorted) {
-      const ids = new Set(floorThemes.map(t => t.id))
+      const ids = new Set(floorThemes.map(th => th.id))
       const prev = merged[merged.length - 1]
       if (prev && floor === prev[1] + 1) {
-        const prevIds = new Set(prev[2].map(t => t.id))
+        const prevIds = new Set(prev[2].map(th => th.id))
         if (ids.size === prevIds.size && [...ids].every(id => prevIds.has(id))) {
           prev[1] = floor
           continue
@@ -148,6 +173,14 @@ export default function ThemeTab({
     if (unassigned.length > 0) merged.push([0, 0, unassigned])
     return merged.length > 0 ? merged : null
   }, [filteredThemes, themeDiffFilter])
+
+  // Localized difficulty button labels (filter values stay Korean)
+  const DIFF_LABELS: Record<string, string> = {
+    '전체': t('mirrorDungeon.tier.all'),
+    '노말': t('mirrorDungeon.tier.normal'),
+    '하드': t('mirrorDungeon.tier.hard'),
+    '익스트림': t('mirrorDungeon.tier.extreme'),
+  }
 
   return (
     <>
@@ -166,7 +199,7 @@ export default function ThemeTab({
           />
           <input
             type="text"
-            placeholder="테마팩 · 기프트 검색..."
+            placeholder={t('mirrorDungeon.theme.search')}
             value={themeSearch}
             onChange={e => setThemeSearch(e.target.value)}
             onFocus={() => setSearchFocused(true)}
@@ -220,7 +253,7 @@ export default function ThemeTab({
                       width: '2rem',
                     }}
                   >
-                    {s.type === 'theme' ? '테마팩' : '기프트'}
+                    {s.type === 'theme' ? t('mirrorDungeon.theme.autocompleteTheme') : t('mirrorDungeon.theme.autocompleteGift')}
                   </span>
                   <span style={{ color: '#ccc', fontSize: '0.75rem' }}>{s.label}</span>
                   {s.sub && (
@@ -233,7 +266,7 @@ export default function ThemeTab({
         </div>
 
         <div className="flex gap-1">
-          {['전체', '노말', '하드', '익스트림'].map(d => {
+          {(['전체', '노말', '하드', '익스트림'] as const).map(d => {
             const colorMap: Record<string, string> = {
               '익스트림': '#e04040',
               '하드': '#e89030',
@@ -265,13 +298,13 @@ export default function ThemeTab({
                   fontFamily: 'var(--font-heading)',
                 }}
               >
-                {d}
+                {DIFF_LABELS[d]}
               </button>
             )
           })}
         </div>
         <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-          {filteredThemes.length}건
+          {filteredThemes.length}{lang === 'ko' ? '건' : ''}
         </span>
       </div>
 
@@ -290,10 +323,14 @@ export default function ThemeTab({
                   }}
                 >
                   {startFloor === 0
-                    ? '기타'
+                    ? t('mirrorDungeon.theme.other')
                     : startFloor === endFloor
-                    ? `${startFloor}층`
-                    : `${startFloor}~${endFloor}층`}
+                    ? lang === 'ko'
+                      ? `${startFloor}층`
+                      : `${t('mirrorDungeon.theme.floor')}${startFloor}`
+                    : lang === 'ko'
+                    ? `${startFloor}~${endFloor}층`
+                    : `${t('mirrorDungeon.theme.floor')}${startFloor}~${endFloor}`}
                 </span>
                 <div
                   style={{
@@ -305,7 +342,7 @@ export default function ThemeTab({
                   }}
                 />
                 <span style={{ color: '#555', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                  {floorThemes.length}개
+                  {floorThemes.length}{lang === 'ko' ? '개' : ''}
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
@@ -345,7 +382,7 @@ export default function ThemeTab({
                 whiteSpace: 'nowrap',
               }}
             >
-              히든 테마팩
+              {t('mirrorDungeon.theme.hidden')}
             </span>
             <div
               style={{
@@ -376,7 +413,7 @@ export default function ThemeTab({
               ) : (
                 <Eye size={13} />
               )}
-              {showHidden ? '스포일러 숨기기' : '스포일러 보기'}
+              {showHidden ? t('mirrorDungeon.theme.spoilerHide') : t('mirrorDungeon.theme.spoilerShow')}
             </button>
           </div>
 
@@ -419,11 +456,10 @@ export default function ThemeTab({
                     textAlign: 'center',
                     lineHeight: 1.5,
                     letterSpacing: '0.03em',
+                    whiteSpace: 'pre-line',
                   }}
                 >
-                  히든 테마팩이
-                  <br />
-                  존재합니다
+                  {t('mirrorDungeon.theme.hiddenExists')}
                 </div>
                 <div
                   style={{
@@ -434,7 +470,7 @@ export default function ThemeTab({
                     letterSpacing: '0.05em',
                   }}
                 >
-                  {hiddenThemes.length}종
+                  {hiddenThemes.length}{lang === 'ko' ? '종' : ''}
                 </div>
               </div>
             </div>

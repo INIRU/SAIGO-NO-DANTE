@@ -4,6 +4,9 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
+import { translations } from '@/lib/i18n/translations'
+import { getLocalizedKeywordName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import KeywordCard from './KeywordCard'
 
 interface Keyword {
@@ -13,6 +16,10 @@ interface Keyword {
   icon_slug: string | null
   sin_affinity: string | null
   category: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 
 interface KeywordGridProps {
@@ -24,12 +31,19 @@ interface KeywordGridProps {
   }
   onSelect: (kw: Keyword) => void
   viewMode: 'detail' | 'compact'
+  lang: SupportedLang
 }
 
 const PAGE_SIZE = 60
 const COMPACT_PAGE_SIZE = 120
 
-export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }: KeywordGridProps) {
+export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode, lang }: KeywordGridProps) {
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   const pageSize = viewMode === 'compact' ? COMPACT_PAGE_SIZE : PAGE_SIZE
   const [visibleCount, setVisibleCount] = useState(pageSize)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -61,8 +75,8 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
   if (keywords.length === 0) {
     return (
       <div className="text-center py-20" style={{ color: '#555' }}>
-        <p className="text-lg mb-2">결과 없음</p>
-        <p className="text-sm">검색어를 변경해 보세요.</p>
+        <p className="text-lg mb-2">{t('keyword.noResults.title')}</p>
+        <p className="text-sm">{t('keyword.noResults.subtitle')}</p>
       </div>
     )
   }
@@ -79,6 +93,9 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
             const iconUrl = kw.icon_slug
               ? `${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`
               : null
+            const displayName = getLocalizedKeywordName(kw.name, {
+              nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null,
+            }, lang)
             return (
               <button
                 key={kw.name}
@@ -101,7 +118,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
                   }}
                 >
                   {iconUrl ? (
-                    <Image src={iconUrl} alt={kw.name} width={20} height={20}
+                    <Image src={iconUrl} alt={displayName} width={20} height={20}
                       style={{ width: '1.25rem', height: 'auto' }} unoptimized />
                   ) : (
                     <span style={{ color: '#555', fontSize: '0.625rem' }}>?</span>
@@ -109,7 +126,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
                 </div>
                 <span className="text-[0.625rem] text-center leading-tight truncate w-full"
                   style={{ color: '#e8dcc8' }}>
-                  {kw.name}
+                  {displayName}
                 </span>
               </button>
             )
@@ -118,7 +135,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
 
         {visibleCount < keywords.length && (
           <div ref={sentinelRef} className="flex justify-center py-6">
-            <span style={{ color: '#555', fontSize: '0.75rem' }}>불러오는 중...</span>
+            <span style={{ color: '#555', fontSize: '0.75rem' }}>{t('keyword.loading')}</span>
           </div>
         )}
       </>
@@ -138,6 +155,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
               giftCount={countMaps.gift[kw.name] || 0}
               animationDelay={(i % PAGE_SIZE) * 0.015}
               onClick={() => onSelect(kw)}
+              lang={lang}
             />
           </div>
         ))}
@@ -145,7 +163,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode }:
 
       {visibleCount < keywords.length && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          <span style={{ color: '#555', fontSize: '0.75rem' }}>불러오는 중...</span>
+          <span style={{ color: '#555', fontSize: '0.75rem' }}>{t('keyword.loading')}</span>
         </div>
       )}
     </>

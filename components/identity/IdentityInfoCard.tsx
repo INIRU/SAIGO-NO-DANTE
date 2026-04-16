@@ -11,7 +11,9 @@ import {
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { SPECIAL_CHARGE_KEYWORDS } from '@/lib/constants/keywords'
-import { useLanguage, getLocalizedAffiliation, getLocalizedKeywordName } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n'
+import { getLocalizedAffiliation, getLocalizedKeywordName } from '@/lib/i18n'
 
 interface IdentityInfoCardProps {
   identity: Identity
@@ -22,14 +24,15 @@ interface IdentityInfoCardProps {
 export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7 }: IdentityInfoCardProps) {
   const { sinMap: kwSinMap } = useKeywordData()
   const kwAll = useKeywords()
-  const { t, lang } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   return (
     <div className="card p-6">
       <h2
         className="font-serif font-light mb-4"
         style={{ color: 'var(--gold)', fontSize: '1rem' }}
       >
-        {t('identity.info')}
+        {t('identity.info.title')}
       </h2>
 
       <div
@@ -63,7 +66,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                     className="inline-flex items-center gap-1 text-xs font-semibold"
                     style={{ color: SIN_COLORS[kwSinMap['충전']] || '#7b68ee' }}
                   >
-                    {getLocalizedKeywordName(kw, kwAll[kw], lang)}
+                    {getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}
                   </span>
                 </KeywordWithTooltip>
               ))}
@@ -75,7 +78,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                       className="inline-flex items-center gap-1 text-xs font-semibold"
                       style={{ color: kwColor }}
                     >
-                      {getLocalizedKeywordName(kw, kwAll[kw], lang)}
+                      {getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}
                     </span>
                   </KeywordWithTooltip>
                 )
@@ -135,7 +138,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               border: `1px solid ${sinColor}40`,
             }}
           >
-            {getLocalizedAffiliation(identity.affiliation, lang)}
+            {getLocalizedAffiliation(identity.affiliation, locale as SupportedLang)}
           </span>
         </div>
       )}

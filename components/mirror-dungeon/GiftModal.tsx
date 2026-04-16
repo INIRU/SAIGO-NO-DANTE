@@ -5,6 +5,10 @@ import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import BaseModal from '@/components/ui/BaseModal'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { X, FlaskConical } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName, getLocalizedAffiliation } from '@/lib/i18n/localize'
 import { STORAGE_BASE } from '@/lib/data/sinners'
 import { OCTAGON_CLIP, GIFT_BG_URL } from '@/lib/constants/gift'
 import { KEYWORD_COLORS, GRADE_LABELS } from './types'
@@ -29,9 +33,77 @@ export default function GiftModal({
   themes?: EgoGiftTheme[]
   onThemeClick?: (id: number) => void
 }) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return (entry as Record<string, string>)[lang] ?? (entry as Record<string, string>)['ko'] ?? key
+  }
+
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
   const isEX = gift.grade === 'EX'
+  const displayName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
+  const getEffect = (kr: string | null, en: string | null | undefined, jp: string | null | undefined): string | null => {
+    if (lang === 'en' && en) return en
+    if (lang === 'ja' && jp) return jp
+    return kr
+  }
+
+  const effectBaseText = getEffect(gift.effect_base, gift.effect_base_en, gift.effect_base_jp)
+  const effectPlusText = getEffect(gift.effect_plus, gift.effect_plus_en, gift.effect_plus_jp)
+  const effectPlusplusText = getEffect(gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp)
+
+  // Keyword localization map (Korean → localized display name)
+  const KEYWORD_EN: Record<string, string> = {
+    '화상': 'Burn', '출혈': 'Bleed', '진동': 'Tremor', '파열': 'Rupture',
+    '침잠': 'Sinking', '호흡': 'Poise', '충전': 'Charge', '참격': 'Slash',
+    '관통': 'Pierce', '타격': 'Blunt', '공통': 'Common',
+  }
+  const KEYWORD_JP: Record<string, string> = {
+    '화상': '火傷', '출혈': '出血', '진동': '振動', '파열': '破裂',
+    '침잠': '沈潜', '호흡': '呼吸', '충전': '充電', '참격': '斬撃',
+    '관통': '貫通', '타격': '打撃', '공통': '共通',
+  }
+  const localizedKeyword = lang === 'en'
+    ? (KEYWORD_EN[gift.keyword] ?? gift.keyword)
+    : lang === 'ja'
+    ? (KEYWORD_JP[gift.keyword] ?? gift.keyword)
+    : gift.keyword
+
+  const localizeRelated = (text: string): string => {
+    if (lang === 'ko') return text
+    const affiliationMatch = text.match(/^집단:\s*(.+)$/)
+    if (affiliationMatch) {
+      const localized = getLocalizedAffiliation(affiliationMatch[1], lang)
+      return lang === 'ja' ? `所属: ${localized}` : `Group: ${localized}`
+    }
+    const charMatch = text.match(/^캐릭터:\s*(.+)$/)
+    if (charMatch) {
+      return lang === 'ja' ? `キャラクター: ${charMatch[1]}` : `Character: ${charMatch[1]}`
+    }
+    const abnoMatch = text.match(/^환상체:\s*(.+)$/)
+    if (abnoMatch) {
+      return lang === 'ja' ? `幻想体: ${abnoMatch[1]}` : `Abnormality: ${abnoMatch[1]}`
+    }
+    return text
+  }
+
+  const DUNGEON_NAMES: Record<string, { en: string; ja: string }> = {
+    '시작의 거울 (거울 던전 1)': { en: 'Mirror of Starting (Mirror Dungeon 1)', ja: '始まりの鏡 (ミラーダンジョン1)' },
+    '거울의 거울 (거울 던전 2)': { en: 'Mirror of Mirrors (Mirror Dungeon 2)', ja: '鏡の鏡 (ミラーダンジョン2)' },
+    '호수의 거울 (거울 던전 3)': { en: 'Mirror of the Lake (Mirror Dungeon 3)', ja: '湖の鏡 (ミラーダンジョン3)' },
+    '꿈결의 거울 (거울 던전 3)': { en: 'Mirror of Dreams (Mirror Dungeon 3)', ja: '夢の鏡 (ミラーダンジョン3)' },
+    '폭풍의 거울 (거울 던전 4)': { en: 'Mirror of Storms (Mirror Dungeon 4)', ja: '嵐の鏡 (ミラーダンジョン4)' },
+    '꿈결의 거울 (거울 던전 5)': { en: 'Mirror of Dreams (Mirror Dungeon 5)', ja: '夢の鏡 (ミラーダンジョン5)' },
+    '영생의 거울 (거울 던전 6)': { en: 'Mirror of Immortality (Mirror Dungeon 6)', ja: '永生の鏡 (ミラーダンジョン6)' },
+    '이름과 거미의 거울 (거울 던전 7)': { en: 'Mirror of Names and Spiders (Mirror Dungeon 7)', ja: '名前と蜘蛛の鏡 (ミラーダンジョン7)' },
+    '거울 던전 7': { en: 'Mirror Dungeon 7', ja: 'ミラーダンジョン7' },
+  }
+  const localizedAppearance = lang === 'ko'
+    ? gift.first_appearance
+    : (DUNGEON_NAMES[gift.first_appearance ?? '']?.[lang] ?? gift.first_appearance)
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="32rem">
@@ -91,13 +163,13 @@ export default function GiftModal({
               <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
                 {(() => {
                   const iconUrl = getGiftKeywordIcon(gift.keyword)
-                  return iconUrl ? <Image src={iconUrl} alt={gift.keyword} fill sizes="24px" className="object-contain" /> : null
+                  return iconUrl ? <Image src={iconUrl} alt={localizedKeyword} fill sizes="24px" className="object-contain" /> : null
                 })()}
               </div>
               <div className="absolute inset-[10%] flex items-center justify-center">
                 {gift.image_url ? (
                   <div className="relative w-full h-full">
-                    <ImageWithFallback src={gift.image_url} alt={gift.name} fill fallbackType="gift" className="object-contain" sizes="70px" />
+                    <ImageWithFallback src={gift.image_url} alt={displayName} fill fallbackType="gift" className="object-contain" sizes="70px" />
                   </div>
                 ) : (
                   <FlaskConical size="1.5rem" style={{ color: '#444' }} />
@@ -107,10 +179,10 @@ export default function GiftModal({
 
             <div className="flex-1 min-w-0 pb-0.5">
               <h2 className="font-serif text-lg md:text-xl font-bold leading-tight" style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                {gift.name}
+                {displayName}
               </h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <KeywordChip keyword={gift.keyword} />
+                <KeywordChip keyword={localizedKeyword} />
               {(() => {
                 const diff = gift.difficulty || '노말'
                 if (diff === '노말') return null
@@ -134,7 +206,7 @@ export default function GiftModal({
                   className="px-2 py-0.5 rounded-full text-[0.625rem]"
                   style={{ background: 'rgba(64,160,96,0.15)', color: '#40a060', fontFamily: 'var(--font-heading)' }}
                 >
-                  강화 가능
+                  {t('mirrorDungeon.gift.enhancement')}
                 </span>
               )}
               {gift.is_synthesis && (
@@ -142,7 +214,7 @@ export default function GiftModal({
                   className="px-2 py-0.5 rounded-full text-[0.625rem]"
                   style={{ background: 'rgba(180,120,220,0.15)', color: '#b478dc', fontFamily: 'var(--font-heading)' }}
                 >
-                  합성
+                  {t('mirrorDungeon.gift.synthesis')}
                 </span>
               )}
             </div>
@@ -152,14 +224,14 @@ export default function GiftModal({
 
         {/* 효과 */}
         <div className="px-5 pb-4 space-y-3">
-          {gift.effect_base && (
-            <EffectBlock label="기본" text={gift.effect_base} color="#888" />
+          {effectBaseText && (
+            <EffectBlock label={t('mirrorDungeon.gift.effect')} text={effectBaseText} color="#888" />
           )}
-          {gift.effect_plus && (
-            <EffectBlock label="+" text={gift.effect_plus} color="#a0a0a0" />
+          {effectPlusText && (
+            <EffectBlock label={t('mirrorDungeon.gift.effectPlus')} text={effectPlusText} color="#a0a0a0" />
           )}
-          {gift.effect_plusplus && (
-            <EffectBlock label="++" text={gift.effect_plusplus} color="#e8b030" />
+          {effectPlusplusText && (
+            <EffectBlock label={t('mirrorDungeon.gift.effectPlusPlus')} text={effectPlusplusText} color="#e8b030" />
           )}
 
           {/* 메타 정보 */}
@@ -168,34 +240,38 @@ export default function GiftModal({
             style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
             {gift.price != null && (
-              <MetaItem label="가격" value={`${gift.price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
+              <MetaItem label={t('mirrorDungeon.gift.price')} value={`${gift.price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
             )}
             {gift.sell_price != null && (
-              <MetaItem label="판매가" value={`${gift.sell_price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
+              <MetaItem label={t('mirrorDungeon.gift.sellPrice')} value={`${gift.sell_price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
             )}
             {gift.buy_disabled && (
-              <MetaItem label="구매" value="불가" valueColor="#c83030" />
+              <MetaItem label={t('mirrorDungeon.gift.purchase')} value={t('mirrorDungeon.gift.unavailable')} valueColor="#c83030" />
             )}
             {gift.activation_condition != null && (() => {
               const c = gift.activation_condition
-              let label = '발동 조건'
-              let value = `${c.count}인`
+              const unitSuffix = t('mirrorDungeon.gift.conditionUnit')
+              const orMoreSuffix = t('mirrorDungeon.gift.conditionOrMore')
+              const personalitySuffix = t('mirrorDungeon.gift.conditionPersonality')
+              const affiliationSuffix = t('mirrorDungeon.gift.conditionAffiliation')
+              let label = t('mirrorDungeon.gift.condition')
+              let value = `${c.count}${unitSuffix}`
               if (c.type === 'keyword') {
-                label = `${c.keyword} 인격`; value = `${c.count}인 이상`
+                label = `${c.keyword}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'multi_keyword') {
-                label = `${c.keywords!.join('+')} 인격`; value = `${c.count}인 이상`
+                label = `${c.keywords!.join('+')}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'affiliation') {
-                label = `${c.affiliation ?? c.affiliations!.join('/')} 소속`; value = `${c.count}인 이상`
+                label = `${c.affiliation ?? c.affiliations!.join('/')}${affiliationSuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'skill') {
-                label = c.skill_condition!; value = `${c.count}인 이상`
+                label = c.skill_condition!; value = `${c.count}${orMoreSuffix}`
               }
               return <MetaItem label={label} value={value} valueColor="#6090d0" />
             })()}
             {gift.first_appearance && (
-              <MetaItem label="첫 등장" value={gift.first_appearance} />
+              <MetaItem label={t('mirrorDungeon.gift.firstAppearance')} value={localizedAppearance ?? gift.first_appearance} />
             )}
             {gift.related && gift.related !== '불명' && gift.related !== '-' && (
-              <MetaItem label="관련" value={gift.related} />
+              <MetaItem label={t('mirrorDungeon.gift.related')} value={localizeRelated(gift.related)} />
             )}
           </div>
 
@@ -209,7 +285,7 @@ export default function GiftModal({
                 className="font-bold mb-1"
                 style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}
               >
-                획득 방법
+                {t('mirrorDungeon.gift.acquisition')}
               </p>
               <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
                 {gift.acquisition}
@@ -221,18 +297,19 @@ export default function GiftModal({
           {themes.length > 0 && (
             <div className="pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="font-bold mb-1.5" style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}>
-                소속 테마팩
+                {t('mirrorDungeon.gift.themes')}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {themes.map(t => {
-                  const isExclusive = gift.game_id ? t.specific_ego_gift_ids.includes(gift.game_id) : false
-                  const diff = t.difficulty
+                {themes.map(theme => {
+                  const isExclusive = gift.game_id ? theme.specific_ego_gift_ids.includes(gift.game_id) : false
+                  const diff = theme.difficulty
                   const diffColor = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : diff === 'effective' ? '#6090d0' : '#888'
                   const diffLabel = diff === 'extreme' ? 'EX' : diff === 'hard' ? 'H' : diff === 'effective' ? 'E' : ''
+                  const themeDisplayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
                   return (
                     <button
-                      key={t.id}
-                      onClick={() => onThemeClick?.(t.id)}
+                      key={theme.id}
+                      onClick={() => onThemeClick?.(theme.id)}
                       className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
                       style={{
                         cursor: 'pointer',
@@ -241,8 +318,8 @@ export default function GiftModal({
                       }}
                     >
                       {isExclusive && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>★</span>}
-                      {t.image_url && <ImageWithFallback src={t.image_url} alt="" width={14} height={25} fallbackType="theme" style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
-                      <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{t.name}</span>
+                      {theme.image_url && <ImageWithFallback src={theme.image_url} alt="" width={14} height={25} fallbackType="theme" style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                      <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{themeDisplayName}</span>
                       {diffLabel && <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
                         {diffLabel}
                       </span>}
@@ -264,7 +341,7 @@ export default function GiftModal({
                 style={{ color: '#b478dc', fontFamily: 'var(--font-heading)' }}
               >
                 <FlaskConical size={13} />
-                조합 레시피
+                {t('mirrorDungeon.gift.recipe')}
               </p>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {recipe.ingredients.map((ing, i) => (
@@ -278,7 +355,7 @@ export default function GiftModal({
                           fontStyle: 'italic',
                         }}
                       >
-                        업화 · 매혹 · 타성 · 욕망 · 교만 · 마찰 · 인연 · 잠식 조각 중 택 2
+                        {t('mirrorDungeon.gift.recipeFragments')}
                       </span>
                     ) : (
                       <span
@@ -315,7 +392,7 @@ export default function GiftModal({
               </div>
               {recipe.final_result && (
                 <p className="mt-2 text-[0.6875rem]" style={{ color: '#888' }}>
-                  <span style={{ color: '#666' }}>최종 합성:</span>{' '}
+                  <span style={{ color: '#666' }}>{t('mirrorDungeon.gift.finalSynthesis')}:</span>{' '}
                   <span style={{ color: '#e8b030' }}>{recipe.final_result}</span>
                 </p>
               )}

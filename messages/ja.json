@@ -1,0 +1,431 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "sinners": "囚人",
+    "sinnerList": "囚人一覧",
+    "decks": "デッキ掲示板",
+    "planner": "ミラーダンジョン",
+    "community": {
+      "title": "コミュニティ",
+      "planner": "ミラダンプランナー",
+      "tierList": "ティアリスト",
+      "collection": "コレクション"
+    },
+    "story": {
+      "title": "ストーリー",
+      "main": "メインストーリー"
+    },
+    "db": {
+      "title": "DB",
+      "mirrorDungeon": "ミラーダンジョン",
+      "keywords": "キーワード"
+    },
+    "other": {
+      "title": "その他",
+      "meta": "分析",
+      "extraction": "抽出",
+      "random": "ランダム編成"
+    }
+  },
+  "common": {
+    "search": "検索",
+    "filter": "フィルター",
+    "sort": "並び替え",
+    "all": "すべて",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "submit": "投稿",
+    "loading": "読み込み中...",
+    "noResults": "結果なし",
+    "login": "ログイン",
+    "logout": "ログアウト"
+  },
+  "lang": {
+    "filter": "言語フィルター",
+    "all": "すべての言語",
+    "mine": "自分の言語のみ"
+  },
+  "deck": {
+    "title": "デッキ掲示板",
+    "new": "新しいデッキを作成",
+    "votes": "投票",
+    "views": "閲覧",
+    "comments": "コメント"
+  },
+  "planner": {
+    "title": "ミラーダンジョンプランナー",
+    "community": "コミュニティプラン",
+    "difficulty": "難易度",
+    "normal": "通常",
+    "hard": "ハード",
+    "tags": "タグ"
+  },
+  "guide": {
+    "title": "ガイド",
+    "write": "ガイドを書く"
+  },
+  "ai": {
+    "summary": "AI要約",
+    "generate": "AI要約を生成",
+    "generating": "AI要約を生成中...",
+    "noSummary": "まだ要約がありません"
+  },
+  "sinner": {
+    "yi-sang": "イサン",
+    "faust": "ファウスト",
+    "don-quixote": "ドンキホーテ",
+    "ryoshu": "リョウシュウ",
+    "meursault": "ムルソー",
+    "hong-lu": "ホンルー",
+    "heathcliff": "ヒースクリフ",
+    "ishmael": "イシュマエル",
+    "rodion": "ロージャ",
+    "sinclair": "シンクレア",
+    "outis": "オーティス",
+    "gregor": "グレゴール",
+    "source": {
+      "yi-sang": "翼 — 李箱",
+      "faust": "ファウスト — ゲーテ",
+      "don-quixote": "ドン・キホーテ — セルバンテス",
+      "ryoshu": "地獄変 — 芥川龍之介",
+      "meursault": "異邦人 — アルベール・カミュ",
+      "hong-lu": "紅楼夢 — 曹雪芹",
+      "heathcliff": "嵐が丘 — エミリー・ブロンテ",
+      "ishmael": "白鯨 — ハーマン・メルヴィル",
+      "rodion": "罪と罰 — ドストエフスキー",
+      "sinclair": "デミアン — ヘルマン・ヘッセ",
+      "outis": "オデュッセイア — ホメロス",
+      "gregor": "変身 — フランツ・カフカ"
+    }
+  },
+  "mypage": {
+    "title": "マイページ"
+  },
+  "home": {
+    "fanArchive": "ファンアーカイブ",
+    "cta": {
+      "sinners": "囚人一覧",
+      "decks": "デッキ掲示板",
+      "planner": "ミラダンプランナー",
+      "discordBot": "Discordボット"
+    },
+    "feat": {
+      "sinnerDb": "囚人DB",
+      "sinnerDbDesc": "12人の囚人の人格、EGO、スキルデータを一か所で。",
+      "deckBoard": "デッキ掲示板",
+      "deckBoardDesc": "コミュニティデッキを探索し、自分のデッキを登録。",
+      "mirrorDungeon": "ミラーダンジョン",
+      "mirrorDungeonDesc": "EGOギフト図鑑、キーワードフィルター、合成レシピ。",
+      "collection": "コレクション",
+      "collectionDesc": "自分の人格・EGOチェックリスト、URLで共有。",
+      "tierList": "ティアリスト",
+      "tierListDesc": "コミュニティ投票ベースのリセマラティアランキング。",
+      "extraction": "抽出シミュ",
+      "extractionDesc": "ガチャ確率シミュレーションで運命を試す。",
+      "random": "ランダム編成",
+      "randomDesc": "スロットマシンUIでランダム編成、キーワードフィルター。",
+      "planner": "ミラダンプランナー",
+      "plannerDesc": "階別テーマパック選択、戦略シミュレーション。"
+    },
+    "official": {
+      "site": "公式サイト",
+      "discord": "ファンDiscord",
+      "discordSub": "ボット紹介・サーバー参加",
+      "youtubeSub": "公式チャンネル"
+    },
+    "latestVideo": "最新映像",
+    "viewChannel": "チャンネルを見る",
+    "latestIdentity": "最新人格",
+    "viewAllSinners": "全囚人を見る",
+    "fanArchiveFooter": "Limbus Company ファンアーカイブ"
+  },
+  "site": {
+    "name": "SAIGO NO DANTE"
+  },
+  "sinners": {
+    "title": "囚人一覧",
+    "subtitle": "リンバスカンパニーの12人の囚人",
+    "viewAllIdentities": "全人格を見る",
+    "viewAllEgo": "全E.G.Oを見る",
+    "identities": "人格"
+  },
+  "sinnerDetail": {
+    "searchIdentity": "人格名、所属、キーワード検索...",
+    "searchEgo": "EGO名、キーワード検索...",
+    "allFilter": "すべて",
+    "viewAll": "すべて表示",
+    "ownedIdentity": "所持人格",
+    "unownedIdentity": "未所持人格",
+    "ownedEgo": "所持EGO",
+    "unownedEgo": "未所持EGO",
+    "newest": "新しい順",
+    "oldest": "古い順",
+    "uptie3": "3同期化",
+    "normal": "通常",
+    "noResults": "検索結果がありません。",
+    "noIdentities": "登録された人格がありません。",
+    "noEgo": "登録されたEGOがありません。",
+    "resetFilter": "フィルターリセット",
+    "keyword": "キーワード",
+    "tabSelect": "Tabで選択",
+    "identity": "人格",
+    "count": "件",
+    "desc": {
+      "yi-sang": "鋭い知性と分裂した自我を持つリンバスカンパニーの団長。",
+      "faust": "真理への探究心が強い、優れた医術の持ち主。",
+      "don-quixote": "正義と理想のために戦う、誰よりも情熱的な騎士。",
+      "ryoshu": "苦痛の中に美を見出す、冷静で寡黙な剣士。",
+      "meursault": "世界に無関心だが、圧倒的な破壊力を持つ異邦人。",
+      "hong-lu": "華やかな出自と余裕ある態度を持つ優雅な貴公子。",
+      "heathcliff": "暗い過去と執着的な復讐心を抱く、荒々しく冷酷な男。",
+      "ishmael": "強靭な意志と生存本能を持つ、海を彷徨っていた船乗り。",
+      "rodion": "罪悪感と内面の葛藤を抱えて生きる、鋭い知性の持ち主。",
+      "sinclair": "自我を求めて彷徨う、純粋だが複雑な葛藤を抱えた青年。",
+      "outis": "正体を隠して行動する、優れた戦略的思考を持つ神秘的な人物。",
+      "gregor": "奇怪に変わってしまったが、人間的な何かを抱き続ける寡黙な存在。"
+    }
+  },
+  "sin": {
+    "wrath": "憤怒",
+    "lust": "色欲",
+    "sloth": "怠惰",
+    "gluttony": "暴食",
+    "gloom": "憂鬱",
+    "pride": "傲慢",
+    "envy": "嫉妬"
+  },
+  "identity": {
+    "stat": {
+      "hp": "HP",
+      "speed": "速度",
+      "defense": "防御"
+    },
+    "info": {
+      "title": "基本情報",
+      "affiliation": "所属",
+      "releaseDate": "リリース時期",
+      "acquisition": "獲得方法",
+      "extraction": "抽出",
+      "vendingMachine": "自販機",
+      "fragmentExchange": "破片交換",
+      "sdDragHint": "ドラッグで移動・スクロールで拡大/縮小・ダブルクリックでリセット",
+      "type": {
+        "default": "デフォルト",
+        "standard": "抽出",
+        "event": "イベント",
+        "walpurgis": "ヴァルプルギス",
+        "attendance": "出席"
+      },
+      "gacha": {
+        "always": "常時抽出",
+        "seasonal": "シーズン限定",
+        "walpurgis": "ヴァルプルギスの夜限定",
+        "none": "抽出不可"
+      },
+      "walpurgisEdition": "回",
+      "targetExtraction": "特定抽出",
+      "vendingUnavailable7d": "交換不可（リリース7日後に開放）",
+      "vendingAvailable": "交換可能",
+      "vendingUnavailableNextSeason": "交換不可（次のシーズンから可能）",
+      "fragmentCost": "自我破片",
+      "exchangeAlways": "（常時）",
+      "exchangeFromSeason": "～常時",
+      "permanent": "常時",
+      "resistance": {
+        "weak": "脆弱",
+        "resist": "耐性"
+      },
+      "slash": "斬撃",
+      "pierce": "貫通",
+      "blunt": "打撃",
+      "season": "シーズン"
+    },
+    "stats": {
+      "title": "ステータス",
+      "hp": "HP",
+      "speed": "速度",
+      "defLevel": "防御レベル",
+      "breakSection": "パニック区間",
+      "breakSectionTitle": "崩れ区間",
+      "breakPhase": "{n}段階"
+    },
+    "skills": {
+      "title": "スキル",
+      "preparing": "スキル情報は準備中です。",
+      "uptie4Changes": "4同期化変更点",
+      "atkWeight": "攻撃加重値",
+      "unbreakableCoin": "破壊不可コイン",
+      "coin": "コイン",
+      "uptie4Diff": "4同期化変更点"
+    },
+    "passives": {
+      "title": "パッシブ",
+      "battle": "バトルパッシブ",
+      "support": "サポートパッシブ",
+      "preparing": "パッシブ情報は準備中です。",
+      "label": "パッシブ",
+      "resonance": "共鳴",
+      "stock": "保有",
+      "typeBattle": "戦闘",
+      "typeSupport": "サポート"
+    },
+    "sanity": {
+      "title": "精神力",
+      "increase": "精神力増加",
+      "decrease": "精神力減少",
+      "panicType": "パニックタイプ",
+      "panicEffect": "パニック効果",
+      "increaseCondition": "基本精神力増加条件",
+      "decreaseCondition": "基本精神力減少条件"
+    },
+    "review": {
+      "title": "レビュー",
+      "placeholder": "一言レビューを書いてください...",
+      "anonymous": "匿名",
+      "oneLineReviews": "一言レビュー",
+      "helpful": "役に立つ",
+      "notHelpful": "残念",
+      "userRating": "ユーザー評価",
+      "participants": "人参加",
+      "recommended": "おすすめ済み",
+      "notRecommended": "非おすすめ済み",
+      "upvote": "おすすめ",
+      "downvote": "非おすすめ",
+      "inputPlaceholder": "一言レビュー（任意、最大100文字）",
+      "loginPrompt": "ログインすると評価に参加できます",
+      "empty": "まだ評価がありません",
+      "modify": "変更する",
+      "cancel": "キャンセル",
+      "delete": "削除"
+    },
+    "guide": {
+      "title": "ガイド",
+      "noGuides": "まだガイドがありません。",
+      "write": "ガイド作成",
+      "newTitlePlaceholder": "ガイドのタイトルを入力してください",
+      "editTitlePlaceholder": "ガイドタイトル",
+      "newContentPlaceholder": "この人格のガイドを作成してください。キーワード/スキル/人格/EGO名を入力すると自動補完されます。",
+      "editContentPlaceholder": "ガイド内容を作成してください。",
+      "delete": "削除",
+      "confirmDeleteTitle": "ガイド削除",
+      "confirmDeleteMsg": "このガイドを削除しますか？",
+      "confirmDeleteLabel": "削除",
+      "emptyState": "まだガイドが作成されていません。",
+      "discordSupport": "ガイド作成を支援する（Discord）",
+      "edit": "編集",
+      "preview": "プレビュー",
+      "saving": "保存中...",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "addNew": "追加する",
+      "untitled": "タイトルなし"
+    },
+    "ai": {
+      "title": "AI要約",
+      "generate": "AI要約を生成",
+      "regenerate": "再生成",
+      "expired": "期限切れ",
+      "generating": "生成中...",
+      "streaming": "ストリーミング中...",
+      "disclaimer": "AI生成の要約です。実際のゲームと異なる場合があります。",
+      "description": "AIがこの人格のスキル、運用法、おすすめ編成を分析して要約します。",
+      "created": "生成"
+    },
+    "decks": "デッキ",
+    "tab": {
+      "skills": "スキル",
+      "passives": "パッシブ",
+      "decks": "デッキ"
+    },
+    "pageTab": {
+      "info": "人格情報",
+      "decks": "デッキ"
+    },
+    "passiveType": {
+      "battle": "バトル",
+      "support": "サポート"
+    },
+    "backToSinner": "← 人格一覧へ",
+    "uptie": {
+      "toggle": "同期化4比較",
+      "level3": "同期化3",
+      "level4": "同期化4"
+    },
+    "rarity": [
+      null,
+      "0等級",
+      "00等級",
+      "000等級"
+    ],
+    "timeAgo": {
+      "justNow": "たった今",
+      "minutesAgo": "分前",
+      "hoursAgo": "時間前",
+      "daysAgo": "日前"
+    },
+    "notFound": "人格が見つかりません",
+    "meta": {
+      "description": "ステータス、スキル、パッシブ、AI要約、ガイド"
+    },
+    "season": "シーズン",
+    "panic": "パニック",
+    "skillType": {
+      "slash": "斬撃",
+      "pierce": "貫通",
+      "blunt": "打撃",
+      "defense": "防御",
+      "evade": "回避",
+      "counter": "カウンター"
+    },
+    "resistance": {
+      "weak": "脆弱",
+      "resistant": "耐性",
+      "normal": "普通"
+    },
+    "portrait": {
+      "illustration": "イラスト",
+      "uptieIllustration": "同期イラスト",
+      "artTipTitle": "画像をタップすると",
+      "artTipDesc": "フルイラストを見ることができます"
+    }
+  },
+  "ego": {
+    "resistance": "罪悪耐性",
+    "cost": "コスト",
+    "passive": "パッシブ",
+    "awakening": "覚醒スキル",
+    "corrosion": "侵蝕スキル",
+    "awakeningLabel": "覚醒",
+    "corrosionLabel": "侵蝕",
+    "power": "威力",
+    "coin": "コイン",
+    "coinPower": "コイン威力",
+    "weight": "加重値",
+    "max": "最大",
+    "loadError": "データの読み込みに失敗しました",
+    "res": {
+      "resist": "耐性",
+      "endure": "耐え",
+      "normal": "普通",
+      "weak": "脆弱",
+      "fatal": "致命",
+      "null": "無効",
+      "immune": "免疫"
+    },
+    "egoSkill": "EGOスキル",
+    "corrosionSection": "侵蝕",
+    "keyword": "キーワード",
+    "acquisition": "入手方法",
+    "fragmentExchange": "破片交換",
+    "construeLevel": "解釈",
+    "noSkillData": "スキルデータなし",
+    "noCorSkillData": "侵蝕スキルデータなし",
+    "backToEgoList": "EGO一覧へ",
+    "sinResistance": "罪悪耐性"
+  },
+  "keyword": {
+    "maxStack": "最大"
+  }
+}

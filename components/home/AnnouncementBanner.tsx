@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { XIcon, Pin, ChevronDown } from 'lucide-react'
 
 export type AnnouncementData = {

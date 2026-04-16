@@ -188,39 +188,57 @@ export async function getEGOs(sinnerId?: string): Promise<EGO[]> {
 }
 
 export async function getEGOById(id: string): Promise<EGO | null> {
-  const { data, error } = await supabase().schema('limbus').from('ego').select('*').eq('id', id).maybeSingle()
+  // ego + ego_skills 병렬 조회 (둘 다 id만 사용)
+  const [egoRes, skillsRes] = await Promise.all([
+    supabase().schema('limbus').from('ego').select('*').eq('id', id).maybeSingle(),
+    supabase().schema('limbus')
+      .from('ego_skills')
+      .select('*')
+      .eq('ego_id', id)
+      .order('skill_order'),
+  ])
+  const { data, error } = egoRes
   if (error) throw error
   if (!data) return null
 
   // ego_skills 릴레이션 테이블에서 스킬 조회 → EGOSkill JSONB 포맷으로 변환
-  const { data: relSkills } = await supabase().schema('limbus')
-    .from('ego_skills')
-    .select('*')
-    .eq('ego_id', id)
-    .order('skill_order')
+  const { data: relSkills } = skillsRes
 
   if (relSkills && relSkills.length > 0) {
-    const toEGOSkill = (s: Record<string, unknown>) => {
-      // description 파싱: "[코인 1] effect\n후속효과\n[코인 2] effect" → 개별 필드
-      const desc = (s.description as string) || ''
+    const parseDescription = (desc: string | null | undefined, suffix: string) => {
+      if (!desc) return {}
       const lines = desc.split('\n')
       let normalEffect = ''
       const coinEffects: string[] = []
       let lastCoinIdx = -1
+      // EN/JP uses [Coin N] format, KR uses [코인 N]
+      const coinRegex = /^\[(?:코인|Coin)\s*(\d+)\]\s*(.*)/
       for (const line of lines) {
-        const coinMatch = line.match(/^\[코인\s*(\d+)\]\s*(.*)/)
+        const coinMatch = line.match(coinRegex)
         if (coinMatch) {
           const idx = parseInt(coinMatch[1]) - 1
           while (coinEffects.length <= idx) coinEffects.push('')
           coinEffects[idx] = coinMatch[2].trim()
           lastCoinIdx = idx
         } else if (line.trim() && lastCoinIdx >= 0) {
-          // 이전 코인의 후속 효과 (줄바꿈으로 이어지는 효과)
           coinEffects[lastCoinIdx] += '\n' + line.trim()
         } else if (line.trim()) {
           normalEffect += (normalEffect ? '\n' : '') + line.trim()
         }
       }
+      return {
+        [`normalEffect_${suffix}`]: normalEffect || null,
+        [`coin1Effect_${suffix}`]: coinEffects[0] || null,
+        [`coin2Effect_${suffix}`]: coinEffects[1] || null,
+        [`coin3Effect_${suffix}`]: coinEffects[2] || null,
+        [`coin4Effect_${suffix}`]: coinEffects[3] || null,
+        [`coin5Effect_${suffix}`]: coinEffects[4] || null,
+      }
+    }
+
+    const toEGOSkill = (s: Record<string, unknown>) => {
+      // description 파싱: "[코인 1] effect\n후속효과\n[코인 2] effect" → 개별 필드
+      const krParsed = parseDescription(s.description as string, 'kr')
       return {
         name: s.name as string,
         power: String((s.base_power as number) ?? 0),
@@ -233,12 +251,16 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         atkWeight: (s.atk_weight as number) ?? 1,
         construeLevel: (s.construe_level as number) ?? 4,
         offenseLevel: (s.offense_level as number) ?? null,
-        normalEffect,
-        coin1Effect: coinEffects[0] || '',
-        coin2Effect: coinEffects[1] || '',
-        coin3Effect: coinEffects[2] || '',
-        coin4Effect: coinEffects[3] || '',
-        coin5Effect: coinEffects[4] || '',
+        normalEffect: (krParsed.normalEffect_kr as string) || '',
+        coin1Effect: (krParsed.coin1Effect_kr as string) || '',
+        coin2Effect: (krParsed.coin2Effect_kr as string) || '',
+        coin3Effect: (krParsed.coin3Effect_kr as string) || '',
+        coin4Effect: (krParsed.coin4Effect_kr as string) || '',
+        coin5Effect: (krParsed.coin5Effect_kr as string) || '',
+        name_en: (s.name_en as string) || null,
+        name_jp: (s.name_jp as string) || null,
+        ...parseDescription(s.description_en as string, 'en'),
+        ...parseDescription(s.description_jp as string, 'jp'),
       }
     }
 
@@ -256,22 +278,24 @@ export async function getEGOById(id: string): Promise<EGO | null> {
 // ── 브라우저용 전체 인격 (스킬 요약 포함) ──────────────────────────────────
 // Design Ref: §4.1 — 서버에서 스킬 요약 가공 후 클라이언트 전달
 export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[]> {
-  // 1. 전체 인격 + 수감자 JOIN
-  const { data: identities, error: idErr } = await supabase()
-    .schema('limbus')
-    .from('identities')
-    .select('id, sinner_id, name, name_kr, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
-    .order('rarity', { ascending: false })
-    .order('name')
+  // 1+2. 전체 인격 + 스킬을 병렬 조회
+  const [idRes, skRes] = await Promise.all([
+    supabase()
+      .schema('limbus')
+      .from('identities')
+      .select('id, sinner_id, name, name_kr, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
+      .order('rarity', { ascending: false })
+      .order('name'),
+    supabase()
+      .schema('limbus')
+      .from('skills')
+      .select('identity_id, sin_affinity, skill_type, atk_weight, coins')
+      .eq('uptie_level', 4)
+      .in('skill_type', ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter']),
+  ])
+  const { data: identities, error: idErr } = idRes
   if (idErr) throw idErr
-
-  // 2. 전체 스킬 (uptie_level=4, 공격스킬만) — 필터용 요약
-  const { data: skills, error: skErr } = await supabase()
-    .schema('limbus')
-    .from('skills')
-    .select('identity_id, sin_affinity, skill_type, atk_weight, coins')
-    .eq('uptie_level', 4)
-    .in('skill_type', ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter'])
+  const { data: skills, error: skErr } = skRes
   if (skErr) throw skErr
 
   // 3. 스킬을 identity_id로 그룹핑하여 요약

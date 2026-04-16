@@ -43,6 +43,8 @@ const DO_RECIPES = !ANY_FILTER || RECIPES_ONLY
 // ── Data dir ──────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
 const KR_DIR = join(DATA_DIR, 'KR')
+const EN_DIR = join(DATA_DIR, 'EN')
+const JP_DIR = join(DATA_DIR, 'JP')
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -150,7 +152,7 @@ const DropPoolItemSchema = z.object({
 })
 
 // ── Keyword fallback map ───────────────────────────────────────────────────────
-const KEYWORD_FALLBACK: Record<string, string> = {
+const KEYWORD_FALLBACK_KR: Record<string, string> = {
   Combustion: '화상', Laceration: '출혈', Vibration: '진동',
   Burst: '파열', Sinking: '침잠', Breath: '호흡', Charge: '충전',
   Random: '무작위', Slash: '참격', Penetrate: '관통', Hit: '타격',
@@ -196,17 +198,6 @@ function globFiles(dir: string, pattern: RegExp): string[] {
   }
 }
 
-function loadGlobList(dir: string, pattern: RegExp): unknown[] {
-  const files = globFiles(dir, pattern)
-  const items: unknown[] = []
-  for (const f of files) {
-    const data = loadJson(join(dir, f))
-    const list = extractList(data)
-    items.push(...list)
-    if (VERBOSE) console.log(`  ${f}: ${list.length} items`)
-  }
-  return items
-}
 
 function parseGrade(tags: string[] | undefined): string {
   const t = tags ?? []
@@ -219,26 +210,76 @@ function parseGrade(tags: string[] | undefined): string {
   return '1'
 }
 
-let _keywordMap: Map<string, string> | null = null
-function getKeywordMap(): Map<string, string> {
-  if (_keywordMap) return _keywordMap
-  _keywordMap = new Map(Object.entries(KEYWORD_FALLBACK))
-  for (const f of globFiles(KR_DIR, /^KR_BattleKeywords.*\.txt$/)) {
-    const data = safeLoadJson(join(KR_DIR, f))
+const KEYWORD_FALLBACK_EN: Record<string, string> = {
+  Combustion: 'Burn', Laceration: 'Bleed', Vibration: 'Tremor',
+  Burst: 'Rupture', Sinking: 'Sinking', Breath: 'Poise', Charge: 'Charge',
+  Random: 'Random', Slash: 'Slash', Penetrate: 'Pierce', Hit: 'Blunt',
+  None: 'Common', Common: 'Common',
+  Burn: 'Burn', Bleed: 'Bleed', Rupture: 'Rupture', Poise: 'Poise',
+  VibrationExplosion: 'Tremor Burst', Switch_Vibration: 'Tremor Conversion',
+  FusionVibration: 'Composite Tremor', VibrationDistribution: 'Tremor-Distribution',
+  Binding: 'Bind', DefenseDown: 'Def Level Down', AttackUp: 'Atk Level Up',
+  Enhancement: 'Potency Up', Vulnerable: 'Fragile', Fragile: 'Fragile',
+  Blunt: 'Blunt',
+}
+
+const KEYWORD_FALLBACK_JP: Record<string, string> = {
+  Combustion: '火傷', Laceration: '出血', Vibration: '振動',
+  Burst: '破裂', Sinking: '沈潜', Breath: '呼吸', Charge: '充電',
+  Random: 'ランダム', Slash: '斬撃', Penetrate: '貫通', Hit: '打撃',
+  None: '共通', Common: '共通',
+  Burn: '火傷', Bleed: '出血', Rupture: '破裂', Poise: '呼吸',
+  VibrationExplosion: '振動爆発', Switch_Vibration: '振動転換',
+  FusionVibration: '合成振動', VibrationDistribution: '振動-分配',
+  Binding: '束縛', DefenseDown: '防御レベル減少', AttackUp: '攻撃レベル増加',
+  Enhancement: '威力増加', Vulnerable: '脆弱', Fragile: '脆弱',
+  Blunt: '打撃',
+}
+
+type Lang = 'kr' | 'en' | 'jp'
+
+const _keywordMaps: Record<Lang, Map<string, string> | null> = { kr: null, en: null, jp: null }
+
+function getKeywordMapForLang(lang: Lang): Map<string, string> {
+  if (_keywordMaps[lang]) return _keywordMaps[lang]!
+
+  let fallback: Record<string, string>
+  let dir: string
+  let filePattern: RegExp
+
+  if (lang === 'en') {
+    fallback = KEYWORD_FALLBACK_EN
+    dir = EN_DIR
+    filePattern = /^EN_BattleKeywords.*\.txt$/
+  } else if (lang === 'jp') {
+    fallback = KEYWORD_FALLBACK_JP
+    dir = JP_DIR
+    filePattern = /^JP_BattleKeywords.*\.txt$/
+  } else {
+    fallback = KEYWORD_FALLBACK_KR
+    dir = KR_DIR
+    filePattern = /^KR_BattleKeywords.*\.txt$/
+  }
+
+  const map = new Map(Object.entries(fallback))
+  for (const f of globFiles(dir, filePattern)) {
+    const data = safeLoadJson(join(dir, f))
     for (const item of extractList(data)) {
       const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
-      if (parsed.success && !_keywordMap.has(parsed.data.id)) {
-        _keywordMap.set(parsed.data.id, parsed.data.name)
+      if (parsed.success && !map.has(parsed.data.id)) {
+        map.set(parsed.data.id, parsed.data.name)
       }
     }
   }
-  if (VERBOSE) console.log(`  배틀 키워드 매핑: ${_keywordMap.size}종`)
-  return _keywordMap
+
+  _keywordMaps[lang] = map
+  if (VERBOSE) console.log(`  배틀 키워드 매핑 [${lang}]: ${map.size}종`)
+  return map
 }
 
-function cleanDesc(desc: string | undefined): string | null {
+function cleanDesc(desc: string | undefined, lang: Lang = 'kr'): string | null {
   if (!desc) return null
-  const map = getKeywordMap()
+  const map = getKeywordMapForLang(lang)
   return desc
     .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
     .replace(/<\/?noparse>/g, '')
@@ -273,6 +314,14 @@ interface GiftRow {
   effect_base: string | null
   effect_plus: string | null
   effect_plusplus: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  effect_base_en?: string | null
+  effect_base_jp?: string | null
+  effect_plus_en?: string | null
+  effect_plus_jp?: string | null
+  effect_plusplus_en?: string | null
+  effect_plusplus_jp?: string | null
   is_synthesis: boolean
   convert_to: number | null
   difficulty?: string
@@ -344,8 +393,50 @@ async function syncGifts(): Promise<void> {
   }
   console.log(`  로컬라이즈: ${localizeMap.size}개`)
 
+  // EN/JP 로컬라이즈 로드
+  const enLocalizeMap = new Map<number, z.infer<typeof LocalizedGiftSchema>>()
+  for (const f of globFiles(DATA_DIR, /^EN_EGOgift.*\.txt$/)) {
+    const data = safeLoadJson(join(DATA_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success && !enLocalizeMap.has(parsed.data.id))
+        enLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
+  for (const f of globFiles(EN_DIR, /^EN_EGOgift.*\.txt$/)) {
+    const data = safeLoadJson(join(EN_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success)
+        enLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
+
+  const jpLocalizeMap = new Map<number, z.infer<typeof LocalizedGiftSchema>>()
+  for (const f of globFiles(DATA_DIR, /^JP_EGOgift.*\.txt$/)) {
+    const data = safeLoadJson(join(DATA_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success && !jpLocalizeMap.has(parsed.data.id))
+        jpLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
+  for (const f of globFiles(JP_DIR, /^JP_EGOgift.*\.txt$/)) {
+    const data = safeLoadJson(join(JP_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success)
+        jpLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
+  console.log(`  EN 로컬라이즈: ${enLocalizeMap.size}개, JP: ${jpLocalizeMap.size}개`)
+
   // 1c. Keyword category map
-  const categoryMap = new Map<string, string>(Object.entries(KEYWORD_FALLBACK))
+  const categoryMap = new Map<string, string>(Object.entries(KEYWORD_FALLBACK_KR))
   const catData = safeLoadJson(join(KR_DIR, 'KR_EgoGiftCategory.json'))
   if (catData) {
     for (const item of extractList(catData)) {
@@ -380,7 +471,7 @@ async function syncGifts(): Promise<void> {
 
     let keyword = '공통'
     if (item.keyword && item.keyword !== 'None') {
-      keyword = categoryMap.get(item.keyword) ?? KEYWORD_FALLBACK[item.keyword] ?? item.keyword
+      keyword = categoryMap.get(item.keyword) ?? KEYWORD_FALLBACK_KR[item.keyword] ?? item.keyword
     }
 
     const convertTo = item.convertDataList?.[0] ?? null
@@ -395,6 +486,8 @@ async function syncGifts(): Promise<void> {
     gifts.push({
       game_id: id,
       name: baseLoc.name,
+      name_en: enLocalizeMap.get(baseLocalizeId)?.name ?? enLocalizeMap.get(id)?.name ?? null,
+      name_jp: jpLocalizeMap.get(baseLocalizeId)?.name ?? jpLocalizeMap.get(id)?.name ?? null,
       keyword,
       grade: parseGrade(item.tag),
       price: item.price ?? null,
@@ -402,11 +495,49 @@ async function syncGifts(): Promise<void> {
       buy_disabled: isBuyDisabled(item.tag),
       enhancement: upgrades.length > 1,
       effect_base: effectBase,
+      effect_base_en: (() => {
+        let desc = cleanDesc(enLocalizeMap.get(baseLocalizeId)?.desc ?? enLocalizeMap.get(id)?.desc, 'en')
+        if (desc && convertTo && desc.includes('{0}')) {
+          const convertLocEn = enLocalizeMap.get(convertTo)
+          const convertName = convertLocEn?.name ?? localizeMap.get(convertTo)?.name ?? `Gift #${convertTo}`
+          desc = desc.replace('{0}', `→ [${convertName}]`)
+        }
+        return desc
+      })(),
+      effect_base_jp: (() => {
+        let desc = cleanDesc(jpLocalizeMap.get(baseLocalizeId)?.desc ?? jpLocalizeMap.get(id)?.desc, 'jp')
+        if (desc && convertTo && desc.includes('{0}')) {
+          const convertLocJp = jpLocalizeMap.get(convertTo)
+          const convertName = convertLocJp?.name ?? localizeMap.get(convertTo)?.name ?? `ギフト #${convertTo}`
+          desc = desc.replace('{0}', `→ [${convertName}]`)
+        }
+        return desc
+      })(),
       effect_plus: plusLocalizeId ? cleanDesc(localizeMap.get(plusLocalizeId)?.desc) : null,
       effect_plusplus: ppLocalizeId ? cleanDesc(localizeMap.get(ppLocalizeId)?.desc) : null,
+      effect_plus_en: plusLocalizeId ? cleanDesc(enLocalizeMap.get(plusLocalizeId)?.desc, 'en') : null,
+      effect_plus_jp: plusLocalizeId ? cleanDesc(jpLocalizeMap.get(plusLocalizeId)?.desc, 'jp') : null,
+      effect_plusplus_en: ppLocalizeId ? cleanDesc(enLocalizeMap.get(ppLocalizeId)?.desc, 'en') : null,
+      effect_plusplus_jp: ppLocalizeId ? cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp') : null,
       is_synthesis: false,
       convert_to: convertTo,
     })
+
+    // Replace runtime placeholders {0}, {1}, etc. with default value "0"
+    // (only for non-convert_to gifts — convert_to gifts are handled in frontend)
+    if (!convertTo) {
+      const last = gifts[gifts.length - 1]
+      if (last.effect_base) last.effect_base = last.effect_base.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_base_en) last.effect_base_en = last.effect_base_en.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_base_jp) last.effect_base_jp = last.effect_base_jp.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plus) last.effect_plus = last.effect_plus.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plusplus) last.effect_plusplus = last.effect_plusplus.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plus_en) last.effect_plus_en = last.effect_plus_en.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plus_jp) last.effect_plus_jp = last.effect_plus_jp.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plusplus_en) last.effect_plusplus_en = last.effect_plusplus_en.replace(/\{(\d+)\}/g, '0')
+      if (last.effect_plusplus_jp) last.effect_plusplus_jp = last.effect_plusplus_jp.replace(/\{(\d+)\}/g, '0')
+    }
+
   }
   console.log(`  변환 완료: ${gifts.length}종 (로컬라이즈 누락: ${missingLocalize})`)
 
@@ -480,7 +611,7 @@ async function syncGifts(): Promise<void> {
   const { data: existingGifts, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gifts')
-    .select('id, game_id, name, keyword, grade, effect_base, effect_plus, effect_plusplus, price, sell_price, buy_disabled, enhancement, is_synthesis, convert_to, difficulty, image_url, activation_condition')
+    .select('id, game_id, name, name_en, name_jp, keyword, grade, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, price, sell_price, buy_disabled, enhancement, is_synthesis, convert_to, difficulty, image_url, activation_condition')
 
   if (fetchErr) throw new Error(`ego_gifts fetch 실패: ${fetchErr.message}`)
 
@@ -506,8 +637,16 @@ async function syncGifts(): Promise<void> {
       if (existing.keyword !== gift.keyword) changes.push(`keyword: ${existing.keyword} → ${gift.keyword}`)
       if (existing.grade !== gift.grade) changes.push(`grade: ${existing.grade} → ${gift.grade}`)
       if (existing.effect_base !== gift.effect_base) changes.push('effect_base 변경')
+      if ((existing.name_en ?? null) !== (gift.name_en ?? null)) changes.push('name_en 변경')
+      if ((existing.name_jp ?? null) !== (gift.name_jp ?? null)) changes.push('name_jp 변경')
+      if ((existing.effect_base_en ?? null) !== (gift.effect_base_en ?? null)) changes.push('effect_base_en 변경')
+      if ((existing.effect_base_jp ?? null) !== (gift.effect_base_jp ?? null)) changes.push('effect_base_jp 변경')
       if (existing.effect_plus !== gift.effect_plus) changes.push('effect_plus 변경')
       if (existing.effect_plusplus !== gift.effect_plusplus) changes.push('effect_plusplus 변경')
+      if ((existing.effect_plus_en ?? null) !== (gift.effect_plus_en ?? null)) changes.push('effect_plus_en 변경')
+      if ((existing.effect_plus_jp ?? null) !== (gift.effect_plus_jp ?? null)) changes.push('effect_plus_jp 변경')
+      if ((existing.effect_plusplus_en ?? null) !== (gift.effect_plusplus_en ?? null)) changes.push('effect_plusplus_en 변경')
+      if ((existing.effect_plusplus_jp ?? null) !== (gift.effect_plusplus_jp ?? null)) changes.push('effect_plusplus_jp 변경')
       if ((existing.price ?? null) !== gift.price) changes.push(`price: ${existing.price} → ${gift.price}`)
       if ((existing.sell_price ?? null) !== gift.sell_price) changes.push(`sell_price: ${existing.sell_price} → ${gift.sell_price}`)
       if (existing.buy_disabled !== gift.buy_disabled) changes.push(`buy_disabled: ${existing.buy_disabled} → ${gift.buy_disabled}`)
@@ -564,13 +703,26 @@ async function syncGifts(): Promise<void> {
       }
     }
 
-    // Update existing gifts
-    for (const item of toUpdate) {
+    // Update existing gifts (batch upsert, 30 rows per batch with delay)
+    const BATCH_SIZE = 30
+    for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+      const batch = toUpdate.slice(i, i + BATCH_SIZE)
       const { error } = await supabase.schema('limbus').from('ego_gifts')
-        .update(item).eq('id', item.id)
-      if (error) console.error(`  ❌ ${item.name}: ${error.message}`)
-      else console.log(`  ✅ 변경: ${item.name}`)
+        .upsert(batch, { onConflict: 'id' })
+      if (error) {
+        console.error(`  ❌ 배치 ${i + 1}~${i + batch.length} 실패: ${error.message}`)
+        // Fallback: individual updates for failed batch
+        for (const item of batch) {
+          const { error: e } = await supabase.schema('limbus').from('ego_gifts')
+            .update(item).eq('id', item.id)
+          if (e) console.error(`  ❌ ${item.name}: ${e.message}`)
+        }
+      } else if (VERBOSE) {
+        console.log(`  ✅ 변경 ${i + 1}~${i + batch.length}`)
+      }
+      if (i + BATCH_SIZE < toUpdate.length) await new Promise(r => setTimeout(r, 200))
     }
+    if (toUpdate.length > 0) console.log(`  ✅ ${toUpdate.length}종 업데이트 완료`)
   } else if (!FIX) {
     console.log('  --dry-run 모드. DB 수정 없음.')
   }
@@ -799,7 +951,7 @@ async function syncRecipes(): Promise<void> {
   }
 
   // Keyword map for result gift keyword lookup
-  const categoryMap = new Map<string, string>(Object.entries(KEYWORD_FALLBACK))
+  const categoryMap = new Map<string, string>(Object.entries(KEYWORD_FALLBACK_KR))
 
   // Build gift keyword lookup (game_id → Korean keyword) from raw gift files
   const rawGiftKeywordMap = new Map<number, string>()
@@ -812,7 +964,7 @@ async function syncRecipes(): Promise<void> {
       if (parsed.success && parsed.data.keyword) {
         const kw = parsed.data.keyword
         if (kw !== 'None' && kw !== 'Common') {
-          const krKeyword = categoryMap.get(kw) ?? KEYWORD_FALLBACK[kw] ?? kw
+          const krKeyword = categoryMap.get(kw) ?? KEYWORD_FALLBACK_KR[kw] ?? kw
           rawGiftKeywordMap.set(parsed.data.id, krKeyword)
         }
       }

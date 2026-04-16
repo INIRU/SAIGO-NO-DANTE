@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'

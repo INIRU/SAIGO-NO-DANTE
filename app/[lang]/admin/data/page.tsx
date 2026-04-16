@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import { Loader2, Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { AdminButton, AdminIconButton, AdminInput } from '@/components/admin'

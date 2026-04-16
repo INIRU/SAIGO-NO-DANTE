@@ -5,7 +5,8 @@ import Image from 'next/image'
 
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityInfoUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
-import { useLanguage } from '@/lib/i18n'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
+import { useLocale } from 'next-intl'
 
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
 
@@ -15,11 +16,11 @@ interface HeroGlitchSliderProps {
 }
 
 export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlitchSliderProps) {
-  const { lang } = useLanguage()
+  const locale = useLocale()
 
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
-    if (lang === 'en') return en ?? kr ?? ''
-    if (lang === 'ja') return jp ?? kr ?? ''
+    if (locale === 'en') return en ?? kr ?? ''
+    if (locale === 'ja') return jp ?? kr ?? ''
     return kr ?? ''
   }
 
@@ -148,7 +149,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
             alt=""
             fill
             placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
+            blurDataURL={getBlurDataURL(pending.url) ?? BLUR_PLACEHOLDER}
             className="object-cover object-top"
             sizes="(max-width: 768px) 100vw, 62vw"
             quality={90}
@@ -163,7 +164,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           fill
           priority
           placeholder="blur"
-          blurDataURL={BLUR_PLACEHOLDER}
+          blurDataURL={getBlurDataURL(current.url) ?? BLUR_PLACEHOLDER}
           className="object-cover object-top"
           sizes="(max-width: 768px) 100vw, 62vw"
           quality={90}

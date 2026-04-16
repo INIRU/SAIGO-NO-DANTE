@@ -2,7 +2,7 @@
 
 // Design Ref: §5.1 — 인격 전체 브라우저 클라이언트
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Search } from 'lucide-react'
 import type { Sinner } from '@/lib/types'
 import type { IdentityBrowserItem, SortOption } from '@/lib/types/browser'

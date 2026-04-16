@@ -1,11 +1,12 @@
 'use client'
 
 // Design Ref: §5.5 — EGO 전용 브라우저 카드
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import type { EGOBrowserItem } from '@/lib/types/browser'
 
 type Props = {
@@ -43,7 +44,7 @@ export default function EGOBrowserCard({ ego }: Props) {
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
+            blurDataURL={getBlurDataURL(imageUrl) ?? BLUR_PLACEHOLDER}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#151210' }}>

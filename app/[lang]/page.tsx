@@ -8,7 +8,7 @@ import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
-import { getServerLang } from '@/lib/i18n/server'
+import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 export const metadata: Metadata = {
@@ -123,7 +123,7 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
 
 async function BelowFoldContent({ latestIdentities, lang }: { latestIdentities: IdentityWithSinner[]; lang: SupportedLang }) {
   const latestVideo = await getLatestYoutubeVideo()
-  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} lang={lang} />
+  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
 }
 
 function BelowFoldSkeleton() {
@@ -153,7 +153,9 @@ async function getCachedHomeData() {
 
 export default async function HomePage() {
   // cookies() is dynamic — call outside 'use cache'
-  const lang = await getServerLang()
+  const locale = await getLocale()
+  setRequestLocale(locale)
+  const lang = locale as SupportedLang
   const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData()
 
   const latestDate = latestIdentities[0]?.release_date

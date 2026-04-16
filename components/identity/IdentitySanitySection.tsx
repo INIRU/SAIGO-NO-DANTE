@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import type { SanityCondition, PanicType } from '@/lib/types'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface IdentitySanitySectionProps {
   sanityConditions: SanityCondition[]
@@ -97,12 +97,13 @@ function renderSanityText(text: string, bulletColor?: string): React.ReactNode {
 }
 
 export default function IdentitySanitySection({ sanityConditions, panicInfo }: IdentitySanitySectionProps) {
-  const { t, lang } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
 
   /** Pick the localized string, falling back to KR. */
   const localText = (kr: string, en?: string | null, jp?: string | null) => {
-    if (lang === 'en' && en) return en
-    if (lang === 'ja' && jp) return jp
+    if (locale === 'en' && en) return en
+    if (locale === 'ja' && jp) return jp
     return kr
   }
 

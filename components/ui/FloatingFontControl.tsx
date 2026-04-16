@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/lib/i18n/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Minus, Plus } from 'lucide-react'
 import { springTransition } from '@/lib/animations'

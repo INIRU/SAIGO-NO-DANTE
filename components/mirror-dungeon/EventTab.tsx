@@ -2,9 +2,13 @@
 
 import { useMemo } from 'react'
 import { Search, X } from 'lucide-react'
+import { useLocale } from 'next-intl'
 import Dropdown from '@/components/ui/Dropdown'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface EventTabProps {
   events: MdEvent[]
@@ -33,6 +37,14 @@ export default function EventTab({
   setEventCategoryFilter,
   onSelectEvent,
 }: EventTabProps) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
+
   const { filteredEvents, totalCount } = useMemo(() => {
     // events prop includes ALL events (root + variants + children) for FK chain traversal in EventModal.
     // The card grid only shows root events:
@@ -100,7 +112,7 @@ export default function EventTab({
           />
           <input
             type="text"
-            placeholder="이벤트 · 기프트 검색..."
+            placeholder={t('mirrorDungeon.event.search')}
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
             className="w-full"
@@ -146,27 +158,30 @@ export default function EventTab({
         <Dropdown
           value={eventThemeFilter}
           options={[
-            { value: '', label: '전체 테마' },
+            { value: '', label: t('mirrorDungeon.event.allThemes') },
             ...themes
-              .filter(t => !t.is_hidden)
+              .filter(th => !th.is_hidden)
               .sort((a, b) => a.id - b.id)
-              .map(t => ({ value: String(t.id), label: t.name })),
+              .map(th => ({
+                value: String(th.id),
+                label: getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang),
+              })),
           ]}
           onChange={setEventThemeFilter}
-          prefix="테마:"
+          prefix={t('mirrorDungeon.event.themePrefix')}
           defaultValue=""
           minWidth={140}
         />
         <Dropdown
           value={eventCategoryFilter}
           options={[
-            { value: '', label: '전체 카테고리' },
-            { value: 'NORMAL', label: '상시 이벤트' },
-            { value: 'SEASONAL', label: '시즌 이벤트' },
-            { value: 'GLOBAL_EVENT_HEAL', label: '자판기' },
+            { value: '', label: t('mirrorDungeon.event.allCategories') },
+            { value: 'NORMAL', label: t('mirrorDungeon.event.normal') },
+            { value: 'SEASONAL', label: t('mirrorDungeon.event.seasonal') },
+            { value: 'GLOBAL_EVENT_HEAL', label: t('mirrorDungeon.event.vending') },
           ]}
           onChange={setEventCategoryFilter}
-          prefix="분류:"
+          prefix={t('mirrorDungeon.event.categoryPrefix')}
           defaultValue=""
           minWidth={120}
         />
@@ -179,7 +194,9 @@ export default function EventTab({
             whiteSpace: 'nowrap',
           }}
         >
-          {eventSearch || eventThemeFilter || eventCategoryFilter ? `${filteredEvents.length} / ${totalCount}` : `${totalCount}건`}
+          {eventSearch || eventThemeFilter || eventCategoryFilter
+            ? `${filteredEvents.length} / ${totalCount}`
+            : `${totalCount}${lang === 'ko' ? '건' : ''}`}
         </span>
       </div>
 
@@ -208,7 +225,7 @@ export default function EventTab({
 
         {filteredEvents.map((ev, evIdx) => {
           const evGifts = (ev.gift_ids || []).map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
-          const title = ev.name || (ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `이벤트 #${ev.id}`)
+          const title = ev.name || (ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `${t('mirrorDungeon.event.fallbackTitle')} #${ev.id}`)
           const hasImage = Boolean(ev.image_url)
           const optCount = choicesByEventId.get(ev.id)?.length ?? 0
 
@@ -326,7 +343,7 @@ export default function EventTab({
                       lineHeight: 1.6,
                     }}
                   >
-                    {optCount}선택
+                    {optCount}{t('mirrorDungeon.event.choices')}
                   </div>
                 )}
               </div>
@@ -377,7 +394,7 @@ export default function EventTab({
                         lineHeight: 1.6,
                       }}
                     >
-                      기프트 {evGifts.length}종
+                      {t('mirrorDungeon.event.gifts')} {evGifts.length}{lang === 'ko' ? '종' : ''}
                     </span>
                   )}
                 </div>

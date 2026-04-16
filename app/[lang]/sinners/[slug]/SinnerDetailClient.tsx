@@ -1,20 +1,23 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import IdentityCard from '@/components/sinners/IdentityCard'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
+import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 interface Props {
   sinner: Sinner
@@ -28,7 +31,10 @@ type OwnershipFilter = 'all' | 'owned' | 'unowned'
 const LOCAL_STORAGE_KEY = 'limbus-collection'
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
+  const lang = locale as SupportedLang
+  useRoutePrefetch([`/${lang}/sinners/identities`, `/${lang}/sinners/ego`])
   const { sinMap: kwSinMap, iconMap: kwIconMap } = useKeywordData()
 
   const getName = (kr?: string | null, en?: string | null, jp?: string | null) => {
@@ -99,7 +105,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     setTab(t)
   }
 
-  // 인격 키워드 빈도 계산 + 정렬
   const keywordStats = useMemo(() => {
     const freq = new Map<string, number>()
     for (const i of identities) {
@@ -371,7 +376,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     sizes="(max-width: 640px) 6rem, 20rem"
                     quality={90}
                     placeholder="blur"
-                    blurDataURL={BLUR_PLACEHOLDER}
+                    blurDataURL={getBlurDataURL(getSinnerProfileUrl(sinner.id)) ?? BLUR_PLACEHOLDER}
                     className="object-cover object-top"
                     style={{ objectPosition: '50% 15%' }}
                   />

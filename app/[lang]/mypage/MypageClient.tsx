@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
 import { showSuccess, showError } from '@/lib/toast'
 import MypageTabs, { type MypageTab } from './components/MypageTabs'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import { Plus, Bookmark, Trash2, X } from 'lucide-react'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 

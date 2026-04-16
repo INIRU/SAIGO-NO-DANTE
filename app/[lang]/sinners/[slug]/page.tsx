@@ -5,11 +5,12 @@ import { getSinnerById } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { notFound } from 'next/navigation'
-import SinnerDetailClient from './SinnerDetailClient'
+import dynamic from 'next/dynamic'
+const SinnerDetailClient = dynamic(() => import('./SinnerDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getSinnerProfileUrl } from '@/lib/utils/images'
 import type { Identity, EGO } from '@/lib/types'
-import { getServerLang } from '@/lib/i18n/server'
+import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 export function generateStaticParams() {
@@ -60,10 +61,10 @@ async function getCachedSinnerData(slug: string) {
 
 export default async function SinnerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const [{ sinner, identities, egos }, lang] = await Promise.all([
-    getCachedSinnerData(slug),
-    getServerLang(),
-  ])
+  const locale = await getLocale()
+  setRequestLocale(locale)
+  const lang = locale as SupportedLang
+  const { sinner, identities, egos } = await getCachedSinnerData(slug)
   if (!sinner) notFound()
 
   const siteUrl = 'https://saigo-no-dante.com'

@@ -133,6 +133,20 @@ export type EGOSkill = {
   coin3Effect: string
   coin4Effect: string
   coin5Effect: string
+  name_en?: string | null
+  name_jp?: string | null
+  normalEffect_en?: string | null
+  normalEffect_jp?: string | null
+  coin1Effect_en?: string | null
+  coin1Effect_jp?: string | null
+  coin2Effect_en?: string | null
+  coin2Effect_jp?: string | null
+  coin3Effect_en?: string | null
+  coin3Effect_jp?: string | null
+  coin4Effect_en?: string | null
+  coin4Effect_jp?: string | null
+  coin5Effect_en?: string | null
+  coin5Effect_jp?: string | null
 }
 
 export type EGO = {
@@ -150,6 +164,12 @@ export type EGO = {
   image_url: string | null
   passive_name: string | null
   passive_content: string | null
+  passive_name_en?: string | null
+  passive_name_jp?: string | null
+  passive_content_en?: string | null
+  passive_content_jp?: string | null
+  obtaining_method_en?: string | null
+  obtaining_method_jp?: string | null
   ego_skills: EGOSkill[] | null
   ego_cor_skills: EGOSkill[] | null
   resistance: string[] | null

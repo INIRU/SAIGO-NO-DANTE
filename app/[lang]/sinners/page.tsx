@@ -5,7 +5,8 @@ import { getSinners } from '@/lib/db/queries'
 import SinnersInteractive from './SinnersInteractive'
 import SinnerCard from '@/components/sinners/SinnerCard'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
-import { getServerLang } from '@/lib/i18n/server'
+import { getLocale, setRequestLocale } from 'next-intl/server'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const SITE_URL = 'https://saigo-no-dante.com'
 
@@ -26,7 +27,9 @@ async function getCachedSinners() {
 }
 
 export default async function SinnersPage() {
-  const lang = await getServerLang()
+  const locale = await getLocale()
+  setRequestLocale(locale)
+  const lang = locale as SupportedLang
   const sinners = await getCachedSinners()
 
   const sinnerListLd = itemListJsonLd({
@@ -52,7 +55,7 @@ export default async function SinnersPage() {
           >
             {sinners.map((sinner, i) => (
               <div key={sinner.id} className="sinner-card-item">
-                <SinnerCard sinner={sinner} index={i} priority={i < 6} lang={lang} />
+                <SinnerCard sinner={sinner} index={i} priority={i < 6} />
               </div>
             ))}
           </div>

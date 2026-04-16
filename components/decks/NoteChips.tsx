@@ -10,7 +10,9 @@ import {
   normalizeSin, getSkillOrderLabel,
   type SinType,
 } from '@/lib/data/sinners'
-import { useLanguage, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
+import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 function sinColorOf(sin: string | null): string {
   const en = normalizeSin(sin)
@@ -199,7 +201,7 @@ export type NoteEgoGiftEntry = {
 // ── SkillChip ───────────────────────────────────────────────────────────
 export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
-  const { t } = useLanguage()
+  const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
@@ -256,7 +258,7 @@ export function SkillChip({ entry }: { entry: NoteSkillEntry }) {
 // ── PassiveChip ─────────────────────────────────────────────────────────
 export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
   const formatSkillDesc = useFormatSkillDesc()
-  const { t } = useLanguage()
+  const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const sinList = entry.sin_affinity
@@ -302,7 +304,7 @@ export function PassiveChip({ entry }: { entry: NotePassiveEntry }) {
 
 // ── EgoChip ─────────────────────────────────────────────────────────────
 export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
-  const { t } = useLanguage()
+  const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const sinEn = normalizeSin(entry.sin_affinity)
@@ -345,7 +347,8 @@ export function EgoChip({ entry }: { entry: NoteEgoEntry }) {
 
 // ── IdentityChip ────────────────────────────────────────────────────────
 export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   const keywords = useKeywords()
   const { sinMap: kwSinMap } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
@@ -380,7 +383,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
               {entry.keywords.map((kw, idx) => {
                 const kwSin = kwSinMap[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
-                const localKwName = getLocalizedKeywordName(kw, keywords[kw], lang)
+                const localKwName = getLocalizedKeywordName(kw, keywords[kw], locale as SupportedLang)
                 return (
                   <span key={`${kw}-${idx}`} style={{ color: kwColor, fontSize: '0.75rem', fontWeight: 600 }}>{localKwName}</span>
                 )
@@ -396,7 +399,8 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 
 // ── KeywordChip ──────────────────────────────────────────────────────────
 export function KeywordChip({ keyword }: { keyword: string }) {
-  const { lang, t } = useLanguage()
+  const t = useTranslations()
+  const locale = useLocale()
   const keywords = useKeywords()
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const ref = useRef<HTMLSpanElement>(null)
@@ -405,7 +409,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   const sinType = kwSinMap[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
   const info = keywords[keyword]
-  const localName = getLocalizedKeywordName(keyword, info, lang)
+  const localName = getLocalizedKeywordName(keyword, info, locale as SupportedLang)
   return (
     <span
       ref={ref}
@@ -425,7 +429,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
           </div>
           {info && (
             <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
-              {getLocalizedKeywordDesc(info.desc, info, lang)}
+              {getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang)}
               {info.maxStack != null && (
                 <span style={{ display: 'block', marginTop: 2, color: '#999', fontSize: '0.8125rem' }}>
                   {t('keyword.maxStack')} {info.maxStack}
@@ -448,7 +452,7 @@ const EGO_GIFT_KW_COLORS: Record<string, string> = {
 }
 
 export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
-  const { lang } = useLanguage()
+  const locale = useLocale()
   const keywords = useKeywords()
   const formatSkillDesc = useFormatSkillDesc()
   const ref = useRef<HTMLSpanElement>(null)
@@ -474,7 +478,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
               <Image src={entry.image_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
             )}
             <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{entry.name}</span>
-            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{getLocalizedKeywordName(entry.keyword, keywords[entry.keyword], lang)} {entry.grade}</span>
+            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{getLocalizedKeywordName(entry.keyword, keywords[entry.keyword], locale as SupportedLang)} {entry.grade}</span>
           </div>
           {entry.effect_base && (
             <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>

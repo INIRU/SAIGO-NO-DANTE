@@ -1,10 +1,11 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import type { IdentityWithSinner } from '@/lib/types'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
-import { useLanguage } from '@/lib/i18n'
+import { getBlurDataURL } from '@/lib/utils/thumbhash'
+import { useLocale } from 'next-intl'
 
 function formatDate(d: string) {
   const dateOnly = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -26,11 +27,11 @@ interface LatestIdentityCardProps {
 }
 
 export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconSrc }: LatestIdentityCardProps) {
-  const { lang } = useLanguage()
+  const locale = useLocale()
 
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
-    if (lang === 'en') return en ?? kr ?? ''
-    if (lang === 'ja') return jp ?? kr ?? ''
+    if (locale === 'en') return en ?? kr ?? ''
+    if (locale === 'ja') return jp ?? kr ?? ''
     return kr ?? ''
   }
 
@@ -38,7 +39,6 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
     <Link
       href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
       className="latest-card group block"
-      suppressHydrationWarning
     >
       <div
         className="relative overflow-hidden"
@@ -64,7 +64,7 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
             alt={identity.name_kr}
             fill
             placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
+            blurDataURL={getBlurDataURL(portraitUrl) ?? BLUR_PLACEHOLDER}
             className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
             style={{ objectPosition: '50% 10%' }}
             sizes="200px"

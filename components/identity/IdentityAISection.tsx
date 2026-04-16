@@ -10,7 +10,7 @@ import SkillDescription from '@/components/skill/SkillDescription'
 import { splitSections, parseRichContent, type AISection } from '@/lib/utils/ai-summary-parser'
 import { SIN_COLORS, SKILL_TYPE_LABELS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import { getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations, useLocale } from 'next-intl'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import type { TranslationKey } from '@/lib/i18n/translations'
 import type { Skill, Passive, Identity } from '@/lib/types'
@@ -503,25 +503,26 @@ export default function IdentityAISection({
   identity,
   isLoggedIn,
 }: IdentityAISectionProps) {
-  const { lang, t } = useLanguage()
-  const langRef = useRef(lang)
-  langRef.current = lang
+  const t = useTranslations()
+  const locale = useLocale()
+  const langRef = useRef(locale)
+  langRef.current = locale
   const { keywords: keywordData } = useKeywordData()
 
   const localizedAllowedKeywords = useMemo(() => {
-    if (!allowedKeywords || lang === 'ko') return allowedKeywords
+    if (!allowedKeywords || locale === 'ko') return allowedKeywords
     const localized = new Set<string>()
     for (const kwKr of allowedKeywords) {
       // Always keep Korean name for fallback matching
       localized.add(kwKr)
       const info = keywordData[kwKr]
       if (info) {
-        if (lang === 'en' && info.nameEn) localized.add(info.nameEn)
-        if (lang === 'ja' && info.nameJp) localized.add(info.nameJp)
+        if (locale === 'en' && info.nameEn) localized.add(info.nameEn)
+        if (locale === 'ja' && info.nameJp) localized.add(info.nameJp)
       }
     }
     return localized
-  }, [allowedKeywords, lang, keywordData])
+  }, [allowedKeywords, locale, keywordData])
   const [summary, setSummary] = useState<string | null>(null)
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -535,7 +536,7 @@ export default function IdentityAISection({
     setLoading(true)
     ;(async () => {
       try {
-        const res = await fetch(`/api/identity-ai?identity_id=${identityId}&lang=${lang}`)
+        const res = await fetch(`/api/identity-ai?identity_id=${identityId}&lang=${locale}`)
         if (!res.ok) throw new Error('fetch failed')
         const data = await res.json()
         if (!cancelled) {
@@ -552,7 +553,7 @@ export default function IdentityAISection({
       }
     })()
     return () => { cancelled = true }
-  }, [identityId, lang])
+  }, [identityId, locale])
 
   // AI 생성 (스트리밍)
   const generate = useCallback(async () => {
@@ -619,7 +620,7 @@ export default function IdentityAISection({
       <div className="card p-6" style={{ border: `1px solid ${sinColor}15` }}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles style={{ width: '1rem', height: '1rem', color: sinColor }} />
-          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai')}</span>
+          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai.title')}</span>
         </div>
         <div className="flex items-center justify-center py-6" style={{ color: '#555' }}>
           <Loader2 className="animate-spin" style={{ width: '1.25rem', height: '1.25rem' }} />
@@ -634,7 +635,7 @@ export default function IdentityAISection({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sparkles style={{ width: '1rem', height: '1rem', color: sinColor }} />
-          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai')}</span>
+          <span className="font-serif" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('identity.ai.title')}</span>
         </div>
         {createdAt && (
           <span style={{ color: '#555', fontSize: '0.75rem' }}>
@@ -667,7 +668,7 @@ export default function IdentityAISection({
                   egoLookup={egoLookup}
                   identityLookup={identityLookup}
                   egoGiftLookup={egoGiftLookup}
-                  lang={lang}
+                  lang={locale}
                   t={t}
                 />
               </AccordionSection>

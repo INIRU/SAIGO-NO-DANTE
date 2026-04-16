@@ -27,6 +27,15 @@ export interface EgoGift {
   acquisition: string | null
   game_id: number | null
   difficulty: string | null
+  convert_to: number | null
+  name_en?: string | null
+  name_jp?: string | null
+  effect_base_en?: string | null
+  effect_base_jp?: string | null
+  effect_plus_en?: string | null
+  effect_plus_jp?: string | null
+  effect_plusplus_en?: string | null
+  effect_plusplus_jp?: string | null
 }
 
 export interface Recipe {
@@ -50,6 +59,8 @@ export interface EgoGiftTheme {
   is_hidden: boolean
   hidden_rate: number | null
   fixed_reward_gift_ids: number[] | null
+  name_en?: string | null
+  name_jp?: string | null
 }
 
 export interface EventRewardEffect {
@@ -117,6 +128,10 @@ export interface MdEvent {
   gift_ids: number[] | null
   variant_of: number | null
   category: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  desc_text_en?: string | null
+  desc_text_jp?: string | null
 }
 
 export interface MdEventChoice {

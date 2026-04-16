@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
-import { useLanguage } from '@/lib/i18n'
+import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
 import { SKILL_DESC_STYLES, type SkillDescVariant } from './tokens'
 
@@ -85,7 +85,7 @@ export default function SkillDescription({
   level4Desc,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
-  const { t } = useLanguage()
+  const t = useTranslations()
   const styles = SKILL_DESC_STYLES[variant]
   const showBadges = showCoinBadges ?? variant !== 'tooltip'
 

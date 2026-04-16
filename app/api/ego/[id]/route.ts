@@ -8,12 +8,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return NextResponse.json({ error: 'Invalid EGO ID' }, { status: 400 })
+    }
     const supabase = createAdminClient()
 
     const { data: ego, error: egoErr } = await supabase
       .schema('limbus')
       .from('ego')
-      .select('id, sinner_id, name, name_kr, grade, sin_affinity, folder_name, image_url, cor_image_url, passive_name, passive_content, resistance, cost, keywords, description, corrosion_risk')
+      .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, folder_name, image_url, cor_image_url, passive_name, passive_content, resistance, cost, keywords, description, corrosion_risk')
       .eq('id', id)
       .single()
 
@@ -25,13 +28,13 @@ export async function GET(
       supabase
         .schema('limbus')
         .from('sinners')
-        .select('name_kr')
+        .select('name_kr, name_en, name_jp')
         .eq('id', ego.sinner_id)
         .single(),
       supabase
         .schema('limbus')
         .from('ego_skills')
-        .select('id, name, skill_type, sin_affinity, base_power, coins, coin_power, description, category, construe_level, offense_level, atk_weight')
+        .select('id, name, name_en, name_jp, skill_type, sin_affinity, base_power, coins, coin_power, description, description_en, description_jp, category, construe_level, offense_level, atk_weight')
         .eq('ego_id', id),
     ])
 
@@ -48,7 +51,7 @@ export async function GET(
 
     return NextResponse.json({
       ego: { ...ego, resistances, costs },
-      sinner_name: sinnerRes.data?.name_kr ?? null,
+      sinner: sinnerRes.data ?? null,
       skills: skillsRes.data ?? [],
     })
   } catch (err: unknown) {

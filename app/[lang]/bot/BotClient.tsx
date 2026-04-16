@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { ArrowLeft, ExternalLink, ChevronDown, Bell, HelpCircle } from 'lucide-react'
 
