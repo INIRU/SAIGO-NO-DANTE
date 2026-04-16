@@ -208,7 +208,7 @@
       "releaseDate": "リリース時期",
       "acquisition": "獲得方法",
       "extraction": "抽出",
-      "vendingMachine": "自販機",
+      "shardPostRelease7d": "リリース後7日",
       "fragmentExchange": "破片交換",
       "sdDragHint": "ドラッグで移動・スクロールで拡大/縮小・ダブルクリックでリセット",
       "type": {
@@ -226,12 +226,7 @@
       },
       "walpurgisEdition": "回",
       "targetExtraction": "特定抽出",
-      "vendingUnavailable7d": "交換不可（リリース7日後に開放）",
-      "vendingAvailable": "交換可能",
-      "vendingUnavailableNextSeason": "交換不可（次のシーズンから可能）",
-      "fragmentCost": "自我破片",
-      "exchangeAlways": "（常時）",
-      "exchangeFromSeason": "～常時",
+      "fragmentCost": "自我の欠片",
       "permanent": "常時",
       "resistance": {
         "weak": "脆弱",

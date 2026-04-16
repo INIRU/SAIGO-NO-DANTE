@@ -150,7 +150,7 @@ function localizeObtainingMethod(text: string, lang: SupportedLang): string {
     '기본': { en: 'Default', ja: 'デフォルト' },
     '추출': { en: 'Extraction', ja: '抽出' },
     '상시': { en: 'Permanent', ja: '常時' },
-    '시즌': { en: 'Season', ja: 'シーズン' },
+    '시즌': { en: 'S', ja: 'S' },
     '이후': { en: 'onwards', ja: '以降' },
     '교환': { en: 'Exchange', ja: '交換' },
     '유료': { en: 'Paid', ja: '有料' },
@@ -191,7 +191,7 @@ function EgoAcquisitionBadges({ text, fragmentLabel, lang }: { text: string; fra
     } else if (/^추출\s*\(시즌\s*(\d+)\s*이후\)$/.test(p)) {
       const m = p.match(/시즌\s*(\d+)/)
       const s = m?.[1]
-      const label = lang === 'ko' ? `추출(시즌 ${s}~)` : lang === 'en' ? `Extraction (S${s}~)` : `抽出(シーズン${s}~)`
+      const label = lang === 'ko' ? `추출(S${s}~)` : lang === 'en' ? `Extraction (S${s}~)` : `抽出(S${s}~)`
       badges.push({ label, color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' })
     } else if (/이벤트\s*추출/.test(p)) {
       const m = p.match(/시즌\s*(\d+)/)

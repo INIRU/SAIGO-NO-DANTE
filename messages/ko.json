@@ -208,7 +208,7 @@
       "releaseDate": "출시시기",
       "acquisition": "획득 방법",
       "extraction": "추출",
-      "vendingMachine": "자판기",
+      "shardPostRelease7d": "출시 후 7일",
       "fragmentExchange": "파편 교환",
       "sdDragHint": "드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화",
       "type": {
@@ -226,12 +226,7 @@
       },
       "walpurgisEdition": "회차",
       "targetExtraction": "특정 추출",
-      "vendingUnavailable7d": "교환 불가 (출시 7일 후 개방)",
-      "vendingAvailable": "교환 가능",
-      "vendingUnavailableNextSeason": "교환 불가 (다음 시즌부터 가능)",
       "fragmentCost": "자아 파편",
-      "exchangeAlways": "(상시)",
-      "exchangeFromSeason": "~ 상시",
       "permanent": "상시",
       "resistance": {
         "weak": "취약",

@@ -208,8 +208,8 @@
       "releaseDate": "Release Date",
       "acquisition": "Acquisition",
       "extraction": "Extraction",
-      "vendingMachine": "Vending Machine",
-      "fragmentExchange": "Fragment Exchange",
+      "shardPostRelease7d": "7d post-release",
+      "fragmentExchange": "Shard Exchange",
       "sdDragHint": "Drag to move · Scroll to zoom · Double-click to reset",
       "type": {
         "default": "Default",
@@ -226,13 +226,8 @@
       },
       "walpurgisEdition": "Edition",
       "targetExtraction": "Rate-up",
-      "vendingUnavailable7d": "Unavailable (opens 7 days after release)",
-      "vendingAvailable": "Available",
-      "vendingUnavailableNextSeason": "Unavailable (available next season)",
       "fragmentCost": "Ego Shards",
-      "exchangeAlways": "(Always)",
-      "exchangeFromSeason": "~ Standard",
-      "permanent": "Permanent",
+      "permanent": "Perm.",
       "resistance": {
         "weak": "Weak",
         "resist": "Resist"
