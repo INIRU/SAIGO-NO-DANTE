@@ -36,10 +36,11 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
   }
 
   return (
-    <Link
-      href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
-      className="latest-card group block"
-    >
+    <div className="latest-card" suppressHydrationWarning>
+      <Link
+        href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
+        className="group block"
+      >
       <div
         className="relative overflow-hidden"
         style={{
@@ -131,5 +132,6 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
         </div>
       </div>
     </Link>
+    </div>
   )
 }

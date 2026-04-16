@@ -203,7 +203,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                           border: '1px solid rgba(200,144,10,0.2)',
                         }}
                       >
-                        {t('identity.info.season')} {info.release_season}
+                        S{info.release_season}
                       </span>
                     )}
 
@@ -257,46 +257,41 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   </div>
                 )}
 
-                {/* 자판기 교환 */}
-                {(info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')) && (() => {
+                {/* 파편 교환 (자판기 + 파편 통합) */}
+                {info.fragment_cost && (() => {
                   const releaseSeason = Number(info.release_season ?? 0)
                   const diff = currentSeason - releaseSeason
+                  const isSeasonalOrEvent = info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')
+
                   // 같은 시즌 신규: 출시 7일 이내는 교환 불가
-                  if (diff === 0 && identity.release_date) {
-                    const daysSince = Math.floor((Date.now() - new Date(identity.release_date).getTime()) / (1000 * 60 * 60 * 24))
-                    if (daysSince < 7) {
-                      return (
-                        <div className="flex items-center gap-2">
-                          <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.vendingMachine')}</span>
-                          <span style={{ fontSize: '0.75rem', color: '#ff6b6b' }}>{t('identity.info.vendingUnavailable7d')}</span>
-                        </div>
-                      )
-                    }
+                  const isNew7dLock = isSeasonalOrEvent && diff === 0 && identity.release_date &&
+                    Math.floor((Date.now() - new Date(identity.release_date).getTime()) / (1000 * 60 * 60 * 24)) < 7
+                  // 다음 시즌 대기 (diff === 1)
+                  const isNextSeasonLock = isSeasonalOrEvent && diff === 1
+
+                  // 파편 교환 상세 텍스트
+                  let detail: string
+                  if (isNew7dLock) {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${info.exchange_from_season ?? releaseSeason + 2} ~ ${t('identity.info.permanent')})`
+                  } else if (isNextSeasonLock) {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (S${info.exchange_from_season ?? releaseSeason + 2} ~ ${t('identity.info.permanent')})`
+                  } else if (info.exchange_from_season) {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${info.exchange_from_season} ~ ${t('identity.info.permanent')})`
+                  } else {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.permanent')})`
                   }
-                  const available = diff !== 1
+
+                  const detailColor = isNew7dLock || isNextSeasonLock ? '#ff6b6b' : '#bbb'
+
                   return (
                     <div className="flex items-center gap-2">
-                      <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.vendingMachine')}</span>
-                      <span style={{ fontSize: '0.75rem', color: available ? '#7bed9f' : '#ff6b6b' }}>
-                        {available ? t('identity.info.vendingAvailable') : t('identity.info.vendingUnavailableNextSeason')}
+                      <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.fragmentExchange')}</span>
+                      <span style={{ fontSize: '0.75rem', color: detailColor }}>
+                        {detail}
                       </span>
                     </div>
                   )
                 })()}
-
-                {/* 파편 교환 */}
-                {info.fragment_cost && (
-                  <div className="flex items-center gap-2">
-                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.fragmentExchange')}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#bbb' }}>
-                      {t('identity.info.fragmentCost')} {info.fragment_cost}
-                      {info.exchange_from_season
-                        ? ` (S${info.exchange_from_season}${t('identity.info.exchangeFromSeason')})`
-                        : info.gacha === 'always' ? ` ${t('identity.info.exchangeAlways')}` : ''
-                      }
-                    </span>
-                  </div>
-                )}
               </div>
             )
           })()}

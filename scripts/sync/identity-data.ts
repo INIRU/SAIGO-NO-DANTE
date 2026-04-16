@@ -449,6 +449,36 @@ function loadKrPersonalities(): Map<string, KrPersonality> {
   return map
 }
 
+/**
+ * Load EN or JP personality title map: game_id (string) → cleaned title
+ * Searches latest dir first (.json/.txt), then fallback dir (.txt)
+ */
+function loadPersonalityNames(lang: 'en' | 'jp'): Map<string, string> {
+  const map = new Map<string, string>()
+  const prefix = lang === 'en' ? 'EN' : 'JP'
+  const latestDir = lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
+  const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
+
+  const loadFromDir = (dir: string, pattern: RegExp) => {
+    if (!existsSync(dir)) return
+    for (const f of globFiles(dir, pattern)) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const parsed = KrPersonalitySchema.safeParse(item)
+        if (!parsed.success) continue
+        const { id, title } = parsed.data
+        if (title) map.set(String(id), title.replace(/\n/g, ' '))
+      }
+    }
+  }
+
+  // Fallback dir first, latest overrides
+  loadFromDir(fallbackDir, new RegExp(`^${prefix}_Personalities.*\\.txt$`))
+  loadFromDir(latestDir, new RegExp(`^${prefix}_Personalities.*\\.(json|txt)$`))
+
+  return map
+}
+
 function loadKrSkills(): Map<number, KrSkill> {
   const map = new Map<number, KrSkill>()
   if (!existsSync(KR_DIR)) return map
@@ -1313,11 +1343,24 @@ async function rebuildKeywordMeta(): Promise<void> {
 
   console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (인격+EGO+기프트)`)
 
+  // Build reverse map: KR name → tag ID (from TAG_MAP which is tag → KR)
+  const krNameToTag: Record<string, string> = {}
+  for (const [tag, krName] of Object.entries(TAG_MAP)) {
+    if (!krNameToTag[krName]) krNameToTag[krName] = tag
+  }
+
+  // Load EN/JP tag maps: tag ID → localized name
+  const enTagMap = loadLangTagMap('en')
+  const jpTagMap = loadLangTagMap('jp')
+
   // Build insert rows
-  const rows: Array<{ name: string; description: string | null }> = []
+  const rows: Array<{ name: string; description: string | null; name_en: string | null; name_jp: string | null }> = []
   for (const name of usedKeywords) {
     const krData = krKeywords.get(name)
-    rows.push({ name, description: krData?.description ?? null })
+    const tag = krData?.id ?? krNameToTag[name]
+    const name_en = tag ? (enTagMap[tag] ?? null) : null
+    const name_jp = tag ? (jpTagMap[tag] ?? null) : null
+    rows.push({ name, description: krData?.description ?? null, name_en, name_jp })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
@@ -1398,13 +1441,16 @@ async function main(): Promise<void> {
   const jpTagMap = loadLangTagMap('jp')
   const enLocale = loadLangLocale('en')
   const jpLocale = loadLangLocale('jp')
+  const enPersonNameMap = loadPersonalityNames('en')
+  const jpPersonNameMap = loadPersonalityNames('jp')
+  console.log(`  EN 인격명: ${enPersonNameMap.size}개, JP 인격명: ${jpPersonNameMap.size}개`)
   console.log('')
 
   // ── Load DB data ──────────────────────────────────────────────────────────
   console.log('  DB 데이터 로드 중...')
   const { data: dbIdentityRows, error: dbErr } = await supabase
     .from('identities')
-    .select('id,game_id,sinner_id,name,name_kr,hp,base_hp,hp_per_level,speed_min,speed_max,def_level,rarity,slash_res,pierce_res,blunt_res,break_section,keywords,folder_name,affiliation')
+    .select('id,game_id,sinner_id,name,name_kr,name_en,name_jp,hp,base_hp,hp_per_level,speed_min,speed_max,def_level,rarity,slash_res,pierce_res,blunt_res,break_section,keywords,folder_name,affiliation')
     .limit(2000)
   if (dbErr) throw new Error(`DB 인격 로드 실패: ${dbErr.message}`)
 
@@ -1489,6 +1535,8 @@ async function main(): Promise<void> {
             sinner_id: sinnerUuid,
             name: computed.name,
             name_kr: computed.name_kr,
+            name_en: enPersonNameMap.get(gameId) ?? null,
+            name_jp: jpPersonNameMap.get(gameId) ?? null,
             tier: computed.rarity ?? 1,
             hp: computed.hp,
             base_hp: computed.base_hp,
@@ -1581,6 +1629,22 @@ async function main(): Promise<void> {
 
       if (changeCount === 0) {
         totalUnchanged++
+        // Backfill EN/JP identity names if missing
+        if (!DRY_RUN) {
+          const identityNameUpdate: Record<string, string> = {}
+          const dbTyped = dbRow as { id: string; name_en?: string | null; name_jp?: string | null }
+          const enName = enPersonNameMap.get(gameId)
+          const jpName = jpPersonNameMap.get(gameId)
+          if (enName && !dbTyped.name_en) identityNameUpdate.name_en = enName
+          if (jpName && !dbTyped.name_jp) identityNameUpdate.name_jp = jpName
+          if (Object.keys(identityNameUpdate).length > 0) {
+            const { error: nameErr } = await supabase
+              .from('identities')
+              .update(identityNameUpdate)
+              .eq('id', dbTyped.id)
+            if (nameErr) console.error(RED(`  [ERR] identity name backfill: ${nameErr.message}`))
+          }
+        }
         // Backfill EN/JP skill translations for existing identities
         if (!DRY_RUN && enLocale && jpLocale) {
           const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, (dbRow as { id: string }).id, enLocale, jpLocale, enTagMap, jpTagMap)

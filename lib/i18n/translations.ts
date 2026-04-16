@@ -294,8 +294,7 @@ export const translations = {
   'identity.info.releaseDate': { ko: '출시시기', en: 'Release Date', ja: 'リリース時期' },
   'identity.info.acquisition': { ko: '획득 방법', en: 'Acquisition', ja: '獲得方法' },
   'identity.info.extraction': { ko: '추출', en: 'Extraction', ja: '抽出' },
-  'identity.info.vendingMachine': { ko: '자판기', en: 'Vending Machine', ja: '自販機' },
-  'identity.info.fragmentExchange': { ko: '파편 교환', en: 'Fragment Exchange', ja: '破片交換' },
+  'identity.info.fragmentExchange': { ko: '파편 교환', en: 'Shard Exchange', ja: '破片交換' },
   'identity.info.sdDragHint': { ko: '드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화', en: 'Drag to move · Scroll to zoom · Double-click to reset', ja: 'ドラッグで移動・スクロールで拡大/縮小・ダブルクリックでリセット' },
   'identity.info.type.default': { ko: '기본', en: 'Default', ja: 'デフォルト' },
   'identity.info.type.standard': { ko: '추출', en: 'Extraction', ja: '抽出' },
@@ -354,13 +353,9 @@ export const translations = {
   'keyword.error.quote': { ko: '키워드 정보가 말을 안 들어.', en: "The keyword data won't cooperate.", ja: 'キーワード情報が言うことを聞かない。' },
   'keyword.error.subQuote': { ko: '다시 한번 불러볼게.', en: "Let me try loading it again.", ja: 'もう一度読み込んでみるね。' },
 
-  'identity.info.vendingUnavailable7d': { ko: '교환 불가 (출시 7일 후 개방)', en: 'Unavailable (opens 7 days after release)', ja: '交換不可（リリース7日後に開放）' },
-  'identity.info.vendingAvailable': { ko: '교환 가능', en: 'Available', ja: '交換可能' },
-  'identity.info.vendingUnavailableNextSeason': { ko: '교환 불가 (다음 시즌부터 가능)', en: 'Unavailable (available next season)', ja: '交換不可（次のシーズンから可能）' },
   'identity.info.fragmentCost': { ko: '자아 파편', en: 'Ego Shards', ja: '自我破片' },
-  'identity.info.exchangeAlways': { ko: '(상시)', en: '(Always)', ja: '（常時）' },
-  'identity.info.exchangeFromSeason': { ko: '~ 상시', en: '~ Standard', ja: '～常時' },
-  'identity.info.permanent': { ko: '상시', en: 'Permanent', ja: '常時' },
+  'identity.info.permanent': { ko: '상시', en: 'Perm.', ja: '常時' },
+  'identity.info.shardPostRelease7d': { ko: '출시 후 7일', en: '7d post-release', ja: 'リリース後7日' },
   'identity.info.resistance.weak': { ko: '취약', en: 'Weak', ja: '脆弱' },
   'identity.info.resistance.resist': { ko: '내성', en: 'Resist', ja: '耐性' },
 
@@ -407,7 +402,6 @@ export const translations = {
   'identity.info.slash': { ko: '참격', en: 'Slash', ja: '斬撃' },
   'identity.info.pierce': { ko: '관통', en: 'Pierce', ja: '貫通' },
   'identity.info.blunt': { ko: '타격', en: 'Blunt', ja: '打撃' },
-  'identity.info.season': { ko: '시즌', en: 'Season', ja: 'シーズン' },
 
   // Identity Stats Card
   'identity.stats.breakPhase': { ko: '{n}차', en: 'Phase {n}', ja: '{n}段階' },
