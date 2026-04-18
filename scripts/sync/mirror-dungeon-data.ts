@@ -17,7 +17,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { z } from 'zod'
@@ -33,6 +33,10 @@ const GIFTS_ONLY = args.includes('--gifts-only')
 const THEMES_ONLY = args.includes('--themes-only')
 const EVENTS_ONLY = args.includes('--events-only')
 const RECIPES_ONLY = args.includes('--recipes-only')
+const DUMP_EVENTS_ARG = args.find(a => a.startsWith('--dump-events=') || a === '--dump-events')
+const DUMP_EVENTS_PATH = DUMP_EVENTS_ARG
+  ? (DUMP_EVENTS_ARG.includes('=') ? DUMP_EVENTS_ARG.split('=').slice(1).join('=') : args[args.indexOf(DUMP_EVENTS_ARG) + 1])
+  : null
 const ANY_FILTER = GIFTS_ONLY || THEMES_ONLY || EVENTS_ONLY || RECIPES_ONLY
 
 const DO_GIFTS = !ANY_FILTER || GIFTS_ONLY
@@ -45,6 +49,9 @@ const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Tex
 const KR_DIR = join(DATA_DIR, 'KR')
 const EN_DIR = join(DATA_DIR, 'EN')
 const JP_DIR = join(DATA_DIR, 'JP')
+const KR_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/kr'))
+const EN_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/en'))
+const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp'))
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -332,10 +339,10 @@ interface GiftRow {
 async function syncGifts(): Promise<void> {
   console.log(BOLD('\n[1/4] EGO 기프트 동기화'))
 
-  // 1a. Skip patterns: buff, story-chapter, a1c, walpu, hellschicken
-  // Include: mirrordungeon variants only
-  const GIFT_PATTERN = /^ego-gift-mirrordungeon.*\.txt$/
-  const SKIP_PATTERN = /^ego-gift-(buff|story-|a1c|walpu|hellschicken)/
+  // 1a. Gift definition files: mirrordungeon variants + story-twth + future non-md families
+  // Skip: buff (stat-only), story-chapter (a1c*), walpu (walpurgis), hellschicken, story- (except story-twth)
+  const GIFT_PATTERN = /^ego-gift-.*\.txt$/
+  const SKIP_PATTERN = /^ego-gift-(buff|a1c|walpu|hellschicken|story-(?!twth))/
 
   const giftFiles = globFiles(DATA_DIR, GIFT_PATTERN).filter(f => !SKIP_PATTERN.test(f))
   if (VERBOSE) console.log(`  기프트 파일: ${giftFiles.join(', ')}`)
@@ -370,7 +377,7 @@ async function syncGifts(): Promise<void> {
   // 1b. Locale (KR) — all KR_EGOgift_MirrorDungeon* files
   const localizeMap = new Map<number, z.infer<typeof LocalizedGiftSchema>>()
 
-  const krGiftFiles = globFiles(KR_DIR, /^KR_EGOgift_MirrorDungeon.*\.txt$/)
+  const krGiftFiles = globFiles(KR_DIR, /^KR_EGOgift_.*\.txt$/)
   for (const f of krGiftFiles) {
     const data = loadJson(join(KR_DIR, f))
     for (const item of extractList(data)) {
@@ -382,8 +389,19 @@ async function syncGifts(): Promise<void> {
   }
 
   // Fallback: root-level KR_ files (recent patches)
-  for (const f of globFiles(DATA_DIR, /^KR_EGOgift_MirrorDungeon.*\.txt$/)) {
+  for (const f of globFiles(DATA_DIR, /^KR_EGOgift_.*\.txt$/)) {
     const data = loadJson(join(DATA_DIR, f))
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success && !localizeMap.has(parsed.data.id)) {
+        localizeMap.set(parsed.data.id, parsed.data)
+      }
+    }
+  }
+  // Latest JSON locales (kr/ dir — newer patches like TwiningThreads)
+  for (const f of globFiles(KR_LATEST_DIR, /^KR_EGOgift_.*\.json$/)) {
+    const data = safeLoadJson(join(KR_LATEST_DIR, f))
+    if (!data) continue
     for (const item of extractList(data)) {
       const parsed = LocalizedGiftSchema.safeParse(item)
       if (parsed.success && !localizeMap.has(parsed.data.id)) {
@@ -413,6 +431,16 @@ async function syncGifts(): Promise<void> {
         enLocalizeMap.set(parsed.data.id, parsed.data)
     }
   }
+  // Latest JSON locales (en/ dir)
+  for (const f of globFiles(EN_LATEST_DIR, /^EN_EGOgift.*\.json$/)) {
+    const data = safeLoadJson(join(EN_LATEST_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success)
+        enLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
 
   const jpLocalizeMap = new Map<number, z.infer<typeof LocalizedGiftSchema>>()
   for (const f of globFiles(DATA_DIR, /^JP_EGOgift.*\.txt$/)) {
@@ -426,6 +454,16 @@ async function syncGifts(): Promise<void> {
   }
   for (const f of globFiles(JP_DIR, /^JP_EGOgift.*\.txt$/)) {
     const data = safeLoadJson(join(JP_DIR, f))
+    if (!data) continue
+    for (const item of extractList(data)) {
+      const parsed = LocalizedGiftSchema.safeParse(item)
+      if (parsed.success)
+        jpLocalizeMap.set(parsed.data.id, parsed.data)
+    }
+  }
+  // Latest JSON locales (jp/ dir)
+  for (const f of globFiles(JP_LATEST_DIR, /^JP_EGOgift.*\.json$/)) {
+    const data = safeLoadJson(join(JP_LATEST_DIR, f))
     if (!data) continue
     for (const item of extractList(data)) {
       const parsed = LocalizedGiftSchema.safeParse(item)
@@ -935,8 +973,9 @@ async function syncRecipes(): Promise<void> {
   // Build gift name lookup (game_id → name) from locale files
   const giftNameMap = new Map<number, string>()
   const localePatterns = [
-    { dir: KR_DIR, pattern: /^KR_EGOgift_MirrorDungeon.*\.txt$/ },
-    { dir: DATA_DIR, pattern: /^KR_EGOgift_MirrorDungeon.*\.txt$/ },
+    { dir: KR_DIR, pattern: /^KR_EGOgift_.*\.txt$/ },
+    { dir: DATA_DIR, pattern: /^KR_EGOgift_.*\.txt$/ },
+    { dir: KR_LATEST_DIR, pattern: /^KR_EGOgift_.*\.json$/ },
   ]
   for (const { dir, pattern } of localePatterns) {
     for (const f of globFiles(dir, pattern)) {
@@ -955,8 +994,8 @@ async function syncRecipes(): Promise<void> {
 
   // Build gift keyword lookup (game_id → Korean keyword) from raw gift files
   const rawGiftKeywordMap = new Map<number, string>()
-  const GIFT_PATTERN_RECIPE = /^ego-gift-mirrordungeon.*\.txt$/
-  const SKIP_PATTERN_RECIPE = /^ego-gift-(buff|story-|a1c|walpu|hellschicken)/
+  const GIFT_PATTERN_RECIPE = /^ego-gift-.*\.txt$/
+  const SKIP_PATTERN_RECIPE = /^ego-gift-(buff|a1c|walpu|hellschicken|story-(?!twth))/
   for (const f of globFiles(DATA_DIR, GIFT_PATTERN_RECIPE).filter(f => !SKIP_PATTERN_RECIPE.test(f))) {
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
@@ -1093,13 +1132,36 @@ interface EventRow {
   id: number
   name: string | null
   desc_text: string | null
+  /** internal only — not written to md_events; used to populate md_event_choices */
   options: EventOption[] | null
   gift_ids: number[] | null
-  option_gifts: number[][] | null
   source: string
-  parent_id: number | null
   theme_ids: number[] | null
   image_url?: string | null
+  name_en: string | null
+  name_jp: string | null
+  desc_text_en: string | null
+  desc_text_jp: string | null
+  variant_of: number | null
+  event_type: string | null
+  category: string | null
+}
+
+/** Only the columns that exist on limbus.md_events — no options/option_gifts/parent_id. */
+function toDbRow(r: EventRow): Omit<EventRow, 'options'> {
+  const { options: _options, ...rest } = r
+  return rest
+}
+
+interface ChoiceRow {
+  event_id: number
+  sort_order: number
+  message: string | null
+  message_desc: string | null
+  result_text: string | null
+  probability: number | string | null
+  next_event_id: number | null
+  effects: unknown[]
 }
 
 // ── Reward enrichment helpers ─────────────────────────────────────────────────
@@ -1300,6 +1362,10 @@ async function syncEvents(): Promise<void> {
     options: EventOption[] | null
     source: string
   }
+  interface LocaleSimpleEntry {
+    name: string | null
+    desc: string | null
+  }
   const krTexts = new Map<number, KrEntry>()
 
   for (const fname of readdirSync(KR_DIR).sort()) {
@@ -1361,7 +1427,192 @@ async function syncEvents(): Promise<void> {
       }
     }
   }
+  // Second pass: KR_LATEST_DIR JSON files (new format, e.g. KR_ActionEvents_twth.json, KR_ActionEvents_Mirror7.json)
+  for (const fname of readdirSync(KR_LATEST_DIR).sort()) {
+    if (!fname.startsWith('KR_ActionEvents') && !fname.startsWith('KR_AbEvents')) continue
+    if (!fname.endsWith('.json')) continue
+    // Exclude: Refraction, story chapters, ResultLog
+    if (
+      fname.includes('Refraction') || fname.includes('a1c5') || fname.includes('a1c6') ||
+      fname.includes('a1c7') || fname.includes('a1c8') || fname.includes('a1c9') ||
+      fname.includes('ResultLog')
+    ) continue
+
+    const data = safeLoadJson(join(KR_LATEST_DIR, fname))
+    if (!data) continue
+    const isAbEvent = fname.startsWith('KR_AbEvents')
+    const source = fname.replace(/^KR_/, '').replace(/\.json$/, '')
+
+    for (const item of extractList(data)) {
+      const id = (item as { id?: unknown }).id
+      if (typeof id !== 'number') continue
+      if (id < 10000) continue
+      if (krTexts.has(id)) continue // first source wins (KR_DIR txt takes priority)
+
+      if (isAbEvent) {
+        const e = AbEventSchema.safeParse(item)
+        if (!e.success) continue
+        const descParts: string[] = []
+        if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
+        const opts: EventOption[] = [
+          ...(e.data.successDesc ?? []).map((s, i) => ({
+            message: `성공${(e.data.successDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
+            result: [s],
+          })),
+          ...(e.data.failureDesc ?? []).map((s, i) => ({
+            message: `실패${(e.data.failureDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
+            result: [s],
+          })),
+        ]
+        krTexts.set(id, {
+          name: e.data.title ?? null,
+          desc: descParts.join('\n') || null,
+          options: opts.length > 0 ? opts : null,
+          source,
+        })
+      } else {
+        const e = ActionEventSchema.safeParse(item)
+        if (!e.success) continue
+        krTexts.set(id, {
+          name: e.data.name ?? null,
+          desc: e.data.desc ?? null,
+          options: e.data.options?.map(opt => ({
+            message: opt.message,
+            messageDesc: opt.messageDesc,
+            result: opt.result,
+          })) ?? null,
+          source,
+        })
+      }
+    }
+  }
   console.log(`  KR 텍스트: ${krTexts.size}개`)
+
+  /* ── 2b. EN locale text ─────────────────────────────────────────────────── */
+  const enTexts = new Map<number, LocaleSimpleEntry>()
+
+  // First pass: EN_DIR txt files
+  for (const fname of readdirSync(EN_DIR).sort()) {
+    if (!fname.startsWith('EN_ActionEvents') && !fname.startsWith('EN_AbEvents')) continue
+    if (!fname.endsWith('.txt')) continue
+    if (
+      fname.includes('Refraction') || fname.includes('a1c5') || fname.includes('a1c6') ||
+      fname.includes('a1c7') || fname.includes('a1c8') || fname.includes('a1c9') ||
+      fname.includes('ResultLog')
+    ) continue
+    const data = safeLoadJson(join(EN_DIR, fname))
+    if (!data) continue
+    const isAbEvent = fname.startsWith('EN_AbEvents')
+    for (const item of extractList(data)) {
+      const id = (item as { id?: unknown }).id
+      if (typeof id !== 'number' || id < 10000) continue
+      if (enTexts.has(id)) continue
+      if (isAbEvent) {
+        const e = AbEventSchema.safeParse(item)
+        if (!e.success) continue
+        const descParts: string[] = []
+        if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
+        enTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+      } else {
+        const e = ActionEventSchema.safeParse(item)
+        if (!e.success) continue
+        enTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+      }
+    }
+  }
+  // Second pass: EN_LATEST_DIR JSON files
+  for (const fname of readdirSync(EN_LATEST_DIR).sort()) {
+    if (!fname.startsWith('EN_ActionEvents') && !fname.startsWith('EN_AbEvents')) continue
+    if (!fname.endsWith('.json')) continue
+    if (
+      fname.includes('Refraction') || fname.includes('a1c5') || fname.includes('a1c6') ||
+      fname.includes('a1c7') || fname.includes('a1c8') || fname.includes('a1c9') ||
+      fname.includes('ResultLog')
+    ) continue
+    const data = safeLoadJson(join(EN_LATEST_DIR, fname))
+    if (!data) continue
+    const isAbEvent = fname.startsWith('EN_AbEvents')
+    for (const item of extractList(data)) {
+      const id = (item as { id?: unknown }).id
+      if (typeof id !== 'number' || id < 10000) continue
+      if (enTexts.has(id)) continue
+      if (isAbEvent) {
+        const e = AbEventSchema.safeParse(item)
+        if (!e.success) continue
+        const descParts: string[] = []
+        if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
+        enTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+      } else {
+        const e = ActionEventSchema.safeParse(item)
+        if (!e.success) continue
+        enTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+      }
+    }
+  }
+  console.log(`  EN 텍스트: ${enTexts.size}개`)
+
+  /* ── 2c. JP locale text ─────────────────────────────────────────────────── */
+  const jpTexts = new Map<number, LocaleSimpleEntry>()
+
+  // First pass: JP_DIR txt files
+  for (const fname of readdirSync(JP_DIR).sort()) {
+    if (!fname.startsWith('JP_ActionEvents') && !fname.startsWith('JP_AbEvents')) continue
+    if (!fname.endsWith('.txt')) continue
+    if (
+      fname.includes('Refraction') || fname.includes('a1c5') || fname.includes('a1c6') ||
+      fname.includes('a1c7') || fname.includes('a1c8') || fname.includes('a1c9') ||
+      fname.includes('ResultLog')
+    ) continue
+    const data = safeLoadJson(join(JP_DIR, fname))
+    if (!data) continue
+    const isAbEvent = fname.startsWith('JP_AbEvents')
+    for (const item of extractList(data)) {
+      const id = (item as { id?: unknown }).id
+      if (typeof id !== 'number' || id < 10000) continue
+      if (jpTexts.has(id)) continue
+      if (isAbEvent) {
+        const e = AbEventSchema.safeParse(item)
+        if (!e.success) continue
+        const descParts: string[] = []
+        if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
+        jpTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+      } else {
+        const e = ActionEventSchema.safeParse(item)
+        if (!e.success) continue
+        jpTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+      }
+    }
+  }
+  // Second pass: JP_LATEST_DIR JSON files
+  for (const fname of readdirSync(JP_LATEST_DIR).sort()) {
+    if (!fname.startsWith('JP_ActionEvents') && !fname.startsWith('JP_AbEvents')) continue
+    if (!fname.endsWith('.json')) continue
+    if (
+      fname.includes('Refraction') || fname.includes('a1c5') || fname.includes('a1c6') ||
+      fname.includes('a1c7') || fname.includes('a1c8') || fname.includes('a1c9') ||
+      fname.includes('ResultLog')
+    ) continue
+    const data = safeLoadJson(join(JP_LATEST_DIR, fname))
+    if (!data) continue
+    const isAbEvent = fname.startsWith('JP_AbEvents')
+    for (const item of extractList(data)) {
+      const id = (item as { id?: unknown }).id
+      if (typeof id !== 'number' || id < 10000) continue
+      if (jpTexts.has(id)) continue
+      if (isAbEvent) {
+        const e = AbEventSchema.safeParse(item)
+        if (!e.success) continue
+        const descParts: string[] = []
+        if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
+        jpTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+      } else {
+        const e = ActionEventSchema.safeParse(item)
+        if (!e.success) continue
+        jpTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+      }
+    }
+  }
+  console.log(`  JP 텍스트: ${jpTexts.size}개`)
 
   /* ── 3. 테마팩 매핑 (3-tier) ────────────────────────────────────────────── */
   console.log('  테마팩 eventPool 매핑...')
@@ -1392,6 +1643,9 @@ async function syncEvents(): Promise<void> {
   } catch { /* optional */ }
 
   // Collect theme IDs by tier
+  // Also track which themes are seasonal (have relatedEventId) — they must not be
+  // included in dungeonId-based fallback mapping (they link via their own eventPool).
+  const seasonalThemeIds = new Set<number>()
   const themeIdsByTier: Record<string | number, number[]> = {}
   const allThemeIds: number[] = []
   for (let i = 1; i <= 6; i++) {
@@ -1399,6 +1653,13 @@ async function syncEvents(): Promise<void> {
     themeIdsByTier[i] = extractList(data)
       .map(it => (it as { id?: number }).id)
       .filter((id): id is number => typeof id === 'number')
+    // Identify seasonal themes (have relatedEventId set)
+    for (const item of extractList(data)) {
+      const t = item as { id?: number; relatedEventId?: number }
+      if (typeof t.id === 'number' && typeof t.relatedEventId === 'number') {
+        seasonalThemeIds.add(t.id)
+      }
+    }
     allThemeIds.push(...themeIdsByTier[i])
   }
   try {
@@ -1409,6 +1670,9 @@ async function syncEvents(): Promise<void> {
     themeIdsByTier['hidden'] = hiddenIds
     allThemeIds.push(...hiddenIds)
   } catch { /* optional */ }
+
+  // Permanent themes only (no relatedEventId) — used for nodepool dungeonId fallback
+  const permanentThemeIds = allThemeIds.filter(id => !seasonalThemeIds.has(id))
 
   // Tier 2: generatenodepool → dungeonId → themes
   const eventToDungeonIds = new Map<number, Set<number>>()
@@ -1425,9 +1689,9 @@ async function syncEvents(): Promise<void> {
   }
 
   const dungeonIdToThemes: Record<number, number[]> = {
-    1: [...themeIdsByTier[1]],
-    2: [...themeIdsByTier[1], ...themeIdsByTier[2], ...themeIdsByTier[3], ...themeIdsByTier[4], ...themeIdsByTier[5]],
-    3: allThemeIds,
+    1: themeIdsByTier[1].filter(id => !seasonalThemeIds.has(id)),
+    2: [...themeIdsByTier[1], ...themeIdsByTier[2], ...themeIdsByTier[3], ...themeIdsByTier[4], ...themeIdsByTier[5]].filter(id => !seasonalThemeIds.has(id)),
+    3: permanentThemeIds,
     // 특수 던전
     910301: [1101], 910302: [1101],
     910701: [1104], 911501: [1104, 1116],
@@ -1444,19 +1708,23 @@ async function syncEvents(): Promise<void> {
   }
   console.log(`  nodepool 자동 매핑: ${nodepoolEventThemes.size}개 이벤트`)
 
-  // Tier 3: source fallback
-  const tier1to5 = [...themeIdsByTier[1], ...themeIdsByTier[2], ...themeIdsByTier[3], ...themeIdsByTier[4], ...themeIdsByTier[5]]
+  // Tier 3: source fallback (exclude seasonal themes — they link only via their own eventPool)
+  const tier1to5 = [...themeIdsByTier[1], ...themeIdsByTier[2], ...themeIdsByTier[3], ...themeIdsByTier[4], ...themeIdsByTier[5]].filter(id => !seasonalThemeIds.has(id))
   const sourceToThemes: Record<string, number[]> = {
-    'ActionEvents_Mirror':  allThemeIds,
+    // Generic Mirror events: theme linkage comes from nodepool matching, not filename fallback
+    'ActionEvents_Mirror':  [],
     'ActionEvents_Mirror3': [...themeIdsByTier[1]],
     'ActionEvents_Mirror4': tier1to5,
-    'ActionEvents_Mirror6': allThemeIds,
-    'ActionEvents_Mirror7': allThemeIds,
-    'ActionEvents':         allThemeIds,
-    'AbEvents_Mirror':      allThemeIds,
+    'ActionEvents_Mirror6': [],
+    'ActionEvents_Mirror7': [],
+    'ActionEvents':         [],
+    'AbEvents_Mirror':      [],
     'AbEvents_Mirror3':     [...themeIdsByTier[1]],
     'AbEvents_Mirror4':     tier1to5,
-    'AbEvents_Mirror6':     allThemeIds,
+    'AbEvents_Mirror6':     [],
+    // 타래엮기
+    'ActionEvents_twth':    [1126],
+    'AbEvents_twth':        [1126],
     // 왈푸르기스
     'ActionEvents-walpu4':  [1107],
     'ActionEvents-walpu5':  [1114],
@@ -1595,20 +1863,29 @@ async function syncEvents(): Promise<void> {
         ? nodepoolEventThemes.get(eid)!
         : (sourceToThemes[kr.source] ?? null)
 
+    const evType: string | null = kr.source.startsWith('AbEvents')
+      ? 'ab'
+      : kr.source.startsWith('ActionEvents')
+        ? 'action'
+        : kr.source.startsWith('personality')
+          ? 'personality'
+          : null
+
     rows.push({
       id: eid,
       name: kr.name,
       desc_text: kr.desc,
       options: kr.options,
       gift_ids: eventAllGifts.get(eid) ?? acquirableGifts.get(eid) ?? null,
-      option_gifts: parentOptionGifts.get(eid) ?? null,
       source: kr.source,
-      parent_id: childToParent.has(eid) && krTexts.has(childToParent.get(eid)!)
-        ? childToParent.get(eid)!
-        : (String(eid).length >= 8 && krTexts.has(Number(String(eid).slice(0, 6))))
-          ? Number(String(eid).slice(0, 6))
-          : null,
       theme_ids: themeIds && themeIds.length > 0 ? themeIds : null,
+      name_en: enTexts.get(eid)?.name ?? null,
+      name_jp: jpTexts.get(eid)?.name ?? null,
+      desc_text_en: enTexts.get(eid)?.desc ?? null,
+      desc_text_jp: jpTexts.get(eid)?.desc ?? null,
+      variant_of: null,
+      event_type: evType,
+      category: null,
     })
   }
 
@@ -1680,123 +1957,210 @@ async function syncEvents(): Promise<void> {
   }
   console.log(`  보강 완료: ${enriched}개 이벤트`)
 
-  /* ── 9. Embed child events as next_event objects ────────────────────────── */
-  console.log('\n  자식 이벤트 next_event 병합...')
-  const rowById = new Map<number, EventRow>(rows.map(r => [r.id, r]))
+  /* ── 9. (removed) next_event inline embedding was removed — frontend uses next_event_id id-only lookup */
 
-  function buildNestedEvent(eventId: number, depth: number = 0): NestedEvent | undefined {
-    if (depth > 3) return undefined
-    const child = rowById.get(eventId)
-    if (!child) return undefined
+  /* ── 10. DB 동기화 ──────────────────────────────────────────────────────── */
 
-    const nestedOptions = child.options?.map(opt => {
-      const newOpt: EventOption = { ...opt }
-      let optNextEvent: NestedEvent | undefined
-      if (opt.rewards) {
-        newOpt.rewards = opt.rewards.map(rg => {
-          if (rg.next_event_id) {
-            const grandChild = buildNestedEvent(rg.next_event_id, depth + 1)
-            if (grandChild) {
-              if (!optNextEvent) optNextEvent = grandChild
-              return { ...rg, next_event: grandChild }
-            }
-          }
-          return rg
-        })
+  // ── Inline retry helper (no external deps) ─────────────────────────────────
+  async function withRetry<T>(
+    fn: () => PromiseLike<T>,
+    retries = 3,
+    delayMs = 500,
+  ): Promise<T> {
+    let lastErr: unknown
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        return await fn()
+      } catch (err: unknown) {
+        lastErr = err
+        const msg = err instanceof Error ? err.message : String(err)
+        // Don't retry on client errors (4xx)
+        if (msg.includes('violates') || msg.includes('duplicate')) throw err
+        if (attempt < retries - 1) {
+          console.warn(`  ⚠ 재시도 ${attempt + 1}/${retries - 1}: ${msg}`)
+          await new Promise(r => setTimeout(r, delayMs * Math.pow(2, attempt)))
+        }
       }
-      if (optNextEvent) newOpt.next_event = optNextEvent
-      return newOpt
-    })
+    }
+    throw lastErr
+  }
 
-    return {
-      id: child.id,
-      name: child.name,
-      desc: child.desc_text,
-      options: nestedOptions,
+  // ── Dump mode: write rows to file and exit before any DB I/O ────────────────
+  if (DUMP_EVENTS_PATH) {
+    // Count choices for reporting (each option × results, mirroring FIX logic)
+    let choiceCount = 0
+    for (const row of rows) {
+      if (!row.options) continue
+      for (const opt of row.options) {
+        const results = (opt as { results?: unknown[] }).results
+        choiceCount += Array.isArray(results) && results.length > 0 ? results.length : 1
+      }
+    }
+    writeFileSync(DUMP_EVENTS_PATH, JSON.stringify(rows.map(toDbRow), null, 2))
+    console.log(`dumped ${rows.length} event rows to ${DUMP_EVENTS_PATH}`)
+    console.log(`choice rows (computed): ${choiceCount}`)
+    return
+  }
+
+  // ── Fetch full existing state (single SELECT — shared by dry-run + fix) ─────
+  const { data: existingForDiff, error: diffFetchErr } = await supabase
+    .schema('limbus')
+    .from('md_events')
+    .select('id, name, desc_text, gift_ids, source, theme_ids, image_url, name_en, name_jp, desc_text_en, desc_text_jp, variant_of, event_type, category')
+  if (diffFetchErr) throw new Error(`md_events fetch 실패: ${diffFetchErr.message}`)
+
+  const existingByIdFull = new Map<number, NonNullable<typeof existingForDiff>[0]>()
+  for (const ev of existingForDiff ?? []) existingByIdFull.set(ev.id, ev)
+
+  // ── Preserve image_url from DB ──────────────────────────────────────────────
+  const existingImageMap = new Map<number, string>()
+  for (const ev of existingForDiff ?? []) {
+    if (ev.image_url) existingImageMap.set(ev.id, ev.image_url)
+  }
+  console.log(`  기존 image_url 보존: ${existingImageMap.size}개`)
+
+  for (const r of rows) {
+    if (existingImageMap.has(r.id)) {
+      r.image_url = existingImageMap.get(r.id)!
+    } else if (r.desc_text && descToImageId.has(r.desc_text)) {
+      const origId = descToImageId.get(r.desc_text)!
+      r.image_url = existingImageMap.get(origId) ?? null
+    } else {
+      r.image_url = null
     }
   }
+  const imageCount = rows.filter(r => r.image_url).length
+  console.log(`  image_url 매핑: ${imageCount}개`)
 
-  let embeddedCount = 0
+  // ── Diff ────────────────────────────────────────────────────────────────────
+  const sourceIds = new Set(rows.map(r => r.id))
+  const toInsert: EventRow[] = []
+  const toUpdate: EventRow[] = []
+  const toDeleteIds: number[] = []
+
   for (const row of rows) {
-    if (!row.options) continue
-    let modified = false
-    row.options = row.options.map(opt => {
-      if (!opt.rewards) return opt
-      // Find the first next_event_id from rewards to embed at option level
-      let optNextEvent: NestedEvent | undefined
-      const newRewards = opt.rewards.map(rg => {
-        if (!rg.next_event_id) return rg
-        const nested = buildNestedEvent(rg.next_event_id)
-        if (nested) {
-          modified = true
-          if (!optNextEvent) optNextEvent = nested
-          return { ...rg, next_event: nested }
-        }
-        return rg
-      })
-      // Set next_event at option level (frontend reads opt.next_event)
-      return { ...opt, rewards: newRewards, ...(optNextEvent ? { next_event: optNextEvent } : {}) }
-    })
-    if (modified) embeddedCount++
+    const existing = existingByIdFull.get(row.id)
+    if (!existing) {
+      toInsert.push(row)
+    } else {
+      const normalize = (v: string | null | undefined) => v ?? null
+      const changed =
+        existing.name !== row.name ||
+        existing.desc_text !== row.desc_text ||
+        existing.source !== row.source ||
+        JSON.stringify((existing.gift_ids ?? []).sort()) !== JSON.stringify((row.gift_ids ?? []).sort()) ||
+        JSON.stringify((existing.theme_ids ?? []).sort()) !== JSON.stringify((row.theme_ids ?? []).sort()) ||
+        normalize(existing.name_en) !== normalize(row.name_en) ||
+        normalize(existing.name_jp) !== normalize(row.name_jp) ||
+        normalize(existing.desc_text_en) !== normalize(row.desc_text_en) ||
+        normalize(existing.desc_text_jp) !== normalize(row.desc_text_jp) ||
+        normalize(existing.event_type) !== normalize(row.event_type) ||
+        (existing.variant_of ?? null) !== (row.variant_of ?? null)
+      if (changed) toUpdate.push(row)
+    }
   }
-  console.log(`  next_event 병합: ${embeddedCount}개 이벤트`)
+  for (const ev of existingForDiff ?? []) {
+    if (!sourceIds.has(ev.id)) toDeleteIds.push(ev.id)
+  }
 
-  /* ── 10. DB 반영 (--fix) ────────────────────────────────────────────────── */
+  const matchCount = rows.length - toInsert.length - toUpdate.length
+  console.log(`  변경 없음: ${matchCount}, 추가: ${toInsert.length}, 업데이트: ${toUpdate.length}, 삭제: ${toDeleteIds.length}  (총 소스 ${rows.length}개, DB ${existingByIdFull.size}개)`)
+
   if (FIX) {
     console.log('\n  DB 업데이트...')
 
-    // Preserve existing image_url
-    const { data: existingRows } = await supabase
-      .schema('limbus')
-      .from('mirror_dungeon_events')
-      .select('id, image_url')
-    const existingImageMap = new Map<number, string>()
-    for (const r of existingRows ?? []) {
-      if (r.image_url) existingImageMap.set(r.id, r.image_url)
-    }
-    console.log(`  기존 image_url 보존: ${existingImageMap.size}개`)
-
-    // Merge image_url into rows
-    for (const r of rows) {
-      if (existingImageMap.has(r.id)) {
-        r.image_url = existingImageMap.get(r.id)!
-      } else if (r.desc_text && descToImageId.has(r.desc_text)) {
-        const origId = descToImageId.get(r.desc_text)!
-        r.image_url = existingImageMap.get(origId) ?? null
-      } else {
-        r.image_url = null
+    if (toInsert.length === 0 && toUpdate.length === 0 && toDeleteIds.length === 0) {
+      console.log('  (변경 없음 — 건너뜀)')
+    } else {
+      // ── a. DELETE orphaned events ────────────────────────────────────────────
+      const allUpsert = [...toInsert, ...toUpdate]
+      if (toDeleteIds.length > 0) {
+        await withRetry(() =>
+          supabase.schema('limbus').from('md_events')
+            .delete()
+            .in('id', toDeleteIds)
+            .then(({ error }) => { if (error) throw error })
+        )
+        console.log(`  고아 행 삭제: ${toDeleteIds.length}개`)
       }
-    }
-    const imageCount = rows.filter(r => r.image_url).length
-    console.log(`  image_url 매핑: ${imageCount}개`)
 
-    // Clean sync: nullify parent_id → delete all → insert without parent_id → update parent_id
-    await supabase.schema('limbus').from('mirror_dungeon_events')
-      .update({ parent_id: null }).not('parent_id', 'is', null)
-    const { error: delErr } = await supabase.schema('limbus').from('mirror_dungeon_events')
-      .delete().not('id', 'is', null)
-    if (delErr) console.error(`  ❌ 삭제 실패: ${delErr.message}`)
+      // ── b. UPSERT md_events (only valid columns via toDbRow) ─────────────────
+      const BATCH = 50
+      let batchNum = 0
+      for (let i = 0; i < allUpsert.length; i += BATCH) {
+        const batch = allUpsert.slice(i, i + BATCH).map(toDbRow)
+        batchNum++
+        await withRetry(() =>
+          supabase.schema('limbus').from('md_events')
+            .upsert(batch, { onConflict: 'id' })
+            .then(({ error }) => { if (error) throw error })
+        )
+        if (VERBOSE) console.log(`  배치 ${batchNum}: ${i + 1}~${i + batch.length}`)
+        if (i + BATCH < allUpsert.length) await new Promise(r => setTimeout(r, 50))
+      }
+      console.log(`  UPSERT 완료: ${allUpsert.length}개 (${batchNum}배치)`)
 
-    // Step 1: Insert all rows WITHOUT parent_id
-    const rowsNoParent = rows.map(r => ({ ...r, parent_id: null }))
-    for (let i = 0; i < rowsNoParent.length; i += 50) {
-      const batch = rowsNoParent.slice(i, i + 50)
-      const { error } = await supabase.schema('limbus').from('mirror_dungeon_events')
-        .upsert(batch, { onConflict: 'id' })
-      if (error) console.error(`  ❌ 삽입 배치 ${i}: ${error.message}`)
-      else if (VERBOSE) console.log(`  ✅ 삽입 ${i + 1}~${i + batch.length}`)
-    }
+      // ── c. Sync md_event_choices ─────────────────────────────────────────────
+      const choiceRows: ChoiceRow[] = []
+      for (const row of rows) {
+        if (!row.options) continue
+        for (let i = 0; i < row.options.length; i++) {
+          const opt = row.options[i]
+          const results = (opt as { results?: unknown[] }).results
+          if (Array.isArray(results) && results.length > 0) {
+            for (let j = 0; j < results.length; j++) {
+              const res = results[j] as Record<string, unknown>
+              choiceRows.push({
+                event_id: row.id,
+                sort_order: i * 100 + j,
+                message: (opt.message ?? null) as string | null,
+                message_desc: (opt.messageDesc ?? null) as string | null,
+                result_text: Array.isArray(opt.result) ? opt.result.join('\n') : ((opt.result ?? null) as string | null),
+                probability: (res.probability ?? null) as number | null,
+                next_event_id: (res.next_event_id ?? null) as number | null,
+                effects: (res.effects as unknown[]) ?? [],
+              })
+            }
+          } else {
+            choiceRows.push({
+              event_id: row.id,
+              sort_order: i * 100,
+              message: (opt.message ?? null) as string | null,
+              message_desc: (opt.messageDesc ?? null) as string | null,
+              result_text: Array.isArray(opt.result) ? opt.result.join('\n') : ((opt.result ?? null) as string | null),
+              probability: null,
+              next_event_id: null,
+              effects: [],
+            })
+          }
+        }
+      }
 
-    // Step 2: Update parent_id for child events
-    const childRows = rows.filter(r => r.parent_id != null)
-    let parentUpdated = 0
-    for (const r of childRows) {
-      const { error } = await supabase.schema('limbus').from('mirror_dungeon_events')
-        .update({ parent_id: r.parent_id }).eq('id', r.id)
-      if (error) console.error(`  ❌ parent_id ${r.id}: ${error.message}`)
-      else parentUpdated++
+      // Delete existing choices for all synced events (delete-then-insert, id is SERIAL)
+      const allSyncedEventIds = rows.map(r => r.id)
+      for (let i = 0; i < allSyncedEventIds.length; i += 500) {
+        const batch = allSyncedEventIds.slice(i, i + 500)
+        await withRetry(() =>
+          supabase.schema('limbus').from('md_event_choices')
+            .delete().in('event_id', batch)
+            .then(({ error }) => { if (error) throw error })
+        )
+      }
+
+      // Insert choice rows in batches of 100 (no id field — SERIAL auto-generated)
+      let insertedChoices = 0
+      for (let i = 0; i < choiceRows.length; i += 100) {
+        const batch = choiceRows.slice(i, i + 100)
+        await withRetry(() =>
+          supabase.schema('limbus').from('md_event_choices')
+            .insert(batch)
+            .then(({ error }) => { if (error) throw error })
+        )
+        insertedChoices += batch.length
+        if (i + 100 < choiceRows.length) await new Promise(r => setTimeout(r, 50))
+      }
+      console.log(`  choices INSERT 완료: ${insertedChoices}개`)
     }
-    console.log(`  parent_id 업데이트: ${parentUpdated}/${childRows.length}개`)
 
     // Remap gift_ids to DB game_ids (event IDs may differ from DB IDs)
     console.log('\n  이벤트 gift_id → DB game_id 치환...')
@@ -1843,7 +2207,7 @@ async function syncEvents(): Promise<void> {
       console.log(`  ${remapped}개 이벤트 치환`)
       for (const r of rows) {
         if (!r.gift_ids) continue
-        await supabase.schema('limbus').from('mirror_dungeon_events')
+        await supabase.schema('limbus').from('md_events')
           .update({ gift_ids: r.gift_ids }).eq('id', r.id)
       }
     } else {
@@ -1853,25 +2217,11 @@ async function syncEvents(): Promise<void> {
     console.log(`\n  ✅ 동기화 완료! (이벤트: ${rows.length})`)
 
   } else {
-    /* ── 8b. Dry-run: compare with DB ───────────────────────────────────────── */
-    const { data: existingEvents, error: fetchErr } = await supabase
-      .schema('limbus')
-      .from('mirror_dungeon_events')
-      .select('id, name, desc_text, options, gift_ids, source, theme_ids')
-
-    if (fetchErr) throw new Error(`mirror_dungeon_events fetch 실패: ${fetchErr.message}`)
-
-    const existingById = new Map<number, typeof existingEvents[0]>()
-    for (const ev of existingEvents ?? []) existingById.set(ev.id, ev)
-
-    let newCount = 0, updateCount = 0, matchCount = 0
-
-    for (const ev of rows) {
-      const existing = existingById.get(ev.id)
-      if (!existing) {
-        newCount++
-        if (VERBOSE) console.log(GREEN(`  🆕 [${ev.id}] ${ev.name ?? '(이름없음)'}`))
-      } else {
+    /* ── dry-run: print plan from already-computed diff ─────────────────────── */
+    if (VERBOSE) {
+      for (const ev of toInsert) console.log(GREEN(`  [NEW] [${ev.id}] ${ev.name ?? '(이름없음)'}`))
+      for (const ev of toUpdate) {
+        const existing = existingByIdFull.get(ev.id)!
         const changes: string[] = []
         if (existing.name !== ev.name) changes.push(`name: ${existing.name} → ${ev.name}`)
         if (existing.desc_text !== ev.desc_text) changes.push('desc_text 변경')
@@ -1879,24 +2229,14 @@ async function syncEvents(): Promise<void> {
         const existGifts = JSON.stringify((existing.gift_ids ?? []).sort())
         const newGifts = JSON.stringify((ev.gift_ids ?? []).sort())
         if (existGifts !== newGifts) changes.push(`gift_ids 변경 (${(existing.gift_ids ?? []).length} → ${(ev.gift_ids ?? []).length})`)
-        if (JSON.stringify(existing.options) !== JSON.stringify(ev.options)) changes.push('options 변경')
         const existThemes = JSON.stringify((existing.theme_ids ?? []).sort())
         const newThemes = JSON.stringify((ev.theme_ids ?? []).sort())
         if (existThemes !== newThemes) changes.push('theme_ids 변경')
-
-        if (changes.length > 0) {
-          updateCount++
-          if (VERBOSE) console.log(YELLOW(`  🔄 [${ev.id}] ${ev.name}: ${changes.join(', ')}`))
-        } else {
-          matchCount++
-          if (VERBOSE) console.log(GRAY(`  ✅ [${ev.id}] ${ev.name}`))
-        }
+        console.log(YELLOW(`  [UPD] [${ev.id}] ${ev.name}: ${changes.join(', ')}`))
       }
+      for (const id of toDeleteIds) console.log(GRAY(`  [DEL] id=${id}`))
     }
-
-    console.log(`\n  신규: ${newCount}, 변경: ${updateCount}, 변경없음: ${matchCount}`)
-    console.log(`  DB 기존: ${existingById.size}개, 계산된 행: ${rows.length}개`)
-    if (!VERBOSE && newCount === 0 && updateCount === 0) {
+    if (matchCount === rows.length) {
       console.log(GRAY('  (모두 최신 상태)'))
     }
     console.log('  --dry-run 모드. DB 수정 없음. --fix 옵션으로 실행하세요.')

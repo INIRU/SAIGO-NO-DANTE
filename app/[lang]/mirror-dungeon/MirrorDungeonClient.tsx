@@ -63,7 +63,7 @@ export default function MirrorDungeonClient({
   const [slotFilterParam, setSlotFilterParam] = useQueryState('slot', parseAsString.withDefault('전체'))
   const [eventSearchParam, setEventSearchParam] = useQueryState('eq', parseAsString.withDefault(''))
   const [eventThemeParam, setEventThemeParam] = useQueryState('etheme', parseAsString.withDefault(''))
-  const [eventCategoryParam, setEventCategoryParam] = useQueryState('ecat', parseAsString.withDefault(''))
+
   const [themeIdParam, setThemeIdParam] = useQueryState('theme', parseAsString.withDefault(''))
 
   // URL 파라미터 → 파생 상태
@@ -125,7 +125,7 @@ export default function MirrorDungeonClient({
   const setThemeDiffFilter = useCallback((v: string) => setThemeDiffParam(v === '전체' ? null : v), [setThemeDiffParam])
   const setSlotFilter = useCallback((v: string) => setSlotFilterParam(v === '전체' ? null : v), [setSlotFilterParam])
   const setEventSearch = useCallback((v: string) => setEventSearchParam(v || null), [setEventSearchParam])
-  const setEventCategory = useCallback((v: string) => setEventCategoryParam(v || null), [setEventCategoryParam])
+
   const setSelectedThemeId = useCallback((v: number | null) => setThemeIdParam(v !== null ? String(v) : null), [setThemeIdParam])
 
   // 이벤트 조회 맵 (EventModal + EventTab 공용)
@@ -436,8 +436,7 @@ export default function MirrorDungeonClient({
             setEventSearch={setEventSearch}
             eventThemeFilter={eventThemeParam}
             setEventThemeFilter={(v) => setEventThemeParam(v === '' ? null : v)}
-            eventCategoryFilter={eventCategoryParam}
-            setEventCategoryFilter={setEventCategory}
+
             onSelectEvent={setSelectedEvent}
           />
         </ScrollReveal>
@@ -477,6 +476,8 @@ export default function MirrorDungeonClient({
             giftImageMap={giftImageMap}
             onClose={() => setSelected(null)}
             getGiftKeywordIcon={getGiftKeywordIcon}
+            themes={themes}
+            onThemeClick={setExpandedThemeId}
           />
         )
       })()}

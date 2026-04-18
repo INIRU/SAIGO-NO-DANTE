@@ -129,19 +129,6 @@ export default function ThemeModal({
                   className="object-cover object-center"
                   style={{ opacity: 0.4 }}
                 />
-                {theme.boss_image_url && (
-                  <div className="absolute z-10" style={{ right: '1rem', bottom: 0, width: '30%', aspectRatio: '391/432' }}>
-                    <ImageWithFallback
-                      src={theme.boss_image_url}
-                      alt=""
-                      fill
-                      fallbackType="default"
-                      sizes="200px"
-                      className="object-contain object-bottom drop-shadow-lg"
-                      style={{ opacity: 0.7 }}
-                    />
-                  </div>
-                )}
                 <div
                   className="absolute inset-0"
                   style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.6) 50%, rgba(19,17,16,0.3) 100%)' }}

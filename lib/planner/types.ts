@@ -163,7 +163,6 @@ export interface ThemeData {
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
   image_url: string | null
-  boss_image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null
 }
