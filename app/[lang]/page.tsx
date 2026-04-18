@@ -7,7 +7,6 @@ import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
-import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -158,17 +157,8 @@ export default async function HomePage() {
   const lang = locale as SupportedLang
   const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData()
 
-  const latestDate = latestIdentities[0]?.release_date
-  const heroIdentities = latestDate
-    ? latestIdentities.filter(id => id.release_date === latestDate)
-    : latestIdentities.slice(0, 1)
-  const firstHeroUrl = heroIdentities[0] ? getIdentityInfoUrl(heroIdentities[0], false) : null
-
   return (
     <>
-      {firstHeroUrl && (
-        <link rel="preload" as="image" href={firstHeroUrl} fetchPriority="high" />
-      )}
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
       <Suspense fallback={<BelowFoldSkeleton />}>

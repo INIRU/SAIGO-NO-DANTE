@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
 import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
@@ -9,9 +10,15 @@ export const metadata: Metadata = {
   description: '덱 데이터 기반 인격·키워드·시너지·EGO 채용률 통계',
 }
 
+async function fetchMetaSinners() {
+  'use cache'
+  cacheLife('page-5m')
+  return getSinners()
+}
+
 export default async function MetaPage() {
   const [sinners, initialData] = await Promise.all([
-    getSinners(),
+    fetchMetaSinners(),
     getMetaData().catch(() => null),
   ])
 

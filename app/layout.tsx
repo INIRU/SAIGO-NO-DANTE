@@ -13,6 +13,20 @@ import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { z } from 'zod'
+
+const KeywordRowSchema = z.object({
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  max_stack: z.number().nullable().optional(),
+  icon_slug: z.string().nullable().optional(),
+  sin_affinity: z.string().nullable().optional(),
+  name_en: z.string().nullable().optional(),
+  name_jp: z.string().nullable().optional(),
+  description_en: z.string().nullable().optional(),
+  description_jp: z.string().nullable().optional(),
+})
+const KeywordRowsSchema = z.array(KeywordRowSchema)
 
 // decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
 const songMyung = Song_Myung({
@@ -204,16 +218,23 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   }
 
   const keywords: Record<string, KeywordInfo> = {}
-  for (const row of allData as Record<string, unknown>[]) {
-    keywords[row.name as string] = {
-      desc: (row.description as string) ?? '',
-      ...(row.max_stack != null ? { maxStack: row.max_stack as number } : {}),
-      ...((row.icon_slug as string) ? { iconSlug: row.icon_slug as string } : {}),
-      ...((row.sin_affinity as string) ? { sinAffinity: row.sin_affinity as string } : {}),
-      nameEn: (row.name_en as string) ?? null,
-      nameJp: (row.name_jp as string) ?? null,
-      descEn: (row.description_en as string) ?? null,
-      descJp: (row.description_jp as string) ?? null,
+  let parsedRows: z.infer<typeof KeywordRowsSchema>
+  try {
+    parsedRows = KeywordRowsSchema.parse(allData)
+  } catch (parseErr) {
+    console.error('[layout] keyword_meta parse error:', parseErr)
+    parsedRows = []
+  }
+  for (const row of parsedRows) {
+    keywords[row.name] = {
+      desc: row.description ?? '',
+      ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
+      ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
+      ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
+      nameEn: row.name_en ?? null,
+      nameJp: row.name_jp ?? null,
+      descEn: row.description_en ?? null,
+      descJp: row.description_jp ?? null,
     }
   }
   return keywords
@@ -230,6 +251,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(SITE_URL)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(SITE_URL)} />

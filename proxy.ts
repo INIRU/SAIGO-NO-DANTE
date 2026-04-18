@@ -133,12 +133,22 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── 5. Rate Limiting (쓰기 API만) ──
-  if (isWriteApi) {
+  // ── 5. Rate Limiting ──
+  // 공개 GET API (scraper 방어용 퍼미시브 제한)
+  const PUBLIC_GET_ROUTES = ['/api/search', '/api/keyword-meta', '/api/announcements', '/api/tier-list']
+  const isPublicGetApi = method === 'GET' && PUBLIC_GET_ROUTES.some(r => pathname.startsWith(r))
+
+  // SSR 내부 호출(origin/referer 없음)은 rate limit 제외
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+  const isInternalCall = !origin && !referer
+
+  if ((isWriteApi || (isPublicGetApi && !isInternalCall))) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       ?? request.headers.get('x-real-ip')
       ?? 'unknown'
-    const { allowed, retryAfter } = checkRateLimit(ip)
+    const bucket = isWriteApi ? 'write' : 'readonly'
+    const { allowed, retryAfter } = checkRateLimit(ip, bucket)
     if (!allowed) {
       return NextResponse.json(
         { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
@@ -182,11 +192,8 @@ export async function proxy(request: NextRequest) {
   }
   if (pathname.startsWith('/api/auth/')) return NextResponse.next()
 
-  const origin = request.headers.get('origin')
-  const referer = request.headers.get('referer')
-
   // 서버 내부 호출 (SSR, API 내부 호출) — origin/referer 모두 없음
-  if (!origin && !referer) return NextResponse.next()
+  if (isInternalCall) return NextResponse.next()
 
   if (origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
     return NextResponse.next()

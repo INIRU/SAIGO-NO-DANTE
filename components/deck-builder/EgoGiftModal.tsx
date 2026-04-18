@@ -69,7 +69,7 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
   }, [activatableGifts])
 
   return (
-    <BaseModal open={open} onClose={onClose} maxWidth="42rem" padding="1rem">
+    <BaseModal open={open} onClose={onClose} maxWidth="42rem" padding="1rem" title="E.G.O 선물 선택">
       <div
         className="flex flex-col w-full"
         style={{
@@ -87,7 +87,7 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
             {activatableGifts.length}개
           </span>
           <div className="flex-1" />
-          <button onClick={onClose} style={{ color: '#888', fontSize: '1.25rem', lineHeight: 1, padding: '0 0.25rem' }}>
+          <button onClick={onClose} aria-label="닫기" style={{ color: '#888', fontSize: '1.25rem', lineHeight: 1, padding: '0 0.25rem' }}>
             <X size={18} />
           </button>
         </div>

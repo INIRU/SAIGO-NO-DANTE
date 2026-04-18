@@ -1,6 +1,8 @@
 import { ImageResponse } from 'next/og'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 export const runtime = 'nodejs'
 export const alt = '덱 공유 이미지'
@@ -8,6 +10,15 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 import { STORAGE_BASE } from '@/lib/constants/game'
+
+// Load local font synchronously to avoid hanging async fetch during prerender
+let pretendardFont: ArrayBuffer | null = null
+try {
+  const fontPath = join(process.cwd(), 'public', 'fonts', 'Pretendard-Regular.ttf')
+  pretendardFont = readFileSync(fontPath).buffer as ArrayBuffer
+} catch {
+  // Fall back to no custom font if file is missing
+}
 
 function portraitUrl(
   sinner_id: string,
@@ -66,6 +77,10 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
     .eq('id', id)
     .single()
 
+  const fontOptions = pretendardFont
+    ? { fonts: [{ name: 'Pretendard', data: pretendardFont, style: 'normal' as const, weight: 400 as const }] }
+    : {}
+
   if (!deck) {
     return new ImageResponse(
       (
@@ -73,7 +88,7 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
           덱을 찾을 수 없습니다
         </div>
       ),
-      { ...size },
+      { ...size, ...fontOptions },
     )
   }
 
@@ -290,6 +305,6 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
         />
       </div>
     ),
-    { ...size },
+    { ...size, ...fontOptions },
   )
 }

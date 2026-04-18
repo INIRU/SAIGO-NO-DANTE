@@ -446,7 +446,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
 
       {/* ── 인격 선택 모달 ── */}
       {modalSinner && (
-        <BaseModal open={!!identityModalSinner} onClose={() => setIdentityModalSinner(null)} maxWidth="48rem">
+        <BaseModal open={!!identityModalSinner} onClose={() => setIdentityModalSinner(null)} maxWidth="48rem" title="인격 선택">
           <div
             style={{
               background: '#1a1510',
@@ -673,7 +673,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         for (const e of selectedEgos) egoByGrade[e.grade] = e
 
         return (
-          <BaseModal open={!!egoModalSinner} onClose={() => setEgoModalSinner(null)} maxWidth="42rem">
+          <BaseModal open={!!egoModalSinner} onClose={() => setEgoModalSinner(null)} maxWidth="42rem" title="E.G.O 선택">
             <div
               style={{
                 background: '#1a1510',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { XIcon, Pin, ChevronDown } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export type AnnouncementData = {
   id: string
@@ -29,6 +30,7 @@ interface AnnouncementBannerProps {
 }
 
 export default function AnnouncementBanner({ announcement }: AnnouncementBannerProps) {
+  const t = useTranslations('common')
   const [open, setOpen]           = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
@@ -77,7 +79,7 @@ export default function AnnouncementBanner({ announcement }: AnnouncementBannerP
             className="font-mono transition-colors hover:opacity-70"
             style={{ color: '#8a6010', fontSize: '0.625rem', flexShrink: 0, letterSpacing: '0.05em' }}
           >
-            전체보기
+            {t('viewAll')}
           </Link>
           <ChevronDown
             size={14}
@@ -100,7 +102,7 @@ export default function AnnouncementBanner({ announcement }: AnnouncementBannerP
               display: 'flex',
               alignItems: 'center',
             }}
-            title="닫기"
+            title={t('close')}
           >
             <XIcon size={13} />
           </button>

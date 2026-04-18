@@ -7,6 +7,10 @@ const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  // NOTE: turbopack.root intentionally unset — worktree node_modules symlink to parent
+  //       repo breaks Turbopack when root is forced to __dirname. The "multiple lockfiles"
+  //       warning is cosmetic only in this layout.
+
   // Keep heavy server-only native addons out of the client bundle
   serverExternalPackages: ['sharp'],
 
@@ -28,6 +32,10 @@ const nextConfig: NextConfig = {
       'sonner',
       'framer-motion',
       '@ai-sdk/react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tooltip',
+      'nuqs',
     ],
   },
 

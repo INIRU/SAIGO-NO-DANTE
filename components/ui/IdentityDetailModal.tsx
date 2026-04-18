@@ -203,7 +203,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
   }, [identityId])
 
   return (
-    <BaseModal open={!!identityId} onClose={onClose} maxWidth="52rem" padding="1rem">
+    <BaseModal open={!!identityId} onClose={onClose} maxWidth="52rem" padding="1rem" title="인격 상세">
       <div
         className="relative overflow-y-auto rounded-xl"
         style={{
@@ -216,6 +216,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
+          aria-label="닫기"
           className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
           style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
         >
@@ -581,18 +582,6 @@ function ModalContent({ data }: { data: ApiResponse }) {
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Section 래퍼 ──────────────────────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(32,20,8,0.5)' }}>
-      <h3 className="font-serif mb-2" style={{ color: '#c8900a', fontSize: '0.8125rem', letterSpacing: '0.05em' }}>
-        {title}
-      </h3>
-      {children}
     </div>
   )
 }

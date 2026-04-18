@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife } from 'next/cache'
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select('title, description, tags')
     .eq('id', id)
     .single()
-  if (error) console.error('Failed to fetch deck metadata:', error)
+  if (error) Sentry.captureException(error, { tags: { location: 'decks/[id]/page:generateMetadata' }, extra: { msg: 'Failed to fetch deck metadata' } })
 
   if (!data) {
     return { title: '덱을 찾을 수 없습니다' }

@@ -40,7 +40,12 @@
     "loading": "로딩 중...",
     "noResults": "결과 없음",
     "login": "로그인",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "skipToContent": "본문으로 건너뛰기",
+    "viewAll": "전체보기",
+    "close": "닫기",
+    "footerNav": "하단 내비게이션",
+    "mainNav": "메인 내비게이션"
   },
   "lang": {
     "filter": "언어 필터",
@@ -56,6 +61,10 @@
   },
   "planner": {
     "title": "거울 던전 플래너",
+    "metaTitle": "거울 던전 플래너",
+    "run": {
+      "metaTitle": "거울 던전 트리거 모드"
+    },
     "community": "커뮤니티 플랜",
     "difficulty": "난이도",
     "normal": "일반",

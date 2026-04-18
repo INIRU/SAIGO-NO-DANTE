@@ -1,12 +1,18 @@
 import type { Metadata } from 'next'
 import { cacheLife } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTranslations } from 'next-intl/server'
 import RunWrapper from './RunWrapper'
+import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 
-export const metadata: Metadata = {
-  title: '거울 던전 트리거 모드',
-  description: '림버스 컴퍼니 거울 던전 트리거 모드 — 실시간 기프트 추적, 인격/스킬/EGO 수정, 확률업 기프트 확인, 이벤트 선택지 가이드',
-  alternates: { canonical: 'https://saigo-no-dante.com/planner/run' },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'planner' })
+  return {
+    title: t('run.metaTitle'),
+    description: '림버스 컴퍼니 거울 던전 트리거 모드 — 실시간 기프트 추적, 인격/스킬/EGO 수정, 확률업 기프트 확인, 이벤트 선택지 가이드',
+    alternates: { canonical: 'https://saigo-no-dante.com/planner/run' },
+  }
 }
 
 export default async function RunPage() {
@@ -29,11 +35,36 @@ export default async function RunPage() {
   ])
   if (e4 || e5 || e6 || e6b) console.error('[RunPage] query group 2:', e4?.message, e5?.message, e6?.message, e6b?.message)
 
-  const [{ data: egos, error: e7 }, { data: events, error: e8 }] = await Promise.all([
+  const [{ data: egos, error: e7 }, { data: mdEvents, error: e8 }, { data: mdChoices, error: e9 }] = await Promise.all([
     supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost'),
-    supabase.schema('limbus').from('mirror_dungeon_events').select('id, name, desc_text, options, gift_ids, source, image_url, parent_id, option_gifts, option_index, theme_ids').order('id'),
+    supabase.schema('limbus').from('md_events').select('id, name, desc_text, gift_ids, source, image_url, theme_ids').order('id'),
+    supabase.schema('limbus').from('md_event_choices').select('event_id, sort_order, message, message_desc, result_text').order('event_id').order('sort_order'),
   ])
-  if (e7 || e8) console.error('[RunPage] query group 3:', e7?.message, e8?.message)
+  if (e7 || e8 || e9) console.error('[RunPage] query group 3:', e7?.message, e8?.message, e9?.message)
+
+  // Build a map from event_id → sorted choices for O(1) lookup
+  const choicesByEventId = new Map<number, typeof mdChoices>()
+  for (const choice of (mdChoices ?? [])) {
+    const arr = choicesByEventId.get(choice.event_id) ?? []
+    arr.push(choice)
+    choicesByEventId.set(choice.event_id, arr)
+  }
+
+  // Compose md_events rows into the MirrorDungeonEvent shape RunClient expects
+  const events: MirrorDungeonEvent[] = (mdEvents ?? []).map(ev => ({
+    id: ev.id,
+    name: ev.name,
+    desc_text: ev.desc_text,
+    gift_ids: ev.gift_ids,
+    source: ev.source,
+    image_url: ev.image_url,
+    theme_ids: ev.theme_ids,
+    options: (choicesByEventId.get(ev.id) ?? []).map(c => ({
+      message: c.message ?? '',
+      messageDesc: c.message_desc ?? undefined,
+      result: c.result_text ? [c.result_text] : undefined,
+    })),
+  }))
 
   return (
     <RunWrapper

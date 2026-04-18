@@ -17,8 +17,7 @@ import type { EgoGift, Recipe, EgoGiftTheme, MdEvent, MdEventChoice } from '@/co
 import GiftTab from '@/components/mirror-dungeon/GiftTab'
 import ThemeTab from '@/components/mirror-dungeon/ThemeTab'
 import EventTab from '@/components/mirror-dungeon/EventTab'
-import ThemeModal from '@/components/mirror-dungeon/ThemeModal'
-
+const ThemeModal = dynamic(() => import('@/components/mirror-dungeon/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'), { ssr: false })
 const EventModal = dynamic(() => import('@/components/mirror-dungeon/EventModal'), { ssr: false })
 

@@ -193,7 +193,7 @@ export function IdentityTab({
     </div>
 
     {/* ── 인격 선택 모달 (플래너 패턴) ── */}
-    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="48rem" padding="1rem">
+    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="48rem" padding="1rem" title="인격 선택">
       {modalSinnerId && modalSinner && (
         <div
           style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: 'var(--radius-lg)', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}
@@ -355,7 +355,7 @@ export function EgoTab({
     </div>
 
     {/* ── 에고 선택 모달 (수감자별, 전 등급 동시 표시) ── */}
-    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="42rem" padding="1rem">
+    <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="42rem" padding="1rem" title="E.G.O 선택">
       {modalSinnerId && modalSinner && (
         <div
           className="flex flex-col"

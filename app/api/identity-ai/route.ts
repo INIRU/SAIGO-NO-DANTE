@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { streamText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
@@ -225,7 +226,7 @@ export async function POST(req: NextRequest) {
       .select('name, name_en, name_jp')
 
     if (kwErr) {
-      console.error('keyword_meta fetch error:', kwErr)
+      Sentry.captureException(kwErr, { tags: { location: 'api/identity-ai/route:GET' }, extra: { msg: 'keyword_meta fetch error' } })
     } else if (allKw && allKw.length > 0) {
       const kwMap = new Map(allKw.map((k: { name: string; name_en: string | null; name_jp: string | null }) => [k.name, k]))
 
@@ -312,8 +313,9 @@ export async function POST(req: NextRequest) {
           .order('slot_order')
 
         // 수감자명 매핑을 위해 sinner_ids 수집
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sinnerIds = [...new Set((slots || []).filter((s: any) => s.identities).map((s: any) => (s.identities as { sinner_id: string }).sinner_id))]
+        type DeckIdentitySlot = { slot_order: number; identities: { name_kr: string; name_en: string | null; name_jp: string | null; sinner_id: string } | null }
+        const typedSlots = (slots || []) as unknown as DeckIdentitySlot[]
+        const sinnerIds = [...new Set(typedSlots.filter(s => s.identities !== null).map(s => s.identities!.sinner_id))]
         const { data: sinners } = await supabase
           .schema('limbus')
           .from('sinners')
@@ -324,12 +326,10 @@ export async function POST(req: NextRequest) {
           sinnerMap[s.id] = lang === 'en' ? (s.name || s.name_kr) : lang === 'jp' ? (s.name_jp || s.name_kr) : s.name_kr
         }
 
-        const composition = (slots || [])
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .filter((s: any) => s.identities)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map((s: any) => {
-            const ident = s.identities as { name_kr: string; name_en?: string; name_jp?: string; sinner_id: string }
+        const composition = typedSlots
+          .filter(s => s.identities !== null)
+          .map(s => {
+            const ident = s.identities!
             const identName = lang === 'en' ? (ident.name_en || ident.name_kr) : lang === 'jp' ? (ident.name_jp || ident.name_kr) : ident.name_kr
             return `${sinnerMap[ident.sinner_id] || ident.sinner_id}:${identName}`
           })
@@ -355,9 +355,8 @@ export async function POST(req: NextRequest) {
   // i18n maps
   const sinMap = lang === 'en' ? SIN_EN : lang === 'jp' ? SIN_JP : SIN_KR
   const typeMap = lang === 'en' ? SKILL_TYPE_EN : lang === 'jp' ? SKILL_TYPE_JP : SKILL_TYPE_KR
-  const id_ = identity as any
-  const identityName = lang === 'en' ? (id_.name_en || identity.name_kr)
-    : lang === 'jp' ? (id_.name_jp || identity.name_kr)
+  const identityName = lang === 'en' ? ((identity as { name_en?: string | null }).name_en || identity.name_kr)
+    : lang === 'jp' ? ((identity as { name_jp?: string | null }).name_jp || identity.name_kr)
     : (identity.name_kr || identity.name)
   const noneLabel = lang === 'en' ? 'none' : lang === 'jp' ? 'なし' : '없음'
   const defLabel = lang === 'en' ? 'Defense' : lang === 'jp' ? '防御' : '수비'
@@ -650,7 +649,7 @@ Component syntax must be on its own line.
           created_at: new Date().toISOString(),
         }, { onConflict: 'identity_id,lang' })
       if (upsertErr) {
-        console.error('AI summary upsert error:', upsertErr)
+        Sentry.captureException(upsertErr, { tags: { location: 'api/identity-ai/route:POST' }, extra: { msg: 'AI summary upsert error' } })
       }
     },
   })

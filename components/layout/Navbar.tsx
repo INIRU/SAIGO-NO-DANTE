@@ -183,7 +183,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        aria-label="메인 내비게이션"
+        aria-label={t('common.mainNav' as TranslationKey)}
         className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300"
         style={{
           transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)',
