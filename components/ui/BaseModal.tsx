@@ -7,6 +7,10 @@ interface BaseModalProps {
   open: boolean
   onClose: () => void
   children: ReactNode
+  /** Accessible title for screen readers (required) */
+  title: string
+  /** Accessible description for screen readers (optional) */
+  description?: string
   /** z-index (default: 50 → z-[50]) */
   zIndex?: number
   /** Max width of the content container (default: '40rem') */
@@ -23,6 +27,8 @@ export default function BaseModal({
   open,
   onClose,
   children,
+  title,
+  description,
   zIndex = 50,
   maxWidth = '40rem',
   className = '',
@@ -62,8 +68,8 @@ export default function BaseModal({
           onPointerDownOutside={() => onClose()}
           onEscapeKeyDown={() => onClose()}
         >
-          <Dialog.Title className="sr-only">Modal</Dialog.Title>
-          <Dialog.Description className="sr-only">Modal content</Dialog.Description>
+          <Dialog.Title className="sr-only">{title}</Dialog.Title>
+          {description && <Dialog.Description className="sr-only">{description}</Dialog.Description>}
           <div
             className={`relative w-full ${className}`}
             style={{ maxWidth, pointerEvents: 'auto' }}

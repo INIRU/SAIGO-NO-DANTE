@@ -7,7 +7,8 @@ import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { showSuccess, showError } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import type { Difficulty } from '@/lib/planner/types'
+import type { Difficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
+import type { Sinner as CanonicalSinner, Identity as CanonicalIdentity, EGO as CanonicalEGO } from '@/lib/types'
 
 type IdentitySlot = {
   identity_id?: string
@@ -59,6 +60,7 @@ type EgoData = {
   sin_affinity: string | null
   image_url: string | null
   cost: number[] | null
+  game_id?: string | null
 }
 
 interface Props {
@@ -122,8 +124,12 @@ export default function PlanActions({
       }
 
       const code = await encodeDeckCode(
-        sinners as any, identities as any, egos as any,
-        deckSlots as any, egoSlotsMap as any, formationOrder,
+        sinners as unknown as CanonicalSinner[],
+        identities as unknown as CanonicalIdentity[],
+        egos as unknown as CanonicalEGO[],
+        deckSlots as Record<string, CanonicalIdentity | undefined>,
+        egoSlotsMap as Record<string, Record<string, CanonicalEGO>>,
+        formationOrder,
       )
       await navigator.clipboard.writeText(code)
       setCodeCopied(true)
@@ -144,7 +150,12 @@ export default function PlanActions({
       giftInventory,
       activeTab: 'deck' as const,
     }
-    saveDraftToLocal(planState as any)
+    saveDraftToLocal({
+      ...planState,
+      identitySlots: planState.identitySlots as PlannerIdentitySlot[],
+      egoSlots: planState.egoSlots as PlannerEgoSlot[],
+      floorPlan: planState.floorPlan as PlannerFloorEntry[],
+    })
     router.push('/planner')
     showSuccess('플래너에 불러왔습니다')
   }
@@ -154,9 +165,9 @@ export default function PlanActions({
       difficulty,
       title: planTitle ?? '',
       description: planDescription ?? '',
-      identitySlots: deck,
-      egoSlots,
-      floorPlan: floorPlan.map((e: any, i: number) => ({
+      identitySlots: deck as PlannerIdentitySlot[],
+      egoSlots: egoSlots as PlannerEgoSlot[],
+      floorPlan: floorPlan.map((e: PlannerFloorEntry, i: number) => ({
         floor: i + 1,
         theme_id: e?.theme_id ?? null,
         gift_ids: [] as string[],
@@ -164,7 +175,7 @@ export default function PlanActions({
       })),
       giftInventory,
       activeTab: 'deck' as const,
-    } as any)
+    })
     window.location.href = '/planner/run?from-plan=1'
   }
 
@@ -173,12 +184,12 @@ export default function PlanActions({
       difficulty,
       title: planTitle,
       description: planDescription ?? '',
-      identitySlots: deck,
-      egoSlots,
-      floorPlan,
+      identitySlots: deck as PlannerIdentitySlot[],
+      egoSlots: egoSlots as PlannerEgoSlot[],
+      floorPlan: floorPlan as PlannerFloorEntry[],
       giftInventory,
       activeTab: 'deck',
-    } as any)
+    })
     router.push(`/planner?edit=${planId}`)
   }
 

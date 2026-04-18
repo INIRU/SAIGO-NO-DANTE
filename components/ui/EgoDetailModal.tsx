@@ -126,7 +126,7 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
   }, [egoId])
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem">
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem" title="E.G.O 상세">
       <div
         className="relative w-full overflow-y-auto rounded-xl"
         style={{
@@ -138,6 +138,7 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
       >
         <button
           onClick={onClose}
+          aria-label="닫기"
           className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
           style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
         >

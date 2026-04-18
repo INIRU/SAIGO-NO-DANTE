@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { SINNER_SLUGS } from '@/lib/constants/game'
@@ -17,10 +18,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.schema('limbus').from('decks').select('id, created_at').order('created_at', { ascending: false }).limit(500),
     supabase.schema('limbus').from('mirror_dungeon_plans').select('id, created_at').order('created_at', { ascending: false }).limit(200),
   ])
-  if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
-  if (egosError) console.error('Failed to fetch egos:', egosError)
-  if (decksError) console.error('Failed to fetch decks:', decksError)
-  if (plansError) console.error('Failed to fetch plans:', plansError)
+  if (identitiesError) Sentry.captureException(identitiesError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch identities' } })
+  if (egosError) Sentry.captureException(egosError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch egos' } })
+  if (decksError) Sentry.captureException(decksError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch decks' } })
+  if (plansError) Sentry.captureException(plansError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch plans' } })
 
   // 정적 페이지 — 주요 콘텐츠
   const staticPages: MetadataRoute.Sitemap = [

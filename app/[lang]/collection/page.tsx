@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { cacheLife } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { CollectionData } from '@/lib/collection'
 import CollectionClient from './CollectionClient'
 
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 }
 
 async function fetchCollectionData(): Promise<CollectionData> {
-  const supabase = await createClient()
+  'use cache'
+  cacheLife('page-5m')
+  const supabase = createAdminClient()
 
   const [sinnersRes, identitiesRes, egosRes] = await Promise.all([
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),

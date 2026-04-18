@@ -274,22 +274,19 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                   <div className={`absolute inset-0 z-20 transition-opacity flex flex-col ${swapSinner || egoSinner ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'}`} style={{ backdropFilter: 'blur(0.25rem) brightness(0.4)', WebkitBackdropFilter: 'blur(0.25rem) brightness(0.4)' }}>
                     {slot ? (
                       <>
-                        <div onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors" style={{ height: '40%', borderBottom: '1px solid rgba(200,144,10,0.2)' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.15)' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                        <button type="button" onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors hover:bg-[rgba(200,144,10,0.15)] w-full border-0 bg-transparent" style={{ height: '40%', borderBottom: '1px solid rgba(200,144,10,0.2)', cursor: 'pointer' }}>
                           <span style={{ color: '#e8b030', fontSize: '0.75rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>변경</span>
-                        </div>
-                        <div onClick={() => handleCardClick(sinner.id, () => handleToggleFormation(sinner.id))} className="flex items-center justify-center transition-colors" style={{ height: '60%' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = slot.slot_order < 99 ? 'rgba(90,176,208,0.12)' : 'rgba(200,144,10,0.12)' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                        </button>
+                        <button type="button" onClick={() => handleCardClick(sinner.id, () => handleToggleFormation(sinner.id))} className={`flex items-center justify-center transition-colors w-full border-0 bg-transparent ${slot.slot_order < 99 ? 'hover:bg-[rgba(90,176,208,0.12)]' : 'hover:bg-[rgba(200,144,10,0.12)]'}`} style={{ height: '60%', cursor: 'pointer' }}>
                           <span style={{ color: slot.slot_order < 99 ? '#5ab0d0' : '#e8b030', fontSize: '0.6875rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
                             {slot.slot_order < 99 ? '편성 해제' : '편성하기'}
                           </span>
-                        </div>
+                        </button>
                       </>
                     ) : (
-                      <div onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors" style={{ height: '100%' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.12)' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                      <button type="button" onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors hover:bg-[rgba(200,144,10,0.12)] w-full border-0 bg-transparent" style={{ height: '100%', cursor: 'pointer' }}>
                         <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>편성</span>
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -327,8 +324,10 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
             for (const e of selectedEgos) egoByGrade[e.grade] = e
 
             return (
-              <div key={sinner.id}
+              <button type="button" key={sinner.id}
                 onClick={() => { if (slot) setEgoSinner(sinner.id) }}
+                disabled={!slot}
+                className="text-left border-0 p-0 w-full"
                 style={{
                   background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
                   border: `1px solid ${slot ? '#221a0f' : '#18120a'}`,
@@ -369,7 +368,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                     )
                   })}
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -471,7 +470,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       )}
 
       {/* ── 인격 선택 모달 ── */}
-      <BaseModal open={!!swapSinner} onClose={() => setSwapSinner(null)} maxWidth="48rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
+      <BaseModal open={!!swapSinner} onClose={() => setSwapSinner(null)} maxWidth="48rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title="인격 교체">
         {swapSinner && (
           <div className="relative w-full rounded-lg" style={{ background: '#1a1510', border: '1px solid #333', maxHeight: '85vh', overflowY: 'auto' }}>
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '0.75rem 1rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
@@ -521,7 +520,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       </BaseModal>
 
       {/* ── EGO 선택 모달 (DeckTab 패턴: 등급별 섹션 + 이미지) ── */}
-      <BaseModal open={!!egoSinner} onClose={() => setEgoSinner(null)} maxWidth="42rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
+      <BaseModal open={!!egoSinner} onClose={() => setEgoSinner(null)} maxWidth="42rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title="E.G.O 선택">
         {egoSinner && (() => {
           const modalSinnerEgo = sinners.find(s => s.id === egoSinner)
           const availableEgos = sinnerEgos.get(egoSinner) ?? []

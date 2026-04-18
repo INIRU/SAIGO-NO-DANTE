@@ -1,5 +1,7 @@
 import { ImageResponse } from 'next/og'
 import sharp from 'sharp'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 export const runtime = 'nodejs'
 export const alt = '최애의 관리자 — Limbus Company 팬 아카이브'
@@ -7,6 +9,15 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 import { STORAGE_BASE } from '@/lib/constants/game'
+
+// Load local font synchronously to avoid hanging async fetch during prerender
+let pretendardFont: ArrayBuffer | null = null
+try {
+  const fontPath = join(process.cwd(), 'public', 'fonts', 'Pretendard-Regular.ttf')
+  pretendardFont = readFileSync(fontPath).buffer as ArrayBuffer
+} catch {
+  // Fall back to no custom font if file is missing
+}
 
 // 거미집 검지 아비 이상 (각성)
 const PORTRAIT_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/${encodeURIComponent('The House of Spiders The Index Nursefather')}/10115_gacksung.webp`
@@ -233,6 +244,9 @@ export default async function OgImage() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      ...(pretendardFont ? { fonts: [{ name: 'Pretendard', data: pretendardFont, style: 'normal', weight: 400 }] } : {}),
+    },
   )
 }

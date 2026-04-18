@@ -1,13 +1,16 @@
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
+import { getTranslations } from 'next-intl/server'
 
 const NAV_LINKS = [
-  { href: '/sinners', label: '수감자' },
-  { href: '/decks', label: '덱 게시판' },
-  { href: '/meta', label: '메타 분석' },
-]
+  { href: '/sinners', labelKey: 'sinners' },
+  { href: '/decks', labelKey: 'decks' },
+  { href: '/meta', labelKey: 'other.meta' },
+] as const
 
-export default function Footer() {
+export default async function Footer() {
+  const tCommon = await getTranslations('common')
+  const tNav = await getTranslations('nav')
   return (
     <footer className="mt-24">
       {/* 장식선 */}
@@ -29,15 +32,15 @@ export default function Footer() {
         </div>
 
         {/* 네비게이션 */}
-        <nav aria-label="하단 내비게이션" className="flex items-center gap-6">
-          {NAV_LINKS.map(({ href, label }) => (
+        <nav aria-label={tCommon('footerNav')} className="flex items-center gap-6">
+          {NAV_LINKS.map(({ href, labelKey }) => (
             <Link
               key={href}
               href={href}
               className="text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
               style={{ color: 'var(--text-tertiary)' }}
             >
-              {label}
+              {tNav(labelKey as Parameters<typeof tNav>[0])}
             </Link>
           ))}
         </nav>

@@ -41,13 +41,13 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
   )
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem">
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem" padding="1rem" title="선물 상세">
       <div
         className="relative w-full max-h-[85vh] overflow-y-auto rounded-xl"
         style={{ background: '#131110', border: `1px solid ${kwColor}30`, boxShadow: `0 0 3rem ${kwColor}10, 0 1.5rem 4rem rgba(0,0,0,0.6)` }}
       >
         {/* 닫기 */}
-        <button onClick={onClose} className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
+        <button onClick={onClose} aria-label="닫기" className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
           <X size={18} />
         </button>
 

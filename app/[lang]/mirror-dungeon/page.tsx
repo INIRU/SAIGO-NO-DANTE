@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife } from 'next/cache'
@@ -53,17 +54,17 @@ export default async function MirrorDungeonPage() {
     { data: events, error: eventsError },
     { data: choices, error: choicesError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select('*'),
+    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, keyword, grade, enhancement, price, sell_price, buy_disabled, effect_base, effect_plus, effect_plusplus, activation_condition, is_synthesis, first_appearance, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gift_recipes').select('id, result_name, keyword, ingredients, final_result'),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
     supabase.schema('limbus').from('md_events').select('*').order('id'),
     supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
   ])
-  if (giftsError) console.error('Failed to fetch gifts:', giftsError)
-  if (recipesError) console.error('Failed to fetch recipes:', recipesError)
-  if (themesError) console.error('Failed to fetch themes:', themesError)
-  if (eventsError) console.error('Failed to fetch events:', eventsError)
-  if (choicesError) console.error('Failed to fetch event choices:', choicesError)
+  if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch gifts' } })
+  if (recipesError) Sentry.captureException(recipesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch recipes' } })
+  if (themesError) Sentry.captureException(themesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch themes' } })
+  if (eventsError) Sentry.captureException(eventsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch events' } })
+  if (choicesError) Sentry.captureException(choicesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch event choices' } })
 
   return (
     <>

@@ -974,7 +974,7 @@ export default function EventModal({
   const choices = choicesByEventId.get(event.id) ?? []
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="58rem" padding="1rem">
+    <BaseModal open={true} onClose={onClose} maxWidth="58rem" padding="1rem" title="이벤트 상세">
       {/* Responsive styles for sidebar layout */}
       <style>{`
         @media (min-width: 768px) {

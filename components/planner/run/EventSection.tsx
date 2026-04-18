@@ -136,7 +136,7 @@ export default function EventSection({ state, dispatch, events, giftMap }: Props
       </div>
 
       {/* ════════ 이벤트 상세 모달 ════════ */}
-      <BaseModal open={!!selectedEvent} onClose={() => setSelectedEvent(null)} padding="calc(env(safe-area-inset-top) + 1rem) calc(env(safe-area-inset-right) + 1rem) calc(env(safe-area-inset-bottom) + 1rem) calc(env(safe-area-inset-left) + 1rem)">
+      <BaseModal open={!!selectedEvent} onClose={() => setSelectedEvent(null)} padding="calc(env(safe-area-inset-top) + 1rem) calc(env(safe-area-inset-right) + 1rem) calc(env(safe-area-inset-bottom) + 1rem) calc(env(safe-area-inset-left) + 1rem)" title="이벤트 상세">
         {selectedEvent && (() => {
           const ev = selectedEvent
           return (

@@ -3,7 +3,6 @@ export interface EgoGift {
   name: string
   keyword: string
   grade: string
-  tier: string | null
   enhancement: boolean
   price: number | null
   sell_price: number | null

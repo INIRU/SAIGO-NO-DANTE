@@ -1,12 +1,20 @@
+import { cacheLife } from 'next/cache'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
 
-export default async function NewDeckPage({ searchParams }: { searchParams: Promise<{ fork?: string }> }) {
-  const { fork: forkId } = await searchParams
+async function fetchDeckBuilderStaticData() {
+  'use cache'
+  cacheLife('page-10m')
   const [sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
     getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
   ])
+  return { sinners, identities, egos, skills, passives, egoGifts }
+}
+
+export default async function NewDeckPage({ searchParams }: { searchParams: Promise<{ fork?: string }> }) {
+  const { fork: forkId } = await searchParams
+  const { sinners, identities, egos, skills, passives, egoGifts } = await fetchDeckBuilderStaticData()
 
   // 포크 모드: 원본 덱 데이터 로드
   if (forkId) {

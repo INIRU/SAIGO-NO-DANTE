@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { connection } from 'next/server'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
@@ -33,16 +32,17 @@ export default async function LangLayout({
 
   const messages = await getMessages()
   await connection()
+  const now = new Date()
 
   return (
-    <NextIntlClientProvider locale={validLang} messages={messages} now={new Date()} timeZone="Asia/Seoul">
+    <NextIntlClientProvider locale={validLang} messages={messages} now={now} timeZone="Asia/Seoul">
       <SetHtmlLang lang={validLang} />
       <SkipNav />
       <AprilFoolsWrapper />
-      <Suspense><Navbar /></Suspense>
-      <Suspense><main id="main-content">{children}</main></Suspense>
+      <Navbar />
+      <main id="main-content">{children}</main>
       <Footer />
-      <Suspense><FloatingFontControl /></Suspense>
+      <FloatingFontControl />
     </NextIntlClientProvider>
   )
 }

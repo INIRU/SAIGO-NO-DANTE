@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -214,7 +215,7 @@ export async function DELETE() {
     if (error) {
       // App data is already deleted but auth user remains
       // Log this for manual cleanup
-      console.error('Auth user deletion failed after app data cleanup:', error.message)
+      Sentry.captureException(error, { tags: { location: 'api/profile/route:DELETE' }, extra: { msg: 'Auth user deletion failed after app data cleanup' } })
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 

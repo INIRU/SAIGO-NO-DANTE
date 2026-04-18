@@ -52,7 +52,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
             <ImageIcon size={16} style={{ color: '#c8900a' }} />
             <span style={{ color: '#e8dcc8', fontSize: '0.875rem', fontWeight: 600 }}>이미지 다운로드</span>
           </div>
-          <button onClick={onClose} style={{ color: '#666', cursor: 'pointer' }}>
+          <button onClick={onClose} aria-label="닫기" style={{ color: '#666', cursor: 'pointer' }}>
             <X size={16} />
           </button>
         </div>

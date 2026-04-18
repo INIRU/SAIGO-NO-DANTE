@@ -466,7 +466,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                         const sinEn = ego?.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
                         const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
                         return (
-                          <div key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} style={{
+                          <button type="button" key={grade} onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)} disabled={!ego?.ego_id} className="border-0 p-0 text-left w-full" style={{
                             background: ego ? `${ec}1a` : 'rgba(10,8,5,0.7)',
                             border: `1px solid ${ego ? ec + '55' : '#18120a'}`,
                             borderRadius: '0.125rem',
@@ -486,7 +486,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                             ) : (
                               <span style={{ color: '#2a1e10', fontSize: '0.5rem', lineHeight: 1 }}>{slot ? '—' : ''}</span>
                             )}
-                          </div>
+                          </button>
                         )
                       })}
                     </div>

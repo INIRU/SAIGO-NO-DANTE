@@ -60,7 +60,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
   }
 
   return (
-    <BaseModal open={open} onClose={onClose} maxWidth="42rem">
+    <BaseModal open={open} onClose={onClose} maxWidth="42rem" title="아바타 선택">
       <div
         className="relative w-full max-h-[80vh] flex flex-col"
         style={{
@@ -112,7 +112,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                 기본으로
               </button>
             )}
-            <button onClick={onClose} style={{ color: '#999', cursor: 'pointer' }}>
+            <button onClick={onClose} aria-label="닫기" style={{ color: '#999', cursor: 'pointer' }}>
               <X size={18} />
             </button>
           </div>
