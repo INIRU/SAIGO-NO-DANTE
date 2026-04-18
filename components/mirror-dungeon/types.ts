@@ -55,7 +55,6 @@ export interface EgoGiftTheme {
   image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null
-  boss_image_url: string | null
   is_hidden: boolean
   hidden_rate: number | null
   fixed_reward_gift_ids: number[] | null

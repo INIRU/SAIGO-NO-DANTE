@@ -128,7 +128,6 @@ type ThemeData = {
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
   image_url: string | null
-  boss_image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null
 }
@@ -738,10 +737,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                             <div style={{ position: 'relative', width: '1.75rem', height: '3.175rem', flexShrink: 0 }}>
                               <Image src={theme.image_url} alt={theme.name} width={18} height={33}
                                 style={{ width: '1.75rem', height: '3.175rem', objectFit: 'cover', borderRadius: '0.1875rem' }} />
-                              {theme.boss_image_url && (
-                                <Image src={theme.boss_image_url} alt="보스" width={28} height={32}
-                                  style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '1.625rem', height: '1.8rem', objectFit: 'contain', opacity: 0.85 }} />
-                              )}
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -770,10 +765,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                             <div style={{ position: 'relative', width: '2.375rem', height: '4.3125rem', flexShrink: 0 }}>
                               <Image src={theme.image_url} alt={theme.name} width={38} height={69}
                                 style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem' }} />
-                              {theme.boss_image_url && (
-                                <Image src={theme.boss_image_url} alt="보스" width={40} height={44}
-                                  style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '2.25rem', height: '2.5rem', objectFit: 'contain', opacity: 0.85 }} />
-                              )}
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>

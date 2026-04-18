@@ -4,7 +4,8 @@ import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import BaseModal from '@/components/ui/BaseModal'
 import KeywordChip from '@/components/ui/KeywordChip'
-import { X, FlaskConical } from 'lucide-react'
+import { useState } from 'react'
+import { X, FlaskConical, ChevronDown } from 'lucide-react'
 import { useLocale } from 'next-intl'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -104,6 +105,12 @@ export default function GiftModal({
   const localizedAppearance = lang === 'ko'
     ? gift.first_appearance
     : (DUNGEON_NAMES[gift.first_appearance ?? '']?.[lang] ?? gift.first_appearance)
+
+  const exclusiveThemes = gift.game_id
+    ? themes.filter(t => t.specific_ego_gift_ids.includes(gift.game_id!))
+    : []
+
+  const [themesOpen, setThemesOpen] = useState(false)
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="32rem">
@@ -217,6 +224,23 @@ export default function GiftModal({
                   {t('mirrorDungeon.gift.synthesis')}
                 </span>
               )}
+              {exclusiveThemes.length > 0 && (
+                <span
+                  className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.625rem] font-bold"
+                  style={{
+                    background: 'rgba(200,144,10,0.15)',
+                    color: '#e0b040',
+                    fontFamily: 'var(--font-heading)',
+                    letterSpacing: '0.04em',
+                    border: '1px solid rgba(200,144,10,0.3)',
+                  }}
+                >
+                  <span style={{ fontSize: '0.5rem' }}>★</span>
+                  {exclusiveThemes.length === 1
+                    ? `${t('mirrorDungeon.theme.exclusiveBadge')} · ${getLocalizedName({ name_kr: exclusiveThemes[0].name, name_en: exclusiveThemes[0].name_en, name_jp: exclusiveThemes[0].name_jp }, lang)}`
+                    : `${t('mirrorDungeon.theme.exclusiveBadge')} ×${exclusiveThemes.length}`}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -293,15 +317,14 @@ export default function GiftModal({
             </div>
           )}
 
-          {/* 소속 테마팩 */}
-          {themes.length > 0 && (
-            <div className="pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="font-bold mb-1.5" style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}>
-                {t('mirrorDungeon.gift.themes')}
+          {/* 전용 기프트 섹션 */}
+          {exclusiveThemes.length > 0 && (
+            <div className="pt-2" style={{ borderTop: '1px solid rgba(200,144,10,0.2)' }}>
+              <p className="font-bold mb-1.5" style={{ color: '#c8900a', fontFamily: 'var(--font-heading)', fontSize: '0.625rem', letterSpacing: '0.05em' }}>
+                {t('mirrorDungeon.theme.exclusiveGifts')}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {themes.map(theme => {
-                  const isExclusive = gift.game_id ? theme.specific_ego_gift_ids.includes(gift.game_id) : false
+                {exclusiveThemes.map(theme => {
                   const diff = theme.difficulty
                   const diffColor = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : diff === 'effective' ? '#6090d0' : '#888'
                   const diffLabel = diff === 'extreme' ? 'EX' : diff === 'hard' ? 'H' : diff === 'effective' ? 'E' : ''
@@ -310,23 +333,88 @@ export default function GiftModal({
                     <button
                       key={theme.id}
                       onClick={() => onThemeClick?.(theme.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded transition-colors hover:bg-white/10"
                       style={{
                         cursor: 'pointer',
-                        background: isExclusive ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.05)',
-                        border: `1px solid ${isExclusive ? 'rgba(200,144,10,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                        background: 'linear-gradient(135deg, rgba(200,144,10,0.18), rgba(200,144,10,0.08))',
+                        border: '1px solid rgba(200,144,10,0.35)',
                       }}
                     >
-                      {isExclusive && <span style={{ color: 'var(--gold)', fontSize: '0.5625rem' }}>★</span>}
-                      {theme.image_url && <ImageWithFallback src={theme.image_url} alt="" width={14} height={25} fallbackType="theme" style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
-                      <span style={{ color: '#bbb', fontSize: '0.6875rem' }}>{themeDisplayName}</span>
-                      {diffLabel && <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
-                        {diffLabel}
-                      </span>}
+                      <span style={{ color: '#e0b040', fontSize: '0.5625rem' }}>★</span>
+                      {theme.image_url && (
+                        <ImageWithFallback
+                          src={theme.image_url}
+                          alt=""
+                          width={16}
+                          height={28}
+                          fallbackType="theme"
+                          style={{ width: '0.625rem', height: '1.125rem', objectFit: 'cover', borderRadius: '1px' }}
+                        />
+                      )}
+                      <span style={{ color: '#e8d8c0', fontSize: '0.6875rem', fontWeight: 600 }}>{themeDisplayName}</span>
+                      {diffLabel && (
+                        <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                          {diffLabel}
+                        </span>
+                      )}
                     </button>
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          {/* 소속 테마팩 */}
+          {themes.length > 0 && (
+            <div className="pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <button
+                onClick={() => setThemesOpen(prev => !prev)}
+                className="flex items-center justify-between w-full"
+                style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginBottom: themesOpen ? '0.375rem' : 0 }}
+              >
+                <span className="font-bold" style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}>
+                  {t('mirrorDungeon.gift.themes')} ({themes.length})
+                </span>
+                <ChevronDown
+                  size={12}
+                  style={{
+                    color: '#666',
+                    transform: themesOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                    flexShrink: 0,
+                  }}
+                />
+              </button>
+              {themesOpen && (
+                <div className="flex flex-wrap gap-1.5">
+                  {themes.map(theme => {
+                    const isExclusive = gift.game_id ? theme.specific_ego_gift_ids.includes(gift.game_id) : false
+                    const diff = theme.difficulty
+                    const diffColor = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : diff === 'effective' ? '#6090d0' : '#888'
+                    const diffLabel = diff === 'extreme' ? 'EX' : diff === 'hard' ? 'H' : diff === 'effective' ? 'E' : ''
+                    const themeDisplayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => onThemeClick?.(theme.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-white/10"
+                        style={{
+                          cursor: 'pointer',
+                          background: isExclusive ? 'rgba(200,144,10,0.08)' : 'rgba(255,255,255,0.05)',
+                          border: isExclusive ? '1px solid rgba(200,144,10,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        {isExclusive && <span style={{ color: '#e0b040', fontSize: '0.5rem' }}>★</span>}
+                        {theme.image_url && <ImageWithFallback src={theme.image_url} alt="" width={14} height={25} fallbackType="theme" style={{ width: '0.55rem', height: '1rem', objectFit: 'cover', borderRadius: '1px' }} />}
+                        <span style={{ color: isExclusive ? '#e8d0a0' : '#bbb', fontSize: '0.6875rem' }}>{themeDisplayName}</span>
+                        {diffLabel && <span style={{ color: diffColor, fontSize: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                          {diffLabel}
+                        </span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 

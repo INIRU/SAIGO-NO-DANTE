@@ -9,7 +9,6 @@ interface ThemePackCardTheme {
   id: number | string
   name: string
   image_url?: string | null
-  boss_image_url?: string | null
   ego_gift_ids?: number[] | null
   specific_ego_gift_ids?: number[] | null
 }
@@ -58,20 +57,6 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
             className="object-cover"
           />
-          {theme.boss_image_url && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative w-full" style={{ aspectRatio: '391/432' }}>
-                <ImageWithFallback
-                  src={theme.boss_image_url}
-                  alt=""
-                  fill
-                  fallbackType="default"
-                  sizes="(max-width: 640px) 33vw, 20vw"
-                  className="object-contain drop-shadow-lg"
-                />
-              </div>
-            </div>
-          )}
           <div className="absolute" style={{ inset: '-1px', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
           {/* Theme name */}

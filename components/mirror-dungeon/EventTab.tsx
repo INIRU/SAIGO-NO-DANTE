@@ -19,8 +19,6 @@ interface EventTabProps {
   setEventSearch: (v: string) => void
   eventThemeFilter: string
   setEventThemeFilter: (v: string) => void
-  eventCategoryFilter: string
-  setEventCategoryFilter: (v: string) => void
   onSelectEvent: (event: MdEvent) => void
 }
 
@@ -33,8 +31,6 @@ export default function EventTab({
   setEventSearch,
   eventThemeFilter,
   setEventThemeFilter,
-  eventCategoryFilter,
-  setEventCategoryFilter,
   onSelectEvent,
 }: EventTabProps) {
   const locale = useLocale()
@@ -66,7 +62,7 @@ export default function EventTab({
         }
       }
     }
-    const rootEvents = events.filter(ev => ev.variant_of === null && !childEventIds.has(ev.id))
+    const rootEvents = events.filter(ev => ev.variant_of == null && !childEventIds.has(ev.id))
 
     const q = eventSearch.trim().toLowerCase()
     const filtered = q
@@ -87,12 +83,8 @@ export default function EventTab({
       ? filtered.filter(ev => ev.theme_ids?.includes(Number(eventThemeFilter)))
       : filtered
 
-    const categoryFiltered = eventCategoryFilter
-      ? themeFiltered.filter(ev => ev.category === eventCategoryFilter)
-      : themeFiltered
-
-    return { filteredEvents: categoryFiltered, totalCount: rootEvents.length }
-  }, [events, eventSearch, eventThemeFilter, eventCategoryFilter, giftByGameId, choicesByEventId])
+    return { filteredEvents: themeFiltered, totalCount: rootEvents.length }
+  }, [events, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId])
 
   return (
     <>
@@ -172,19 +164,6 @@ export default function EventTab({
           defaultValue=""
           minWidth={140}
         />
-        <Dropdown
-          value={eventCategoryFilter}
-          options={[
-            { value: '', label: t('mirrorDungeon.event.allCategories') },
-            { value: 'NORMAL', label: t('mirrorDungeon.event.normal') },
-            { value: 'SEASONAL', label: t('mirrorDungeon.event.seasonal') },
-            { value: 'GLOBAL_EVENT_HEAL', label: t('mirrorDungeon.event.vending') },
-          ]}
-          onChange={setEventCategoryFilter}
-          prefix={t('mirrorDungeon.event.categoryPrefix')}
-          defaultValue=""
-          minWidth={120}
-        />
         <span
           style={{
             color: 'rgba(200,144,10,0.45)',
@@ -194,7 +173,7 @@ export default function EventTab({
             whiteSpace: 'nowrap',
           }}
         >
-          {eventSearch || eventThemeFilter || eventCategoryFilter
+          {eventSearch || eventThemeFilter
             ? `${filteredEvents.length} / ${totalCount}`
             : `${totalCount}${lang === 'ko' ? '건' : ''}`}
         </span>

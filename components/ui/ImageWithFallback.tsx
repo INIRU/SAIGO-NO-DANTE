@@ -20,6 +20,15 @@ interface ImageWithFallbackProps extends Omit<ImageProps, 'onError'> {
   showPendingText?: boolean
 }
 
+function resolveNumericDim(val: number | string | undefined): number | undefined {
+  if (typeof val === 'number') return val
+  if (typeof val === 'string') {
+    const parsed = parseInt(val, 10)
+    return isNaN(parsed) ? undefined : parsed
+  }
+  return undefined
+}
+
 export default function ImageWithFallback({
   fallbackType = 'default',
   showPendingText = false,
@@ -31,7 +40,13 @@ export default function ImageWithFallback({
 }: ImageWithFallbackProps) {
   const [errored, setErrored] = useState(false)
 
-  const thumbhashBlur = typeof props.src === 'string' ? getBlurDataURL(props.src) : undefined
+  // Determine if image is rendered at < 40x40 — skip thumbhash blur to avoid Next.js warning
+  const dimW = resolveNumericDim(props.width) ?? resolveNumericDim(style?.width as string | undefined)
+  const dimH = resolveNumericDim(props.height) ?? resolveNumericDim(style?.height as string | undefined)
+  const isSmallImage = dimW !== undefined && dimH !== undefined && dimW < 40 && dimH < 40
+
+  const rawBlur = typeof props.src === 'string' ? getBlurDataURL(props.src) : undefined
+  const thumbhashBlur = (isSmallImage || fallbackType === 'gift') ? undefined : rawBlur
   const effectivePlaceholder = placeholder ?? (thumbhashBlur ? 'blur' : undefined)
   const effectiveBlurDataURL = blurDataURL ?? thumbhashBlur
 
