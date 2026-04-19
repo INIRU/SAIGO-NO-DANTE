@@ -180,7 +180,7 @@ export const metadata: Metadata = {
 
 async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   'use cache'
-  cacheLife('page-1h')
+  cacheLife('page-1d')
 
   const supabase = createAdminClient()
   const allData: any[] = []

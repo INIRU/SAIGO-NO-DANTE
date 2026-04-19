@@ -105,7 +105,7 @@ export default function TierCardInteractive({
             alt={identity.name_kr}
             width={220}
             height={293}
-            quality={40}
+            quality={50}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
         ) : (
