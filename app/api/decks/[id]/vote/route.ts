@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 
 export async function GET(
@@ -45,6 +46,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const ip = _request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? _request.headers.get('x-real-ip') ?? 'unknown'
+    const rl = checkRateLimit(ip, 'write')
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter ?? 60) } })
+    }
+
     const { id } = await params
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
