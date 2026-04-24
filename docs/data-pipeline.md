@@ -62,8 +62,10 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 
 | 스크립트 | 런타임 | 설명 | 대상 테이블 |
 |----------|--------|------|-------------|
+| `sync/identity-data.ts` | tsx | 인격/스킬/패시브 통합 동기화 (TypeScript+Zod) | `identities`, `skills`, `passives` |
 | `sync/mirror-dungeon-data.ts` | tsx | 거울 던전 전체 동기화 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `mirror_dungeon_events` |
 | `sync/game-data.mjs` | Node.js | 인격 + EGO 스킬 동기화 | `skills`, `ego_skills` |
+| `sync/translations.mjs` | Node.js | EN/JP 게임 텍스트 동기화 (스킬/패시브/키워드/기프트) | `game_translations`, `skills`, `passives` |
 | `sync/wiki-namu.mjs` | Node.js | Namuwiki 레거시 동기화 (유지보수 전용) | `identities`, `ego`, `keyword_meta` |
 
 ### sync-mirror-dungeon-data.ts (거울 던전 통합 동기화)
@@ -244,6 +246,56 @@ sync-mirror-dungeon-data.ts (npx tsx)
        │
        ▼
 6. 에셋 업로드 (이미지 파이프라인)
+```
+
+### sync-identity-data.ts (인격/스킬/패시브 통합 동기화)
+
+TypeScript + Zod 기반 범용 인격 동기화 스크립트. 신규 인격 추가 + 기존 인격 필드 업데이트 모두 지원.
+
+```bash
+npx tsx scripts/sync/identity-data.ts [options]
+```
+
+**옵션:**
+
+| 옵션 | 설명 |
+|------|------|
+| `--dry-run` | 비교만 수행 (기본값) |
+| `--fix` | DB 자동 수정 |
+| `--sinner <slug>` | 특정 수감자만 처리 |
+| `--verbose` | 상세 로그 |
+| `--new-only` | 신규 인격만 표시/처리 |
+| `--keywords` | 기존 인격 keywords 필드도 업데이트 |
+| `--rebuild-keyword-meta` | keyword_meta 테이블 재구축 |
+
+> **참고:** 이 스크립트가 `sync/game-data.mjs`의 상위 집합. 신규 인격 삽입을 포함한 전체 파이프라인에 사용할 것.
+
+---
+
+## 번역 동기화 스크립트
+
+루트 `scripts/` 아래의 번역 전용 스크립트들. 각각 대상 테이블/컬럼이 다름.
+
+| 스크립트 | 설명 | 대상 |
+|----------|------|------|
+| `sync/translations.mjs` | EN/JP 스킬/패시브/키워드/기프트 텍스트 → `game_translations` 및 `skills`/`passives` 직접 업데이트 | `game_translations`, `skills.name_en/jp`, `passives.name_en/jp` |
+| `sync-game-translations.mjs` | EN/JP 로케일 파일 → `game_translations` upsert (CLI 필터 지원) | `game_translations` |
+| `sync-keyword-translations.mjs` | `game_translations`에서 EN/JP 번역을 가져와 `keyword_meta` 컬럼 채움 | `keyword_meta.name_en/jp`, `description_en/jp` |
+| `sync-name-translations.mjs` | EN/JP 인격/EGO/수감자 이름을 각 테이블에 직접 채움 | `identities.name_en/jp`, `ego.name_en/jp`, `sinners.name_jp` |
+
+**번역 동기화 순서 (패치 후):**
+```bash
+# 1. 게임 텍스트 → game_translations
+node --env-file=.env.local scripts/sync-game-translations.mjs --dry-run
+node --env-file=.env.local scripts/sync-game-translations.mjs
+
+# 2. keyword_meta 번역 채움
+node --env-file=.env.local scripts/sync-keyword-translations.mjs --dry-run
+node --env-file=.env.local scripts/sync-keyword-translations.mjs
+
+# 3. 인격/EGO/수감자 이름 채움
+node --env-file=.env.local scripts/sync-name-translations.mjs --dry-run
+node --env-file=.env.local scripts/sync-name-translations.mjs
 ```
 
 ---
