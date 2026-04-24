@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
+
+const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'

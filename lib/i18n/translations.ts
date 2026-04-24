@@ -468,6 +468,20 @@ export const translations = {
   'mirrorDungeon.meta.title': { ko: '거울 던전 — E.G.O 기프트 도감 | 림버스 컴퍼니', en: 'Mirror Dungeon — E.G.O Gift Encyclopedia | Limbus Company', ja: 'ミラーダンジョン — E.G.Oギフト図鑑 | リムバスカンパニー' },
   'mirrorDungeon.meta.description': { ko: '림버스 컴퍼니 거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피, 테마팩, 이벤트 정보까지 한 곳에서.', en: 'Limbus Company Mirror Dungeon E.G.O Gift encyclopedia with 408 gifts. Filter by keyword, grade, recipes, theme packs, and events.', ja: 'リムバスカンパニー ミラーダンジョン E.G.Oギフト408種図鑑。キーワード別フィルター、等級別検索、合成レシピ、テーマパック、イベント情報。' },
 
+  // Home — Page metadata
+  'home.meta.title': { ko: '최애의 관리자 | SAIGO NO DANTE', en: 'SAIGO NO DANTE | Limbus Company Fan Archive', ja: 'SAIGO NO DANTE | リムバスカンパニー情報サイト' },
+  'home.meta.description': { ko: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더, 티어표', en: 'Limbus Company fan archive — Sinner identities, EGO database, Mirror Dungeon gifts, keyword encyclopedia, deck builder, tier list.', ja: 'リムバスカンパニー情報サイト — 受刑者人格・EGOデータベース、ミラーダンジョンギフト、キーワード図鑑、デッキビルダー、ティア表。' },
+
+  // Sinners — Page metadata
+  'sinners.meta.title': { ko: '수감자 목록 — 림버스 컴퍼니 12인', en: 'Sinner Directory — The Twelve of Limbus Company', ja: '受刑者一覧 — リムバスカンパニー12人' },
+  'sinners.meta.description': { ko: 'Limbus Company 12인 수감자 — 이상, 파우스트, 돈키호테, 료슈, 뫼르소, 홍루, 히스클리프, 이스마엘, 로쟈, 싱클레어, 오티스, 그레고르의 모든 인격과 EGO 정보.', en: 'Explore all twelve Sinners of Limbus Company — Yi Sang, Faust, Don Quixote, Ryōshū, Meursault, Hong Lu, Heathcliff, Ishmael, Rodion, Sinclair, Outis, and Gregor. All identities and EGOs in one place.', ja: 'リムバスカンパニーの12人の受刑者 — イサン、ファウスト、ドン・キホーテ、良秀、ムルソー、ホンル、ヒースクリフ、イシュメール、ロージャ、シンクレア、ウーティス、グレゴールの全人格とEGO情報。' },
+  'sinners.meta.ogTitle': { ko: '수감자 목록 | 최애의 관리자', en: 'Sinner Directory | SAIGO NO DANTE', ja: '受刑者一覧 | SAIGO NO DANTE' },
+  'sinners.meta.ogDescription': { ko: '12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서 확인하세요.', en: 'Identities, EGOs, and skill data for all twelve Sinners in one place.', ja: '12人の受刑者の人格・EGO・スキルデータを一挙掲載。' },
+
+  // Decks — Page metadata
+  'decks.meta.title': { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' },
+  'decks.meta.description': { ko: '림버스 컴퍼니 커뮤니티 덱 빌드를 탐색하고 공유하세요.', en: 'Browse and share Limbus Company community deck builds.', ja: 'リムバスカンパニーのコミュニティデッキビルドを閲覧・共有しよう。' },
+
   // Mirror Dungeon — Keyword filters
   'mirrorDungeon.filter.all': { ko: '전체', en: 'All', ja: 'すべて' },
   'mirrorDungeon.filter.combustion': { ko: '화상', en: 'Burn', ja: '火傷' },

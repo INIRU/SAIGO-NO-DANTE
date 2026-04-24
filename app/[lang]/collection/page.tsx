@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { CollectionData } from '@/lib/collection'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import CollectionClient from './CollectionClient'
 
 export const metadata: Metadata = {
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
 
 async function fetchCollectionData(): Promise<CollectionData> {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData)
   const supabase = createAdminClient()
 
   const [sinnersRes, identitiesRes, egosRes] = await Promise.all([

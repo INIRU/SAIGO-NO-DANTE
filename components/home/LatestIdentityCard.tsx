@@ -87,7 +87,7 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
             alt=""
             width={20}
             height={20}
-            style={{ width: '1.25rem', height: '1.25rem', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75, objectFit: 'contain' }}
+            style={{ width: '1.25rem', height: 'auto', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75, objectFit: 'contain' }}
           />
         </div>
 

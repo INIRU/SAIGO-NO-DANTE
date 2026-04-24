@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 export async function GET(
@@ -93,6 +95,7 @@ export async function POST(
       .eq('id', userId)
       .single()
 
+    updateTag(CACHE_TAGS.deck(id))
     return NextResponse.json({
       ...data,
       username: profile?.username ?? session.user.name,
@@ -170,6 +173,7 @@ export async function DELETE(
 
     writeAuditLog({ actorId: userId, action: 'comment_delete', targetType: 'comment', targetId: commentId, details: { deck_id: id } })
 
+    updateTag(CACHE_TAGS.deck(id))
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

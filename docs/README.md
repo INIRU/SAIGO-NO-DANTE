@@ -35,6 +35,20 @@ SAIGO NO DANTE는 모바일 게임 **림버스 컴퍼니**의 데이터를 한 �
 | [README.md](./README.md) | 프로젝트 개요 및 문서 인덱스 (현재 문서) |
 | [prd.md](./prd.md) | 제품 요구사항 정의서 (PRD) |
 | [architecture.md](./architecture.md) | 기술 아키텍처 |
+| [data-model.md](./data-model.md) | DB 스키마 (`limbus.*` 테이블·RLS) |
+| [data-pipeline.md](./data-pipeline.md) | 데이터 파이프라인 (sync/upload/seed 스크립트) |
+| [deployment.md](./deployment.md) | Vercel 배포·env·CI/CD |
+
+### 협업 규칙 / AI 에이전트
+
+| 문서 | 설명 |
+|------|------|
+| [conventions.md](./conventions.md) | 코딩 컨벤션 (rem, Supabase, 파일 구조, i18n 등) |
+| [boundaries.md](./boundaries.md) | Agent별 파일 경계 매트릭스 (allowed_paths ↔ 실제 구조) |
+| [specs/](./specs/) | 7-doc spec (`00-context → 06-lore`) · `_template/`에서 복제 |
+| [plans/](./plans/) | Trivial 작업용 단일 파일 plan (`_template.md` 참고) |
+| [solutions/](./solutions/) | 과거 버그 수정·베스트 프랙티스 |
+| [_archive/](./_archive/) | 완료/폐기된 임시 문서 보관 |
 
 ### 기능별 문서
 

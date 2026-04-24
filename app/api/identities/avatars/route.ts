@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 async function getCachedAvatars() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.sinners, CACHE_TAGS.gameData)
 
   const admin = createAdminClient()
 

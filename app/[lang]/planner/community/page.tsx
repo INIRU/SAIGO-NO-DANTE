@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import type { PlanSummary } from '@/components/planner/PlanCard'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import CommunityClient from './CommunityClient'
 
 export const metadata: Metadata = {
@@ -16,7 +17,8 @@ const PAGE_SIZE = 20
 
 export default async function CommunityPage() {
   'use cache'
-  cacheLife('page-1m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.plansList)
   let initialPlans: PlanSummary[] = []
   let initialTotal = 0
 

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 export async function GET(
@@ -69,11 +71,13 @@ export async function POST(
       if (insertError.code === '23505') {
         await admin.schema('limbus').from('deck_bookmarks')
           .delete().eq('deck_id', id).eq('user_id', userId)
+        updateTag(CACHE_TAGS.deck(id))
         return NextResponse.json({ bookmarked: false })
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
+    updateTag(CACHE_TAGS.deck(id))
     return NextResponse.json({ bookmarked: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

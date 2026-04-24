@@ -22,6 +22,7 @@ import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { z } from 'zod'
 import { config } from 'dotenv'
+import { triggerRevalidation } from './_revalidate'
 
 config({ path: '.env.local' })
 
@@ -778,7 +779,7 @@ interface ThemeRow {
   image_url?: string | null
   boss_image_url?: string | null
   difficulty?: string | null
-  floor_info?: Record<string, number[]> | null
+  floor_info?: Record<string, number[] | string> | null
   is_hidden?: boolean
 }
 
@@ -823,14 +824,14 @@ async function syncThemes(): Promise<void> {
       const name = themeNameMap.get(t.id) ?? t.desc ?? `Theme ${t.id}`
 
       // Build floor_info from exceptionConditions
-      const floorInfo: Record<string, number[]> = {}
+      const floorInfo: Record<string, number[] | string> = {}
       for (const cond of t.exceptionConditions ?? []) {
         const label = DUNGEON_LABELS[cond.dungeonIdx]
         if (label && cond.selectableFloors) {
           floorInfo[label] = cond.selectableFloors.map((f: number) => f + 1)
         } else if (label) {
-          // dungeonIdx without selectableFloors (e.g. extreme) — just mark presence
-          if (!floorInfo[label]) floorInfo[label] = []
+          // dungeonIdx without selectableFloors → theme available on ALL floors of that difficulty
+          if (!floorInfo[label]) floorInfo[label] = '전체'
         }
       }
 
@@ -897,6 +898,7 @@ async function syncThemes(): Promise<void> {
       if (existing.difficulty !== theme.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${theme.difficulty}`)
       if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
       if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)
+      if (JSON.stringify(existing.floor_info ?? null) !== JSON.stringify(theme.floor_info ?? null)) changes.push(`floor_info 변경`)
 
       if (changes.length > 0) {
         updateCount++
@@ -2271,6 +2273,11 @@ async function main(): Promise<void> {
   console.log(BOLD('\n동기화 완료.'))
   if (!FIX) {
     console.log('(--fix 옵션으로 실제 DB에 반영하세요)')
+  }
+
+  // On-demand cache invalidation after successful --fix run.
+  if (FIX) {
+    await triggerRevalidation({ scope: 'all-game-data' })
   }
 }
 

@@ -20,6 +20,7 @@
 import { readFileSync, readdirSync } from 'fs'
 import { join, resolve } from 'path'
 import { createClient } from '@supabase/supabase-js'
+import { triggerRevalidation } from './_revalidate'
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -1070,6 +1071,11 @@ async function main() {
 
   console.log()
   console.log('Done.')
+
+  // On-demand cache invalidation after successful --fix run.
+  // (This point is only reached when --fix is passed; the dry-run branch
+  // returns earlier.)
+  await triggerRevalidation({ scope: 'all-game-data' })
 }
 
 main().catch(err => {

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getAllIdentitiesForBrowser, getSinners } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import IdentityBrowserClient from './IdentityBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 
@@ -19,7 +20,8 @@ export const metadata: Metadata = {
 
 export default async function IdentitiesPage() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.identities, CACHE_TAGS.gameData)
   const [identities, sinners] = await Promise.all([
     getAllIdentitiesForBrowser(),
     getSinners(),

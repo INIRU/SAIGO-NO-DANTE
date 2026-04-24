@@ -1,6 +1,6 @@
 import { connection } from 'next/server'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
-import { getMessages, setRequestLocale } from 'next-intl/server'
+import { getMessages, setRequestLocale, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -31,6 +31,8 @@ export default async function LangLayout({
   setRequestLocale(validLang)
 
   const messages = await getMessages()
+  const t = await getTranslations()
+  const mainNavLabel = t('common.mainNav')
   await connection()
   const now = new Date()
 
@@ -39,7 +41,7 @@ export default async function LangLayout({
       <SetHtmlLang lang={validLang} />
       <SkipNav />
       <AprilFoolsWrapper />
-      <Navbar />
+      <Navbar mainNavLabel={mainNavLabel} />
       <main id="main-content">{children}</main>
       <Footer />
       <FloatingFontControl />

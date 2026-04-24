@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { ChevronUp, X, Beaker } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
@@ -11,7 +12,7 @@ import KeywordChart from '@/components/planner/KeywordChart'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
 import { getKeywordSlug, getKeywordIconUrl, OCTAGON_CLIP, GRADE_ROMAN } from '@/components/planner/gift-plan/constants'
-import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
+const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 
 interface Props {
   state: RunState

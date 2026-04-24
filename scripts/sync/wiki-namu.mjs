@@ -25,10 +25,18 @@
  * 추출 대상 (EGO):
  *   - 스킬 (각성/침식: 타입, 죄악, 위력, 코인, 가중치, 공격레벨, 설명) → ego_skills 테이블
  *   - 전용 키워드 → keyword_meta 자동 upsert
+ *
+ * ⚠️ keyword_meta upsert 경로는 공통/Common/None/공용 placeholder를 반드시 필터링해야 함
  */
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+// 공통/Common/None 같은 placeholder는 키워드가 아니다 — DB 오염 방지
+const KEYWORD_PLACEHOLDERS = new Set(['공통', 'Common', 'None', '공용', ''])
+function isPlaceholderKeyword(name) {
+  return !name || KEYWORD_PLACEHOLDERS.has(name.trim())
+}
 
 // ── .env.local 로드 ──
 const ROOT = process.cwd()
@@ -1173,6 +1181,7 @@ async function main() {
 
                   // 키워드 upsert
                   for (const kw of wi.keywords) {
+                    if (isPlaceholderKeyword(kw.name)) continue
                     try {
                       await supaUpsert('keyword_meta', {
                         name: kw.name,
@@ -1371,6 +1380,7 @@ async function main() {
           // ─── 전용 키워드 → keyword_meta upsert ───
           if (wi.keywords.length > 0) {
             for (const kw of wi.keywords) {
+              if (isPlaceholderKeyword(kw.name)) continue
               if (verbose) console.log(`    [kw] ${kw.name}: ${kw.description.substring(0, 60)}...`)
               if (autoFix) {
                 try {
@@ -1460,6 +1470,7 @@ async function main() {
             // 키워드 처리 (--new / 기존 모두)
             if (we.keywords.length > 0) {
               for (const kw of we.keywords) {
+                if (isPlaceholderKeyword(kw.name)) continue
                 if (verbose) console.log(`    [kw] ${kw.name}: ${kw.description.substring(0, 60)}...`)
                 if (autoFix) {
                   try {
@@ -1622,6 +1633,7 @@ async function main() {
           // 전용 키워드
           if (we.keywords.length > 0) {
             for (const kw of we.keywords) {
+              if (isPlaceholderKeyword(kw.name)) continue
               if (verbose) console.log(`    [kw] ${kw.name}: ${kw.description.substring(0, 60)}...`)
               if (autoFix) {
                 try {

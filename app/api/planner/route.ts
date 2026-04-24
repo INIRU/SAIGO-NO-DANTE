@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { updateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 // GET /api/planner — 플랜 목록
@@ -108,6 +110,7 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    updateTag(CACHE_TAGS.plansList)
     return NextResponse.json({ id: data.id }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

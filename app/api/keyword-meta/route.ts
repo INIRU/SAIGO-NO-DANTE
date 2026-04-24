@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 async function getCachedKeywordMeta() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
 
   const supabase = createAdminClient()
   const allData: Array<{ name: string; description: string | null; max_stack: number | null }> = []

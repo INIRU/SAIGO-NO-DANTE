@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 // GET /api/planner/[id]/comments — 댓글 목록
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { count } = await admin.schema('limbus').from('md_plan_comments').select('id', { count: 'exact', head: true }).eq('plan_id', id)
     await admin.schema('limbus').from('md_plans').update({ comment_count: count ?? 0 }).eq('id', id)
 
+    updateTag(CACHE_TAGS.plan(id))
     return NextResponse.json(data, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

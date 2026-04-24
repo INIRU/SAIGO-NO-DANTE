@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
   //       repo breaks Turbopack when root is forced to __dirname. The "multiple lockfiles"
   //       warning is cosmetic only in this layout.
 
+  // Phase 4 (Next.js 16 sweep): React Compiler considered but DEFERRED.
+  // Enabling `reactCompiler: true` caused `npm run build` to crash with
+  // "FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed -
+  // JavaScript heap out of memory" during the TypeScript type-check phase
+  // (V8 hits the 4GB default ceiling). Keep disabled until we either:
+  //   (a) raise NODE_OPTIONS=--max-old-space-size in Vercel build env, and/or
+  //   (b) split the monorepo/TSC passes.
+  // babel-plugin-react-compiler devDep is kept installed for a future retry.
+  // reactCompiler: true,
+
   // Keep heavy server-only native addons out of the client bundle
   serverExternalPackages: ['sharp'],
 
@@ -38,6 +48,9 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'nuqs',
     ],
+    // Phase 4 (Next.js 16 sweep): persist Turbopack compilation across dev restarts.
+    // Dev-only flag — no production runtime impact.
+    turbopackFileSystemCacheForDev: true,
   },
 
   images: {

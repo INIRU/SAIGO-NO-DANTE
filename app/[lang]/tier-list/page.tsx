@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { Identity } from '@/lib/types'
 import TierListInteractive from './TierListInteractive'
 import TierGrid from './TierGrid'
@@ -76,7 +77,8 @@ function TierListSkeleton() {
 
 export default async function TierListPage() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.tierList, CACHE_TAGS.gameData)
   const [tiers, currentSeason] = await Promise.all([getTierData(), getCurrentSeason()])
 
   return (

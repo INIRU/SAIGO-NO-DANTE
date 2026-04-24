@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 // GET /api/planner/[id]/vote — 추천 상태 확인
@@ -42,6 +44,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    updateTag(CACHE_TAGS.plan(id))
+    updateTag(CACHE_TAGS.plansList)
     return NextResponse.json({ voted: data })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

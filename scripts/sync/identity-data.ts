@@ -13,6 +13,8 @@
  *   --verbose          상세 로그 출력
  *   --new-only         신규 인격만 표시/처리 (기존 비교 스킵)
  *   --keywords         기존 인격 keywords 필드도 업데이트 (기본적으로 protected)
+ *
+ * ⚠️ keyword_meta upsert 경로는 공통/Common/None/공용 placeholder를 반드시 필터링해야 함
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -21,6 +23,7 @@ import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { z } from 'zod'
 import { config } from 'dotenv'
+import { triggerRevalidation } from './_revalidate'
 
 config({ path: '.env.local' })
 
@@ -34,6 +37,10 @@ const VERBOSE = args.includes('--verbose')
 const NEW_ONLY = args.includes('--new-only')
 const UPDATE_KEYWORDS = args.includes('--keywords')
 const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
+
+// 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
+// DB 스키마는 nullable이 아니라 '공통'이 기본값으로 들어가므로, keyword_meta 재구축 시 반드시 필터링
+const KEYWORD_PLACEHOLDERS = new Set(['공통', 'Common', 'None', '공용', ''])
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
@@ -1341,6 +1348,11 @@ async function rebuildKeywordMeta(): Promise<void> {
     from += 1000
   }
 
+  // Filter out placeholder values that aren't real keywords
+  for (const placeholder of KEYWORD_PLACEHOLDERS) {
+    usedKeywords.delete(placeholder)
+  }
+
   console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (인격+EGO+기프트)`)
 
   // Build reverse map: KR name → tag ID (from TAG_MAP which is tag → KR)
@@ -1980,6 +1992,11 @@ async function main(): Promise<void> {
     console.log(YELLOW('    • acquisition_info — JSONB (type, gacha, fragment_cost, release_season)'))
     console.log(YELLOW('    • quote            — 특색 있는 대사 (KR_Voice_*.json → smalltalk)'))
     console.log(YELLOW('    • keywords         — 추출 키워드 확인 및 보완 필요 (--keywords로 확인)'))
+  }
+
+  // On-demand cache invalidation after successful --fix run.
+  if (!DRY_RUN) {
+    await triggerRevalidation({ scope: 'all-game-data' })
   }
 }
 

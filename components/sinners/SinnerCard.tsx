@@ -81,6 +81,7 @@ export default async function SinnerCard({ sinner, index = 0, priority: priority
               alt={`#${String(sinner.order_num).padStart(2, '0')}`}
               width={389}
               height={1023}
+              priority={priorityProp}
               className="w-full h-auto"
             />
           </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -18,8 +19,9 @@ import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
 import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
-import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
+
+const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type EgoSlot = {

@@ -1,10 +1,12 @@
 'use client'
 
 import { useMemo, useState, useCallback, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import IdentityDetailModal from '@/components/ui/IdentityDetailModal'
+
+const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { IdentityData, SinnerData, SkillSummary, EgoData, PassiveData, GiftData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
