@@ -50,7 +50,7 @@ export default function KeywordChips({ keywords, onChange, onMaxExceeded }: Prop
             <button
               key={kw}
               onClick={() => toggleKeyword(kw)}
-              className="flex items-center gap-[0.25rem] rounded-full px-[0.625rem] py-[0.1875rem] text-[0.75rem] transition-all duration-200"
+              className="flex min-h-[2.75rem] items-center justify-center gap-[0.25rem] rounded-full px-[0.875rem] py-[0.5rem] text-[0.75rem] transition-all duration-200 sm:min-h-0 sm:px-[0.625rem] sm:py-[0.1875rem]"
               style={active ? {
                 border: `1px solid ${color}88`,
                 backgroundColor: `${color}25`,

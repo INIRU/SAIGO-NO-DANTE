@@ -1023,11 +1023,12 @@ export default function ExtractionScene() {
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           zIndex: 20,
+          width: 'min(calc(100vw - 1.5rem), 25.9rem)',
           animation: 'resultFadeIn 0.5s ease-out both',
         }}>
           {/* 결과 통합 카드 */}
           <div style={{
-            padding: '1.5rem 1.75rem',
+            padding: '1.5rem clamp(1rem, 4vw, 1.75rem)',
             background: 'linear-gradient(180deg, rgba(18,14,9,0.92) 0%, rgba(10,8,5,0.95) 100%)',
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(200,144,10,0.12)',
@@ -1037,6 +1038,7 @@ export default function ExtractionScene() {
               : '0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
             position: 'relative',
             overflow: 'hidden',
+            boxSizing: 'border-box',
           }}>
             {/* 상단 장식 라인 */}
             <div style={{
@@ -1104,9 +1106,10 @@ export default function ExtractionScene() {
             {/* 결과 카드 그리드 */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: '0.6rem',
+              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+              gap: 'clamp(0.35rem, 1.4vw, 0.6rem)',
               justifyItems: 'center',
+              width: '100%',
             }}>
             {results.map((r, i) => {
               const isSpecial = r === 'ego' || r === '000'
@@ -1115,10 +1118,11 @@ export default function ExtractionScene() {
                 <div
                   key={i}
                   style={{
-                    width: '64px', height: '80px',
+                    width: 'min(100%, 4rem)',
+                    aspectRatio: '4 / 5',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: '6px',
+                    gap: 'clamp(0.25rem, 1vw, 0.375rem)',
                     position: 'relative',
                     background: r === 'ego'
                       ? 'linear-gradient(180deg, rgba(255,60,60,0.08) 0%, rgba(255,40,40,0.02) 100%)'
@@ -1134,6 +1138,7 @@ export default function ExtractionScene() {
                       ? `0 0 20px ${glowColor}18, 0 2px 8px rgba(0,0,0,0.3), inset 0 0 12px ${glowColor}08`
                       : '0 2px 6px rgba(0,0,0,0.2)',
                     overflow: 'hidden',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {/* 상단 빛줄기 */}
@@ -1144,12 +1149,17 @@ export default function ExtractionScene() {
                     }} />
                   )}
                   {RESULT_RARITY_IMG[r] ? (
-                    <div style={{ width: '36px', height: '36px', position: 'relative', flexShrink: 0 }}>
+                    <div style={{
+                      width: 'clamp(2rem, 9vw, 2.25rem)',
+                      aspectRatio: '1 / 1',
+                      position: 'relative',
+                      flexShrink: 0,
+                    }}>
                       <Image
                         src={RESULT_RARITY_IMG[r]!}
                         alt={r === '000' ? '3성' : r === '00' ? '2성' : '1성'}
                         fill
-                        sizes="36px"
+                        sizes="(max-width: 25rem) 2rem, 2.25rem"
                         style={{
                           objectFit: 'contain',
                           filter: isSpecial ? `drop-shadow(0 0 8px ${glowColor}60)` : 'none',
