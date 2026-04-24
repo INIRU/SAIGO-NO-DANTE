@@ -14,6 +14,7 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
+import { triggerRevalidation } from './_revalidate.mjs';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -473,6 +474,11 @@ async function main() {
   }
 
   console.log('\nDone.');
+
+  // On-demand cache invalidation after a successful non-dry-run.
+  if (!DRY_RUN) {
+    await triggerRevalidation({ scope: 'all-game-data' });
+  }
 }
 
 main().catch(err => {

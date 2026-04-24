@@ -7,13 +7,22 @@ import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
-import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
+import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { translations } from '@/lib/i18n/translations'
 
-export const metadata: Metadata = {
-  title: '최애의 관리자 | SAIGO NO DANTE',
-  description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더, 티어표',
-  alternates: { canonical: 'https://saigo-no-dante.com' },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
+  }
+  return {
+    title: t('home.meta.title'),
+    description: t('home.meta.description'),
+    alternates: { canonical: 'https://saigo-no-dante.com' },
+  }
 }
 
 const HOME_FAQ = [
@@ -120,7 +129,7 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
 }
 
 
-async function BelowFoldContent({ latestIdentities, lang }: { latestIdentities: IdentityWithSinner[]; lang: SupportedLang }) {
+async function BelowFoldContent({ latestIdentities }: { latestIdentities: IdentityWithSinner[] }) {
   const latestVideo = await getLatestYoutubeVideo()
   return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
 }
@@ -154,7 +163,6 @@ export default async function HomePage() {
   // cookies() is dynamic — call outside 'use cache'
   const locale = await getLocale()
   setRequestLocale(locale)
-  const lang = locale as SupportedLang
   const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData()
 
   return (
@@ -162,7 +170,7 @@ export default async function HomePage() {
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
       <Suspense fallback={<BelowFoldSkeleton />}>
-        <BelowFoldContent latestIdentities={latestIdentities} lang={lang} />
+        <BelowFoldContent latestIdentities={latestIdentities} />
       </Suspense>
     </>
   )

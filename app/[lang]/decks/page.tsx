@@ -1,15 +1,26 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DecksClient from './DecksClient'
 import type { DeckSummary } from '@/components/decks/DeckCard'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
 
-export const metadata: Metadata = {
-  title: '덱 게시판',
-  description: '림버스 컴퍼니 커뮤니티 덱 빌드를 탐색하고 공유하세요.',
-  alternates: { canonical: 'https://saigo-no-dante.com/decks' },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
+  }
+  return {
+    title: t('decks.meta.title'),
+    description: t('decks.meta.description'),
+    alternates: { canonical: 'https://saigo-no-dante.com/decks' },
+  }
 }
 
 const PAGE_SIZE = 12
@@ -35,7 +46,8 @@ function DecksPageSkeleton() {
 
 export default async function DecksPage() {
   'use cache'
-  cacheLife('page-1m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.decksList)
   const supabase = createAdminClient()
 
   const { data, error } = await supabase

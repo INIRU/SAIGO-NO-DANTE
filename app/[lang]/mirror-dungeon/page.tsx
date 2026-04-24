@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from './MirrorDungeonClient'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
@@ -44,7 +45,8 @@ const MIRROR_FAQ = [
 
 export default async function MirrorDungeonPage() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
   const supabase = createAdminClient()
 
   const [

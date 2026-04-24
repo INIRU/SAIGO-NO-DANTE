@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import RandomStatic from './RandomStatic'
 import RandomInteractive from './RandomInteractive'
 import type { Metadata } from 'next'
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
 
 export default async function RandomPage() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData)
   const [sinners, identities, egos] = await Promise.all([
     getSinners(),
     getIdentities(),

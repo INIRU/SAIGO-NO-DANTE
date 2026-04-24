@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
 import { getMetaData } from '@/lib/db/meta'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MetaClient from './MetaClient'
 
 export const metadata: Metadata = {
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
 
 async function fetchMetaSinners() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.meta, CACHE_TAGS.gameData)
   return getSinners()
 }
 

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { updateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 // ── 덱 코드 인코딩 (DeckBuilderClient와 동일 로직) ─────────────────────────
@@ -257,6 +259,8 @@ export async function DELETE(
 
     writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
 
+    updateTag(CACHE_TAGS.deck(id))
+    updateTag(CACHE_TAGS.decksList)
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
@@ -387,6 +391,8 @@ export async function PATCH(
 
     writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })
 
+    updateTag(CACHE_TAGS.deck(id))
+    updateTag(CACHE_TAGS.decksList)
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

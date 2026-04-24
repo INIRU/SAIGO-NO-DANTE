@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -11,7 +12,7 @@ import { DIFFICULTY_CONFIG, type Difficulty, type GiftActivationCondition, type 
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { showError } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
-import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
+const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 import PlanActions from '@/components/planner/PlanActions'
 import PlanComments from '@/components/planner/PlanComments'
 import PlanDeckTabs from '@/components/planner/PlanDeckTabs'

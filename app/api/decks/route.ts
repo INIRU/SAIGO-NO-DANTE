@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 
 export async function GET(request: NextRequest) {
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     revalidatePath('/decks')
+    updateTag(CACHE_TAGS.decksList)
     return NextResponse.json(deck, { status: 201 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { notFound } from 'next/navigation'
@@ -35,7 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 async function getCachedSinnerData(slug: string) {
   'use cache'
-  cacheLife('page-1m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.sinners, CACHE_TAGS.gameData)
   const supabase = createAdminClient()
 
   const [sinner, identitiesRes, egosRes] = await Promise.all([

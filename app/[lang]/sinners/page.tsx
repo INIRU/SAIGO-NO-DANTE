@@ -1,28 +1,39 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import SinnersInteractive from './SinnersInteractive'
 import SinnerCard from '@/components/sinners/SinnerCard'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { translations } from '@/lib/i18n/translations'
 
 const SITE_URL = 'https://saigo-no-dante.com'
 
-export const metadata: Metadata = {
-  title: '수감자 목록 — 림버스 컴퍼니 12인',
-  description: 'Limbus Company 12인 수감자 — 이상, 파우스트, 돈키호테, 료슈, 뫼르소, 홍루, 히스클리프, 이스마엘, 로쟈, 싱클레어, 오티스, 그레고르의 모든 인격과 EGO 정보.',
-  alternates: { canonical: `${SITE_URL}/sinners` },
-  openGraph: {
-    title: '수감자 목록 | 최애의 관리자',
-    description: '12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서 확인하세요.',
-  },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
+  }
+  return {
+    title: t('sinners.meta.title'),
+    description: t('sinners.meta.description'),
+    alternates: { canonical: `${SITE_URL}/sinners` },
+    openGraph: {
+      title: t('sinners.meta.ogTitle'),
+      description: t('sinners.meta.ogDescription'),
+    },
+  }
 }
 
 async function getCachedSinners() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.sinners, CACHE_TAGS.gameData)
   return getSinners()
 }
 

@@ -1,8 +1,9 @@
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DeckDetailClient from './DeckDetailClient'
 import DeckHero from '@/components/deck-detail/DeckHero'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
@@ -66,8 +67,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DeckDetailPage({ params }: Props) {
   'use cache'
-  cacheLife('page-1m')
+  cacheLife('max')
   const { id } = await params
+  cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP
   let initialDeck = null

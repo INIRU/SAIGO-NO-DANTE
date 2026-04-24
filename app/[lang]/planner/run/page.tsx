@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTranslations } from 'next-intl/server'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import RunWrapper from './RunWrapper'
 import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
 
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function RunPage() {
   'use cache'
-  cacheLife('page-5m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
   const supabase = createAdminClient()
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([

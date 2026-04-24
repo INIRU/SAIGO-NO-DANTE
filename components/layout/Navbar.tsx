@@ -10,13 +10,8 @@ import dynamic from 'next/dynamic'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
-
-type NavGroup = {
-  label: string
-  items: { href: string; label: string }[]
-}
 
 type NavGroupDef = {
   labelKey: string
@@ -58,7 +53,11 @@ const NAV_GROUPS: NavGroupDef[] = [
 ]
 
 
-export default function Navbar() {
+interface NavbarProps {
+  mainNavLabel: string
+}
+
+export default function Navbar({ mainNavLabel }: NavbarProps) {
   const [hidden, setHidden] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -134,7 +133,6 @@ export default function Navbar() {
   }, [])
 
   const t = useTranslations()
-  const locale = useLocale()
   // next-intl Link handles locale prefix automatically
   const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
     label: t(g.labelKey as TranslationKey),
@@ -183,7 +181,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        aria-label={t('common.mainNav' as TranslationKey)}
+        aria-label={mainNavLabel}
         className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300"
         style={{
           transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)',

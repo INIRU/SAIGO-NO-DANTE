@@ -13,10 +13,19 @@
  *   --dry-run         비교만 (DB 수정 안 함, 기본값)
  *   --fix             DB 반영 (기존 스킬 삭제 후 재삽입)
  *   --verbose         상세 로그
+ *
+ * ⚠️ keyword_meta upsert 경로는 공통/Common/None/공용 placeholder를 반드시 필터링해야 함
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { triggerRevalidation } from './_revalidate.mjs'
+
+// 공통/Common/None 같은 placeholder는 키워드가 아니다 — DB 오염 방지
+const KEYWORD_PLACEHOLDERS = new Set(['공통', 'Common', 'None', '공용', ''])
+function isPlaceholderKeyword(name) {
+  return !name || KEYWORD_PLACEHOLDERS.has(name.trim())
+}
 
 // ── .env.local 로드 ──
 const ROOT = process.cwd()
@@ -30,6 +39,12 @@ const env = Object.fromEntries(
 
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY
+
+// Propagate revalidation-related env vars to process.env so the shared
+// triggerRevalidation helper can pick them up regardless of --env-file usage.
+for (const key of ['SITE_URL', 'NEXT_PUBLIC_SITE_URL', 'REVALIDATION_SECRET']) {
+  if (env[key] && !process.env[key]) process.env[key] = env[key]
+}
 const headers = {
   apikey: SUPABASE_KEY,
   Authorization: `Bearer ${SUPABASE_KEY}`,
@@ -1453,7 +1468,9 @@ async function main() {
   if (allEgoKeywords.size > 0) {
     const existingMeta = await supaGet('keyword_meta', 'select=name')
     const existingNames = new Set(existingMeta.map(m => m.name))
-    const newKws = [...allEgoKeywords].filter(kw => !existingNames.has(kw))
+    const newKws = [...allEgoKeywords]
+      .filter(kw => !isPlaceholderKeyword(kw))
+      .filter(kw => !existingNames.has(kw))
     if (newKws.length > 0) {
       if (dryRun) {
         console.log(`\n  EGO keyword_meta 신규: [${newKws.join(', ')}]`)
@@ -1601,32 +1618,8 @@ async function main() {
   console.log(`  스킵: 인격 ${totalSkipped}개 / EGO ${egoSkipped}개`)
 
   if (!dryRun) {
-    await revalidateCache()
-  }
-}
-
-// Revalidate homepage cache after sync
-async function revalidateCache() {
-  const secret = process.env.REVALIDATION_SECRET
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://saigo-no-dante.com'
-  if (!secret) {
-    console.log('⚠️  REVALIDATION_SECRET not set, skipping cache revalidation')
-    return
-  }
-  try {
-    const res = await fetch(`${siteUrl}/api/revalidate?secret=${secret}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths: ['/', '/sinners', '/mirror-dungeon'] }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      console.log('✅ Cache revalidated:', data.revalidated)
-    } else {
-      console.log('⚠️  Cache revalidation failed:', res.status)
-    }
-  } catch (err) {
-    console.log('⚠️  Cache revalidation error:', err.message)
+    // On-demand cache invalidation: signal Vercel to bust all game-data tags.
+    await triggerRevalidation({ scope: 'all-game-data' })
   }
 }
 

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getEGOById, getEGOs } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
 const EGODetailClient = dynamic(() => import('./EGODetailClient'))
@@ -40,8 +41,9 @@ export async function generateStaticParams() {
 
 export default async function EGODetailPage({ params }: { params: Promise<{ slug: string; egoId: string }> }) {
   'use cache'
-  cacheLife('page-1m')
+  cacheLife('max')
   const { slug, egoId } = await params
+  cacheTag(CACHE_TAGS.egoEntry(egoId), CACHE_TAGS.ego, CACHE_TAGS.gameData)
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(egoId)) notFound()
   const [sinner, ego] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
   if (!sinner || !ego) notFound()
