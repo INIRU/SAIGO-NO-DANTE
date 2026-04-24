@@ -204,6 +204,15 @@ export default function GiftTab({
 
   const visibleGifts = useMemo(() => deferredFiltered.slice(0, visibleCount), [deferredFiltered, visibleCount])
 
+  const selectedThemeLabel = useMemo(() => {
+    if (selectedThemeId === null) return null
+    const theme = themes.find(item => item.id === selectedThemeId)
+    if (!theme) return null
+    return getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+  }, [lang, selectedThemeId, themes])
+
+  const dropdownShellClass = 'min-w-0 [&>div]:w-full [&>div>button]:min-h-[2rem] [&>div>button]:w-full [&>div>button]:min-w-0 [&>div>button]:justify-between [&>div>button]:overflow-hidden [&>div>button]:whitespace-nowrap'
+
   const filteredLenRef = useRef(deferredFiltered.length)
   filteredLenRef.current = deferredFiltered.length
 
@@ -232,7 +241,7 @@ export default function GiftTab({
   return (
     <div className="space-y-3 mb-8">
       {/* 키워드 필터 */}
-      <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:justify-center sm:gap-2 sm:overflow-visible sm:pb-0">
         {KEYWORDS.map(kw => {
           const isAll = kw.key === '전체'
           const active = isAll ? keywords.size === 0 : keywords.has(kw.key)
@@ -242,7 +251,7 @@ export default function GiftTab({
             <button
               key={kw.key}
               onClick={() => toggleKeyword(kw.key)}
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all duration-200"
+              className="flex min-h-[1.875rem] shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-all duration-200 sm:gap-1.5 sm:px-3 sm:py-1.5"
               style={{
                 cursor: 'pointer',
                 background: active ? kwColor : 'rgba(255,255,255,0.06)',
@@ -272,9 +281,8 @@ export default function GiftTab({
 
       {/* 컨트롤 바 */}
       <div
-        className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg"
+        className="flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-2.5"
         style={{
-          padding: '0.625rem 1rem',
           background: 'rgba(255,255,255,0.035)',
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(8px)',
@@ -283,96 +291,9 @@ export default function GiftTab({
           zIndex: 10,
         }}
       >
-        {/* 필터 드롭다운 그룹 */}
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
-          <Dropdown
-            value={tiers.size === 0 ? '전체' : [...tiers][0]}
-            options={[
-              { value: '전체', label: t('mirrorDungeon.tier.all') },
-              { value: '노말', label: t('mirrorDungeon.tier.normal') },
-              { value: '하드', label: t('mirrorDungeon.tier.hard') },
-              { value: '익스트림', label: t('mirrorDungeon.tier.extreme') },
-            ]}
-            onChange={v => {
-              if (v === '전체') setTiers(new Set())
-              else setTiers(new Set([v]))
-            }}
-            prefix={t('mirrorDungeon.filter.difficulty')}
-            defaultValue="전체"
-            minWidth={120}
-          />
-          <Dropdown
-            value={slotFilter}
-            options={[
-              { value: '전체', label: t('mirrorDungeon.filter.all') },
-              ...Array.from({ length: 8 }, (_, i) => ({ value: `${i + 1}`, label: `${i + 1}${t('mirrorDungeon.filter.slot')}` })),
-            ]}
-            onChange={v => setSlotFilter(v)}
-            prefix={t('mirrorDungeon.filter.slotPrefix')}
-            defaultValue="전체"
-            minWidth={120}
-          />
-          <Dropdown
-            value={selectedThemeId !== null ? String(selectedThemeId) : '전체'}
-            options={[
-              { value: '전체', label: t('mirrorDungeon.filter.all') },
-              ...themes.map(theme => ({ value: String(theme.id), label: getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang) })),
-            ]}
-            onChange={v => setSelectedThemeId(v === '전체' ? null : Number(v))}
-            prefix={t('mirrorDungeon.filter.themePrefix')}
-            defaultValue="전체"
-            minWidth={140}
-          />
-        </div>
-
-        {/* 구분선 */}
-        <div
-          className="hidden sm:block flex-shrink-0"
-          style={{ width: '1px', height: '1.25rem', background: 'rgba(255,255,255,0.06)' }}
-        />
-
-        {/* 정렬 + 검색 그룹 */}
-        <div className="flex items-center gap-2 sm:ml-auto w-full sm:w-auto">
-          {/* 세그먼트 정렬 */}
-          <div
-            className="flex items-center overflow-hidden rounded-md"
-            style={{ border: '1px solid rgba(255,255,255,0.09)' }}
-          >
-            {(['default', 'name', 'grade'] as const).map((key, i, arr) => {
-              const labels = { default: t('mirrorDungeon.sort.default'), name: t('mirrorDungeon.sort.name'), grade: t('mirrorDungeon.sort.grade') }
-              const isSort = sortBy === key
-              return (
-                <button
-                  key={key}
-                  onClick={() => {
-                    if (sortBy === key && key !== 'default') setSortDesc(v => !v)
-                    else {
-                      setSortBy(key)
-                      setSortDesc(false)
-                    }
-                  }}
-                  className="transition-colors"
-                  style={{
-                    padding: '0.4375rem 0.75rem',
-                    fontSize: '0.6875rem',
-                    background: isSort ? 'rgba(200,144,10,0.18)' : 'transparent',
-                    color: isSort ? 'var(--gold)' : '#666',
-                    fontFamily: 'var(--font-heading)',
-                    cursor: 'pointer',
-                    borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
-                    borderBottom: isSort ? '2px solid var(--gold)' : '2px solid transparent',
-                  }}
-                >
-                  {labels[key]}
-                  {isSort && key !== 'default' && (sortDesc ? ' ↓' : ' ↑')}
-                </button>
-              )
-            })}
-          </div>
-
+        <div className="order-1 flex w-full min-w-0 items-center gap-2 sm:order-4 sm:w-auto">
           {/* 검색 */}
-          <div className="relative">
+          <div className="relative min-w-0 flex-1 sm:flex-none">
             <Search
               size={14}
               style={{
@@ -397,7 +318,7 @@ export default function GiftTab({
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
                 e.currentTarget.style.boxShadow = 'none'
               }}
-              className="pl-8 pr-7 py-1.5 rounded-md text-xs flex-1 sm:flex-none sm:w-44 min-w-0 placeholder:text-[#555]"
+              className="min-h-[2.25rem] w-full min-w-0 rounded-md py-1.5 pl-8 pr-7 text-xs placeholder:text-[#555] sm:w-44"
               style={{
                 background: 'rgba(0,0,0,0.3)',
                 border: '1px solid rgba(255,255,255,0.09)',
@@ -428,19 +349,114 @@ export default function GiftTab({
 
           {/* 결과 수 */}
           <span
-            className="flex-shrink-0 tabular-nums"
+            className="flex-shrink-0 whitespace-nowrap tabular-nums"
             style={{ color: '#777', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}
           >
             {filtered.length}
             <span style={{ fontSize: '0.5625rem', marginLeft: '1px' }}>건</span>
           </span>
         </div>
+
+        {/* 필터 드롭다운 그룹 */}
+        <div className="order-2 grid w-full grid-cols-2 gap-1.5 sm:order-1 sm:flex sm:w-auto sm:items-center sm:gap-2">
+          <div className={dropdownShellClass}>
+            <GradeMultiDropdown grades={grades} toggleGrade={toggleGrade} />
+          </div>
+          <div className={dropdownShellClass}>
+            <Dropdown
+              value={tiers.size === 0 ? '전체' : [...tiers][0]}
+              options={[
+                { value: '전체', label: t('mirrorDungeon.tier.all') },
+                { value: '노말', label: t('mirrorDungeon.tier.normal') },
+                { value: '하드', label: t('mirrorDungeon.tier.hard') },
+                { value: '익스트림', label: t('mirrorDungeon.tier.extreme') },
+              ]}
+              onChange={v => {
+                if (v === '전체') setTiers(new Set())
+                else setTiers(new Set([v]))
+              }}
+              prefix={t('mirrorDungeon.filter.difficulty')}
+              defaultValue="전체"
+              minWidth={120}
+            />
+          </div>
+          <div className={dropdownShellClass}>
+            <Dropdown
+              value={slotFilter}
+              options={[
+                { value: '전체', label: t('mirrorDungeon.filter.all') },
+                ...Array.from({ length: 8 }, (_, i) => ({ value: `${i + 1}`, label: `${i + 1}${t('mirrorDungeon.filter.slot')}` })),
+              ]}
+              onChange={v => setSlotFilter(v)}
+              prefix={t('mirrorDungeon.filter.slotPrefix')}
+              defaultValue="전체"
+              minWidth={120}
+            />
+          </div>
+          <div className={dropdownShellClass}>
+            <Dropdown
+              value={selectedThemeId !== null ? String(selectedThemeId) : '전체'}
+              options={[
+                { value: '전체', label: t('mirrorDungeon.filter.all') },
+                ...themes.map(theme => ({ value: String(theme.id), label: getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang) })),
+              ]}
+              onChange={v => setSelectedThemeId(v === '전체' ? null : Number(v))}
+              prefix={t('mirrorDungeon.filter.themePrefix')}
+              defaultValue="전체"
+              minWidth={140}
+            />
+          </div>
+        </div>
+
+        {/* 구분선 */}
+        <div
+          className="hidden flex-shrink-0 sm:order-2 sm:block"
+          style={{ width: '1px', height: '1.25rem', background: 'rgba(255,255,255,0.06)' }}
+        />
+
+        {/* 세그먼트 정렬 */}
+        <div
+          className="order-3 flex w-full shrink-0 items-center overflow-hidden rounded-md sm:order-3 sm:ml-auto sm:w-auto"
+          style={{ border: '1px solid rgba(255,255,255,0.09)' }}
+        >
+          {(['default', 'name', 'grade'] as const).map((key, i, arr) => {
+            const labels = { default: t('mirrorDungeon.sort.default'), name: t('mirrorDungeon.sort.name'), grade: t('mirrorDungeon.sort.grade') }
+            const isSort = sortBy === key
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  if (sortBy === key && key !== 'default') setSortDesc(v => !v)
+                  else {
+                    setSortBy(key)
+                    setSortDesc(false)
+                  }
+                }}
+                className="flex min-h-[2rem] min-w-0 flex-1 items-center justify-center whitespace-nowrap px-2 py-1.5 text-center transition-colors sm:flex-none sm:px-3"
+                style={{
+                  fontSize: '0.6875rem',
+                  lineHeight: '1rem',
+                  background: isSort ? 'rgba(200,144,10,0.18)' : 'transparent',
+                  color: isSort ? 'var(--gold)' : '#666',
+                  fontFamily: 'var(--font-heading)',
+                  cursor: 'pointer',
+                  borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                  borderBottom: isSort ? '2px solid var(--gold)' : '2px solid transparent',
+                }}
+              >
+                {labels[key]}
+                {isSort && key !== 'default' && (sortDesc ? ' ↓' : ' ↑')}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* 활성 필터 칩 */}
-      {(keywords.size > 0 || grades.size > 0 || tiers.size > 0 || slotFilter !== '전체') && (
-        <div className="flex items-center gap-1.5 flex-wrap">
+      {(keywords.size > 0 || grades.size > 0 || tiers.size > 0 || slotFilter !== '전체' || selectedThemeId !== null) && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible sm:pb-0">
           <span
+            className="hidden sm:inline"
             style={{
               color: '#666',
               fontSize: '0.5625rem',
@@ -459,7 +475,7 @@ export default function GiftTab({
               <button
                 key={`fk-${kw}`}
                 onClick={() => toggleKeyword(kw)}
-                className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-2 pr-1.5 transition-colors hover:brightness-125"
                 style={{
                   background: `${c}15`,
                   border: `1px solid ${c}25`,
@@ -481,7 +497,7 @@ export default function GiftTab({
             <button
               key={`fg-${g}`}
               onClick={() => toggleGrade(g)}
-              className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-2 pr-1.5 transition-colors hover:brightness-125"
               style={{
                 background: 'rgba(200,144,10,0.1)',
                 border: '1px solid rgba(200,144,10,0.2)',
@@ -499,7 +515,7 @@ export default function GiftTab({
             <button
               key={`ft-${tier}`}
               onClick={() => setTiers(new Set())}
-              className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-2 pr-1.5 transition-colors hover:brightness-125"
               style={{
                 background:
                   tier === '익스트림'
@@ -527,7 +543,7 @@ export default function GiftTab({
           {slotFilter !== '전체' && (
             <button
               onClick={() => setSlotFilter('전체')}
-              className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full transition-colors hover:brightness-125"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-2 pr-1.5 transition-colors hover:brightness-125"
               style={{
                 background: 'rgba(200,144,10,0.1)',
                 border: '1px solid rgba(200,144,10,0.2)',
@@ -541,16 +557,34 @@ export default function GiftTab({
               <X size={10} style={{ opacity: 0.5 }} />
             </button>
           )}
+          {selectedThemeId !== null && selectedThemeLabel && (
+            <button
+              onClick={() => setSelectedThemeId(null)}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-2 pr-1.5 transition-colors hover:brightness-125"
+              style={{
+                background: 'rgba(200,144,10,0.1)',
+                border: '1px solid rgba(200,144,10,0.2)',
+                color: 'var(--gold)',
+                fontSize: '0.6875rem',
+                fontFamily: 'var(--font-heading)',
+                cursor: 'pointer',
+              }}
+            >
+              {selectedThemeLabel}
+              <X size={10} style={{ opacity: 0.5 }} />
+            </button>
+          )}
           <button
             onClick={() => {
               setKeywords(new Set())
               setGrades(new Set())
               setTiers(new Set())
               setSlotFilter('전체')
+              setSelectedThemeId(null)
               setInputValue('')
               setSearch('')
             }}
-            className="ml-auto px-2 py-0.5 rounded-full transition-colors hover:bg-white/5"
+            className="shrink-0 rounded-full px-2 py-0.5 transition-colors hover:bg-white/5 sm:ml-auto"
             style={{
               color: '#444',
               fontSize: '0.625rem',

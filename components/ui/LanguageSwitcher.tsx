@@ -24,7 +24,7 @@ export default function LanguageSwitcher() {
   }, []);
 
   return (
-    <div ref={ref} className="relative" style={{ position: 'relative', zIndex: 0 }}>
+    <div ref={ref} className="relative" style={{ position: 'relative', zIndex: open ? 60 : 0 }}>
       <button
         onClick={() => setOpen(prev => !prev)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all duration-200"
@@ -56,7 +56,8 @@ export default function LanguageSwitcher() {
           className="absolute right-0 top-full mt-2 rounded-lg overflow-hidden"
           style={{
             border: '1px solid rgba(200,144,10,0.2)',
-            background: 'var(--bg-card)',
+            backgroundColor: 'var(--bg-card)',
+            backgroundImage: 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-panel) 100%)',
             boxShadow: '0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,144,10,0.08)',
             zIndex: 50,
             minWidth: '9rem',

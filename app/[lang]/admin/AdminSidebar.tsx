@@ -21,6 +21,7 @@ const menuItems = [
 export default function AdminSidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const sidebarId = 'admin-mobile-sidebar'
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
@@ -44,11 +45,11 @@ export default function AdminSidebar() {
 
   const navContent = (
     <>
-      <div style={{ padding: '12px 20px', marginBottom: '4px' }}>
+      <div style={{ padding: '0.75rem 1.25rem', marginBottom: '0.25rem' }}>
         <p className="font-serif" style={{ color: 'var(--gold)', fontSize: '0.9375rem', fontWeight: 700 }}>
           관리자
         </p>
-        <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '2px' }}>
+        <p style={{ color: '#888888', fontSize: '0.6875rem', marginTop: '0.125rem' }}>
           SAIGO NO DANTE Admin
         </p>
       </div>
@@ -62,15 +63,15 @@ export default function AdminSidebar() {
               href={item.href}
               className="flex items-center gap-3 transition-colors hover:text-yellow-300"
               style={{
-                padding: '10px 20px',
+                padding: '0.625rem 1.25rem',
                 fontSize: '0.8125rem',
                 fontFamily: 'var(--font-heading)',
                 color: active ? 'var(--gold)' : '#7a6845',
                 background: active ? 'rgba(200,144,10,0.08)' : 'transparent',
-                borderRight: active ? '2px solid var(--gold)' : '2px solid transparent',
+                borderRight: active ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
               }}
             >
-              <Icon size={16} />
+              <Icon size="1rem" />
               {item.label}
             </Link>
           )
@@ -81,26 +82,40 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* 모바일 토글 버튼 */}
-      <button
-        className="md:hidden fixed z-40 flex items-center justify-center"
-        onClick={() => setOpen(v => !v)}
+      {/* 모바일 관리자 툴바 */}
+      <div
+        className="md:hidden fixed left-0 right-0 z-[35] flex items-center"
         style={{
-          top: '76px',
-          left: '12px',
-          width: 36,
-          height: 36,
-          borderRadius: '6px',
+          top: '4rem',
+          height: '4rem',
+          padding: '0 1rem',
           background: '#1a1510',
-          border: '1px solid var(--border)',
-          color: 'var(--gold)',
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+          borderBottom: '0.0625rem solid var(--border)',
+          boxShadow: '0 0.125rem 0.75rem rgba(0,0,0,0.35)',
         }}
-        aria-label={open ? '사이드바 닫기' : '사이드바 열기'}
       >
-        {open ? <X size={18} /> : <Menu size={18} />}
-      </button>
+        <button
+          type="button"
+          className="flex items-center justify-center"
+          onClick={() => setOpen(v => !v)}
+          style={{
+            width: '2.75rem',
+            height: '2.75rem',
+            borderRadius: '0.375rem',
+            background: '#0d0b08',
+            border: '0.0625rem solid var(--border)',
+            color: 'var(--gold)',
+            cursor: 'pointer',
+            boxShadow: '0 0.125rem 0.5rem rgba(0,0,0,0.4)',
+            touchAction: 'manipulation',
+          }}
+          aria-label={open ? '사이드바 닫기' : '사이드바 열기'}
+          aria-expanded={open}
+          aria-controls={sidebarId}
+        >
+          {open ? <X size="1.125rem" /> : <Menu size="1.125rem" />}
+        </button>
+      </div>
 
       {/* 모바일 오버레이 배경 */}
       {open && (
@@ -114,13 +129,16 @@ export default function AdminSidebar() {
       {/* 사이드바 */}
       {/* 데스크탑: 항상 표시, 모바일: 오버레이 드로어 */}
       <aside
-        className={`shrink-0 fixed md:static z-30 transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        id={sidebarId}
+        className={`shrink-0 fixed md:static z-30 pt-[8.25rem] md:pt-[4.5rem] transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
-          width: 220,
+          width: '13.75rem',
+          top: 0,
+          left: 0,
           background: '#1a1510',
-          borderRight: '1px solid var(--border)',
-          minHeight: '100vh',
-          paddingTop: '72px',
+          borderRight: '0.0625rem solid var(--border)',
+          minHeight: '100dvh',
+          overflowY: 'auto',
         }}
       >
         {navContent}

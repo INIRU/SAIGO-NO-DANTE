@@ -126,7 +126,7 @@ export default function OptionPanel(props: Props) {
                         props.onRarityFilterChange(next.size === 3 ? null : next)
                       }
                     }}
-                    className="flex items-center gap-[0.25rem] rounded-full px-[0.625rem] py-[0.1875rem] text-[0.75rem] transition-all duration-200"
+                    className="flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center gap-[0.25rem] rounded-full px-[0.875rem] py-[0.5rem] text-[0.75rem] transition-all duration-200 sm:min-h-0 sm:min-w-0 sm:px-[0.625rem] sm:py-[0.1875rem]"
                     style={isActive ? {
                       border: `1px solid ${colors.border}88`,
                       background: `${colors.border}20`,
@@ -155,7 +155,7 @@ export default function OptionPanel(props: Props) {
               {props.rarityFilter !== null && (
                 <button
                   onClick={() => props.onRarityFilterChange(null)}
-                  className="text-[0.6875rem] px-[0.5rem] py-[0.125rem] rounded-full transition-colors"
+                  className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full px-[0.875rem] py-[0.5rem] text-[0.6875rem] transition-colors sm:min-h-0 sm:px-[0.5rem] sm:py-[0.125rem]"
                   style={{ color: '#5a4830', border: '1px solid rgba(138,96,16,0.15)' }}
                 >
                   전체
@@ -180,7 +180,7 @@ function ToggleChip({ label, active, onClick }: { label: string; active: boolean
   return (
     <button
       onClick={onClick}
-      className="rounded-full px-[0.75rem] py-[0.25rem] text-[0.8125rem] transition-all duration-200"
+      className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full px-[1rem] py-[0.5rem] text-[0.8125rem] transition-all duration-200 sm:min-h-0 sm:px-[0.75rem] sm:py-[0.25rem]"
       style={active ? {
         border: '1px solid rgba(200,144,10,0.5)',
         background: 'linear-gradient(135deg, rgba(200,144,10,0.15), rgba(200,144,10,0.08))',
