@@ -3,12 +3,18 @@
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getThemePackNameColor } from '@/lib/data/theme-pack-colors'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import { translations } from '@/lib/i18n/translations'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { Check } from 'lucide-react'
+import { useLocale } from 'next-intl'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
 interface ThemePackCardTheme {
   id: number | string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   image_url?: string | null
   ego_gift_ids?: number[] | null
   specific_ego_gift_ids?: number[] | null
@@ -18,17 +24,29 @@ interface ThemePackCardProps {
   theme: ThemePackCardTheme
   onClick: () => void
   isSelected?: boolean
+  lang?: SupportedLang
   /** Show gift count below name (default: false) */
   showGiftCount?: boolean
 }
 
-export default function ThemePackCard({ theme, onClick, isSelected, showGiftCount }: ThemePackCardProps) {
+export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
+  const locale = useLocale()
+  const lang = langProp ?? (locale as SupportedLang)
+  const t = (key: string) => {
+    const entry = translations[key as keyof typeof translations]
+    if (!entry) return key
+    return entry[lang] ?? entry['ko'] ?? key
+  }
   const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
   const nameColor = getThemePackNameColor(numId)
   const titleTrackRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
-  const fontSize = useAutoFontSize(theme.name, 1.5, 0.625, titleMeasureWidth, 'var(--font-kotra-bold), serif')
+  const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+  const fontSize = useAutoFontSize(displayName, 1.5, 0.625, titleMeasureWidth, 'var(--font-kotra-bold), serif')
   const giftCount = (theme.ego_gift_ids ?? []).length
+  const giftCountLabel = lang === 'en'
+    ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
+    : `${t('mirrorDungeon.theme.gifts')} ${giftCount}${t('mirrorDungeon.theme.giftCountSuffix')}`
 
   useEffect(() => {
     const element = titleTrackRef.current
@@ -58,6 +76,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
   return (
     <button
       onClick={onClick}
+      aria-label={displayName}
       className="relative group text-left overflow-hidden transition-all duration-200"
       style={{
         background: 'transparent',
@@ -72,14 +91,14 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
       {isSelected && !theme.image_url && (
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
           <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-          <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>선택됨</span>
+          <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
         </div>
       )}
       {theme.image_url ? (
         <div className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]" style={{ aspectRatio: '380/690', borderRadius: 'var(--radius-md)' }}>
           <ImageWithFallback
             src={theme.image_url}
-            alt={theme.name}
+            alt={displayName}
             fill
             fallbackType="theme"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
@@ -102,7 +121,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
                 overflow: 'hidden',
               } as CSSProperties}
             >
-              {theme.name}
+              {displayName}
             </div>
           </div>
 
@@ -110,7 +129,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
           {showGiftCount && giftCount > 0 && (
             <div className="absolute left-0 right-0 flex justify-center" style={{ bottom: '7%' }}>
               <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
-                기프트 {giftCount}종
+                {giftCountLabel}
               </span>
             </div>
           )}
@@ -119,18 +138,18 @@ export default function ThemePackCard({ theme, onClick, isSelected, showGiftCoun
           {isSelected && (
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
               <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-              <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>선택됨</span>
+              <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
             </div>
           )}
         </div>
       ) : (
         <div className="px-3 py-4" style={{ minHeight: '8rem' }}>
           <div className="font-serif font-bold leading-tight" style={{ color: nameColor, fontSize: '0.875rem' }}>
-            {theme.name}
+            {displayName}
           </div>
           {showGiftCount && giftCount > 0 && (
             <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
-              기프트 {giftCount}종
+              {giftCountLabel}
             </span>
           )}
         </div>

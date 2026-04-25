@@ -99,7 +99,7 @@ npx tsx scripts/sync/mirror-dungeon-data.ts [options]
 
 [2/4] 테마팩 동기화 (syncThemes)
   - mirrordungeon-theme-floor-t{1~6}.txt 로드
-  - KR 테마명 매핑
+  - KR/EN/JP 테마명 매핑 (`name`, `name_en`, `name_jp`)
   - floor_info 구성 (난이도별)
   - DB upsert (ego_gift_themes)
 
@@ -111,10 +111,13 @@ npx tsx scripts/sync/mirror-dungeon-data.ts [options]
 [4/4] 이벤트 동기화 (syncEvents)
   - action/personality choice event 로드
   - KR 이벤트 텍스트 매핑 (KR_ActionEvents_Mirror*, KR_AbEvents*)
+  - EN/JP 이벤트/선택지 텍스트 매핑 (ActionEvents/AbEvents)
   - 테마별 이벤트 매핑
-  - 보상(rewards) 추출 및 결합
-  - 연쇄 이벤트 parent_id 연결
-  - DB 삽입 (clean sync: 전체 삭제 → 재삽입 → parent_id 업데이트)
+  - 현재 테마팩 `eventPool`/`specialEventPool` root와 `nextEventID` child만 동기화 대상으로 사용
+  - source 근거가 명확한 current-pool 중복 visible 이벤트는 canonical winner만 유지
+  - 보상(rewards), `nextEventID`, result effects 추출 및 `md_event_choices.next_event_id/effects` 구성
+  - 연쇄 child 이벤트는 카드 목록에서 숨기고 parent 이벤트 모달에서 `next_event_id`로 중첩 표시
+  - DB 삽입 (dry-run 비교 기본, `--fix` 승인 후 반영)
 ```
 
 ### sync-game-data.mjs (인격 + EGO 스킬 동기화)

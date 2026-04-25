@@ -6,7 +6,6 @@ import { useQueryState, parseAsString } from 'nuqs'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeInUp } from '@/lib/animations'
 import dynamic from 'next/dynamic'
-import { useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import { translations } from '@/lib/i18n/translations'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -22,20 +21,20 @@ const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'),
 const EventModal = dynamic(() => import('@/components/mirror-dungeon/EventModal'), { ssr: false })
 
 export default function MirrorDungeonClient({
+  lang,
   gifts,
   recipes,
   themes = [],
   events = [],
   choices = [],
 }: {
+  lang: SupportedLang
   gifts: EgoGift[]
   recipes: Recipe[]
   themes?: EgoGiftTheme[]
   events?: MdEvent[]
   choices?: MdEventChoice[]
 }) {
-  const locale = useLocale()
-  const lang = locale as SupportedLang
   useRoutePrefetch([`/${lang}/keywords`])
   const t = (key: string) => {
     const entry = translations[key as keyof typeof translations]
@@ -127,22 +126,68 @@ export default function MirrorDungeonClient({
 
   const setSelectedThemeId = useCallback((v: number | null) => setThemeIdParam(v !== null ? String(v) : null), [setThemeIdParam])
 
+  const localizedEvents = useMemo(() => {
+    return events.map(ev => {
+      const name = ev.name
+        ? getLocalizedName({ name_kr: ev.name, name_en: ev.name_en, name_jp: ev.name_jp }, lang)
+        : ev.name
+      const descText = lang === 'en'
+        ? ev.desc_text_en ?? ev.desc_text
+        : lang === 'ja'
+          ? ev.desc_text_jp ?? ev.desc_text
+          : ev.desc_text
+
+      return {
+        ...ev,
+        name,
+        desc_text: descText,
+      }
+    })
+  }, [events, lang])
+
+  const localizedChoices = useMemo(() => {
+    return choices.map(choice => {
+      const message = lang === 'en'
+        ? choice.message_en ?? choice.message
+        : lang === 'ja'
+          ? choice.message_jp ?? choice.message
+          : choice.message
+      const messageDesc = lang === 'en'
+        ? choice.message_desc_en ?? choice.message_desc
+        : lang === 'ja'
+          ? choice.message_desc_jp ?? choice.message_desc
+          : choice.message_desc
+      const resultText = lang === 'en'
+        ? choice.result_text_en ?? choice.result_text
+        : lang === 'ja'
+          ? choice.result_text_jp ?? choice.result_text
+          : choice.result_text
+
+      return {
+        ...choice,
+        message,
+        message_desc: messageDesc,
+        result_text: resultText,
+      }
+    })
+  }, [choices, lang])
+
   // 이벤트 조회 맵 (EventModal + EventTab 공용)
   const eventById = useMemo(() => {
     const map = new Map<number, MdEvent>()
-    for (const ev of events) map.set(ev.id, ev)
+    for (const ev of localizedEvents) map.set(ev.id, ev)
     return map
-  }, [events])
+  }, [localizedEvents])
 
   const choicesByEventId = useMemo(() => {
     const map = new Map<number, MdEventChoice[]>()
-    for (const c of choices) {
+    for (const c of localizedChoices) {
       const arr = map.get(c.event_id)
       if (arr) arr.push(c)
       else map.set(c.event_id, [c])
     }
     return map
-  }, [choices])
+  }, [localizedChoices])
 
   // ThemeModal용 선택지 수 맵 (choices 배열 직접 순회, choicesByEventId 파생)
   const choiceCountByEventId = useMemo(() => {
@@ -411,6 +456,7 @@ export default function MirrorDungeonClient({
       {activeTab === 'themes' && themes.length > 0 && (
         <ScrollReveal variant={fadeInUp} as="div">
           <ThemeTab
+            lang={lang}
             themes={themes}
             gifts={gifts}
             giftByGameId={giftByGameId}
@@ -427,7 +473,8 @@ export default function MirrorDungeonClient({
       {activeTab === 'events' && events.length > 0 && (
         <ScrollReveal variant={fadeInUp} as="div">
           <EventTab
-            events={events}
+            lang={lang}
+            events={localizedEvents}
             choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
             themes={themes}
@@ -449,12 +496,13 @@ export default function MirrorDungeonClient({
         const themeGifts = [...allGiftIds].map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
         return (
           <ThemeModal
+            lang={lang}
             theme={theme}
             themeGifts={themeGifts}
             getGiftKeywordIcon={getGiftKeywordIcon}
             onClose={() => setExpandedThemeId(null)}
             onSelectGift={handleThemeModalSelectGift}
-            events={events}
+            events={localizedEvents}
             choiceCountByEventId={choiceCountByEventId}
           />
         )
@@ -484,6 +532,7 @@ export default function MirrorDungeonClient({
       {/* 이벤트 상세 모달 */}
       {selectedEvent && (
         <EventModal
+          lang={lang}
           event={selectedEvent}
           eventById={eventById}
           choicesByEventId={choicesByEventId}

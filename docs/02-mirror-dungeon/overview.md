@@ -11,9 +11,10 @@
 | 테이블 | 주요 컬럼 | 설명 |
 |--------|-----------|------|
 | `ego_gifts` | id, name, keyword, grade, tier, enhancement, price, sell_price, buy_disabled, effect_base/plus/plusplus, activation_condition, is_synthesis, image_url, game_id, difficulty, acquisition | E.G.O 기프트 (400+개) |
-| `ego_gift_themes` | id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info | 테마 팩 정보 |
+| `ego_gift_themes` | id, name, name_en/name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info | 테마 팩 정보 |
 | `ego_gift_recipes` | (재료 3개 -> 결과 1개) | 기프트 조합 레시피 |
-| `mirror_dungeon_events` | (이벤트 정보) | 거울 던전 이벤트 |
+| `md_events` | id, name/name_en/name_jp, desc_text/desc_text_en/desc_text_jp, event_type, theme_ids, gift_ids, variant_of | 거울 던전 이벤트 본문 |
+| `md_event_choices` | event_id, sort_order, message/message_en/message_jp, message_desc/message_desc_en/message_desc_jp, result_text/result_text_en/result_text_jp, next_event_id, effects | 이벤트 선택지와 연쇄 이벤트/보상 |
 | `keyword_meta` | name, description, max_stack, icon_slug, sin_affinity | 키워드 메타 정보 |
 
 ## 주요 컴포넌트
@@ -149,6 +150,7 @@
 1. 이벤트 탭으로 전환
 2. 거울 던전 이벤트 목록 탐색
 3. 이벤트별 선택지, 보상, 중첩 이벤트 확인
+4. `md_event_choices.next_event_id`로 연결된 child dialogue event는 독립 카드가 아니라 parent 이벤트 상세 모달 안에 표시
 
 ## API 라우트
 

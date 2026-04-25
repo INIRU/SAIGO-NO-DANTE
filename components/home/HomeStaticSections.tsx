@@ -2,19 +2,18 @@ import React from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import {
   Globe, XIcon, ExternalLink, Sparkles, ChevronRight, Calendar,
-  Shield, Layers, Compass, BookOpen, Trophy, Dices, Shuffle, Map,
 } from 'lucide-react'
 import type { IdentityWithSinner } from '@/lib/types'
 import type { YoutubeVideo } from '@/app/[lang]/page'
 import { getSinnerLogoUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
-import { FeatureHoverCard, OfficialHoverCard } from './HomeHoverCard'
+import { OfficialHoverCard } from './HomeHoverCard'
 import { LatestIdentityCard } from './LatestIdentityCard'
 import { getTranslations } from 'next-intl/server'
 
 // ── SVG icons (defined here so they work in Server Components) ────────────
 
-function YoutubeIcon({ size = 16, style }: { size?: number; style?: React.CSSProperties }) {
+function YoutubeIcon({ size = 16, style }: { size?: number | string; style?: React.CSSProperties }) {
   return (
     <svg
       width={size}
@@ -33,7 +32,7 @@ function YoutubeIcon({ size = 16, style }: { size?: number; style?: React.CSSPro
   )
 }
 
-function DiscordIcon({ size = 18, style }: { size?: number; style?: React.CSSProperties }) {
+function DiscordIcon({ size = 18, style }: { size?: number | string; style?: React.CSSProperties }) {
   return (
     <svg
       width={size}
@@ -48,20 +47,118 @@ function DiscordIcon({ size = 18, style }: { size?: number; style?: React.CSSPro
   )
 }
 
+type CommandGlyphKind = 'sinner' | 'deck' | 'mirror' | 'collection' | 'tier' | 'extraction' | 'random' | 'planner'
+
+function CommandGlyph({
+  kind,
+  size = '1.25rem',
+  style,
+}: {
+  kind: CommandGlyphKind
+  size?: string
+  style?: React.CSSProperties
+}) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 32 32',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    style,
+    'aria-hidden': true,
+  }
+
+  if (kind === 'sinner') {
+    return (
+      <svg {...common}>
+        <path d="M16 4.5 24.5 9v8.8L16 27.5 7.5 17.8V9L16 4.5Z" />
+        <path d="M16 8.8v14.4M10.8 11.7 16 8.8l5.2 2.9M11.2 17.2h9.6" />
+      </svg>
+    )
+  }
+
+  if (kind === 'deck') {
+    return (
+      <svg {...common}>
+        <path d="M9 7h14v17H9z" />
+        <path d="M6 10h14M12 4h14v17" />
+        <path d="M12.5 13.5h7M12.5 17h4.5" />
+      </svg>
+    )
+  }
+
+  if (kind === 'mirror') {
+    return (
+      <svg {...common}>
+        <path d="M16 4 26 10v12l-10 6-10-6V10l10-6Z" />
+        <path d="M16 4v24M6 10l20 12M26 10 6 22" />
+        <path d="M12 12.2 16 10l4 2.2v7.6L16 22l-4-2.2v-7.6Z" />
+      </svg>
+    )
+  }
+
+  if (kind === 'collection') {
+    return (
+      <svg {...common}>
+        <path d="M8 6h16v20H8z" />
+        <path d="M12 6v20M16 10h5M16 14h4M16 18h5" />
+      </svg>
+    )
+  }
+
+  if (kind === 'tier') {
+    return (
+      <svg {...common}>
+        <path d="M6 24h20M8 20h4v4H8zM14 14h4v10h-4zM20 9h4v15h-4z" />
+        <path d="M16 6 18 9.5 22 10l-3 2.8.8 4-3.8-2-3.8 2 .8-4-3-2.8 4-.5L16 6Z" />
+      </svg>
+    )
+  }
+
+  if (kind === 'extraction') {
+    return (
+      <svg {...common}>
+        <path d="M16 5v22M5 16h22" />
+        <path d="M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z" />
+      </svg>
+    )
+  }
+
+  if (kind === 'random') {
+    return (
+      <svg {...common}>
+        <path d="M7 10h5l8 12h5M7 22h5l2.2-3.3M19.8 13.3 22 10h3" />
+        <path d="m22 7 3 3-3 3M22 19l3 3-3 3" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M6 7h20v18H6z" />
+      <path d="M10 11h12M10 16h5M18 16h4M10 21h12" />
+      <path d="M16 11v10" />
+    </svg>
+  )
+}
+
 // ── Static data ───────────────────────────────────────────────────────────
 
 type TFn = Awaited<ReturnType<typeof getTranslations>>
 
 function getFeatures(t: TFn) {
   return [
-    { href: '/sinners',        Icon: Shield,   tag: 'SINNER DB',       title: t('home.feat.sinnerDb'),       desc: t('home.feat.sinnerDbDesc'),       accent: '#c8900a' },
-    { href: '/decks',          Icon: Layers,   tag: 'DECK BOARD',      title: t('home.feat.deckBoard'),       desc: t('home.feat.deckBoardDesc'),      accent: '#4898b0' },
-    { href: '/mirror-dungeon', Icon: Compass,  tag: 'MIRROR DUNGEON',  title: t('home.feat.mirrorDungeon'),   desc: t('home.feat.mirrorDungeonDesc'),  accent: '#8058a8' },
-    { href: '/collection',     Icon: BookOpen, tag: 'COLLECTION',      title: t('home.feat.collection'),      desc: t('home.feat.collectionDesc'),     accent: '#d4b830' },
-    { href: '/tier-list',      Icon: Trophy,   tag: 'TIER LIST',       title: t('home.feat.tierList'),        desc: t('home.feat.tierListDesc'),       accent: '#d06030' },
-    { href: '/extraction',     Icon: Dices,    tag: 'EXTRACTION SIM',  title: t('home.feat.extraction'),      desc: t('home.feat.extractionDesc'),     accent: '#c83030' },
-    { href: '/random',         Icon: Shuffle,  tag: 'RANDOM COMP',     title: t('home.feat.random'),          desc: t('home.feat.randomDesc'),         accent: '#3870b0' },
-    { href: '/planner',        Icon: Map,      tag: 'DUNGEON PLANNER', title: t('home.feat.planner'),         desc: t('home.feat.plannerDesc'),        accent: '#8b1a1a' },
+    { href: '/sinners',        glyph: 'sinner' as const,     tag: 'SINNER DB',       title: t('home.feat.sinnerDb'),       desc: t('home.feat.sinnerDbDesc') },
+    { href: '/decks',          glyph: 'deck' as const,       tag: 'DECK BOARD',      title: t('home.feat.deckBoard'),       desc: t('home.feat.deckBoardDesc') },
+    { href: '/mirror-dungeon', glyph: 'mirror' as const,     tag: 'MIRROR DUNGEON',  title: t('home.feat.mirrorDungeon'),   desc: t('home.feat.mirrorDungeonDesc') },
+    { href: '/collection',     glyph: 'collection' as const, tag: 'COLLECTION',      title: t('home.feat.collection'),      desc: t('home.feat.collectionDesc') },
+    { href: '/tier-list',      glyph: 'tier' as const,       tag: 'TIER LIST',       title: t('home.feat.tierList'),        desc: t('home.feat.tierListDesc') },
+    { href: '/extraction',     glyph: 'extraction' as const, tag: 'EXTRACTION SIM',  title: t('home.feat.extraction'),      desc: t('home.feat.extractionDesc') },
+    { href: '/random',         glyph: 'random' as const,     tag: 'RANDOM COMP',     title: t('home.feat.random'),          desc: t('home.feat.randomDesc') },
+    { href: '/planner',        glyph: 'planner' as const,    tag: 'DUNGEON PLANNER', title: t('home.feat.planner'),         desc: t('home.feat.plannerDesc') },
   ]
 }
 
@@ -101,7 +198,10 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
   const t = await getTranslations()
   const latestDate = latestIdentities[0]?.release_date
   const features = getFeatures(t)
+  const priorityFeatures = [features[0], features[2]].filter(Boolean)
+  const utilityFeatures = features.filter(feature => !priorityFeatures.includes(feature))
   const officialLinks = getOfficialLinks(t)
+  const routeAccents = ['var(--gold)', '#8a6010', '#5a4a35']
 
   return (
     <div style={{ background: 'var(--bg-deep)' }}>
@@ -109,106 +209,77 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
       {/* ── 최신 유튜브 영상 ─────────────────────────────────────── */}
       {latestVideo && (
         <section
-          className="relative max-w-5xl mx-auto px-6 py-20"
+          className="home-archive-module video-archive-section relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24"
           style={{ isolation: 'isolate' }}
         >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(200,48,30,0.04) 0%, transparent 70%)',
-              zIndex: 0,
-            }}
-          />
-
-          <div className="relative" style={{ zIndex: 1 }}>
-            {/* 섹션 헤더 */}
-            <div className="flex items-end justify-between mb-6">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <YoutubeIcon size={11} style={{ color: '#c83030' }} />
-                  <span className="font-mono" style={{ color: '#c83030', fontSize: '0.625rem', letterSpacing: '0.4em', opacity: 0.8 }}>
-                    LATEST VIDEO
-                  </span>
-                </div>
-                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>
+          <div className="relative border-y border-[rgba(200,144,10,0.24)]">
+            <div className="grid min-h-[3rem] gap-3 border-b border-[rgba(200,144,10,0.18)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-center md:px-5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <YoutubeIcon size="0.8125rem" style={{ color: '#c83030' }} />
+                <span className="font-mono text-[0.625rem] uppercase text-[rgba(200,48,48,0.82)]">
+                  ARCHIVE-01 / BROADCAST
+                </span>
+                <span className="hidden h-px w-10 bg-[rgba(200,144,10,0.32)] md:block" aria-hidden="true" />
+                <span className="hidden truncate font-serif text-sm text-[rgba(232,176,48,0.78)] md:block">
                   {t('home.latestVideo')}
-                </h2>
+                </span>
               </div>
               <a
                 href="https://www.youtube.com/@ProjectMoonOfficial/videos"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm transition-all hover:gap-2.5 mb-1"
-                style={{ color: '#c83030', opacity: 0.7 }}
+                className="group flex min-h-[2.25rem] items-center justify-between gap-3 border border-[rgba(200,48,48,0.3)] bg-[rgba(200,48,48,0.07)] px-3 py-2 font-serif text-sm text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(200,48,48,0.62)] hover:bg-[rgba(200,48,48,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(200,48,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0 md:min-w-[11rem]"
               >
-                {t('home.viewChannel')} <ChevronRight size={14} />
+                <span>{t('home.viewChannel')}</span>
+                <ChevronRight size="0.875rem" className="transition-transform duration-300 group-hover:translate-x-1" />
               </a>
             </div>
 
-            <div className="divider-gold mb-8" />
-
-            {/* 풀 폭 영상 */}
-            <div
-              style={{
-                position: 'relative',
-                paddingTop: '56.25%',
-                borderRadius: '0.25rem',
-                overflow: 'hidden',
-                border: '1px solid var(--border)',
-                boxShadow: '0 0.5rem 2.5rem rgba(0,0,0,0.6)',
-              }}
-            >
-              <iframe
-                src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0&modestbranding=1`}
-                title={latestVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-              />
-            </div>
-
-            {/* 하단 메타 바 */}
-            <div
-              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-4"
-              style={{ padding: '0.75rem 0' }}
-            >
-              {/* 채널 배지 */}
-              <div className="flex items-center gap-2.5 shrink-0">
-                <div
-                  className="flex items-center justify-center rounded-full shrink-0"
-                  style={{ width: '1.75rem', height: '1.75rem', background: 'rgba(200,48,48,0.12)', border: '1px solid rgba(200,48,48,0.3)' }}
-                >
-                  <YoutubeIcon size={13} style={{ color: '#c83030' }} />
+            <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_21rem]">
+              <div className="video-archive-frame relative p-2 md:p-3">
+                <div className="relative overflow-hidden border border-[rgba(200,144,10,0.22)] shadow-[0_1rem_3rem_rgba(0,0,0,0.45)]" style={{ aspectRatio: '16/9' }}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0&modestbranding=1`}
+                    title={latestVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                    className="absolute inset-0 h-full w-full border-0"
+                  />
                 </div>
-                <span className="font-serif text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Project Moon
-                </span>
               </div>
 
-              {/* 구분점 (데스크탑) */}
-              <span className="hidden sm:block" style={{ color: 'var(--text-muted)', fontSize: '0.5rem' }}>●</span>
-
-              {/* 영상 제목 */}
-              <a
-                href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-serif font-light leading-snug hover:text-yellow-300 transition-colors flex-1 min-w-0 truncate"
-                style={{ color: 'var(--gold-light)', fontSize: '0.9375rem' }}
-              >
-                {latestVideo.title}
-              </a>
-
-              {/* 출판일 */}
-              {latestVideo.publishedAt && (
-                <div className="flex items-center gap-1.5 shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  <Calendar size={10} />
-                  <span className="font-mono" style={{ fontSize: '0.625rem' }}>
-                    {formatDate(latestVideo.publishedAt.slice(0, 10))}
-                  </span>
+              <div className="grid min-w-0 border-t border-[rgba(200,144,10,0.18)] md:border-l md:border-t-0">
+                <div className="min-w-0 px-4 py-4 md:px-5 md:py-5">
+                  <h2 className="font-serif text-[1.625rem] font-medium leading-tight md:text-[2rem]" style={{ color: 'var(--gold-light)' }}>
+                    {t('home.latestVideo')}
+                  </h2>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 block min-w-0 font-serif text-[1rem] leading-snug text-[rgba(232,176,48,0.82)] transition-colors duration-300 hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]"
+                  >
+                    {latestVideo.title}
+                  </a>
                 </div>
-              )}
+
+                <div className="grid border-t border-[rgba(200,144,10,0.14)] sm:grid-cols-2 md:grid-cols-1">
+                  <div className="px-4 py-3 md:px-5">
+                    <div className="font-mono text-[0.625rem] text-[var(--text-muted)]">CHANNEL</div>
+                    <div className="mt-1 font-serif text-sm text-[var(--text-secondary)]">Project Moon</div>
+                  </div>
+                  {latestVideo.publishedAt && (
+                    <div className="border-t border-[rgba(200,144,10,0.14)] px-4 py-3 sm:border-l sm:border-t-0 md:border-l-0 md:border-t md:px-5">
+                      <div className="font-mono text-[0.625rem] text-[var(--text-muted)]">PUBLISHED</div>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono text-[0.6875rem] text-[rgba(232,176,48,0.72)]">
+                        <Calendar size="0.6875rem" />
+                        {formatDate(latestVideo.publishedAt.slice(0, 10))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -217,7 +288,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
       {/* ── 최신 인격 ──────────────────────────────────────────── */}
       {latestIdentities.length > 0 && (
         <section
-          className="latest-section relative max-w-7xl mx-auto px-6 py-20"
+          className="latest-section home-archive-module relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24"
           style={{ isolation: 'isolate' }}
         >
           <div
@@ -225,26 +296,36 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
             style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(200,144,10,0.04) 0%, transparent 70%)', zIndex: 0 }}
           />
 
-          <div className="relative" style={{ zIndex: 1 }}>
-            <div className="latest-header flex items-end justify-between mb-6" suppressHydrationWarning>
-              <div>
+          <div className="relative border-y border-[rgba(200,144,10,0.22)] py-5 md:p-6" style={{ zIndex: 1 }}>
+            <div className="latest-header grid gap-5 border-b border-[rgba(200,144,10,0.16)] pb-5 md:grid-cols-[1fr_auto]" suppressHydrationWarning>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles size={11} style={{ color: 'var(--gold)' }} />
-                  <span className="font-mono" style={{ color: 'var(--gold-dim)', fontSize: '0.625rem', letterSpacing: '0.4em' }}>LATEST UPDATE</span>
+                  <Sparkles size="0.75rem" style={{ color: 'var(--gold)' }} />
+                  <span className="font-mono text-[0.625rem] text-[var(--gold-dim)]">ARCHIVE-02 / ROSTER UPDATE</span>
                 </div>
-                <h2 className="font-serif text-4xl font-medium tracking-wide" style={{ color: 'var(--gold-light)' }}>{t('home.latestIdentity')}</h2>
+                <h2 className="font-serif text-[1.875rem] font-medium leading-tight md:text-[2.25rem]" style={{ color: 'var(--gold-light)' }}>{t('home.latestIdentity')}</h2>
               </div>
-              {latestDate && (
-                <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <Calendar size={11} />
-                  <span className="font-mono" style={{ fontSize: '0.6875rem' }}>{formatDate(latestDate)}</span>
-                </div>
-              )}
+              <div className="grid gap-3 sm:grid-cols-2 md:min-w-[17rem] md:grid-cols-1">
+                {latestDate && (
+                  <div className="flex items-center justify-between gap-4 border border-[rgba(200,144,10,0.18)] bg-[rgba(26,21,16,0.48)] px-3 py-2.5">
+                    <span className="font-mono text-[0.625rem] text-[var(--text-muted)]">ISSUED</span>
+                    <span className="flex items-center gap-1.5 font-mono text-[0.6875rem] text-[rgba(232,176,48,0.76)]">
+                      <Calendar size="0.6875rem" />
+                      {formatDate(latestDate)}
+                    </span>
+                  </div>
+                )}
+                <Link
+                  href="/sinners"
+                  className="group flex min-h-[2.75rem] items-center justify-between border border-[rgba(200,144,10,0.34)] bg-[rgba(200,144,10,0.08)] px-3 py-2.5 font-serif text-sm text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(232,176,48,0.58)] hover:bg-[rgba(200,144,10,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0"
+                >
+                  {t('home.viewAllSinners')}
+                  <ChevronRight size="0.875rem" className="transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
             </div>
 
-            <div className="divider-gold mb-10" />
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1fr] md:grid-cols-4 md:gap-4 lg:grid-cols-6">
               {latestIdentities.map((identity) => {
                 const portraitUrl   = getIdentityInfoUrl(identity)
                 const logoUrl       = getSinnerLogoUrl(identity.sinner_id)
@@ -260,172 +341,181 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 )
               })}
             </div>
-
-            <div className="mt-12 flex justify-center">
-              <Link
-                href="/sinners"
-                className="flex items-center gap-2 font-serif text-sm transition-all hover:text-gold-light"
-                style={{
-                  color: 'var(--gold-dim)',
-                  border: '1px solid var(--gold-dim)',
-                  padding: '0.5rem 1.5rem',
-                  borderRadius: '0.125rem',
-                }}
-              >
-                {t('home.viewAllSinners')}
-                <ChevronRight size={14} />
-              </Link>
-            </div>
           </div>
         </section>
       )}
 
-      {/* ── 기능 소개 (카드 그리드) ──────────────────────────── */}
-      <section className="features-section max-w-7xl mx-auto px-6 py-16">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="divider-gold flex-1" />
-          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#5a4a35', fontSize: '0.625rem', letterSpacing: '0.4em' }}>
-            FEATURES
-          </span>
-          <div className="divider-gold flex-1" />
+      {/* ── 기능 소개 ─────────────────────────────────────────── */}
+      <section className="features-section home-archive-module mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24">
+        <div className="mb-6 grid gap-3 md:grid-cols-[0.42fr_1fr] md:items-end">
+          <div>
+              <span aria-hidden="true" className="font-mono text-[0.625rem] text-[#5a4a35]">
+              ARCHIVE-03 / ROUTE MAP
+            </span>
+            <h2 className="mt-2 font-serif text-[1.875rem] font-medium leading-tight text-[var(--gold-light)] md:text-[2.25rem]">
+              COMMAND MAP
+            </h2>
+          </div>
+          <div className="hidden h-[0.0625rem] bg-[linear-gradient(90deg,rgba(200,144,10,0.35),transparent)] md:block" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {features.map((feature) => (
-            <Link key={feature.href} href={feature.href} className="feature-card block" suppressHydrationWarning>
-              <FeatureHoverCard
-                accent={feature.accent}
+        <div className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+            {priorityFeatures.map((feature, index) => {
+              const accent = routeAccents[index] ?? 'var(--gold)'
+              return (
+              <Link
+                key={feature.href}
+                href={feature.href}
+                className="feature-card group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]"
+                suppressHydrationWarning
+              >
+                <div
+                  className="relative h-full overflow-hidden border border-[var(--border)] bg-[linear-gradient(135deg,rgba(26,21,16,0.86),rgba(18,14,8,0.78))] p-5 transition-[background-color,border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[0.125rem] group-hover:border-[rgba(232,176,48,0.48)] group-hover:bg-[rgba(26,21,16,0.94)] group-hover:shadow-[0_1rem_2.5rem_rgba(0,0,0,0.35),inset_0.1875rem_0_0_rgba(200,144,10,0.8)]"
+                  style={{
+                    minHeight: index === 0 ? '12rem' : '10.75rem',
+                  }}
+                >
+                  <span className="pointer-events-none absolute inset-x-0 top-0 h-[0.0625rem] scale-x-0 bg-[rgba(232,176,48,0.72)] transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+                  <div className="flex h-full flex-col justify-between gap-8">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="mb-2 font-mono text-[0.625rem]" style={{ color: accent, opacity: 0.72 }}>
+                          {feature.tag}
+                        </div>
+                        <div className="font-serif text-2xl font-light leading-tight text-[var(--gold-light)]">
+                          {feature.title}
+                        </div>
+                      </div>
+                      <div
+                        className="grid h-[2.75rem] w-[2.75rem] shrink-0 place-items-center border transition-[border-color,background-color,transform,color] duration-300 group-hover:translate-x-[0.125rem] group-hover:-translate-y-[0.125rem] group-hover:border-[rgba(232,176,48,0.58)] group-hover:bg-[rgba(200,144,10,0.16)]"
+                        style={{ background: 'rgba(200,144,10,0.08)', borderColor: 'rgba(200,144,10,0.28)' }}
+                      >
+                        <CommandGlyph kind={feature.glyph} size="1.25rem" style={{ color: accent, opacity: 0.86 }} />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                      <p className="max-w-[34rem] text-sm leading-relaxed text-[var(--text-tertiary)]">
+                        {feature.desc}
+                      </p>
+                      <ChevronRight
+                        aria-hidden="true"
+                        size="1rem"
+                        className="text-[#5a4a35] transition-[color,transform] duration-300 group-hover:translate-x-1 group-hover:text-[var(--gold)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+              )
+            })}
+          </div>
+
+          <div className="feature-route-list border-y border-[rgba(200,144,10,0.2)]">
+            {utilityFeatures.map((feature, index) => {
+              const accent = routeAccents[(index + 1) % routeAccents.length] ?? '#5a4a35'
+              return (
+              <Link
+                key={feature.href}
+                href={feature.href}
+                className="feature-card group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]"
+                suppressHydrationWarning
+              >
+              <div
+                className="relative overflow-hidden transition-[background-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[0.0625rem] group-hover:bg-[rgba(36,29,21,0.72)] group-hover:shadow-[inset_0.1875rem_0_0_rgba(200,144,10,0.72)]"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '0.25rem',
-                  padding: '1.5rem',
-                  minHeight: '10rem',
-                  height: '100%',
-                  transition: 'border-color 0.25s, box-shadow 0.25s, background 0.25s',
-                  position: 'relative',
+                  background: index % 2 === 0 ? 'rgba(26,21,16,0.34)' : 'rgba(13,11,8,0.22)',
+                  border: '0',
+                  borderBottom: index === utilityFeatures.length - 1 ? '0' : '1px solid rgba(200,144,10,0.13)',
+                  padding: '1rem',
                 }}
               >
-                {/* 아이콘 */}
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{
-                    width: '2.5rem',
-                    height: '2.5rem',
-                    background: `${feature.accent}12`,
-                    border: `1px solid ${feature.accent}30`,
-                    marginBottom: '1rem',
-                  }}
-                >
-                  <feature.Icon
-                    size={18}
-                    style={{ color: feature.accent, opacity: 0.8 }}
+                <span className="pointer-events-none absolute inset-y-3 left-0 w-[0.0625rem] scale-y-0 bg-[rgba(232,176,48,0.7)] transition-transform duration-300 group-hover:scale-y-100" aria-hidden="true" />
+                <div className="grid grid-cols-[2.25rem_1fr_auto] items-center gap-3">
+                  <div
+                    className="grid h-[2.25rem] w-[2.25rem] place-items-center border transition-[border-color,background-color,transform] duration-300 group-hover:scale-[1.04] group-hover:border-[rgba(232,176,48,0.48)] group-hover:bg-[rgba(200,144,10,0.13)]"
+                    style={{ background: 'rgba(200,144,10,0.06)', borderColor: 'rgba(200,144,10,0.18)' }}
+                  >
+                    <CommandGlyph kind={feature.glyph} size="1rem" style={{ color: accent, opacity: 0.78 }} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-mono text-[0.5625rem]" style={{ color: accent, opacity: 0.58 }}>
+                      {feature.tag}
+                    </div>
+                    <div className="mt-1 truncate font-serif text-base font-light text-[var(--gold)]">
+                      {feature.title}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-[0.75rem] leading-relaxed text-[var(--text-tertiary)]">
+                      {feature.desc}
+                    </div>
+                  </div>
+                  <ChevronRight
+                    aria-hidden="true"
+                    size="0.875rem"
+                    className="text-[#5a4a35] transition-[color,transform] duration-300 group-hover:translate-x-1 group-hover:text-[var(--gold)]"
                   />
                 </div>
-
-                {/* 태그 */}
-                <div
-                  className="font-mono"
-                  style={{
-                    fontSize: '0.5625rem',
-                    letterSpacing: '0.3em',
-                    color: feature.accent,
-                    opacity: 0.5,
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  {feature.tag}
-                </div>
-
-                {/* 타이틀 */}
-                <div
-                  className="font-serif font-light"
-                  style={{
-                    fontSize: '1.0625rem',
-                    color: 'var(--gold)',
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  {feature.title}
-                </div>
-
-                {/* 설명 */}
-                <div
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-tertiary)',
-                    fontFamily: 'var(--font-body)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {feature.desc}
-                </div>
-
-                {/* 쉐브론 */}
-                <ChevronRight
-                  aria-hidden="true"
-                  size={14}
-                  style={{
-                    position: 'absolute',
-                    bottom: '1rem',
-                    right: '1rem',
-                    color: '#5a4a35',
-                  }}
-                />
-              </FeatureHoverCard>
+              </div>
             </Link>
-          ))}
+              )
+            })}
+          </div>
         </div>
       </section>
 
       {/* ── 공식 채널 ──────────────────────────────────────────── */}
-      <section className="official-section max-w-7xl mx-auto px-6 pb-16">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="divider-gold flex-1" />
-          <span aria-hidden="true" className="font-mono shrink-0" style={{ color: '#5a4a35', fontSize: '0.625rem', letterSpacing: '0.4em' }}>OFFICIAL</span>
-          <div className="divider-gold flex-1" />
-        </div>
+      <section className="official-section home-archive-module mx-auto max-w-7xl px-5 pb-16 sm:px-6 md:pb-24">
+        <div className="grid gap-5 border-y border-[rgba(200,144,10,0.22)] py-5 md:grid-cols-[0.36fr_1fr] md:items-stretch md:p-6">
+          <div className="flex flex-col justify-between gap-4">
+            <div>
+              <span aria-hidden="true" className="font-mono text-[0.625rem] text-[#5a4a35]">ARCHIVE-04 / SIGNAL</span>
+              <h2 className="mt-2 font-serif text-2xl font-medium leading-tight text-[var(--gold-light)]">
+                SAIGO NO DANTE
+              </h2>
+            </div>
+            <span aria-hidden="true" className="font-mono text-[0.5625rem] text-[var(--text-muted)] opacity-50">
+              {t('home.fanArchiveFooter')}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid gap-0 border-y border-[rgba(200,144,10,0.16)] md:border-y-0 md:border-l">
           {officialLinks.map(({ label, sub, href, Icon, color, isInternal }) => {
+            const signalColor = isInternal ? 'var(--gold)' : color
             const inner = (
               <OfficialHoverCard
-                color={color}
-                className="flex flex-col items-center text-center h-full"
+                color={signalColor}
+                className="official-link-card group"
                 style={{
-                  background: 'linear-gradient(160deg, #1a1510 0%, #120e08 100%)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '0.25rem',
-                  padding: '1.5rem',
-                  minHeight: '9rem',
+                  background: 'transparent',
+                  border: '0',
+                  borderBottom: '1px solid rgba(200,144,10,0.13)',
+                  padding: '0.875rem 0',
                   position: 'relative',
-                  transition: 'border-color 0.3s, box-shadow 0.3s',
+                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
                 }}
               >
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{
-                    width: '2.5rem',
-                    height: '2.5rem',
-                    background: `${color}18`,
-                    border: `1px solid ${color}40`,
-                    marginBottom: '1rem',
-                  }}
-                >
-                  <Icon size={18} style={{ color }} />
+                <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-3 md:px-4">
+                  <div
+                    className="grid h-[2.5rem] w-[2.5rem] place-items-center border"
+                    style={{ background: isInternal ? 'rgba(200,144,10,0.1)' : `${color}14`, borderColor: isInternal ? 'rgba(200,144,10,0.32)' : `${color}34` }}
+                  >
+                    <Icon size="1rem" style={{ color: signalColor }} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-serif text-sm font-light text-[var(--gold-light)]">{label}</div>
+                    <div className="mt-1 truncate font-mono text-[0.625rem] text-[var(--text-muted)]">{sub}</div>
+                  </div>
+                  <ExternalLink
+                    aria-hidden="true"
+                    size="0.75rem"
+                    className="text-[#5a4a35] transition-transform duration-300 group-hover:translate-x-[0.125rem] group-hover:-translate-y-[0.125rem]"
+                  />
                 </div>
-                <div className="font-serif font-light text-sm mb-1" style={{ color: 'var(--gold-light)' }}>{label}</div>
-                <div className="truncate font-mono w-full" style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>{sub}</div>
-                <ExternalLink
-                  aria-hidden="true"
-                  size={12}
-                  style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', color: '#5a4a35' }}
-                />
               </OfficialHoverCard>
             )
 
             return (
-              <div key={href} className="official-link-card" suppressHydrationWarning>
+              <div key={href} suppressHydrationWarning>
                 {isInternal ? (
                   <Link href={href}>{inner}</Link>
                 ) : (
@@ -434,17 +524,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
               </div>
             )
           })}
-        </div>
-
-        {/* 마무리 */}
-        <div className="mt-14 flex flex-col items-center gap-3">
-          <div className="divider-gold" style={{ maxWidth: '12rem' }} />
-          <span aria-hidden="true" className="font-logo tracking-widest" style={{ color: 'var(--gold-dim)', fontSize: '1.125rem', opacity: 0.4, letterSpacing: '0.3em' }}>
-            SAIGO NO DANTE
-          </span>
-          <span aria-hidden="true" className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', opacity: 0.3 }}>
-            {t('home.fanArchiveFooter')}
-          </span>
+          </div>
         </div>
       </section>
 

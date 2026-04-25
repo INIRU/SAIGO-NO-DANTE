@@ -43,8 +43,9 @@ const MIRROR_FAQ = [
   },
 ]
 
-export default async function MirrorDungeonPage() {
+export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
+  const { lang } = await params
   cacheLife('max')
   cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
   const supabase = createAdminClient()
@@ -56,10 +57,14 @@ export default async function MirrorDungeonPage() {
     { data: events, error: eventsError },
     { data: choices, error: choicesError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, keyword, grade, enhancement, price, sell_price, buy_disabled, effect_base, effect_plus, effect_plusplus, activation_condition, is_synthesis, first_appearance, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, sell_price, buy_disabled, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition, is_synthesis, first_appearance, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('id, result_name, keyword, ingredients, final_result'),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
-    supabase.schema('limbus').from('md_events').select('*').order('id'),
+    supabase
+      .schema('limbus')
+      .from('md_events')
+      .select('id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category')
+      .order('id'),
     supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
   ])
   if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch gifts' } })
@@ -75,6 +80,7 @@ export default async function MirrorDungeonPage() {
           to prevent CSR bailout from de-opting the entire page to client rendering. */}
       <Suspense fallback={null}>
         <MirrorDungeonClient
+          lang={lang as SupportedLang}
           gifts={gifts ?? []}
           recipes={recipes ?? []}
           themes={themes ?? []}
