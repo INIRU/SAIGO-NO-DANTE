@@ -325,7 +325,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   return (
-    <div className="min-h-screen pt-20 sm:pt-24 pb-16 relative">
+    <div className="min-h-[100dvh] pt-[4.75rem] sm:pt-24 pb-16 relative">
       {/* 배경 글로우 */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
         <div style={{
@@ -340,7 +340,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative" style={{ zIndex: 1 }}>
         {/* 브레드크럼 */}
-        <div className="mb-4 sm:mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
+        <div className="mb-2 sm:mb-8 flex items-center gap-2 text-xs sm:text-sm" style={{ color: '#888888' }}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             {t('sinners.title')}
           </Link>
@@ -348,7 +348,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)] gap-3 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <motion.div
             className="lg:sticky lg:top-24 lg:self-start"
@@ -356,16 +356,17 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
           >
-            <div className="card p-4 sm:p-6" style={{
-              background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
-              border: '0.0625rem solid rgba(200,144,10,0.12)',
-              borderRadius: '0.5rem',
-              boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+            <div className="p-3 sm:p-6" style={{
+              background: 'linear-gradient(180deg, rgba(20,18,14,0.96) 0%, rgba(15,13,10,0.9) 100%)',
+              borderTop: '0.0625rem solid rgba(200,144,10,0.22)',
+              borderBottom: '0.0625rem solid rgba(200,144,10,0.12)',
+              borderRadius: '0.375rem',
+              boxShadow: '0 0.75rem 2rem rgba(0,0,0,0.28)',
             }}>
-              <div className="flex gap-4 sm:block">
+              <div className="flex gap-3 sm:block">
               {/* 프로필 이미지 */}
               <div
-                className="relative w-24 sm:w-full rounded-lg mb-0 sm:mb-6 overflow-hidden flex-shrink-0"
+                className="relative w-16 sm:w-full rounded-md sm:rounded-lg mb-0 sm:mb-6 overflow-hidden flex-shrink-0"
                 style={{ aspectRatio: '3/4', background: 'var(--bg-elevated)' }}
               >
                 {getSinnerProfileUrl(sinner.id) ? (
@@ -373,7 +374,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     src={getSinnerProfileUrl(sinner.id)}
                     alt={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                     fill
-                    sizes="(max-width: 640px) 6rem, 20rem"
+                    sizes="(max-width: 640px) 4rem, 20rem"
                     quality={90}
                     placeholder="blur"
                     blurDataURL={getBlurDataURL(getSinnerProfileUrl(sinner.id)) ?? BLUR_PLACEHOLDER}
@@ -394,14 +395,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               <div className="flex-1 min-w-0">
               {/* 이름 + 로고 */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-1">
+              <div className="flex items-center gap-2 sm:gap-3 mb-1 min-w-0">
                 <Image
                   src={getSinnerLogoUrl(sinner.id)}
                   alt=""
                   width={40}
                   height={40}
                  
-                  className="w-7 h-7 sm:w-10 sm:h-10"
+                  className="w-6 h-6 sm:w-10 sm:h-10"
                   style={{
                     width: 'auto',
                     height: 'auto',
@@ -409,14 +410,17 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     opacity: 0.9,
                   }}
                 />
-                <div>
+                <div className="flex-1 min-w-0" style={{ containerType: 'inline-size' }}>
                   <h1
-                    className="font-serif text-xl sm:text-3xl font-bold"
-                    style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}
+                    className="font-serif text-lg sm:text-[clamp(1.5rem,22cqw,1.875rem)] font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+                    style={{
+                      color: 'var(--gold)',
+                      fontFamily: 'var(--font-heading)',
+                    }}
                   >
                     {getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                   </h1>
-                  <p className="text-xs sm:text-sm" style={{ color: '#666688' }}>
+                  <p className="text-[0.625rem] sm:text-sm" style={{ color: '#666688' }}>
                     {sinner.name} · #{String(sinner.order_num).padStart(2, '0')}
                   </p>
                 </div>
@@ -424,8 +428,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 설명 */}
               <p
-                className="text-xs sm:text-sm leading-relaxed mb-2 sm:mb-4"
-                style={{ color: '#9e9e9e' }}
+                className="text-[0.6875rem] sm:text-sm leading-snug sm:leading-relaxed mb-1.5 sm:mb-4"
+                style={{
+                  color: '#9e9e9e',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
               >
                 {(() => {
                   const descKey = `sinnerDetail.desc.${sinner.id}` as keyof typeof translations
@@ -437,7 +447,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 문학 출처 */}
               <div
-                className="text-[0.625rem] sm:text-xs italic px-2 sm:px-3 py-1.5 sm:py-2"
+                className="text-[0.5625rem] sm:text-xs italic px-2 sm:px-3 py-1 sm:py-2"
                 style={{
                   background: 'linear-gradient(135deg, rgba(200,144,10,0.08) 0%, rgba(200,144,10,0.03) 100%)',
                   borderLeft: '0.125rem solid var(--gold)',
@@ -454,14 +464,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
           {/* 우측: 탭 콘텐츠 */}
           <motion.div
-            className="lg:col-span-2"
+            className="min-w-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
           >
             {/* 탭 */}
             <div
-              className="flex gap-0 mb-4 overflow-hidden"
+              className="flex gap-0 mb-2 sm:mb-4 overflow-hidden"
               style={{
                 border: '0.0625rem solid var(--border)',
                 borderRadius: '0.375rem',
@@ -471,7 +481,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 <button
                   key={tabKey}
                   onClick={() => changeTab(tabKey)}
-                  className="flex-1 py-3 text-sm font-medium transition-all duration-200 relative"
+                  className="flex-1 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 relative"
                   style={{
                     background: tab === tabKey
                       ? 'linear-gradient(180deg, rgba(200,144,10,0.2) 0%, rgba(200,144,10,0.08) 100%)'
@@ -497,7 +507,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             </div>
 
             {/* 검색 바 + 자동완성 (공통) */}
-            <div className="mb-3" ref={autocompleteRef}>
+            <div className="mb-2 sm:mb-3" ref={autocompleteRef}>
               <div className="relative">
                 <Search
                   size={14}
@@ -510,12 +520,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setShowAutocomplete(true) }}
                   placeholder={tab === 'identities' ? t('sinnerDetail.searchIdentity') : t('sinnerDetail.searchEgo')}
-                  className="w-full pl-9 pr-8 py-2 rounded text-xs transition-all"
+                  className="w-full pl-9 pr-8 py-2.5 rounded text-xs transition-all"
                   style={{
                     background: 'rgba(0,0,0,0.3)',
                     border: '1px solid var(--border)',
                     color: '#ccc',
                     outline: 'none',
+                    minHeight: '2.375rem',
                   }}
                   onFocus={() => { if (searchQuery.trim()) setShowAutocomplete(true) }}
                   onKeyDown={handleSearchKeyDown}
@@ -658,27 +669,44 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {tab === 'identities' && (
               <div>
                 {/* 필터 바 */}
-                <div className="flex flex-wrap items-center justify-between gap-y-2 mb-4 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div
+                  className="mb-3 sm:mb-4 lg:mb-3 p-2 sm:p-2.5 lg:px-2.5 lg:py-1.5 rounded-md"
+                  style={{
+                    background: 'rgba(10,8,6,0.38)',
+                    border: '1px solid rgba(200,144,10,0.12)',
+                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2">
                   {/* 등급 필터 */}
-                  <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div
+                    className="grid grid-cols-4 rounded overflow-hidden lg:flex-none"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'rgba(0,0,0,0.22)',
+                    }}
+                    aria-label="rarity filter"
+                  >
                     {[
                       { value: null, label: t('sinnerDetail.allFilter'), icon: null },
                       { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
                       { value: '2성', label: '2성', icon: `${STORAGE_BASE}/icons/Rarity/2star.webp` },
                       { value: '3성', label: '3성', icon: `${STORAGE_BASE}/icons/Rarity/3star.webp` },
-                    ].map(({ value, label, icon }) => {
+                    ].map(({ value, label, icon }, index, items) => {
                       const isActive = rarityFilter === value
                       const borderColor = value === '3성' ? '#c8900a' : value === '2성' ? '#5588bb' : value === '1성' ? '#556677' : 'var(--border)'
                       return (
                         <button
+                          type="button"
                           key={label}
                           onClick={() => setRarityFilter(value)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200 min-h-[2.75rem] sm:min-h-0"
+                          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] min-w-[3.25rem] lg:min-w-[3rem]"
                           style={{
                             background: isActive ? `${borderColor}20` : 'transparent',
-                            border: `1px solid ${isActive ? borderColor : 'var(--border)'}`,
+                            borderRight: index === items.length - 1 ? '0' : '1px solid var(--border)',
                             color: isActive ? (value === null ? 'var(--gold)' : borderColor) : '#555',
                             opacity: isActive ? 1 : 0.6,
+                            boxShadow: isActive ? `inset 0 -0.125rem 0 ${value === null ? 'var(--gold)' : borderColor}` : 'none',
                           }}
                         >
                           {icon ? (
@@ -702,9 +730,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     })}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:min-w-0 lg:flex-none lg:flex-nowrap lg:gap-1.5">
                     {/* 보유 필터 드롭다운 */}
                     {ownedIds !== null && (
+                      <div className="min-w-0 sm:min-w-[7rem] lg:w-[7rem] lg:min-w-[7rem] [&>div]:w-full [&>div>button]:w-full [&>div>button]:min-h-[2.25rem] lg:[&>div>button]:min-h-[2rem] [&>div>button]:justify-between lg:[&>div>button]:px-2">
                       <Dropdown
                         value={ownershipFilter}
                         defaultValue="all"
@@ -716,12 +745,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         onChange={v => setOwnershipFilter(v as OwnershipFilter)}
                         minWidth={110}
                       />
+                      </div>
                     )}
 
                     {/* 정렬 토글 */}
                     <button
+                      type="button"
                       onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
+                      className="flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
                       style={{
                         background: 'rgba(200,164,90,0.08)',
                         border: '1px solid var(--border)',
@@ -740,8 +771,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
                   {/* 일반/각성 토글 */}
                   <button
+                    type="button"
                     onClick={() => setGacksung(!gacksung)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
+                    className="flex min-w-0 items-center justify-center gap-2 px-3 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
                     style={{
                       background: gacksung ? 'rgba(255,107,107,0.15)' : 'rgba(200,164,90,0.1)',
                       border: `1px solid ${gacksung ? 'rgba(255,107,107,0.4)' : 'var(--border)'}`,
@@ -755,6 +787,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {gacksung ? t('sinnerDetail.uptie3') : t('sinnerDetail.normal')}
                   </button>
                   </div>
+                  </div>
                 </div>
 
                 {filteredIdentities.length === 0 ? (
@@ -765,11 +798,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noIdentities')}
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className="grid grid-cols-[repeat(3,minmax(0,1fr))] sm:grid-cols-[repeat(4,minmax(0,1fr))] md:grid-cols-[repeat(5,minmax(0,1fr))] xl:grid-cols-[repeat(6,minmax(0,1fr))] gap-x-1.5 gap-y-4 sm:gap-x-3 sm:gap-y-5" staggerDelay={0.05}>
                     {filteredIdentities.map((identity) => (
                       <motion.div
                         key={identity.id}
                         variants={staggerItem}
+                        className="w-full"
                       >
                         <IdentityCard
                           identity={identity}
