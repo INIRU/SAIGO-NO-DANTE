@@ -1,6 +1,6 @@
 # 데이터 모델 (DB Schema)
 
-SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (49 테이블). **2026-04-18 라이브 DB 기준.**
+SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-25 tier-list ratings migration 기준.**
 
 > Supabase Dashboard > Settings > API > Extra search path에 `limbus`가 추가되어야 한다.
 
@@ -49,11 +49,13 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (49 테이블). **2026-04-
 | `deck_bookmarks` | 3 | 덱 북마크 |
 | `deck_comments` | 6 | 덱 댓글 |
 | `identity_reviews` | 6 | 인격 리뷰 (개추/비추) |
+| `tier_ratings` | 8 | 티어표 평가/댓글 |
+| `tier_rating_reports` | 6 | 티어표 평가 댓글 신고 |
 | `identity_guides` | 8 | 인격 운영법 가이드 |
 | `identity_sentiment` | 16 | 인격 커뮤니티 감성 분석 |
 | `identity_sentiment_trend` | 7 | 감성 트렌드 집계 (뷰) |
 | `identity_ai_summaries` | 5 | 인격별 AI 요약 |
-| `tier_list` | 5 | 티어 리스트 |
+| `tier_list` | 6 | 티어 리스트 |
 
 ### 스토리
 
@@ -833,9 +835,58 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 |------|------|------|------|
 | `id` | UUID | PK, DEFAULT gen_random_uuid() | |
 | `identity_id` | UUID | NOT NULL, FK → identities(id) | |
-| `tier` | VARCHAR | NOT NULL | 티어 (`S`, `A`, `B`, `C`, `D`) |
+| `category` | VARCHAR | NOT NULL, DEFAULT 'reroll' | 티어표 맥락 (`reroll`, `overall`, `mirror_dungeon`, `goodstuff`) |
+| `tier` | VARCHAR | NOT NULL | 티어 (`S+`, `S`, `A`, `B`, `C`, `N/A`); migration에서 기존 짧은 VARCHAR 폭을 확장 |
 | `sort_order` | INT | DEFAULT 0 | 티어 내 순서 |
 | `updated_at` | TIMESTAMPTZ | DEFAULT now() | |
+
+- UNIQUE: (`category`, `identity_id`)
+- Index: (`category`, `sort_order`)
+- 기존 category 없는 행은 `reroll`로 취급한다.
+- 카테고리 라벨: `reroll`=`리세`, `overall`=`종합`, `mirror_dungeon`=`거던`, `goodstuff`=`굿스터프`
+
+---
+
+### tier_ratings (티어표 평가/댓글)
+
+카테고리별 인격 평가. `N/A`는 평가가 0개인 상태이며, 1개 이상은 평균 점수로 티어를 산정한다. 낮은 점수 자체는 `C`로 집계하고, 표본이 적은 평가는 UI에서 낮은 신뢰도 경고로 표시한다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | |
+| `identity_id` | UUID | NOT NULL, FK → identities(id) ON DELETE CASCADE | |
+| `user_id` | UUID | NOT NULL, FK → profiles(id) ON DELETE CASCADE | 작성자 |
+| `category` | VARCHAR | NOT NULL | 저장 가능한 평가 맥락 (`reroll`, `mirror_dungeon`, `goodstuff`) |
+| `score` | INT | NOT NULL, CHECK 1-10 | 평가 점수 |
+| `comment` | TEXT | NOT NULL, DEFAULT '', 최대 280자 | 평가 코멘트 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 자동 갱신 트리거 |
+
+- UNIQUE: (`identity_id`, `user_id`, `category`)
+- RLS: 모든 사용자 읽기, 인증된 본인만 생성/수정/삭제
+- Index: (`identity_id`, `category`), (`user_id`, `category`), (`identity_id`, `category`, `created_at DESC`)
+- 집계 티어 기준: 5개 미만 `N/A`, 평균 9.2 이상 `S+`, 8.4 이상 `S`, 7.2 이상 `A`, 6.0 이상 `B`, 그 미만 `C`
+- 저장되는 사용자 평가 category 값은 `reroll`, `mirror_dungeon`, `goodstuff` 중 하나이다.
+- `overall`/`종합`은 `reroll`, `goodstuff`, `mirror_dungeon` 평가에서 파생되는 읽기 전용 집계이며 `tier_ratings`에 직접 저장하지 않는다.
+
+---
+
+### tier_rating_reports (티어표 평가 댓글 신고)
+
+티어표 평가 댓글 신고. 공개 조회는 제공하지 않으며, API는 신고자 정보를 공개하지 않는다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | |
+| `rating_id` | UUID | NOT NULL, FK → tier_ratings(id) ON DELETE CASCADE | 신고 대상 평가 |
+| `reporter_id` | UUID | NOT NULL, FK → profiles(id) ON DELETE CASCADE | 신고자 |
+| `reason` | TEXT | NOT NULL, DEFAULT 'inappropriate' | 신고 사유 |
+| `status` | TEXT | NOT NULL, DEFAULT 'pending' | 처리 상태 (`pending`, `reviewed`, `dismissed`, `resolved`) |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+
+- UNIQUE: (`rating_id`, `reporter_id`)
+- RLS: 공개 조회 없음, 인증된 본인 신고 생성/대기 상태 수정만 허용
+- Index: (`rating_id`), (`reporter_id`), (`status`, `created_at DESC`)
 
 ---
 

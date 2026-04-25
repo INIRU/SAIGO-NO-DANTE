@@ -355,6 +355,7 @@ export const translations = {
 
   'identity.info.fragmentCost': { ko: '자아 파편', en: 'Ego Shards', ja: '自我破片' },
   'identity.info.permanent': { ko: '상시', en: 'Perm.', ja: '常時' },
+  'identity.info.walpurgisLimited': { ko: '발푸르기스밤 한정', en: 'Walpurgis Night limited', ja: 'ヴァルプルギスの夜限定' },
   'identity.info.shardPostRelease7d': { ko: '출시 후 7일', en: '7d post-release', ja: 'リリース後7日' },
   'identity.info.resistance.weak': { ko: '취약', en: 'Weak', ja: '脆弱' },
   'identity.info.resistance.resist': { ko: '내성', en: 'Resist', ja: '耐性' },

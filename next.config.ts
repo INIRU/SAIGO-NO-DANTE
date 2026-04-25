@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    // Local dev stale RSC/fetch cache mitigation; Cache Components stay enabled.
+    serverComponentsHmrCache: false,
     // Tree-shake barrel-file packages so only used exports are bundled
     optimizePackageImports: [
       'lucide-react',

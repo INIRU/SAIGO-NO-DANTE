@@ -10,8 +10,15 @@ import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import type { Identity } from '@/lib/types'
 
-const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
+const TIERS = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
 type Tier = typeof TIERS[number]
+const CATEGORIES = [
+  { key: 'reroll', label: '리세' },
+  { key: 'overall', label: '종합' },
+  { key: 'mirror_dungeon', label: '거던' },
+  { key: 'goodstuff', label: '굿스터프' },
+] as const
+type TierCategory = typeof CATEGORIES[number]['key']
 
 const TIER_COLORS: Record<Tier, string> = {
   'S+': '#ff5050',
@@ -19,16 +26,26 @@ const TIER_COLORS: Record<Tier, string> = {
   'A': '#ffd040',
   'B': '#60c860',
   'C': '#60a0ff',
-  'F': '#909090',
+  'N/A': '#8a7855',
+}
+
+const EMPTY_TIERS: Record<Tier, TierIdentity[]> = {
+  'S+': [], 'S': [], 'A': [], 'B': [], 'C': [], 'N/A': [],
 }
 
 type TierIdentity = Pick<Identity, 'id' | 'name_kr' | 'rarity' | 'sinner_id' | 'game_id' | 'folder_name'>
 
+function normalizeTier(value: string): Tier | null {
+  if (value === 'F') return 'N/A'
+  return TIERS.includes(value as Tier) ? value as Tier : null
+}
+
 export default function AdminTierListPage() {
   const [tiers, setTiers] = useState<Record<Tier, TierIdentity[]>>({
-    'S+': [], 'S': [], 'A': [], 'B': [], 'C': [], 'F': [],
+    ...EMPTY_TIERS,
   })
   const [unassigned, setUnassigned] = useState<TierIdentity[]>([])
+  const [category, setCategory] = useState<TierCategory>('reroll')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -40,16 +57,14 @@ export default function AdminTierListPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/tier-list')
+      const res = await fetch(`/api/admin/tier-list?category=${category}`)
       const data = await res.json()
 
-      const newTiers: Record<Tier, TierIdentity[]> = {
-        'S+': [], 'S': [], 'A': [], 'B': [], 'C': [], 'F': [],
-      }
+      const newTiers: Record<Tier, TierIdentity[]> = { ...EMPTY_TIERS }
 
       for (const row of data.assigned ?? []) {
-        const tier = row.tier as Tier
-        if (newTiers[tier] && row.identity) {
+        const tier = normalizeTier(row.tier)
+        if (tier && row.identity) {
           newTiers[tier].push(row.identity)
         }
       }
@@ -61,7 +76,7 @@ export default function AdminTierListPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [category])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -76,7 +91,7 @@ export default function AdminTierListPage() {
       const res = await fetch('/api/admin/tier-list', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tiers: tiersPayload }),
+        body: JSON.stringify({ category, tiers: tiersPayload }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -148,6 +163,7 @@ export default function AdminTierListPage() {
     : unassigned
 
   const totalAssigned = TIERS.reduce((sum, t) => sum + tiers[t].length, 0)
+  const categoryLabel = CATEGORIES.find(item => item.key === category)?.label ?? '리세'
 
   if (loading) {
     return (
@@ -163,10 +179,10 @@ export default function AdminTierListPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.25rem', fontWeight: 700 }}>
-            리세마라 티어표
+            티어표
           </h1>
-          <p style={{ color: '#888888', fontSize: '0.75rem', marginTop: '4px' }}>
-            인격을 드래그하여 티어에 배치하세요 ({totalAssigned}개 배정)
+          <p style={{ color: '#888888', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+            {categoryLabel} 카테고리: {totalAssigned}개 배정
           </p>
         </div>
         <AdminButton
@@ -181,8 +197,41 @@ export default function AdminTierListPage() {
         </AdminButton>
       </div>
 
+      <div
+        className="mb-5 flex w-full max-w-sm items-center"
+        style={{
+          padding: '0.25rem',
+          background: '#14100c',
+          border: '1px solid rgba(200,144,10,0.22)',
+          borderRadius: '0.5rem',
+        }}
+      >
+        {CATEGORIES.map(item => {
+          const selected = category === item.key
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setCategory(item.key)}
+              style={{
+                flex: 1,
+                minHeight: '2rem',
+                borderRadius: '0.375rem',
+                background: selected ? 'rgba(200,144,10,0.18)' : 'transparent',
+                border: selected ? '1px solid rgba(200,144,10,0.35)' : '1px solid transparent',
+                color: selected ? 'var(--gold)' : '#8a7855',
+                fontSize: '0.8125rem',
+                fontWeight: selected ? 700 : 500,
+              }}
+            >
+              {item.label}
+            </button>
+          )
+        })}
+      </div>
+
       {/* 티어 영역 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
         {TIERS.map(tier => (
           <div
             key={tier}
@@ -191,23 +240,23 @@ export default function AdminTierListPage() {
             onDrop={e => onDrop(e, tier)}
             style={{
               display: 'flex',
-              minHeight: '72px',
+              minHeight: '4.5rem',
               background: dragOverTarget === tier ? 'rgba(200,144,10,0.08)' : '#141210',
               border: dragOverTarget === tier ? '1px dashed rgba(200,144,10,0.3)' : '1px solid transparent',
-              borderRadius: '4px',
+              borderRadius: '0.25rem',
               transition: 'background 0.15s, border-color 0.15s',
             }}
           >
             {/* 티어 라벨 */}
             <div
               style={{
-                width: '64px',
-                minWidth: '64px',
+                width: tier === 'N/A' ? '4.5rem' : '4rem',
+                minWidth: tier === 'N/A' ? '4.5rem' : '4rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: TIER_COLORS[tier],
-                borderRadius: '4px 0 0 4px',
+                borderRadius: '0.25rem 0 0 0.25rem',
                 fontFamily: 'var(--font-heading)',
                 fontSize: '1.125rem',
                 fontWeight: 700,
@@ -225,13 +274,13 @@ export default function AdminTierListPage() {
                 display: 'flex',
                 flexWrap: 'wrap',
                 alignItems: 'center',
-                gap: '4px',
-                padding: '6px 8px',
+                gap: '0.25rem',
+                padding: '0.375rem 0.5rem',
               }}
             >
-              {tiers[tier].map(identity => (
+              {tiers[tier].map((identity, index) => (
                 <MiniIdentityCard
-                  key={identity.id}
+                  key={`${tier}-${identity.id}-${index}`}
                   identity={identity}
                   onDragStart={e => onDragStart(e, identity.id, tier)}
                 />
@@ -247,33 +296,33 @@ export default function AdminTierListPage() {
       </div>
 
       {/* 미배정 인격 풀 */}
-      <div style={{ marginTop: '24px' }}>
+      <div style={{ marginTop: '1.5rem' }}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-serif" style={{ color: '#8a7855', fontSize: '0.9375rem', fontWeight: 600 }}>
             미배정 ({unassigned.length})
           </h2>
           <div style={{ position: 'relative' }}>
-            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#888888' }} />
+            <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#888888' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="인격 검색..."
               style={{
-                padding: '6px 10px 6px 30px',
+                padding: '0.375rem 0.625rem 0.375rem 1.875rem',
                 background: '#1a1510',
                 border: '1px solid var(--border)',
-                borderRadius: '4px',
+                borderRadius: '0.25rem',
                 color: '#c8a450',
                 fontSize: '0.75rem',
                 outline: 'none',
-                width: '180px',
+                width: '11.25rem',
               }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: '#888888', cursor: 'pointer', background: 'none', border: 'none' }}
+                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#888888', cursor: 'pointer', background: 'none', border: 'none' }}
               >
                 <X size={12} />
               </button>
@@ -287,18 +336,18 @@ export default function AdminTierListPage() {
           style={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '4px',
-            padding: '12px',
+            gap: '0.25rem',
+            padding: '0.75rem',
             background: dragOverTarget === 'unassigned' ? 'rgba(200,144,10,0.08)' : '#141210',
             border: dragOverTarget === 'unassigned' ? '1px dashed rgba(200,144,10,0.3)' : '1px solid var(--border)',
-            borderRadius: '6px',
-            minHeight: '80px',
+            borderRadius: '0.375rem',
+            minHeight: '5rem',
             transition: 'background 0.15s, border-color 0.15s',
           }}
         >
-          {filteredUnassigned.map(identity => (
+          {filteredUnassigned.map((identity, index) => (
             <MiniIdentityCard
-              key={identity.id}
+              key={`unassigned-${identity.id}-${index}`}
               identity={identity}
               onDragStart={e => onDragStart(e, identity.id, 'unassigned')}
             />
@@ -314,7 +363,7 @@ export default function AdminTierListPage() {
       <ConfirmModal
         open={confirmOpen}
         title="티어표 저장"
-        message={`${totalAssigned}개 인격의 티어 배치를 저장하시겠습니까?`}
+        message={`${categoryLabel} 카테고리의 ${totalAssigned}개 인격 배치를 저장하시겠습니까?`}
         confirmLabel="저장"
         cancelLabel="취소"
         variant="warning"
