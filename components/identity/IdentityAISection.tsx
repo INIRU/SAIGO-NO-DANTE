@@ -44,6 +44,17 @@ function timeAgo(dateStr: string, t: (key: TranslationKey) => string): string {
   return `${days}${t('identity.timeAgo.daysAgo')}`
 }
 
+const CHIP_REFERENCE_RE = /^(?:s|p|i):/
+
+function normalizeBracketedKeywordNames(text: string, allowedKeywords?: Set<string>): string {
+  if (!allowedKeywords || allowedKeywords.size === 0) return text
+
+  return text.replace(/\[([^\]\n]+)\]/g, (match, body: string) => {
+    if (CHIP_REFERENCE_RE.test(body)) return match
+    return allowedKeywords.has(body) ? body : match
+  })
+}
+
 /* ─── 아코디언 섹션 ─── */
 function AccordionSection({
   title, isOpen, onToggle, sinColor, children,
@@ -438,6 +449,10 @@ function RichContentRenderer({
   t: (key: TranslationKey) => string
 }) {
   const nodes = useMemo(() => parseRichContent(content), [content])
+  const normalizedTextByNode = useMemo(
+    () => nodes.map(node => node.type === 'text' ? normalizeBracketedKeywordNames(node.value, allowedKeywords) : null),
+    [nodes, allowedKeywords]
+  )
 
   return (
     <>
@@ -447,7 +462,7 @@ function RichContentRenderer({
             return (
               <NoteRenderer
                 key={i}
-                text={node.value}
+                text={normalizedTextByNode[i] ?? node.value}
                 skillLookup={skillLookup}
                 passiveLookup={passiveLookup}
                 egoLookup={egoLookup}

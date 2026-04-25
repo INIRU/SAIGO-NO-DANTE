@@ -262,6 +262,9 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   const releaseSeason = Number(info.release_season ?? 0)
                   const diff = currentSeason - releaseSeason
                   const isSeasonalOrEvent = info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')
+                  const permanentExchangeSeason = info.exchange_from_season ?? (
+                    isSeasonalOrEvent && releaseSeason > 0 ? releaseSeason + 2 : undefined
+                  )
 
                   // 같은 시즌 신규: 출시 7일 이내는 교환 불가
                   const isNew7dLock = isSeasonalOrEvent && diff === 0 && identity.release_date &&
@@ -272,11 +275,13 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   // 파편 교환 상세 텍스트
                   let detail: string
                   if (isNew7dLock) {
-                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${info.exchange_from_season ?? releaseSeason + 2} ~ ${t('identity.info.permanent')})`
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${permanentExchangeSeason} ~ ${t('identity.info.permanent')})`
                   } else if (isNextSeasonLock) {
-                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (S${info.exchange_from_season ?? releaseSeason + 2} ~ ${t('identity.info.permanent')})`
-                  } else if (info.exchange_from_season) {
-                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${info.exchange_from_season} ~ ${t('identity.info.permanent')})`
+                    detail = permanentExchangeSeason
+                      ? `${t('identity.info.fragmentCost')} ${info.fragment_cost} (S${permanentExchangeSeason} ~ ${t('identity.info.permanent')})`
+                      : `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.permanent')})`
+                  } else if (permanentExchangeSeason) {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${permanentExchangeSeason} ~ ${t('identity.info.permanent')})`
                   } else {
                     detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.permanent')})`
                   }
