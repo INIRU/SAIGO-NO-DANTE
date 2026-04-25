@@ -58,6 +58,7 @@ const TIER_LABELS: Record<SupportedLocale, Record<Tier, string>> = {
 
 const NA_FILTER_PANEL_HEIGHT = '3.875rem'
 const NA_CONTROL_HEIGHT = '2.25rem'
+const TIER_GRID_MAX_WIDTH = '53.25rem'
 
 const FILTER_COPY = {
   ko: {
@@ -314,6 +315,8 @@ export default function TierGrid({
             max-width: calc(100vw - 2rem) !important;
           }
           .tier-card-grid {
+            width: 100% !important;
+            margin: 0 auto !important;
             grid-template-columns: minmax(0, 6.25rem) minmax(0, 6.25rem) minmax(0, 6.25rem) !important;
             justify-content: center !important;
             gap: 1rem 0.625rem !important;
@@ -502,8 +505,10 @@ export default function TierGrid({
                 className="tier-card-grid"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 8.75rem), 9.75rem))',
-                  justifyContent: 'center',
+                  width: `min(100%, ${TIER_GRID_MAX_WIDTH})`,
+                  margin: '0 auto',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.75rem), 9.75rem))',
+                  justifyContent: 'start',
                   alignItems: 'start',
                   gap: '1.375rem 1.125rem',
                   padding: '0.25rem 0.25rem 0.875rem',
