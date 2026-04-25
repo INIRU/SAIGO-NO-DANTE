@@ -82,6 +82,7 @@ const SYSTEM_PROMPT = `당신은 "림버스 컴퍼니" 게임의 전문 분석�
 ### 작성 규칙
 - 키워드(출혈, 진동 등), EGO, EGO 기프트는 칩 문법 없이 일반 텍스트로 작성하세요.
 - 키워드를 언급할 때는 반드시 "키워드 목록"에 있는 정확한 전체 이름을 사용하세요. 축약하거나 일부만 쓰지 마세요.
+- 키워드 목록의 이름은 고유 인격 키워드(예: 작품명: 파시아, 구속 해제 - 창작 몰입)를 포함해 모두 일반 텍스트로만 쓰세요. 절대 [작품명: 파시아], [구속 해제 - 창작 몰입]처럼 대괄호로 감싸거나 [s:], [p:], [i:] 칩 문법으로 만들지 마세요.
 - 칩 문법/컴포넌트 문법 외의 대괄호나 중괄호는 사용하지 마세요.
 - 마크다운 헤딩(##)이나 볼드(**)는 사용하지 마세요. 순수 텍스트 + 칩/컴포넌트 문법만 사용합니다.
 - 줄바꿈으로 문단을 구분하세요.
@@ -447,6 +448,7 @@ ${deckContextStr || '(No decks contain this identity)'}
 Based on the data above, write an operation guide for this identity.
 Actively use chip syntax ([i:], [s:], [p:]). Never write plain text like "Don Quixote S1" — always use [s:${sinnerName}:1] format.
 If variant skills exist, always include the variant number: [s:${sinnerName}:order:variant].
+Keyword names from the Keyword List, including unique identity keywords, must stay plain text only. Do not wrap them in square brackets and do not convert them to [s:], [p:], or [i:] chip syntax.
 Use "${sinnerName}" for the sinner name.`
   : lang === 'jp' ? `# 分析対象
 囚人: ${sinnerName}
@@ -470,6 +472,7 @@ ${deckContextStr || '(この人格が含まれるデッキはありません)'}
 上記データに基づいて、この人格の運用ガイドを作成してください。
 チップ構文([i:], [s:], [p:])を積極的に活用してください。「ドンキホーテ S1」のような一般テキストは絶対禁止、必ず[s:${sinnerName}:1]形式で書いてください。
 変形スキルがある場合は必ず変形番号まで[s:${sinnerName}:順序:変形番号]形式で書いてください。
+キーワード一覧の名前は、固有人格キーワードを含めて必ず通常テキストのまま書いてください。角括弧で囲んだり、[s:]、[p:]、[i:]のチップ構文に変換したりしないでください。
 囚人名は「${sinnerName}」を使用してください。`
   : `# 분석 대상
 수감자: ${sinnerName}
@@ -493,6 +496,7 @@ ${deckContextStr || '(이 인격이 포함된 덱이 없습니다)'}
 위 데이터를 기반으로 이 인격의 운영 가이드를 작성해주세요.
 칩 문법([i:], [s:], [p:])을 적극 활용해주세요. "돈키호테 S1" 같은 일반 텍스트 절대 금지, 반드시 [s:${sinnerName}:1] 형태로 쓰세요.
 변형 스킬이 있으면 반드시 변형번호까지 [s:${sinnerName}:순서:변형번호] 형태로 쓰세요.
+키워드 목록의 이름은 고유 인격 키워드를 포함해 반드시 일반 텍스트로만 쓰세요. 대괄호로 감싸거나 [s:], [p:], [i:] 칩 문법으로 변환하지 마세요.
 수감자명은 "${sinnerName}"을 사용하세요.`
 
   // 7. AI 스트리밍 호출
@@ -559,6 +563,7 @@ Component syntax must be on its own line.
 ### Writing Rules
 - Keywords (Bleed, Tremor, etc.) should be plain text, no chip syntax
 - When mentioning keywords, use the exact full name from the "Keyword List"
+- Keyword names from the Keyword List, including unique identity keywords, must be plain text only. Never wrap them in square brackets, and never convert them to [s:], [p:], or [i:] chip syntax.
 - IMPORTANT: Skill descriptions may contain Korean keyword names. Always translate them to the English names from the Keyword List. Never output Korean keyword names in your analysis.
 - No markdown formatting, no brackets except chip/component syntax
 - Keep analysis concise and practical
@@ -624,6 +629,7 @@ Component syntax must be on its own line.
 ### 記述ルール
 - キーワード（出血、振動など）はチップ構文なしの通常テキスト
 - キーワードに言及する際は、「キーワード一覧」の正確な名前を使用
+- キーワード一覧の名前は、固有人格キーワードを含めて必ず通常テキストのまま書いてください。角括弧で囲まず、[s:]、[p:]、[i:]のチップ構文にも変換しないでください。
 - 重要：スキル説明に韓国語のキーワード名が含まれている場合があります。必ずキーワードリストの日本語名に翻訳してください。韓国語のキーワード名を出力しないでください。
 - マークダウン形式禁止、チップ/コンポーネント構文以外の括弧禁止
 - 分析は簡潔かつ実用的に
