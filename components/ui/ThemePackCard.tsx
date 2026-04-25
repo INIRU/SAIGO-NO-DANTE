@@ -29,6 +29,9 @@ interface ThemePackCardProps {
   showGiftCount?: boolean
 }
 
+const TITLE_MIN_FONT_REM = 0.9375
+const TITLE_SIDE_PADDING_REM = 0.5
+
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
   const locale = useLocale()
   const lang = langProp ?? (locale as SupportedLang)
@@ -40,9 +43,13 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
   const nameColor = getThemePackNameColor(numId)
   const titleTrackRef = useRef<HTMLDivElement>(null)
+  const titleTextRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
+  const [minTitleOverflows, setMinTitleOverflows] = useState(false)
+  const [titleSingleLineOverflows, setTitleSingleLineOverflows] = useState(false)
   const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
-  const fontSize = useAutoFontSize(displayName, 1.5, 0.625, titleMeasureWidth, 'var(--font-kotra-bold), serif')
+  const fontSize = useAutoFontSize(displayName, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, 'var(--font-kotra-bold), serif')
+  const shouldWrapTitle = titleSingleLineOverflows || minTitleOverflows || fontSize <= TITLE_MIN_FONT_REM + 0.001
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -52,12 +59,14 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
     const element = titleTrackRef.current
     if (!element) return
 
-    const updateMeasureWidth = (width: number) => {
-      const nextWidth = Math.max(1, Math.round(width * 0.92))
+    const updateMeasureWidth = () => {
+      const style = getComputedStyle(element)
+      const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+      const nextWidth = Math.max(1, Math.round(element.getBoundingClientRect().width - horizontalPadding))
       setTitleMeasureWidth(prevWidth => (Math.abs(prevWidth - nextWidth) > 1 ? nextWidth : prevWidth))
     }
 
-    const measure = () => updateMeasureWidth(element.getBoundingClientRect().width)
+    const measure = () => updateMeasureWidth()
     measure()
 
     if (typeof ResizeObserver === 'undefined') {
@@ -65,13 +74,70 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
       return () => window.removeEventListener('resize', measure)
     }
 
-    const observer = new ResizeObserver(entries => {
-      updateMeasureWidth(entries[0]?.contentRect.width ?? element.getBoundingClientRect().width)
-    })
+    const observer = new ResizeObserver(updateMeasureWidth)
     observer.observe(element)
 
     return () => observer.disconnect()
   }, [theme.image_url])
+
+  useEffect(() => {
+    if (!displayName || titleMeasureWidth <= 0) {
+      setMinTitleOverflows(false)
+      return
+    }
+
+    let cancelled = false
+
+    const measureMinimumTitle = () => {
+      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      const rootStyle = getComputedStyle(document.documentElement)
+      const resolvedFamily =
+        rootStyle.getPropertyValue('--font-kotra-bold').trim() || 'var(--font-kotra-bold), serif'
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+
+      if (!context) return
+
+      context.font = `700 ${TITLE_MIN_FONT_REM * rootFontSize}px ${resolvedFamily}`
+      const measuredWidth = context.measureText(displayName).width
+
+      if (!cancelled) {
+        setMinTitleOverflows(measuredWidth > titleMeasureWidth)
+      }
+    }
+
+    measureMinimumTitle()
+    document.fonts?.ready.then(measureMinimumTitle)
+
+    return () => {
+      cancelled = true
+    }
+  }, [displayName, titleMeasureWidth])
+
+  useEffect(() => {
+    setTitleSingleLineOverflows(false)
+  }, [displayName, titleMeasureWidth])
+
+  useEffect(() => {
+    const element = titleTextRef.current
+    if (!element || titleSingleLineOverflows || shouldWrapTitle) return
+
+    let cancelled = false
+
+    const measureRenderedTitle = () => {
+      if (!cancelled) {
+        setTitleSingleLineOverflows(element.scrollWidth > element.clientWidth + 1)
+      }
+    }
+
+    const frameId = window.requestAnimationFrame(measureRenderedTitle)
+    document.fonts?.ready.then(measureRenderedTitle)
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [displayName, fontSize, shouldWrapTitle, titleSingleLineOverflows])
 
   return (
     <button
@@ -107,18 +173,29 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
           {/* Theme name */}
-          <div ref={titleTrackRef} className="absolute left-0 right-0 flex items-center justify-center px-1" style={{ bottom: '14%', height: '1.75rem' }}>
+          <div
+            ref={titleTrackRef}
+            className="absolute left-0 right-0 flex items-center justify-center"
+            style={{ bottom: '12.5%', height: '2.25rem', paddingInline: `${TITLE_SIDE_PADDING_REM}rem` }}
+          >
             <div
-              className="font-serif font-bold text-center [--theme-title-cap:clamp(0.6875rem,3.2vw,0.875rem)] sm:[--theme-title-cap:1.5rem]"
+              ref={titleTextRef}
+              className="font-serif font-bold text-center [--theme-title-cap:0.9375rem] sm:[--theme-title-cap:1.5rem]"
               style={{
                 '--theme-title-auto-size': `${fontSize}rem`,
                 color: nameColor,
-                fontSize: 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
-                lineHeight: 1.2,
+                fontSize: shouldWrapTitle ? `${TITLE_MIN_FONT_REM}rem` : 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
+                lineHeight: 1.04,
                 textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
-                maxWidth: '92%',
-                whiteSpace: 'nowrap',
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
+                whiteSpace: shouldWrapTitle ? 'normal' : 'nowrap',
                 overflow: 'hidden',
+                overflowWrap: 'break-word',
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: shouldWrapTitle ? 2 : 1,
               } as CSSProperties}
             >
               {displayName}
