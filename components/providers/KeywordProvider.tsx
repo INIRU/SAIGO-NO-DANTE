@@ -1,8 +1,14 @@
 'use client'
 
-import { createContext, useContext, useMemo, useCallback } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
+import { useLocale, useTranslations } from 'next-intl'
+import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/constants/game'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
+import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
+import type { SupportedLang } from '@/lib/i18n'
+import type { SinType } from '@/lib/types'
 
 export type KeywordInfo = {
   desc: string
@@ -16,6 +22,21 @@ export type KeywordInfo = {
 }
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
+
+const BASE_ATTACK_ICON_KEYS: Record<string, keyof typeof ATK_TYPE_ICON_MAP> = {
+  slash: 'slash',
+  pierce: 'pierce',
+  blunt: 'blunt',
+  '참격': 'slash',
+  '관통': 'pierce',
+  '타격': 'blunt',
+}
+
+export function resolveKeywordIconUrl(keyword: string, iconSlug?: string | null): string | null {
+  const attackIconKey = BASE_ATTACK_ICON_KEYS[keyword] ?? (iconSlug ? BASE_ATTACK_ICON_KEYS[iconSlug] : undefined)
+  if (attackIconKey) return ATK_TYPE_ICON_MAP[attackIconKey] ?? null
+  return getKeywordIconUrl(keyword, iconSlug ?? undefined)
+}
 
 export function KeywordProvider({
   keywords,
@@ -186,14 +207,6 @@ export function useFormatSkillDesc() {
 // ─── 내부 구현 (KeywordTooltip.tsx에서 이동) ────────────────────────
 // 이 함수는 훅이 아니므로 직접 호출하지 마세요. useFormatSkillDesc()를 사용하세요.
 
-import { getKeywordIconUrl } from '@/lib/constants/keywords'
-import { STORAGE_BASE } from '@/lib/constants/game'
-import { useTranslations, useLocale } from 'next-intl'
-import type { SupportedLang } from '@/lib/i18n'
-import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
-import type { SinType } from '@/lib/types'
-import { useState, useRef, useEffect } from 'react'
-
 /**
  * Context 기반 키워드 데이터 훅.
  * KEYWORD_SIN_MAP / KEYWORD_ICON_MAP 하드코딩 대체용.
@@ -219,8 +232,7 @@ export function useKeywordData() {
 
   const getIconUrl = useCallback((keyword: string): string | null => {
     const slug = keywords[keyword]?.iconSlug
-    if (!slug) return null
-    return `${STORAGE_BASE}/icons/keywords/${slug}.webp`
+    return resolveKeywordIconUrl(keyword, slug)
   }, [keywords])
 
   return { sinMap, iconMap, getIconUrl, keywords }

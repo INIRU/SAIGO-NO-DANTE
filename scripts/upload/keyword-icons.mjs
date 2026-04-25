@@ -9,6 +9,11 @@ const sb = createClient(
 
 // ── Korean → English keyword mapping ──
 export const KEYWORD_EN_MAP = {
+  // 기본 공격 유형은 keyword icon으로 업로드하지 않고 canonical stat icon을 사용한다.
+  '참격': 'stat:slash',
+  '관통': 'stat:pierce',
+  '타격': 'stat:blunt',
+
   // 상태이상 기본
   '출혈': 'bleed',
   '화상': 'burn',
@@ -321,6 +326,7 @@ export const KEYWORD_EN_MAP = {
 
 // 아이콘이 없는 키워드 (횟수 계열, 공명 등)
 const NO_ICON_KEYWORDS = new Set([
+  '참격', '관통', '타격',
   ' 충전 횟수', '가중치 증가', '공명', '관통 내성 약화', '관통 피래향 증가',
   '광역난사', '깊은 상처', '무작위 디버프', '보유', '상처',
   '앙갚음대상', '우울 내성 약화', '자원 변경', '정신력 회복',

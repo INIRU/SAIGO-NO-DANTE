@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { getIdentityInfoUrl, RARITY_ICON_MAP, type Identity } from '@/lib/data/sinners'
+import { getTierTextColor, TIER_COLORS, type Tier } from '@/lib/tier-list/tierModel'
 import type { TierIdentity } from './TierCardInteractive'
 
 export const TIER_CATEGORIES = [
@@ -20,7 +21,6 @@ export const TIER_CATEGORIES = [
 
 export type TierCategory = typeof TIER_CATEGORIES[number]['key']
 export type RatingPeriod = '7d' | '30d' | '1y' | 'all'
-export type Tier = 'S+' | 'S' | 'A' | 'B' | 'C' | 'N/A'
 type SupportedLocale = 'ko' | 'en' | 'ja'
 type SourceCategory = 'reroll' | 'mirror_dungeon' | 'goodstuff'
 type SourceAggregate = {
@@ -333,15 +333,6 @@ const EMPTY_RATING: TierRatingResponse = {
     reason: 'login_required',
     accountAgeDays: null,
   },
-}
-
-const TIER_COLORS: Record<Tier, string> = {
-  'S+': '#ff5050',
-  S: '#ffa030',
-  A: '#ffd040',
-  B: '#60c860',
-  C: '#60a0ff',
-  'N/A': '#8a7855',
 }
 
 const SCORE_OPTIONS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -810,7 +801,7 @@ function SourceAverageOverview({
                     style={{
                       borderRadius: '0.25rem',
                       background: TIER_COLORS[aggregate.derivedTier],
-                      color: aggregate.derivedTier === 'A' ? '#241900' : '#fff',
+                      color: getTierTextColor(aggregate.derivedTier),
                       fontSize: '0.6875rem',
                       fontWeight: 800,
                       padding: '0.125rem 0.375rem',
@@ -1262,7 +1253,7 @@ export function TierRatingModal({
                     justifyContent: 'center',
                     borderRadius: '0.25rem',
                     background: TIER_COLORS[ratingData.aggregate.derivedTier],
-                    color: ratingData.aggregate.derivedTier === 'A' ? '#241900' : '#fff',
+                    color: getTierTextColor(ratingData.aggregate.derivedTier),
                     fontSize: '0.75rem',
                     fontWeight: 800,
                     padding: '0 0.5rem',

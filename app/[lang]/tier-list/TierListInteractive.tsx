@@ -3,15 +3,15 @@
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { useMemo } from 'react'
+import { TIERS, type Tier } from '@/lib/tier-list/tierModel'
 import type { TierIdentity } from './TierCardInteractive'
-import { getTierCategoryLabel, TIER_CATEGORIES, type RatingPeriod, type TierCategory, type Tier, type TierRatingViewer } from './TierRatingModal'
+import { getTierCategoryLabel, TIER_CATEGORIES, type RatingPeriod, type TierCategory, type TierRatingViewer } from './TierRatingModal'
 import { motion } from 'framer-motion'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeInUp } from '@/lib/animations'
 import TierGrid from './TierGrid'
 
-const TIERS: Tier[] = ['S+', 'S', 'A', 'B', 'C', 'N/A']
-type TierData = Record<Tier, TierIdentity[]>
+type TierData = Partial<Record<Tier, TierIdentity[]>>
 type SupportedLocale = 'ko' | 'en' | 'ja'
 const PERIOD_OPTIONS: RatingPeriod[] = ['7d', '30d', '1y', 'all']
 
@@ -45,7 +45,7 @@ export default function TierListInteractive({
   viewer: TierRatingViewer
 }) {
   const locale = normalizeLocale(useLocale())
-  const hasTiers = TIERS.some(t => tiers[t].length > 0)
+  const hasTiers = TIERS.some(t => (tiers[t]?.length ?? 0) > 0)
   const activeCategoryLabel = getTierCategoryLabel(category, locale)
   const motionKey = useMemo(() => `${category}:${period}`, [category, period])
 

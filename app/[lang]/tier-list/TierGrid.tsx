@@ -4,61 +4,21 @@ import { Search } from 'lucide-react'
 import { useLocale } from 'next-intl'
 import { useMemo, useState } from 'react'
 import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
+import { getTierSubtextColor, getTierTextColor, TIER_COLORS, TIER_SCORE_LABELS, TIERS, type Tier } from '@/lib/tier-list/tierModel'
 import TierCardInteractive, { type TierIdentity } from './TierCardInteractive'
-import type { RatingPeriod, TierCategory, Tier, TierRatingViewer } from './TierRatingModal'
-
-const TIERS: Tier[] = ['S+', 'S', 'A', 'B', 'C', 'N/A']
-
-const TIER_COLORS: Record<Tier, string> = {
-  'S+': '#ff5050',
-  'S': '#ffa030',
-  'A': '#ffd040',
-  'B': '#60c860',
-  'C': '#60a0ff',
-  'N/A': '#8a7855',
-}
-
-const TIER_LABEL_STYLES: Record<Tier, { color: string; subtext: string; textShadow?: string }> = {
-  'S+': { color: '#fff', subtext: '#ffe5dc', textShadow: '0 1px 3px rgba(0,0,0,0.4)' },
-  'S': { color: '#fff', subtext: '#fff1d6', textShadow: '0 1px 3px rgba(0,0,0,0.38)' },
-  'A': { color: '#241900', subtext: '#3a2800' },
-  'B': { color: '#071f08', subtext: '#123214' },
-  'C': { color: '#fff', subtext: '#e5f0ff', textShadow: '0 1px 3px rgba(0,0,0,0.4)' },
-  'N/A': { color: '#fff8e8', subtext: '#f0dfba', textShadow: '0 1px 3px rgba(0,0,0,0.35)' },
-}
+import type { RatingPeriod, TierCategory, TierRatingViewer } from './TierRatingModal'
 
 type SupportedLocale = 'ko' | 'en' | 'ja'
 
-const TIER_LABELS: Record<SupportedLocale, Record<Tier, string>> = {
-  ko: {
-    'S+': '9.2+',
-    'S': '8.4+',
-    'A': '7.2+',
-    'B': '6.0+',
-    'C': '<6.0',
-    'N/A': '측정 불가',
-  },
-  en: {
-    'S+': '9.2+',
-    'S': '8.4+',
-    'A': '7.2+',
-    'B': '6.0+',
-    'C': '<6.0',
-    'N/A': 'Unrated',
-  },
-  ja: {
-    'S+': '9.2+',
-    'S': '8.4+',
-    'A': '7.2+',
-    'B': '6.0+',
-    'C': '<6.0',
-    'N/A': '未測定',
-  },
+const TIER_UNAVAILABLE_LABELS: Record<SupportedLocale, string> = {
+  ko: '측정 불가',
+  en: 'Unrated',
+  ja: '未測定',
 }
 
 const NA_FILTER_PANEL_HEIGHT = '3.875rem'
 const NA_CONTROL_HEIGHT = '2.25rem'
-const TIER_GRID_MAX_WIDTH = '53.25rem'
+const TIER_GRID_MAX_WIDTH = '64rem'
 
 const FILTER_COPY = {
   ko: {
@@ -123,6 +83,26 @@ function getLocalizedSinnerName(identity: TierIdentity, locale: SupportedLocale)
   if (locale === 'en') return sinner.name_en ?? sinner.name ?? sinner.name_kr ?? sinner.name_jp ?? identity.sinner_id
   if (locale === 'ja') return sinner.name_jp ?? sinner.name ?? sinner.name_kr ?? sinner.name_en ?? identity.sinner_id
   return sinner.name_kr ?? sinner.name ?? sinner.name_en ?? sinner.name_jp ?? identity.sinner_id
+}
+
+function getLocalizedIdentityName(identity: TierIdentity, locale: SupportedLocale) {
+  if (locale === 'en') return identity.name_en ?? identity.name ?? identity.name_kr ?? identity.name_jp ?? ''
+  if (locale === 'ja') return identity.name_jp ?? identity.name ?? identity.name_kr ?? identity.name_en ?? ''
+  return identity.name_kr ?? identity.name ?? identity.name_en ?? identity.name_jp ?? ''
+}
+
+function getTierThresholdLabel(tier: Tier, locale: SupportedLocale) {
+  return tier === 'N/A' ? TIER_UNAVAILABLE_LABELS[locale] : TIER_SCORE_LABELS[tier]
+}
+
+function compareTierIdentities(locale: SupportedLocale) {
+  return (a: TierIdentity, b: TierIdentity) => {
+    const scoreDelta = (b.tier_rating_summary?.averageScore ?? -1) - (a.tier_rating_summary?.averageScore ?? -1)
+    if (scoreDelta !== 0) return scoreDelta
+    const countDelta = (b.tier_rating_summary?.ratingCount ?? 0) - (a.tier_rating_summary?.ratingCount ?? 0)
+    if (countDelta !== 0) return countDelta
+    return getLocalizedIdentityName(a, locale).localeCompare(getLocalizedIdentityName(b, locale), locale)
+  }
 }
 
 function normalizeSearch(value: string) {
@@ -191,7 +171,7 @@ export default function TierGrid({
   period,
   viewer,
 }: {
-  tiers: Record<Tier, TierIdentity[]>
+  tiers: Partial<Record<Tier, TierIdentity[]>>
   category: TierCategory
   period: RatingPeriod
   viewer: TierRatingViewer
@@ -205,7 +185,7 @@ export default function TierGrid({
   const renderedIdentityIds = new Set<string>()
   const normalizedSearch = normalizeSearch(naSearch)
 
-  const naIdentities = tiers['N/A']
+  const naIdentities = tiers['N/A'] ?? []
   const sinnerOptions = useMemo<DropdownOption[]>(() => {
     const options = new Map<string, { label: string; order: number }>()
     for (const identity of naIdentities) {
@@ -333,7 +313,9 @@ export default function TierGrid({
         }
       `}</style>
       {TIERS.map(tier => {
-        const sourceIdentities = tiers[tier]
+        const sourceIdentities = tier === 'N/A'
+          ? (tiers[tier] ?? [])
+          : [...(tiers[tier] ?? [])].sort(compareTierIdentities(locale))
         const tierIdentities = sourceIdentities.filter(identity => {
           if (renderedIdentityIds.has(identity.id)) return false
           renderedIdentityIds.add(identity.id)
@@ -348,7 +330,8 @@ export default function TierGrid({
           }))
           : tierIdentities
         const showEmptyNaResult = tier === 'N/A' && tierIdentities.length > 0 && visibleIdentities.length === 0
-        const labelStyle = TIER_LABEL_STYLES[tier]
+        const labelColor = getTierTextColor(tier)
+        const labelSubtextColor = getTierSubtextColor(tier)
 
         if (tierIdentities.length === 0 && !showEmptyNaResult) return null
         return (
@@ -390,13 +373,13 @@ export default function TierGrid({
                   fontFamily: 'var(--font-heading)',
                   fontSize: '1.25rem',
                   fontWeight: 700,
-                  color: labelStyle.color,
-                  textShadow: labelStyle.textShadow ?? 'none',
+                  color: labelColor,
+                  textShadow: labelColor === '#fff' ? '0 1px 3px rgba(0,0,0,0.38)' : 'none',
                 }}
               >
                 <span>{tier}</span>
-                <span className="tier-label-subtext" style={{ color: labelStyle.subtext, fontSize: '0.6875rem', fontWeight: 600, lineHeight: 1.25, marginTop: '0.125rem' }}>
-                  {TIER_LABELS[locale][tier]}
+                <span className="tier-label-subtext" style={{ color: labelSubtextColor, fontSize: '0.6875rem', fontWeight: 600, lineHeight: 1.25, marginTop: '0.125rem' }}>
+                  {getTierThresholdLabel(tier, locale)}
                 </span>
               </div>
               <div
@@ -507,7 +490,7 @@ export default function TierGrid({
                   display: 'grid',
                   width: `min(100%, ${TIER_GRID_MAX_WIDTH})`,
                   margin: '0 auto',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.75rem), 9.75rem))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 9.25rem))',
                   justifyContent: 'start',
                   alignItems: 'start',
                   gap: '1.375rem 1.125rem',

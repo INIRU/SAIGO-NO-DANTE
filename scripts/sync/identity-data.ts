@@ -41,6 +41,12 @@ const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 // 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
 // DB 스키마는 nullable이 아니라 '공통'이 기본값으로 들어가므로, keyword_meta 재구축 시 반드시 필터링
 const KEYWORD_PLACEHOLDERS = new Set(['공통', 'Common', 'None', '공용', ''])
+const KEYWORD_ICON_SLUG_OVERRIDES: Record<string, string> = {
+  '참격': 'stat:slash',
+  '관통': 'stat:pierce',
+  '타격': 'stat:blunt',
+  '지령 탐닉': 'directive-indulgence',
+}
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
@@ -406,17 +412,50 @@ function loadKrKeywordDescriptions(): Map<string, { id: string; description: str
   if (existsSync(KR_DIR)) dirs.push({ dir: KR_DIR, ext: '.txt' })
 
   for (const { dir, ext } of dirs) {
-    const files = globFiles(dir, /^KR_(BattleKeywords|Bufs)/i).filter(f => f.endsWith(ext))
+    const files = globFiles(dir, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i).filter(f => f.endsWith(ext))
     for (const f of files) {
       const data = readTxt(join(dir, f))
       for (const item of extractList(data)) {
         const parsed = z.object({ id: z.string(), name: z.string(), desc: z.string().optional() }).safeParse(item)
-        if (parsed.success && !map.has(parsed.data.name)) {
+        if (!parsed.success) continue
+        const current = map.get(parsed.data.name)
+        const shouldPreferYisangDirective = parsed.data.name === '지령 탐닉' && parsed.data.id === 'BlackNightmareYisang'
+        if (!current || shouldPreferYisangDirective) {
           map.set(parsed.data.name, { id: parsed.data.id, description: parsed.data.desc ?? null })
         }
       }
     }
   }
+  return map
+}
+
+function loadLangKeywordDescriptions(lang: 'en' | 'jp'): Map<string, { name: string; description: string | null }> {
+  const prefix = lang.toUpperCase()
+  const latestDir = lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
+  const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
+  const map = new Map<string, { name: string; description: string | null }>()
+
+  for (const { dir, ext } of [
+    { dir: latestDir, ext: '.json' },
+    { dir: fallbackDir, ext: '.txt' },
+  ]) {
+    if (!existsSync(dir)) continue
+    const files = globFiles(dir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+      .filter(f => f.endsWith(ext))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), name: z.string(), desc: z.string().optional() }).safeParse(item)
+        if (parsed.success && !map.has(parsed.data.id)) {
+          map.set(parsed.data.id, {
+            name: parsed.data.name,
+            description: parsed.data.desc ?? null,
+          })
+        }
+      }
+    }
+  }
+
   return map
 }
 
@@ -1321,7 +1360,8 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Identity keywords (paginated)
   let from = 0
   while (true) {
-    const { data } = await supabase.from('identities').select('keywords').range(from, from + 999)
+    const { data, error } = await supabase.from('identities').select('keywords').range(from, from + 999)
+    if (error) throw new Error(`identities keywords 로드 실패: ${error.message}`)
     if (!data?.length) break
     for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
     if (data.length < 1000) break
@@ -1331,7 +1371,8 @@ async function rebuildKeywordMeta(): Promise<void> {
   // EGO keywords (paginated)
   from = 0
   while (true) {
-    const { data } = await supabase.from('ego').select('keywords').range(from, from + 999)
+    const { data, error } = await supabase.from('ego').select('keywords').range(from, from + 999)
+    if (error) throw new Error(`ego keywords 로드 실패: ${error.message}`)
     if (!data?.length) break
     for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
     if (data.length < 1000) break
@@ -1341,7 +1382,8 @@ async function rebuildKeywordMeta(): Promise<void> {
   // EGO gift keywords (paginated)
   from = 0
   while (true) {
-    const { data } = await supabase.from('ego_gifts').select('keyword').range(from, from + 999)
+    const { data, error } = await supabase.from('ego_gifts').select('keyword').range(from, from + 999)
+    if (error) throw new Error(`ego_gifts keyword 로드 실패: ${error.message}`)
     if (!data?.length) break
     for (const r of data) { if (r.keyword) usedKeywords.add((r.keyword as string).normalize('NFC')) }
     if (data.length < 1000) break
@@ -1364,15 +1406,61 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Load EN/JP tag maps: tag ID → localized name
   const enTagMap = loadLangTagMap('en')
   const jpTagMap = loadLangTagMap('jp')
+  const enKeywordData = loadLangKeywordDescriptions('en')
+  const jpKeywordData = loadLangKeywordDescriptions('jp')
+
+  const { data: existingMeta, error: existingMetaError } = await supabase
+    .from('keyword_meta')
+    .select('name, description, name_en, name_jp, description_en, description_jp, icon_slug')
+    .limit(5000)
+
+  if (existingMetaError) {
+    throw new Error(`keyword_meta 기존 메타데이터 로드 실패: ${existingMetaError.message}`)
+  }
+
+  const existingMetaMap = new Map(
+    (existingMeta ?? []).map(row => [
+      String(row.name),
+      row as {
+        name: string
+        description: string | null
+        name_en: string | null
+        name_jp: string | null
+        description_en: string | null
+        description_jp: string | null
+        icon_slug: string | null
+      },
+    ]),
+  )
 
   // Build insert rows
-  const rows: Array<{ name: string; description: string | null; name_en: string | null; name_jp: string | null }> = []
+  const rows: Array<{
+    name: string
+    description: string | null
+    name_en: string | null
+    name_jp: string | null
+    description_en: string | null
+    description_jp: string | null
+    icon_slug: string | null
+  }> = []
   for (const name of usedKeywords) {
     const krData = krKeywords.get(name)
     const tag = krData?.id ?? krNameToTag[name]
-    const name_en = tag ? (enTagMap[tag] ?? null) : null
-    const name_jp = tag ? (jpTagMap[tag] ?? null) : null
-    rows.push({ name, description: krData?.description ?? null, name_en, name_jp })
+    const existing = existingMetaMap.get(name)
+    const enData = tag ? enKeywordData.get(tag) : undefined
+    const jpData = tag ? jpKeywordData.get(tag) : undefined
+    const name_en = tag ? (enData?.name ?? enTagMap[tag] ?? existing?.name_en ?? null) : existing?.name_en ?? null
+    const name_jp = tag ? (jpData?.name ?? jpTagMap[tag] ?? existing?.name_jp ?? null) : existing?.name_jp ?? null
+    const icon_slug = KEYWORD_ICON_SLUG_OVERRIDES[name] ?? existing?.icon_slug ?? null
+    rows.push({
+      name,
+      description: krData?.description ?? existing?.description ?? null,
+      name_en,
+      name_jp,
+      description_en: enData?.description ?? existing?.description_en ?? null,
+      description_jp: jpData?.description ?? existing?.description_jp ?? null,
+      icon_slug,
+    })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
