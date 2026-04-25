@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Identity, getIdentityInfoUrl, getIdentitySinColor, SIN_COLORS, RARITY_ICON_MAP, RARITY_FRAME_MAP, RARITY_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { Identity, getIdentityInfoUrl, getIdentitySinColor, getSinnerLogoUrl, SIN_COLORS, RARITY_ICON_MAP, IDENTITY_CARD_FRAME_MAP, RARITY_COLORS, STORAGE_BASE, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -44,7 +44,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
   return (
     <div
       onClick={onClick}
-      className={`${styles.card} ${selected ? styles.selected : ''} group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]`}
+      className={`${styles.card} ${compact ? styles.compact : ''} ${selected ? styles.selected : ''} group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]`}
       data-rarity={rarityNum}
       data-gacksung={gacksung || undefined}
       style={{ transformOrigin: 'center center' }}
@@ -120,10 +120,28 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           )}
         </div>
 
-        {/* 등급 프레임 오버레이 */}
-        {RARITY_FRAME_MAP[identity.rarity] && (
+        {/* 수감자 로고 배지 */}
+        <div className={styles.sinnerBadge} aria-hidden="true">
           <Image
-            src={RARITY_FRAME_MAP[identity.rarity]}
+            src={getSinnerLogoUrl(identity.sinner_id)}
+            alt=""
+            fill
+            className={styles.sinnerBadgeLogo}
+            sizes="3rem"
+          />
+          <Image
+            src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
+            alt=""
+            fill
+            className={styles.sinnerBadgeRing}
+            sizes="3rem"
+          />
+        </div>
+
+        {/* 등급 프레임 오버레이 */}
+        {IDENTITY_CARD_FRAME_MAP[identity.rarity] && (
+          <Image
+            src={IDENTITY_CARD_FRAME_MAP[identity.rarity]}
             alt=""
             width={200}
             height={300}
@@ -142,13 +160,13 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             background: 'rgba(13,11,8,0.85)',
           }}
         >
-          <div className="grid grid-cols-3 gap-1 text-center">
+          <div className="flex items-center justify-between gap-1 text-center">
             {[
               { label: t('identity.stat.hp'), value: identity.hp },
               { label: t('identity.stat.speed'), value: `${identity.speed_min}-${identity.speed_max}` },
               { label: t('identity.stat.defense'), value: identity.def_level },
             ].map(({ label, value }) => (
-              <div key={label}>
+              <div key={label} className="min-w-0 flex-1">
                 <div className="font-mono font-semibold" style={{ color: sinColor, fontSize: 'var(--text-xs)' }}>
                   {value}
                 </div>
