@@ -5,6 +5,7 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { deriveTier, type Tier } from '@/lib/tier-list/tierModel'
 
 const TIER_LIST_CATEGORIES = ['reroll', 'overall', 'mirror_dungeon', 'goodstuff'] as const
 const OVERALL_SOURCE_CATEGORIES = ['reroll', 'goodstuff', 'mirror_dungeon'] as const
@@ -14,16 +15,14 @@ const SUPPORTED_LOCALES = ['ko', 'en', 'ja'] as const
 type TierListCategory = typeof TIER_LIST_CATEGORIES[number]
 type OverallSourceCategory = typeof OVERALL_SOURCE_CATEGORIES[number]
 type RatingPeriod = typeof RATING_PERIODS[number]
-type DerivedTier = 'S+' | 'S' | 'A' | 'B' | 'C' | 'N/A'
 type RatingAggregate = {
   averageScore: number | null
   ratingCount: number
-  derivedTier: DerivedTier
+  derivedTier: Tier
   distribution: Record<number, number>
 }
 
 const MIN_ACCOUNT_AGE_DAYS = 14
-const MIN_RATINGS_FOR_TIER = 1
 const MAX_COMMENT_LENGTH = 280
 
 function parseCategory(value: unknown): TierListCategory | null {
@@ -51,15 +50,6 @@ function revalidateTierListCaches() {
 
 function isEditableCategory(category: TierListCategory): boolean {
   return EDITABLE_CATEGORIES.includes(category as typeof EDITABLE_CATEGORIES[number])
-}
-
-function deriveTier(averageScore: number | null, ratingCount: number): DerivedTier {
-  if (averageScore === null || ratingCount < MIN_RATINGS_FOR_TIER) return 'N/A'
-  if (averageScore >= 9.2) return 'S+'
-  if (averageScore >= 8.4) return 'S'
-  if (averageScore >= 7.2) return 'A'
-  if (averageScore >= 6.0) return 'B'
-  return 'C'
 }
 
 function getAccountAgeDays(createdAt: string | null | undefined): number | null {
@@ -265,7 +255,7 @@ async function getOverallRatingResponse(
     }
   }
 
-  const usableStats = [...sourceStats.values()].filter(stats => stats.count >= MIN_RATINGS_FOR_TIER)
+  const usableStats = [...sourceStats.values()].filter(stats => stats.count > 0)
   const usableAverages = usableStats.map(stats => stats.total / stats.count)
   const distribution = emptyDistribution()
   for (const stats of usableStats) {

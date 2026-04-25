@@ -44,6 +44,8 @@ const KEYWORD_SIN_MAP = {
 
 // ── 키워드 → 아이콘 슬러그 매핑 ──────────────────────────────────────────────
 const KEYWORD_ICON_MAP = {
+  // 기본 공격 유형: keyword icon upload가 아니라 canonical stat icon resolver에서 처리
+  '참격': 'stat:slash', '관통': 'stat:pierce', '타격': 'stat:blunt',
   // 상태이상
   '출혈': 'bleed', '화상': 'burn', '파열': 'rupture', '침잠': 'sinking',
   '진동': 'tremor', '충전': 'charge', '마비': 'paralysis', '속박': 'bind',
@@ -56,6 +58,7 @@ const KEYWORD_ICON_MAP = {
   '침잠쇄도': 'sinking-deluge', '충전 역장': 'charge-barrier', '과충전': 'overcharge',
   // 레벨/위력
   '공격 레벨 증가': 'atk-level-up', '공격 레벨 감소': 'atk-level-down',
+  '공격 레벨+': 'offense-level-up',
   '방어 레벨 증가': 'def-level-up', '방어 레벨 감소': 'def-level-down',
   '공격 위력 증가': 'atk-power-up', '공격 위력 감소': 'atk-power-down',
   '수비 위력 증가': 'def-power-up', '수비 위력 감소': 'def-power-down',
@@ -80,7 +83,8 @@ const KEYWORD_ICON_MAP = {
   '도발치': 'aggro', '나비': 'butterfly', '뇌진탕': 'concussion', '버림': 'discard',
   '해금': 'unlock', '카르마': 'karma', '광신': 'fanaticism', '못': 'nail',
   '탄환': 'ammo', '방어 태세': 'defense-stance', '합 가능 가드': 'clash-guard',
-  '체력 회복 감소': 'hp-heal-down',
+  '체력 회복 감소': 'hp-heal-down', '체력 회복': 'hp-heal-up',
+  '정신력 회복': 'sp-heal-up',
   // 이상 전용
   '산나비·죽은나비': 'living-dead-butterfly', '재장전 - 이상': 'reload-yi-sang',
   '찢어진 추억': 'torn-memory', '흉탄': 'fell-bullet', '대행 [헤르메스]': 'proxy-hermes',
@@ -170,6 +174,14 @@ const KEYWORD_ICON_MAP = {
   '원호 방어': 'support-defense', '시[始]': 'beginning', '대[待]': 'waiting',
   '원[援]': 'support', '천구성도': 'celestial-chart',
   '뜻에 따라, 베겠습니다.': 'by-your-will-i-shall-cut',
+  '강렬한 색채': 'IntenseColorsRodion',
+  '과감한 터치': 'BoldBrushstrokesRodion',
+  '고전압 외피': 'high-voltage-exoskeleton',
+  '구속 해제 - 창작 몰입': 'the-self-unbound-flow-state',
+  '전하침': 'charged-sting',
+  '진동 - 중첩': 'tremor-superposition',
+  '집중【저격】': 'concentration-sniper',
+  '천퇴성[天退星]': 'heavenly-retreat',
   '손도끼로 갈비뼈를 찍어 내릴 때는…': 'hatchet-ribs',
   '바스타드 소드로 어깨와 머리를 짓이길 때는…': 'bastard-sword-shoulders',
   '레이피어로 몸에 10개 이상의 구멍을 내야할 때는…': 'rapier-ten-holes',

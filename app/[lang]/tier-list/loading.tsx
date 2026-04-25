@@ -1,13 +1,4 @@
-const TIERS = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
-
-const TIER_COLORS: Record<string, string> = {
-  'S+': '#ff5050',
-  S: '#ff8c50',
-  A: '#f0c040',
-  B: '#70d070',
-  C: '#50b0e0',
-  'N/A': '#8a7855',
-}
+import { TIER_COLORS, TIERS } from '@/lib/tier-list/tierModel'
 
 export default function Loading() {
   return (
@@ -97,8 +88,10 @@ export default function Loading() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.75rem), 9.75rem))',
-                    justifyContent: 'center',
+                    width: 'min(100%, 64rem)',
+                    margin: '0 auto',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 9.25rem))',
+                    justifyContent: 'start',
                     alignItems: 'start',
                     gap: '1.375rem 1.125rem',
                     padding: '0.25rem 0.25rem 0.875rem',

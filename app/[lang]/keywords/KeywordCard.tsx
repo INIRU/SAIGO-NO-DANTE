@@ -2,11 +2,11 @@
 
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
-import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
+import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 
 interface KeywordCardProps {
   keyword: {
@@ -41,9 +41,7 @@ export default function KeywordCard({
   const sinColor = kw.sin_affinity
     ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
     : null
-  const iconUrl = kw.icon_slug
-    ? `${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`
-    : null
+  const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
 
   const displayName = getLocalizedKeywordName(kw.name, {
     nameEn: kw.name_en,

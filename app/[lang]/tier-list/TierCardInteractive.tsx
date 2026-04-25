@@ -2,6 +2,7 @@
 
 import { KeyboardEvent, useState } from 'react'
 import IdentityCard from '@/components/sinners/IdentityCard'
+import type { Tier } from '@/lib/tier-list/tierModel'
 import type { Identity } from '@/lib/types'
 import { TierRatingModal, type RatingPeriod, type TierCategory, type TierRatingViewer } from './TierRatingModal'
 
@@ -17,7 +18,7 @@ export type TierIdentity = Identity & {
   tier_rating_summary?: {
     averageScore: number | null
     ratingCount: number
-    derivedTier: 'S+' | 'S' | 'A' | 'B' | 'C' | 'N/A'
+    derivedTier: Tier
     distribution?: Record<number, number>
     sourceCategories?: Array<'reroll' | 'mirror_dungeon' | 'goodstuff'>
   }

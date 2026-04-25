@@ -33,6 +33,11 @@ const args = process.argv.slice(2)
 const DRY_RUN = args.includes('--dry-run')
 const sinnerArgIdx = args.indexOf('--sinner')
 const sinnerFilter = sinnerArgIdx !== -1 ? args[sinnerArgIdx + 1] : null
+const STAT_ICON_KEYWORDS = new Map([
+  ['참격', 'stat:slash'],
+  ['관통', 'stat:pierce'],
+  ['타격', 'stat:blunt'],
+])
 
 // ── 수감자별 나무위키 URL ──
 const WIKI_URLS = {
@@ -65,6 +70,7 @@ const KNOWN_SLUGS = {
   '진폭 변환': 'amplitude-conversion', '진폭 얽힘': 'amplitude-entangle',
   '침잠쇄도': 'sinking-deluge', '충전 역장': 'charge-barrier', '과충전': 'overcharge',
   '공격 레벨 증가': 'atk-level-up', '공격 레벨 감소': 'atk-level-down',
+  '공격 레벨+': 'offense-level-up',
   '방어 레벨 증가': 'def-level-up', '방어 레벨 감소': 'def-level-down',
   '공격 위력 증가': 'atk-power-up', '공격 위력 감소': 'atk-power-down',
   '수비 위력 증가': 'def-power-up', '수비 위력 감소': 'def-power-down',
@@ -94,7 +100,8 @@ const KNOWN_SLUGS = {
   '버림': 'discard', '해금': 'unlock', '카르마': 'karma',
   '광신': 'fanaticism', '못': 'nail', '탄환': 'ammo', '방어 태세': 'defense-stance',
   '합 가능 가드': 'clash-guard', '체력 회복 감소': 'hp-heal-down',
-  '체력 회복 증가': 'hp-heal-up',
+  '체력 회복 증가': 'hp-heal-up', '체력 회복': 'hp-heal-up',
+  '정신력 회복': 'sp-heal-up',
   '산나비·죽은나비': 'living-dead-butterfly',
   '재장전 - 이상': 'reload-yi-sang', '찢어진 추억': 'torn-memory',
   '흉탄': 'fell-bullet', '대행 [헤르메스]': 'proxy-hermes',
@@ -206,6 +213,13 @@ const KNOWN_SLUGS = {
   '시[始]': 'beginning', '대[待]': 'waiting', '원[援]': 'support',
   '천구성도': 'celestial-chart',
   '뜻에 따라, 베겠습니다.': 'by-your-will-i-shall-cut',
+  '강렬한 색채': 'IntenseColorsRodion',
+  '과감한 터치': 'BoldBrushstrokesRodion',
+  '고전압 외피': 'high-voltage-exoskeleton',
+  '구속 해제 - 창작 몰입': 'the-self-unbound-flow-state',
+  '전하침': 'charged-sting',
+  '진동 - 중첩': 'tremor-superposition',
+  '집중【저격】': 'concentration-sniper',
   '당연한 믿음': 'natural-faith', '상처': 'wound',
   '깊은 상처': 'deep-wound', '치명적인 상처': 'fatal-wound',
   '손도끼로 갈비뼈를 찍어 내릴 때는…': 'hatchet-ribs',
@@ -254,7 +268,7 @@ const KNOWN_SLUGS = {
   '상급 시엔징': 'advanced-sienching', '시술': 'treatment',
   '시엔징': 'sienching',
   '신(心) - 천퇴성 [天退星]': 'heart-heavenly-retreat',
-  '천퇴성 [天退星]': 'heavenly-retreat',
+  '천퇴성 [天退星]': 'heavenly-retreat', '천퇴성[天退星]': 'heavenly-retreat',
   '얽혀버린 저주 부적': 'tangled-curse-talisman',
   '올가미': 'lasso', '왕의 앞으로': 'before-the-king',
   '울음 방울': 'crying-bell',
@@ -455,7 +469,7 @@ async function main() {
   const existing = await supaGet('keyword_meta', 'select=name,icon_slug')
   const existingMap = new Map(existing.map(k => [k.name, k.icon_slug]))
   const missingIcon = [...existingMap.entries()]
-    .filter(([, slug]) => !slug)
+    .filter(([name, slug]) => !slug && !STAT_ICON_KEYWORDS.has(name))
     .map(([name]) => name)
   console.log(`DB keywords: ${existing.length}, missing icons: ${missingIcon.length}`)
 
@@ -501,6 +515,7 @@ async function main() {
   const toProcess = []
   for (const [name, imgUrl] of allKeywords) {
     const currentSlug = existingMap.get(name)
+    if (STAT_ICON_KEYWORDS.has(name)) continue
     if (!currentSlug) {
       // This keyword needs an icon (either new or missing)
       toProcess.push({ name, imgUrl, slug: makeSlug(name) })

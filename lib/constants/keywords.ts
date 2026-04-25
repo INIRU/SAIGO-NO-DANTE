@@ -78,7 +78,24 @@ export function normalizeForStats(kw: string): string {
  * 키워드 아이콘 URL을 반환.
  * iconSlug가 없으면 null.
  */
-export function getKeywordIconUrl(_keyword: string, iconSlug?: string): string | null {
+const BASE_ATTACK_KEYWORD_ICON_PATHS: Record<string, string> = {
+  '참격': 'icons/stats/slash.webp',
+  '관통': 'icons/stats/pierce.webp',
+  '타격': 'icons/stats/blunt.webp',
+  slash: 'icons/stats/slash.webp',
+  pierce: 'icons/stats/pierce.webp',
+  blunt: 'icons/stats/blunt.webp',
+}
+
+const BASE_ATTACK_ICON_SLUG_PATHS: Record<string, string> = {
+  'stat:slash': 'icons/stats/slash.webp',
+  'stat:pierce': 'icons/stats/pierce.webp',
+  'stat:blunt': 'icons/stats/blunt.webp',
+}
+
+export function getKeywordIconUrl(keyword: string, iconSlug?: string): string | null {
+  const statIconPath = BASE_ATTACK_KEYWORD_ICON_PATHS[keyword] ?? (iconSlug ? BASE_ATTACK_ICON_SLUG_PATHS[iconSlug] : undefined)
+  if (statIconPath) return `${STORAGE_BASE}/${statIconPath}`
   if (!iconSlug) return null
   return `${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`
 }

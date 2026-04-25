@@ -10,6 +10,7 @@ import { SIN_COLORS } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
+import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 
 const RARITY_ICONS: Record<number, string> = { 1: '1star', 2: '2star', 3: '3star' }
 const GRADE_LABELS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', 'EX': 'EX' }
@@ -73,6 +74,7 @@ export default function KeywordModal({
   const kwDesc = kw.description
     ? getLocalizedKeywordDesc(kw.description, { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)
     : null
+  const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
 
   // body 스크롤 잠금
   useEffect(() => {
@@ -130,7 +132,7 @@ export default function KeywordModal({
           <div className="p-5 pb-4" style={{ borderBottom: '0.0625rem solid rgba(200,144,10,0.08)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {kw.icon_slug && (
+                {iconUrl && (
                   <div className="flex items-center justify-center rounded"
                     style={{
                       width: '2.75rem', height: '2.75rem',
@@ -139,7 +141,7 @@ export default function KeywordModal({
                     }}
                   >
                     <Image
-                      src={`${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`}
+                      src={iconUrl}
                       alt={kwName} width={28} height={28}
                       style={{ width: '1.75rem', height: 'auto' }}
                     />

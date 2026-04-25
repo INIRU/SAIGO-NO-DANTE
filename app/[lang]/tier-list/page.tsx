@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { TIERS, createEmptyTiers, deriveTier, MIN_RATINGS_FOR_TIER, type Tier } from '@/lib/tier-list/tierModel'
 import TierListInteractive from './TierListInteractive'
 import type { TierIdentity } from './TierCardInteractive'
 import type { RatingPeriod, TierRatingViewer } from './TierRatingModal'
@@ -19,17 +20,14 @@ export const metadata: Metadata = {
     description: '림버스 컴퍼니 인격 티어표에서 종합, 리세, 굿스터프, 거울 던전 기준의 커뮤니티 평가와 등급을 확인하세요.',
   },
 }
-const TIERS = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
-type Tier = typeof TIERS[number]
-
 const CATEGORIES = ['overall', 'reroll', 'goodstuff', 'mirror_dungeon'] as const
 type TierCategory = typeof CATEGORIES[number]
 const RATING_PERIODS = ['7d', '30d', '1y', 'all'] as const
-const TIER_DATA_MODEL_VERSION = 'identity-rating-v10-period-filter'
+const TIER_DATA_MODEL_VERSION = 'identity-rating-v11-refined-tier-model'
 const OVERALL_SOURCE_CATEGORIES = ['reroll', 'goodstuff', 'mirror_dungeon'] as const
 const MIN_ACCOUNT_AGE_DAYS = 14
-const MIN_RATINGS_FOR_TIER = 1
 type SupportedLocale = 'ko' | 'en' | 'ja'
+type TierIdentitySummaryTier = NonNullable<TierIdentity['tier_rating_summary']>['derivedTier']
 
 const HEADER_COPY: Record<SupportedLocale, {
   title: string
@@ -51,10 +49,6 @@ const HEADER_COPY: Record<SupportedLocale, {
 
 function normalizeLocale(value: string | undefined): SupportedLocale {
   return value === 'en' || value === 'ja' ? value : 'ko'
-}
-
-function createEmptyTiers(): Record<Tier, TierIdentity[]> {
-  return { 'S+': [], 'S': [], 'A': [], 'B': [], 'C': [], 'N/A': [] }
 }
 
 const IDENTITY_SELECT = `
@@ -117,7 +111,7 @@ function getPeriodCacheKey(period: RatingPeriod): string {
   return `${period}:${new Date().toISOString().slice(0, 13)}`
 }
 
-async function getTierData(category: TierCategory, period: RatingPeriod): Promise<Record<Tier, TierIdentity[]>> {
+async function getTierData(category: TierCategory, period: RatingPeriod, locale: SupportedLocale): Promise<Record<Tier, TierIdentity[]>> {
   const supabase = createAdminClient()
 
   const { data: identities, error: identitiesError } = await supabase
@@ -126,7 +120,11 @@ async function getTierData(category: TierCategory, period: RatingPeriod): Promis
     .select(IDENTITY_SELECT)
     .order('name_kr')
 
-  if (identitiesError || !identities) return createEmptyTiers()
+  if (identitiesError) {
+    console.error('[TierListPage] identities fetch error:', identitiesError)
+    return createEmptyTiers<TierIdentity>()
+  }
+  if (!identities) return createEmptyTiers<TierIdentity>()
 
   let ratingsQuery = supabase
     .schema('limbus')
@@ -144,16 +142,21 @@ async function getTierData(category: TierCategory, period: RatingPeriod): Promis
   }
   const { data: ratingRows, error: ratingsError } = await ratingsQuery
 
+  if (ratingsError) {
+    console.error('[TierListPage] ratings fetch error:', ratingsError)
+  }
+
   const rows = ratingsError || !ratingRows ? [] : ratingRows as TierRatingRow[]
   const normalizedIdentities = normalizeIdentities(identities as unknown as RawTierIdentity[])
   return category === 'overall'
-    ? groupIdentitiesByOverall(normalizedIdentities, rows)
-    : groupIdentitiesByRatings(normalizedIdentities, rows, category)
+    ? groupIdentitiesByOverall(normalizedIdentities, rows, locale)
+    : groupIdentitiesByRatings(normalizedIdentities, rows, category, locale)
 }
 
 async function getCachedTierData(
   category: TierCategory,
   period: RatingPeriod,
+  locale: SupportedLocale,
   periodWindowKey: string,
   dataVersion: string,
 ): Promise<Record<Tier, TierIdentity[]>> {
@@ -162,7 +165,7 @@ async function getCachedTierData(
   void dataVersion
   cacheLife('max')
   cacheTag(CACHE_TAGS.tierList, CACHE_TAGS.gameData)
-  return getTierData(category, period)
+  return getTierData(category, period, locale)
 }
 
 function getAccountAgeDays(createdAt: string | null | undefined): number | null {
@@ -267,19 +270,33 @@ function normalizeIdentities(identities: RawTierIdentity[]): TierIdentity[] {
   }))
 }
 
-function deriveTier(averageScore: number, ratingCount: number): Tier {
-  if (ratingCount < MIN_RATINGS_FOR_TIER) return 'N/A'
-  if (averageScore >= 9.2) return 'S+'
-  if (averageScore >= 8.4) return 'S'
-  if (averageScore >= 7.2) return 'A'
-  if (averageScore >= 6.0) return 'B'
-  return 'C'
+function getLocalizedIdentityName(identity: TierIdentity, locale: SupportedLocale): string {
+  if (locale === 'en') return identity.name_en ?? identity.name ?? identity.name_kr ?? identity.id
+  if (locale === 'ja') return identity.name_jp ?? identity.name_kr ?? identity.name ?? identity.id
+  return identity.name_kr ?? identity.name ?? identity.name_en ?? identity.name_jp ?? identity.id
+}
+
+function sortTierIdentities(tiers: Record<Tier, TierIdentity[]>, locale: SupportedLocale): void {
+  for (const tier of TIERS) {
+    tiers[tier].sort((a, b) => {
+      if (tier !== 'N/A') {
+        const scoreDelta = (b.tier_rating_summary?.averageScore ?? -1) - (a.tier_rating_summary?.averageScore ?? -1)
+        if (scoreDelta !== 0) return scoreDelta
+
+        const countDelta = (b.tier_rating_summary?.ratingCount ?? 0) - (a.tier_rating_summary?.ratingCount ?? 0)
+        if (countDelta !== 0) return countDelta
+      }
+
+      return getLocalizedIdentityName(a, locale).localeCompare(getLocalizedIdentityName(b, locale), locale)
+    })
+  }
 }
 
 function groupIdentitiesByRatings(
   identities: TierIdentity[],
   ratingRows: TierRatingRow[],
   category: TierCategory,
+  locale: SupportedLocale,
 ): Record<Tier, TierIdentity[]> {
   const ratingMap = new Map<string, { total: number; count: number; distribution: Record<number, number> }>()
 
@@ -298,7 +315,7 @@ function groupIdentitiesByRatings(
     }
   }
 
-  const tiers = createEmptyTiers()
+  const tiers = createEmptyTiers<TierIdentity>()
   const seen = new Set<string>()
 
   for (const identity of identities) {
@@ -313,15 +330,13 @@ function groupIdentitiesByRatings(
       tier_rating_summary: {
         averageScore,
         ratingCount: rating?.count ?? 0,
-        derivedTier: tier,
+        derivedTier: tier as TierIdentitySummaryTier,
         distribution: rating?.distribution ?? {},
       },
     })
   }
 
-  for (const tier of TIERS) {
-    tiers[tier].sort((a, b) => a.name_kr.localeCompare(b.name_kr, 'ko'))
-  }
+  sortTierIdentities(tiers, locale)
 
   return tiers
 }
@@ -329,6 +344,7 @@ function groupIdentitiesByRatings(
 function groupIdentitiesByOverall(
   identities: TierIdentity[],
   ratingRows: TierRatingRow[],
+  locale: SupportedLocale,
 ): Record<Tier, TierIdentity[]> {
   const ratingMap = new Map<string, Map<typeof OVERALL_SOURCE_CATEGORIES[number], { total: number; count: number }>>()
 
@@ -346,7 +362,7 @@ function groupIdentitiesByOverall(
     ratingMap.set(row.identity_id, identityRatings)
   }
 
-  const tiers = createEmptyTiers()
+  const tiers = createEmptyTiers<TierIdentity>()
   const seen = new Set<string>()
 
   for (const identity of identities) {
@@ -371,16 +387,14 @@ function groupIdentitiesByOverall(
       tier_rating_summary: {
         averageScore,
         ratingCount,
-        derivedTier: tier,
+        derivedTier: tier as TierIdentitySummaryTier,
         distribution: {},
         sourceCategories: usable.map(item => item.category),
       },
     })
   }
 
-  for (const tier of TIERS) {
-    tiers[tier].sort((a, b) => a.name_kr.localeCompare(b.name_kr, 'ko'))
-  }
+  sortTierIdentities(tiers, locale)
 
   return tiers
 }
@@ -415,10 +429,10 @@ export default async function TierListPage({
   const period = normalizePeriod(resolvedSearchParams?.period)
   const locale = normalizeLocale(routeParams?.lang)
   const [tiers, viewer] = await Promise.all([
-    getCachedTierData(category, period, getPeriodCacheKey(period), TIER_DATA_MODEL_VERSION),
+    getCachedTierData(category, period, locale, getPeriodCacheKey(period), TIER_DATA_MODEL_VERSION),
     getInitialTierViewer(),
   ])
-  return <TierListContent category={category} locale={locale} period={period} tiers={tiers} viewer={viewer} />
+  return <TierListContent category={category} locale={locale} period={period} tiers={tiers as Record<TierIdentitySummaryTier, TierIdentity[]>} viewer={viewer} />
 }
 
 function TierListContent({
@@ -431,7 +445,7 @@ function TierListContent({
   category: TierCategory
   locale: SupportedLocale
   period: RatingPeriod
-  tiers: Record<Tier, TierIdentity[]>
+  tiers: Record<TierIdentitySummaryTier, TierIdentity[]>
   viewer: TierRatingViewer
 }) {
   const copy = HEADER_COPY[locale]

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { useDebounce } from '@/hooks/useDebounce'
+import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 
 // Korean consonant (초성) list for fuzzy search
 const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
@@ -109,7 +110,7 @@ function flatten(data: SearchResult): FlatItem[] {
       label: k.name,
       sublabel: k.description?.slice(0, 50) ?? '',
       href: `/mirror-dungeon?keyword=${encodeURIComponent(k.name)}`,
-      icon: k.icon_slug ? `${STORAGE_BASE}/icons/keywords/${k.icon_slug}.webp` : undefined,
+      icon: resolveKeywordIconUrl(k.name, k.icon_slug) ?? undefined,
     })
   }
 

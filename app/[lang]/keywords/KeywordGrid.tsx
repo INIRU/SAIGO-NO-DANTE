@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { STORAGE_BASE } from '@/lib/data/sinners'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import { getLocalizedKeywordName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 import KeywordCard from './KeywordCard'
 
 interface Keyword {
@@ -90,9 +90,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode, l
             const sinColor = kw.sin_affinity
               ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
               : null
-            const iconUrl = kw.icon_slug
-              ? `${STORAGE_BASE}/icons/keywords/${kw.icon_slug}.webp`
-              : null
+            const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
             const displayName = getLocalizedKeywordName(kw.name, {
               nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null,
             }, lang)
