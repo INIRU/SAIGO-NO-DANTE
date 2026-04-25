@@ -274,7 +274,9 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
 
                   // 파편 교환 상세 텍스트
                   let detail: string
-                  if (isNew7dLock) {
+                  if (info.gacha === 'walpurgis') {
+                    detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.walpurgisLimited')})`
+                  } else if (isNew7dLock) {
                     detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.shardPostRelease7d')} ~ S${releaseSeason}, S${permanentExchangeSeason} ~ ${t('identity.info.permanent')})`
                   } else if (isNextSeasonLock) {
                     detail = permanentExchangeSeason

@@ -21,20 +21,9 @@ export default function ScrollAnimations() {
 
         if (reducedMotion) {
           gsap.set(
-            '.home-command-surface, .home-logo-mark, .home-brand-title, .home-subtitle, .home-meta-strip, .home-command-actions, .home-scroll-prompt',
+            '.latest-card, .latest-header, .feature-card',
             { opacity: 1, clearProps: 'transform' }
           )
-          gsap.set('.home-gold-rail', { opacity: 0.65, scaleY: 1 })
-        } else {
-          gsap.timeline({ defaults: { ease: 'power3.out' } })
-            .fromTo('.home-command-surface', { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.65, delay: 0.15 })
-            .fromTo('.home-logo-mark', { opacity: 0, y: 12, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.55 }, '-=0.3')
-            .fromTo('.home-brand-title', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.72 }, '-=0.38')
-            .fromTo('.home-gold-rail', { opacity: 0, scaleY: 0.08 }, { opacity: 0.65, scaleY: 1, duration: 0.8, transformOrigin: '50% 0%' }, '-=0.55')
-            .fromTo('.home-subtitle', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.62 }, '-=0.42')
-            .fromTo('.home-meta-strip', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.55 }, '-=0.28')
-            .fromTo('.home-command-actions', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 }, '-=0.22')
-            .fromTo('.home-scroll-prompt', { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.5 }, '-=0.12')
         }
 
         if (document.querySelector('.latest-card')) {

@@ -1,4 +1,4 @@
-const TIERS = ['S+', 'S', 'A', 'B', 'C', 'F'] as const
+const TIERS = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
 
 const TIER_COLORS: Record<string, string> = {
   'S+': '#ff5050',
@@ -6,70 +6,122 @@ const TIER_COLORS: Record<string, string> = {
   A: '#f0c040',
   B: '#70d070',
   C: '#50b0e0',
-  F: '#9090b0',
+  'N/A': '#8a7855',
 }
 
 export default function Loading() {
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 pt-28 pb-16 animate-pulse">
-
-      {/* 헤더 블록 */}
-      <div className="mb-8 space-y-2 text-center">
-        <div className="mx-auto rounded" style={{ width: '8rem', height: '0.625rem', background: 'rgba(200,144,10,0.12)' }} />
-        <div className="mx-auto rounded" style={{ width: '12rem', height: '2rem', background: '#2a2318' }} />
-        <div className="mx-auto rounded" style={{ width: '18rem', height: '0.8125rem', background: '#1a1510' }} />
-        <div className="mx-auto rounded" style={{ width: '14rem', height: '0.6875rem', background: '#1a1510' }} />
-        <div className="mx-auto rounded" style={{ width: '10rem', height: '0.6875rem', background: '#1a1510' }} />
-        {/* 범례 */}
-        <div className="flex items-center justify-center gap-5 mt-4">
-          {[4, 4, 4].map((w, i) => (
-            <div key={i} className="rounded" style={{ width: `${w}rem`, height: '0.6875rem', background: '#1a1510' }} />
-          ))}
-        </div>
-        {/* 시즌 필터 칩 */}
-        <div className="flex items-center justify-center gap-2 flex-wrap mt-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-full" style={{ width: '3.5rem', height: '1.5rem', background: '#1a1510' }} />
-          ))}
-        </div>
+    <div style={{ background: 'var(--bg-deep)', minHeight: '100dvh' }}>
+      <div className="max-w-5xl mx-auto text-center" style={{ padding: '5.75rem 1.25rem 1.375rem' }}>
+        <div className="mx-auto rounded" style={{ width: '5.75rem', height: '0.625rem', background: 'rgba(200,144,10,0.14)', marginBottom: '0.5rem' }} />
+        <div className="mx-auto rounded" style={{ width: '10.5rem', height: '2rem', background: '#2a2318' }} />
+        <div className="mx-auto rounded" style={{ width: '18rem', maxWidth: '75%', height: '0.8125rem', background: '#1a1510', marginTop: '0.5rem' }} />
+        <div className="mx-auto" style={{ width: '7rem', height: '0.0625rem', background: 'rgba(200,144,10,0.32)', marginTop: '0.875rem' }} />
       </div>
 
-      {/* 6개 티어 행 */}
-      <div className="space-y-2">
-        {TIERS.map(tier => (
-          <div
-            key={tier}
-            className="flex items-stretch rounded overflow-hidden"
-            style={{ border: '1px solid rgba(255,255,255,0.05)' }}
-          >
-            {/* 티어 라벨 */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16 animate-pulse">
+        <div
+          className="mx-auto grid w-full max-w-lg grid-cols-4"
+          style={{
+            gap: '0.25rem',
+            padding: '0.25rem',
+            background: '#14100c',
+            border: '1px solid rgba(200,144,10,0.22)',
+            borderRadius: '0.5rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          {Array.from({ length: 4 }).map((_, index) => (
             <div
-              className="flex items-center justify-center flex-shrink-0"
+              key={index}
               style={{
-                width: '3.5rem',
-                minHeight: '4rem',
-                background: `${TIER_COLORS[tier]}22`,
-                borderRight: `2px solid ${TIER_COLORS[tier]}44`,
+                minHeight: '2.25rem',
+                borderRadius: '0.375rem',
+                background: index === 0 ? 'rgba(200,144,10,0.16)' : '#0d0b08',
+              }}
+            />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+          {TIERS.map((tier, tierIndex) => (
+            <section
+              key={tier}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(3.75rem, 4.5rem) minmax(0, 1fr)',
+                columnGap: '1rem',
+                alignItems: 'start',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-serif)', color: TIER_COLORS[tier], fontWeight: 900, fontSize: '1.125rem', opacity: 0.5 }}>
-                {tier}
-              </span>
-            </div>
-            {/* 인격 카드 슬롯들 */}
-            <div className="flex flex-wrap gap-1.5 p-2 flex-1" style={{ background: '#0f0d0a' }}>
-              {Array.from({ length: tier === 'S+' ? 3 : tier === 'S' ? 5 : tier === 'A' ? 7 : tier === 'B' ? 6 : tier === 'C' ? 4 : 2 }).map((_, i) => (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem' }}>
                 <div
-                  key={i}
-                  className="rounded overflow-hidden"
-                  style={{ width: '3rem', height: '4rem', background: '#1a1510', border: '1px solid rgba(200,144,10,0.06)' }}
+                  style={{
+                    width: '100%',
+                    minHeight: tier === 'N/A' ? '3.875rem' : '3.5rem',
+                    borderRadius: '0.375rem',
+                    background: `${TIER_COLORS[tier]}44`,
+                  }}
                 />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+                <div className="mx-auto rounded" style={{ width: '3.25rem', height: '0.6875rem', background: '#1a1510' }} />
+                <div
+                  style={{
+                    width: '0.0625rem',
+                    minHeight: '4rem',
+                    alignSelf: 'center',
+                    background: `${TIER_COLORS[tier]}33`,
+                  }}
+                />
+              </div>
 
+              <div>
+                {tier === 'N/A' && (
+                  <div
+                    className="grid gap-2 md:grid-cols-[minmax(12rem,1fr)_8rem_7rem_8.5rem]"
+                    style={{
+                      margin: '0 0.25rem 0.875rem',
+                      minHeight: '3.875rem',
+                      padding: '0.625rem',
+                      background: '#14100c',
+                      border: '1px solid rgba(200,144,10,0.18)',
+                      borderRadius: '0.5rem',
+                    }}
+                  >
+                    <div style={{ height: '2.25rem', borderRadius: '0.375rem', background: '#0d0b08' }} />
+                    <div style={{ height: '2.25rem', borderRadius: '0.375rem', background: '#0d0b08' }} />
+                    <div style={{ height: '2.25rem', borderRadius: '0.375rem', background: '#0d0b08' }} />
+                    <div style={{ height: '2.25rem', borderRadius: '0.375rem', background: '#0d0b08' }} />
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.75rem), 9.75rem))',
+                    justifyContent: 'center',
+                    alignItems: 'start',
+                    gap: '1.375rem 1.125rem',
+                    padding: '0.25rem 0.25rem 0.875rem',
+                    overflow: 'visible',
+                  }}
+                >
+                  {Array.from({ length: tierIndex < 2 ? 4 : tier === 'N/A' ? 8 : 5 }).map((_, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        height: '13.25rem',
+                        borderRadius: '0.375rem',
+                        background: '#1a1510',
+                        border: '1px solid rgba(200,144,10,0.08)',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

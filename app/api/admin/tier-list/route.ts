@@ -1,13 +1,30 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const TIER_LIST_CATEGORIES = ['reroll', 'overall', 'mirror_dungeon', 'goodstuff'] as const
+type TierListCategory = typeof TIER_LIST_CATEGORIES[number]
+const TIER_VALUES = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
 
-export async function GET() {
+function parseCategory(value: unknown): TierListCategory | null {
+  if (typeof value !== 'string' || value.length === 0) return 'reroll'
+  return TIER_LIST_CATEGORIES.includes(value as TierListCategory) ? value as TierListCategory : null
+}
+
+function isValidTier(value: string): boolean {
+  return TIER_VALUES.includes(value as typeof TIER_VALUES[number])
+}
+
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+    const category = parseCategory(request.nextUrl.searchParams.get('category'))
+    if (!category) {
+      return NextResponse.json({ error: '유효하지 않은 티어 카테고리입니다.' }, { status: 400 })
+    }
 
     const supabase = createAdminClient()
 
@@ -16,9 +33,10 @@ export async function GET() {
       .schema('limbus')
       .from('tier_list')
       .select(`
-        tier, sort_order,
+        category, tier, sort_order,
         identity:identities(id, name_kr, rarity, sinner_id, game_id, folder_name, acquisition_info, release_date)
       `)
+      .eq('category', category)
       .order('sort_order')
 
     if (assignedErr) return NextResponse.json({ error: assignedErr.message }, { status: 500 })
@@ -61,23 +79,29 @@ export async function PUT(request: Request) {
     const supabase = createAdminClient()
     const body = await request.json()
     const { tiers } = body as { tiers: Record<string, string[]> }
+    const category = parseCategory((body as { category?: unknown }).category)
 
     if (!tiers) return NextResponse.json({ error: 'tiers 데이터가 필요합니다.' }, { status: 400 })
+    if (!category) return NextResponse.json({ error: '유효하지 않은 티어 카테고리입니다.' }, { status: 400 })
 
     // 기존 데이터 삭제
     const { error: deleteErr } = await supabase
       .schema('limbus')
       .from('tier_list')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000') // delete all rows
+      .eq('category', category)
+      .neq('id', '00000000-0000-0000-0000-000000000000') // delete all rows in category
 
     if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 })
 
     // 새 데이터 일괄 삽입
-    const rows: { identity_id: string; tier: string; sort_order: number }[] = []
+    const rows: { identity_id: string; tier: string; sort_order: number; category: TierListCategory }[] = []
     for (const [tier, ids] of Object.entries(tiers)) {
+      if (!isValidTier(tier)) {
+        return NextResponse.json({ error: `유효하지 않은 티어입니다: ${tier}` }, { status: 400 })
+      }
       ids.forEach((id, idx) => {
-        rows.push({ identity_id: id, tier, sort_order: idx })
+        rows.push({ identity_id: id, tier, sort_order: idx, category })
       })
     }
 

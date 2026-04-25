@@ -148,6 +148,54 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
     <>
       {/* Scroll animations — targets server-rendered class names */}
       <ScrollAnimations />
+      <style jsx global>{`
+        @keyframes homeHeroSurfaceReveal {
+          from { opacity: 0; transform: translateX(-1.125rem); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes homeHeroRiseReveal {
+          from { opacity: 0; transform: translateY(0.875rem); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes homeHeroLogoReveal {
+          from { opacity: 0; transform: translateY(0.75rem) scale(0.94); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .home-command-surface {
+          animation: homeHeroSurfaceReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+        }
+        .home-logo-mark {
+          animation: homeHeroLogoReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+        }
+        .home-brand-title {
+          animation: homeHeroRiseReveal 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+        }
+        .home-subtitle {
+          animation: homeHeroRiseReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.34s both;
+        }
+        .home-meta-strip {
+          animation: homeHeroRiseReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.46s both;
+        }
+        .home-command-actions {
+          animation: homeHeroRiseReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.58s both;
+        }
+        .home-scroll-prompt {
+          animation: homeHeroRiseReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .home-command-surface,
+          .home-logo-mark,
+          .home-brand-title,
+          .home-subtitle,
+          .home-meta-strip,
+          .home-command-actions,
+          .home-scroll-prompt {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+      `}</style>
 
       {/* ── 히어로 ─────────────────────────────────────────────── */}
       <section
@@ -191,8 +239,6 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
             ].join(', '),
           }}
         />
-        <div className="home-gold-rail pointer-events-none absolute bottom-[5.25rem] left-6 top-[5.25rem] z-[3] hidden w-[0.0625rem] origin-top bg-gradient-to-b from-transparent via-[rgba(200,144,10,0.46)] to-transparent opacity-0 md:left-[4.5rem] md:block lg:left-[6rem]" />
-
         {/* 수감자 아이콘 워터마크 */}
         {selectedIdentity && (
           <div
@@ -220,7 +266,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
           className="relative z-10 flex w-full flex-col justify-end px-5 pb-16 pt-[48dvh] sm:px-6 md:max-w-[38rem] md:justify-center md:px-16 md:pb-24 md:pt-24 lg:max-w-[42rem] lg:px-24"
           style={{ minHeight: firstViewportHeight }}
         >
-          <div className="home-command-surface max-w-full border-l border-[rgba(200,144,10,0.32)] bg-[linear-gradient(90deg,rgba(13,11,8,0.64),rgba(13,11,8,0.22)_78%,transparent)] pl-3 opacity-0 sm:pl-4 md:border-[rgba(200,144,10,0.36)] md:bg-[linear-gradient(90deg,rgba(13,11,8,0.9),rgba(13,11,8,0.48)_78%,transparent)] md:pl-6">
+          <div className="home-command-surface max-w-full bg-[linear-gradient(90deg,rgba(13,11,8,0.64),rgba(13,11,8,0.22)_78%,transparent)] pl-3 opacity-0 sm:pl-4 md:bg-[linear-gradient(90deg,rgba(13,11,8,0.9),rgba(13,11,8,0.48)_78%,transparent)] md:pl-6">
             <div className="mb-3 flex items-center gap-3 md:mb-5 md:gap-4">
               <Image
                 src="/images/logo-hero.webp"
@@ -254,8 +300,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
           {/* 현재 슬라이드 인격 정보 */}
           {selectedIdentity && (
             <div className="home-meta-strip mb-4 max-w-[34rem] opacity-0 md:mb-8" suppressHydrationWarning>
-              <div className="relative min-w-0 pl-3">
-                <span className="absolute bottom-1 left-0 top-1 w-[0.0625rem] bg-[linear-gradient(180deg,rgba(200,144,10,0.7),rgba(200,144,10,0.12))]" aria-hidden="true" />
+              <div className="relative min-w-0">
                 <div className="mb-2 flex min-w-0 items-center gap-2.5">
                   <RarityIcon rarity={selectedIdentity.rarity} />
                   <span className="font-mono text-[0.625rem] leading-none text-[rgba(232,176,48,0.55)]">
@@ -269,7 +314,6 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
                   {getName(selectedIdentity.name_kr, selectedIdentity.name_en, selectedIdentity.name_jp)}
                 </div>
                 <div className="mt-1 flex min-w-0 items-center gap-2 text-[0.6875rem] leading-none text-[var(--text-muted)]">
-                  <span className="h-px w-5 shrink-0 bg-[rgba(200,144,10,0.45)]" aria-hidden="true" />
                   <span className="truncate font-title">
                     {getName(selectedIdentity.sinner?.name_kr, selectedIdentity.sinner?.name_en, selectedIdentity.sinner?.name_jp)}
                   </span>
