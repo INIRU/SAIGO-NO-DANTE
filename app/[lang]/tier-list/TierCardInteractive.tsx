@@ -1,10 +1,23 @@
 'use client'
 
 import { KeyboardEvent, useState } from 'react'
+import { useLocale } from 'next-intl'
 import IdentityCard from '@/components/sinners/IdentityCard'
 import type { Tier } from '@/lib/tier-list/tierModel'
 import type { Identity } from '@/lib/types'
 import { TierRatingModal, type RatingPeriod, type TierCategory, type TierRatingViewer } from './TierRatingModal'
+
+type SupportedLocale = 'ko' | 'en' | 'ja'
+
+const DIAGNOSIS_SELECTED_LABELS: Record<SupportedLocale, string> = {
+  ko: '보유',
+  en: 'Owned',
+  ja: '所持',
+}
+
+function normalizeLocale(locale: string): SupportedLocale {
+  return locale === 'en' || locale === 'ja' ? locale : 'ko'
+}
 
 export type TierIdentity = Identity & {
   sinner?: {
@@ -29,19 +42,34 @@ export default function TierCardInteractive({
   category,
   period,
   viewer,
+  diagnosisMode = false,
+  diagnosisSelected = false,
+  onToggleDiagnosis,
 }: {
   identity: TierIdentity
   category: TierCategory
   period: RatingPeriod
   viewer: TierRatingViewer
+  diagnosisMode?: boolean
+  diagnosisSelected?: boolean
+  onToggleDiagnosis?: (identityId: string) => void
 }) {
+  const locale = normalizeLocale(useLocale())
   const [modalOpen, setModalOpen] = useState(false)
+  const selectedLabel = DIAGNOSIS_SELECTED_LABELS[locale]
 
-  const openModal = () => setModalOpen(true)
+  const toggleDiagnosis = () => onToggleDiagnosis?.(identity.id)
+  const activateCard = () => {
+    if (diagnosisMode && onToggleDiagnosis) {
+      toggleDiagnosis()
+      return
+    }
+    setModalOpen(true)
+  }
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      openModal()
+      activateCard()
     }
   }
 
@@ -50,10 +78,12 @@ export default function TierCardInteractive({
     <div
       role="button"
       tabIndex={0}
-      onClick={openModal}
+      onClick={activateCard}
       onKeyDown={handleKeyDown}
-      aria-label={`${identity.name_kr} 평가 열기`}
+      aria-pressed={diagnosisMode ? diagnosisSelected : undefined}
+      aria-label={diagnosisMode ? `${identity.name_kr} 자가진단 ${diagnosisSelected ? '선택 해제' : '선택'}` : `${identity.name_kr} 평가 열기`}
       data-identity-id={identity.id}
+      data-diagnosis-mode={diagnosisMode ? 'true' : undefined}
       style={{
         position: 'relative',
         cursor: 'pointer',
@@ -61,9 +91,23 @@ export default function TierCardInteractive({
         padding: '0.25rem',
         outline: 'none',
       }}
-      className="tier-identity-cell group rounded-md focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+      className="tier-identity-cell rounded-md focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
     >
-      <IdentityCard identity={identity} compact />
+      <div
+        className="tier-identity-card-shell"
+        style={{
+          filter: diagnosisMode && diagnosisSelected ? 'brightness(1.08) saturate(1.06)' : 'none',
+        }}
+      >
+        <IdentityCard identity={identity} compact />
+        {diagnosisMode && diagnosisSelected && (
+          <span className="tier-diagnosis-selected-overlay" aria-hidden="true">
+            <span className="tier-diagnosis-selected-label">
+              {selectedLabel}
+            </span>
+          </span>
+        )}
+      </div>
     </div>
     <TierRatingModal
       identity={identity}

@@ -170,11 +170,17 @@ export default function TierGrid({
   category,
   period,
   viewer,
+  diagnosisMode = false,
+  selectedDiagnosisIds,
+  onToggleDiagnosis,
 }: {
   tiers: Partial<Record<Tier, TierIdentity[]>>
   category: TierCategory
   period: RatingPeriod
   viewer: TierRatingViewer
+  diagnosisMode?: boolean
+  selectedDiagnosisIds?: Set<string>
+  onToggleDiagnosis?: (identityId: string) => void
 }) {
   const locale = normalizeLocale(useLocale())
   const copy = FILTER_COPY[locale]
@@ -224,6 +230,41 @@ export default function TierGrid({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
       <style>{`
+        .tier-identity-card-shell {
+          position: relative;
+          border-radius: 0.5rem;
+          transition: transform 0.18s ease, filter 0.18s ease;
+          transform-origin: center center;
+        }
+        .tier-identity-cell:hover .tier-identity-card-shell,
+        .tier-identity-cell:focus-visible .tier-identity-card-shell {
+          transform: scale(1.04);
+        }
+        .tier-identity-card-shell > [data-rarity] {
+          pointer-events: none;
+        }
+        .tier-diagnosis-selected-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0.375rem;
+          background: rgba(13,11,8,0.48);
+          backdrop-filter: brightness(0.72) saturate(0.9);
+          pointer-events: none;
+        }
+        .tier-diagnosis-selected-label {
+          color: #e8b030;
+          font-size: 1rem;
+          font-weight: 800;
+          line-height: 1;
+          text-shadow: 0 0 0.75rem rgba(200,144,10,0.68), 0 0.125rem 0.5rem rgba(0,0,0,0.9);
+        }
+        .tier-identity-cell[data-diagnosis-mode="true"] {
+          cursor: crosshair;
+        }
         @media (max-width: 47.999rem) {
           .tier-row {
             grid-template-columns: minmax(0, 1fr) !important;
@@ -507,6 +548,9 @@ export default function TierGrid({
                     category={category}
                     period={period}
                     viewer={viewer}
+                    diagnosisMode={category === 'reroll' && diagnosisMode && Boolean(onToggleDiagnosis)}
+                    diagnosisSelected={selectedDiagnosisIds?.has(identity.id) ?? false}
+                    onToggleDiagnosis={onToggleDiagnosis}
                   />
                 ))}
               </div>
