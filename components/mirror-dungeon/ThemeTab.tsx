@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { Search, X, Eye, EyeOff } from 'lucide-react'
-import { useLocale } from 'next-intl'
 import ThemePackCard from '@/components/mirror-dungeon/ThemePackCard'
 import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import { translations } from '@/lib/i18n/translations'
@@ -18,6 +17,7 @@ const FLOOR_RANGE: Record<string, [number, number]> = {
 }
 
 interface ThemeTabProps {
+  lang: SupportedLang
   themes: EgoGiftTheme[]
   gifts: EgoGift[]
   giftByGameId: Map<number, EgoGift>
@@ -29,6 +29,7 @@ interface ThemeTabProps {
 }
 
 export default function ThemeTab({
+  lang,
   themes,
   gifts,
   giftByGameId,
@@ -41,8 +42,6 @@ export default function ThemeTab({
   const [searchFocused, setSearchFocused] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
 
-  const locale = useLocale()
-  const lang = locale as SupportedLang
   const t = (key: string) => {
     const entry = translations[key as keyof typeof translations]
     if (!entry) return key
@@ -65,7 +64,7 @@ export default function ThemeTab({
     const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
     for (const th of normalThemes) {
       const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
-      if (displayName.toLowerCase().includes(q)) {
+      if (displayName.toLowerCase().includes(q) || th.name.toLowerCase().includes(q)) {
         const diff =
           th.difficulty === 'hard'
             ? ` [${t('mirrorDungeon.tier.hard')}]`
@@ -80,7 +79,7 @@ export default function ThemeTab({
       const seen = new Set<string>()
       for (const g of gifts) {
         const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-        if (gName.toLowerCase().includes(q) && !seen.has(gName)) {
+        if ((gName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)) && !seen.has(gName)) {
           seen.add(gName)
           const belongThemes = normalThemes.filter(th => g.game_id && th.ego_gift_ids.includes(g.game_id))
           if (belongThemes.length > 0) {
@@ -106,12 +105,12 @@ export default function ThemeTab({
       const q = themeSearch.trim().toLowerCase()
       result = result.filter(th => {
         const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
-        if (displayName.toLowerCase().includes(q)) return true
+        if (displayName.toLowerCase().includes(q) || th.name.toLowerCase().includes(q)) return true
         return th.ego_gift_ids.some(gid => {
           const g = giftByGameId.get(gid)
           if (!g) return false
           const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-          return gName.toLowerCase().includes(q)
+          return gName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)
         })
       })
     }
@@ -304,7 +303,7 @@ export default function ThemeTab({
           })}
         </div>
         <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-          {filteredThemes.length}{lang === 'ko' ? '건' : ''}
+          {filteredThemes.length}{t('mirrorDungeon.filter.results')}
         </span>
       </div>
 
@@ -342,12 +341,12 @@ export default function ThemeTab({
                   }}
                 />
                 <span style={{ color: '#555', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-                  {floorThemes.length}{lang === 'ko' ? '개' : ''}
+                  {floorThemes.length}{t('mirrorDungeon.theme.countSuffix')}
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
                 {floorThemes.map(theme => (
-                  <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} />
+                  <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} lang={lang} />
                 ))}
               </div>
             </div>
@@ -356,7 +355,7 @@ export default function ThemeTab({
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 mb-8">
           {filteredThemes.map(theme => (
-            <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} />
+            <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} lang={lang} />
           ))}
         </div>
       )}
@@ -421,7 +420,7 @@ export default function ThemeTab({
           {showHidden ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
               {hiddenThemes.map(theme => (
-                <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} />
+                <ThemePackCard key={theme.id} theme={theme} onClick={() => onThemeClick(theme.id)} lang={lang} />
               ))}
             </div>
           ) : (

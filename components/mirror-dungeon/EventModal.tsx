@@ -20,10 +20,13 @@ import {
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { translations } from '@/lib/i18n/translations'
+import { getLocalizedName } from '@/lib/i18n/localize'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface EventModalProps {
+  lang: SupportedLang
   event: MdEvent
   eventById: Map<number, MdEvent>
   choicesByEventId: Map<number, MdEventChoice[]>
@@ -69,17 +72,182 @@ function stripSizeTags(text: string): string {
  * Extract condition from message_desc and return a human-readable string.
  * Returns null if the condition is absent or unrecognizable (hide gracefully).
  */
-function formatCondition(raw: string, giftByGameId: Map<number, EgoGift>): string | null {
+const EFFECT_TEXT: Record<SupportedLang, {
+  allAllies: string
+  chosenPersonality: string
+  randomPersonality: string
+  onePersonality: string
+  unaffectedAlly: string
+  randomAlly: (count: string) => string
+  lowestHpAlly: (count: string) => string
+  lowestMpAlly: (count: string) => string
+  includeSkillAttribute: (sins: string) => string
+  notIncludeSkillAttribute: (sins: string) => string
+  attributePersonality: (sin: string) => string
+  giftCondition: (names: string) => string
+  costCondition: (amount: string) => string
+  costGain: (amount: number | undefined) => string
+  costLoss: (amount: number | undefined) => string
+  hpLoss: (subject: string, amount: number | undefined) => string
+  hpLossAll: (subject: string) => string
+  mpLoss: (subject: string, amount: number | undefined) => string
+  mpLossAll: (subject: string) => string
+  hpMpLoss: (subject: string, hp: number | undefined, mp: number | undefined, amount: number | undefined) => string
+  hpRatioLoss: (subject: string, amount: number | undefined) => string
+  hpRecover: (subject: string, amount: number | undefined) => string
+  hpRecoverAll: (subject: string) => string
+  mpRecover: (subject: string, amount: number | undefined) => string
+  mpRecoverAll: (subject: string) => string
+  hpMpRecover: (subject: string, hp: number | undefined, mp: number | undefined, amount: number | undefined) => string
+  hpRatioRecover: (subject: string, amount: number | undefined) => string
+  battle: string
+  nothing: string
+  levelUp: string
+  getCharacter: string
+  destroyGift: string
+  battleGift: string
+}> = {
+  ko: {
+    allAllies: '아군 전원',
+    chosenPersonality: '선택한 인격',
+    randomPersonality: '랜덤 인격',
+    onePersonality: '인격 1명',
+    unaffectedAlly: '이상 없는 아군',
+    randomAlly: count => `랜덤 아군 ${count}명`,
+    lowestHpAlly: count => `체력이 가장 낮은 아군 ${count}명`,
+    lowestMpAlly: count => `정신력이 가장 낮은 아군 ${count}명`,
+    includeSkillAttribute: sins => `${sins} 속성 공격 스킬 보유 인격`,
+    notIncludeSkillAttribute: sins => `${sins} 속성 공격 스킬 미보유 인격`,
+    attributePersonality: sin => `${sin} 속성 인격`,
+    giftCondition: names => `E.G.O 기프트 「${names}」 보유 시 선택 가능`,
+    costCondition: amount => `코스트 ${amount} 이상 시 선택 가능`,
+    costGain: amount => `코스트 ${amount} 획득`,
+    costLoss: amount => `코스트 ${amount} 소모`,
+    hpLoss: (subject, amount) => `${subject} 체력 ${amount} 피해`,
+    hpLossAll: subject => `${subject} 체력 전소모`,
+    mpLoss: (subject, amount) => `${subject} 정신력 ${amount} 피해`,
+    mpLossAll: subject => `${subject} 정신력 전소모`,
+    hpMpLoss: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject} 체력 ${hp}, 정신력 ${mp} 피해`
+      : `${subject} 체력·정신력 ${amount} 피해`,
+    hpRatioLoss: (subject, amount) => `${subject} ${amount}%만큼 체력 피해`,
+    hpRecover: (subject, amount) => `${subject} 체력 ${amount} 회복`,
+    hpRecoverAll: subject => `${subject} 체력 전회복`,
+    mpRecover: (subject, amount) => `${subject} 정신력 ${amount} 회복`,
+    mpRecoverAll: subject => `${subject} 정신력 전회복`,
+    hpMpRecover: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject} 체력 ${hp}, 정신력 ${mp} 회복`
+      : `${subject} 체력·정신력 ${amount} 회복`,
+    hpRatioRecover: (subject, amount) => `${subject} ${amount}%만큼 체력 회복`,
+    battle: '전투 발생!',
+    nothing: '아무 일도 일어나지 않았다.',
+    levelUp: '인격 레벨 업!',
+    getCharacter: '수감자 영입!',
+    destroyGift: 'E.G.O 기프트 파괴',
+    battleGift: '다음 전투 승리 시 획득',
+  },
+  en: {
+    allAllies: 'All allies',
+    chosenPersonality: 'Selected Identity',
+    randomPersonality: 'Random Identity',
+    onePersonality: '1 Identity',
+    unaffectedAlly: 'Unaffected ally',
+    randomAlly: count => `${count} random allies`,
+    lowestHpAlly: count => `${count} allies with the lowest HP`,
+    lowestMpAlly: count => `${count} allies with the lowest SP`,
+    includeSkillAttribute: sins => `Identities with ${sins} attack skills`,
+    notIncludeSkillAttribute: sins => `Identities without ${sins} attack skills`,
+    attributePersonality: sin => `${sin} Identity`,
+    giftCondition: names => `Selectable if you own E.G.O Gift "${names}"`,
+    costCondition: amount => `Selectable with ${amount}+ Cost`,
+    costGain: amount => `Gain ${amount} Cost`,
+    costLoss: amount => `Spend ${amount} Cost`,
+    hpLoss: (subject, amount) => `${subject}: take ${amount} HP damage`,
+    hpLossAll: subject => `${subject}: lose all HP`,
+    mpLoss: (subject, amount) => `${subject}: take ${amount} SP damage`,
+    mpLossAll: subject => `${subject}: lose all SP`,
+    hpMpLoss: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject}: take ${hp} HP and ${mp} SP damage`
+      : `${subject}: take ${amount} HP/SP damage`,
+    hpRatioLoss: (subject, amount) => `${subject}: take HP damage equal to ${amount}%`,
+    hpRecover: (subject, amount) => `${subject}: recover ${amount} HP`,
+    hpRecoverAll: subject => `${subject}: fully recover HP`,
+    mpRecover: (subject, amount) => `${subject}: recover ${amount} SP`,
+    mpRecoverAll: subject => `${subject}: fully recover SP`,
+    hpMpRecover: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject}: recover ${hp} HP and ${mp} SP`
+      : `${subject}: recover ${amount} HP/SP`,
+    hpRatioRecover: (subject, amount) => `${subject}: recover HP by ${amount}%`,
+    battle: 'Battle starts!',
+    nothing: 'Nothing happens.',
+    levelUp: 'Identity level up!',
+    getCharacter: 'Recruit Sinner!',
+    destroyGift: 'Destroy E.G.O Gift',
+    battleGift: 'Obtained after winning the next battle',
+  },
+  ja: {
+    allAllies: '味方全員',
+    chosenPersonality: '選択した人格',
+    randomPersonality: 'ランダムな人格',
+    onePersonality: '人格1名',
+    unaffectedAlly: '異常のない味方',
+    randomAlly: count => `ランダムな味方${count}名`,
+    lowestHpAlly: count => `体力が最も低い味方${count}名`,
+    lowestMpAlly: count => `精神力が最も低い味方${count}名`,
+    includeSkillAttribute: sins => `${sins}属性攻撃スキルを持つ人格`,
+    notIncludeSkillAttribute: sins => `${sins}属性攻撃スキルを持たない人格`,
+    attributePersonality: sin => `${sin}属性人格`,
+    giftCondition: names => `E.G.Oギフト「${names}」所持時に選択可能`,
+    costCondition: amount => `コスト${amount}以上で選択可能`,
+    costGain: amount => `コスト${amount}獲得`,
+    costLoss: amount => `コスト${amount}消費`,
+    hpLoss: (subject, amount) => `${subject} 体力${amount}ダメージ`,
+    hpLossAll: subject => `${subject} 体力を全消耗`,
+    mpLoss: (subject, amount) => `${subject} 精神力${amount}ダメージ`,
+    mpLossAll: subject => `${subject} 精神力を全消耗`,
+    hpMpLoss: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject} 体力${hp}、精神力${mp}ダメージ`
+      : `${subject} 体力・精神力${amount}ダメージ`,
+    hpRatioLoss: (subject, amount) => `${subject} 体力に${amount}%分のダメージ`,
+    hpRecover: (subject, amount) => `${subject} 体力${amount}回復`,
+    hpRecoverAll: subject => `${subject} 体力を全回復`,
+    mpRecover: (subject, amount) => `${subject} 精神力${amount}回復`,
+    mpRecoverAll: subject => `${subject} 精神力を全回復`,
+    hpMpRecover: (subject, hp, mp, amount) => hp != null && mp != null
+      ? `${subject} 体力${hp}、精神力${mp}回復`
+      : `${subject} 体力・精神力${amount}回復`,
+    hpRatioRecover: (subject, amount) => `${subject} 体力を${amount}%回復`,
+    battle: '戦闘発生！',
+    nothing: '何も起こらなかった。',
+    levelUp: '人格レベルアップ！',
+    getCharacter: '囚人加入！',
+    destroyGift: 'E.G.Oギフト破壊',
+    battleGift: '次の戦闘勝利時に獲得',
+  },
+}
+
+function effectText(lang: SupportedLang) {
+  return EFFECT_TEXT[lang] ?? EFFECT_TEXT.ko
+}
+
+function formatGiftList(names: string[], lang: SupportedLang): string {
+  if (lang === 'ko') return names.join('」 또는 「')
+  if (lang === 'ja') return names.join('」または「')
+  return names.join('" or "')
+}
+
+function formatCondition(raw: string, giftByGameId: Map<number, EgoGift>, lang: SupportedLang): string | null {
   const m = raw.match(/\[조건: ([^\]]+)\]/)
   if (!m) return null
   const cond = m[1].trim()
+  const text = effectText(lang)
 
   // HasNotEgoGift_XXXX
   const singleGift = cond.match(/^HasNotEgoGift_(\d+)$/)
   if (singleGift) {
     const gift = giftByGameId.get(Number(singleGift[1]))
     if (!gift) return null
-    return `E.G.O 기프트 「${gift.name}」 보유 시 선택 가능`
+    return text.giftCondition(getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang))
   }
 
   // HasNotEgoGiftList_N_XXXX:YYYY:...
@@ -87,16 +255,19 @@ function formatCondition(raw: string, giftByGameId: Map<number, EgoGift>): strin
   if (listGift) {
     const ids = listGift[1].split(':').map(Number)
     const names = ids
-      .map(id => giftByGameId.get(id)?.name)
+      .map(id => {
+        const gift = giftByGameId.get(id)
+        return gift ? getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang) : null
+      })
       .filter((n): n is string => Boolean(n))
     if (names.length === 0) return null
-    return `E.G.O 기프트 「${names.join('」 또는 「')}」 보유 시 선택 가능`
+    return text.giftCondition(formatGiftList(names, lang))
   }
 
   // HasNotEnoughCost_N
   const cost = cond.match(/^HasNotEnoughCost_(\d+)$/)
   if (cost) {
-    return `코스트 ${cost[1]} 이상 시 선택 가능`
+    return text.costCondition(cost[1])
   }
 
   return null
@@ -107,14 +278,45 @@ function stripConditionTag(text: string): string {
   return text.replace(/\[조건: [^\]]+\]/g, '').trim()
 }
 
-/** Format a probability string to a human-readable percentage, or null for 100% */
-function formatProb(prob: string | null | undefined): string | null {
-  if (!prob || prob === 'Prob_1' || prob === '1') return null
-  const m = prob.match(/^Prob_([\d.]+)$/)
-  if (m) return `${Math.round(parseFloat(m[1]) * 100)}%`
-  const n = parseFloat(prob)
-  if (!isNaN(n) && n > 0 && n <= 1) return `${Math.round(n * 100)}%`
-  return prob
+function tEvent(key: string, lang: SupportedLang): string {
+  const entry = translations[key as keyof typeof translations]
+  if (!entry) return key
+  return entry[lang] ?? entry.ko ?? key
+}
+
+function getEventName(event: MdEvent, lang: SupportedLang): string | null {
+  if (!event.name) return null
+  return getLocalizedName({ name_kr: event.name, name_en: event.name_en, name_jp: event.name_jp }, lang)
+}
+
+function getEventDesc(event: MdEvent, lang: SupportedLang): string | null {
+  if (lang === 'en') return event.desc_text_en ?? event.desc_text
+  if (lang === 'ja') return event.desc_text_jp ?? event.desc_text
+  return event.desc_text
+}
+
+function getEventTitle(event: MdEvent, lang: SupportedLang): string {
+  const name = getEventName(event, lang)
+  if (name) return name
+  const desc = getEventDesc(event, lang)
+  return desc
+    ? desc.split('\n')[0].slice(0, 40)
+    : `${tEvent('mirrorDungeon.event.fallbackTitle', lang)} #${event.id}`
+}
+
+function getGiftCardData(gift: EgoGift, lang: SupportedLang) {
+  return {
+    ...gift,
+    name: getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
+  }
+}
+
+function isCoinEvent(event: MdEvent): boolean {
+  return event.event_type === 'COIN_EVENT' || event.event_type === 'ab'
+}
+
+function isActionEvent(event: MdEvent): boolean {
+  return event.event_type === 'ACTION' || event.event_type === 'action' || event.event_type === 'personality'
 }
 
 // ── Effect renderer (sentence style) ─────────────────────────────────────────
@@ -129,38 +331,39 @@ function sinList(raw: string, lang: SupportedLang): string {
 
 function formatTarget(raw: string, lang: SupportedLang = 'ko'): string | null {
   if (!raw) return null
+  const text = effectText(lang)
   // strip condition suffix (|SUCCESS, |FAILURE, |IncludeSkillAttribute_*)
   const parts = raw.split('|')
   const target = parts[0]
 
-  if (target === 'ChosenPersonality') return '선택한 인격'
-  if (target === 'RandomPersonality') return '랜덤 인격'
-  if (target === 'OnePersonality') return '인격 1명'
-  if (target === 'NotAffectedAlly') return '이상 없는 아군'
+  if (target === 'ChosenPersonality') return text.chosenPersonality
+  if (target === 'RandomPersonality') return text.randomPersonality
+  if (target === 'OnePersonality') return text.onePersonality
+  if (target === 'NotAffectedAlly') return text.unaffectedAlly
 
   // RandomAlly_N
   const randomAlly = target.match(/^RandomAlly_(\d+)$/)
-  if (randomAlly) return `랜덤 아군 ${randomAlly[1]}명`
+  if (randomAlly) return text.randomAlly(randomAlly[1])
 
   // LowestHpAlly_N
   const lowestHp = target.match(/^LowestHpAlly_(\d+)$/)
-  if (lowestHp) return `체력이 가장 낮은 아군 ${lowestHp[1]}명`
+  if (lowestHp) return text.lowestHpAlly(lowestHp[1])
 
   // LowestMpAlly_N
   const lowestMp = target.match(/^LowestMpAlly_(\d+)$/)
-  if (lowestMp) return `정신력이 가장 낮은 아군 ${lowestMp[1]}명`
+  if (lowestMp) return text.lowestMpAlly(lowestMp[1])
 
   // IncludeSkillAttribute_SIN[,SIN]
   const includeAttr = target.match(/^IncludeSkillAttribute_(.+)$/)
-  if (includeAttr) return `${sinList(includeAttr[1], lang)} 속성 공격 스킬 보유 인격`
+  if (includeAttr) return text.includeSkillAttribute(sinList(includeAttr[1], lang))
 
   // NotIncludeSkillAttribute_SIN[,SIN]
   const excludeAttr = target.match(/^NotIncludeSkillAttribute_(.+)$/)
-  if (excludeAttr) return `${sinList(excludeAttr[1], lang)} 속성 공격 스킬 미보유 인격`
+  if (excludeAttr) return text.notIncludeSkillAttribute(sinList(excludeAttr[1], lang))
 
   // AttributePersonality_SIN (legacy pattern)
   const attrPersonality = target.match(/^AttributePersonality_(\w+)$/)
-  if (attrPersonality) return `${sinLabel(attrPersonality[1], lang)} 속성 인격`
+  if (attrPersonality) return text.attributePersonality(sinLabel(attrPersonality[1], lang))
 
   // Named character targets (Ryosyu, Donquixote etc.) — show as-is
   if (/^[A-Z]/.test(target)) return target
@@ -177,6 +380,7 @@ interface EffectLineProps {
 function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   const locale = useLocale()
   const lang = (locale as SupportedLang) ?? 'ko'
+  const text = effectText(lang)
   const red = '#e05050'
   const green = '#00c87a'
   const gold = '#c8900a'
@@ -194,7 +398,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
     return (
       <div style={{ position: 'relative', zIndex: 0, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', maxWidth: '5rem' }}>
         <GiftCard
-          gift={gift}
+          gift={getGiftCardData(gift, lang)}
           onClick={() => onSelectGift(gift)}
           size="3rem"
           showName={true}
@@ -206,7 +410,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'cost') {
     return (
       <p style={{ ...lineStyle, color: gold, fontWeight: 700 }}>
-        코스트 {effect.amount} 획득
+        {text.costGain(effect.amount)}
       </p>
     )
   }
@@ -214,19 +418,19 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'cost_loss') {
     return (
       <p style={{ ...lineStyle, color: red }}>
-        코스트 {effect.amount} 소모
+        {text.costLoss(effect.amount)}
       </p>
     )
   }
 
   const targetText = effect.effect ? formatTarget(effect.effect, lang) : null
-  const subject = targetText ?? '아군 전원'
+  const subject = targetText ?? text.allAllies
 
   if (effect.type === 'hp_loss') {
     const val = effect.hp ?? effect.amount
     return (
       <p style={{ ...lineStyle, color: red }}>
-        {val === -1 ? `${subject} 체력 전소모` : `${subject} 체력 ${val} 피해`}
+        {val === -1 ? text.hpLossAll(subject) : text.hpLoss(subject, val)}
       </p>
     )
   }
@@ -235,7 +439,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
     const val = effect.mp ?? effect.amount
     return (
       <p style={{ ...lineStyle, color: red }}>
-        {val === -1 ? `${subject} 정신력 전소모` : `${subject} 정신력 ${val} 피해`}
+        {val === -1 ? text.mpLossAll(subject) : text.mpLoss(subject, val)}
       </p>
     )
   }
@@ -243,9 +447,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'hp_mp_loss') {
     return (
       <p style={{ ...lineStyle, color: red }}>
-        {effect.hp != null && effect.mp != null
-          ? `${subject} 체력 ${effect.hp}, 정신력 ${effect.mp} 피해`
-          : `${subject} 체력·정신력 ${effect.amount} 피해`}
+        {text.hpMpLoss(subject, effect.hp, effect.mp, effect.amount)}
       </p>
     )
   }
@@ -253,7 +455,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'hp_loss_ratio') {
     return (
       <p style={{ ...lineStyle, color: red }}>
-        {subject} {effect.amount}%만큼 체력 피해
+        {text.hpRatioLoss(subject, effect.amount)}
       </p>
     )
   }
@@ -262,7 +464,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
     const val = effect.hp ?? effect.amount
     return (
       <p style={{ ...lineStyle, color: green }}>
-        {val === -1 ? `${subject} 체력 전회복` : `${subject} 체력 ${val} 회복`}
+        {val === -1 ? text.hpRecoverAll(subject) : text.hpRecover(subject, val)}
       </p>
     )
   }
@@ -271,7 +473,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
     const val = effect.mp ?? effect.amount
     return (
       <p style={{ ...lineStyle, color: green }}>
-        {val === -1 ? `${subject} 정신력 전회복` : `${subject} 정신력 ${val} 회복`}
+        {val === -1 ? text.mpRecoverAll(subject) : text.mpRecover(subject, val)}
       </p>
     )
   }
@@ -279,9 +481,7 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'hp_mp_recover') {
     return (
       <p style={{ ...lineStyle, color: green }}>
-        {effect.hp != null && effect.mp != null
-          ? `${subject} 체력 ${effect.hp}, 정신력 ${effect.mp} 회복`
-          : `${subject} 체력·정신력 ${effect.amount} 회복`}
+        {text.hpMpRecover(subject, effect.hp, effect.mp, effect.amount)}
       </p>
     )
   }
@@ -289,39 +489,39 @@ function EffectLine({ effect, giftByGameId, onSelectGift }: EffectLineProps) {
   if (effect.type === 'hp_recover_ratio') {
     return (
       <p style={{ ...lineStyle, color: green }}>
-        {subject} {effect.amount}%만큼 체력 회복
+        {text.hpRatioRecover(subject, effect.amount)}
       </p>
     )
   }
 
   if (effect.type === 'battle' || effect.type === 'battle_abnormality') {
     return (
-      <p style={{ ...lineStyle, color: red, fontWeight: 700 }}>전투 발생!</p>
+      <p style={{ ...lineStyle, color: red, fontWeight: 700 }}>{text.battle}</p>
     )
   }
 
   if (effect.type === 'nothing') {
     return (
-      <p style={{ ...lineStyle, color: muted }}>아무 일도 일어나지 않았다.</p>
+      <p style={{ ...lineStyle, color: muted }}>{text.nothing}</p>
     )
   }
 
   if (effect.type === 'level_up') {
     return (
-      <p style={{ ...lineStyle, color: gold }}>인격 레벨 업!</p>
+      <p style={{ ...lineStyle, color: gold }}>{text.levelUp}</p>
     )
   }
 
   if (effect.type === 'get_character') {
     return (
-      <p style={{ ...lineStyle, color: gold }}>수감자 영입!</p>
+      <p style={{ ...lineStyle, color: gold }}>{text.getCharacter}</p>
     )
   }
 
   // destroy_gift
   if (effect.type === 'destroy_gift') {
     return (
-      <p style={{ ...lineStyle, color: red }}>E.G.O 기프트 파괴</p>
+      <p style={{ ...lineStyle, color: red }}>{text.destroyGift}</p>
     )
   }
 
@@ -339,6 +539,8 @@ function EffectsList({
   giftByGameId: Map<number, EgoGift>
   onSelectGift: (g: EgoGift) => void
 }) {
+  const locale = useLocale()
+  const lang = (locale as SupportedLang) ?? 'ko'
   if (!effects || effects.length === 0) return null
   const normalGifts = effects.filter(e => e.type === 'gift')
   const battleGifts = effects.filter(e => e.type === 'gift_battle')
@@ -351,7 +553,7 @@ function EffectsList({
       {battleGifts.length > 0 && (
         <div style={{ marginTop: '0.25rem' }}>
           <p style={{ fontSize: '0.6875rem', color: '#00c87a', marginBottom: '0.375rem' }}>
-            다음 전투 승리 시 획득
+            {effectText(lang).battleGift}
           </p>
           <div style={{ position: 'relative', zIndex: 0, display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {battleGifts.map((eff, i) => (
@@ -420,18 +622,23 @@ function CoinEventBlock({
   giftByGameId,
   onSelectGift,
   depth,
-  successLabel = '성공',
-  failureLabel = '실패',
+  successLabel,
+  failureLabel,
 }: CoinEventProps) {
+  const locale = useLocale()
+  const lang = locale as SupportedLang
   if (depth > 5) return null
   const branches = choicesByEventId.get(coinEvent.id) ?? []
   const successBranch = branches.find(c => c.sort_order === 0)
   const failureBranch = branches.find(c => c.sort_order === 1)
+  const successText = successLabel ?? tEvent('mirrorDungeon.event.success', lang)
+  const failureText = failureLabel ?? tEvent('mirrorDungeon.event.failure', lang)
 
   // Parse sin/threshold from behaveDesc stored in coinEvent.desc_text
   // Format: "분노/색욕 판정 XX+" or similar
-  const judgeText = coinEvent.desc_text
-    ? replaceEventPlaceholders(stripSizeTags(coinEvent.desc_text))
+  const judgeSource = getEventDesc(coinEvent, lang)
+  const judgeText = judgeSource
+    ? replaceEventPlaceholders(stripSizeTags(judgeSource))
     : null
 
   // Extract sin types from message_desc of branches: [SINCOLOR/sinKR 판정 min~max]
@@ -525,24 +732,24 @@ function CoinEventBlock({
           <BranchBlock
             choice={successBranch}
             isSuccess={true}
-            label={successLabel}
             eventById={eventById}
             choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
             onSelectGift={onSelectGift}
             depth={depth}
+            label={successText}
           />
         )}
         {failureBranch && (
           <BranchBlock
             choice={failureBranch}
             isSuccess={false}
-            label={failureLabel}
             eventById={eventById}
             choicesByEventId={choicesByEventId}
             giftByGameId={giftByGameId}
             onSelectGift={onSelectGift}
             depth={depth}
+            label={failureText}
           />
         )}
       </div>
@@ -605,7 +812,7 @@ function BranchBlock({
       )}
 
       {/* Nested: if success branch itself leads to another coin event */}
-      {childEvent && childEvent.event_type === 'COIN_EVENT' && (
+      {childEvent && isCoinEvent(childEvent) && (
         <CoinEventBlock
           coinEvent={childEvent}
           eventById={eventById}
@@ -615,7 +822,7 @@ function BranchBlock({
           depth={depth + 1}
         />
       )}
-      {childEvent && childEvent.event_type === 'ACTION' && (
+      {childEvent && isActionEvent(childEvent) && (
         <div style={{ marginTop: '0.5rem' }}>
           <ChoiceList
             event={childEvent}
@@ -633,11 +840,6 @@ function BranchBlock({
 
 // ── Single choice row ─────────────────────────────────────────────────────────
 
-interface ProbBranch {
-  probability: string | null
-  effects: ChoiceEffect[]
-}
-
 interface ChoiceItemProps {
   choice: MdEventChoice
   index: number
@@ -646,8 +848,6 @@ interface ChoiceItemProps {
   giftByGameId: Map<number, EgoGift>
   onSelectGift: (g: EgoGift) => void
   depth: number
-  /** When set, render probability-labeled branches instead of merged effects */
-  probBranches?: ProbBranch[]
 }
 
 function ChoiceItem({
@@ -658,20 +858,21 @@ function ChoiceItem({
   giftByGameId,
   onSelectGift,
   depth,
-  probBranches,
 }: ChoiceItemProps) {
+  const locale = useLocale()
+  const lang = (locale as SupportedLang) ?? 'ko'
   if (depth > 5) return null
 
   const messageDescClean = choice.message_desc
     ? stripSizeTags(replaceEventPlaceholders(choice.message_desc))
     : null
   const conditionText = messageDescClean
-    ? formatCondition(messageDescClean, giftByGameId)
+    ? formatCondition(messageDescClean, giftByGameId, lang)
     : null
   const descDisplay = messageDescClean ? stripConditionTag(messageDescClean) : null
 
   const childEvent = choice.next_event_id ? eventById.get(choice.next_event_id) : null
-  const isCoinChild = childEvent?.event_type === 'COIN_EVENT'
+  const isCoinChild = childEvent ? isCoinEvent(childEvent) : false
 
   return (
     <div
@@ -750,50 +951,11 @@ function ChoiceItem({
           </div>
         )}
 
-        {/* Effects — probability branches or plain merged effects */}
-        {probBranches ? (
-          <div style={{ marginTop: '0.375rem', paddingLeft: '2.25rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {probBranches.map((branch, bi) => {
-              const label = formatProb(branch.probability)
-              return (
-                <div
-                  key={bi}
-                  style={{
-                    border: '1px solid rgba(200,144,10,0.18)',
-                    borderRadius: '0.375rem',
-                    padding: '0.375rem 0.625rem',
-                    background: 'rgba(200,144,10,0.04)',
-                  }}
-                >
-                  {label && (
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        padding: '0.125rem 0.375rem',
-                        background: 'rgba(200,144,10,0.12)',
-                        border: '1px solid rgba(200,144,10,0.25)',
-                        borderRadius: '0.25rem',
-                        color: '#c8900a',
-                        fontSize: '0.6875rem',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        marginBottom: '0.25rem',
-                      }}
-                    >
-                      {label}
-                    </span>
-                  )}
-                  <EffectsList effects={branch.effects} giftByGameId={giftByGameId} onSelectGift={onSelectGift} />
-                </div>
-              )
-            })}
+        {/* Effects */}
+        {choice.effects && choice.effects.length > 0 && (
+          <div style={{ marginTop: '0.25rem', paddingLeft: '2.25rem' }}>
+            <EffectsList effects={choice.effects} giftByGameId={giftByGameId} onSelectGift={onSelectGift} />
           </div>
-        ) : (
-          choice.effects && choice.effects.length > 0 && (
-            <div style={{ marginTop: '0.25rem', paddingLeft: '2.25rem' }}>
-              <EffectsList effects={choice.effects} giftByGameId={giftByGameId} onSelectGift={onSelectGift} />
-            </div>
-          )
         )}
 
         {/* Coin event child */}
@@ -811,7 +973,7 @@ function ChoiceItem({
         )}
 
         {/* Non-coin child event (nested choices) */}
-        {childEvent && childEvent.event_type !== 'COIN_EVENT' && (
+        {childEvent && !isCoinEvent(childEvent) && (
           <div
             style={{
               marginTop: '0.75rem',
@@ -857,55 +1019,20 @@ function ChoiceList({
   const choices = choicesByEventId.get(event.id) ?? []
   if (choices.length === 0) return null
 
-  // Group consecutive choices with the same message (probability branches)
-  const grouped: {
-    representative: MdEventChoice
-    choices: MdEventChoice[]
-    mergedEffects: ChoiceEffect[]
-  }[] = []
-  for (const choice of choices) {
-    const last = grouped[grouped.length - 1]
-    if (last && last.representative.message === choice.message) {
-      last.choices.push(choice)
-      const extraEffects = (choice.effects ?? []).filter(e => e.type !== 'nothing')
-      last.mergedEffects.push(...extraEffects)
-    } else {
-      const baseEffects = (choice.effects ?? []).filter(e => e.type !== 'nothing')
-      grouped.push({ representative: choice, choices: [choice], mergedEffects: baseEffects })
-    }
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-      {grouped.map((group, i) => {
-        // Determine if we should show per-branch probability labels:
-        // only when there are multiple branches AND all of them have real (non-nothing) effects
-        let probBranches: ProbBranch[] | undefined
-        if (group.choices.length > 1) {
-          const allHaveRealEffects = group.choices.every(
-            c => (c.effects ?? []).some(e => e.type !== 'nothing')
-          )
-          if (allHaveRealEffects) {
-            probBranches = group.choices.map(c => ({
-              probability: c.probability,
-              effects: (c.effects ?? []).filter(e => e.type !== 'nothing'),
-            }))
-          }
-        }
-        return (
-          <ChoiceItem
-            key={group.representative.id}
-            choice={probBranches ? { ...group.representative, effects: [] } : { ...group.representative, effects: group.mergedEffects }}
-            index={i}
-            eventById={eventById}
-            choicesByEventId={choicesByEventId}
-            giftByGameId={giftByGameId}
-            onSelectGift={onSelectGift}
-            depth={depth}
-            probBranches={probBranches}
-          />
-        )
-      })}
+      {choices.map((choice, i) => (
+        <ChoiceItem
+          key={choice.id}
+          choice={choice}
+          index={i}
+          eventById={eventById}
+          choicesByEventId={choicesByEventId}
+          giftByGameId={giftByGameId}
+          onSelectGift={onSelectGift}
+          depth={depth}
+        />
+      ))}
     </div>
   )
 }
@@ -950,6 +1077,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 // ── Main EventModal ───────────────────────────────────────────────────────────
 
 export default function EventModal({
+  lang,
   event,
   eventById,
   choicesByEventId,
@@ -958,6 +1086,8 @@ export default function EventModal({
   onClose,
   onSelectGift,
 }: EventModalProps) {
+  const eventTitle = getEventTitle(event, lang)
+  const eventDesc = getEventDesc(event, lang)
   const evThemes = (event.theme_ids ?? [])
     .map(tid => themes.find(th => th.id === tid))
     .filter((t): t is EgoGiftTheme => Boolean(t))
@@ -974,7 +1104,7 @@ export default function EventModal({
   const choices = choicesByEventId.get(event.id) ?? []
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="58rem" padding="1rem" title="이벤트 상세">
+    <BaseModal open={true} onClose={onClose} maxWidth="58rem" padding="1rem" title={tEvent('mirrorDungeon.event.modalTitle', lang)}>
       {/* Responsive styles for sidebar layout */}
       <style>{`
         @media (min-width: 768px) {
@@ -1008,6 +1138,7 @@ export default function EventModal({
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label={tEvent('mirrorDungeon.theme.close', lang)}
           className="absolute top-3 right-3 z-30 flex items-center justify-center"
           style={{
             cursor: 'pointer',
@@ -1107,20 +1238,17 @@ export default function EventModal({
                   fontSize: '1.0625rem',
                   color: '#f0e2c0',
                   lineHeight: 1.3,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: 0,
                   margin: 0,
                 }}
               >
-                {event.name ||
-                  (event.desc_text
-                    ? event.desc_text.split('\n')[0].slice(0, 40)
-                    : `이벤트 #${event.id}`)}
+                {eventTitle}
               </h2>
 
               {/* Description text */}
-              {event.desc_text && (
+              {eventDesc && (
                 <div>
-                  {replaceEventPlaceholders(event.desc_text)
+                  {replaceEventPlaceholders(eventDesc)
                     .split('\n\n')
                     .map((para, pi) => (
                       <p
@@ -1130,7 +1258,7 @@ export default function EventModal({
                           color: pi === 0 ? '#cebf9e' : '#a08870',
                           fontSize: '0.8125rem',
                           lineHeight: 1.85,
-                          marginBottom: pi < replaceEventPlaceholders(event.desc_text!).split('\n\n').length - 1 ? '0.625rem' : 0,
+                          marginBottom: pi < replaceEventPlaceholders(eventDesc).split('\n\n').length - 1 ? '0.625rem' : 0,
                           ...(pi === 0 ? { fontWeight: 500 } : {}),
                         }}
                       >
@@ -1143,7 +1271,7 @@ export default function EventModal({
               {/* Related E.G.O Gifts */}
               {evGifts.length > 0 && (
                 <div>
-                  <SectionLabel>획득 가능 기프트</SectionLabel>
+                  <SectionLabel>{tEvent('mirrorDungeon.event.availableGifts', lang)}</SectionLabel>
                   {/* position: relative + zIndex: 0 isolates GiftCard hover z-index */}
                   <div
                     style={{
@@ -1157,7 +1285,7 @@ export default function EventModal({
                     {evGifts.map(g => (
                       <GiftCard
                         key={g.id}
-                        gift={g}
+                        gift={getGiftCardData(g, lang)}
                         onClick={() => handleSelectGift(g)}
                         size="2.5rem"
                         showName={true}
@@ -1170,7 +1298,7 @@ export default function EventModal({
               {/* Related Theme Packs */}
               {evThemes.length > 0 && evThemes.length <= 8 && (
                 <div>
-                  <SectionLabel>출현 테마팩</SectionLabel>
+                  <SectionLabel>{tEvent('mirrorDungeon.event.relatedThemes', lang)}</SectionLabel>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                     {evThemes.map(t => {
                       const dColor =
@@ -1209,7 +1337,7 @@ export default function EventModal({
                             />
                           )}
                           <span style={{ color: '#b0a088', fontSize: '0.6875rem', flex: 1, minWidth: 0 }}>
-                            {t.name}
+                            {getLocalizedName({ name_kr: t.name, name_en: t.name_en, name_jp: t.name_jp }, lang)}
                           </span>
                           <span
                             style={{
@@ -1245,7 +1373,7 @@ export default function EventModal({
             >
               {choices.length > 0 ? (
                 <>
-                  <SectionLabel>선택지</SectionLabel>
+                  <SectionLabel>{tEvent('mirrorDungeon.event.choicesLabel', lang)}</SectionLabel>
                   <ChoiceList
                     event={event}
                     eventById={eventById}
@@ -1266,7 +1394,7 @@ export default function EventModal({
                     fontSize: '0.8125rem',
                   }}
                 >
-                  선택지 정보 없음
+                  {tEvent('mirrorDungeon.event.noChoices', lang)}
                 </div>
               )}
             </div>

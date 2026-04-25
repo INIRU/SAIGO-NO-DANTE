@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react'
 import { Search, X } from 'lucide-react'
-import { useLocale } from 'next-intl'
 import Dropdown from '@/components/ui/Dropdown'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
@@ -11,6 +10,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface EventTabProps {
+  lang: SupportedLang
   events: MdEvent[]
   giftByGameId: Map<number, EgoGift>
   themes: EgoGiftTheme[]
@@ -23,6 +23,7 @@ interface EventTabProps {
 }
 
 export default function EventTab({
+  lang,
   events,
   giftByGameId,
   themes,
@@ -33,12 +34,26 @@ export default function EventTab({
   setEventThemeFilter,
   onSelectEvent,
 }: EventTabProps) {
-  const locale = useLocale()
-  const lang = locale as SupportedLang
   const t = (key: string) => {
     const entry = translations[key as keyof typeof translations]
     if (!entry) return key
     return entry[lang] ?? entry['ko'] ?? key
+  }
+  const getEventName = (ev: MdEvent) => ev.name
+    ? getLocalizedName({ name_kr: ev.name, name_en: ev.name_en, name_jp: ev.name_jp }, lang)
+    : null
+  const getEventDesc = (ev: MdEvent) => {
+    if (lang === 'en') return ev.desc_text_en ?? ev.desc_text
+    if (lang === 'ja') return ev.desc_text_jp ?? ev.desc_text
+    return ev.desc_text
+  }
+  const getEventTitle = (ev: MdEvent) => {
+    const localizedName = getEventName(ev)
+    if (localizedName) return localizedName
+    const localizedDesc = getEventDesc(ev)
+    return localizedDesc
+      ? localizedDesc.split('\n')[0].slice(0, 30)
+      : `${t('mirrorDungeon.event.fallbackTitle')} #${ev.id}`
   }
 
   const { filteredEvents, totalCount } = useMemo(() => {
@@ -67,13 +82,18 @@ export default function EventTab({
     const q = eventSearch.trim().toLowerCase()
     const filtered = q
       ? rootEvents.filter(ev => {
-          if (ev.name?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
+          const localizedName = getEventName(ev)
+          const localizedDesc = getEventDesc(ev)
+          if (localizedName?.toLowerCase().includes(q) || ev.name?.toLowerCase().includes(q)) return true
+          if (localizedDesc?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
           if (choicesByEventId.get(ev.id)?.some(c =>
             c.message?.toLowerCase().includes(q) || c.message_desc?.toLowerCase().includes(q)
           )) return true
           if (ev.gift_ids?.some(gid => {
             const g = giftByGameId.get(gid)
-            return g && g.name.toLowerCase().includes(q)
+            if (!g) return false
+            const localizedGiftName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
+            return localizedGiftName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)
           })) return true
           return false
         })
@@ -84,7 +104,7 @@ export default function EventTab({
       : filtered
 
     return { filteredEvents: themeFiltered, totalCount: rootEvents.length }
-  }, [events, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId])
+  }, [events, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId, lang])
 
   return (
     <>
@@ -204,7 +224,7 @@ export default function EventTab({
 
         {filteredEvents.map((ev, evIdx) => {
           const evGifts = (ev.gift_ids || []).map(gid => giftByGameId.get(gid)).filter(Boolean) as EgoGift[]
-          const title = ev.name || (ev.desc_text ? ev.desc_text.split('\n')[0].slice(0, 30) : `${t('mirrorDungeon.event.fallbackTitle')} #${ev.id}`)
+          const title = getEventTitle(ev)
           const hasImage = Boolean(ev.image_url)
           const optCount = choicesByEventId.get(ev.id)?.length ?? 0
 

@@ -45,6 +45,12 @@ const DO_THEMES = !ANY_FILTER || THEMES_ONLY
 const DO_EVENTS = !ANY_FILTER || EVENTS_ONLY
 const DO_RECIPES = !ANY_FILTER || RECIPES_ONLY
 
+// Current source contains both 971105 and 971107 in theme 1126's eventPool, but
+// they render as the same visible root event. 971107 also points its illustId to
+// 971105, so keep 971105 as the display-canonical row and drop 971107 plus its
+// nextEventID child from the public DB target.
+const CANONICAL_EVENT_EXCLUDE_IDS = new Set<number>([971107])
+
 // ── Data dir ──────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
 const KR_DIR = join(DATA_DIR, 'KR')
@@ -772,6 +778,8 @@ async function syncGifts(): Promise<void> {
 interface ThemeRow {
   id: number
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   dungeon_id: null
   unlock_code: number | null
   ego_gift_ids: number[]
@@ -783,16 +791,39 @@ interface ThemeRow {
   is_hidden?: boolean
 }
 
+function loadThemeNameMap(paths: string[]): Map<number, string> {
+  const map = new Map<number, string>()
+  for (const path of paths) {
+    const data = safeLoadJson(path)
+    if (!data) continue
+    const list = Array.isArray(data) ? data : extractList(data)
+    for (const item of list) {
+      const parsed = ThemeLocaleSchema.safeParse(item)
+      if (parsed.success && !map.has(parsed.data.id)) {
+        map.set(parsed.data.id, parsed.data.name)
+      }
+    }
+  }
+  return map
+}
+
 async function syncThemes(): Promise<void> {
   console.log(BOLD('\n[2/4] 테마팩 동기화'))
 
   // Theme locale
-  const themeNameMap = new Map<number, string>()
-  const themeLocaleData = safeLoadJson(join(KR_DIR, 'KR_MirrorDungeonTheme-1.txt'))
-  for (const item of extractList(themeLocaleData)) {
-    const parsed = ThemeLocaleSchema.safeParse(item)
-    if (parsed.success) themeNameMap.set(parsed.data.id, parsed.data.name)
-  }
+  const themeNameMap = loadThemeNameMap([
+    join(KR_DIR, 'KR_MirrorDungeonTheme-1.txt'),
+    join(KR_LATEST_DIR, 'KR_MirrorDungeonTheme-1.json'),
+  ])
+  const themeNameEnMap = loadThemeNameMap([
+    join(EN_DIR, 'EN_MirrorDungeonTheme-1.txt'),
+    join(EN_LATEST_DIR, 'EN_MirrorDungeonTheme-1.json'),
+  ])
+  const themeNameJpMap = loadThemeNameMap([
+    join(JP_DIR, 'JP_MirrorDungeonTheme-1.txt'),
+    join(JP_LATEST_DIR, 'JP_MirrorDungeonTheme-1.json'),
+  ])
+  console.log(`  테마 로컬라이즈: KR ${themeNameMap.size}개, EN ${themeNameEnMap.size}개, JP ${themeNameJpMap.size}개`)
 
   // Load all theme floor files: t1~t6 + hidden
   const themeFiles = [
@@ -852,6 +883,8 @@ async function syncThemes(): Promise<void> {
       themes.push({
         id: t.id,
         name,
+        name_en: themeNameEnMap.get(t.id) ?? null,
+        name_jp: themeNameJpMap.get(t.id) ?? null,
         dungeon_id: null,
         unlock_code: t.unlockCondition?.unlockCode ?? null,
         ego_gift_ids: t.egoGiftPool ?? [],
@@ -870,7 +903,7 @@ async function syncThemes(): Promise<void> {
   const { data: existingThemes, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gift_themes')
-    .select('id, name, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info')
+    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden')
 
   if (fetchErr) throw new Error(`ego_gift_themes fetch 실패: ${fetchErr.message}`)
 
@@ -889,6 +922,8 @@ async function syncThemes(): Promise<void> {
     } else {
       const changes: string[] = []
       if (existing.name !== theme.name) changes.push(`name: ${existing.name} → ${theme.name}`)
+      if ((existing.name_en ?? null) !== (theme.name_en ?? null)) changes.push('name_en 변경')
+      if ((existing.name_jp ?? null) !== (theme.name_jp ?? null)) changes.push('name_jp 변경')
       const existIds = JSON.stringify((existing.ego_gift_ids ?? []).sort())
       const newIds = JSON.stringify((theme.ego_gift_ids ?? []).sort())
       if (existIds !== newIds) changes.push(`ego_gift_ids 변경 (${(existing.ego_gift_ids ?? []).length} → ${theme.ego_gift_ids.length})`)
@@ -1126,6 +1161,12 @@ interface EventOption {
   message?: string
   messageDesc?: string
   result?: string[]
+  messageEn?: string | null
+  messageJp?: string | null
+  messageDescEn?: string | null
+  messageDescJp?: string | null
+  resultEn?: string[] | null
+  resultJp?: string[] | null
   rewards?: RewardGroup[]
   next_event?: NestedEvent
 }
@@ -1159,8 +1200,14 @@ interface ChoiceRow {
   event_id: number
   sort_order: number
   message: string | null
+  message_en: string | null
+  message_jp: string | null
   message_desc: string | null
+  message_desc_en: string | null
+  message_desc_jp: string | null
   result_text: string | null
+  result_text_en: string | null
+  result_text_jp: string | null
   probability: number | string | null
   next_event_id: number | null
   effects: unknown[]
@@ -1335,6 +1382,102 @@ function extractNextEventIds(obj: unknown): number[] {
   return ids
 }
 
+function joinChoiceResult(result: string[] | null | undefined): string | null {
+  return Array.isArray(result) ? result.join('\n') : null
+}
+
+function makeAbEventOptions(
+  successDesc: string[] | undefined,
+  failureDesc: string[] | undefined,
+  labels: { success: string; failure: string },
+): EventOption[] | null {
+  const opts: EventOption[] = [
+    ...(successDesc ?? []).map((s, i) => ({
+      message: `${labels.success}${(successDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
+      result: [s],
+    })),
+    ...(failureDesc ?? []).map((s, i) => ({
+      message: `${labels.failure}${(failureDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
+      result: [s],
+    })),
+  ]
+  return opts.length > 0 ? opts : null
+}
+
+function mergeChoiceLocales(
+  options: EventOption[] | null,
+  enOptions: EventOption[] | null | undefined,
+  jpOptions: EventOption[] | null | undefined,
+): EventOption[] | null {
+  if (!options) return null
+  return options.map((opt, i) => {
+    const en = enOptions?.[i]
+    const jp = jpOptions?.[i]
+    return {
+      ...opt,
+      messageEn: en?.message ?? null,
+      messageJp: jp?.message ?? null,
+      messageDescEn: en?.messageDesc ?? null,
+      messageDescJp: jp?.messageDesc ?? null,
+      resultEn: en?.result ?? null,
+      resultJp: jp?.result ?? null,
+    }
+  })
+}
+
+function makeChoiceRow(
+  eventId: number,
+  opt: EventOption,
+  sortOrder: number,
+  reward: RewardGroup | null,
+): ChoiceRow {
+  return {
+    event_id: eventId,
+    sort_order: sortOrder,
+    message: opt.message ?? null,
+    message_en: opt.messageEn ?? null,
+    message_jp: opt.messageJp ?? null,
+    message_desc: opt.messageDesc ?? null,
+    message_desc_en: opt.messageDescEn ?? null,
+    message_desc_jp: opt.messageDescJp ?? null,
+    result_text: joinChoiceResult(opt.result),
+    result_text_en: joinChoiceResult(opt.resultEn),
+    result_text_jp: joinChoiceResult(opt.resultJp),
+    probability: reward?.probability ?? null,
+    next_event_id: reward?.next_event_id ?? null,
+    effects: reward?.effects ?? [],
+  }
+}
+
+function buildChoiceRows(rows: EventRow[]): ChoiceRow[] {
+  const choiceRows: ChoiceRow[] = []
+  const eventIds = new Set(rows.map(row => row.id))
+  const droppedNextEventIds = new Set<number>()
+  for (const row of rows) {
+    if (!row.options) continue
+    for (let i = 0; i < row.options.length; i++) {
+      const opt = row.options[i]
+      const rewards = opt.rewards
+      if (Array.isArray(rewards) && rewards.length > 0) {
+        for (let j = 0; j < rewards.length; j++) {
+          const choiceRow = makeChoiceRow(row.id, opt, i * 100 + j, rewards[j])
+          if (choiceRow.next_event_id != null && !eventIds.has(choiceRow.next_event_id)) {
+            droppedNextEventIds.add(choiceRow.next_event_id)
+            choiceRow.next_event_id = null
+          }
+          choiceRows.push(choiceRow)
+        }
+      } else {
+        choiceRows.push(makeChoiceRow(row.id, opt, i * 100, null))
+      }
+    }
+  }
+  if (droppedNextEventIds.size > 0) {
+    console.log(`  제외된 이벤트 nextEventID 제거: ${[...droppedNextEventIds].sort((a, b) => a - b).join(', ')}`)
+  }
+  return choiceRows
+}
+
 async function syncEvents(): Promise<void> {
   console.log(BOLD('\n[4/4] 이벤트 동기화'))
 
@@ -1367,6 +1510,7 @@ async function syncEvents(): Promise<void> {
   interface LocaleSimpleEntry {
     name: string | null
     desc: string | null
+    options: EventOption[] | null
   }
   const krTexts = new Map<number, KrEntry>()
 
@@ -1397,20 +1541,10 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        const opts: EventOption[] = [
-          ...(e.data.successDesc ?? []).map((s, i) => ({
-            message: `성공${(e.data.successDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
-            result: [s],
-          })),
-          ...(e.data.failureDesc ?? []).map((s, i) => ({
-            message: `실패${(e.data.failureDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
-            result: [s],
-          })),
-        ]
         krTexts.set(id, {
           name: e.data.title ?? null,
           desc: descParts.join('\n') || null,
-          options: opts.length > 0 ? opts : null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: '성공', failure: '실패' }),
           source,
         })
       } else {
@@ -1456,20 +1590,10 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        const opts: EventOption[] = [
-          ...(e.data.successDesc ?? []).map((s, i) => ({
-            message: `성공${(e.data.successDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
-            result: [s],
-          })),
-          ...(e.data.failureDesc ?? []).map((s, i) => ({
-            message: `실패${(e.data.failureDesc?.length ?? 0) > 1 ? ` ${i + 1}` : ''}`,
-            result: [s],
-          })),
-        ]
         krTexts.set(id, {
           name: e.data.title ?? null,
           desc: descParts.join('\n') || null,
-          options: opts.length > 0 ? opts : null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: '성공', failure: '실패' }),
           source,
         })
       } else {
@@ -1514,11 +1638,23 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        enTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+        enTexts.set(id, {
+          name: e.data.title ?? null,
+          desc: descParts.join('\n') || null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: 'Success', failure: 'Failure' }),
+        })
       } else {
         const e = ActionEventSchema.safeParse(item)
         if (!e.success) continue
-        enTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+        enTexts.set(id, {
+          name: e.data.name ?? null,
+          desc: e.data.desc ?? null,
+          options: e.data.options?.map(opt => ({
+            message: opt.message,
+            messageDesc: opt.messageDesc,
+            result: opt.result,
+          })) ?? null,
+        })
       }
     }
   }
@@ -1543,11 +1679,23 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        enTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+        enTexts.set(id, {
+          name: e.data.title ?? null,
+          desc: descParts.join('\n') || null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: 'Success', failure: 'Failure' }),
+        })
       } else {
         const e = ActionEventSchema.safeParse(item)
         if (!e.success) continue
-        enTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+        enTexts.set(id, {
+          name: e.data.name ?? null,
+          desc: e.data.desc ?? null,
+          options: e.data.options?.map(opt => ({
+            message: opt.message,
+            messageDesc: opt.messageDesc,
+            result: opt.result,
+          })) ?? null,
+        })
       }
     }
   }
@@ -1577,11 +1725,23 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        jpTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+        jpTexts.set(id, {
+          name: e.data.title ?? null,
+          desc: descParts.join('\n') || null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: '成功', failure: '失敗' }),
+        })
       } else {
         const e = ActionEventSchema.safeParse(item)
         if (!e.success) continue
-        jpTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+        jpTexts.set(id, {
+          name: e.data.name ?? null,
+          desc: e.data.desc ?? null,
+          options: e.data.options?.map(opt => ({
+            message: opt.message,
+            messageDesc: opt.messageDesc,
+            result: opt.result,
+          })) ?? null,
+        })
       }
     }
   }
@@ -1606,11 +1766,23 @@ async function syncEvents(): Promise<void> {
         if (!e.success) continue
         const descParts: string[] = []
         if (e.data.behaveDesc) descParts.push(e.data.behaveDesc)
-        jpTexts.set(id, { name: e.data.title ?? null, desc: descParts.join('\n') || null })
+        jpTexts.set(id, {
+          name: e.data.title ?? null,
+          desc: descParts.join('\n') || null,
+          options: makeAbEventOptions(e.data.successDesc, e.data.failureDesc, { success: '成功', failure: '失敗' }),
+        })
       } else {
         const e = ActionEventSchema.safeParse(item)
         if (!e.success) continue
-        jpTexts.set(id, { name: e.data.name ?? null, desc: e.data.desc ?? null })
+        jpTexts.set(id, {
+          name: e.data.name ?? null,
+          desc: e.data.desc ?? null,
+          options: e.data.options?.map(opt => ({
+            message: opt.message,
+            messageDesc: opt.messageDesc,
+            result: opt.result,
+          })) ?? null,
+        })
       }
     }
   }
@@ -1624,9 +1796,12 @@ async function syncEvents(): Promise<void> {
   for (let i = 1; i <= 6; i++) {
     const data = safeLoadJson(join(DATA_DIR, `mirrordungeon-theme-floor-t${i}.txt`))
     for (const item of extractList(data)) {
-      const t = item as { id?: number; mapGenOption?: { eventPool?: number[] } }
+      const t = item as { id?: number; mapGenOption?: { eventPool?: number[]; specialEventPool?: number[] } }
       if (typeof t.id !== 'number') continue
-      for (const eid of t.mapGenOption?.eventPool ?? []) {
+      for (const eid of [
+        ...(t.mapGenOption?.eventPool ?? []),
+        ...(t.mapGenOption?.specialEventPool ?? []),
+      ]) {
         if (!eventToThemes.has(eid)) eventToThemes.set(eid, new Set())
         eventToThemes.get(eid)!.add(t.id)
       }
@@ -1635,9 +1810,12 @@ async function syncEvents(): Promise<void> {
   try {
     const hiddenData = safeLoadJson(join(DATA_DIR, 'mirrordungeon-theme-floor-hidden.txt'))
     for (const item of extractList(hiddenData)) {
-      const t = item as { id?: number; mapGenOption?: { eventPool?: number[] } }
+      const t = item as { id?: number; mapGenOption?: { eventPool?: number[]; specialEventPool?: number[] } }
       if (typeof t.id !== 'number') continue
-      for (const eid of t.mapGenOption?.eventPool ?? []) {
+      for (const eid of [
+        ...(t.mapGenOption?.eventPool ?? []),
+        ...(t.mapGenOption?.specialEventPool ?? []),
+      ]) {
         if (!eventToThemes.has(eid)) eventToThemes.set(eid, new Set())
         eventToThemes.get(eid)!.add(t.id)
       }
@@ -1829,26 +2007,23 @@ async function syncEvents(): Promise<void> {
   console.log(`  acquirable + personality 매핑: ${acquirableGifts.size}개 이벤트`)
 
   /* ── 6. 거울 던전 등장 이벤트 필터 ─────────────────────────────────────── */
-  const allNodepoolEvents = new Set<number>()
-  for (const eid of eventToDungeonIds.keys()) allNodepoolEvents.add(eid)
-  for (const eid of eventToThemes.keys()) allNodepoolEvents.add(eid)
-
-  const allowedEvents = new Set<number>(allNodepoolEvents)
-  // Children of allowed events
-  for (const [childId, parentId] of childToParent) {
-    if (allowedEvents.has(parentId)) allowedEvents.add(childId)
-  }
-  // All game event data entries
-  for (const eid of allGameEvents.keys()) allowedEvents.add(eid)
-  // 8-digit ID fallback: parent = first 5-6 digits (mirror dungeon events are 900000+)
-  for (const eid of krTexts.keys()) {
-    if (eid < 900000) continue // skip non-mirror-dungeon events (story dungeon 10xxx etc.)
-    if (String(eid).length >= 7) {
-      const p6 = Number(String(eid).slice(0, 6))
-      const p5 = Number(String(eid).slice(0, 5))
-      if (allowedEvents.has(p6) || allowedEvents.has(p5)) allowedEvents.add(eid)
+  const rootEventCount = eventToThemes.size
+  const allowedEvents = new Set(
+    [...eventToThemes.keys()].filter(eid => !CANONICAL_EVENT_EXCLUDE_IDS.has(eid))
+  )
+  let addedChild = true
+  let childEventCount = 0
+  while (addedChild) {
+    addedChild = false
+    for (const [childId, parentId] of childToParent) {
+      if (allowedEvents.has(parentId) && !allowedEvents.has(childId)) {
+        allowedEvents.add(childId)
+        childEventCount++
+        addedChild = true
+      }
     }
   }
+  console.log(`  current pool roots: ${rootEventCount}개, nextEventID children: ${childEventCount}개`)
 
   /* ── 7. DB 행 구성 ──────────────────────────────────────────────────────── */
   console.log(`\n  DB 행 구성... (거던 등장 이벤트: ${allowedEvents.size}개)`)
@@ -1856,6 +2031,8 @@ async function syncEvents(): Promise<void> {
 
   for (const [eid, kr] of krTexts) {
     if (!allowedEvents.has(eid)) continue
+    const en = enTexts.get(eid)
+    const jp = jpTexts.get(eid)
 
     // Theme IDs: tier 1 > tier 2 > tier 3 fallback
     const themeSet = eventToThemes.get(eid)
@@ -1877,14 +2054,14 @@ async function syncEvents(): Promise<void> {
       id: eid,
       name: kr.name,
       desc_text: kr.desc,
-      options: kr.options,
+      options: mergeChoiceLocales(kr.options, en?.options, jp?.options),
       gift_ids: eventAllGifts.get(eid) ?? acquirableGifts.get(eid) ?? null,
       source: kr.source,
       theme_ids: themeIds && themeIds.length > 0 ? themeIds : null,
-      name_en: enTexts.get(eid)?.name ?? null,
-      name_jp: jpTexts.get(eid)?.name ?? null,
-      desc_text_en: enTexts.get(eid)?.desc ?? null,
-      desc_text_jp: jpTexts.get(eid)?.desc ?? null,
+      name_en: en?.name ?? null,
+      name_jp: jp?.name ?? null,
+      desc_text_en: en?.desc ?? null,
+      desc_text_jp: jp?.desc ?? null,
       variant_of: null,
       event_type: evType,
       category: null,
@@ -1990,17 +2167,11 @@ async function syncEvents(): Promise<void> {
   // ── Dump mode: write rows to file and exit before any DB I/O ────────────────
   if (DUMP_EVENTS_PATH) {
     // Count choices for reporting (each option × results, mirroring FIX logic)
-    let choiceCount = 0
-    for (const row of rows) {
-      if (!row.options) continue
-      for (const opt of row.options) {
-        const results = (opt as { results?: unknown[] }).results
-        choiceCount += Array.isArray(results) && results.length > 0 ? results.length : 1
-      }
-    }
+    const choiceRows = buildChoiceRows(rows)
     writeFileSync(DUMP_EVENTS_PATH, JSON.stringify(rows.map(toDbRow), null, 2))
     console.log(`dumped ${rows.length} event rows to ${DUMP_EVENTS_PATH}`)
-    console.log(`choice rows (computed): ${choiceCount}`)
+    console.log(`choice rows (computed): ${choiceRows.length}`)
+    console.log(`choice next_event_id rows: ${choiceRows.filter(c => c.next_event_id != null).length}`)
     return
   }
 
@@ -2068,15 +2239,49 @@ async function syncEvents(): Promise<void> {
   const matchCount = rows.length - toInsert.length - toUpdate.length
   console.log(`  변경 없음: ${matchCount}, 추가: ${toInsert.length}, 업데이트: ${toUpdate.length}, 삭제: ${toDeleteIds.length}  (총 소스 ${rows.length}개, DB ${existingByIdFull.size}개)`)
 
+  const choiceRows = buildChoiceRows(rows)
+  const choiceRowsWithNext = choiceRows.filter(c => c.next_event_id != null).length
+  const choiceRowsWithEffects = choiceRows.filter(c => c.effects.length > 0).length
+  const choiceRowsWithEn = choiceRows.filter(c => c.message_en || c.message_desc_en || c.result_text_en).length
+  const choiceRowsWithJp = choiceRows.filter(c => c.message_jp || c.message_desc_jp || c.result_text_jp).length
+
+  const { data: existingChoiceStats, error: choiceStatsErr } = await supabase
+    .schema('limbus')
+    .from('md_event_choices')
+    .select('event_id, next_event_id, effects')
+  if (choiceStatsErr) throw new Error(`md_event_choices fetch 실패: ${choiceStatsErr.message}`)
+
+  console.log(
+    `  선택지 대상: ${choiceRows.length}개 ` +
+    `(next_event_id ${choiceRowsWithNext}, effects ${choiceRowsWithEffects}, EN ${choiceRowsWithEn}, JP ${choiceRowsWithJp})`
+  )
+  console.log(
+    `  선택지 현재 DB: ${existingChoiceStats?.length ?? 0}개 ` +
+    `(next_event_id ${(existingChoiceStats ?? []).filter(c => c.next_event_id != null).length})`
+  )
+
   if (FIX) {
     console.log('\n  DB 업데이트...')
 
+    const allUpsert = [...toInsert, ...toUpdate]
     if (toInsert.length === 0 && toUpdate.length === 0 && toDeleteIds.length === 0) {
-      console.log('  (변경 없음 — 건너뜀)')
+      console.log('  md_events 변경 없음 — choices sync 계속')
     } else {
       // ── a. DELETE orphaned events ────────────────────────────────────────────
-      const allUpsert = [...toInsert, ...toUpdate]
       if (toDeleteIds.length > 0) {
+        for (let i = 0; i < toDeleteIds.length; i += 500) {
+          const batch = toDeleteIds.slice(i, i + 500)
+          await withRetry(() =>
+            supabase.schema('limbus').from('md_event_choices')
+              .delete().in('event_id', batch)
+              .then(({ error }) => { if (error) throw error })
+          )
+          await withRetry(() =>
+            supabase.schema('limbus').from('md_event_choices')
+              .delete().in('next_event_id', batch)
+              .then(({ error }) => { if (error) throw error })
+          )
+        }
         await withRetry(() =>
           supabase.schema('limbus').from('md_events')
             .delete()
@@ -2101,68 +2306,33 @@ async function syncEvents(): Promise<void> {
         if (i + BATCH < allUpsert.length) await new Promise(r => setTimeout(r, 50))
       }
       console.log(`  UPSERT 완료: ${allUpsert.length}개 (${batchNum}배치)`)
-
-      // ── c. Sync md_event_choices ─────────────────────────────────────────────
-      const choiceRows: ChoiceRow[] = []
-      for (const row of rows) {
-        if (!row.options) continue
-        for (let i = 0; i < row.options.length; i++) {
-          const opt = row.options[i]
-          const results = (opt as { results?: unknown[] }).results
-          if (Array.isArray(results) && results.length > 0) {
-            for (let j = 0; j < results.length; j++) {
-              const res = results[j] as Record<string, unknown>
-              choiceRows.push({
-                event_id: row.id,
-                sort_order: i * 100 + j,
-                message: (opt.message ?? null) as string | null,
-                message_desc: (opt.messageDesc ?? null) as string | null,
-                result_text: Array.isArray(opt.result) ? opt.result.join('\n') : ((opt.result ?? null) as string | null),
-                probability: (res.probability ?? null) as number | null,
-                next_event_id: (res.next_event_id ?? null) as number | null,
-                effects: (res.effects as unknown[]) ?? [],
-              })
-            }
-          } else {
-            choiceRows.push({
-              event_id: row.id,
-              sort_order: i * 100,
-              message: (opt.message ?? null) as string | null,
-              message_desc: (opt.messageDesc ?? null) as string | null,
-              result_text: Array.isArray(opt.result) ? opt.result.join('\n') : ((opt.result ?? null) as string | null),
-              probability: null,
-              next_event_id: null,
-              effects: [],
-            })
-          }
-        }
-      }
-
-      // Delete existing choices for all synced events (delete-then-insert, id is SERIAL)
-      const allSyncedEventIds = rows.map(r => r.id)
-      for (let i = 0; i < allSyncedEventIds.length; i += 500) {
-        const batch = allSyncedEventIds.slice(i, i + 500)
-        await withRetry(() =>
-          supabase.schema('limbus').from('md_event_choices')
-            .delete().in('event_id', batch)
-            .then(({ error }) => { if (error) throw error })
-        )
-      }
-
-      // Insert choice rows in batches of 100 (no id field — SERIAL auto-generated)
-      let insertedChoices = 0
-      for (let i = 0; i < choiceRows.length; i += 100) {
-        const batch = choiceRows.slice(i, i + 100)
-        await withRetry(() =>
-          supabase.schema('limbus').from('md_event_choices')
-            .insert(batch)
-            .then(({ error }) => { if (error) throw error })
-        )
-        insertedChoices += batch.length
-        if (i + 100 < choiceRows.length) await new Promise(r => setTimeout(r, 50))
-      }
-      console.log(`  choices INSERT 완료: ${insertedChoices}개`)
     }
+
+    // ── c. Sync md_event_choices ─────────────────────────────────────────────
+    // Delete existing choices for all synced events (delete-then-insert, id is SERIAL)
+    const allSyncedEventIds = rows.map(r => r.id)
+    for (let i = 0; i < allSyncedEventIds.length; i += 500) {
+      const batch = allSyncedEventIds.slice(i, i + 500)
+      await withRetry(() =>
+        supabase.schema('limbus').from('md_event_choices')
+          .delete().in('event_id', batch)
+          .then(({ error }) => { if (error) throw error })
+      )
+    }
+
+    // Insert choice rows in batches of 100 (no id field — SERIAL auto-generated)
+    let insertedChoices = 0
+    for (let i = 0; i < choiceRows.length; i += 100) {
+      const batch = choiceRows.slice(i, i + 100)
+      await withRetry(() =>
+        supabase.schema('limbus').from('md_event_choices')
+          .insert(batch)
+          .then(({ error }) => { if (error) throw error })
+      )
+      insertedChoices += batch.length
+      if (i + 100 < choiceRows.length) await new Promise(r => setTimeout(r, 50))
+    }
+    console.log(`  choices INSERT 완료: ${insertedChoices}개`)
 
     // Remap gift_ids to DB game_ids (event IDs may differ from DB IDs)
     console.log('\n  이벤트 gift_id → DB game_id 치환...')
@@ -2200,10 +2370,10 @@ async function syncEvents(): Promise<void> {
       for (const r of rows) {
         if (!r.gift_ids) continue
         let changed = false
-        r.gift_ids = r.gift_ids.map(gid => {
+        r.gift_ids = [...new Set(r.gift_ids.map(gid => {
           if (giftIdRemap.has(gid)) { changed = true; return giftIdRemap.get(gid)! }
           return gid
-        })
+        }))]
         if (changed) remapped++
       }
       console.log(`  ${remapped}개 이벤트 치환`)

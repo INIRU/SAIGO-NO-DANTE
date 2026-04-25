@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { X } from 'lucide-react'
-import { useLocale } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
@@ -12,6 +11,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface ThemeModalProps {
+  lang: SupportedLang
   theme: EgoGiftTheme
   themeGifts: EgoGift[]
   getGiftKeywordIcon: (keyword: string) => string | null
@@ -21,7 +21,30 @@ interface ThemeModalProps {
   choiceCountByEventId?: Map<number, number>
 }
 
+const KEYWORD_TRANSLATION_KEYS: Record<string, string> = {
+  '화상': 'mirrorDungeon.filter.combustion',
+  '출혈': 'mirrorDungeon.filter.laceration',
+  '진동': 'mirrorDungeon.filter.vibration',
+  '파열': 'mirrorDungeon.filter.burst',
+  '침잠': 'mirrorDungeon.filter.sinking',
+  '호흡': 'mirrorDungeon.filter.breath',
+  '충전': 'mirrorDungeon.filter.charge',
+  '참격': 'mirrorDungeon.filter.slash',
+  '관통': 'mirrorDungeon.filter.pierce',
+  '타격': 'mirrorDungeon.filter.blunt',
+  '공통': 'mirrorDungeon.filter.common',
+}
+
+const GIFT_GRID_STYLE = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))',
+  gap: '0.5rem',
+  position: 'relative' as const,
+  zIndex: 0,
+}
+
 export default function ThemeModal({
+  lang,
   theme,
   themeGifts,
   getGiftKeywordIcon,
@@ -30,12 +53,29 @@ export default function ThemeModal({
   events,
   choiceCountByEventId,
 }: ThemeModalProps) {
-  const locale = useLocale()
-  const lang = locale as SupportedLang
   const t = (key: string) => {
     const entry = translations[key as keyof typeof translations]
     if (!entry) return key
     return entry[lang] ?? entry['ko'] ?? key
+  }
+  const getKeywordLabel = (keyword: string) => {
+    const key = KEYWORD_TRANSLATION_KEYS[keyword]
+    return key ? t(key) : keyword
+  }
+  const getGiftCardData = (gift: EgoGift) => ({
+    ...gift,
+    name: getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
+  })
+  const getEventDisplayName = (event: MdEvent) => {
+    if (event.name) {
+      return getLocalizedName({ name_kr: event.name, name_en: event.name_en, name_jp: event.name_jp }, lang)
+    }
+    const desc = lang === 'en'
+      ? event.desc_text_en ?? event.desc_text
+      : lang === 'ja'
+      ? event.desc_text_jp ?? event.desc_text
+      : event.desc_text
+    return desc ? desc.split('\n')[0].slice(0, 30) : t('mirrorDungeon.event.fallbackTitle')
   }
 
   const isHidden = theme.is_hidden === true
@@ -95,7 +135,7 @@ export default function ThemeModal({
   }
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="48rem" padding="1rem" title="테마 상세">
+    <BaseModal open={true} onClose={onClose} maxWidth="48rem" padding="1rem" title={t('mirrorDungeon.theme.modalTitle')}>
       <div
         className="relative w-full overflow-hidden"
         style={{
@@ -110,7 +150,7 @@ export default function ThemeModal({
           {/* 닫기 버튼 */}
           <button
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t('mirrorDungeon.theme.close')}
             className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
             style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
           >
@@ -261,6 +301,7 @@ export default function ThemeModal({
                     .slice(0, 6)
                     .map(([kw, kwGifts]) => {
                       const iconUrl = getGiftKeywordIcon(kw)
+                      const keywordLabel = getKeywordLabel(kw)
                       return (
                         <span
                           key={kw}
@@ -270,13 +311,13 @@ export default function ThemeModal({
                           {iconUrl && (
                             <Image
                               src={iconUrl}
-                              alt={kw}
+                              alt={keywordLabel}
                               width={14}
                               height={14}
                               style={{ width: '0.875rem', height: '0.875rem' }}
                             />
                           )}
-                          <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{kw}</span>
+                          <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{keywordLabel}</span>
                           <span style={{ color: '#555', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
                             {kwGifts.length}
                           </span>
@@ -310,9 +351,9 @@ export default function ThemeModal({
                     ({fixedRewardGifts.length})
                   </span>
                 </div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
+                <div className="gift-grid" style={GIFT_GRID_STYLE}>
                   {fixedRewardGifts.map(g => (
-                    <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
+                    <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                   ))}
                 </div>
                 <div
@@ -335,48 +376,46 @@ export default function ThemeModal({
                   </span>
                 </div>
                 <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(8rem, 1fr))' }}>
-                  {themeEvents.map(ev => (
-                    <div
-                      key={ev.id}
-                      className="overflow-hidden rounded-lg"
-                      style={{
-                        background: '#1a1714',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                      }}
-                    >
-                      {ev.image_url && (
-                        <div className="relative w-full aspect-square overflow-hidden">
-                          <ImageWithFallback
-                            src={ev.image_url}
-                            alt={ev.name ?? ''}
-                            fill
-                            fallbackType="default"
-                            sizes="8rem"
-                            className="object-cover"
-                            style={{ opacity: 0.8 }}
-                          />
-                        </div>
-                      )}
-                      <div className="px-2 py-1.5">
-                        <div
-                          className="font-serif font-bold leading-tight"
-                          style={{ color: '#ddd', fontSize: '0.6875rem' }}
-                        >
-                          {ev.name
-                            ? getLocalizedName(
-                                { name_kr: ev.name, name_en: ev.name_en, name_jp: ev.name_jp },
-                                lang
-                              )
-                            : ev.name}
-                        </div>
-                        {(choiceCountByEventId?.get(ev.id) ?? 0) > 0 && (
-                          <div style={{ color: '#666', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.125rem' }}>
-                            {choiceCountByEventId?.get(ev.id) ?? 0}{t('mirrorDungeon.theme.choiceCount')}
+                  {themeEvents.map(ev => {
+                    const eventDisplayName = getEventDisplayName(ev)
+                    return (
+                      <div
+                        key={ev.id}
+                        className="overflow-hidden rounded-lg"
+                        style={{
+                          background: '#1a1714',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                        }}
+                      >
+                        {ev.image_url && (
+                          <div className="relative w-full aspect-square overflow-hidden">
+                            <ImageWithFallback
+                              src={ev.image_url}
+                              alt={eventDisplayName}
+                              fill
+                              fallbackType="default"
+                              sizes="8rem"
+                              className="object-cover"
+                              style={{ opacity: 0.8 }}
+                            />
                           </div>
                         )}
+                        <div className="px-2 py-1.5">
+                          <div
+                            className="font-serif font-bold leading-tight"
+                            style={{ color: '#ddd', fontSize: '0.6875rem' }}
+                          >
+                            {eventDisplayName}
+                          </div>
+                          {(choiceCountByEventId?.get(ev.id) ?? 0) > 0 && (
+                            <div style={{ color: '#666', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.125rem' }}>
+                              {choiceCountByEventId?.get(ev.id) ?? 0}{t('mirrorDungeon.theme.choiceCount')}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <div
                   className="mt-4"
@@ -397,9 +436,9 @@ export default function ThemeModal({
                     ({exclusiveGifts.length})
                   </span>
                 </div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
+                <div className="gift-grid" style={GIFT_GRID_STYLE}>
                   {exclusiveGifts.map(g => (
-                    <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
+                    <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                   ))}
                 </div>
                 <div
@@ -412,13 +451,14 @@ export default function ThemeModal({
             {/* 키워드별 그룹 */}
             {Object.entries(byKeyword).map(([kw, kwGifts]) => {
               const iconUrl = getGiftKeywordIcon(kw)
+              const keywordLabel = getKeywordLabel(kw)
               return (
                 <div key={kw} className="mb-4">
                   <div className="flex items-center gap-1.5 mb-2">
                     {iconUrl && (
                       <Image
                         src={iconUrl}
-                        alt={kw}
+                        alt={keywordLabel}
                         width={16}
                         height={16}
                         style={{ width: '1rem', height: '1rem' }}
@@ -428,13 +468,13 @@ export default function ThemeModal({
                       className="font-serif font-medium"
                       style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}
                     >
-                      {kw}
+                      {keywordLabel}
                     </span>
                     <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({kwGifts.length})</span>
                   </div>
-                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(5rem, 1fr))' }}>
+                  <div className="gift-grid" style={GIFT_GRID_STYLE}>
                     {kwGifts.map(g => (
-                      <GiftCard key={g.id} gift={g} onClick={() => onSelectGift(g)} />
+                      <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                     ))}
                   </div>
                 </div>

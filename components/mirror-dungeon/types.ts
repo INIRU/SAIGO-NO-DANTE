@@ -119,7 +119,7 @@ export interface MdEvent {
   id: number
   name: string | null
   desc_text: string | null
-  event_type: 'ACTION' | 'COIN_EVENT' | null
+  event_type: 'ACTION' | 'COIN_EVENT' | 'action' | 'ab' | 'personality' | null
   source: string | null
   image_url: string | null
   theme_ids: number[] | null
@@ -137,8 +137,14 @@ export interface MdEventChoice {
   event_id: number
   sort_order: number
   message: string | null
+  message_en?: string | null
+  message_jp?: string | null
   message_desc: string | null
+  message_desc_en?: string | null
+  message_desc_jp?: string | null
   result_text: string | null
+  result_text_en?: string | null
+  result_text_jp?: string | null
   probability: string | null
   next_event_id: number | null
   effects: ChoiceEffect[] | null

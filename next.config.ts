@@ -48,9 +48,6 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'nuqs',
     ],
-    // Phase 4 (Next.js 16 sweep): persist Turbopack compilation across dev restarts.
-    // Dev-only flag — no production runtime impact.
-    turbopackFileSystemCacheForDev: true,
   },
 
   images: {

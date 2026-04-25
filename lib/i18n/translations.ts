@@ -531,6 +531,10 @@ export const translations = {
   'mirrorDungeon.theme.other': { ko: '기타', en: 'Other', ja: 'その他' },
   'mirrorDungeon.theme.autocompleteTheme': { ko: '테마팩', en: 'Theme', ja: 'テーマ' },
   'mirrorDungeon.theme.autocompleteGift': { ko: '기프트', en: 'Gift', ja: 'ギフト' },
+  'mirrorDungeon.theme.selected': { ko: '선택됨', en: 'Selected', ja: '選択済み' },
+  'mirrorDungeon.theme.modalTitle': { ko: '테마 상세', en: 'Theme Details', ja: 'テーマ詳細' },
+  'mirrorDungeon.theme.close': { ko: '닫기', en: 'Close', ja: '閉じる' },
+  'mirrorDungeon.theme.countSuffix': { ko: '개', en: '', ja: '件' },
 
   // Mirror Dungeon — Event tab
   'mirrorDungeon.event.search': { ko: '이벤트 · 기프트 검색...', en: 'Search events & gifts...', ja: 'イベント・ギフト検索...' },
@@ -559,6 +563,9 @@ export const translations = {
 
   // Mirror Dungeon — EventModal labels
   'mirrorDungeon.event.fallbackTitle': { ko: '이벤트', en: 'Event', ja: 'イベント' },
+  'mirrorDungeon.event.modalTitle': { ko: '이벤트 상세', en: 'Event Details', ja: 'イベント詳細' },
+  'mirrorDungeon.event.availableGifts': { ko: '획득 가능 기프트', en: 'Available Gifts', ja: '獲得可能ギフト' },
+  'mirrorDungeon.event.relatedThemes': { ko: '출현 테마팩', en: 'Related Theme Packs', ja: '登場テーマパック' },
   'mirrorDungeon.event.choicesLabel': { ko: '선택지', en: 'Choices', ja: '選択肢' },
   'mirrorDungeon.event.noChoices': { ko: '선택지 정보 없음', en: 'No choice data', ja: '選択肢情報なし' },
   'mirrorDungeon.event.success': { ko: '성공', en: 'Success', ja: '成功' },
