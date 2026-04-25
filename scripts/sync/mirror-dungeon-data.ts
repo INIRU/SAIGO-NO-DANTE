@@ -807,6 +807,28 @@ function loadThemeNameMap(paths: string[]): Map<number, string> {
   return map
 }
 
+function sortedNumberArrayJson(values: number[] | null | undefined): string {
+  return JSON.stringify([...(values ?? [])].sort((a, b) => a - b))
+}
+
+function stableJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stableJsonValue)
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, entry]) => [key, stableJsonValue(entry)])
+    )
+  }
+  return value
+}
+
+function stableJsonEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(stableJsonValue(left)) === JSON.stringify(stableJsonValue(right))
+}
+
 async function syncThemes(): Promise<void> {
   console.log(BOLD('\n[2/4] 테마팩 동기화'))
 
@@ -924,16 +946,16 @@ async function syncThemes(): Promise<void> {
       if (existing.name !== theme.name) changes.push(`name: ${existing.name} → ${theme.name}`)
       if ((existing.name_en ?? null) !== (theme.name_en ?? null)) changes.push('name_en 변경')
       if ((existing.name_jp ?? null) !== (theme.name_jp ?? null)) changes.push('name_jp 변경')
-      const existIds = JSON.stringify((existing.ego_gift_ids ?? []).sort())
-      const newIds = JSON.stringify((theme.ego_gift_ids ?? []).sort())
+      const existIds = sortedNumberArrayJson(existing.ego_gift_ids)
+      const newIds = sortedNumberArrayJson(theme.ego_gift_ids)
       if (existIds !== newIds) changes.push(`ego_gift_ids 변경 (${(existing.ego_gift_ids ?? []).length} → ${theme.ego_gift_ids.length})`)
-      const existSpec = JSON.stringify((existing.specific_ego_gift_ids ?? []).sort())
-      const newSpec = JSON.stringify((theme.specific_ego_gift_ids ?? []).sort())
+      const existSpec = sortedNumberArrayJson(existing.specific_ego_gift_ids)
+      const newSpec = sortedNumberArrayJson(theme.specific_ego_gift_ids)
       if (existSpec !== newSpec) changes.push('specific_ego_gift_ids 변경')
       if (existing.difficulty !== theme.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${theme.difficulty}`)
       if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
       if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)
-      if (JSON.stringify(existing.floor_info ?? null) !== JSON.stringify(theme.floor_info ?? null)) changes.push(`floor_info 변경`)
+      if (!stableJsonEqual(existing.floor_info ?? null, theme.floor_info ?? null)) changes.push(`floor_info 변경`)
 
       if (changes.length > 0) {
         updateCount++
