@@ -1,6 +1,6 @@
 'use client'
 
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, memo, useCallback, useState } from 'react'
 import { useLocale } from 'next-intl'
 import IdentityCard from '@/components/sinners/IdentityCard'
 import type { Tier } from '@/lib/tier-list/tierModel'
@@ -37,7 +37,7 @@ export type TierIdentity = Identity & {
   }
 }
 
-export default function TierCardInteractive({
+function TierCardInteractive({
   identity,
   category,
   period,
@@ -58,20 +58,25 @@ export default function TierCardInteractive({
   const [modalOpen, setModalOpen] = useState(false)
   const selectedLabel = DIAGNOSIS_SELECTED_LABELS[locale]
 
-  const toggleDiagnosis = () => onToggleDiagnosis?.(identity.id)
-  const activateCard = () => {
+  const closeModal = useCallback(() => {
+    setModalOpen(false)
+  }, [])
+  const toggleDiagnosis = useCallback(() => {
+    onToggleDiagnosis?.(identity.id)
+  }, [identity.id, onToggleDiagnosis])
+  const activateCard = useCallback(() => {
     if (diagnosisMode && onToggleDiagnosis) {
       toggleDiagnosis()
       return
     }
     setModalOpen(true)
-  }
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+  }, [diagnosisMode, onToggleDiagnosis, toggleDiagnosis])
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       activateCard()
     }
-  }
+  }, [activateCard])
 
   return (
     <>
@@ -109,14 +114,18 @@ export default function TierCardInteractive({
         )}
       </div>
     </div>
-    <TierRatingModal
-      identity={identity}
-      category={category}
-      period={period}
-      initialViewer={viewer}
-      open={modalOpen}
-      onClose={() => setModalOpen(false)}
-    />
+    {modalOpen && (
+      <TierRatingModal
+        identity={identity}
+        category={category}
+        period={period}
+        initialViewer={viewer}
+        open={modalOpen}
+        onClose={closeModal}
+      />
+    )}
     </>
   )
 }
+
+export default memo(TierCardInteractive)

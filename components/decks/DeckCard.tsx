@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
@@ -12,6 +12,7 @@ import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 // 덱 테마를 정의하는 핵심 상태이상 키워드만 표시
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
+const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 
 type IdentityPreview = {
   slot_order: number
@@ -91,28 +92,28 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
   )
 }
 
-export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
+function DeckCard({ deck, onTagClick }: DeckCardProps) {
   const { getIconUrl } = useKeywordData()
-  const date = (() => {
+  const date = useMemo(() => {
     const d = deck.created_at.slice(0, 10) // "YYYY-MM-DD"
     const [, mm, dd] = d.split('-')
     return `${parseInt(mm)}월 ${parseInt(dd)}일`
-  })()
+  }, [deck.created_at])
 
   // 슬롯 순서로 정렬, slot_order=99는 뒤로
-  const sorted = [...(deck.deck_identities ?? [])].sort((a, b) => {
+  const sorted = useMemo(() => [...(deck.deck_identities ?? [])].sort((a, b) => {
     if (a.slot_order === 99 && b.slot_order !== 99) return 1
     if (b.slot_order === 99 && a.slot_order !== 99) return -1
     return a.slot_order - b.slot_order
-  })
+  }), [deck.deck_identities])
 
   // 12칸 고정 (빈 슬롯 포함)
-  const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
+  const slots = useMemo(() => Array.from({ length: 12 }, (_, i) => sorted[i] ?? null), [sorted])
 
   const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
   // 편성(slot_order<99) 인격 기준 키워드 비율 집계
-  const topKeywords = (() => {
+  const topKeywords = useMemo(() => {
     const formed = sorted.filter(s => s && s.slot_order < 99 && s.identities)
     const total = formed.length
     if (total === 0) return []
@@ -133,10 +134,10 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
       .filter(([, n]) => n >= minCount)
       .sort((a, b) => b[1] - a[1])
       .map(([kw]) => kw)
-  })()
+  }, [sorted])
 
   // 키워드 최대 3개 + 넘치면 "+N" 뱃지
-  const visibleKeywords = topKeywords.slice(0, 3)
+  const visibleKeywords = useMemo(() => topKeywords.slice(0, 3), [topKeywords])
   const overflowCount = topKeywords.length - visibleKeywords.length
 
   return (
@@ -217,7 +218,15 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
                 maxWidth: '100%',
               }}
             >
-              <NoteRenderer text={deck.description} skillLookup={{}} passiveLookup={{}} egoLookup={{}} inline />
+              <NoteRenderer
+                text={deck.description}
+                skillLookup={EMPTY_NOTE_LOOKUP}
+                passiveLookup={EMPTY_NOTE_LOOKUP}
+                egoLookup={EMPTY_NOTE_LOOKUP}
+                identityLookup={EMPTY_NOTE_LOOKUP}
+                egoGiftLookup={EMPTY_NOTE_LOOKUP}
+                inline
+              />
             </div>
           ) : (
             <div className="flex-1" />
@@ -369,3 +378,5 @@ export default function DeckCard({ deck, onTagClick }: DeckCardProps) {
     </div>
   )
 }
+
+export default memo(DeckCard)

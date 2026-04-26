@@ -1,9 +1,12 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from '@/lib/i18n/navigation'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+
+const deckGridVariants = staggerContainer(0.06)
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -15,7 +18,7 @@ interface DeckGridProps {
   onTagClick: (tag: string) => void
 }
 
-export default function DeckGrid({
+function DeckGrid({
   filtered,
   loading,
   hasMore,
@@ -69,7 +72,7 @@ export default function DeckGrid({
       <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
-        variants={staggerContainer(0.06)}
+        variants={deckGridVariants}
         initial="initial"
         animate="animate"
       >
@@ -97,3 +100,5 @@ export default function DeckGrid({
     </>
   )
 }
+
+export default memo(DeckGrid)

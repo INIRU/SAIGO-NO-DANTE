@@ -188,10 +188,50 @@ export default function TierGrid({
   const [naSinner, setNaSinner] = useState('all')
   const [naRarity, setNaRarity] = useState('all')
   const [naAcquisition, setNaAcquisition] = useState('all')
-  const renderedIdentityIds = new Set<string>()
   const normalizedSearch = normalizeSearch(naSearch)
 
-  const naIdentities = tiers['N/A'] ?? []
+  const baseTierRows = useMemo(() => {
+    const renderedIdentityIds = new Set<string>()
+
+    return TIERS.map(tier => {
+      const sourceIdentities = tier === 'N/A'
+        ? (tiers[tier] ?? [])
+        : [...(tiers[tier] ?? [])].sort(compareTierIdentities(locale))
+      const tierIdentities = sourceIdentities.filter(identity => {
+        if (renderedIdentityIds.has(identity.id)) return false
+        renderedIdentityIds.add(identity.id)
+        return true
+      })
+
+      return {
+        tier,
+        tierIdentities,
+      }
+    })
+  }, [locale, tiers])
+
+  const naIdentities = baseTierRows.find(row => row.tier === 'N/A')?.tierIdentities ?? []
+  const derivedTierRows = useMemo(() => {
+    const filters = {
+      search: normalizedSearch,
+      sinner: naSinner,
+      rarity: naRarity,
+      acquisition: naAcquisition,
+    }
+
+    return baseTierRows.map(row => {
+      const visibleIdentities = row.tier === 'N/A'
+        ? row.tierIdentities.filter(identity => matchesNaFilters(identity, filters))
+        : row.tierIdentities
+
+      return {
+        ...row,
+        visibleIdentities,
+        showEmptyNaResult: row.tier === 'N/A' && row.tierIdentities.length > 0 && visibleIdentities.length === 0,
+      }
+    })
+  }, [baseTierRows, naAcquisition, naRarity, naSinner, normalizedSearch])
+
   const sinnerOptions = useMemo<DropdownOption[]>(() => {
     const options = new Map<string, { label: string; order: number }>()
     for (const identity of naIdentities) {
@@ -353,24 +393,7 @@ export default function TierGrid({
           }
         }
       `}</style>
-      {TIERS.map(tier => {
-        const sourceIdentities = tier === 'N/A'
-          ? (tiers[tier] ?? [])
-          : [...(tiers[tier] ?? [])].sort(compareTierIdentities(locale))
-        const tierIdentities = sourceIdentities.filter(identity => {
-          if (renderedIdentityIds.has(identity.id)) return false
-          renderedIdentityIds.add(identity.id)
-          return true
-        })
-        const visibleIdentities = tier === 'N/A'
-          ? tierIdentities.filter(identity => matchesNaFilters(identity, {
-            search: normalizedSearch,
-            sinner: naSinner,
-            rarity: naRarity,
-            acquisition: naAcquisition,
-          }))
-          : tierIdentities
-        const showEmptyNaResult = tier === 'N/A' && tierIdentities.length > 0 && visibleIdentities.length === 0
+      {derivedTierRows.map(({ tier, tierIdentities, visibleIdentities, showEmptyNaResult }) => {
         const labelColor = getTierTextColor(tier)
         const labelSubtextColor = getTierSubtextColor(tier)
 
@@ -541,9 +564,9 @@ export default function TierGrid({
                   overflow: 'visible',
                 }}
               >
-                {visibleIdentities.map((identity, index) => (
+                {visibleIdentities.map(identity => (
                   <TierCardInteractive
-                    key={`${tier}-${identity.id}-${index}`}
+                    key={`${tier}-${identity.id}`}
                     identity={identity}
                     category={category}
                     period={period}
