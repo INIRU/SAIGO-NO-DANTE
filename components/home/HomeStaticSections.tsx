@@ -61,12 +61,8 @@ function CommandGlyph({
   const common = {
     width: size,
     height: size,
-    viewBox: '0 0 32 32',
+    viewBox: '0 0 24 24',
     fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.8,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
     style,
     'aria-hidden': true,
   }
@@ -74,8 +70,11 @@ function CommandGlyph({
   if (kind === 'sinner') {
     return (
       <svg {...common}>
-        <path d="M16 4.5 24.5 9v8.8L16 27.5 7.5 17.8V9L16 4.5Z" />
-        <path d="M16 8.8v14.4M10.8 11.7 16 8.8l5.2 2.9M11.2 17.2h9.6" />
+        <rect x="5" y="3" width="14" height="18" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M9 10.2c0-1.8 1.2-3.2 3-3.2s3 1.4 3 3.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M8.2 15.3c1-1.4 2.2-2.1 3.8-2.1s2.8.7 3.8 2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M8 18h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M17 4.5h2.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     )
   }
@@ -83,19 +82,25 @@ function CommandGlyph({
   if (kind === 'deck') {
     return (
       <svg {...common}>
-        <path d="M9 7h14v17H9z" />
-        <path d="M6 10h14M12 4h14v17" />
-        <path d="M12.5 13.5h7M12.5 17h4.5" />
+        <rect x="6" y="5" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(-8 6 5)" />
+        <rect x="9" y="4" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(8 9 4)" />
+        <path d="M8 15l4-4 4 3 3-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="8" cy="15" r="1.2" fill="currentColor" />
+        <circle cx="12" cy="11" r="1.2" fill="currentColor" />
+        <circle cx="16" cy="14" r="1.2" fill="currentColor" />
       </svg>
     )
   }
 
-  if (kind === 'mirror') {
+  if (kind === 'mirror' || kind === 'planner') {
     return (
       <svg {...common}>
-        <path d="M16 4 26 10v12l-10 6-10-6V10l10-6Z" />
-        <path d="M16 4v24M6 10l20 12M26 10 6 22" />
-        <path d="M12 12.2 16 10l4 2.2v7.6L16 22l-4-2.2v-7.6Z" />
+        <path d="M12 2.8l7 4v10.4l-7 4-7-4V6.8l7-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M12 7v4.5m0 0l-4 3.5m4-3.5l4 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <circle cx="12" cy="7" r="1.5" fill="currentColor" />
+        <circle cx="8" cy="15" r="1.5" fill="currentColor" />
+        <circle cx="16" cy="15" r="1.5" fill="currentColor" />
+        <path d="M7.5 7.5l3.2 2.3M16.5 7.5l-3.2 2.3" stroke="currentColor" strokeWidth="1.2" opacity="0.7" />
       </svg>
     )
   }
@@ -103,8 +108,10 @@ function CommandGlyph({
   if (kind === 'collection') {
     return (
       <svg {...common}>
-        <path d="M8 6h16v20H8z" />
-        <path d="M12 6v20M16 10h5M16 14h4M16 18h5" />
+        <rect x="4" y="6" width="13" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M7 4h11c1.1 0 2 .9 2 2v11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M7.5 11h6M7.5 15h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <path d="M14.5 16.5l2 2 4-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )
   }
@@ -112,8 +119,11 @@ function CommandGlyph({
   if (kind === 'tier') {
     return (
       <svg {...common}>
-        <path d="M6 24h20M8 20h4v4H8zM14 14h4v10h-4zM20 9h4v15h-4z" />
-        <path d="M16 6 18 9.5 22 10l-3 2.8.8 4-3.8-2-3.8 2 .8-4-3-2.8 4-.5L16 6Z" />
+        <path d="M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <rect x="6" y="13" width="4" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+        <rect x="10" y="9" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.8" />
+        <rect x="14" y="5" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 5.5l.8 1.6 1.8.3-1.3 1.2.3 1.8-1.6-.9-1.6.9.3-1.8-1.3-1.2 1.8-.3.8-1.6z" fill="currentColor" />
       </svg>
     )
   }
@@ -121,26 +131,23 @@ function CommandGlyph({
   if (kind === 'extraction') {
     return (
       <svg {...common}>
-        <path d="M16 5v22M5 16h22" />
-        <path d="M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z" />
-      </svg>
-    )
-  }
-
-  if (kind === 'random') {
-    return (
-      <svg {...common}>
-        <path d="M7 10h5l8 12h5M7 22h5l2.2-3.3M19.8 13.3 22 10h3" />
-        <path d="m22 7 3 3-3 3M22 19l3 3-3 3" />
+        <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 4V2.5M12 21.5V20M20 12h1.5M2.5 12H4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M6.3 6.3L5.2 5.2M18.8 18.8l-1.1-1.1M17.7 6.3l1.1-1.1M5.2 18.8l1.1-1.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M9 12c1.8-3.2 4.2-3.2 6 0-1.8 3.2-4.2 3.2-6 0z" fill="currentColor" opacity="0.85" />
+        <path d="M15.5 9.5c1.8.4 3 1.3 4.2 2.5-1.2 1.2-2.4 2.1-4.2 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     )
   }
 
   return (
     <svg {...common}>
-      <path d="M6 7h20v18H6z" />
-      <path d="M10 11h12M10 16h5M18 16h4M10 21h12" />
-      <path d="M16 11v10" />
+      <rect x="7" y="6" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(8 12 11)" />
+      <circle cx="10" cy="9" r="1" fill="currentColor" />
+      <circle cx="14" cy="10" r="1" fill="currentColor" />
+      <circle cx="12" cy="13" r="1" fill="currentColor" />
+      <path d="M6 17.5c2.8 2.7 7.1 3 10.2.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M16.2 18.3h-3M16.2 18.3v-3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   )
 }
