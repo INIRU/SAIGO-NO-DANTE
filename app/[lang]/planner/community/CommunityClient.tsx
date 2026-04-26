@@ -18,6 +18,13 @@ import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
 type IdentityNameEntry = { name_kr: string; sinner_id: string; folder_name: string | null; game_id: string | null }
+type PlanFilterIndex = {
+  plan: PlanSummary
+  searchableFields: string[]
+  themeKeywordSet: Set<string>
+  identityIds: string[]
+  egoIds: string[]
+}
 const PAGE_SIZE = 20
 
 const DIFFICULTY_STYLE: Record<string, { bg: string; color: string; border: string }> = {
@@ -68,12 +75,17 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
   const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
-  useEffect(() => {
-    createBrowserClient()
-      .schema('limbus')
-      .from('identities')
-      .select('name_kr, sinner_id, folder_name, game_id')
-      .then(({ data }) => {
+  const identitiesRequestRef = useRef<Promise<void> | null>(null)
+  const ensureIdentitySuggestions = useCallback(() => {
+    if (allIdentities.length > 0) return Promise.resolve()
+    if (identitiesRequestRef.current) return identitiesRequestRef.current
+
+    identitiesRequestRef.current = (async () => {
+      try {
+        const { data } = await createBrowserClient()
+          .schema('limbus')
+          .from('identities')
+          .select('name_kr, sinner_id, folder_name, game_id')
         if (data) {
           const seen = new Set<string>()
           const deduped = (data as IdentityNameEntry[])
@@ -81,8 +93,20 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
             .sort((a, b) => a.name_kr.localeCompare(b.name_kr))
           setAllIdentities(deduped)
         }
-      })
-  }, [])
+      } finally {
+        identitiesRequestRef.current = null
+      }
+    })()
+
+    return identitiesRequestRef.current
+  }, [allIdentities.length])
+
+  const activeInputTermLength = useMemo(() => getActiveTerm(inputValue).activeTerm.length, [inputValue])
+  useEffect(() => {
+    if (showSuggestions && activeInputTermLength > 0) {
+      void ensureIdentitySuggestions()
+    }
+  }, [showSuggestions, activeInputTermLength, ensureIdentitySuggestions])
 
   // 인격 + 키워드 자동완성 후보
   const suggestions = useMemo((): SearchSuggestion[] => {
@@ -184,6 +208,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const [collectionData, setCollectionData] = useState<CollectionData | null>(null)
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState(false)
+  const collectionDataRef = useRef<CollectionData | null>(null)
+  const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
 
   const fetchPlans = useCallback(async (opts: {
     sort: SortKey
@@ -239,33 +265,67 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     fetchPlans({ sort: sort as SortKey, difficulty, offset: offsetRef.current, replace: false })
   }
 
-  // 컬렉션 마스터 데이터 로드
   useEffect(() => {
-    fetch('/api/collection').then(r => r.json())
-      .then((d: CollectionData) => { if (d.sinners?.length > 0) setCollectionData(d) })
-      .catch(() => {})
+    collectionDataRef.current = collectionData
+  }, [collectionData])
+
+  const loadCollectionData = useCallback(async () => {
+    if (collectionDataRef.current) return collectionDataRef.current
+    if (!collectionRequestRef.current) {
+      collectionRequestRef.current = fetch('/api/collection')
+        .then(r => r.json())
+        .then((d: CollectionData) => {
+          if (d.sinners?.length > 0) {
+            collectionDataRef.current = d
+            setCollectionData(d)
+            return d
+          }
+          return null
+        })
+        .catch(() => null)
+        .finally(() => {
+          collectionRequestRef.current = null
+        })
+    }
+    return collectionRequestRef.current
   }, [])
 
   // 로그인 유저: 프로필에서 컬렉션 코드 자동 로드
+  const profileCollectionLoadedRef = useRef(false)
   useEffect(() => {
-    if (authStatus !== 'authenticated' || !collectionData) return
-    fetch('/api/profile').then(r => r.json())
+    if (authStatus !== 'authenticated' || profileCollectionLoadedRef.current) return
+    let cancelled = false
+    profileCollectionLoadedRef.current = true
+
+    fetch('/api/profile')
+      .then(r => r.json())
       .then(async (profileData: { profile?: { collection_code?: string | null } }) => {
+        if (cancelled) return
         const code = profileData.profile?.collection_code
-        if (code) {
-          const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
-          if (decoded.size > 0) {
-            setOwnedIds(decoded)
-            setHasCollection(true)
-          }
+        if (!code) return
+
+        const data = await loadCollectionData()
+        if (!data || cancelled) {
+          if (!data) profileCollectionLoadedRef.current = false
+          return
+        }
+        const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+        if (decoded.size > 0) {
+          setOwnedIds(decoded)
+          setHasCollection(true)
         }
       })
-      .catch(() => {})
-  }, [authStatus, collectionData])
+      .catch(() => {
+        profileCollectionLoadedRef.current = false
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [authStatus, loadCollectionData])
 
   // 보유 코드 적용
   const applyCollectionCode = useCallback(async (rawInput: string) => {
-    if (!collectionData) return
     setCodeError(false)
     let code = rawInput.trim()
     try {
@@ -276,14 +336,16 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     }
     if (!code) return
     try {
-      const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
+      const data = await loadCollectionData()
+      if (!data) { setCodeError(true); return }
+      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
       if (decoded.size === 0) { setCodeError(true); return }
       setOwnedIds(decoded)
       setHasCollection(true)
     } catch {
       setCodeError(true)
     }
-  }, [collectionData])
+  }, [loadCollectionData])
 
   // 키워드 토글
   const toggleKeyword = useCallback((kw: string) => {
@@ -298,66 +360,75 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   // 항상 전체 테마 키워드 표시
   const availableKeywords = THEME_KEYWORDS as readonly string[]
 
+  const planIndexes = useMemo((): PlanFilterIndex[] => plans.map(plan => ({
+    plan,
+    searchableFields: [
+      plan.title,
+      plan.description ?? '',
+      ...getPlanIdentityNames(plan),
+    ],
+    themeKeywordSet: new Set(getPlanThemeKeywords(plan)),
+    identityIds: (plan.deck ?? [])
+      .map(s => s.identity_id)
+      .filter((id): id is string => Boolean(id)),
+    egoIds: (plan.egos ?? [])
+      .map(e => e.ego_id)
+      .filter((id): id is string => Boolean(id)),
+  })), [plans])
+
+  const activeKeywordList = useMemo(() => Array.from(activeKeywords), [activeKeywords])
+
   // 클라이언트 필터
   const filtered = useMemo(() => {
-    let list = plans
+    let list = planIndexes
 
     // 텍스트 검색: 인격 + 제목 + 설명 (+: OR, *: AND)
     if (debouncedSearch.trim()) {
       const parsed = parseSearchQuery(debouncedSearch)
       if (parsed.terms.length > 0) {
-        list = list.filter(p => {
-          const searchable = [
-            p.title,
-            p.description ?? '',
-            ...getPlanIdentityNames(p),
-          ]
+        list = list.filter(({ searchableFields }) => {
           if (parsed.mode === 'and') {
-            return parsed.terms.every(term => termMatchesAny(term, searchable))
+            return parsed.terms.every(term => termMatchesAny(term, searchableFields))
           } else {
-            return parsed.terms.some(term => termMatchesAny(term, searchable))
+            return parsed.terms.some(term => termMatchesAny(term, searchableFields))
           }
         })
       }
     }
 
     // 키워드 필터
-    if (activeKeywords.size > 0) {
-      const kwArr = Array.from(activeKeywords)
-      list = list.filter(p => {
-        const planKws = new Set(getPlanThemeKeywords(p))
+    if (activeKeywordList.length > 0) {
+      list = list.filter(({ themeKeywordSet }) => {
         if (keywordMode === 'and') {
-          return kwArr.every(kw => planKws.has(kw))
+          return activeKeywordList.every(kw => themeKeywordSet.has(kw))
         } else {
-          return kwArr.some(kw => planKws.has(kw))
+          return activeKeywordList.some(kw => themeKeywordSet.has(kw))
         }
       })
     }
 
     // 보유 인격 필터
     if (filterOwnedIdentity && ownedIds) {
-      list = list.filter(p => {
-        const ids = (p.deck ?? [])
-          .map(s => s.identity_id)
-          .filter((id): id is string => Boolean(id))
-        if (ids.length === 0) return true
-        return ids.every(id => ownedIds.has(id))
+      list = list.filter(({ identityIds }) => {
+        if (identityIds.length === 0) return true
+        return identityIds.every(id => ownedIds.has(id))
       })
     }
 
     // 보유 에고 필터
     if (filterOwnedEgo && ownedIds) {
-      list = list.filter(p => {
-        const egoIds = (p.egos ?? [])
-          .map(e => e.ego_id)
-          .filter((id): id is string => Boolean(id))
+      list = list.filter(({ egoIds }) => {
         if (egoIds.length === 0) return true
         return egoIds.every(id => ownedIds.has(id))
       })
     }
 
-    return list
-  }, [plans, debouncedSearch, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+    return list.map(({ plan }) => plan)
+  }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+
+  const renderedPlanCards = useMemo(() => filtered.map(plan => (
+    <PlanCard key={plan.id} plan={plan} />
+  )), [filtered])
 
   return (
     <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
@@ -743,9 +814,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filtered.map(plan => (
-                <PlanCard key={plan.id} plan={plan} />
-              ))}
+              {renderedPlanCards}
             </div>
 
             {hasMore && !search && activeKeywords.size === 0 && !filterOwnedIdentity && !filterOwnedEgo && (

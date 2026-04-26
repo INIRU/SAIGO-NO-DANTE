@@ -56,7 +56,7 @@ export default function EventTab({
       : `${t('mirrorDungeon.event.fallbackTitle')} #${ev.id}`
   }
 
-  const { filteredEvents, totalCount } = useMemo(() => {
+  const rootEvents = useMemo(() => {
     // events prop includes ALL events (root + variants + children) for FK chain traversal in EventModal.
     // The card grid only shows root events:
     // 1. Hide variant events (variant_of !== null)
@@ -67,18 +67,32 @@ export default function EventTab({
         if (c.next_event_id != null) childEventIds.add(c.next_event_id)
       }
     }
+    const eventIds = new Set(events.map(ev => ev.id))
     // Additional child detection: 8-digit IDs that are children of 6-digit parents
     for (const ev of events) {
       const idStr = String(ev.id)
       if (idStr.length === 8) {
         const parentId = Math.floor(ev.id / 100)
-        if (events.some(e => e.id === parentId)) {
+        if (eventIds.has(parentId)) {
           childEventIds.add(ev.id)
         }
       }
     }
-    const rootEvents = events.filter(ev => ev.variant_of == null && !childEventIds.has(ev.id))
+    return events.filter(ev => ev.variant_of == null && !childEventIds.has(ev.id))
+  }, [events, choicesByEventId])
 
+  const themeOptions = useMemo(() => [
+    { value: '', label: t('mirrorDungeon.event.allThemes') },
+    ...themes
+      .filter(th => !th.is_hidden)
+      .sort((a, b) => a.id - b.id)
+      .map(th => ({
+        value: String(th.id),
+        label: getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang),
+      })),
+  ], [themes, lang])
+
+  const { filteredEvents, totalCount } = useMemo(() => {
     const q = eventSearch.trim().toLowerCase()
     const filtered = q
       ? rootEvents.filter(ev => {
@@ -104,7 +118,7 @@ export default function EventTab({
       : filtered
 
     return { filteredEvents: themeFiltered, totalCount: rootEvents.length }
-  }, [events, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId, lang])
+  }, [rootEvents, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId, lang])
 
   return (
     <>
@@ -169,16 +183,7 @@ export default function EventTab({
         </div>
         <Dropdown
           value={eventThemeFilter}
-          options={[
-            { value: '', label: t('mirrorDungeon.event.allThemes') },
-            ...themes
-              .filter(th => !th.is_hidden)
-              .sort((a, b) => a.id - b.id)
-              .map(th => ({
-                value: String(th.id),
-                label: getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang),
-              })),
-          ]}
+          options={themeOptions}
           onChange={setEventThemeFilter}
           prefix={t('mirrorDungeon.event.themePrefix')}
           defaultValue=""

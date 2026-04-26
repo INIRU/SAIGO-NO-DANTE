@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
@@ -50,21 +50,23 @@ function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] 
   )
 }
 
-export default function PlanCard({ plan }: { plan: PlanSummary }) {
+function PlanCard({ plan }: { plan: PlanSummary }) {
   const { getIconUrl } = useKeywordData()
   const diffConfig = DIFFICULTY_CONFIG[plan.difficulty]
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
   const username = plan.profiles?.username ?? '익명'
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
-  const deckArr = Array.isArray(plan.deck) ? plan.deck : []
-  const sorted = [...deckArr].sort((a, b) => {
-    const ao = a.slot_order ?? 99, bo = b.slot_order ?? 99
-    if (ao === 99 && bo !== 99) return 1
-    if (bo === 99 && ao !== 99) return -1
-    return ao - bo
-  })
-  const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
+  const slots = useMemo(() => {
+    const deckArr = Array.isArray(plan.deck) ? plan.deck : []
+    const sorted = [...deckArr].sort((a, b) => {
+      const ao = a.slot_order ?? 99, bo = b.slot_order ?? 99
+      if (ao === 99 && bo !== 99) return 1
+      if (bo === 99 && ao !== 99) return -1
+      return ao - bo
+    })
+    return Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
+  }, [plan.deck])
 
   // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
   const topKeywords = plan.theme_keywords ?? []
@@ -156,3 +158,5 @@ export default function PlanCard({ plan }: { plan: PlanSummary }) {
     </div>
   )
 }
+
+export default memo(PlanCard)

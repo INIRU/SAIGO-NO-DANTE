@@ -249,55 +249,56 @@ export default function DeckListFilters({
         </button>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--border)', display: showAdvancedFilter ? 'block' : 'none' }}>
-        {/* 태그 필터 */}
-        {allTags.length > 0 && (
-          <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-            <button
-              onClick={onToggleTagFilter}
-              className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
-              style={{ color: activeTags.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
-            >
-              <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showTagFilter ? '▾' : '▸'}</span>
-              태그
-              {activeTags.size > 0 && (
-                <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                  {activeTags.size}
-                </span>
-              )}
-            </button>
-            {showTagFilter && (
-              <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+      {showAdvancedFilter && (
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          {/* 태그 필터 */}
+          {allTags.length > 0 && (
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <button
+                onClick={onToggleTagFilter}
+                className="flex items-center gap-2 w-full px-4 py-2 text-xs transition-colors hover:bg-white/[0.02]"
+                style={{ color: activeTags.size > 0 ? 'var(--gold)' : '#666', fontFamily: 'var(--font-heading)', fontSize: '0.6875rem' }}
+              >
+                <span style={{ fontSize: '0.5rem', opacity: 0.5 }}>{showTagFilter ? '▾' : '▸'}</span>
+                태그
                 {activeTags.size > 0 && (
-                  <button
-                    onClick={onClearTags}
-                    className="px-2.5 py-1 rounded-full text-xs"
-                    style={{ color: '#888', border: '1px solid var(--border)' }}
-                  >
-                    초기화
-                  </button>
+                  <span style={{ background: 'rgba(200,144,10,0.2)', color: 'var(--gold)', padding: '0 0.375rem', borderRadius: '0.5rem', fontSize: '0.625rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {activeTags.size}
+                  </span>
                 )}
-                {allTags.map(tag => {
-                  const isActive = activeTags.has(tag)
-                  return (
+              </button>
+              {showTagFilter && (
+                <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+                  {activeTags.size > 0 && (
                     <button
-                      key={tag}
-                      onClick={() => onToggleTag(tag)}
-                      className="px-3 py-1 rounded-full text-xs transition-all duration-150"
-                      style={{
-                        background: isActive ? 'rgba(200,144,10,0.2)' : 'transparent',
-                        color: isActive ? 'var(--gold)' : '#555566',
-                        border: `1px solid ${isActive ? 'var(--gold-dim)' : 'var(--border)'}`,
-                      }}
+                      onClick={onClearTags}
+                      className="px-2.5 py-1 rounded-full text-xs"
+                      style={{ color: '#888', border: '1px solid var(--border)' }}
                     >
-                      #{tag}
+                      초기화
                     </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
+                  {allTags.map(tag => {
+                    const isActive = activeTags.has(tag)
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => onToggleTag(tag)}
+                        className="px-3 py-1 rounded-full text-xs transition-all duration-150"
+                        style={{
+                          background: isActive ? 'rgba(200,144,10,0.2)' : 'transparent',
+                          color: isActive ? 'var(--gold)' : '#555566',
+                          border: `1px solid ${isActive ? 'var(--gold-dim)' : 'var(--border)'}`,
+                        }}
+                      >
+                        #{tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
         {/* 키워드 필터 */}
         {availableKeywords.length > 0 && (
@@ -478,6 +479,7 @@ export default function DeckListFilters({
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

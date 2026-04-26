@@ -58,17 +58,66 @@ export default function ThemeTab({
     [themes]
   )
 
+  const { themeSearchRows, giftThemeCountByGameId } = useMemo(() => {
+    const themeRows: Array<{ theme: EgoGiftTheme; displayName: string; themeText: string; filterText: string }> = []
+    const giftCounts = new Map<number, number>()
+
+    for (const th of normalThemes) {
+      const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
+      const searchParts = [displayName, th.name]
+      const countedGiftIds = new Set<number>()
+
+      for (const gid of th.ego_gift_ids) {
+        if (!countedGiftIds.has(gid)) {
+          countedGiftIds.add(gid)
+          giftCounts.set(gid, (giftCounts.get(gid) ?? 0) + 1)
+        }
+        const gift = giftByGameId.get(gid)
+        if (!gift) continue
+        searchParts.push(
+          getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
+          gift.name
+        )
+      }
+
+      themeRows.push({
+        theme: th,
+        displayName,
+        themeText: `${displayName}\n${th.name}`.toLowerCase(),
+        filterText: searchParts.join('\n').toLowerCase(),
+      })
+    }
+
+    return { themeSearchRows: themeRows, giftThemeCountByGameId: giftCounts }
+  }, [normalThemes, giftByGameId, lang])
+
+  const themeSearchTextById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const row of themeSearchRows) map.set(row.theme.id, row.filterText)
+    return map
+  }, [themeSearchRows])
+
+  const giftSearchRows = useMemo(() => {
+    return gifts.map(g => {
+      const displayName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
+      return {
+        displayName,
+        searchText: `${displayName}\n${g.name}`.toLowerCase(),
+        themeCount: g.game_id ? giftThemeCountByGameId.get(g.game_id) ?? 0 : 0,
+      }
+    })
+  }, [gifts, giftThemeCountByGameId, lang])
+
   const themeSearchSuggestions = useMemo(() => {
     if (!themeSearch.trim() || themeSearch.trim().length < 1) return []
     const q = themeSearch.trim().toLowerCase()
     const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
-    for (const th of normalThemes) {
-      const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
-      if (displayName.toLowerCase().includes(q) || th.name.toLowerCase().includes(q)) {
+    for (const { theme, displayName, themeText } of themeSearchRows) {
+      if (themeText.includes(q)) {
         const diff =
-          th.difficulty === 'hard'
+          theme.difficulty === 'hard'
             ? ` [${t('mirrorDungeon.tier.hard')}]`
-            : th.difficulty === 'extreme'
+            : theme.difficulty === 'extreme'
             ? ` [${t('mirrorDungeon.tier.extreme')}]`
             : ''
         suggestions.push({ type: 'theme', label: displayName, sub: diff })
@@ -77,23 +126,21 @@ export default function ThemeTab({
     }
     if (suggestions.length < 8) {
       const seen = new Set<string>()
-      for (const g of gifts) {
-        const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-        if ((gName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)) && !seen.has(gName)) {
-          seen.add(gName)
-          const belongThemes = normalThemes.filter(th => g.game_id && th.ego_gift_ids.includes(g.game_id))
-          if (belongThemes.length > 0) {
+      for (const { displayName, searchText, themeCount } of giftSearchRows) {
+        if (searchText.includes(q) && !seen.has(displayName)) {
+          seen.add(displayName)
+          if (themeCount > 0) {
             const countLabel = lang === 'ko'
-              ? `${belongThemes.length}개 ${t('mirrorDungeon.theme.autocompleteTheme')}`
-              : `${belongThemes.length} ${t('mirrorDungeon.theme.autocompleteTheme')}`
-            suggestions.push({ type: 'gift', label: gName, sub: countLabel })
+              ? `${themeCount}개 ${t('mirrorDungeon.theme.autocompleteTheme')}`
+              : `${themeCount} ${t('mirrorDungeon.theme.autocompleteTheme')}`
+            suggestions.push({ type: 'gift', label: displayName, sub: countLabel })
           }
           if (suggestions.length >= 8) break
         }
       }
     }
     return suggestions
-  }, [themeSearch, normalThemes, gifts, lang])
+  }, [themeSearch, themeSearchRows, giftSearchRows, lang])
 
   const filteredThemes = useMemo(() => {
     let result = normalThemes
@@ -104,18 +151,11 @@ export default function ThemeTab({
     if (themeSearch.trim()) {
       const q = themeSearch.trim().toLowerCase()
       result = result.filter(th => {
-        const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
-        if (displayName.toLowerCase().includes(q) || th.name.toLowerCase().includes(q)) return true
-        return th.ego_gift_ids.some(gid => {
-          const g = giftByGameId.get(gid)
-          if (!g) return false
-          const gName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-          return gName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)
-        })
+        return themeSearchTextById.get(th.id)?.includes(q) ?? false
       })
     }
     return result
-  }, [normalThemes, themeSearch, themeDiffFilter, giftByGameId, lang])
+  }, [normalThemes, themeSearch, themeDiffFilter, themeSearchTextById])
 
   const floorGroupedThemes = useMemo(() => {
     const floorKeys: string[] =

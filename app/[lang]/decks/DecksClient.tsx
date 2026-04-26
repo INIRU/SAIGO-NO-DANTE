@@ -18,6 +18,7 @@ import { useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 const PAGE_SIZE = 12
+const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 
 type SortKey = 'latest' | 'popular'
 type IdentityNameEntry = {
@@ -29,36 +30,50 @@ type IdentityNameEntry = {
 
 const KEYWORD_THRESHOLD = 5
 
-function getDeckThemeKeywords(deck: DeckSummary): string[] {
+type DeckDerivedIndex = {
+  searchValues: string[]
+  themeKeywords: string[]
+  identityIds: string[]
+  egoIds: string[]
+}
+
+function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
   const freq: Record<string, number> = {}
+  const allKeywords = new Set<string>()
+  const identityNames: string[] = []
+  const identityIds: string[] = []
+
   for (const slot of deck.deck_identities ?? []) {
+    const identity = slot?.identities
+    if (identity?.name_kr) identityNames.push(identity.name_kr)
+    if (identity?.id) identityIds.push(identity.id)
+
     for (const kw of slot?.identities?.keywords ?? []) {
+      allKeywords.add(kw)
       const normalized = normalizeThemeKeyword(kw)
-      if ((THEME_KEYWORDS as readonly string[]).includes(normalized)) {
+      if (THEME_KEYWORD_SET.has(normalized)) {
         freq[normalized] = (freq[normalized] ?? 0) + 1
       }
     }
   }
-  return Object.entries(freq)
+
+  const themeKeywords = Object.entries(freq)
     .filter(([, n]) => n >= KEYWORD_THRESHOLD)
     .sort((a, b) => b[1] - a[1])
     .map(([kw]) => kw)
-}
 
-function getDeckAllKeywords(deck: DeckSummary): string[] {
-  const kws = new Set<string>()
-  for (const slot of deck.deck_identities ?? []) {
-    for (const kw of slot?.identities?.keywords ?? []) {
-      kws.add(kw)
-    }
+  return {
+    searchValues: [
+      deck.title,
+      deck.description ?? '',
+      ...deck.tags,
+      ...allKeywords,
+      ...identityNames,
+    ],
+    themeKeywords,
+    identityIds,
+    egoIds: (deck.deck_egos ?? []).map(e => e.ego_id),
   }
-  return [...kws]
-}
-
-function getDeckIdentityNames(deck: DeckSummary): string[] {
-  return (deck.deck_identities ?? [])
-    .map(s => s.identities?.name_kr)
-    .filter((n): n is string => Boolean(n))
 }
 
 function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
@@ -349,26 +364,32 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   }, [])
 
   // ── Derived filter data ──
-  const allTags = useMemo(() => {
-    const freq: Record<string, number> = {}
+  const deckDerived = useMemo(() => {
+    const byId = new Map<string, DeckDerivedIndex>()
+    const tagFreq: Record<string, number> = {}
+    const themeKeywordSet = new Set<string>()
+
     for (const d of decks) {
+      const index = buildDeckDerivedIndex(d)
+      byId.set(d.id, index)
+      for (const kw of index.themeKeywords) themeKeywordSet.add(kw)
       for (const t of d.tags ?? []) {
-        freq[t] = (freq[t] ?? 0) + 1
+        tagFreq[t] = (tagFreq[t] ?? 0) + 1
       }
     }
-    return Object.entries(freq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .map(([tag]) => tag)
+
+    return {
+      byId,
+      allTags: Object.entries(tagFreq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([tag]) => tag),
+      availableKeywords: THEME_KEYWORDS.filter(kw => themeKeywordSet.has(kw)),
+    }
   }, [decks])
 
-  const availableKeywords = useMemo(() => {
-    const found = new Set<string>()
-    for (const d of decks) {
-      for (const kw of getDeckThemeKeywords(d)) found.add(kw)
-    }
-    return THEME_KEYWORDS.filter(kw => found.has(kw))
-  }, [decks])
+  const allTags = deckDerived.allTags
+  const availableKeywords = deckDerived.availableKeywords
 
   // ── Filter application ──
   const filtered = useMemo(() => {
@@ -382,13 +403,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
       const parsed = parseSearchQuery(debouncedSearch)
       if (parsed.terms.length > 0) {
         list = list.filter(d => {
-          const searchable = [
-            d.title,
-            d.description ?? '',
-            ...d.tags,
-            ...getDeckAllKeywords(d),
-            ...getDeckIdentityNames(d),
-          ]
+          const searchable = deckDerived.byId.get(d.id)?.searchValues ?? []
           return parsed.mode === 'and'
             ? parsed.terms.every(term => termMatchesAny(term, searchable))
             : parsed.terms.some(term => termMatchesAny(term, searchable))
@@ -407,7 +422,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
 
     if (activeKeywords.size > 0) {
       list = list.filter(d => {
-        const deckKws = getDeckThemeKeywords(d)
+        const deckKws = deckDerived.byId.get(d.id)?.themeKeywords ?? []
         if (keywordMode === 'and') {
           for (const kw of activeKeywords) {
             if (!deckKws.includes(kw)) return false
@@ -424,22 +439,20 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
 
     if (filterOwnedIdentity && ownedIds) {
       list = list.filter(d => {
-        const ids = (d.deck_identities ?? [])
-          .map(s => s.identities?.id)
-          .filter((id): id is string => Boolean(id))
+        const ids = deckDerived.byId.get(d.id)?.identityIds ?? []
         return ids.length === 0 || ids.every(id => ownedIds.has(id))
       })
     }
 
     if (filterOwnedEgo && ownedIds) {
       list = list.filter(d => {
-        const egoIds = (d.deck_egos ?? []).map(e => e.ego_id)
+        const egoIds = deckDerived.byId.get(d.id)?.egoIds ?? []
         return egoIds.length === 0 || egoIds.every(id => ownedIds.has(id))
       })
     }
 
     return list
-  }, [decks, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, deckDerived, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo)
   const advancedFilterCount = activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)

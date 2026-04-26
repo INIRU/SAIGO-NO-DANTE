@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { AlertTriangle, Calculator, RotateCcw } from 'lucide-react'
 import { TIERS, type Tier } from '@/lib/tier-list/tierModel'
 import type { TierIdentity } from './TierCardInteractive'
@@ -511,18 +511,23 @@ export default function TierListInteractive({
   const motionKey = useMemo(() => `${category}:${period}`, [category, period])
   const diagnosisEnabled = category === 'reroll'
   const diagnosisResult = useMemo(
-    () => buildDiagnosisResult(tiers, selectedDiagnosisIds, locale),
-    [locale, selectedDiagnosisIds, tiers],
+    () => diagnosisEnabled ? buildDiagnosisResult(tiers, selectedDiagnosisIds, locale) : null,
+    [diagnosisEnabled, locale, selectedDiagnosisIds, tiers],
   )
-  const toggleDiagnosisIdentity = (identityId: string) => {
+  const toggleDiagnosisIdentity = useCallback((identityId: string) => {
     setSelectedDiagnosisIds(prev => {
       const next = new Set(prev)
       if (next.has(identityId)) next.delete(identityId)
       else next.add(identityId)
       return next
     })
-  }
-  const resetDiagnosis = () => setSelectedDiagnosisIds(new Set())
+  }, [])
+  const toggleDiagnosisMode = useCallback(() => {
+    setDiagnosisMode(value => !value)
+  }, [])
+  const resetDiagnosis = useCallback(() => {
+    setSelectedDiagnosisIds(new Set())
+  }, [])
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -633,11 +638,11 @@ export default function TierListInteractive({
           </div>
         ) : (
           <>
-            {diagnosisEnabled && (
+            {diagnosisEnabled && diagnosisResult && (
               <RerollDiagnosisPanel
                 result={diagnosisResult}
                 diagnosisMode={diagnosisMode}
-                onToggleMode={() => setDiagnosisMode(value => !value)}
+                onToggleMode={toggleDiagnosisMode}
                 onReset={resetDiagnosis}
               />
             )}
