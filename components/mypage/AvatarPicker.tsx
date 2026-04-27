@@ -127,16 +127,18 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
             <button
               key={s.id}
               onClick={() => setSelectedSinner(s.id)}
-              className="flex-shrink-0 transition-all duration-150"
+              className="flex flex-shrink-0 items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-[0.125rem] focus-visible:ring-[var(--gold)] focus-visible:ring-offset-[0.125rem] focus-visible:ring-offset-[#1a1510]"
               title={s.name_kr}
+              aria-pressed={selectedSinner === s.id}
               style={{
                 width: '2.25rem',
                 height: '2.25rem',
                 borderRadius: '50%',
-                border: selectedSinner === s.id ? '2px solid var(--gold)' : '2px solid transparent',
+                border: selectedSinner === s.id ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
                 background: selectedSinner === s.id ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.03)',
                 cursor: 'pointer',
-                padding: '0.1875rem',
+                overflow: 'hidden',
+                padding: '0.25rem',
               }}
             >
               <Image
@@ -144,7 +146,15 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                 alt={s.name_kr}
                 width={28}
                 height={28}
-                style={{ width: 'auto', height: 'auto', maxHeight: '3rem', maxWidth: '3rem', borderRadius: '50%' }}
+                style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  borderRadius: '50%',
+                }}
               />
             </button>
           ))}

@@ -14,7 +14,7 @@ import http from 'http'
 
 const env = process.env
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = env.SUPABASE_SECRET_KEY
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing SUPABASE env vars')

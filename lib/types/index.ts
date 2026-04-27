@@ -178,6 +178,7 @@ export type EGO = {
   obtaining_method: string | null
   cor_image_url: string | null
   game_id: string | null
+  release_date?: string | null
 }
 
 export type IdentityWithSinner = Identity & { sinner: Sinner }

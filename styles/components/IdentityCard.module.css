@@ -1,6 +1,9 @@
 /* ── IdentityCard ──────────────────────────────────────── */
 
 .card {
+  --identity-badge-logo-padding: calc(var(--identity-badge-size) * 0.205);
+  --identity-badge-offset: calc(var(--identity-badge-size) * -0.26);
+  --identity-badge-size: clamp(3rem, 34%, 3.4rem);
   position: relative;
   background: transparent;
   border: none;
@@ -13,6 +16,7 @@
 }
 
 .card.compact {
+  --identity-badge-size: clamp(2.55rem, 36%, 3rem);
   max-width: 7.75rem;
 }
 
@@ -91,10 +95,10 @@
 
 .sinnerBadge {
   position: absolute;
-  top: -0.78rem;
-  right: -0.78rem;
+  top: var(--identity-badge-offset);
+  right: var(--identity-badge-offset);
   z-index: 13;
-  width: 3rem;
+  width: var(--identity-badge-size);
   aspect-ratio: 1;
   pointer-events: none;
   border-radius: 50%;
@@ -110,7 +114,7 @@
 
 .sinnerBadgeLogo {
   z-index: 3;
-  padding: 0.62rem;
+  padding: var(--identity-badge-logo-padding);
   opacity: 1;
   filter: drop-shadow(0 0.0625rem 0.0625rem rgba(0, 0, 0, 0.85));
 }
@@ -134,10 +138,12 @@
 
 @media (max-width: 640px) {
   .card {
+    --identity-badge-size: clamp(2.35rem, 34%, 2.85rem);
     max-width: 7.25rem;
   }
 
   .card.compact {
+    --identity-badge-size: clamp(2.15rem, 37%, 2.55rem);
     max-width: 6.25rem;
   }
 
@@ -156,15 +162,6 @@
     transform-origin: top left;
   }
 
-  .sinnerBadge {
-    top: -0.62rem;
-    right: -0.62rem;
-    width: 2.25rem;
-  }
-
-  .sinnerBadgeLogo {
-    padding: 0.49rem;
-  }
 }
 
 .name[data-locale='ko'] {
@@ -186,6 +183,13 @@
 .card.compact .name[data-locale='ja'] {
   left: 10%;
   right: 6%;
+}
+
+.card.compact .name[data-locale='ko'] {
+  left: 12%;
+  right: 6%;
+  font-size: 0.8125rem;
+  line-height: 1.12;
 }
 
 .card.compact .name[data-locale='en'] {

@@ -25,6 +25,9 @@ const HANGUL_RE = /[\uac00-\ud7a3]/
 const SINGLE_HANGUL_RE = /^[\uac00-\ud7a3]$/
 const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3]/
 const EGO_FRAGMENT_RE = /(?:^|[^A-Za-z])E\.?G?\.?O?[:：]*$/i
+const BROKEN_EGO_PREFIX_RE = /^(?:G\.O|G\.|O)(?:[:：]{1,2}|$)/i
+const EGO_ACRONYM_RE = /E\.?G\.?O(?::[:：])?/ig
+const LEADING_PARTICLE_RE = /^[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3]?(?:의|와|과|을|를|이|가|은|는|へ|を|が|は|に|の|と|も|で)(?:\s|$)/
 const TITLE_SUFFIX_RE = /^(?:대표|해결사|대행|아비)$/
 const COMPACT_DETERMINISTIC_LINE_UNITS = 6.1
 const REGULAR_DETERMINISTIC_LINE_UNITS = 9.4
@@ -77,8 +80,9 @@ function parseLetterSpacing(style: CSSStyleDeclaration) {
 }
 
 function getMeasuredLineLimit(maxWidth: number, locale: string, letterSpacing: number) {
-  if (locale !== 'en') return maxWidth + 1
-  return maxWidth - Math.max(2, letterSpacing * 3)
+  const bufferedWidth = Math.max(1, maxWidth - 4)
+  if (locale !== 'en') return bufferedWidth
+  return bufferedWidth - Math.max(2, letterSpacing * 3)
 }
 
 function getSemanticBreakpoints(value: string, locale: string) {
@@ -98,6 +102,10 @@ function getSemanticBreakpoints(value: string, locale: string) {
   }
 
   for (const match of value.matchAll(/[:：]{2,}/g)) {
+    if (match.index !== undefined) breaks.add(match.index + match[0].length)
+  }
+
+  for (const match of value.matchAll(EGO_ACRONYM_RE)) {
     if (match.index !== undefined) breaks.add(match.index + match[0].length)
   }
 
@@ -152,6 +160,24 @@ function buildBreakpointCombinations(breakpoints: number[], count: number, start
 function buildNameLineCandidates(value: string, maxLines: number, locale: string) {
   const breakpoints = getSemanticBreakpoints(value, locale)
   const candidates: string[][] = [[value.trim()]]
+  const egoTokenMatch = value.match(/^(.*?\bE\.?G\.?O[:：]{2})(.+)$/i)
+
+  if (egoTokenMatch && maxLines >= 2) {
+    const prefix = egoTokenMatch[1].trim()
+    const rest = egoTokenMatch[2].trim()
+    candidates.push([prefix, rest])
+
+    if (maxLines >= 3) {
+      const restBreakpoints = getSemanticBreakpoints(rest, locale)
+      for (const breakpoint of restBreakpoints) {
+        candidates.push([
+          prefix,
+          rest.slice(0, breakpoint).trim(),
+          rest.slice(breakpoint).trim(),
+        ])
+      }
+    }
+  }
 
   for (let lineCount = 2; lineCount <= maxLines; lineCount++) {
     for (const selectedBreakpoints of buildBreakpointCombinations(breakpoints, lineCount - 1)) {
@@ -169,6 +195,18 @@ function buildNameLineCandidates(value: string, maxLines: number, locale: string
     if (seen.has(key)) return false
     seen.add(key)
     return true
+  })
+}
+
+function hasBrokenProtectedNameLines(lines: string[]) {
+  return lines.some(line => {
+    const compact = line.replace(/\s+/g, '')
+    return (
+      BROKEN_EGO_PREFIX_RE.test(compact) ||
+      /E\.G\.$|E\.G$|E\.$/i.test(compact) ||
+      LEADING_PARTICLE_RE.test(line.trim()) ||
+      /^[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3]$/.test(compact)
+    )
   })
 }
 
@@ -200,9 +238,11 @@ function scoreNameLines(lines: string[], widths: number[], maxWidth: number) {
   lines.forEach((line, index) => {
     const compact = line.replace(/\s+/g, '')
     if (SINGLE_HANGUL_RE.test(compact)) score += 140
+    if (LEADING_PARTICLE_RE.test(line.trim())) score += 180
     if (/^[)\]】」』,.:;:：-]/.test(compact)) score += 45
     if (/^[\u3040-\u30ff][【「『（(\[]/.test(compact)) score += 100
-    if (/^(?:G\.O|G\.|O)(?:[:：]|$)/i.test(compact)) score += 120
+    if (BROKEN_EGO_PREFIX_RE.test(compact)) score += 240
+    if (/E\.G\.$|E\.G$|E\.$/i.test(compact)) score += 240
     if (/[A-Za-z]-$/.test(compact)) score += 90
     if (EGO_FRAGMENT_RE.test(compact) && !/E\.G\.O[:：]{2}$/i.test(compact)) score += 90
     if (index < lines.length - 1 && /E\.G\.$|E\.G\.O?$/i.test(compact)) score += 90
@@ -281,10 +321,14 @@ function chooseMeasuredNameLines(value: string, maxWidth: number, font: string, 
   }
 
   const measureLine = (line: string) => {
+    const canvasWidth = measureCanvasTextWidth(line, font, letterSpacing)
     const prepared = prepareWithSegments(line, font)
     const result = layoutWithLines(prepared, maxWidth, lineHeight)
-    if (result.lineCount !== 1 || result.lines.length !== 1) return null
-    return getTextWidthWithLetterSpacing(result.lines[0].width, line, letterSpacing)
+    if (result.lineCount !== 1 || result.lines.length !== 1) {
+      return canvasWidth !== null && canvasWidth <= lineLimit ? canvasWidth : null
+    }
+    const pretextWidth = getTextWidthWithLetterSpacing(result.lines[0].width, line, letterSpacing)
+    return Math.max(pretextWidth, canvasWidth ?? 0)
   }
 
   const singleLineWidth = measureLine(normalizedValue)
@@ -329,7 +373,7 @@ function chooseMeasuredNameLines(value: string, maxWidth: number, font: string, 
       return width !== null && width <= lineLimit
     })
 
-    if (fallbackLines.length > 0 && fits) return fallbackLines
+    if (fallbackLines.length > 0 && fits && !hasBrokenProtectedNameLines(fallbackLines)) return fallbackLines
 
     fallbackMaxWidth = Math.max(maxWidth * 0.72, fallbackMaxWidth - Math.max(2, letterSpacing * 6))
   }
@@ -524,14 +568,14 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             alt=""
             fill
             className={styles.sinnerBadgeLogo}
-            sizes="3rem"
+            sizes="(max-width: 640px) 2.55rem, 3.4rem"
           />
           <Image
             src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
             alt=""
             fill
             className={styles.sinnerBadgeRing}
-            sizes="3rem"
+            sizes="(max-width: 640px) 2.55rem, 3.4rem"
           />
         </div>
 

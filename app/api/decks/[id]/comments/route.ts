@@ -5,6 +5,7 @@ import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 
 export async function GET(
@@ -55,6 +56,13 @@ export async function POST(
     const activeUser = await requireActiveUser()
     if (activeUser.error) return activeUser.response
     const { session } = activeUser
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'comment',
+      scope: 'deck-comments:create',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const body = await request.json()
     const content = (body.content as string ?? '').trim()
@@ -123,6 +131,13 @@ export async function DELETE(
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
     const { session } = auth
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'comment',
+      scope: 'deck-comments:delete',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(

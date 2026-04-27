@@ -26,6 +26,7 @@ interface EGO {
   name: string
   name_kr: string | null
   grade: string
+  release_date: string | null
   sin_affinity: string | null
   description: string | null
   corrosion_risk: string | null
@@ -181,6 +182,7 @@ export default function EditEGOPage() {
     name: '',
     name_kr: '',
     grade: 'ZAYIN',
+    release_date: '',
     sin_affinity: '',
     description: '',
     corrosion_risk: '',
@@ -218,6 +220,7 @@ export default function EditEGOPage() {
           name: ego.name ?? '',
           name_kr: ego.name_kr ?? '',
           grade: ego.grade ?? 'ZAYIN',
+          release_date: ego.release_date ?? '',
           sin_affinity: ego.sin_affinity ?? '',
           description: ego.description ?? '',
           corrosion_risk: ego.corrosion_risk ?? '',
@@ -244,6 +247,7 @@ export default function EditEGOPage() {
         ...form,
         sin_affinity: form.sin_affinity || null,
         name_kr: form.name_kr || null,
+        release_date: form.release_date || null,
         description: form.description || null,
         corrosion_risk: form.corrosion_risk || null,
         folder_name: form.folder_name || null,
@@ -404,6 +408,12 @@ export default function EditEGOPage() {
             onChange={v => setForm(f => ({ ...f, sin_affinity: v }))}
             options={SINS.map(s => ({ value: s, label: s }))}
             placeholder="-- 없음 --"
+          />
+          <AdminInput
+            label="출시일"
+            value={form.release_date ?? ''}
+            onChange={v => setForm(f => ({ ...f, release_date: v }))}
+            placeholder="YYYY-MM-DD"
           />
           <AdminSelect
             label="부식 위험도"

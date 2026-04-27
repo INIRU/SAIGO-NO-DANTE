@@ -1,17 +1,12 @@
 -- supabase/grant-limbus.sql
--- Supabase SQL Editor에서 실행하세요.
--- limbus 스키마에 anon / authenticated / service_role 권한을 부여합니다.
+-- QUARANTINED: this file used to grant blanket public privileges.
+--
+-- Do not use this file to widen anon/authenticated access. Public access must be
+-- granted through reviewed, table-specific RLS policies and least-privilege
+-- column grants in migrations/spec-approved SQL.
+--
+-- This script is intentionally a safe no-op so accidental execution cannot
+-- grant ALL on limbus tables, sequences, routines, or future default
+-- privileges.
 
-GRANT USAGE ON SCHEMA limbus TO anon, authenticated, service_role;
-
-GRANT ALL ON ALL TABLES     IN SCHEMA limbus TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES  IN SCHEMA limbus TO anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES   IN SCHEMA limbus TO anon, authenticated, service_role;
-
--- 이후 생성되는 테이블/시퀀스/함수에도 자동 적용
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA limbus
-  GRANT ALL ON TABLES    TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA limbus
-  GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA limbus
-  GRANT ALL ON ROUTINES  TO anon, authenticated, service_role;
+SELECT 'grant-limbus.sql is quarantined; use reviewed least-privilege migrations instead.' AS status;

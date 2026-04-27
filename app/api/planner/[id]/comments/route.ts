@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 
 // GET /api/planner/[id]/comments — 댓글 목록
@@ -34,6 +35,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
     const { session } = auth
+
+    const rateLimit = checkRequestRateLimit(req, {
+      bucket: 'comment',
+      scope: 'planner-comments:create',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)

@@ -6,9 +6,12 @@ export async function writeAuditLog(params: {
   targetType?: string
   targetId?: string
   details?: Record<string, unknown>
+  severity?: 'info' | 'warning' | 'danger' | 'success'
+  ip?: string | null
+  country?: string | null
 }) {
   const admin = createAdminClient()
-  await admin
+  const { error } = await admin
     .schema('limbus')
     .from('audit_logs')
     .insert({
@@ -17,5 +20,10 @@ export async function writeAuditLog(params: {
       target_type: params.targetType ?? null,
       target_id: params.targetId ?? null,
       details: params.details ?? {},
+      severity: params.severity ?? 'info',
+      ip: params.ip ?? null,
+      country: params.country ?? null,
     })
+
+  return { error }
 }

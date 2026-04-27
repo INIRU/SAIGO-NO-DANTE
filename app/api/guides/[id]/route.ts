@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireActiveUser, requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
@@ -12,7 +11,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const activeUser = await requireActiveUser()
+    if (activeUser.error) return activeUser.response
+
+    const { session } = activeUser
     if (!session?.user?.isWanjang && !session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
@@ -77,10 +79,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    const adminAuth = await requireAdmin()
+    if (adminAuth.error) return adminAuth.response
+
+    const { session } = adminAuth
 
     const { id } = await params
     const admin = createAdminClient()

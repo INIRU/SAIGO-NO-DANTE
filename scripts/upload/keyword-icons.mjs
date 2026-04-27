@@ -2,9 +2,16 @@ import { createClient } from '@supabase/supabase-js'
 import https from 'https'
 import http from 'http'
 
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY
+
+if (!SUPABASE_KEY) {
+  console.error('Missing SUPABASE_SECRET_KEY')
+  process.exit(1)
+}
+
 const sb = createClient(
   'https://lpgqcleszdlldneiwgep.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'REMOVED'
+  SUPABASE_KEY
 )
 
 // ── Korean → English keyword mapping ──

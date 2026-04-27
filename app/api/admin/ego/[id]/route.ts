@@ -4,6 +4,14 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateBody, updateEgoSchema } from '@/lib/schemas/admin'
 
+function isMissingReleaseDateColumn(error: { code?: string; message?: string }) {
+  return error.code === '42703' && (error.message ?? '').includes('release_date')
+}
+
+function omitReleaseDate<T extends { release_date?: string | null }>(body: T) {
+  const { release_date: _releaseDate, ...rest } = body
+  return rest
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -47,13 +55,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!parsed.success) return parsed.response
     const supabase = createAdminClient()
 
-    const { data: ego, error } = await supabase
+    let result = await supabase
       .schema('limbus')
       .from('ego')
       .update(parsed.data)
       .eq('id', id)
       .select()
       .single()
+
+    if (
+      result.error &&
+      isMissingReleaseDateColumn(result.error) &&
+      (parsed.data.release_date === null || parsed.data.release_date === undefined)
+    ) {
+      result = await supabase
+        .schema('limbus')
+        .from('ego')
+        .update(omitReleaseDate(parsed.data))
+        .eq('id', id)
+        .select()
+        .single()
+    }
+
+    const { data: ego, error } = result
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

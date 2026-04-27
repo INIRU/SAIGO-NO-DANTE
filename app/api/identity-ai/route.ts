@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { streamText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireActiveUser } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 export const maxDuration = 60
@@ -176,10 +175,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
   // 인증 확인
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-  }
+  const activeUser = await requireActiveUser()
+  if (activeUser.error) return activeUser.response
 
   // Rate limit (per IP)
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? 'unknown'
