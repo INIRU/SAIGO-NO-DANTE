@@ -9,9 +9,18 @@ interface AdminCardProps {
 
 export function AdminCard({ title, children, style, headerRight }: AdminCardProps) {
   return (
-    <div className="card" style={{ padding: '24px', marginBottom: '24px', ...style }}>
+    <div
+      className="card"
+      style={{
+        padding: '1.25rem',
+        marginBottom: '1.25rem',
+        borderColor: 'rgba(200,144,10,0.16)',
+        background: 'rgba(26,21,16,0.72)',
+        ...style,
+      }}
+    >
       {title && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <h2 className="font-serif" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 'bold' }}>
             {title}
           </h2>

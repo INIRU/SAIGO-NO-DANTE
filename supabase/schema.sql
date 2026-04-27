@@ -61,17 +61,25 @@ CREATE TABLE IF NOT EXISTS limbus.ego (
   description     TEXT,
   corrosion_risk  TEXT,
   folder_name     TEXT,            -- 로컬 폴더명 (이미지 경로)
-  image_url       TEXT             -- awaken_profile.webp 전체 URL
+  image_url       TEXT,            -- awaken_profile.webp 전체 URL
+  release_date    TEXT             -- YYYY-MM-DD, sourced from game JSON updatedDate
 );
 
 -- ⑥ 유저 프로필 (auth.users 확장)
 CREATE TABLE IF NOT EXISTS limbus.profiles (
-  id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username   TEXT UNIQUE,
-  avatar_url TEXT,
-  role       TEXT DEFAULT 'user',
-  suspended  BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT now()
+  id                UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username          TEXT UNIQUE,
+  avatar_url        TEXT,
+  role              TEXT DEFAULT 'user',
+  suspended         BOOLEAN DEFAULT FALSE,
+  suspension_reason TEXT,
+  suspended_until   TIMESTAMPTZ,
+  suspended_at      TIMESTAMPTZ,
+  suspended_by      UUID REFERENCES limbus.profiles(id) ON DELETE SET NULL,
+  last_seen_at      TIMESTAMPTZ,
+  last_ip           TEXT,
+  last_country      TEXT,
+  created_at        TIMESTAMPTZ DEFAULT now()
 );
 
 -- ⑦ 덱
@@ -173,14 +181,115 @@ $$ LANGUAGE sql SECURITY DEFINER;
 -- 이메일로 유저 정지 상태 조회
 CREATE OR REPLACE FUNCTION limbus.is_user_suspended(user_email TEXT)
 RETURNS BOOLEAN AS $$
-  SELECT COALESCE(p.suspended, FALSE)
+  SELECT COALESCE(
+    (
+      p.suspended IS TRUE
+      AND (p.suspended_until IS NULL OR p.suspended_until > now())
+    ),
+    FALSE
+  )
   FROM limbus.profiles p
   JOIN auth.users u ON p.id = u.id
   WHERE u.email = user_email
   LIMIT 1;
 $$ LANGUAGE sql SECURITY DEFINER;
 
--- ⑩ 공지사항
+CREATE OR REPLACE FUNCTION limbus.expire_suspensions()
+RETURNS INTEGER AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  WITH expired AS (
+    SELECT
+      id,
+      username,
+      suspension_reason,
+      suspended_until,
+      suspended_at,
+      suspended_by
+    FROM limbus.profiles
+    WHERE suspended IS TRUE
+      AND suspended_until IS NOT NULL
+      AND suspended_until <= now()
+    FOR UPDATE SKIP LOCKED
+  ),
+  audit_rows AS (
+    INSERT INTO limbus.audit_logs (
+      actor_id,
+      action,
+      target_type,
+      target_id,
+      details,
+      severity,
+      created_at
+    )
+    SELECT
+      NULL,
+      'suspension_expired',
+      'user',
+      expired.id::TEXT,
+      jsonb_build_object(
+        'username', expired.username,
+        'reason', expired.suspension_reason,
+        'suspended_until', expired.suspended_until,
+        'suspended_at', expired.suspended_at,
+        'suspended_by', expired.suspended_by
+      ),
+      'info',
+      now()
+    FROM expired
+    RETURNING target_id::UUID AS profile_id
+  ),
+  updated AS (
+    UPDATE limbus.profiles profiles
+    SET
+      suspended = FALSE,
+      suspension_reason = NULL,
+      suspended_until = NULL,
+      suspended_at = NULL,
+      suspended_by = NULL
+    FROM audit_rows
+    WHERE profiles.id = audit_rows.profile_id
+    RETURNING profiles.id
+  )
+  SELECT count(*) INTO expired_count FROM updated;
+
+  RETURN expired_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = limbus, public;
+
+CREATE OR REPLACE FUNCTION limbus.record_profile_activity(
+  user_email TEXT,
+  request_ip TEXT DEFAULT NULL,
+  request_country TEXT DEFAULT NULL
+)
+RETURNS UUID AS $$
+  UPDATE limbus.profiles p
+  SET
+    last_seen_at = now(),
+    last_ip = COALESCE(NULLIF(request_ip, ''), p.last_ip),
+    last_country = COALESCE(NULLIF(upper(request_country), ''), p.last_country)
+  FROM auth.users u
+  WHERE p.id = u.id
+    AND u.email = user_email
+  RETURNING p.id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ⑩ 감사 로그
+CREATE TABLE IF NOT EXISTS limbus.audit_logs (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id    UUID REFERENCES limbus.profiles(id),
+  action      TEXT NOT NULL,
+  target_type TEXT,
+  target_id   TEXT,
+  details     JSONB DEFAULT '{}',
+  severity    TEXT DEFAULT 'info',
+  ip          TEXT,
+  country     TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- ⑪ 공지사항
 CREATE TABLE IF NOT EXISTS limbus.announcements (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title       TEXT NOT NULL,
@@ -194,7 +303,7 @@ CREATE TRIGGER announcements_updated_at
   BEFORE UPDATE ON limbus.announcements
   FOR EACH ROW EXECUTE FUNCTION limbus.update_updated_at();
 
--- ⑪ 덱 북마크
+-- ⑫ 덱 북마크
 CREATE TABLE IF NOT EXISTS limbus.deck_bookmarks (
   deck_id    UUID REFERENCES limbus.decks(id) ON DELETE CASCADE,
   user_id    UUID REFERENCES limbus.profiles(id) ON DELETE CASCADE,
@@ -202,7 +311,7 @@ CREATE TABLE IF NOT EXISTS limbus.deck_bookmarks (
   PRIMARY KEY (deck_id, user_id)
 );
 
--- ⑫ 덱 댓글
+-- ⑬ 덱 댓글
 CREATE TABLE IF NOT EXISTS limbus.deck_comments (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deck_id    UUID REFERENCES limbus.decks(id) ON DELETE CASCADE,
@@ -233,6 +342,7 @@ ALTER TABLE limbus.deck_votes    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE limbus.sinners       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE limbus.identities    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE limbus.ego           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE limbus.audit_logs    ENABLE ROW LEVEL SECURITY;
 
 -- 게임 데이터: 누구나 읽기
 CREATE POLICY "sinners_select"    ON limbus.sinners    FOR SELECT USING (true);
@@ -254,6 +364,11 @@ CREATE POLICY "votes_select" ON limbus.deck_votes FOR SELECT USING (true);
 CREATE POLICY "votes_insert" ON limbus.deck_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "votes_delete" ON limbus.deck_votes FOR DELETE USING (auth.uid() = user_id);
 
+-- 감사 로그: 관리자/완장 활동 기록은 서버/API에서만 조회
+CREATE POLICY "audit_logs_select" ON limbus.audit_logs FOR SELECT USING (
+  limbus.get_user_role((SELECT email FROM auth.users WHERE id = auth.uid())) IN ('admin', 'wanjang')
+);
+
 -- 북마크: 누구나 읽기, 로그인 유저만 추가/삭제
 ALTER TABLE limbus.deck_bookmarks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "bookmarks_select" ON limbus.deck_bookmarks FOR SELECT USING (true);
@@ -269,3 +384,10 @@ CREATE POLICY "comments_delete" ON limbus.deck_comments FOR DELETE USING (auth.u
 -- 공지사항: 누구나 읽기
 ALTER TABLE limbus.announcements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "announcements_select" ON limbus.announcements FOR SELECT USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_last_seen_at ON limbus.profiles (last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_suspended_until ON limbus.profiles (suspended_until);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON limbus.audit_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON limbus.audit_logs (action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_severity ON limbus.audit_logs (severity);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_target ON limbus.audit_logs (target_type, target_id);

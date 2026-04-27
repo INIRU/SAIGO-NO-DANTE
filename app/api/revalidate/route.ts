@@ -10,7 +10,8 @@ import { revalidateBodySchema, type RevalidateScope } from '@/lib/schemas/revali
 //   - `paths` : string[] — revalidatePath targets (backward compat)
 //   - `scope` : 'all-game-data' | 'announcements' — predefined bundles
 //
-// Auth: `?secret=...` query param matches REVALIDATION_SECRET env.
+// Auth: `x-revalidation-secret: ...` or `Authorization: Bearer ...`
+// header matches REVALIDATION_SECRET env. Query-string secrets are rejected.
 // Called by:
 //   - 목요일 sync 스크립트 (scope: 'all-game-data')
 //   - admin 공지 수정 훅 (scope: 'announcements')
@@ -22,12 +23,29 @@ function resolveScopeTags(scope: RevalidateScope): readonly string[] {
   return []
 }
 
+function getBearerToken(value: string | null): string | null {
+  const match = value?.match(/^Bearer\s+(.+)$/i)
+  return match?.[1] ?? null
+}
+
+function hasQuerySecret(request: Request): boolean {
+  const { searchParams } = new URL(request.url)
+  return searchParams.has('secret')
+}
+
+function isAuthorized(request: Request): boolean {
+  const expectedSecret = process.env.REVALIDATION_SECRET
+  if (!expectedSecret) return false
+
+  const headerSecret = request.headers.get('x-revalidation-secret')
+  const bearerToken = getBearerToken(request.headers.get('authorization'))
+
+  return headerSecret === expectedSecret || bearerToken === expectedSecret
+}
+
 export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const secret = searchParams.get('secret')
-
-    if (secret !== process.env.REVALIDATION_SECRET) {
+    if (hasQuerySecret(request) || !isAuthorized(request)) {
       return NextResponse.json(
         { error: { code: 'unauthorized', message: 'Invalid secret' } },
         { status: 401 },

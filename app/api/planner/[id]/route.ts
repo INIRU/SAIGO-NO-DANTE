@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { writeAuditLog } from '@/lib/audit'
 
 
 // GET /api/planner/[id] — 플랜 상세
@@ -53,6 +54,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { error } = await admin.schema('limbus').from('md_plans').update(updates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    await writeAuditLog({
+      actorId: userId,
+      action: 'planner_update',
+      targetType: 'planner',
+      targetId: id,
+      details: {
+        fields: Object.keys(updates).filter(field => field !== 'updated_at'),
+      },
+    })
+
     updateTag(CACHE_TAGS.plan(id))
     updateTag(CACHE_TAGS.plansList)
     return NextResponse.json({ ok: true })
@@ -78,6 +89,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     const { error } = await admin.schema('limbus').from('md_plans').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await writeAuditLog({
+      actorId: userId,
+      action: 'planner_delete',
+      targetType: 'planner',
+      targetId: id,
+    })
 
     updateTag(CACHE_TAGS.plan(id))
     updateTag(CACHE_TAGS.plansList)

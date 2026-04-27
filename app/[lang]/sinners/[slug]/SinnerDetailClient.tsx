@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
@@ -8,7 +8,7 @@ import { useRouter, usePathname } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
-import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
@@ -18,6 +18,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 
 interface Props {
   sinner: Sinner
@@ -29,6 +30,34 @@ type Tab = 'identities' | 'ego'
 type OwnershipFilter = 'all' | 'owned' | 'unowned'
 
 const LOCAL_STORAGE_KEY = 'limbus-collection'
+
+const getEgoReleaseTime = (ego: EGO) => {
+  if (!ego.release_date) return null
+  const time = Date.parse(ego.release_date)
+  return Number.isNaN(time) ? null : time
+}
+
+const compareEgoFallback = (a: EGO, b: EGO) => {
+  const aGameId = parseInt(a.game_id ?? '', 10)
+  const bGameId = parseInt(b.game_id ?? '', 10)
+  if (!Number.isNaN(aGameId) && !Number.isNaN(bGameId) && aGameId !== bGameId) {
+    return aGameId - bGameId
+  }
+  return a.id.localeCompare(b.id)
+}
+
+const compareEgosByReleaseDate = (a: EGO, b: EGO, sortOrder: 'newest' | 'oldest') => {
+  const aTime = getEgoReleaseTime(a)
+  const bTime = getEgoReleaseTime(b)
+
+  if (aTime !== null && bTime !== null && aTime !== bTime) {
+    return sortOrder === 'newest' ? bTime - aTime : aTime - bTime
+  }
+  if (aTime !== null && bTime === null) return -1
+  if (aTime === null && bTime !== null) return 1
+  const fallbackOrder = compareEgoFallback(a, b)
+  return sortOrder === 'newest' ? -fallbackOrder : fallbackOrder
+}
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
   const t = useTranslations()
@@ -202,11 +231,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         ownershipFilter === 'owned' ? ownedIds.has(e.id) : !ownedIds.has(e.id)
       )
     }
-    result = [...result].sort((a, b) => {
-      const aId = parseInt(a.game_id ?? '0')
-      const bId = parseInt(b.game_id ?? '0')
-      return sortOrder === 'newest' ? bId - aId : aId - bId
-    })
+    result = [...result].sort((a, b) => compareEgosByReleaseDate(a, b, sortOrder))
     return result
   }, [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
 
@@ -867,54 +892,24 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     </p>
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-4 sm:gap-y-9" staggerDelay={0.05}>
                     {filteredEgos.map((ego) => {
-                      const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
-                      const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
+                      const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name
 
                       return (
-                        <motion.button
+                        <motion.div
                           key={ego.id}
-                          onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
-                          className="group flex flex-col items-center gap-2"
                           variants={staggerItem}
-                          whileHover={{ scale: 1.05 }}
-                          style={{ cursor: 'pointer' }}
+                          whileHover={{ scale: 1.035 }}
                         >
-                          {/* 원형 CG - 메인 포커스 */}
-                          <div style={{
-                            position: 'relative',
-                            width: '6.875rem', height: '6.875rem',
-                            borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                            border: `2px solid ${sinColor}`,
-                            boxShadow: `0 0 18px ${sinColor}60, 0 0 36px ${sinColor}25`,
-                            background: '#0d0a06',
-                          }}>
-                            {ego.image_url ? (
-                              <Image src={ego.image_url} alt="" fill
-                                className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="80px" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '0.875rem' }}>{ego.grade?.[0]}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* 등급 + 이름 */}
-                          <div className="flex items-center justify-center gap-1.5">
-                            {ego.grade !== 'ALEPH' ? (
-                              <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade}
-                                width={33} height={13} unoptimized
-                                style={{ height: '0.8125rem', width: 'auto', opacity: 0.8, flexShrink: 0 }} />
-                            ) : (
-                              <span style={{ fontFamily: 'monospace', fontSize: '0.5rem', color: gradeColor, letterSpacing: '0.1em', flexShrink: 0 }}>ALEPH</span>
-                            )}
-                            <p className="font-serif font-light text-center leading-snug"
-                              style={{ color: '#c8a450', fontSize: '0.8125rem', lineHeight: '1.35' }}>
-                              {getName(ego.name_kr, ego.name_en, ego.name_jp)}
-                            </p>
-                          </div>
-                        </motion.button>
+                          <EgoDisplayCard
+                            ego={ego}
+                            lang={lang}
+                            name={egoName}
+                            onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
+                            sinnerId={sinner.id}
+                          />
+                        </motion.div>
                       )
                     })}
                   </StaggerReveal>

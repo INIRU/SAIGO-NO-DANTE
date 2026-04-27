@@ -38,9 +38,12 @@ export async function triggerRevalidation(options = {}) {
   if (options.paths && options.paths.length > 0) body.paths = [...options.paths]
 
   try {
-    const res = await fetch(`${siteUrl}/api/revalidate?secret=${encodeURIComponent(secret)}`, {
+    const res = await fetch(`${siteUrl}/api/revalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-revalidation-secret': secret,
+      },
       body: JSON.stringify(body),
     })
     if (!res.ok) {

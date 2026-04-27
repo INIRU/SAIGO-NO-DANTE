@@ -10,7 +10,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { rgbaToThumbHash } from 'thumbhash'
 import sharp from 'sharp'
-import { writeFileSync, mkdirSync, existsSync } from 'fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -20,15 +20,19 @@ const ROOT = join(__dirname, '..')
 const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public'
 const CONCURRENCY = 10
 const OUTPUT_PATH = join(ROOT, 'lib', 'data', 'thumbhash-map.json')
+const LOCAL_EGO_CG_FALLBACKS = [
+  '/assets/ego-cg-fallbacks/outis/21101_cg.png',
+  '/assets/ego-cg-fallbacks/outis/21103_cg.png',
+]
 
 // ---------------------------------------------------------------------------
-// Supabase client (read-only, anon key is sufficient for public storage URLs)
+// Supabase client
 // ---------------------------------------------------------------------------
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseKey = process.env.SUPABASE_SECRET_KEY
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY env vars')
   process.exit(1)
 }
 
@@ -47,6 +51,16 @@ function toStoragePath(fullUrl) {
   const idx = fullUrl.indexOf(marker)
   if (idx === -1) return fullUrl
   return fullUrl.slice(idx + marker.length)
+}
+
+function toEgoCgEntry(profileUrl) {
+  if (!profileUrl.endsWith('_awaken_profile.webp')) return null
+
+  const url = profileUrl.replace(/_awaken_profile\.webp$/, '_cg.webp')
+  return {
+    path: toStoragePath(url),
+    url,
+  }
 }
 
 /** Generate a ThumbHash base64 string from an image buffer. */
@@ -77,8 +91,22 @@ async function fetchBuffer(url) {
   }
 }
 
+function readLocalBuffer(filePath) {
+  try {
+    return readFileSync(filePath)
+  } catch (err) {
+    console.warn(`  [WARN] Read failed for ${filePath}: ${err.message}`)
+    return null
+  }
+}
+
+async function getEntryBuffer(entry) {
+  if (entry.filePath) return readLocalBuffer(entry.filePath)
+  return fetchBuffer(entry.url)
+}
+
 /**
- * Process a batch of { path, url } entries with limited concurrency.
+ * Process a batch of { path, url } or { path, filePath } entries with limited concurrency.
  * Returns a partial map of path -> base64 thumbhash.
  */
 async function processBatch(entries, label, startIdx, total) {
@@ -88,11 +116,12 @@ async function processBatch(entries, label, startIdx, total) {
   while (i < entries.length) {
     const chunk = entries.slice(i, i + CONCURRENCY)
     await Promise.all(
-      chunk.map(async ({ path, url }, chunkIdx) => {
+      chunk.map(async (entry, chunkIdx) => {
+        const { path } = entry
         const globalIdx = startIdx + i + chunkIdx
         process.stdout.write(`\r  ${label} (${globalIdx + 1}/${total})`)
 
-        const buffer = await fetchBuffer(url)
+        const buffer = await getEntryBuffer(entry)
         if (!buffer) return
 
         try {
@@ -162,10 +191,20 @@ async function collectEgo() {
   for (const row of rows) {
     if (row.image_url) {
       entries.push({ path: toStoragePath(row.image_url), url: row.image_url })
+
+      const cgEntry = toEgoCgEntry(row.image_url)
+      if (cgEntry) entries.push(cgEntry)
     }
     if (row.cor_image_url) {
       entries.push({ path: toStoragePath(row.cor_image_url), url: row.cor_image_url })
     }
+  }
+
+  for (const fallbackPath of LOCAL_EGO_CG_FALLBACKS) {
+    entries.push({
+      path: fallbackPath,
+      filePath: join(ROOT, 'public', fallbackPath.slice(1)),
+    })
   }
 
   console.log(`  ${entries.length} ego images to process`)

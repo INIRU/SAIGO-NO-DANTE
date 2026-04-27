@@ -2,11 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 
-// ── Supabase 클라이언트 (browser/server 공용 anon key) ─────────────────────
+// ── Supabase 클라이언트 (browser/server 공용 publishable key) ───────────────
 function supabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   )
 }
 
@@ -167,15 +167,34 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
 }
 
 export async function getLatestEGOs(limit = 6): Promise<EGOWithSinner[]> {
+  const loadByGameId = async () => {
+    const { data, error } = await supabase()
+      .schema('limbus')
+      .from('ego')
+      .select('*, sinner:sinners(*)')
+      .not('image_url', 'is', null)
+      .not('game_id', 'is', null)
+      .order('game_id', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data ?? []) as EGOWithSinner[]
+  }
+
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego')
     .select('*, sinner:sinners(*)')
     .not('image_url', 'is', null)
     .not('game_id', 'is', null)
+    .not('release_date', 'is', null)
+    .order('release_date', { ascending: false })
     .order('game_id', { ascending: false })
     .limit(limit)
-  if (error) throw error
+  if (error) {
+    if (error.code === '42703') return loadByGameId()
+    throw error
+  }
+  if (!data || data.length === 0) return loadByGameId()
   return (data ?? []) as EGOWithSinner[]
 }
 

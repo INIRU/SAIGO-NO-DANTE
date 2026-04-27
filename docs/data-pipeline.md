@@ -62,9 +62,10 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 
 | 스크립트 | 런타임 | 설명 | 대상 테이블 |
 |----------|--------|------|-------------|
-| `sync/identity-data.ts` | tsx | 인격/스킬/패시브 통합 동기화 (TypeScript+Zod) | `identities`, `skills`, `passives` |
+| `sync/identity-data.ts` | tsx | 인격/스킬/패시브/EGO 출시일 통합 동기화 (TypeScript+Zod) | `identities`, `skills`, `passives`, `ego.release_date` |
 | `sync/mirror-dungeon-data.ts` | tsx | 거울 던전 전체 동기화 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `mirror_dungeon_events` |
 | `sync/game-data.mjs` | Node.js | 인격 + EGO 스킬 동기화 | `skills`, `ego_skills` |
+| `backfill-ego-release-dates.mjs` | Node.js | 로컬 게임 JSON `ego-*.txt`의 `updatedDate`로 EGO 출시일 백필 (dry-run 기본) | `ego.release_date` |
 | `sync/translations.mjs` | Node.js | EN/JP 게임 텍스트 동기화 (스킬/패시브/키워드/기프트) | `game_translations`, `skills`, `passives` |
 | `sync/wiki-namu.mjs` | Node.js | Namuwiki 레거시 동기화 (유지보수 전용) | `identities`, `ego`, `keyword_meta` |
 
@@ -143,6 +144,25 @@ node --env-file=.env.local scripts/sync/game-data.mjs [options]
 - KR 스킬 텍스트: `KR/KR_Skills*.json`에서 매핑
 
 > **주의:** 이 스크립트는 기존 DB에 존재하는 인격의 스킬만 sync한다. 신규 인격 row 자체를 생성하지 않는다.
+
+### backfill-ego-release-dates.mjs (EGO 출시일 백필)
+
+로컬 게임 JSON의 true EGO 파일(`ego-1.txt`, `ego-a1c9p3.txt` 등)에서 `updatedDate`를 읽어 `YYYY-MM-DD`로 변환하고, `limbus.ego.game_id` 기준으로 `release_date`를 비교한다. `ego-skill-*`, `ego-gift-*`, `ego-empty*` 계열은 출시일 소스가 아니므로 제외한다.
+
+```bash
+node --env-file=.env.local scripts/backfill-ego-release-dates.mjs --dry-run
+node --env-file=.env.local scripts/backfill-ego-release-dates.mjs --fix
+```
+
+**옵션:**
+
+| 옵션 | 설명 |
+|------|------|
+| `--dry-run` | 비교만 수행 (기본값) |
+| `--fix` | DB 자동 수정. `limbus.ego.release_date` 마이그레이션 적용 후 승인받고 실행 |
+| `--data-dir <path>` | 로컬 게임 JSON 경로 오버라이드 |
+
+> **주의:** 이 스크립트는 dry-run 결과로 matched/changed/missing/ambiguous counts를 먼저 확인한 뒤에만 `--fix`를 실행한다.
 
 ### sync-wiki-namu.mjs (Namuwiki 레거시)
 
@@ -251,9 +271,9 @@ sync-mirror-dungeon-data.ts (npx tsx)
 6. 에셋 업로드 (이미지 파이프라인)
 ```
 
-### sync-identity-data.ts (인격/스킬/패시브 통합 동기화)
+### sync-identity-data.ts (인격/스킬/패시브/EGO 출시일 통합 동기화)
 
-TypeScript + Zod 기반 범용 인격 동기화 스크립트. 신규 인격 추가 + 기존 인격 필드 업데이트 모두 지원.
+TypeScript + Zod 기반 범용 인격 동기화 스크립트. 신규 인격 추가, 기존 인격 필드 업데이트, EGO 스킬/패시브 로케일 보강, EGO 출시일 비교/업데이트를 지원한다.
 
 ```bash
 npx tsx scripts/sync/identity-data.ts [options]
@@ -272,6 +292,7 @@ npx tsx scripts/sync/identity-data.ts [options]
 | `--rebuild-keyword-meta` | keyword_meta 테이블 재구축 |
 
 > **참고:** 이 스크립트가 `sync/game-data.mjs`의 상위 집합. 신규 인격 삽입을 포함한 전체 파이프라인에 사용할 것.
+> EGO 출시일은 로컬 게임 JSON true EGO 파일의 `updatedDate`를 `YYYY-MM-DD`로 변환해 `ego.release_date`에 반영한다. `--dry-run`은 비교만 수행하고, `--fix`는 `limbus.ego.release_date` 마이그레이션 적용 후 승인받고 실행한다.
 
 ---
 

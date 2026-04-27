@@ -63,7 +63,7 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
   )
 
   const { data: deck } = await supabase

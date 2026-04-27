@@ -206,7 +206,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
     <>
       {/* Scroll animations — targets server-rendered class names */}
       <ScrollAnimations />
-      <style jsx global>{`
+      <style>{`
         @keyframes homeHeroSurfaceReveal {
           from { opacity: 0; transform: translateX(-1.125rem); }
           to { opacity: 1; transform: translateX(0); }
