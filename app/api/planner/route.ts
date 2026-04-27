@@ -7,6 +7,8 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { writeAuditLog } from '@/lib/audit'
 
 
 // GET /api/planner — 플랜 목록
@@ -83,6 +85,13 @@ export async function POST(req: NextRequest) {
     if (activeUser.error) return activeUser.response
     const { session } = activeUser
 
+    const rateLimit = checkRequestRateLimit(req, {
+      bucket: 'create',
+      scope: 'planner:create',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
+
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
 
@@ -109,6 +118,19 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await writeAuditLog({
+      actorId: userId,
+      action: 'planner_create',
+      targetType: 'planner',
+      targetId: data.id,
+      details: {
+        difficulty: difficulty ?? 'hard',
+        tagCount: Array.isArray(tags) ? tags.length : 0,
+        deckCount: Array.isArray(deck) ? deck.length : 0,
+        egoCount: Array.isArray(egos) ? egos.length : 0,
+      },
+    })
 
     updateTag(CACHE_TAGS.plansList)
     return NextResponse.json({ id: data.id }, { status: 201 })

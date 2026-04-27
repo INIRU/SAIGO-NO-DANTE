@@ -34,6 +34,7 @@ export const createEgoSchema = z.object({
   name: z.string().min(1, '이름 필수'),
   grade: z.string().default('ZAYIN'),
   name_kr: z.string().optional().nullable(),
+  release_date: z.string().optional().nullable(),
   sin_affinity: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   corrosion_risk: z.coerce.number().int().min(0).optional().nullable(),
@@ -74,12 +75,60 @@ export type UpdateKeywordInput = z.infer<typeof updateKeywordSchema>
 // ── User ────────────────────────────────────────────────────────────────────
 
 export const updateUserRoleSchema = z.object({
-  role: z.string().min(1, '역할 필수'),
+  role: z.enum(['user', 'wanjang', 'admin']),
 })
 
 export const updateUserSuspensionSchema = z.object({
   suspended: z.boolean(),
+  reason: z.string().trim().max(500, '정지 사유는 500자 이하로 입력해주세요.').optional().nullable(),
+  suspension_reason: z.string().trim().max(500, '정지 사유는 500자 이하로 입력해주세요.').optional().nullable(),
+  suspended_until: z.string().trim().min(1).optional().nullable(),
+  suspendedUntil: z.string().trim().min(1).optional().nullable(),
+  duration_days: z.coerce.number().int().positive().max(3650).optional().nullable(),
+  durationDays: z.coerce.number().int().positive().max(3650).optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (!data.suspended) return
+
+  const reason = data.reason ?? data.suspension_reason
+  if (!reason?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['reason'],
+      message: '정지 사유 필수',
+    })
+  }
+
+  const until = data.suspended_until ?? data.suspendedUntil
+  if (until && Number.isNaN(Date.parse(until))) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['suspended_until'],
+      message: '유효한 정지 종료일 필요',
+    })
+  }
 })
+
+// ── Legal documents ─────────────────────────────────────────────────────────
+
+const legalSectionSchema = z.object({
+  heading: z.string().trim().min(1, '섹션 제목 필수'),
+  body: z.string().optional(),
+  items: z.array(z.string()).optional(),
+  itemAccent: z.enum(['gold', 'red']).optional(),
+})
+
+export const upsertLegalDocSchema = z.object({
+  type: z.enum(['privacy', 'terms']),
+  title: z.string().trim().min(1, '문서 제목 필수'),
+  version: z.string().trim().min(1, '문서 버전 필수').optional(),
+  last_updated: z.string().trim().min(1, '최종 수정일 필수'),
+  sections: z.array(legalSectionSchema).min(1, '섹션 필수'),
+}).transform(data => ({
+  ...data,
+  version: data.version?.trim() || data.last_updated.trim(),
+}))
+
+export type UpsertLegalDocInput = z.infer<typeof upsertLegalDocSchema>
 
 // ── Skill ───────────────────────────────────────────────────────────────────
 

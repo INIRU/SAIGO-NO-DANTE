@@ -23,6 +23,8 @@ import EgoDetailModal from '@/components/ui/EgoDetailModal'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 
+const postedDeckViews = new Set<string>()
+
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type EgoSlot = {
   grade: string
@@ -238,6 +240,18 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
+
+  useEffect(() => {
+    const viewKey = `deck-view:${id}`
+    if (postedDeckViews.has(viewKey)) return
+    postedDeckViews.add(viewKey)
+
+    fetch(`/api/decks/${id}/view`, {
+      method: 'POST',
+      cache: 'no-store',
+      keepalive: true,
+    }).catch(() => {})
+  }, [id])
 
   useEffect(() => {
     fetch('/api/keyword-meta')

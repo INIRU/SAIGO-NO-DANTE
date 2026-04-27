@@ -5,7 +5,7 @@ import sharp from 'sharp'
 
 // ── 설정 ──────────────────────────────────────────────────
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY
 const BUCKET      = 'limbus-assets'
 const SOURCE_DIR  = '/Users/iniru/Documents/Limbus/assets/Identities & EGO Art'
 const ICONS_DIR   = '/Users/iniru/Documents/Limbus/assets/Icons'

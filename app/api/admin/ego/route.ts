@@ -4,6 +4,14 @@ import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateBody, createEgoSchema } from '@/lib/schemas/admin'
 
+function isMissingReleaseDateColumn(error: { code?: string; message?: string }) {
+  return error.code === '42703' && (error.message ?? '').includes('release_date')
+}
+
+function omitReleaseDate<T extends { release_date?: string | null }>(body: T) {
+  const { release_date: _releaseDate, ...rest } = body
+  return rest
+}
 
 export async function GET(request: Request) {
   try {
@@ -43,12 +51,27 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    const { data: ego, error } = await supabase
+    let result = await supabase
       .schema('limbus')
       .from('ego')
       .insert(body)
       .select()
       .single()
+
+    if (
+      result.error &&
+      isMissingReleaseDateColumn(result.error) &&
+      (body.release_date === null || body.release_date === undefined)
+    ) {
+      result = await supabase
+        .schema('limbus')
+        .from('ego')
+        .insert(omitReleaseDate(body))
+        .select()
+        .single()
+    }
+
+    const { data: ego, error } = result
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

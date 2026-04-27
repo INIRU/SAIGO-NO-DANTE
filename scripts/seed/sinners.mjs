@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('❌ .env.local에서 SUPABASE_URL / SERVICE_ROLE_KEY를 설정해주세요.')

@@ -1,6 +1,6 @@
 # 데이터 모델 (DB Schema)
 
-SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-25 tier-list ratings migration 기준.**
+SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-27 EGO release date migration 기준.**
 
 > Supabase Dashboard > Settings > API > Extra search path에 `limbus`가 추가되어야 한다.
 
@@ -16,7 +16,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-
 | `identities` | 28 | 인격 카드 |
 | `skills` | 20 | 인격 스킬 (업타이 3/4) |
 | `passives` | 14 | 인격 패시브 |
-| `ego` | 28 | E.G.O |
+| `ego` | 29 | E.G.O |
 | `ego_skills` | 19 | E.G.O 스킬 (각성/침식, 해석 3/4) |
 | `keyword_meta` | 10 | 키워드 사전 (아이콘, 설명, 죄악 속성) |
 | `panic_types` | 7 | 패닉 유형 |
@@ -288,6 +288,7 @@ E.G.O 장비 정보.
 | `obtaining_method` | TEXT | | 획득 방법 |
 | `cor_image_url` | TEXT | | 침식 이미지 URL |
 | `game_id` | TEXT | | 게임 내부 ID |
+| `release_date` | TEXT | | 출시일 (`YYYY-MM-DD`, 로컬 게임 JSON `updatedDate` 기반) |
 | `name_en` | TEXT | | 영문 번역명 (i18n) |
 | `name_jp` | TEXT | | 일본어 번역명 (i18n) |
 | `passive_name_en` | TEXT | | 패시브 영문명 (i18n) |

@@ -22,12 +22,7 @@ export const authOptions: NextAuthOptions = {
 
       // 1) 환경변수 ADMIN_EMAILS 체크
       const admins = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
-      if (admins.includes(email)) {
-        token.isAdmin = true
-        token.isWanjang = true
-        token.isSuspended = false
-        return token
-      }
+      const isEnvAdmin = admins.includes(email)
 
       // 2) DB role + suspended 체크 (매 요청마다)
       try {
@@ -36,14 +31,16 @@ export const authOptions: NextAuthOptions = {
           supabase.schema('limbus').rpc('get_user_role', { user_email: email }),
           supabase.schema('limbus').rpc('is_user_suspended', { user_email: email }),
         ])
-        token.isAdmin = roleRes.data === 'admin'
-        token.isWanjang = roleRes.data === 'wanjang' || roleRes.data === 'admin'
+        if (roleRes.error) throw new Error(roleRes.error.message)
+        if (suspendedRes.error) throw new Error(suspendedRes.error.message)
+        token.isAdmin = isEnvAdmin || roleRes.data === 'admin'
+        token.isWanjang = isEnvAdmin || roleRes.data === 'wanjang' || roleRes.data === 'admin'
         token.isSuspended = suspendedRes.data === true
       } catch {
-        // DB 조회 실패 시 기존 값 유지 (첫 로그인이면 기본값)
-        token.isAdmin ??= false
-        token.isWanjang ??= false
-        token.isSuspended ??= false
+        // DB 조회 실패 시 stale token 권한/정지 상태를 신뢰하지 않는다.
+        token.isAdmin = false
+        token.isWanjang = false
+        token.isSuspended = true
       }
 
       return token
@@ -63,6 +60,9 @@ export async function requireAdmin() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.isAdmin) {
     return { error: true as const, response: NextResponse.json({ error: 'Unauthorized' }, { status: 403 }) }
+  }
+  if (session.user.isSuspended) {
+    return { error: true as const, response: NextResponse.json({ error: '이용이 정지된 계정입니다.' }, { status: 403 }) }
   }
   return { error: false as const, session }
 }

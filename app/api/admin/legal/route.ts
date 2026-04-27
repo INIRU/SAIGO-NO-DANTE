@@ -1,36 +1,25 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
-import type { LegalSection } from '@/lib/data/legal'
+import { requireAdmin } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { upsertLegalDocSchema, validateBody } from '@/lib/schemas/admin'
 
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    const adminAuth = await requireAdmin()
+    if (adminAuth.error) return adminAuth.response
 
-    const body = await request.json() as {
-      type: string
-      title: string
-      last_updated: string
-      sections: LegalSection[]
-    }
+    const parsed = validateBody(upsertLegalDocSchema, await request.json())
+    if (!parsed.success) return parsed.response
 
-    const { type, title, last_updated, sections } = body
+    const { type, title, version, last_updated, sections } = parsed.data
 
-    if (!['privacy', 'terms'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
-    }
-
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .schema('limbus')
       .from('legal_docs')
-      .upsert({ type, title, last_updated, sections, updated_at: new Date().toISOString() })
+      .upsert({ type, title, version, last_updated, sections, updated_at: new Date().toISOString() })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

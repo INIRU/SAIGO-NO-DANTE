@@ -56,12 +56,13 @@ const EN_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/en')
 const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp'))
 const EN_DIR = join(DATA_DIR, 'EN')
 const JP_DIR = join(DATA_DIR, 'JP')
+const TRUE_EGO_FILE_RE = /^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseKey = process.env.SUPABASE_SECRET_KEY
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY')
   process.exit(1)
 }
 const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: 'limbus' } })
@@ -258,6 +259,11 @@ const KrPassiveSchema = z.object({
   desc: z.string().optional(),
 })
 
+const EgoReleaseDateSourceSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  updatedDate: z.union([z.number(), z.string()]).optional(),
+}).passthrough()
+
 // ── TypeScript types ──────────────────────────────────────────────────────────
 
 type Personality = z.infer<typeof PersonalitySchema>
@@ -266,6 +272,32 @@ type KrSkill = z.infer<typeof KrSkillSchema>
 type KrPassive = z.infer<typeof KrPassiveSchema>
 type PassiveMapping = z.infer<typeof PassiveMappingSchema>
 type PassiveDetail = z.infer<typeof PassiveDetailSchema>
+
+interface EgoReleaseDateSource {
+  release_date: string
+  updatedDate: string
+  sourceFile: string
+}
+
+interface EgoReleaseDateDbRow {
+  id: string
+  game_id: string | number | null
+  sinner_id: string | null
+  name: string | null
+  name_kr: string | null
+  release_date: string | null
+}
+
+interface EgoReleaseDateChange {
+  id: string
+  game_id: string
+  sinner_id: string | null
+  name: string | null
+  before: string | null
+  after: string
+  updatedDate: string
+  sourceFile: string
+}
 
 interface KrPersonality {
   name: string
@@ -361,6 +393,32 @@ function globFiles(dir: string, pattern: RegExp): string[] {
   } catch {
     return []
   }
+}
+
+function formatGameUpdatedDate(value: unknown): string | null {
+  const raw = String(value ?? '').trim()
+  if (!/^\d{8}$/.test(raw)) return null
+
+  const year = raw.slice(0, 4)
+  const month = raw.slice(4, 6)
+  const day = raw.slice(6, 8)
+  const date = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== Number(year) ||
+    date.getUTCMonth() + 1 !== Number(month) ||
+    date.getUTCDate() !== Number(day)
+  ) {
+    return null
+  }
+
+  return `${year}-${month}-${day}`
+}
+
+function normalizeReleaseDate(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null
+  return String(value)
 }
 
 function sleep(ms: number): Promise<void> {
@@ -1342,6 +1400,271 @@ async function supaInsertBatch(table: string, rows: unknown[]): Promise<void> {
   }
 }
 
+// ── EGO release_date sync ────────────────────────────────────────────────────
+
+function loadEgoReleaseDateSources(): {
+  sourceFiles: string[]
+  sourceByGameId: Map<string, EgoReleaseDateSource>
+  ambiguousSource: Map<string, EgoReleaseDateSource[]>
+  sourceEntries: number
+  skippedEntries: number
+} {
+  const sourceFiles = globFiles(DATA_DIR, TRUE_EGO_FILE_RE)
+  const sourceByGameId = new Map<string, EgoReleaseDateSource>()
+  const ambiguousSource = new Map<string, EgoReleaseDateSource[]>()
+  let sourceEntries = 0
+  let skippedEntries = 0
+
+  for (const sourceFile of sourceFiles) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
+    for (const entry of extractList(data)) {
+      const parsed = EgoReleaseDateSourceSchema.safeParse(entry)
+      if (!parsed.success) {
+        skippedEntries++
+        continue
+      }
+
+      const gameId = String(parsed.data.id).trim()
+      const releaseDate = formatGameUpdatedDate(parsed.data.updatedDate)
+      if (!gameId || !releaseDate) {
+        skippedEntries++
+        continue
+      }
+
+      sourceEntries++
+      const next: EgoReleaseDateSource = {
+        release_date: releaseDate,
+        updatedDate: String(parsed.data.updatedDate),
+        sourceFile,
+      }
+      const current = sourceByGameId.get(gameId)
+
+      if (!current) {
+        sourceByGameId.set(gameId, next)
+        continue
+      }
+
+      if (current.release_date !== next.release_date) {
+        const records = ambiguousSource.get(gameId) ?? [current]
+        records.push(next)
+        ambiguousSource.set(gameId, records)
+      }
+    }
+  }
+
+  for (const gameId of ambiguousSource.keys()) {
+    sourceByGameId.delete(gameId)
+  }
+
+  return { sourceFiles, sourceByGameId, ambiguousSource, sourceEntries, skippedEntries }
+}
+
+function isMissingReleaseDateColumn(error: unknown): boolean {
+  const err = error as { code?: string; message?: string } | null
+  return err?.code === '42703' && String(err?.message ?? '').includes('release_date')
+}
+
+function filterEgoRowsBySinners(
+  rows: EgoReleaseDateDbRow[],
+  targetSinners: typeof SINNERS[number][],
+): EgoReleaseDateDbRow[] {
+  const targetSlugs = new Set<string>(targetSinners.map(s => s.slug))
+  return rows.filter(row => targetSlugs.has(String(row.sinner_id ?? '')))
+}
+
+async function loadEgoRowsForReleaseDate(
+  targetSinners: typeof SINNERS[number][],
+): Promise<{ rows: EgoReleaseDateDbRow[]; columnMissing: boolean }> {
+  const withReleaseDate = await supabase
+    .from('ego')
+    .select('id, game_id, sinner_id, name, name_kr, release_date')
+    .limit(1000)
+
+  if (!withReleaseDate.error) {
+    return {
+      rows: filterEgoRowsBySinners((withReleaseDate.data ?? []) as EgoReleaseDateDbRow[], targetSinners),
+      columnMissing: false,
+    }
+  }
+
+  if (!isMissingReleaseDateColumn(withReleaseDate.error)) {
+    throw new Error(`EGO release_date 로드 실패: ${withReleaseDate.error.message}`)
+  }
+
+  const withoutReleaseDate = await supabase
+    .from('ego')
+    .select('id, game_id, sinner_id, name, name_kr')
+    .limit(1000)
+
+  if (withoutReleaseDate.error) {
+    throw new Error(`EGO release_date fallback 로드 실패: ${withoutReleaseDate.error.message}`)
+  }
+
+  return {
+    rows: filterEgoRowsBySinners(
+      ((withoutReleaseDate.data ?? []) as Array<Omit<EgoReleaseDateDbRow, 'release_date'>>)
+        .map(row => ({ ...row, release_date: null })),
+      targetSinners,
+    ),
+    columnMissing: true,
+  }
+}
+
+function buildEgoReleaseDatePlan(
+  rows: EgoReleaseDateDbRow[],
+  sourceByGameId: Map<string, EgoReleaseDateSource>,
+  ambiguousSource: Map<string, EgoReleaseDateSource[]>,
+  columnMissing: boolean,
+): {
+  changes: EgoReleaseDateChange[]
+  summary: {
+    dbRows: number
+    matched: number
+    changed: number
+    unchanged: number
+    missingSource: number
+    missingGameId: number
+    ambiguousSource: number
+    columnMissing: boolean
+  }
+} {
+  const changes: EgoReleaseDateChange[] = []
+  let matched = 0
+  let unchanged = 0
+  let missingSource = 0
+  let missingGameId = 0
+  let ambiguousSourceRows = 0
+
+  for (const row of rows) {
+    const gameId = String(row.game_id ?? '').trim()
+    if (!gameId) {
+      missingGameId++
+      continue
+    }
+
+    if (ambiguousSource.has(gameId)) {
+      ambiguousSourceRows++
+      continue
+    }
+
+    const source = sourceByGameId.get(gameId)
+    if (!source) {
+      missingSource++
+      continue
+    }
+
+    matched++
+    const before = columnMissing ? null : normalizeReleaseDate(row.release_date)
+    const after = source.release_date
+
+    if (before === after) {
+      unchanged++
+      continue
+    }
+
+    changes.push({
+      id: row.id,
+      game_id: gameId,
+      sinner_id: row.sinner_id,
+      name: row.name_kr || row.name || null,
+      before,
+      after,
+      updatedDate: source.updatedDate,
+      sourceFile: source.sourceFile,
+    })
+  }
+
+  return {
+    changes,
+    summary: {
+      dbRows: rows.length,
+      matched,
+      changed: changes.length,
+      unchanged,
+      missingSource,
+      missingGameId,
+      ambiguousSource: ambiguousSourceRows,
+      columnMissing,
+    },
+  }
+}
+
+function printEgoReleaseDateReport(params: {
+  targetSinners: typeof SINNERS[number][]
+  sourceFiles: string[]
+  sourceEntries: number
+  skippedEntries: number
+  summary: ReturnType<typeof buildEgoReleaseDatePlan>['summary']
+  changes: EgoReleaseDateChange[]
+}): void {
+  const { targetSinners, sourceFiles, sourceEntries, skippedEntries, summary, changes } = params
+  console.log(`\n${'═'.repeat(60)}`)
+  console.log(BOLD('  EGO release_date 동기화'))
+  console.log('═'.repeat(60))
+  console.log(`  sourceDir: ${DATA_DIR}`)
+  console.log(`  sourceFiles: ${sourceFiles.length}`)
+  console.log(`  sourceEntries: ${sourceEntries}`)
+  console.log(`  skippedEntries: ${skippedEntries}`)
+  console.log(`  targetSinners: ${targetSinners.map(s => s.slug).join(', ')}`)
+  console.log('')
+  console.log('  Summary:')
+  console.log(`    dbRows: ${summary.dbRows}`)
+  console.log(`    matched: ${summary.matched}`)
+  console.log(`    changed: ${summary.changed}`)
+  console.log(`    unchanged: ${summary.unchanged}`)
+  console.log(`    missingSource: ${summary.missingSource}`)
+  console.log(`    missingGameId: ${summary.missingGameId}`)
+  console.log(`    ambiguousSource: ${summary.ambiguousSource}`)
+  console.log(`    columnMissing: ${summary.columnMissing}`)
+
+  if (changes.length > 0) {
+    console.log('')
+    console.log('  Sample changes:')
+    for (const change of changes.slice(0, 10)) {
+      console.log(
+        `    ${change.game_id} ${change.name ?? '(unnamed)'}: ` +
+        `${change.before ?? '(null)'} -> ${change.after} ` +
+        `(${change.sourceFile}, updatedDate=${change.updatedDate})`,
+      )
+    }
+  }
+}
+
+async function syncEgoReleaseDates(targetSinners: typeof SINNERS[number][]): Promise<void> {
+  const { sourceFiles, sourceByGameId, ambiguousSource, sourceEntries, skippedEntries } =
+    loadEgoReleaseDateSources()
+  const { rows, columnMissing } = await loadEgoRowsForReleaseDate(targetSinners)
+  const { changes, summary } = buildEgoReleaseDatePlan(rows, sourceByGameId, ambiguousSource, columnMissing)
+
+  printEgoReleaseDateReport({
+    targetSinners,
+    sourceFiles,
+    sourceEntries,
+    skippedEntries,
+    summary,
+    changes,
+  })
+
+  if (DRY_RUN) return
+
+  if (columnMissing) {
+    throw new Error('Abort: limbus.ego.release_date column is missing. Apply the migration before --fix.')
+  }
+
+  let updated = 0
+  for (const change of changes) {
+    const { error } = await supabase
+      .from('ego')
+      .update({ release_date: change.after })
+      .eq('id', change.id)
+
+    if (error) throw new Error(`EGO release_date 업데이트 실패 (${change.game_id}): ${error.message}`)
+    updated++
+  }
+
+  console.log(GREEN(`  EGO release_date 업데이트: ${updated}개`))
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function rebuildKeywordMeta(): Promise<void> {
@@ -1570,6 +1893,10 @@ async function main(): Promise<void> {
     console.error(`유효한 slug: ${SINNERS.map(s => s.slug).join(', ')}`)
     process.exit(1)
   }
+
+  // Run before any mutating sync stages so --fix cannot partially update other
+  // tables when the release_date migration is missing.
+  await syncEgoReleaseDates(targetSinners)
 
   // ── Keyword context store (gameId → context) ──────────────────────────────
   const keywordContexts = new Map<string, KeywordContext>()

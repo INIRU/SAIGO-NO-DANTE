@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireActiveUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { writeAuditLog } from '@/lib/audit'
 
 const DEFAULT_REASON = 'inappropriate'
 const MAX_REASON_LENGTH = 120
@@ -24,6 +26,13 @@ export async function POST(request: NextRequest) {
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
     const { session } = auth
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'report',
+      scope: 'tier-rating-reports:create',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const body = await request.json()
     const ratingId = typeof body.ratingId === 'string' ? body.ratingId.trim() : ''
@@ -86,6 +95,18 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: reportError.message }, { status: 500 })
     }
+
+    await writeAuditLog({
+      actorId: reporterId,
+      action: 'tier_rating_report',
+      targetType: 'tier_rating_report',
+      targetId: report.id,
+      details: {
+        ratingId,
+        status: report.status,
+        reasonLength: reason.length,
+      },
+    })
 
     return NextResponse.json({
       success: true,

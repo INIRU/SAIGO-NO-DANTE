@@ -38,7 +38,7 @@ const env = Object.fromEntries(
 )
 
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = env.SUPABASE_SECRET_KEY
 
 // Propagate revalidation-related env vars to process.env so the shared
 // triggerRevalidation helper can pick them up regardless of --env-file usage.
