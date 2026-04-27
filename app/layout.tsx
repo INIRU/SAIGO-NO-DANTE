@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Metadata } from 'next'
 import { Black_Han_Sans, Song_Myung, Noto_Sans_JP } from 'next/font/google'
 import localFont from 'next/font/local'
@@ -120,6 +121,11 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+const toastPositionStyle = {
+  '--toast-close-button-start': 'unset',
+  '--toast-close-button-end': '0',
+  '--toast-close-button-transform': 'translate(35%, -35%)',
+} as CSSProperties
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -269,12 +275,16 @@ export default async function RootLayout({
         <Toaster
           theme="dark"
           position="top-right"
+          closeButton
+          style={toastPositionStyle}
           toastOptions={{
+            closeButtonAriaLabel: 'Dismiss notification',
             style: {
               background: '#1a1510',
-              border: '1px solid #3a3020',
+              border: '0.0625rem solid #3a3020',
               color: '#e8dcc8',
               fontFamily: 'var(--font-body)',
+              paddingRight: '2.5rem',
             },
           }}
         />

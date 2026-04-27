@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { deriveTier, type Tier } from '@/lib/tier-list/tierModel'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { writeAuditLog } from '@/lib/audit'
 
 const TIER_LIST_CATEGORIES = ['reroll', 'overall', 'mirror_dungeon', 'goodstuff'] as const
 const OVERALL_SOURCE_CATEGORIES = ['reroll', 'goodstuff', 'mirror_dungeon'] as const
@@ -402,6 +404,13 @@ export async function POST(request: NextRequest) {
     if (auth.error) return auth.response
     const { session } = auth
 
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'rating',
+      scope: 'tier-ratings:upsert',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
+
     const body = await request.json()
     const identityId = typeof body.identityId === 'string' ? body.identityId : null
     const category = parseCategory(body.category)
@@ -452,6 +461,19 @@ export async function POST(request: NextRequest) {
       }, { status: 403 })
     }
 
+    const { data: existingRating, error: existingRatingError } = await admin
+      .schema('limbus')
+      .from('tier_ratings')
+      .select('id')
+      .eq('identity_id', identityId)
+      .eq('category', category)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (existingRatingError) {
+      return NextResponse.json({ error: existingRatingError.message }, { status: 500 })
+    }
+
     const { data, error } = await admin
       .schema('limbus')
       .from('tier_ratings')
@@ -466,6 +488,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    await writeAuditLog({
+      actorId: userId,
+      action: existingRating ? 'tier_rating_update' : 'tier_rating_create',
+      targetType: 'tier_rating',
+      targetId: data.id,
+      details: {
+        identityId,
+        category,
+        score,
+        hadComment: comment.length > 0,
+      },
+    })
+
     revalidateTierListCaches()
     return NextResponse.json(data)
   } catch (err: unknown) {
@@ -479,6 +514,13 @@ export async function DELETE(request: NextRequest) {
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
     const { session } = auth
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'rating',
+      scope: 'tier-ratings:delete',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     let body: { identityId?: unknown; category?: unknown } = {}
     try {
@@ -515,6 +557,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
+    const { data: existingRating, error: existingRatingError } = await admin
+      .schema('limbus')
+      .from('tier_ratings')
+      .select('id')
+      .eq('identity_id', identityId)
+      .eq('category', category)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (existingRatingError) {
+      return NextResponse.json({ error: existingRatingError.message }, { status: 500 })
+    }
+
     const { error } = await admin
       .schema('limbus')
       .from('tier_ratings')
@@ -525,6 +580,19 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (existingRating) {
+      await writeAuditLog({
+        actorId: userId,
+        action: 'tier_rating_delete',
+        targetType: 'tier_rating',
+        targetId: existingRating.id,
+        details: {
+          identityId,
+          category,
+        },
+      })
     }
 
     revalidateTierListCaches()

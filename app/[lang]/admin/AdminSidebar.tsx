@@ -37,10 +37,12 @@ export default function AdminSidebar() {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden'
-    } else {
+    } else if (!document.body.classList.contains('admin-scroll-locked')) {
       document.body.style.overflow = ''
     }
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [open])
 
   const navContent = (
@@ -130,14 +132,14 @@ export default function AdminSidebar() {
       {/* 데스크탑: 항상 표시, 모바일: 오버레이 드로어 */}
       <aside
         id={sidebarId}
-        className={`shrink-0 fixed md:static z-30 pt-[8.25rem] md:pt-[4.5rem] transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`shrink-0 fixed md:sticky z-30 pt-[8.25rem] md:pt-0 transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
           width: '13.75rem',
           top: 0,
           left: 0,
           background: '#1a1510',
           borderRight: '0.0625rem solid var(--border)',
-          minHeight: '100dvh',
+          height: '100%',
           overflowY: 'auto',
         }}
       >

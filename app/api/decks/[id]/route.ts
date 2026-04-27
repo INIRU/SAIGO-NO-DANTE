@@ -192,9 +192,6 @@ export async function GET(
     }
   } catch { /* not authenticated */ }
 
-  // 조회수 증가 (atomic increment, fire-and-forget)
-  supabase.schema('limbus').rpc('increment_view', { deck_id: id }).then(() => {})
-
   // 노트 렌더링용: 덱 내 수감자의 전체 에고 목록
   const allSinnerEgos = (egoRes.data ?? []).map(e => ({
     sinner_id: e.sinner_id, name_kr: e.name_kr, grade: e.grade,
@@ -257,7 +254,7 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
+    await writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
 
     updateTag(CACHE_TAGS.deck(id))
     updateTag(CACHE_TAGS.decksList)
@@ -389,7 +386,19 @@ export async function PATCH(
       }
     }
 
-    writeAuditLog({ actorId: userId, action: 'deck_update', targetType: 'deck', targetId: id, details: { title, isAdmin: !isOwner && isAdmin } })
+    await writeAuditLog({
+      actorId: userId,
+      action: 'deck_update',
+      targetType: 'deck',
+      targetId: id,
+      details: {
+        contentType: content_type || '없음',
+        tagCount: Array.isArray(tags) ? tags.length : 0,
+        identityCount: Array.isArray(identitySlots) ? identitySlots.length : 0,
+        egoCount: Array.isArray(egoSlots) ? egoSlots.length : 0,
+        isAdmin: !isOwner && isAdmin,
+      },
+    })
 
     updateTag(CACHE_TAGS.deck(id))
     updateTag(CACHE_TAGS.decksList)

@@ -65,6 +65,7 @@ export default function BaseModal({
         <Dialog.Content
           className="fixed inset-0 flex items-center justify-center"
           style={{ zIndex: zIndex + 1, padding, pointerEvents: 'none' }}
+          {...(!description ? { 'aria-describedby': undefined } : {})}
           onPointerDownOutside={() => onClose()}
           onEscapeKeyDown={() => onClose()}
         >

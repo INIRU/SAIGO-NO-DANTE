@@ -46,6 +46,7 @@ export default function NewEGOPage() {
     sinner_id: string
     name: string
     grade: string
+    release_date: string
     name_kr: string
     sin_affinity: string
     description: string
@@ -67,6 +68,7 @@ export default function NewEGOPage() {
       sinner_id: preselectedSinner,
       name: '',
       grade: 'ZAYIN',
+      release_date: '',
       name_kr: '',
       sin_affinity: '',
       description: '',
@@ -101,6 +103,7 @@ export default function NewEGOPage() {
         name: data.name,
         name_kr: data.name_kr || null,
         grade: data.grade,
+        release_date: data.release_date || null,
         sin_affinity: data.sin_affinity || null,
         description: data.description || null,
         corrosion_risk: data.corrosion_risk ?? null,
@@ -225,6 +228,18 @@ export default function NewEGOPage() {
                   onChange={field.onChange}
                   options={SINS.map(s => ({ value: s, label: s }))}
                   placeholder="-- 없음 --"
+                />
+              )}
+            />
+            <Controller
+              name="release_date"
+              control={control}
+              render={({ field }) => (
+                <AdminInput
+                  label="출시일"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="YYYY-MM-DD"
                 />
               )}
             />

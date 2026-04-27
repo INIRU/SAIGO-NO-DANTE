@@ -23,7 +23,7 @@ const env = Object.fromEntries(
 )
 
 const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseKey = env.SUPABASE_SECRET_KEY
 const STORAGE_API = `${supabaseUrl}/storage/v1`
 
 const ASSETS_BASE = '/Users/iniru/Documents/Limbus/assets/Sinner Intros'

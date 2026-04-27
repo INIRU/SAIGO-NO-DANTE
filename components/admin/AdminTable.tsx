@@ -19,28 +19,28 @@ interface AdminTableProps<T> {
 export function AdminTable<T>({ columns, data, keyExtractor, emptyMessage = '데이터가 없습니다.' }: AdminTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}>
+      <div style={{ padding: '1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}>
         {emptyMessage}
       </div>
     )
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ overflowX: 'auto', border: '0.0625rem solid rgba(200,144,10,0.12)', borderRadius: '0.375rem', background: 'rgba(13,11,8,0.38)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ borderBottom: '1px solid var(--border)' }}>
+          <tr style={{ borderBottom: '0.0625rem solid var(--border)' }}>
             {columns.map(col => (
               <th
                 key={col.key}
                 style={{
                   textAlign: 'left',
-                  padding: '10px 12px',
+                  padding: '0.625rem 0.75rem',
                   color: '#888888',
                   fontSize: '0.6875rem',
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  letterSpacing: 0,
                   width: col.width,
                 }}
               >
@@ -54,7 +54,7 @@ export function AdminTable<T>({ columns, data, keyExtractor, emptyMessage = '데
             <tr
               key={keyExtractor(item)}
               className="transition-colors"
-              style={{ borderBottom: '1px solid rgba(58,42,21,0.2)' }}
+              style={{ borderBottom: '0.0625rem solid rgba(58,42,21,0.2)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.03)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
@@ -62,7 +62,7 @@ export function AdminTable<T>({ columns, data, keyExtractor, emptyMessage = '데
                 <td
                   key={col.key}
                   style={{
-                    padding: '10px 12px',
+                    padding: '0.625rem 0.75rem',
                     fontSize: '0.8125rem',
                     color: '#c8a450',
                   }}

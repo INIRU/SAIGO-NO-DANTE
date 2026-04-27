@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { writeAuditLog } from '@/lib/audit'
 
 
 export async function GET(request: NextRequest) {
@@ -66,6 +68,13 @@ export async function POST(request: NextRequest) {
     if (auth.error) return auth.response
     const { session } = auth
 
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'create',
+      scope: 'decks:create',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
+
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
     // identitySlots: [{ identity_id, gacksung, slot_order }]
@@ -126,6 +135,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: egoInsertError.message }, { status: 500 })
       }
     }
+
+    await writeAuditLog({
+      actorId: userId,
+      action: 'deck_create',
+      targetType: 'deck',
+      targetId: deck.id,
+      details: {
+        contentType: deck.content_type,
+        tagCount: Array.isArray(deck.tags) ? deck.tags.length : 0,
+        identityCount: Array.isArray(identitySlots) ? identitySlots.length : 0,
+        egoCount: Array.isArray(egoSlots) ? egoSlots.length : 0,
+      },
+    })
 
     revalidatePath('/decks')
     updateTag(CACHE_TAGS.decksList)

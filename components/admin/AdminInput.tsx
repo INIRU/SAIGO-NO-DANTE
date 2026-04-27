@@ -6,10 +6,10 @@ import { ChevronDown } from 'lucide-react'
 // Shared styles
 export const adminInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 12px',
-  background: 'rgba(0,0,0,0.3)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
+  padding: '0.5rem 0.75rem',
+  background: 'rgba(13,11,8,0.48)',
+  border: '0.0625rem solid var(--border)',
+  borderRadius: '0.25rem',
   color: '#c8a450',
   fontSize: '0.8125rem',
 }
@@ -17,7 +17,7 @@ export const adminInputStyle: React.CSSProperties = {
 export const adminLabelStyle: React.CSSProperties = {
   color: '#888888',
   fontSize: '0.6875rem',
-  marginBottom: '4px',
+  marginBottom: '0.25rem',
   display: 'block',
 }
 
@@ -25,7 +25,7 @@ interface AdminInputProps {
   label?: string
   value: string | number
   onChange: (value: string) => void
-  type?: 'text' | 'number' | 'date'
+  type?: 'text' | 'number' | 'date' | 'datetime-local'
   placeholder?: string
   error?: string
   required?: boolean
@@ -44,6 +44,7 @@ export function AdminInput({ label, value, onChange, type = 'text', placeholder,
         value={value ?? ''}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={label ?? placeholder}
         min={min}
         max={max}
         disabled={disabled}
@@ -54,7 +55,7 @@ export function AdminInput({ label, value, onChange, type = 'text', placeholder,
           ...style,
         }}
       />
-      {error && <span style={{ color: '#ee6666', fontSize: '0.625rem', marginTop: '2px', display: 'block' }}>{error}</span>}
+      {error && <span style={{ color: '#ee6666', fontSize: '0.625rem', marginTop: '0.125rem', display: 'block' }}>{error}</span>}
     </div>
   )
 }
@@ -93,13 +94,14 @@ export function AdminSelect({ label, value, onChange, options, placeholder, requ
       <div ref={containerRef} style={{ position: 'relative', ...style }}>
         <button
           type="button"
+          aria-label={label ?? placeholder ?? '선택'}
           onClick={() => !disabled && setOpen(prev => !prev)}
           style={{
             ...adminInputStyle,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            gap: '0.5rem',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
             color: selectedLabel ? '#c8a450' : '#888',
@@ -110,7 +112,7 @@ export function AdminSelect({ label, value, onChange, options, placeholder, requ
             {selectedLabel ?? placeholder ?? '선택'}
           </span>
           <ChevronDown
-            size={14}
+            size="0.875rem"
             style={{
               flexShrink: 0,
               transition: 'transform 0.2s ease',
@@ -122,14 +124,14 @@ export function AdminSelect({ label, value, onChange, options, placeholder, requ
         {open && (
           <div style={{
             position: 'absolute',
-            top: 'calc(100% + 2px)',
+            top: 'calc(100% + 0.125rem)',
             left: 0,
             right: 0,
             background: '#1a1510',
-            border: '1px solid var(--border)',
-            borderRadius: '4px',
+            border: '0.0625rem solid var(--border)',
+            borderRadius: '0.25rem',
             zIndex: 50,
-            maxHeight: '240px',
+            maxHeight: '15rem',
             overflowY: 'auto',
           }}>
             {placeholder && (
@@ -138,7 +140,7 @@ export function AdminSelect({ label, value, onChange, options, placeholder, requ
                 onClick={() => { onChange(''); setOpen(false) }}
                 style={{
                   width: '100%',
-                  padding: '8px 12px',
+                  padding: '0.5rem 0.75rem',
                   textAlign: 'left',
                   fontSize: '0.8125rem',
                   color: '#888',
@@ -159,7 +161,7 @@ export function AdminSelect({ label, value, onChange, options, placeholder, requ
                 onClick={() => { onChange(o.value); setOpen(false) }}
                 style={{
                   width: '100%',
-                  padding: '8px 12px',
+                  padding: '0.5rem 0.75rem',
                   textAlign: 'left',
                   fontSize: '0.8125rem',
                   color: o.value === value ? '#e8b030' : '#c8a450',
@@ -201,6 +203,7 @@ export function AdminTextarea({ label, value, onChange, rows = 3, placeholder, r
         onChange={e => onChange(e.target.value)}
         rows={rows}
         placeholder={placeholder}
+        aria-label={label ?? placeholder}
         disabled={disabled}
         style={{
           ...adminInputStyle,
@@ -224,7 +227,7 @@ interface AdminCheckboxProps {
 
 export function AdminCheckbox({ label, checked, onChange, disabled }: AdminCheckboxProps) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
       <input
         type="checkbox"
         checked={checked}

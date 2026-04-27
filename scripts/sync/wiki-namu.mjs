@@ -49,7 +49,7 @@ const env = Object.fromEntries(
 )
 
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = env.SUPABASE_SECRET_KEY
 const headers = {
   apikey: SUPABASE_KEY,
   Authorization: `Bearer ${SUPABASE_KEY}`,

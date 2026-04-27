@@ -16,7 +16,7 @@ import { join, extname, basename } from 'path'
 import sharp from 'sharp'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY
 const BUCKET = 'limbus-assets'
 const SOURCE_DIR = '/Users/iniru/Documents/Limbus/assets/Icons/skill/Sinners'
 const CONCURRENCY = 4
@@ -41,7 +41,7 @@ const SINNER_ID_MAP = {
 }
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY 필요')
+  console.error('NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY 필요')
   process.exit(1)
 }
 
