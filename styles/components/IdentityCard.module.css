@@ -56,15 +56,29 @@
   position: absolute;
   text-align: right;
   bottom: 9%;
-  left: 22%;
+  left: 16%;
   right: 8%;
   z-index: 12;
-  font-weight: 800;
+  font-family: var(--font-kotra-bold), var(--font-heading), serif;
+  font-weight: 700;
+  letter-spacing: 0;
   line-height: 1.25;
   font-size: 0.875rem;
-  color: #f0d060;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.7);
+  color: oklch(83.38% 0.1701 88.93);
+  text-shadow: 0.0625rem 0.0625rem 0.125rem rgba(0, 0, 0, 0.8);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-break: auto;
+}
+
+.name[data-layout] {
+  overflow-wrap: break-word;
   word-break: keep-all;
+}
+
+.nameLine {
+  display: block;
+  white-space: nowrap;
 }
 
 /* 등급 아이콘 */
@@ -129,7 +143,7 @@
 
   .name {
     bottom: 8%;
-    left: 23%;
+    left: 14%;
     right: 8%;
     font-size: 0.75rem;
     line-height: 1.2;
@@ -150,5 +164,52 @@
 
   .sinnerBadgeLogo {
     padding: 0.49rem;
+  }
+}
+
+.name[data-locale='ko'] {
+  font-family: var(--font-kotra-bold), var(--font-heading), serif;
+}
+
+.name[data-locale='en'] {
+  font-family: var(--font-mikodacs), var(--font-scdream), system-ui, sans-serif;
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+
+.name[data-locale='ja'] {
+  font-family: var(--font-corporate-logo), var(--font-noto-jp), 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  line-height: 1.1;
+}
+
+.card.compact .name[data-locale='en'],
+.card.compact .name[data-locale='ja'] {
+  left: 10%;
+  right: 6%;
+}
+
+.card.compact .name[data-locale='en'] {
+  left: 4%;
+  right: 4%;
+  font-size: 0.875rem;
+  line-height: 1.05;
+}
+
+.card.compact .name[data-locale='ja'] {
+  font-size: 0.8125rem;
+  line-height: 1.08;
+}
+
+@media (max-width: 640px) {
+  .card.compact .name[data-locale='ko'] {
+    left: 2%;
+    right: 2%;
+  }
+
+  .card.compact .name[data-locale='en'] {
+    left: 0;
+    right: 0;
+    font-size: 0.875rem;
+    line-height: 1;
   }
 }

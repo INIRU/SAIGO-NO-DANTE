@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
+import { layoutWithLines, prepareWithSegments, setLocale as setPretextLocale } from '@chenglou/pretext'
 import { Identity, getIdentityInfoUrl, getIdentitySinColor, getSinnerLogoUrl, SIN_COLORS, RARITY_ICON_MAP, IDENTITY_CARD_FRAME_MAP, STORAGE_BASE, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { RARITY_COLORS } from '@/lib/constants/game'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
@@ -19,6 +20,323 @@ interface IdentityCardProps {
   compact?: boolean
 }
 
+const DEFAULT_MAX_MANUAL_NAME_LINES = 3
+const HANGUL_RE = /[\uac00-\ud7a3]/
+const SINGLE_HANGUL_RE = /^[\uac00-\ud7a3]$/
+const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3]/
+const EGO_FRAGMENT_RE = /(?:^|[^A-Za-z])E\.?G?\.?O?[:：]*$/i
+const TITLE_SUFFIX_RE = /^(?:대표|해결사|대행|아비)$/
+const COMPACT_DETERMINISTIC_LINE_UNITS = 6.1
+const REGULAR_DETERMINISTIC_LINE_UNITS = 9.4
+const SHORT_SINGLE_LINE_MAX_WEIGHT = 7
+let activePretextLocale: string | null = null
+
+function getLineTextWeight(value: string) {
+  return Array.from(value.replace(/\s+/g, '')).length
+}
+
+function normalizeLineComparison(value: string) {
+  return value.replace(/\s+/g, '')
+}
+
+function shouldPreferMeasuredSingleLine(value: string) {
+  const compact = normalizeLineComparison(value)
+  if (!compact) return false
+  if (getLineTextWeight(value) > SHORT_SINGLE_LINE_MAX_WEIGHT) return false
+  return /[\s-–—]/.test(value)
+}
+
+function getMaxManualNameLines(locale: string, compact: boolean) {
+  if (!compact) return DEFAULT_MAX_MANUAL_NAME_LINES
+  if (locale === 'en') return 5
+  if (locale === 'ja') return 4
+  return DEFAULT_MAX_MANUAL_NAME_LINES
+}
+
+function getGraphemeCount(value: string) {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value)).length
+  }
+
+  return Array.from(value).length
+}
+
+function getLetterSpacingWidth(value: string, letterSpacing: number) {
+  if (letterSpacing <= 0) return 0
+  return Math.max(0, getGraphemeCount(value) - 1) * letterSpacing
+}
+
+function getTextWidthWithLetterSpacing(width: number, value: string, letterSpacing: number) {
+  return width + getLetterSpacingWidth(value, letterSpacing)
+}
+
+function parseLetterSpacing(style: CSSStyleDeclaration) {
+  if (!style.letterSpacing || style.letterSpacing === 'normal') return 0
+  const parsed = Number.parseFloat(style.letterSpacing)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function getMeasuredLineLimit(maxWidth: number, locale: string, letterSpacing: number) {
+  if (locale !== 'en') return maxWidth + 1
+  return maxWidth - Math.max(2, letterSpacing * 3)
+}
+
+function getSemanticBreakpoints(value: string, locale: string) {
+  const breaks = new Set<number>()
+
+  for (const match of value.matchAll(/\s+/g)) {
+    if (match.index !== undefined) breaks.add(match.index + match[0].length)
+  }
+
+  for (const match of value.matchAll(/\s*[-–—]\s*/g)) {
+    if (match.index === undefined) continue
+
+    const previous = value[match.index - 1] ?? ''
+    const next = value[match.index + match[0].length] ?? ''
+    const isInnerEnglishHyphen = locale === 'en' && /[A-Za-z]/.test(previous) && /[A-Za-z]/.test(next)
+    if (!isInnerEnglishHyphen) breaks.add(match.index + match[0].length)
+  }
+
+  for (const match of value.matchAll(/[:：]{2,}/g)) {
+    if (match.index !== undefined) breaks.add(match.index + match[0].length)
+  }
+
+  for (const match of value.matchAll(/[【「『（(\[]/g)) {
+    if (match.index !== undefined && match.index > 0) breaks.add(match.index)
+  }
+
+  if (locale === 'ja') {
+    for (const match of value.matchAll(/[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*(?::[:：])?/g)) {
+      if (match.index === undefined) continue
+
+      const tokenStart = match.index
+      const tokenEnd = tokenStart + match[0].length
+      const previous = value[tokenStart - 1] ?? ''
+      const next = value[tokenEnd] ?? ''
+
+      if (tokenStart > 0 && CJK_RE.test(previous)) breaks.add(tokenStart)
+      if (tokenEnd > 0 && tokenEnd < value.length && CJK_RE.test(next)) breaks.add(tokenEnd)
+    }
+
+    for (const match of value.matchAll(/[\u3040-\u30ff\u3400-\u9fff]{4,}/g)) {
+      if (match.index === undefined) continue
+
+      const runStart = match.index
+      const runLength = match[0].length
+      for (let offset = 3; offset < runLength; offset++) {
+        breaks.add(runStart + offset)
+      }
+    }
+  }
+
+  return Array.from(breaks)
+    .filter(position => position > 0 && position < value.length)
+    .sort((a, b) => a - b)
+}
+
+function buildBreakpointCombinations(breakpoints: number[], count: number, start = 0, current: number[] = [], output: number[][] = []) {
+  if (current.length === count) {
+    output.push([...current])
+    return output
+  }
+
+  for (let index = start; index < breakpoints.length; index++) {
+    current.push(breakpoints[index])
+    buildBreakpointCombinations(breakpoints, count, index + 1, current, output)
+    current.pop()
+  }
+
+  return output
+}
+
+function buildNameLineCandidates(value: string, maxLines: number, locale: string) {
+  const breakpoints = getSemanticBreakpoints(value, locale)
+  const candidates: string[][] = [[value.trim()]]
+
+  for (let lineCount = 2; lineCount <= maxLines; lineCount++) {
+    for (const selectedBreakpoints of buildBreakpointCombinations(breakpoints, lineCount - 1)) {
+      const positions = [0, ...selectedBreakpoints, value.length]
+      candidates.push(positions.slice(0, -1).map((position, index) => (
+        value.slice(position, positions[index + 1]).trim()
+      )))
+    }
+  }
+
+  const seen = new Set<string>()
+  return candidates.filter(candidate => {
+    if (candidate.length > maxLines || candidate.some(line => line.length === 0)) return false
+    const key = candidate.join('\n')
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function estimateLineUnits(value: string) {
+  return Array.from(value).reduce((sum, char) => {
+    if (/\s/.test(char)) return sum + 0.36
+    if (HANGUL_RE.test(char)) return sum + 1
+    if (/[A-Za-z0-9]/.test(char)) return sum + 0.56
+    if (/[-–—:.：]/.test(char)) return sum + 0.34
+    if (/[【】「」『』()[\]]/.test(char)) return sum + 0.42
+    return sum + 0.8
+  }, 0)
+}
+
+function scoreNameLines(lines: string[], widths: number[], maxWidth: number) {
+  const visualWeights = lines.map(getLineTextWeight)
+  const averageWidth = widths.reduce((sum, width) => sum + width, 0) / widths.length
+  const balancePenalty = widths.reduce((sum, width) => sum + Math.abs(width - averageWidth), 0) / Math.max(maxWidth, 1)
+  const finalWeight = visualWeights[visualWeights.length - 1] ?? 0
+  const finalCompact = lines[lines.length - 1]?.replace(/\s+/g, '') ?? ''
+  let score = lines.length * 8 + balancePenalty
+
+  if (lines.length === 1) score += 16
+  if (lines.length > 2) score += 4
+  if (finalWeight <= 1) score += 160
+  if (finalWeight === 2) score += lines.length === 2 && HANGUL_RE.test(finalCompact) ? 35 : 8
+  if (TITLE_SUFFIX_RE.test(finalCompact)) score -= 40
+
+  lines.forEach((line, index) => {
+    const compact = line.replace(/\s+/g, '')
+    if (SINGLE_HANGUL_RE.test(compact)) score += 140
+    if (/^[)\]】」』,.:;:：-]/.test(compact)) score += 45
+    if (/^[\u3040-\u30ff][【「『（(\[]/.test(compact)) score += 100
+    if (/^(?:G\.O|G\.|O)(?:[:：]|$)/i.test(compact)) score += 120
+    if (/[A-Za-z]-$/.test(compact)) score += 90
+    if (EGO_FRAGMENT_RE.test(compact) && !/E\.G\.O[:：]{2}$/i.test(compact)) score += 90
+    if (index < lines.length - 1 && /E\.G\.$|E\.G\.O?$/i.test(compact)) score += 90
+    if (index < lines.length - 1 && /(?:[-–—]|[:：]{2})$/.test(compact)) score -= 25
+    if (index < lines.length - 1 && getLineTextWeight(compact) <= 2) score += 50
+    if (index < lines.length - 1 && getLineTextWeight(compact) === 3) score += 15
+    if (index === lines.length - 1 && HANGUL_RE.test(compact) && compact.length <= 2) score += 10
+  })
+
+  return score
+}
+
+function scoreDeterministicNameLines(lines: string[], maxUnits: number) {
+  const estimatedWidths = lines.map(estimateLineUnits)
+  const overflowPenalty = estimatedWidths.reduce((sum, width) => {
+    if (width <= maxUnits) return sum
+    return sum + (width - maxUnits) * 90
+  }, 0)
+  const finalCompact = lines[lines.length - 1]?.replace(/\s+/g, '') ?? ''
+  const looseSuffixPenalty = TITLE_SUFFIX_RE.test(finalCompact) ? 34 : 0
+
+  return scoreNameLines(lines, estimatedWidths, maxUnits) + overflowPenalty + looseSuffixPenalty
+}
+
+function chooseDeterministicNameLines(value: string, compact: boolean, locale: string) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+  if (shouldPreferMeasuredSingleLine(normalized)) return null
+
+  const candidates = buildNameLineCandidates(normalized, getMaxManualNameLines(locale, compact), locale)
+  if (candidates.length <= 1) return null
+
+  const maxUnits = compact ? COMPACT_DETERMINISTIC_LINE_UNITS : REGULAR_DETERMINISTIC_LINE_UNITS
+  let best: { lines: string[]; score: number } | null = null
+
+  for (const candidate of candidates) {
+    const score = scoreDeterministicNameLines(candidate, maxUnits)
+    if (best === null || score < best.score) best = { lines: candidate, score }
+  }
+
+  if (!best || best.lines.length <= 1) return null
+  return best.lines
+}
+
+function getCanvasFont(style: CSSStyleDeclaration) {
+  const fontStyle = style.fontStyle && style.fontStyle !== 'normal' ? `${style.fontStyle} ` : ''
+  const fontVariant = style.fontVariant && style.fontVariant !== 'normal' ? `${style.fontVariant} ` : ''
+  return `${fontStyle}${fontVariant}${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+}
+
+function measureCanvasTextWidth(value: string, font: string, letterSpacing: number) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (!context) return null
+  context.font = font
+  return getTextWidthWithLetterSpacing(context.measureText(value).width, value, letterSpacing)
+}
+
+function chooseMeasuredNameLines(value: string, maxWidth: number, font: string, lineHeight: number, locale: string, compact: boolean, letterSpacing: number) {
+  if (!value.trim() || maxWidth <= 0) return null
+
+  const normalizedValue = value.replace(/\s+/g, ' ').trim()
+  const maxLines = getMaxManualNameLines(locale, compact)
+  const lineLimit = getMeasuredLineLimit(maxWidth, locale, letterSpacing)
+  const canvasWidth = measureCanvasTextWidth(normalizedValue, font, letterSpacing)
+  if (
+    canvasWidth !== null &&
+    canvasWidth <= lineLimit &&
+    shouldPreferMeasuredSingleLine(normalizedValue)
+  ) {
+    return [normalizedValue]
+  }
+
+  if (activePretextLocale !== locale) {
+    setPretextLocale(locale)
+    activePretextLocale = locale
+  }
+
+  const measureLine = (line: string) => {
+    const prepared = prepareWithSegments(line, font)
+    const result = layoutWithLines(prepared, maxWidth, lineHeight)
+    if (result.lineCount !== 1 || result.lines.length !== 1) return null
+    return getTextWidthWithLetterSpacing(result.lines[0].width, line, letterSpacing)
+  }
+
+  const singleLineWidth = measureLine(normalizedValue)
+  if (
+    singleLineWidth !== null &&
+    singleLineWidth <= lineLimit &&
+    shouldPreferMeasuredSingleLine(normalizedValue)
+  ) {
+    return [normalizedValue]
+  }
+
+  let best: { lines: string[]; score: number } | null = null
+
+  for (const candidate of buildNameLineCandidates(normalizedValue, maxLines, locale)) {
+    const widths: number[] = []
+    let fits = true
+
+    for (const line of candidate) {
+      const width = measureLine(line)
+      if (width === null || width > lineLimit) {
+        fits = false
+        break
+      }
+      widths.push(width)
+    }
+
+    if (!fits) continue
+
+    const score = scoreNameLines(candidate, widths, maxWidth)
+    if (best === null || score < best.score) best = { lines: candidate, score }
+  }
+
+  if (best) return best.lines
+
+  let fallbackMaxWidth = maxWidth
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const fallback = layoutWithLines(prepareWithSegments(normalizedValue, font), fallbackMaxWidth, lineHeight)
+    const fallbackLines = fallback.lines.map(line => line.text.trim()).filter(Boolean).slice(0, maxLines)
+    const fits = fallbackLines.every(line => {
+      const width = measureCanvasTextWidth(line, font, letterSpacing)
+      return width !== null && width <= lineLimit
+    })
+
+    if (fallbackLines.length > 0 && fits) return fallbackLines
+
+    fallbackMaxWidth = Math.max(maxWidth * 0.72, fallbackMaxWidth - Math.max(2, letterSpacing * 6))
+  }
+
+  return null
+}
+
 export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const t = useTranslations()
@@ -28,6 +346,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
     if (locale === 'ja') return jp ?? kr ?? ''
     return kr ?? ''
   }
+  const displayName = getName(identity.name_kr, identity.name_en, identity.name_jp)
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS[1]
   const rarityNum = identity.rarity
@@ -35,6 +354,71 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
   const fallbackUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
   const [imgSrc, setImgSrc] = useState(infoUrl)
   const [imgKey, setImgKey] = useState(infoUrl)
+  const nameRef = useRef<HTMLDivElement>(null)
+  const [measuredNameLines, setMeasuredNameLines] = useState<string[] | null>(null)
+  const deterministicNameLines = useMemo(
+    () => chooseDeterministicNameLines(displayName, compact, locale),
+    [compact, displayName, locale],
+  )
+  const renderedNameLines = useMemo(() => {
+    if (
+      measuredNameLines &&
+      normalizeLineComparison(measuredNameLines.join('')) === normalizeLineComparison(displayName)
+    ) {
+      return measuredNameLines
+    }
+    return deterministicNameLines
+  }, [deterministicNameLines, displayName, measuredNameLines])
+  const nameLayout = measuredNameLines && measuredNameLines === renderedNameLines
+    ? 'measured'
+    : deterministicNameLines === renderedNameLines
+      ? 'deterministic'
+      : undefined
+
+  useEffect(() => {
+    const node = nameRef.current
+    if (!node) return
+
+    let cancelled = false
+
+    const measure = () => {
+      if (cancelled) return
+
+      try {
+        const style = window.getComputedStyle(node)
+        const font = getCanvasFont(style)
+        const parsedLineHeight = Number.parseFloat(style.lineHeight)
+        const parsedFontSize = Number.parseFloat(style.fontSize)
+        const lineHeight = Number.isFinite(parsedLineHeight) ? parsedLineHeight : parsedFontSize * 1.2
+        const letterSpacing = parseLetterSpacing(style)
+        const lines = chooseMeasuredNameLines(displayName, node.clientWidth, font, lineHeight, locale, compact, letterSpacing)
+
+        if (!cancelled) {
+          setMeasuredNameLines(previous => {
+            if (previous && lines && previous.join('\n') === lines.join('\n')) return previous
+            if (!previous && !lines) return previous
+            return lines
+          })
+        }
+      } catch {
+        if (!cancelled) setMeasuredNameLines(null)
+      }
+    }
+
+    setMeasuredNameLines(null)
+    const rafId = window.requestAnimationFrame(measure)
+    const fontsReady = document.fonts?.ready
+    fontsReady?.then(measure).catch(() => undefined)
+
+    const resizeObserver = new ResizeObserver(measure)
+    resizeObserver.observe(node)
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(rafId)
+      resizeObserver.disconnect()
+    }
+  }, [displayName, locale, compact])
 
   // gacksung prop이 바뀌면 이미지 URL 갱신
   if (imgKey !== infoUrl) {
@@ -58,7 +442,7 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           {imgSrc ? (
             <Image
               src={imgSrc}
-              alt={getName(identity.name_kr, identity.name_en, identity.name_jp)}
+              alt={displayName}
               fill
               placeholder="blur"
               blurDataURL={getBlurDataURL(imgSrc) ?? BLUR_PLACEHOLDER}
@@ -89,8 +473,20 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
         </div>
 
         {/* 인격명 */}
-        <div className={`${styles.name} font-semibold`}>
-          {getName(identity.name_kr, identity.name_en, identity.name_jp)}
+        <div
+          ref={nameRef}
+          className={styles.name}
+          data-locale={locale}
+          data-layout={nameLayout}
+          aria-label={displayName}
+        >
+          {renderedNameLines
+            ? renderedNameLines.map((line, index) => (
+              <span className={styles.nameLine} key={`${line}-${index}`}>
+                {line}
+              </span>
+            ))
+            : displayName}
         </div>
 
         {/* 등급 아이콘 */}
