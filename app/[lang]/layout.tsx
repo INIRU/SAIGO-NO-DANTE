@@ -1,4 +1,4 @@
-import { connection } from 'next/server'
+import type { Metadata } from 'next'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, setRequestLocale, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
@@ -11,8 +11,36 @@ import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import SetHtmlLang from '@/components/i18n/SetHtmlLang'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+function absoluteUrl(path: string): string {
+  return new URL(path, SITE_URL).toString()
+}
+
+function isSupportedLang(lang: string): lang is SupportedLang {
+  return lang === 'ko' || lang === 'en' || lang === 'ja'
+}
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ lang: locale }))
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang: rawLang } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
+  const ogImage = absoluteUrl(`/${lang}/opengraph-image`)
+
+  return {
+    openGraph: {
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      images: [ogImage],
+    },
+  }
 }
 
 export default async function LangLayout({
@@ -33,11 +61,9 @@ export default async function LangLayout({
   const messages = await getMessages()
   const t = await getTranslations()
   const mainNavLabel = t('common.mainNav')
-  await connection()
-  const now = new Date()
 
   return (
-    <NextIntlClientProvider locale={validLang} messages={messages} now={now} timeZone="Asia/Seoul">
+    <NextIntlClientProvider locale={validLang} messages={messages} timeZone="Asia/Seoul">
       <SetHtmlLang lang={validLang} />
       <SkipNav />
       <AprilFoolsWrapper />

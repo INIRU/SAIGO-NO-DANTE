@@ -1,15 +1,25 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { cacheLife, cacheTag } from 'next/cache'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
+async function getCachedEgoGifts() {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.egoGifts, CACHE_TAGS.gameData, CACHE_TAGS.mirrorDungeon)
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .schema('limbus')
+    .from('ego_gifts')
+    .select('name, keyword, grade, image_url, effect_base, activation_condition')
+  if (error) throw new Error(error.message)
+  return data
+}
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .schema('limbus')
-      .from('ego_gifts')
-      .select('name, keyword, grade, image_url, effect_base, activation_condition')
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const data = await getCachedEgoGifts()
     return NextResponse.json(data)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

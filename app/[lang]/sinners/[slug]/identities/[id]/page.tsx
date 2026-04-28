@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -14,29 +16,35 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+function absoluteUrl(path: string): string {
+  return new URL(path, SITE_URL).toString()
+}
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ lang: string; slug: string; id: string }>
 }): Promise<Metadata> {
+  'use cache'
+  cacheLife('max')
   const { lang: rawLang, slug, id } = await params
   const lang = (['ko', 'en', 'ja'].includes(rawLang) ? rawLang : 'ko') as SupportedLang
-  const [sinner, identity] = await Promise.all([
+  cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.identities, CACHE_TAGS.gameData)
+  const [sinner, identity, t] = await Promise.all([
     getSinnerById(slug),
     getIdentityById(id),
+    getTranslations({ locale: lang }),
   ])
-  if (!sinner || !identity) return { title: (await getTranslations())('identity.notFound'), robots: { index: false } }
+  if (!sinner || !identity) return { title: t('identity.notFound'), robots: { index: false } }
 
-  const t = await getTranslations()
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const identityName = getLocalizedName(identity, lang)
   const rarityStr = identity.rarity === 3 ? t('identity.rarity.3') : identity.rarity === 2 ? t('identity.rarity.2') : t('identity.rarity.1')
   const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
   const descSuffix = t('identity.meta.description')
   const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
-  const imageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
+  const ogImage = absoluteUrl(`/${lang}/sinners/${slug}/identities/${id}/opengraph-image`)
   const pageTitle = `${identityName} | ${sinnerName} | SAIGO NO DANTE`
 
   return {
@@ -48,13 +56,13 @@ export async function generateMetadata({
       description,
       url: canonical,
       type: 'article',
-      ...(imageUrl ? { images: [{ url: imageUrl, width: 512, height: 512, alt: `${identityName} — ${sinnerName}` }] } : {}),
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${identityName} — ${sinnerName}` }],
     },
     twitter: {
       card: 'summary_large_image',
       title: pageTitle,
       description,
-      ...(imageUrl ? { images: [imageUrl] } : {}),
+      images: [ogImage],
     },
   }
 }
