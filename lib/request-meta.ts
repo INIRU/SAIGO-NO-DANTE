@@ -56,9 +56,16 @@ function keyedHash(value: string | null): string | null {
   return createHmac('sha256', secret).update(value).digest('hex')
 }
 
+export function hashDeviceToken(token: string | null): string | null {
+  return keyedHash(token)
+}
+
 export function getRequestMetadata(request: NextRequest | Request): RequestMetadata {
   const headers = request.headers
-  const ip = getFirstHeaderValue(headers.get('x-forwarded-for')) ?? getFirstHeaderValue(headers.get('x-real-ip'))
+  const ip =
+    getFirstHeaderValue(headers.get('cf-connecting-ip')) ??
+    getFirstHeaderValue(headers.get('x-forwarded-for')) ??
+    getFirstHeaderValue(headers.get('x-real-ip'))
   const normalizedIp = ip ? stripPort(ip) : null
   const userAgent = headers.get('user-agent')?.trim() || null
 

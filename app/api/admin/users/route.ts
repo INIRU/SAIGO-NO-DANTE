@@ -17,6 +17,7 @@ type ProfileRow = {
   last_ip_hash: string | null
   last_ip_masked: string | null
   last_user_agent_hash: string | null
+  last_device_hash: string | null
   last_country: string | null
   created_at: string
 }
@@ -26,7 +27,7 @@ type AuthUserSummary = {
   last_sign_in_at?: string | null
 }
 
-type DuplicateMatchType = 'ip' | 'user_agent'
+type DuplicateMatchType = 'ip' | 'user_agent' | 'device'
 
 type DuplicateProfileRow = Pick<
   ProfileRow,
@@ -36,9 +37,21 @@ type DuplicateProfileRow = Pick<
   | 'last_seen_at'
   | 'last_ip_hash'
   | 'last_user_agent_hash'
+  | 'last_device_hash'
   | 'last_country'
   | 'created_at'
 >
+
+type AccessSignalRow = {
+  profile_id: string
+  seen_at: string
+  ip_hash: string | null
+  ip_masked: string | null
+  user_agent_hash: string | null
+  device_hash: string | null
+  country: string | null
+  created_at: string
+}
 
 type DuplicateMatchCandidate = {
   profile: DuplicateProfileRow
@@ -75,7 +88,7 @@ function countCluster(values: Array<string | null>) {
 
 function groupProfilesByHash(
   profiles: DuplicateProfileRow[],
-  hashKey: 'last_ip_hash' | 'last_user_agent_hash',
+  hashKey: 'last_ip_hash' | 'last_user_agent_hash' | 'last_device_hash',
 ) {
   const grouped = new Map<string, DuplicateProfileRow[]>()
   for (const profile of profiles) {
@@ -111,6 +124,7 @@ function collectDuplicateCandidates(
   profile: ProfileRow,
   ipProfilesByHash: Map<string, DuplicateProfileRow[]>,
   userAgentProfilesByHash: Map<string, DuplicateProfileRow[]>,
+  deviceProfilesByHash: Map<string, DuplicateProfileRow[]>,
 ) {
   const candidates = new Map<string, DuplicateMatchCandidate>()
 
@@ -138,10 +152,72 @@ function collectDuplicateCandidates(
   if (profile.last_user_agent_hash) {
     addMatches(userAgentProfilesByHash.get(profile.last_user_agent_hash), 'user_agent')
   }
+  if (profile.last_device_hash) {
+    addMatches(deviceProfilesByHash.get(profile.last_device_hash), 'device')
+  }
 
   return [...candidates.values()]
     .sort(compareDuplicateCandidates)
     .slice(0, MAX_DUPLICATE_MATCHES_PER_USER)
+}
+
+function hasRiskCandidate(candidates: DuplicateMatchCandidate[]) {
+  return candidates.some(candidate => (
+    candidate.matchTypes.has('device') ||
+    (candidate.matchTypes.has('ip') && candidate.matchTypes.has('user_agent'))
+  ))
+}
+
+function groupAccessSignalsByProfile(signals: AccessSignalRow[]) {
+  const grouped = new Map<string, AccessSignalRow[]>()
+  for (const signal of signals) {
+    const current = grouped.get(signal.profile_id)
+    if (current) {
+      current.push(signal)
+    } else {
+      grouped.set(signal.profile_id, [signal])
+    }
+  }
+
+  for (const rows of grouped.values()) {
+    rows.sort((a, b) => {
+      const seenDiff = dateMs(b.seen_at) - dateMs(a.seen_at)
+      if (seenDiff !== 0) return seenDiff
+      return dateMs(b.created_at) - dateMs(a.created_at)
+    })
+  }
+
+  return grouped
+}
+
+function countDistinctProfilesByHash(
+  rows: AccessSignalRow[],
+  hashKey: 'ip_hash' | 'user_agent_hash' | 'device_hash',
+) {
+  const grouped = new Map<string, Set<string>>()
+  for (const row of rows) {
+    const hash = row[hashKey]
+    if (!hash) continue
+    const profileIds = grouped.get(hash)
+    if (profileIds) {
+      profileIds.add(row.profile_id)
+    } else {
+      grouped.set(hash, new Set([row.profile_id]))
+    }
+  }
+
+  const counts = new Map<string, number>()
+  for (const [hash, profileIds] of grouped) {
+    counts.set(hash, profileIds.size)
+  }
+  return counts
+}
+
+function formatHashFingerprint(hash: string | null) {
+  const value = hash?.trim()
+  if (!value) return null
+  if (value.length <= 10) return `${value.slice(0, Math.min(6, value.length))}...`
+  return `${value.slice(0, 6)}...${value.slice(-4)}`
 }
 
 function isMissingAuthUserError(error: { message?: string; status?: number }) {
@@ -209,6 +285,7 @@ export async function GET(request: Request) {
         last_ip_hash,
         last_ip_masked,
         last_user_agent_hash,
+        last_device_hash,
         last_country,
         created_at
       `, { count: 'exact' })
@@ -253,8 +330,9 @@ export async function GET(request: Request) {
     const userIds = profiles.map(profile => profile.id)
     const ipHashes = [...new Set(profiles.map(profile => profile.last_ip_hash).filter(Boolean))] as string[]
     const userAgentHashes = [...new Set(profiles.map(profile => profile.last_user_agent_hash).filter(Boolean))] as string[]
+    const deviceHashes = [...new Set(profiles.map(profile => profile.last_device_hash).filter(Boolean))] as string[]
 
-    const [decksRes, authResults, ipClusterRes, userAgentClusterRes] = await Promise.all([
+    const [decksRes, authResults, ipClusterRes, userAgentClusterRes, deviceClusterRes, accessSignalsRes] = await Promise.all([
       userIds.length > 0
         ? supabase
             .schema('limbus')
@@ -277,6 +355,7 @@ export async function GET(request: Request) {
               last_seen_at,
               last_ip_hash,
               last_user_agent_hash,
+              last_device_hash,
               last_country,
               created_at
             `)
@@ -293,10 +372,45 @@ export async function GET(request: Request) {
               last_seen_at,
               last_ip_hash,
               last_user_agent_hash,
+              last_device_hash,
               last_country,
               created_at
             `)
             .in('last_user_agent_hash', userAgentHashes)
+        : Promise.resolve({ data: [], error: null }),
+      deviceHashes.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profiles')
+            .select(`
+              id,
+              username,
+              avatar_url,
+              last_seen_at,
+              last_ip_hash,
+              last_user_agent_hash,
+              last_device_hash,
+              last_country,
+              created_at
+            `)
+            .in('last_device_hash', deviceHashes)
+        : Promise.resolve({ data: [], error: null }),
+      userIds.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profile_access_signals')
+            .select(`
+              profile_id,
+              seen_at,
+              ip_hash,
+              ip_masked,
+              user_agent_hash,
+              device_hash,
+              country,
+              created_at
+            `)
+            .in('profile_id', userIds)
+            .order('seen_at', { ascending: false })
         : Promise.resolve({ data: [], error: null }),
     ])
 
@@ -309,11 +423,101 @@ export async function GET(request: Request) {
     if (userAgentClusterRes.error) {
       return NextResponse.json({ error: userAgentClusterRes.error.message }, { status: 500 })
     }
+    if (deviceClusterRes.error) {
+      return NextResponse.json({ error: deviceClusterRes.error.message }, { status: 500 })
+    }
+    if (accessSignalsRes.error) {
+      return NextResponse.json({ error: accessSignalsRes.error.message }, { status: 500 })
+    }
 
     const authError = authResults.find(result => result.error && !isMissingAuthUserError(result.error))
     if (authError?.error) {
       return NextResponse.json({ error: authError.error.message }, { status: 500 })
     }
+
+    const accessSignals = (accessSignalsRes.data ?? []) as AccessSignalRow[]
+    const recentAccessSignalsByProfile = groupAccessSignalsByProfile(accessSignals)
+    const signalIpHashes = [...new Set(accessSignals.map(signal => signal.ip_hash).filter(Boolean))] as string[]
+    const signalUserAgentHashes = [
+      ...new Set(accessSignals.map(signal => signal.user_agent_hash).filter(Boolean)),
+    ] as string[]
+    const signalDeviceHashes = [
+      ...new Set(accessSignals.map(signal => signal.device_hash).filter(Boolean)),
+    ] as string[]
+
+    const [ipSignalClusterRes, userAgentSignalClusterRes, deviceSignalClusterRes] = await Promise.all([
+      signalIpHashes.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profile_access_signals')
+            .select(`
+              profile_id,
+              seen_at,
+              ip_hash,
+              ip_masked,
+              user_agent_hash,
+              device_hash,
+              country,
+              created_at
+            `)
+            .in('ip_hash', signalIpHashes)
+        : Promise.resolve({ data: [], error: null }),
+      signalUserAgentHashes.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profile_access_signals')
+            .select(`
+              profile_id,
+              seen_at,
+              ip_hash,
+              ip_masked,
+              user_agent_hash,
+              device_hash,
+              country,
+              created_at
+            `)
+            .in('user_agent_hash', signalUserAgentHashes)
+        : Promise.resolve({ data: [], error: null }),
+      signalDeviceHashes.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profile_access_signals')
+            .select(`
+              profile_id,
+              seen_at,
+              ip_hash,
+              ip_masked,
+              user_agent_hash,
+              device_hash,
+              country,
+              created_at
+            `)
+            .in('device_hash', signalDeviceHashes)
+        : Promise.resolve({ data: [], error: null }),
+    ])
+
+    if (ipSignalClusterRes.error) {
+      return NextResponse.json({ error: ipSignalClusterRes.error.message }, { status: 500 })
+    }
+    if (userAgentSignalClusterRes.error) {
+      return NextResponse.json({ error: userAgentSignalClusterRes.error.message }, { status: 500 })
+    }
+    if (deviceSignalClusterRes.error) {
+      return NextResponse.json({ error: deviceSignalClusterRes.error.message }, { status: 500 })
+    }
+
+    const ipSignalClusterCounts = countDistinctProfilesByHash(
+      (ipSignalClusterRes.data ?? []) as AccessSignalRow[],
+      'ip_hash',
+    )
+    const userAgentSignalClusterCounts = countDistinctProfilesByHash(
+      (userAgentSignalClusterRes.data ?? []) as AccessSignalRow[],
+      'user_agent_hash',
+    )
+    const deviceSignalClusterCounts = countDistinctProfilesByHash(
+      (deviceSignalClusterRes.data ?? []) as AccessSignalRow[],
+      'device_hash',
+    )
 
     const authMap = new Map<string, AuthUserSummary>()
     for (const result of authResults) {
@@ -333,6 +537,9 @@ export async function GET(request: Request) {
     const userAgentClusterCounts = countCluster(
       (userAgentClusterRes.data ?? []).map(row => row.last_user_agent_hash),
     )
+    const deviceClusterCounts = countCluster(
+      (deviceClusterRes.data ?? []).map(row => row.last_device_hash),
+    )
     const ipProfilesByHash = groupProfilesByHash(
       (ipClusterRes.data ?? []) as DuplicateProfileRow[],
       'last_ip_hash',
@@ -341,11 +548,20 @@ export async function GET(request: Request) {
       (userAgentClusterRes.data ?? []) as DuplicateProfileRow[],
       'last_user_agent_hash',
     )
+    const deviceProfilesByHash = groupProfilesByHash(
+      (deviceClusterRes.data ?? []) as DuplicateProfileRow[],
+      'last_device_hash',
+    )
     const duplicateCandidatesByUserId = new Map<string, DuplicateMatchCandidate[]>()
     const duplicateAuthUserIds = new Set<string>()
 
     for (const profile of profiles) {
-      const candidates = collectDuplicateCandidates(profile, ipProfilesByHash, userAgentProfilesByHash)
+      const candidates = collectDuplicateCandidates(
+        profile,
+        ipProfilesByHash,
+        userAgentProfilesByHash,
+        deviceProfilesByHash,
+      )
       duplicateCandidatesByUserId.set(profile.id, candidates)
       for (const candidate of candidates) {
         if (!authMap.has(candidate.profile.id)) {
@@ -380,6 +596,29 @@ export async function GET(request: Request) {
         const sameUserAgentHashCount = p.last_user_agent_hash
           ? userAgentClusterCounts.get(p.last_user_agent_hash) ?? 0
           : 0
+        const sameDeviceHashCount = p.last_device_hash
+          ? deviceClusterCounts.get(p.last_device_hash) ?? 0
+          : 0
+        const duplicateCandidates = duplicateCandidatesByUserId.get(p.id) ?? []
+        const recentAccessSignals = (recentAccessSignalsByProfile.get(p.id) ?? [])
+          .slice(0, 5)
+          .map(signal => ({
+            seen_at: signal.seen_at,
+            country: signal.country,
+            ip_masked: signal.ip_masked,
+            ip_hash_fingerprint: formatHashFingerprint(signal.ip_hash),
+            user_agent_hash_fingerprint: formatHashFingerprint(signal.user_agent_hash),
+            device_hash_fingerprint: formatHashFingerprint(signal.device_hash),
+            same_ip_hash_count: signal.ip_hash
+              ? ipSignalClusterCounts.get(signal.ip_hash) ?? 0
+              : 0,
+            same_user_agent_hash_count: signal.user_agent_hash
+              ? userAgentSignalClusterCounts.get(signal.user_agent_hash) ?? 0
+              : 0,
+            same_device_hash_count: signal.device_hash
+              ? deviceSignalClusterCounts.get(signal.device_hash) ?? 0
+              : 0,
+          }))
         return {
           id: p.id,
           username: p.username,
@@ -402,16 +641,18 @@ export async function GET(request: Request) {
           deck_count: countMap.get(p.id) ?? 0,
           same_ip_hash_count: sameIpHashCount,
           same_user_agent_hash_count: sameUserAgentHashCount,
-          duplicate_risk_count: Math.max(sameIpHashCount, sameUserAgentHashCount),
-          duplicate_risk: sameIpHashCount > 1 || sameUserAgentHashCount > 1,
-          duplicate_matches: (duplicateCandidatesByUserId.get(p.id) ?? []).map(candidate => {
+          same_device_hash_count: sameDeviceHashCount,
+          duplicate_risk_count: Math.max(sameIpHashCount, sameUserAgentHashCount, sameDeviceHashCount),
+          duplicate_risk: hasRiskCandidate(duplicateCandidates),
+          recent_access_signals: recentAccessSignals,
+          duplicate_matches: duplicateCandidates.map(candidate => {
             const duplicateAuthUser = authMap.get(candidate.profile.id)
             return {
               id: candidate.profile.id,
               username: candidate.profile.username,
               email: duplicateAuthUser?.email ?? null,
               avatar_url: candidate.profile.avatar_url,
-              match_types: (['ip', 'user_agent'] as const).filter(matchType => (
+              match_types: (['ip', 'user_agent', 'device'] as const).filter(matchType => (
                 candidate.matchTypes.has(matchType)
               )),
               last_seen_at: candidate.profile.last_seen_at,
