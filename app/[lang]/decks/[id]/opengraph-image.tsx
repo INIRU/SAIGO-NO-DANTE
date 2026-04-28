@@ -1,72 +1,83 @@
 import { ImageResponse } from 'next/og'
 import { createClient } from '@supabase/supabase-js'
-import sharp from 'sharp'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
+import {
+  OG_CONTENT_TYPE,
+  OG_SIZE,
+  clampText,
+  fetchImageDataUri,
+  isSupportedLang,
+  ogFontOptions,
+} from '@/lib/utils/og-image'
 
 export const runtime = 'nodejs'
 export const alt = '덱 공유 이미지'
-export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
+export const size = OG_SIZE
+export const contentType = OG_CONTENT_TYPE
 
-import { STORAGE_BASE } from '@/lib/constants/game'
-
-// Load local font synchronously to avoid hanging async fetch during prerender
-let pretendardFont: ArrayBuffer | null = null
-try {
-  const fontPath = join(process.cwd(), 'public', 'fonts', 'Pretendard-Regular.ttf')
-  pretendardFont = readFileSync(fontPath).buffer as ArrayBuffer
-} catch {
-  // Fall back to no custom font if file is missing
-}
-
-function portraitUrl(
-  sinner_id: string,
-  folder_name: string | null,
-  game_id: string | null,
-  gacksung: boolean,
-): string {
-  if (!game_id || !folder_name) return ''
-  const prefix = gacksung ? 'gacksung' : 'normal'
-  const folder = encodeURIComponent(folder_name)
-  return `${STORAGE_BASE}/sinners/${sinner_id}/identities/${folder}/${game_id}_${prefix}_info.webp`
-}
-
-async function fetchAsJpegDataUri(url: string): Promise<string> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return ''
-    const buf = Buffer.from(await res.arrayBuffer())
-    const jpeg = await sharp(buf).resize(120, 400, { fit: 'cover', position: 'top' }).jpeg({ quality: 70 }).toBuffer()
-    return `data:image/jpeg;base64,${jpeg.toString('base64')}`
-  } catch {
-    return ''
-  }
-}
+const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 type SlotRow = {
   slot_order: number
-  gacksung: boolean
+  gacksung: boolean | null
   identities: {
     sinner_id: string
     folder_name: string | null
     game_id: string | null
     keywords: string[] | null
-  } | null
+  } | {
+    sinner_id: string
+    folder_name: string | null
+    game_id: string | null
+    keywords: string[] | null
+  }[] | null
 }
 
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
-const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
+type DeckRow = {
+  title: string
+  tags: string[] | null
+  vote_count: number | null
+  view_count: number | null
+  profiles: { username: string | null } | { username: string | null }[] | null
+  deck_identities: SlotRow[] | null
+}
 
-export default async function DeckOgImage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+function fallbackImage(message: string) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          background: '#0d0b08',
+          color: '#e8b030',
+          fontFamily: 'Paperlogy',
+        }}
+      >
+        <div style={{ display: 'flex', fontSize: 28, letterSpacing: '0.16em', color: 'rgba(232,176,48,0.58)' }}>
+          SAIGO NO DANTE
+        </div>
+        <div style={{ display: 'flex', fontSize: 50, marginTop: 20 }}>{message}</div>
+      </div>
+    ),
+    { ...size, ...ogFontOptions },
+  )
+}
 
+export default async function DeckOgImage({ params }: { params: Promise<{ lang: string; id: string }> }) {
+  const { lang: rawLang, id } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
   )
 
-  const { data: deck } = await supabase
+  const { data: deck, error } = await supabase
     .schema('limbus')
     .from('decks')
     .select(`
@@ -75,54 +86,48 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
       deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
     `)
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
-  const fontOptions = pretendardFont
-    ? { fonts: [{ name: 'Pretendard', data: pretendardFont, style: 'normal' as const, weight: 400 as const }] }
-    : {}
+  if (error || !deck) return fallbackImage(lang === 'en' ? 'Deck not found' : lang === 'ja' ? 'デッキが見つかりません' : '덱을 찾을 수 없습니다')
 
-  if (!deck) {
-    return new ImageResponse(
-      (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b08', color: '#c8900a', fontSize: 40 }}>
-          덱을 찾을 수 없습니다
-        </div>
-      ),
-      { ...size, ...fontOptions },
-    )
-  }
-
-  const sorted = [...(deck.deck_identities as unknown as SlotRow[] ?? [])].sort((a, b) => {
+  const deckRow = deck as unknown as DeckRow
+  const sorted = [...(deckRow.deck_identities ?? [])].sort((a, b) => {
     if (a.slot_order === 99 && b.slot_order !== 99) return 1
     if (b.slot_order === 99 && a.slot_order !== 99) return -1
     return a.slot_order - b.slot_order
   })
   const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
 
-  // 테마 키워드
-  const kwFreq: Record<string, number> = {}
+  const keywordFrequency = new Map<string, number>()
   for (const slot of sorted) {
-    const id_ = Array.isArray(slot?.identities) ? slot.identities[0] : slot?.identities
-    for (const kw of id_?.keywords ?? []) {
-      const nkw = normalizeThemeKeyword(kw)
-      if (THEME_KW_SET.has(nkw)) kwFreq[nkw] = (kwFreq[nkw] ?? 0) + 1
+    const identity = Array.isArray(slot?.identities) ? slot.identities[0] : slot?.identities
+    for (const keyword of identity?.keywords ?? []) {
+      const normalized = normalizeThemeKeyword(keyword)
+      if (THEME_KW_SET.has(normalized)) {
+        keywordFrequency.set(normalized, (keywordFrequency.get(normalized) ?? 0) + 1)
+      }
     }
   }
-  const topKeywords = Object.entries(kwFreq)
-    .filter(([, n]) => n >= 5)
+
+  const topKeywords = [...keywordFrequency.entries()]
+    .filter(([, count]) => count >= 5)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
-    .map(([kw]) => kw)
+    .map(([keyword]) => keyword)
 
-  // 이미지 pre-fetch (WebP → JPEG 변환, 병렬)
-  const imgUrls = slots.map(slot => {
-    const id_ = slot ? (Array.isArray(slot.identities) ? slot.identities[0] : slot.identities) : null
-    return id_ ? portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot?.gacksung ?? false) : ''
+  const imagePromises = slots.map((slot) => {
+    const identity = slot ? (Array.isArray(slot.identities) ? slot.identities[0] : slot.identities) : null
+    const url = identity
+      ? getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, slot?.gacksung ?? false)
+      : ''
+    return fetchImageDataUri(url, { width: 126, height: 430, quality: 72, position: 'top' })
   })
-  const imgDataUris = await Promise.all(imgUrls.map(u => u ? fetchAsJpegDataUri(u) : Promise.resolve('')))
+  const imageDataUris = await Promise.all(imagePromises)
 
-  const profile = Array.isArray(deck.profiles) ? deck.profiles[0] : deck.profiles
-  const username = (profile as { username: string } | null)?.username ?? null
+  const profile = Array.isArray(deckRow.profiles) ? deckRow.profiles[0] : deckRow.profiles
+  const username = profile?.username ?? null
+  const tags = (deckRow.tags ?? []).slice(0, 4)
+  const socialLabel = lang === 'en' ? 'SHARED DECK' : lang === 'ja' ? '共有デッキ' : '공유 덱'
 
   return new ImageResponse(
     (
@@ -133,178 +138,203 @@ export default async function DeckOgImage({ params }: { params: Promise<{ id: st
           display: 'flex',
           flexDirection: 'column',
           background: '#0d0b08',
+          color: '#f4ead5',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {/* 12 포트레이트 배경 (상단 60%) */}
-        <div style={{ display: 'flex', width: '100%', height: '380px', position: 'relative' }}>
-          {slots.map((_, i) => {
-            const dataUri = imgDataUris[i]
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background:
+              'radial-gradient(circle at 15% 10%, rgba(232,176,48,0.12), transparent 22%), linear-gradient(180deg, #18120c 0%, #0d0b08 62%)',
+          }}
+        />
+        <div style={{ display: 'flex', width: '100%', height: 410, position: 'relative' }}>
+          {slots.map((slot, index) => {
+            const dataUri = imageDataUris[index]
             return (
               <div
-                key={i}
+                key={`${slot?.slot_order ?? 'empty'}-${index}`}
                 style={{
-                  width: '100px',
-                  height: '380px',
-                  overflow: 'hidden',
+                  width: 100,
+                  height: 410,
                   display: 'flex',
                   position: 'relative',
+                  overflow: 'hidden',
+                  background: index % 2 === 0 ? '#15100b' : '#0f0b08',
                 }}
               >
                 {dataUri ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={dataUri}
                     alt=""
                     width={100}
-                    height={380}
+                    height={410}
                     style={{
                       objectFit: 'cover',
                       objectPosition: 'center top',
-                      filter: 'brightness(0.6) saturate(0.85)',
+                      filter: 'brightness(0.74) saturate(0.88) contrast(1.04)',
                     }}
                   />
                 ) : (
-                  <div style={{ width: '100%', height: '100%', background: '#080604', display: 'flex' }} />
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'rgba(232,176,48,0.18)',
+                      fontFamily: 'PerfectDOS',
+                      fontSize: 34,
+                    }}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
                 )}
-                {/* 스트립 구분선 */}
-                {i > 0 && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '1px', background: 'rgba(0,0,0,0.6)', display: 'flex' }} />
-                )}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', borderLeft: '1px solid rgba(0,0,0,0.52)' }} />
               </div>
             )
           })}
-          {/* 하단 그라디언트 */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '200px',
-              background: 'linear-gradient(to bottom, transparent 0%, #0d0b08 100%)',
-              display: 'flex',
-            }}
-          />
-          {/* 좌우 그라디언트 */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to right, rgba(13,11,8,0.7) 0%, transparent 15%, transparent 85%, rgba(13,11,8,0.7) 100%)',
               display: 'flex',
+              background:
+                'linear-gradient(0deg, #0d0b08 0%, rgba(13,11,8,0.82) 22%, transparent 58%), linear-gradient(90deg, rgba(13,11,8,0.72) 0%, transparent 18%, transparent 82%, rgba(13,11,8,0.76) 100%)',
             }}
           />
         </div>
-
-        {/* 하단 정보 영역 */}
         <div
           style={{
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
-            padding: '0 60px',
-            marginTop: '-60px',
-            position: 'relative',
+            padding: '0 62px 34px',
+            marginTop: -78,
             flex: 1,
           }}
         >
-          {/* 사이트명 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+            <span style={{ color: 'rgba(232,176,48,0.68)', fontFamily: 'PerfectDOS', fontSize: 16, letterSpacing: '0.2em' }}>
+              SAIGO NO DANTE
+            </span>
+            <span style={{ width: 64, height: 1, background: 'rgba(232,176,48,0.32)', display: 'flex' }} />
+            <span style={{ color: 'rgba(244,234,213,0.48)', fontFamily: 'PerfectDOS', fontSize: 15, letterSpacing: '0.16em' }}>
+              {socialLabel}
+            </span>
+          </div>
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '12px',
+              maxWidth: 960,
+              color: '#f6eddc',
+              fontFamily: 'Paperlogy',
+              fontSize: 50,
+              lineHeight: 1.08,
+              marginBottom: 18,
             }}
           >
-            <span style={{ color: 'rgba(200,144,10,0.5)', fontSize: '13px', letterSpacing: '0.25em', fontFamily: 'monospace' }}>
-              SAIGO NO DANTE
-            </span>
-            <div style={{ width: '30px', height: '1px', background: 'rgba(200,144,10,0.3)', display: 'flex' }} />
-            <span style={{ color: 'rgba(200,144,10,0.35)', fontSize: '13px', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
-              DECK
-            </span>
+            {clampText(deckRow.title, 64)}
           </div>
-
-          {/* 덱 타이틀 */}
-          <h1
-            style={{
-              fontSize: '44px',
-              fontWeight: 'bold',
-              color: '#f0ece0',
-              margin: '0 0 16px 0',
-              lineClamp: 2,
-              overflow: 'hidden',
-              textShadow: '0 2px 20px rgba(0,0,0,0.8)',
-            }}
-          >
-            {deck.title}
-          </h1>
-
-          {/* 태그 + 키워드 */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            {topKeywords.map(kw => (
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+            {topKeywords.map((keyword) => (
               <span
-                key={kw}
+                key={keyword}
                 style={{
-                  background: 'rgba(136,88,40,0.2)',
-                  color: '#c8a450',
-                  border: '1px solid rgba(136,88,40,0.4)',
-                  borderRadius: '4px',
-                  padding: '4px 12px',
-                  fontSize: '16px',
+                  display: 'flex',
+                  padding: '7px 13px',
+                  border: '1px solid rgba(232,176,48,0.32)',
+                  background: 'rgba(232,176,48,0.12)',
+                  color: '#f1cc68',
+                  fontSize: 18,
                 }}
               >
-                {kw}
+                {keyword}
               </span>
             ))}
-            {(deck.tags as string[]).slice(0, 4).map(tag => (
+            {tags.map((tag) => (
               <span
                 key={tag}
                 style={{
-                  background: 'rgba(200,144,10,0.1)',
-                  color: 'rgba(200,144,10,0.7)',
-                  border: '1px solid rgba(200,144,10,0.25)',
-                  borderRadius: '20px',
-                  padding: '4px 14px',
-                  fontSize: '15px',
+                  display: 'flex',
+                  padding: '7px 13px',
+                  border: '1px solid rgba(244,234,213,0.16)',
+                  background: 'rgba(244,234,213,0.06)',
+                  color: 'rgba(244,234,213,0.74)',
+                  fontSize: 17,
                 }}
               >
                 #{tag}
               </span>
             ))}
           </div>
-
-          {/* 하단 메타 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: 'auto', paddingBottom: '24px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginTop: 'auto',
+              paddingTop: 22,
+            }}
+          >
             {username && (
-              <span style={{ color: '#4a4060', fontSize: '16px' }}>
+              <span
+                style={{
+                  display: 'flex',
+                  padding: '10px 16px',
+                  border: '1px solid rgba(244,234,213,0.18)',
+                  background: 'rgba(244,234,213,0.08)',
+                  color: 'rgba(244,234,213,0.84)',
+                  fontSize: 20,
+                }}
+              >
                 {username}
               </span>
             )}
-            <span style={{ color: '#2a2035', fontSize: '14px', fontFamily: 'monospace' }}>
-              ♥ {deck.vote_count}
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 9,
+                padding: '10px 16px',
+                border: '1px solid rgba(232,176,48,0.34)',
+                background: 'rgba(232,176,48,0.14)',
+                color: '#f1cc68',
+                fontFamily: 'PerfectDOS',
+                fontSize: 22,
+                letterSpacing: '0.04em',
+              }}
+            >
+              <span style={{ color: 'rgba(244,234,213,0.62)', fontSize: 15, fontFamily: 'Pretendard' }}>votes</span>
+              {deckRow.vote_count ?? 0}
             </span>
-            <span style={{ color: '#2a2035', fontSize: '14px', fontFamily: 'monospace' }}>
-              👁 {deck.view_count}
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 9,
+                padding: '10px 16px',
+                border: '1px solid rgba(232,176,48,0.26)',
+                background: 'rgba(232,176,48,0.09)',
+                color: '#ead28a',
+                fontFamily: 'PerfectDOS',
+                fontSize: 22,
+                letterSpacing: '0.04em',
+              }}
+            >
+              <span style={{ color: 'rgba(244,234,213,0.58)', fontSize: 15, fontFamily: 'Pretendard' }}>views</span>
+              {deckRow.view_count ?? 0}
             </span>
           </div>
         </div>
-
-        {/* 장식 보더 */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: '12px',
-            border: '1px solid rgba(200,144,10,0.15)',
-            borderRadius: '6px',
-            display: 'flex',
-            pointerEvents: 'none',
-          }}
-        />
+        <div style={{ position: 'absolute', inset: 18, border: '1px solid rgba(232,176,48,0.18)', display: 'flex', pointerEvents: 'none' }} />
       </div>
     ),
-    { ...size, ...fontOptions },
+    { ...size, ...ogFontOptions },
   )
 }

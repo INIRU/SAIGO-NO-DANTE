@@ -1,11 +1,13 @@
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 async function fetchDeckBuilderStaticData() {
   'use cache'
-  cacheLife('page-10m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts)
   const [sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
     getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
   ])

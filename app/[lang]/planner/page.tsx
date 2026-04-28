@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -18,7 +19,16 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 async function fetchPlannerStaticData() {
   'use cache'
-  cacheLife('page-10m')
+  cacheLife('max')
+  cacheTag(
+    CACHE_TAGS.gameData,
+    CACHE_TAGS.mirrorDungeon,
+    CACHE_TAGS.themes,
+    CACHE_TAGS.egoGifts,
+    CACHE_TAGS.identities,
+    CACHE_TAGS.sinners,
+    CACHE_TAGS.ego
+  )
   const supabase = createAdminClient()
 
   // 그룹 1: 거울 던전 데이터

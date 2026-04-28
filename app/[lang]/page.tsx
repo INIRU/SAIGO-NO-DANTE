@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import HomeClient from './HomeClient'
@@ -10,6 +10,7 @@ import type { IdentityWithSinner } from '@/lib/types'
 import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -151,7 +152,8 @@ function BelowFoldSkeleton() {
 
 async function getCachedHomeData() {
   'use cache'
-  cacheLife('page-10m')
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities, CACHE_TAGS.sinners, CACHE_TAGS.announcements)
   const [latestIdentities, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
     getPinnedAnnouncement(),

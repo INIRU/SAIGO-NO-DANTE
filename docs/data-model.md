@@ -1,6 +1,6 @@
 # 데이터 모델 (DB Schema)
 
-SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-27 EGO release date migration 기준.**
+SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-28 duplicate-signal event migration 기준.**
 
 > Supabase Dashboard > Settings > API > Extra search path에 `limbus`가 추가되어야 한다.
 
@@ -41,7 +41,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-
 
 | 테이블 | 컬럼 수 | 설명 |
 |--------|---------|------|
-| `profiles` | 9 | 유저 프로필 (auth.users 확장) |
+| `profiles` | 17 | 유저 프로필 (auth.users 확장) |
 | `decks` | 13 | 덱 편성 |
 | `deck_identities` | 7 | 덱-인격 편성 |
 | `deck_egos` | 4 | 덱-EGO 편성 |
@@ -72,6 +72,8 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (51 테이블). **2026-04-
 | `announcements` | 6 | 공지사항 |
 | `site_maintenance` | 9 | 페이지별 점검 상태 |
 | `audit_logs` | 7 | 관리자 활동 로그 |
+| `profile_access_signals` | 9 | 최근 5개 접속 신호 |
+| `profile_duplicate_signal_events` | 9 | 강한 중복 계정 신호 JSON 스냅샷 |
 | `game_translations` | 7 | 게임 데이터 번역 오버레이 (EN/JP) |
 | `ai_summaries` | 9 | AI 요약 캐시 (다국어) |
 | `app_config` | 3 | 앱 설정 키-값 저장소 |
@@ -649,10 +651,62 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 | `collection_code` | TEXT | | 컬렉션 코드 |
 | `role` | TEXT | DEFAULT 'user' | 역할 (`user`, `admin`) |
 | `suspended` | BOOLEAN | DEFAULT false | 정지 여부 |
+| `suspension_reason` | TEXT | | 정지 사유 |
+| `suspended_until` | TIMESTAMPTZ | | 정지 종료 시각 |
+| `suspended_at` | TIMESTAMPTZ | | 정지 적용 시각 |
+| `suspended_by` | UUID | FK → profiles(id) ON DELETE SET NULL | 정지 처리자 |
+| `last_seen_at` | TIMESTAMPTZ | | 마지막 접속 시각 |
+| `last_ip` | TEXT | | 레거시 원문 IP, 신규 기록은 NULL로 유지 |
+| `last_ip_hash` | TEXT | | HMAC 기반 IP 해시 |
+| `last_ip_masked` | TEXT | | 관리자 표시용 마스킹 IP |
+| `last_user_agent_hash` | TEXT | | HMAC 기반 UA 해시 |
+| `last_device_hash` | TEXT | | 서버 발급 디바이스 토큰 해시 |
+| `last_country` | TEXT | | 접속 국가 코드 |
 | `preferred_lang` | VARCHAR | NOT NULL, DEFAULT 'ko' | 선호 언어 |
 
 - RLS: 모든 사용자 읽기, 본인만 수정
 - RPC: `get_user_role(user_email)`, `is_user_suspended(user_email)`
+
+---
+
+### profile_access_signals (최근 접속 신호)
+
+관리자 중복 계정 수동 검토용 bounded 신호 로그. `record_profile_activity` RPC가 프로필별 최신 5개만 유지한다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | |
+| `profile_id` | UUID | NOT NULL, FK → profiles(id) ON DELETE CASCADE | 대상 프로필 |
+| `seen_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 접속 시각 |
+| `ip_hash` | TEXT | | HMAC 기반 IP 해시 |
+| `ip_masked` | TEXT | | 관리자 표시용 마스킹 IP |
+| `user_agent_hash` | TEXT | | HMAC 기반 UA 해시 |
+| `device_hash` | TEXT | | 서버 발급 디바이스 토큰 해시 |
+| `country` | TEXT | | 접속 국가 코드 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+
+- RLS: 활성화, `anon`/`authenticated` 권한 없음, `service_role` 전용
+
+---
+
+### profile_duplicate_signal_events (강한 중복 신호)
+
+최근 5개 접속 신호 중 한 번이라도 강한 중복 계정 신호가 감지되면 프로필당 1행으로 보존하는 관리자 검토용 JSON 스냅샷.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | |
+| `profile_id` | UUID | NOT NULL, FK → profiles(id) ON DELETE CASCADE | 대상 프로필 |
+| `signal_grade` | TEXT | NOT NULL, DEFAULT 'strong', CHECK | 현재 `strong` |
+| `matched_profile_ids` | UUID[] | NOT NULL, DEFAULT `{}` | 강한 신호가 겹친 프로필 ID |
+| `match_snapshot` | JSONB | NOT NULL, DEFAULT `{}` | 감지 시각, source, reason, hash fingerprint JSON |
+| `first_detected_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 최초 감지 |
+| `last_detected_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 최근 감지 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+
+- UNIQUE: (`profile_id`, `signal_grade`)
+- RLS: 활성화, `anon`/`authenticated` 권한 없음, `service_role` 전용
 
 ---
 

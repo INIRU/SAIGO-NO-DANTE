@@ -19,7 +19,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-serif: var(--font-paperlogy), var(--font-kotra-bold), Georgia, serif;
+  --font-serif: var(--font-kotra-bold), Georgia, serif;
 }
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
@@ -47,7 +47,7 @@
   --envy:     #8058a8;
 
   /* 폰트 변수 (next/font/local CSS variables) */
-  --font-logo:    var(--font-corporate-logo), var(--font-bebas-kai), sans-serif;
+  --font-logo:    var(--font-bebas-kai), var(--font-kotra-bold), sans-serif;
   --font-title:   var(--font-bebas-kai), sans-serif;
   --font-heading: var(--font-kotra-bold), var(--font-scdream), sans-serif;
   --font-body:    var(--font-scdream), sans-serif;
