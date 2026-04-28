@@ -175,7 +175,7 @@
 }
 
 .name[data-locale='ja'] {
-  font-family: var(--font-corporate-logo), var(--font-noto-jp), 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  font-family: var(--font-bebas-kai), var(--font-noto-jp), 'Hiragino Sans', 'Yu Gothic', sans-serif;
   line-height: 1.1;
 }
 

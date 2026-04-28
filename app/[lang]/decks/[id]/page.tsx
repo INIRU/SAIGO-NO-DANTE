@@ -9,6 +9,15 @@ import DeckHero from '@/components/deck-detail/DeckHero'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { HeroSlot } from '@/components/deck-detail/DeckHero'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+function absoluteUrl(path: string): string {
+  return new URL(path, SITE_URL).toString()
+}
+
+function isSupportedLang(lang: string): lang is 'ko' | 'en' | 'ja' {
+  return lang === 'ko' || lang === 'en' || lang === 'ja'
+}
+
 type Comment = {
   id: string
   content: string
@@ -20,7 +29,7 @@ type Comment = {
   role?: string
 }
 
-type Props = { params: Promise<{ id: string }> }
+type Props = { params: Promise<{ lang: string; id: string }> }
 
 type EgoSlot = {
   grade: string
@@ -36,7 +45,11 @@ type EgoSlot = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params
+  'use cache'
+  cacheLife('max')
+  const { lang: rawLang, id } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
+  cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .schema('limbus')
@@ -54,13 +67,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = data.description
     ? data.description.slice(0, 160)
     : `${data.title} — 림버스 컴퍼니 덱 빌드`
+  const canonical = absoluteUrl(`/${lang}/decks/${id}`)
+  const ogImage = absoluteUrl(`/${lang}/decks/${id}/opengraph-image`)
 
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title: `${title} | 덱 게시판`,
       description,
+      url: canonical,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${title} | SAIGO NO DANTE` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} | 덱 게시판`,
+      description,
+      images: [ogImage],
     },
   }
 }

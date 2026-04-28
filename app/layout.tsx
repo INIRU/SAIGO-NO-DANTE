@@ -52,6 +52,7 @@ const excelsiorSans = localFont({
   src: '../public/fonts/ExcelsiorSans.ttf',
   variable: '--font-excelsior',
   display: 'optional',
+  preload: false,
 })
 
 // decorative — display:optional prevents FOUT
@@ -59,6 +60,7 @@ const mikodacs = localFont({
   src: '../public/fonts/Mikodacs.ttf',
   variable: '--font-mikodacs',
   display: 'optional',
+  preload: false,
 })
 
 // decorative — display:optional prevents FOUT
@@ -68,14 +70,7 @@ const bebasKai = localFont({
   ],
   variable: '--font-bebas-kai',
   display: 'optional',
-})
-
-// decorative — display:optional prevents FOUT
-const corporateLogo = localFont({
-  src: '../public/fonts/Corporate-Logo-Bold-ver2.otf',
-  weight: '700',
-  variable: '--font-corporate-logo',
-  display: 'optional',
+  preload: false,
 })
 
 // heading font — keep swap but specify fallback with similar metrics to reduce shift
@@ -101,6 +96,7 @@ const perfectDOS = localFont({
   src: '../public/fonts/PerfectDOSVGA437.ttf',
   variable: '--font-perfect-dos',
   display: 'optional',
+  preload: false,
 })
 
 // decorative — display:optional prevents FOUT
@@ -112,6 +108,7 @@ const paperlogy = localFont({
   ],
   variable: '--font-paperlogy',
   display: 'optional',
+  preload: false,
 })
 
 const notoSansJP = Noto_Sans_JP({
@@ -122,6 +119,7 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+const shouldRenderAnalytics = process.env.VERCEL === '1'
 const toastPositionStyle = {
   '--toast-close-button-start': 'unset',
   '--toast-close-button-end': '0',
@@ -187,7 +185,7 @@ export const metadata: Metadata = {
 
 async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   'use cache'
-  cacheLife('page-1d')
+  cacheLife('max')
   cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
 
   const supabase = createAdminClient()
@@ -256,7 +254,7 @@ export default async function RootLayout({
   const keywords = await getKeywordData()
 
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${corporateLogo.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
@@ -290,7 +288,7 @@ export default async function RootLayout({
             },
           }}
         />
-        <Analytics />
+        {shouldRenderAnalytics ? <Analytics /> : null}
         <ServiceWorkerRegister />
       </body>
     </html>
