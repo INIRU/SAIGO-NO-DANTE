@@ -46,9 +46,11 @@ interface User {
   deck_count?: number | null
   same_ip_hash_count?: number | null
   same_user_agent_hash_count?: number | null
+  same_device_hash_count?: number | null
   duplicate_risk_count?: number | null
   duplicate_risk?: boolean | null
   duplicate_matches?: DuplicateMatch[] | null
+  recent_access_signals?: RecentAccessSignal[] | null
   moderation_history?: ModerationHistoryEntry[] | null
   audit_history?: ModerationHistoryEntry[] | null
 }
@@ -62,9 +64,26 @@ interface DuplicateMatch {
   matchTypes?: DuplicateMatchType[] | null
   same_ip?: boolean | null
   same_user_agent?: boolean | null
+  same_device?: boolean | null
   last_seen_at?: string | null
   last_country?: string | null
   created_at?: string | null
+}
+
+interface RecentAccessSignal {
+  seen_at?: string | null
+  time?: string | null
+  created_at?: string | null
+  country?: string | null
+  ip_masked?: string | null
+  masked_ip?: string | null
+  last_ip_masked?: string | null
+  ip_hash_fingerprint?: string | null
+  user_agent_hash_fingerprint?: string | null
+  device_hash_fingerprint?: string | null
+  same_ip_hash_count?: number | null
+  same_user_agent_hash_count?: number | null
+  same_device_hash_count?: number | null
 }
 
 interface ModerationHistoryEntry {
@@ -78,7 +97,8 @@ interface ModerationHistoryEntry {
   details?: Record<string, unknown> | null
 }
 
-type DuplicateMatchType = 'ip' | 'user_agent'
+type DuplicateMatchType = 'ip' | 'user_agent' | 'device'
+type DuplicateSignalGrade = 'none' | 'weak' | 'medium' | 'strong'
 
 interface ModerationHistoryState {
   status: 'idle' | 'loading' | 'success' | 'error'
@@ -208,8 +228,9 @@ function getRoleTone(role: string | null) {
 function duplicateSignalText(user: User) {
   const sameIp = user.same_ip_hash_count ?? 0
   const sameUa = user.same_user_agent_hash_count ?? 0
-  if (sameIp <= 1 && sameUa <= 1) return '중복 신호 없음'
-  return `IP ${sameIp || '-'} / UA ${sameUa || '-'}`
+  const sameDevice = user.same_device_hash_count ?? 0
+  if (sameIp <= 1 && sameUa <= 1 && sameDevice <= 1) return '검토 신호 없음'
+  return `IP ${sameIp || '-'} / UA ${sameUa || '-'} / DEVICE ${sameDevice || '-'}`
 }
 
 function getDuplicateMatches(user: User) {
@@ -217,18 +238,21 @@ function getDuplicateMatches(user: User) {
 }
 
 function hasDuplicateSignal(user: User) {
-  return Boolean(user.duplicate_risk) || getDuplicateMatches(user).length > 0
+  return Boolean(user.duplicate_risk)
+    || getDuplicateMatches(user).length > 0
+    || (user.same_device_hash_count ?? 0) > 1
 }
 
 function getDuplicateMatchTypes(match: DuplicateMatch): DuplicateMatchType[] {
   const rawTypes = match.match_types ?? match.matchTypes
   if (Array.isArray(rawTypes) && rawTypes.length > 0) {
-    return rawTypes.filter(type => type === 'ip' || type === 'user_agent')
+    return rawTypes.filter(type => type === 'ip' || type === 'user_agent' || type === 'device')
   }
 
   const types: DuplicateMatchType[] = []
   if (match.same_ip) types.push('ip')
   if (match.same_user_agent) types.push('user_agent')
+  if (match.same_device) types.push('device')
   return types
 }
 
@@ -239,10 +263,57 @@ function duplicateMatchName(match: DuplicateMatch, maskSensitive: boolean) {
 }
 
 function duplicateMatchTypeLabel(types: DuplicateMatchType[]) {
+  if (types.includes('device')) return types.includes('ip') || types.includes('user_agent') ? 'DEVICE+' : 'DEVICE'
   if (types.includes('ip') && types.includes('user_agent')) return 'IP+UA'
   if (types.includes('ip')) return 'IP'
   if (types.includes('user_agent')) return 'UA'
   return '신호'
+}
+
+function getDuplicateSignalGrade(types: DuplicateMatchType[]): DuplicateSignalGrade {
+  if (types.includes('device')) return 'strong'
+  if (types.includes('ip') && types.includes('user_agent')) return 'medium'
+  if (types.includes('ip') || types.includes('user_agent')) return 'weak'
+  return 'none'
+}
+
+function getUserDuplicateSignalGrade(user: User): DuplicateSignalGrade {
+  const matches = getDuplicateMatches(user)
+  const matchGrade = matches.reduce<DuplicateSignalGrade>((grade, match) => {
+    const nextGrade = getDuplicateSignalGrade(getDuplicateMatchTypes(match))
+    if (nextGrade === 'strong' || grade === 'strong') return 'strong'
+    if (nextGrade === 'medium' || grade === 'medium') return 'medium'
+    if (nextGrade === 'weak' || grade === 'weak') return 'weak'
+    return 'none'
+  }, 'none')
+  if (matchGrade !== 'none') return matchGrade
+
+  const sameIp = (user.same_ip_hash_count ?? 0) > 1
+  const sameUa = (user.same_user_agent_hash_count ?? 0) > 1
+  const sameDevice = (user.same_device_hash_count ?? 0) > 1
+  if (sameDevice) return 'strong'
+  if (sameIp && sameUa) return 'medium'
+  if (sameIp || sameUa) return 'weak'
+  return 'none'
+}
+
+function duplicateSignalGradeLabel(grade: DuplicateSignalGrade) {
+  if (grade === 'strong') return '강한 신호'
+  if (grade === 'medium') return '중간 신호'
+  if (grade === 'weak') return '약한 신호'
+  return '신호 없음'
+}
+
+function duplicateSignalGradeTone(grade: DuplicateSignalGrade) {
+  if (grade === 'strong') return { color: '#c98272', border: 'rgba(170,92,70,0.42)' }
+  if (grade === 'medium') return { color: '#d6be7a', border: 'rgba(200,144,10,0.34)' }
+  if (grade === 'weak') return { color: '#9a8a6a', border: 'rgba(122,104,69,0.34)' }
+  return { color: '#7a6845', border: 'rgba(122,104,69,0.22)' }
+}
+
+function DuplicateGradeBadge({ grade }: { grade: DuplicateSignalGrade }) {
+  if (grade === 'none') return null
+  return <Badge tone={duplicateSignalGradeTone(grade)}>{duplicateSignalGradeLabel(grade)}</Badge>
 }
 
 function DuplicateTypeBadge({ type }: { type: string }) {
@@ -272,7 +343,7 @@ function DuplicateSignalInline({ user, maskSensitive }: { user: User; maskSensit
 
   return (
     <>
-      <span className="shrink-0">중복:</span>
+      <span className="shrink-0">검토:</span>
       <span className="min-w-0 truncate">
         {visibleMatches.map(match => duplicateMatchName(match, maskSensitive)).join(', ')}
         {remaining > 0 ? ` 외 ${remaining}` : ''}
@@ -288,15 +359,31 @@ function DuplicateMatchesDetail({ user, maskSensitive }: { user: User; maskSensi
   const matches = getDuplicateMatches(user)
 
   if (matches.length === 0) {
-    return <DetailItem label="중복 신호" value={duplicateSignalText(user)} mono />
+    const grade = getUserDuplicateSignalGrade(user)
+    return (
+      <DetailItem
+        label="중복 검토 신호"
+        value={(
+          <span className="flex flex-wrap items-center gap-2">
+            <span>{duplicateSignalText(user)}</span>
+            <DuplicateGradeBadge grade={grade} />
+          </span>
+        )}
+        mono
+      />
+    )
   }
 
   return (
     <div className="min-w-0 rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.1)', padding: '0.625rem 0.75rem' }}>
-      <p className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>중복 계정</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>중복 검토 신호</p>
+        <DuplicateGradeBadge grade={getUserDuplicateSignalGrade(user)} />
+      </div>
       <div className="mt-2 space-y-2">
         {matches.map(match => {
           const types = getDuplicateMatchTypes(match)
+          const grade = getDuplicateSignalGrade(types)
           const name = duplicateMatchName(match, maskSensitive)
           const email = match.email ? (maskSensitive ? maskEmail(match.email) : match.email) : null
           return (
@@ -306,6 +393,7 @@ function DuplicateMatchesDetail({ user, maskSensitive }: { user: User; maskSensi
                   {name}
                 </span>
                 <DuplicateTypeBadge type={duplicateMatchTypeLabel(types)} />
+                <DuplicateGradeBadge grade={grade} />
               </div>
               <p className="mt-1 break-words font-sans" style={{ color: '#8a7a5a', fontSize: '0.6875rem', lineHeight: 1.55 }}>
                 {email && email !== name ? `${email} / ` : ''}
@@ -360,6 +448,26 @@ function summarizeHistoryEntry(entry: ModerationHistoryEntry) {
   if (until) return `종료 ${formatDateTime(until)}`
 
   return '세부 사유 없음'
+}
+
+function accessSignalTime(signal: RecentAccessSignal) {
+  return signal.seen_at ?? signal.time ?? signal.created_at ?? null
+}
+
+function accessSignalMaskedIp(signal: RecentAccessSignal) {
+  return signal.ip_masked ?? signal.masked_ip ?? signal.last_ip_masked ?? null
+}
+
+function accessSignalDeviceFingerprint(signal: RecentAccessSignal) {
+  return signal.device_hash_fingerprint ?? null
+}
+
+function signalMatchTypes(signal: RecentAccessSignal): DuplicateMatchType[] {
+  const types: DuplicateMatchType[] = []
+  if ((signal.same_ip_hash_count ?? 0) > 1) types.push('ip')
+  if ((signal.same_user_agent_hash_count ?? 0) > 1) types.push('user_agent')
+  if ((signal.same_device_hash_count ?? 0) > 1) types.push('device')
+  return types
 }
 
 function Badge({ children, tone }: { children: React.ReactNode; tone: { color: string; border: string } }) {
@@ -583,6 +691,93 @@ function ModerationHistory({ state }: { state: ModerationHistoryState | undefine
   )
 }
 
+function RecentAccessSignals({ signals, maskSensitive }: { signals?: RecentAccessSignal[] | null; maskSensitive: boolean }) {
+  const recentSignals = (signals ?? []).slice(0, 5)
+  const countLabel = recentSignals.length > 0 ? `${recentSignals.length}건` : '0건'
+
+  return (
+    <section
+      className="rounded-sm border"
+      aria-label="최근 접속 신호"
+      style={{
+        borderColor: 'rgba(200,144,10,0.14)',
+        background: 'rgba(8,7,5,0.42)',
+        padding: '0.75rem',
+      }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3 border-b" style={{ borderColor: 'rgba(200,144,10,0.12)', paddingBottom: '0.5rem' }}>
+        <div>
+          <p className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>RECENT ACCESS SIGNALS</p>
+          <p className="mt-1 font-sans" style={{ color: '#665a42', fontSize: '0.6875rem' }}>
+            IP/UA/Device는 수동 검토용 단서입니다.
+          </p>
+        </div>
+        <span className="rounded-sm border font-sans tabular-nums" style={{ borderColor: 'rgba(200,144,10,0.14)', color: '#8a7a5a', padding: '0.125rem 0.375rem', fontSize: '0.6875rem' }}>
+          {countLabel}
+        </span>
+      </div>
+
+      {recentSignals.length === 0 ? (
+        <div className="rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.08)', padding: '0.75rem', color: '#7a6845', fontSize: '0.75rem', background: 'rgba(8,7,5,0.24)' }}>
+          최근 접속 신호가 아직 없습니다.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[52rem] border-collapse">
+            <thead>
+              <tr className="border-b" style={{ borderColor: 'rgba(200,144,10,0.1)' }}>
+                <th scope="col" className="py-2 pr-3 text-left font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem', fontWeight: 400 }}>시간</th>
+                <th scope="col" className="px-3 py-2 text-left font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem', fontWeight: 400 }}>국가</th>
+                <th scope="col" className="px-3 py-2 text-left font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem', fontWeight: 400 }}>마스킹 IP</th>
+                <th scope="col" className="px-3 py-2 text-left font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem', fontWeight: 400 }}>디바이스</th>
+                <th scope="col" className="py-2 pl-3 text-left font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem', fontWeight: 400 }}>검토 신호</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: 'rgba(200,144,10,0.08)' }}>
+              {recentSignals.map((signal, signalIndex) => {
+                const types = signalMatchTypes(signal)
+                const grade = getDuplicateSignalGrade(types)
+                const maskedIp = accessSignalMaskedIp(signal)
+                const deviceFingerprint = accessSignalDeviceFingerprint(signal)
+                return (
+                  <tr key={`${accessSignalTime(signal) ?? 'access'}-${signalIndex}`}>
+                    <td className="py-2 pr-3 font-sans tabular-nums" style={{ color: '#8a7a5a', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+                      {formatDateTime(accessSignalTime(signal))}
+                    </td>
+                    <td className="px-3 py-2 font-sans" style={{ color: '#9a8a6a', fontSize: '0.75rem' }}>
+                      {signal.country ?? '국가 없음'}
+                    </td>
+                    <td className="px-3 py-2 font-sans tabular-nums" style={{ color: '#9a8a6a', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {maskSensitive ? 'IP 숨김' : maskedIp ?? 'IP 없음'}
+                    </td>
+                    <td className="px-3 py-2 font-mono tabular-nums" style={{ color: deviceFingerprint ? '#c8a450' : '#665a42', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+                      {deviceFingerprint ?? '-'}
+                    </td>
+                    <td className="py-2 pl-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {types.length === 0 ? (
+                          <span className="font-sans" style={{ color: '#665a42', fontSize: '0.6875rem' }}>겹침 없음</span>
+                        ) : (
+                          <>
+                            {types.map(type => (
+                              <DuplicateTypeBadge key={`${accessSignalTime(signal) ?? signalIndex}-${type}`} type={duplicateMatchTypeLabel([type])} />
+                            ))}
+                            <DuplicateGradeBadge grade={grade} />
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function UserRow({
   user,
   expanded,
@@ -607,6 +802,7 @@ function UserRow({
   const visibleEmail = maskSensitive ? maskEmail(user.email) : user.email ?? 'email 없음'
   const visibleIp = sensitiveText(user.last_ip_masked, maskSensitive, 'IP 없음', 'IP 숨김')
   const visibleAccessMeta = `${formatDateTime(user.last_seen_at ?? user.auth_last_sign_in_at)} / ${visibleIp} / ${user.last_country ?? '국가 없음'}`
+  const duplicateGrade = getUserDuplicateSignalGrade(user)
 
   return (
     <article className="border-b" style={{ borderColor: 'rgba(200,144,10,0.1)' }}>
@@ -657,9 +853,10 @@ function UserRow({
             {user.last_country ?? '국가 없음'} / {visibleIp}
           </p>
           {hasDuplicateSignal(user) && (
-            <p className="flex min-w-0 items-center gap-1 font-sans" style={{ color: '#c98272', fontSize: '0.6875rem', fontWeight: 700 }}>
+            <p className="flex min-w-0 flex-wrap items-center gap-1 font-sans" style={{ color: duplicateSignalGradeTone(duplicateGrade).color, fontSize: '0.6875rem', fontWeight: 700 }}>
               <ShieldAlert size="0.75rem" aria-hidden="true" />
               <DuplicateSignalInline user={user} maskSensitive={maskSensitive} />
+              <DuplicateGradeBadge grade={duplicateGrade} />
             </p>
           )}
         </div>
@@ -702,6 +899,9 @@ function UserRow({
           </div>
           <div className="mt-3">
             <ModerationHistory state={historyState} />
+          </div>
+          <div className="mt-3">
+            <RecentAccessSignals signals={user.recent_access_signals} maskSensitive={maskSensitive} />
           </div>
         </div>
       )}
