@@ -12,8 +12,9 @@ import { KeywordProvider, type KeywordInfo } from '@/components/providers/Keywor
 
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { z } from 'zod'
 
 const KeywordRowSchema = z.object({
@@ -187,6 +188,7 @@ export const metadata: Metadata = {
 async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
   'use cache'
   cacheLife('page-1d')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
 
   const supabase = createAdminClient()
   const allData: any[] = []
