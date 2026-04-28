@@ -19,7 +19,10 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  'use cache'
+  cacheLife('max')
   const { slug } = await params
+  cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.sinners, CACHE_TAGS.gameData)
   const sinner = await getSinnerById(slug)
   if (!sinner) return { title: '수감자를 찾을 수 없습니다', robots: { index: false } }
   const siteUrl = 'https://saigo-no-dante.com'

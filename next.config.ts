@@ -3,6 +3,23 @@ import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
+const isVercelDeployment = process.env.VERCEL === '1';
+
+const contentSecurityPolicyDirectives = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com",
+  "font-src 'self'",
+  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
+  "worker-src 'self' blob:",
+  "frame-src https://www.youtube.com",
+  "media-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  ...(isVercelDeployment ? ["upgrade-insecure-requests"] : []),
+];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -100,21 +117,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com",
-              "font-src 'self'",
-              "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
-              "worker-src 'self' blob:",
-              "frame-src https://www.youtube.com",
-              "media-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "upgrade-insecure-requests",
-            ].join('; '),
+            value: contentSecurityPolicyDirectives.join('; '),
           },
         ],
       },

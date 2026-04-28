@@ -1,41 +1,28 @@
 import { ImageResponse } from 'next/og'
-import sharp from 'sharp'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import {
+  OG_CONTENT_TYPE,
+  OG_SIZE,
+  fetchImageDataUri,
+  localizedSiteLabels,
+  ogFontOptions,
+} from '@/lib/utils/og-image'
 
 export const runtime = 'nodejs'
 export const alt = '최애의 관리자 — Limbus Company 팬 아카이브'
-export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
+export const size = OG_SIZE
+export const contentType = OG_CONTENT_TYPE
 
-import { STORAGE_BASE } from '@/lib/constants/game'
-
-// Load local font synchronously to avoid hanging async fetch during prerender
-let pretendardFont: ArrayBuffer | null = null
-try {
-  const fontPath = join(process.cwd(), 'public', 'fonts', 'Pretendard-Regular.ttf')
-  pretendardFont = readFileSync(fontPath).buffer as ArrayBuffer
-} catch {
-  // Fall back to no custom font if file is missing
-}
-
-// 거미집 검지 아비 이상 (각성)
-const PORTRAIT_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/${encodeURIComponent('The House of Spiders The Index Nursefather')}/10115_gacksung.webp`
-
-async function fetchAsJpegDataUri(url: string, w: number, h: number): Promise<string> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return ''
-    const buf = Buffer.from(await res.arrayBuffer())
-    const jpeg = await sharp(buf).resize(w, h, { fit: 'cover', position: 'top' }).jpeg({ quality: 80 }).toBuffer()
-    return `data:image/jpeg;base64,${jpeg.toString('base64')}`
-  } catch {
-    return ''
-  }
-}
+const HERO_ART_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/${encodeURIComponent('The House of Spiders The Index Nursefather')}/10115_gacksung.webp`
 
 export default async function OgImage() {
-  const portrait = await fetchAsJpegDataUri(PORTRAIT_URL, 420, 630)
+  const labels = localizedSiteLabels('ko')
+  const heroArt = await fetchImageDataUri(HERO_ART_URL, {
+    width: 520,
+    height: 630,
+    quality: 82,
+    position: 'top',
+  })
 
   return new ImageResponse(
     (
@@ -45,208 +32,163 @@ export default async function OgImage() {
           height: '100%',
           display: 'flex',
           position: 'relative',
-          background: 'linear-gradient(135deg, #0d0b08 0%, #1a1510 40%, #0d0b08 100%)',
           overflow: 'hidden',
+          background: '#0d0b08',
+          color: '#f4ead5',
         }}
       >
-        {/* 포트레이트 (우측) */}
-        {portrait && (
-          <div
-            style={{
-              position: 'absolute',
-              right: '0',
-              top: '0',
-              width: '480px',
-              height: '630px',
-              display: 'flex',
-              overflow: 'hidden',
-            }}
-          >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background:
+              'radial-gradient(circle at 18% 12%, rgba(232,176,48,0.18), transparent 26%), linear-gradient(135deg, #0d0b08 0%, #1a1510 52%, #090706 100%)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 52,
+            left: 60,
+            width: 430,
+            height: 508,
+            display: 'flex',
+            border: '1px solid rgba(232,176,48,0.22)',
+            background: 'rgba(232,176,48,0.035)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: 560,
+            height: 630,
+            display: 'flex',
+            overflow: 'hidden',
+          }}
+        >
+          {heroArt ? (
             <img
-              src={portrait}
-              width={480}
+              src={heroArt}
+              alt=""
+              width={560}
               height={630}
               style={{
                 objectFit: 'cover',
-                objectPosition: 'top center',
-                opacity: 0.85,
+                objectPosition: '50% 0%',
+                filter: 'saturate(0.92) contrast(1.06)',
               }}
             />
-            {/* 좌측 페이드 */}
-            <div
-              style={{
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                width: '200px',
-                height: '100%',
-                background: 'linear-gradient(90deg, #0d0b08 0%, transparent 100%)',
-                display: 'flex',
-              }}
-            />
-            {/* 하단 페이드 */}
-            <div
-              style={{
-                position: 'absolute',
-                left: '0',
-                bottom: '0',
-                width: '100%',
-                height: '120px',
-                background: 'linear-gradient(0deg, #0d0b08 0%, transparent 100%)',
-                display: 'flex',
-              }}
-            />
-          </div>
-        )}
-
-        {/* 배경 글로우 */}
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', background: '#17110b' }} />
+          )}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              background:
+                'linear-gradient(90deg, #0d0b08 0%, rgba(13,11,8,0.72) 17%, rgba(13,11,8,0.06) 48%, rgba(13,11,8,0.2) 100%), linear-gradient(0deg, #0d0b08 0%, transparent 28%)',
+            }}
+          />
+        </div>
         <div
           style={{
             position: 'absolute',
-            top: '50%',
-            left: '30%',
-            transform: 'translate(-50%, -50%)',
-            width: '600px',
-            height: '600px',
-            background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, transparent 70%)',
+            inset: 22,
             display: 'flex',
-          }}
-        />
-
-        {/* 장식 보더 */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: '16px',
             border: '1px solid rgba(200,144,10,0.2)',
-            borderRadius: '8px',
-            display: 'flex',
           }}
         />
-
-        {/* 텍스트 영역 (좌측) */}
         <div
           style={{
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '60px 80px',
-            position: 'relative',
-            zIndex: 1,
-            maxWidth: '720px',
+            width: 760,
+            padding: '56px 72px',
           }}
         >
-          {/* 상단 태그 */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              marginBottom: '28px',
+              gap: 14,
+              color: 'rgba(232,176,48,0.72)',
+              fontFamily: 'PerfectDOS',
+              fontSize: 16,
+              letterSpacing: '0.18em',
+              marginBottom: 26,
             }}
           >
-            <div
-              style={{
-                width: '32px',
-                height: '1px',
-                background: 'rgba(200,144,10,0.5)',
-                display: 'flex',
-              }}
-            />
-            <span
-              style={{
-                color: 'rgba(200,144,10,0.5)',
-                fontSize: '13px',
-                letterSpacing: '0.35em',
-                fontFamily: 'monospace',
-              }}
-            >
-              LIMBUS COMPANY FAN ARCHIVE
-            </span>
+            <span>{labels.eyebrow}</span>
+            <span style={{ width: 72, height: 1, display: 'flex', background: 'rgba(232,176,48,0.35)' }} />
+            <span>{labels.locale}</span>
           </div>
-
-          {/* 메인 타이틀 */}
-          <h1
-            style={{
-              fontSize: '64px',
-              fontWeight: 'bold',
-              color: '#c8900a',
-              letterSpacing: '0.06em',
-              margin: '0 0 12px 0',
-              textShadow: '0 0 80px rgba(200,144,10,0.4)',
-              lineHeight: 1.1,
-            }}
-          >
-            SAIGO NO
-            <br />
-            DANTE
-          </h1>
-
-          {/* 한글 타이틀 */}
-          <p
-            style={{
-              fontSize: '26px',
-              color: 'rgba(232,196,120,0.65)',
-              margin: '0 0 40px 0',
-              fontWeight: 600,
-            }}
-          >
-            최애의 관리자
-          </p>
-
-          {/* 기능 태그 */}
           <div
             style={{
               display: 'flex',
-              gap: '12px',
+              flexDirection: 'column',
+              color: '#e8b030',
+              fontFamily: 'Paperlogy',
+              fontSize: 76,
+              lineHeight: 0.94,
+              letterSpacing: '0.025em',
+              marginBottom: 24,
             }}
           >
-            {['수감자 DB', '덱 빌더', '거울 던전', '메타 분석'].map((tag) => (
+            <span>SAIGO NO</span>
+            <span>DANTE</span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              maxWidth: 570,
+              color: 'rgba(244,234,213,0.78)',
+              fontSize: 26,
+              lineHeight: 1.35,
+              marginBottom: 38,
+            }}
+          >
+            {labels.subtitle}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {labels.features.map((feature, index) => (
               <div
-                key={tag}
+                key={feature}
                 style={{
-                  padding: '6px 16px',
-                  border: '1px solid rgba(200,144,10,0.25)',
-                  borderRadius: '4px',
-                  color: 'rgba(200,144,10,0.7)',
-                  fontSize: '14px',
-                  background: 'rgba(200,144,10,0.04)',
                   display: 'flex',
+                  padding: '9px 16px',
+                  border: '1px solid rgba(232,176,48,0.26)',
+                  background: index === 0 ? 'rgba(232,176,48,0.14)' : 'rgba(232,176,48,0.055)',
+                  color: index === 0 ? '#f2d27a' : 'rgba(242,210,122,0.78)',
+                  fontSize: 18,
                 }}
               >
-                {tag}
+                {feature}
               </div>
             ))}
           </div>
         </div>
-
-        {/* 하단 URL */}
         <div
           style={{
             position: 'absolute',
-            bottom: '28px',
-            left: '80px',
+            right: 60,
+            bottom: 42,
             display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
+            color: 'rgba(244,234,213,0.46)',
+            fontFamily: 'PerfectDOS',
+            fontSize: 16,
+            letterSpacing: '0.08em',
           }}
         >
-          <span
-            style={{
-              color: 'rgba(200,144,10,0.3)',
-              fontSize: '13px',
-              letterSpacing: '0.1em',
-              fontFamily: 'monospace',
-            }}
-          >
-            saigo-no-dante.vercel.app
-          </span>
+          saigo-no-dante.com
         </div>
       </div>
     ),
-    {
-      ...size,
-      ...(pretendardFont ? { fonts: [{ name: 'Pretendard', data: pretendardFont, style: 'normal', weight: 400 }] } : {}),
-    },
+    { ...size, ...ogFontOptions },
   )
 }

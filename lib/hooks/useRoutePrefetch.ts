@@ -3,25 +3,38 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface NavigatorWithConnection extends Navigator {
+  connection?: {
+    effectiveType?: string
+  }
+  deviceMemory?: number
+}
+
 function shouldSkip(): boolean {
   if (typeof window === 'undefined') return true
   if (window.matchMedia('(prefers-reduced-data)').matches) return true
-  const conn = (navigator as any).connection
+  const nav = navigator as NavigatorWithConnection
+  const conn = nav.connection
   if (conn?.effectiveType && ['2g', '3g'].includes(conn.effectiveType)) return true
-  const mem = (navigator as any).deviceMemory
+  const mem = nav.deviceMemory
   if (mem && mem < 4) return true
   return false
 }
 
-export function useRoutePrefetch(routes: string[], delay = 2000): void {
+export function useRoutePrefetch(routes: string[], delay = 2000, enabled = false): void {
   const router = useRouter()
+  const routeKey = routes.join('\n')
 
   useEffect(() => {
-    if (shouldSkip()) return
+    if (!enabled || !routeKey || shouldSkip()) return
 
-    const timeoutId = setTimeout(() => {
+    const routeList = routeKey.split('\n').filter(Boolean)
+    let idleId: number | undefined
+    let fallbackId: number | undefined
+
+    const timeoutId = window.setTimeout(() => {
       const run = () => {
-        for (const route of routes) {
+        for (const route of routeList) {
           try {
             router.prefetch(route)
           } catch {
@@ -32,13 +45,18 @@ export function useRoutePrefetch(routes: string[], delay = 2000): void {
         }
       }
 
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        requestIdleCallback(run, { timeout: 5000 })
+      const requestIdleCallback = window.requestIdleCallback
+      if (typeof requestIdleCallback === 'function') {
+        idleId = requestIdleCallback(run, { timeout: 5000 })
       } else {
-        setTimeout(run, 4000)
+        fallbackId = window.setTimeout(run, 4000)
       }
     }, delay)
 
-    return () => clearTimeout(timeoutId)
-  }, [router, delay])
+    return () => {
+      window.clearTimeout(timeoutId)
+      if (idleId !== undefined) window.cancelIdleCallback(idleId)
+      if (fallbackId !== undefined) window.clearTimeout(fallbackId)
+    }
+  }, [router, delay, enabled, routeKey])
 }

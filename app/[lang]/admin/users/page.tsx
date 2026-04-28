@@ -49,6 +49,8 @@ interface User {
   same_device_hash_count?: number | null
   duplicate_risk_count?: number | null
   duplicate_risk?: boolean | null
+  duplicate_signal_grade?: DuplicateSignalGrade | null
+  duplicate_signal_event?: DuplicateSignalEvent | null
   duplicate_matches?: DuplicateMatch[] | null
   recent_access_signals?: RecentAccessSignal[] | null
   moderation_history?: ModerationHistoryEntry[] | null
@@ -86,6 +88,14 @@ interface RecentAccessSignal {
   same_device_hash_count?: number | null
 }
 
+interface DuplicateSignalEvent {
+  signal_grade?: string | null
+  matched_profile_ids?: string[] | null
+  match_snapshot?: Record<string, unknown> | null
+  first_detected_at?: string | null
+  last_detected_at?: string | null
+}
+
 interface ModerationHistoryEntry {
   id?: string
   action?: string
@@ -98,7 +108,8 @@ interface ModerationHistoryEntry {
 }
 
 type DuplicateMatchType = 'ip' | 'user_agent' | 'device'
-type DuplicateSignalGrade = 'none' | 'weak' | 'medium' | 'strong'
+type DuplicateSignalGrade = 'none' | 'weak' | 'strong'
+type DuplicateSignalFilter = 'all' | 'weak' | 'strong'
 
 interface ModerationHistoryState {
   status: 'idle' | 'loading' | 'success' | 'error'
@@ -146,6 +157,12 @@ const STATUS_OPTIONS = [
   { value: 'suspended', label: '정지' },
   { value: 'expired', label: '만료 정지' },
 ]
+
+const DUPLICATE_SIGNAL_OPTIONS = [
+  { value: 'all', label: '전체 중복 신호' },
+  { value: 'weak', label: '약한 신호' },
+  { value: 'strong', label: '강한 신호' },
+] satisfies { value: DuplicateSignalFilter; label: string }[]
 
 const DURATION_OPTIONS = [
   { value: '1d', label: '1일' },
@@ -239,6 +256,7 @@ function getDuplicateMatches(user: User) {
 
 function hasDuplicateSignal(user: User) {
   return Boolean(user.duplicate_risk)
+    || Boolean(user.duplicate_signal_event)
     || getDuplicateMatches(user).length > 0
     || (user.same_device_hash_count ?? 0) > 1
 }
@@ -271,18 +289,25 @@ function duplicateMatchTypeLabel(types: DuplicateMatchType[]) {
 }
 
 function getDuplicateSignalGrade(types: DuplicateMatchType[]): DuplicateSignalGrade {
-  if (types.includes('device')) return 'strong'
-  if (types.includes('ip') && types.includes('user_agent')) return 'medium'
+  if (types.includes('device') || (types.includes('ip') && types.includes('user_agent'))) return 'strong'
   if (types.includes('ip') || types.includes('user_agent')) return 'weak'
   return 'none'
 }
 
+function normalizeDuplicateSignalGrade(value?: DuplicateSignalGrade | null) {
+  if (value === 'weak' || value === 'strong') return value
+  return null
+}
+
 function getUserDuplicateSignalGrade(user: User): DuplicateSignalGrade {
+  const serverGrade = normalizeDuplicateSignalGrade(user.duplicate_signal_grade)
+  if (serverGrade) return serverGrade
+  if (user.duplicate_signal_event) return 'strong'
+
   const matches = getDuplicateMatches(user)
   const matchGrade = matches.reduce<DuplicateSignalGrade>((grade, match) => {
     const nextGrade = getDuplicateSignalGrade(getDuplicateMatchTypes(match))
     if (nextGrade === 'strong' || grade === 'strong') return 'strong'
-    if (nextGrade === 'medium' || grade === 'medium') return 'medium'
     if (nextGrade === 'weak' || grade === 'weak') return 'weak'
     return 'none'
   }, 'none')
@@ -292,21 +317,19 @@ function getUserDuplicateSignalGrade(user: User): DuplicateSignalGrade {
   const sameUa = (user.same_user_agent_hash_count ?? 0) > 1
   const sameDevice = (user.same_device_hash_count ?? 0) > 1
   if (sameDevice) return 'strong'
-  if (sameIp && sameUa) return 'medium'
+  if (sameIp && sameUa) return 'strong'
   if (sameIp || sameUa) return 'weak'
   return 'none'
 }
 
 function duplicateSignalGradeLabel(grade: DuplicateSignalGrade) {
   if (grade === 'strong') return '강한 신호'
-  if (grade === 'medium') return '중간 신호'
   if (grade === 'weak') return '약한 신호'
   return '신호 없음'
 }
 
 function duplicateSignalGradeTone(grade: DuplicateSignalGrade) {
   if (grade === 'strong') return { color: '#c98272', border: 'rgba(170,92,70,0.42)' }
-  if (grade === 'medium') return { color: '#d6be7a', border: 'rgba(200,144,10,0.34)' }
   if (grade === 'weak') return { color: '#9a8a6a', border: 'rgba(122,104,69,0.34)' }
   return { color: '#7a6845', border: 'rgba(122,104,69,0.22)' }
 }
@@ -314,6 +337,16 @@ function duplicateSignalGradeTone(grade: DuplicateSignalGrade) {
 function DuplicateGradeBadge({ grade }: { grade: DuplicateSignalGrade }) {
   if (grade === 'none') return null
   return <Badge tone={duplicateSignalGradeTone(grade)}>{duplicateSignalGradeLabel(grade)}</Badge>
+}
+
+function DuplicateSignalEventNote({ event }: { event?: DuplicateSignalEvent | null }) {
+  if (!event) return null
+  const matchedCount = event.matched_profile_ids?.length ?? 0
+  return (
+    <p className="mt-2 font-sans tabular-nums" style={{ color: '#c98272', fontSize: '0.6875rem', lineHeight: 1.55 }}>
+      강한 신호 기록됨 · 대상 {matchedCount}개 · 최초 {formatDateTime(event.first_detected_at)} · 최근 {formatDateTime(event.last_detected_at)}
+    </p>
+  )
 }
 
 function DuplicateTypeBadge({ type }: { type: string }) {
@@ -364,10 +397,13 @@ function DuplicateMatchesDetail({ user, maskSensitive }: { user: User; maskSensi
       <DetailItem
         label="중복 검토 신호"
         value={(
-          <span className="flex flex-wrap items-center gap-2">
-            <span>{duplicateSignalText(user)}</span>
-            <DuplicateGradeBadge grade={grade} />
-          </span>
+          <>
+            <span className="flex flex-wrap items-center gap-2">
+              <span>{duplicateSignalText(user)}</span>
+              <DuplicateGradeBadge grade={grade} />
+            </span>
+            <DuplicateSignalEventNote event={user.duplicate_signal_event} />
+          </>
         )}
         mono
       />
@@ -380,6 +416,7 @@ function DuplicateMatchesDetail({ user, maskSensitive }: { user: User; maskSensi
         <p className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>중복 검토 신호</p>
         <DuplicateGradeBadge grade={getUserDuplicateSignalGrade(user)} />
       </div>
+      <DuplicateSignalEventNote event={user.duplicate_signal_event} />
       <div className="mt-2 space-y-2">
         {matches.map(match => {
           const types = getDuplicateMatchTypes(match)
@@ -486,6 +523,7 @@ function parseUsersPayload(payload: UsersPayload, offset: number) {
       users: sliced.map(normalizeUser),
       total: payload.length,
       hasMore: offset + PAGE_SIZE < payload.length,
+      nextOffset: offset + sliced.length,
     }
   }
 
@@ -495,6 +533,7 @@ function parseUsersPayload(payload: UsersPayload, offset: number) {
     users: rows.map(normalizeUser),
     total,
     hasMore: payload.hasMore ?? (payload.nextOffset != null || offset + rows.length < total),
+    nextOffset: payload.nextOffset ?? offset + rows.length,
   }
 }
 
@@ -915,12 +954,14 @@ export default function AdminUsersPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
+  const [nextOffset, setNextOffset] = useState(0)
   const [updating, setUpdating] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [duplicateSignalFilter, setDuplicateSignalFilter] = useState<DuplicateSignalFilter>('all')
   const [maskSensitive, setMaskSensitive] = useState(true)
   const [moderationHistory, setModerationHistory] = useState<Record<string, ModerationHistoryState>>({})
   const [reason, setReason] = useState('')
@@ -944,6 +985,7 @@ export default function AdminUsersPage() {
     if (trimmedSearch) params.set('search', trimmedSearch)
     if (roleFilter !== 'all') params.set('role', roleFilter)
     if (statusFilter !== 'all') params.set('status', statusFilter)
+    if (duplicateSignalFilter !== 'all') params.set('duplicateSignal', duplicateSignalFilter)
 
     try {
       const response = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' })
@@ -958,6 +1000,7 @@ export default function AdminUsersPage() {
       })
       setTotal(parsed.total)
       setHasMore(parsed.hasMore)
+      setNextOffset(parsed.nextOffset)
     } catch {
       if (!loadErrorShownRef.current) {
         loadErrorShownRef.current = true
@@ -967,7 +1010,7 @@ export default function AdminUsersPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [roleFilter, search, statusFilter])
+  }, [duplicateSignalFilter, roleFilter, search, statusFilter])
 
   useEffect(() => {
     setExpandedId(null)
@@ -1034,12 +1077,12 @@ export default function AdminUsersPage() {
 
     const observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) {
-        fetchUsers(users.length, 'append')
+        fetchUsers(nextOffset, 'append')
       }
     }, { rootMargin: '0% 0% 25% 0%' })
     observer.observe(node)
     return () => observer.disconnect()
-  }, [fetchUsers, hasMore, loading, loadingMore, users.length])
+  }, [fetchUsers, hasMore, loading, loadingMore, nextOffset])
 
   useEffect(() => {
     if (pending?.type === 'suspend') {
@@ -1190,13 +1233,18 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <section className="mb-4 grid gap-2 lg:grid-cols-[1fr_10rem_10rem]">
+      <section className="mb-4 grid gap-2 lg:grid-cols-[1fr_10rem_10rem_12rem]">
         <div className="relative">
           <Search size="0.875rem" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#7a6845' }} aria-hidden="true" />
           <AdminInput value={search} onChange={setSearch} placeholder="이름, 이메일, ID 검색" style={{ paddingLeft: '2.25rem' }} />
         </div>
         <AdminPortalSelect value={roleFilter} onChange={setRoleFilter} options={[{ value: 'all', label: '전체 역할' }, ...ROLE_OPTIONS]} />
         <AdminPortalSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} />
+        <AdminPortalSelect
+          value={duplicateSignalFilter}
+          onChange={value => setDuplicateSignalFilter(value as DuplicateSignalFilter)}
+          options={DUPLICATE_SIGNAL_OPTIONS}
+        />
       </section>
 
       <section className="overflow-hidden rounded-md border" style={{ borderColor: 'rgba(200,144,10,0.14)', background: 'rgba(26,21,16,0.5)' }}>
@@ -1236,7 +1284,7 @@ export default function AdminUsersPage() {
       {!loading && (
         <div className="mt-4 flex justify-center">
           {hasMore ? (
-            <AdminButton onClick={() => fetchUsers(users.length, 'append')} loading={loadingMore} disabled={loadingMore} variant="ghost">
+            <AdminButton onClick={() => fetchUsers(nextOffset, 'append')} loading={loadingMore} disabled={loadingMore} variant="ghost">
               {loadingMore ? '더 불러오는 중…' : '더 불러오기'}
             </AdminButton>
           ) : (
