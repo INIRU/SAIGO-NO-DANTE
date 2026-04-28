@@ -81,7 +81,7 @@ const KEYWORD_ICON_MAP = {
   '더하기 코인 약화': 'plus-coin-weaken',
   // 기본
   '도발치': 'aggro', '나비': 'butterfly', '뇌진탕': 'concussion', '버림': 'discard',
-  '해금': 'unlock', '카르마': 'karma', '광신': 'fanaticism', '못': 'nail',
+  '해금': 'unlock', '카르마': 'karmic-consequence', '광신': 'fanaticism', '못': 'nail',
   '탄환': 'ammo', '방어 태세': 'defense-stance', '합 가능 가드': 'clash-guard',
   '체력 회복 감소': 'hp-heal-down', '체력 회복': 'hp-heal-up',
   '정신력 회복': 'sp-heal-up',
