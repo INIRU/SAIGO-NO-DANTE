@@ -28,6 +28,8 @@ type AuthUserSummary = {
 }
 
 type DuplicateMatchType = 'ip' | 'user_agent' | 'device'
+type DuplicateSignalGrade = 'none' | 'weak' | 'strong'
+type DuplicateSignalFilter = 'all' | 'weak' | 'strong'
 
 type DuplicateProfileRow = Pick<
   ProfileRow,
@@ -53,6 +55,27 @@ type AccessSignalRow = {
   created_at: string
 }
 
+type RecentAccessSignalSummary = {
+  seen_at: string
+  country: string | null
+  ip_masked: string | null
+  ip_hash_fingerprint: string | null
+  user_agent_hash_fingerprint: string | null
+  device_hash_fingerprint: string | null
+  same_ip_hash_count: number
+  same_user_agent_hash_count: number
+  same_device_hash_count: number
+}
+
+type DuplicateSignalEventRow = {
+  profile_id: string
+  signal_grade: string
+  matched_profile_ids: string[] | null
+  match_snapshot: Record<string, unknown> | null
+  first_detected_at: string
+  last_detected_at: string
+}
+
 type DuplicateMatchCandidate = {
   profile: DuplicateProfileRow
   matchTypes: Set<DuplicateMatchType>
@@ -69,6 +92,11 @@ function parseBoundedInt(value: string | null, fallback: number, min: number, ma
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed)) return fallback
   return Math.min(Math.max(parsed, min), max)
+}
+
+function parseDuplicateSignalFilter(value: string | null): DuplicateSignalFilter {
+  if (value === 'weak' || value === 'strong') return value
+  return 'all'
 }
 
 function isSuspensionActive(profile: Pick<ProfileRow, 'suspended' | 'suspended_until'>) {
@@ -161,11 +189,53 @@ function collectDuplicateCandidates(
     .slice(0, MAX_DUPLICATE_MATCHES_PER_USER)
 }
 
-function hasRiskCandidate(candidates: DuplicateMatchCandidate[]) {
-  return candidates.some(candidate => (
-    candidate.matchTypes.has('device') ||
-    (candidate.matchTypes.has('ip') && candidate.matchTypes.has('user_agent'))
-  ))
+function getDuplicateSignalGrade(types: Iterable<DuplicateMatchType>): DuplicateSignalGrade {
+  const typeSet = new Set(types)
+  if (typeSet.has('device') || (typeSet.has('ip') && typeSet.has('user_agent'))) return 'strong'
+  if (typeSet.has('ip') || typeSet.has('user_agent')) return 'weak'
+  return 'none'
+}
+
+function strongerDuplicateSignalGrade(
+  current: DuplicateSignalGrade,
+  next: DuplicateSignalGrade,
+): DuplicateSignalGrade {
+  if (current === 'strong' || next === 'strong') return 'strong'
+  if (current === 'weak' || next === 'weak') return 'weak'
+  return 'none'
+}
+
+function getCandidateSignalGrade(candidate: DuplicateMatchCandidate) {
+  return getDuplicateSignalGrade(candidate.matchTypes)
+}
+
+function getAccessSignalGrade(signal: RecentAccessSignalSummary) {
+  const types: DuplicateMatchType[] = []
+  if (signal.same_ip_hash_count > 1) types.push('ip')
+  if (signal.same_user_agent_hash_count > 1) types.push('user_agent')
+  if (signal.same_device_hash_count > 1) types.push('device')
+  return getDuplicateSignalGrade(types)
+}
+
+function getUserDuplicateSignalGrade(
+  candidates: DuplicateMatchCandidate[],
+  recentAccessSignals: RecentAccessSignalSummary[],
+  strongSignalEvent: DuplicateSignalEventRow | null,
+) {
+  if (strongSignalEvent) return 'strong'
+
+  let grade: DuplicateSignalGrade = 'none'
+  for (const candidate of candidates) {
+    grade = strongerDuplicateSignalGrade(grade, getCandidateSignalGrade(candidate))
+    if (grade === 'strong') return grade
+  }
+
+  for (const signal of recentAccessSignals) {
+    grade = strongerDuplicateSignalGrade(grade, getAccessSignalGrade(signal))
+    if (grade === 'strong') return grade
+  }
+
+  return grade
 }
 
 function groupAccessSignalsByProfile(signals: AccessSignalRow[]) {
@@ -235,6 +305,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.trim().toLowerCase() ?? ''
     const role = searchParams.get('role')?.trim()
     const status = searchParams.get('status')?.trim()
+    const duplicateSignalFilter = parseDuplicateSignalFilter(searchParams.get('duplicateSignal'))
     const limit = parseBoundedInt(searchParams.get('limit'), DEFAULT_LIMIT, 1, MAX_LIMIT)
     const offset = parseBoundedInt(searchParams.get('offset'), 0, 0, Number.MAX_SAFE_INTEGER)
     const pageEnd = offset + limit - 1
@@ -332,7 +403,15 @@ export async function GET(request: Request) {
     const userAgentHashes = [...new Set(profiles.map(profile => profile.last_user_agent_hash).filter(Boolean))] as string[]
     const deviceHashes = [...new Set(profiles.map(profile => profile.last_device_hash).filter(Boolean))] as string[]
 
-    const [decksRes, authResults, ipClusterRes, userAgentClusterRes, deviceClusterRes, accessSignalsRes] = await Promise.all([
+    const [
+      decksRes,
+      authResults,
+      ipClusterRes,
+      userAgentClusterRes,
+      deviceClusterRes,
+      accessSignalsRes,
+      strongSignalEventsRes,
+    ] = await Promise.all([
       userIds.length > 0
         ? supabase
             .schema('limbus')
@@ -412,6 +491,21 @@ export async function GET(request: Request) {
             .in('profile_id', userIds)
             .order('seen_at', { ascending: false })
         : Promise.resolve({ data: [], error: null }),
+      userIds.length > 0
+        ? supabase
+            .schema('limbus')
+            .from('profile_duplicate_signal_events')
+            .select(`
+              profile_id,
+              signal_grade,
+              matched_profile_ids,
+              match_snapshot,
+              first_detected_at,
+              last_detected_at
+            `)
+            .in('profile_id', userIds)
+            .eq('signal_grade', 'strong')
+        : Promise.resolve({ data: [], error: null }),
     ])
 
     if (decksRes.error) {
@@ -428,6 +522,9 @@ export async function GET(request: Request) {
     }
     if (accessSignalsRes.error) {
       return NextResponse.json({ error: accessSignalsRes.error.message }, { status: 500 })
+    }
+    if (strongSignalEventsRes.error) {
+      return NextResponse.json({ error: strongSignalEventsRes.error.message }, { status: 500 })
     }
 
     const authError = authResults.find(result => result.error && !isMissingAuthUserError(result.error))
@@ -552,6 +649,10 @@ export async function GET(request: Request) {
       (deviceClusterRes.data ?? []) as DuplicateProfileRow[],
       'last_device_hash',
     )
+    const strongSignalEventByProfile = new Map<string, DuplicateSignalEventRow>()
+    for (const event of (strongSignalEventsRes.data ?? []) as DuplicateSignalEventRow[]) {
+      strongSignalEventByProfile.set(event.profile_id, event)
+    }
     const duplicateCandidatesByUserId = new Map<string, DuplicateMatchCandidate[]>()
     const duplicateAuthUserIds = new Set<string>()
 
@@ -588,7 +689,7 @@ export async function GET(request: Request) {
       })
     }
 
-    const users = profiles
+    const mappedUsers = profiles
       .map(p => {
         const authUser = authMap.get(p.id)
         const activeSuspension = isSuspensionActive(p)
@@ -619,6 +720,12 @@ export async function GET(request: Request) {
               ? deviceSignalClusterCounts.get(signal.device_hash) ?? 0
               : 0,
           }))
+        const strongSignalEvent = strongSignalEventByProfile.get(p.id) ?? null
+        const duplicateSignalGrade = getUserDuplicateSignalGrade(
+          duplicateCandidates,
+          recentAccessSignals,
+          strongSignalEvent,
+        )
         return {
           id: p.id,
           username: p.username,
@@ -643,7 +750,15 @@ export async function GET(request: Request) {
           same_user_agent_hash_count: sameUserAgentHashCount,
           same_device_hash_count: sameDeviceHashCount,
           duplicate_risk_count: Math.max(sameIpHashCount, sameUserAgentHashCount, sameDeviceHashCount),
-          duplicate_risk: hasRiskCandidate(duplicateCandidates),
+          duplicate_risk: duplicateSignalGrade !== 'none',
+          duplicate_signal_grade: duplicateSignalGrade,
+          duplicate_signal_event: strongSignalEvent ? {
+            signal_grade: strongSignalEvent.signal_grade,
+            matched_profile_ids: strongSignalEvent.matched_profile_ids ?? [],
+            match_snapshot: strongSignalEvent.match_snapshot ?? {},
+            first_detected_at: strongSignalEvent.first_detected_at,
+            last_detected_at: strongSignalEvent.last_detected_at,
+          } : null,
           recent_access_signals: recentAccessSignals,
           duplicate_matches: duplicateCandidates.map(candidate => {
             const duplicateAuthUser = authMap.get(candidate.profile.id)
@@ -663,7 +778,10 @@ export async function GET(request: Request) {
         }
       })
 
-    const nextOffset = offset + users.length
+    const users = duplicateSignalFilter === 'all'
+      ? mappedUsers
+      : mappedUsers.filter(user => user.duplicate_signal_grade === duplicateSignalFilter)
+    const nextOffset = offset + profiles.length
     const hasMore = nextOffset < total
 
     return NextResponse.json({
