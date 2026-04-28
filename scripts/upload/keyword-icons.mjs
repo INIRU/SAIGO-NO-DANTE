@@ -103,7 +103,7 @@ export const KEYWORD_EN_MAP = {
   '뇌진탕': 'concussion',
   '버림': 'discard',
   '해금': 'unlock',
-  '카르마': 'karma',
+  '카르마': 'karmic-consequence',
   '광신': 'fanaticism',
   '못': 'nail',
   '탄환': 'ammo',
