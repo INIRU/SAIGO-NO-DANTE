@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { ChevronDown, ChevronRight, Link2, Minus, Plus, Search, SlidersHorizontal, User, X } from 'lucide-react'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { getSinnerLogoUrl } from '@/lib/data/sinners'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SearchSuggestion } from './decks-types'
-import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from './DeckIdentityFilterModal'
+import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
+
+const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'), {
+  ssr: false,
+  loading: () => null,
+})
 
 interface DeckListFiltersProps {
   inputValue: string

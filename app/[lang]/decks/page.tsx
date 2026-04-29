@@ -25,6 +25,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 const PAGE_SIZE = 12
+type DeckSort = 'latest' | 'popular'
+
+function normalizeDeckSort(sort: string | string[] | undefined): DeckSort {
+  const value = Array.isArray(sort) ? sort[0] : sort
+  return value === 'popular' ? 'popular' : 'latest'
+}
 
 function DecksPageSkeleton() {
   return (
@@ -45,13 +51,13 @@ function DecksPageSkeleton() {
   )
 }
 
-export default async function DecksPage() {
+async function CachedDecksPage({ initialSort }: { initialSort: DeckSort }) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.decksList)
   const supabase = createAdminClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .schema('limbus')
     .from('decks')
     .select(`
@@ -60,8 +66,17 @@ export default async function DecksPage() {
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
       deck_egos(ego_id)
     `)
-    .order('created_at', { ascending: false })
-    .range(0, PAGE_SIZE - 1)
+
+  query = initialSort === 'popular'
+    ? query
+        .order('vote_count', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+    : query
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+
+  const { data, error } = await query.range(0, PAGE_SIZE - 1)
 
   if (error) {
     console.error('[DecksPage] initial fetch error:', error)
@@ -109,8 +124,19 @@ export default async function DecksPage() {
           <DecksPageSkeleton />
         </div>
       }>
-        <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} />
+        <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort={initialSort} />
       </Suspense>
     </div>
   )
+}
+
+export default async function DecksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string | string[] }>
+}) {
+  const { sort } = await searchParams
+  const initialSort = normalizeDeckSort(sort)
+
+  return <CachedDecksPage initialSort={initialSort} />
 }

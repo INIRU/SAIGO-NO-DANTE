@@ -1,12 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from '@/lib/i18n/navigation'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
-import { staggerContainer, staggerItem } from '@/lib/animations'
-
-const deckGridVariants = staggerContainer(0.06)
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -71,41 +67,36 @@ function DeckGrid({
 
   return (
     <>
-      {refreshing && (
+      <div
+        className={`mb-3 flex min-h-8 items-center gap-2 rounded-sm transition-opacity duration-200 ${refreshing ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        style={{
+          padding: '0 0.625rem',
+          background: 'rgba(200,144,10,0.06)',
+          borderLeft: '0.125rem solid rgba(200,144,10,0.52)',
+          color: '#a99062',
+          fontSize: '0.875rem',
+        }}
+        aria-live="polite"
+        aria-hidden={!refreshing}
+      >
         <div
-          className="mb-3 flex items-center gap-2 rounded-sm"
-          style={{
-            minHeight: '2rem',
-            padding: '0 0.625rem',
-            background: 'rgba(200,144,10,0.06)',
-            borderLeft: '0.125rem solid rgba(200,144,10,0.52)',
-            color: '#a99062',
-            fontSize: '0.875rem',
-          }}
-          aria-live="polite"
-        >
-          <span
-            className="rounded-full animate-spin"
-            style={{ width: '0.875rem', height: '0.875rem', border: '1px solid rgba(200,144,10,0.28)', borderTopColor: 'var(--gold)' }}
-            aria-hidden="true"
-          />
-          목록 갱신 중…
-        </div>
-      )}
+          className="rounded-full animate-spin"
+          style={{ width: '0.875rem', height: '0.875rem', border: '1px solid rgba(200,144,10,0.28)', borderTopColor: 'var(--gold)' }}
+          aria-hidden="true"
+        />
+        목록 갱신 중…
+      </div>
 
-      <motion.div
+      <div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
-        variants={deckGridVariants}
-        initial={false}
-        animate="animate"
       >
         {filtered.map(deck => (
-          <motion.div key={deck.id} variants={staggerItem} className="h-full">
+          <div key={deck.id} className="h-full">
             <DeckCard deck={deck} onTagClick={onTagClick} />
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* 무한 스크롤 센티널 */}
       {hasMore && (
