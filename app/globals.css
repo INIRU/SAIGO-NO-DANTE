@@ -49,9 +49,10 @@
   /* 폰트 변수 (next/font/local CSS variables) */
   --font-logo:    var(--font-bebas-kai), var(--font-kotra-bold), sans-serif;
   --font-title:   var(--font-bebas-kai), sans-serif;
-  --font-heading: var(--font-kotra-bold), var(--font-scdream), sans-serif;
-  --font-body:    var(--font-scdream), sans-serif;
-  --font-mono:    var(--font-perfect-dos), monospace;
+  --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body:    var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-mono:    var(--font-noto-sans-mono), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
+  --font-perfect-dos: var(--font-mono);
 
   /* ── 텍스트 위계 ─────────────────────────────── */
   --text-primary:   #e8dcc8;
@@ -103,8 +104,8 @@ html[lang="ja"] {
 
 /* English font override */
 html[lang="en"] {
-  --font-body: var(--font-scdream), 'Inter', 'Segoe UI', sans-serif;
-  --font-heading: var(--font-kotra-bold), var(--font-scdream), sans-serif;
+  --font-body: var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Segoe UI', sans-serif;
+  --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', sans-serif;
 }
 
 * {

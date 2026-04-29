@@ -14,34 +14,53 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckListFilters from '@/components/decks/DeckListFilters'
 import DeckGrid from '@/components/decks/DeckGrid'
 import type { SearchSuggestion } from '@/components/decks/decks-types'
+import type { DeckFilterIdentity } from '@/components/decks/DeckIdentityFilterModal'
 import { useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
+const PINNED_DECK_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '호흡', '진동', '침잠', '충전']
 
 type SortKey = 'latest' | 'popular'
 type IdentityNameEntry = {
+  id: string
+  name: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   sinner_id: string
   folder_name: string | null
   game_id: string | null
+  rarity: number
+  keywords: string[] | null
+  hp: number | null
+  speed_min: number | null
+  speed_max: number | null
+  def_level: number | null
+  sinner?: {
+    id: string
+    name_kr: string
+    order_num: number
+  } | { id: string; name_kr: string; order_num: number }[] | null
 }
-
-const KEYWORD_THRESHOLD = 5
 
 type DeckDerivedIndex = {
   searchValues: string[]
   themeKeywords: string[]
+  keywordValues: string[]
   identityIds: string[]
   egoIds: string[]
+  formationCount: number
 }
 
 function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
   const freq: Record<string, number> = {}
   const allKeywords = new Set<string>()
+  const keywordValues = new Set<string>()
   const identityNames: string[] = []
   const identityIds: string[] = []
+  const formationSinnerIds = new Set<string>()
 
   for (const slot of deck.deck_identities ?? []) {
     const identity = slot?.identities
@@ -50,15 +69,28 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
 
     for (const kw of slot?.identities?.keywords ?? []) {
       allKeywords.add(kw)
+    }
+
+    if (!identity || slot.slot_order >= 99) continue
+    const isNewFormationSinner = Boolean(identity.sinner_id) && !formationSinnerIds.has(identity.sinner_id)
+    if (identity.sinner_id) formationSinnerIds.add(identity.sinner_id)
+
+    for (const rawKeyword of identity.keywords ?? []) {
+      const kw = rawKeyword.trim()
+      if (!kw) continue
+      keywordValues.add(kw)
       const normalized = normalizeThemeKeyword(kw)
-      if (THEME_KEYWORD_SET.has(normalized)) {
+      if (THEME_KEYWORD_SET.has(normalized)) keywordValues.add(normalized)
+      if (isNewFormationSinner && THEME_KEYWORD_SET.has(normalized)) {
         freq[normalized] = (freq[normalized] ?? 0) + 1
       }
     }
   }
 
+  const formationCount = formationSinnerIds.size
+  const minKeywordCount = formationCount <= 1 ? formationCount : Math.max(2, Math.ceil(formationCount * 0.4))
   const themeKeywords = Object.entries(freq)
-    .filter(([, n]) => n >= KEYWORD_THRESHOLD)
+    .filter(([, n]) => n >= minKeywordCount)
     .sort((a, b) => b[1] - a[1])
     .map(([kw]) => kw)
 
@@ -71,8 +103,32 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
       ...identityNames,
     ],
     themeKeywords,
+    keywordValues: [...keywordValues],
     identityIds,
     egoIds: (deck.deck_egos ?? []).map(e => e.ego_id),
+    formationCount,
+  }
+}
+
+function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
+  const sinner = Array.isArray(identity.sinner) ? identity.sinner[0] : identity.sinner
+  return {
+    id: identity.id,
+    sinner_id: identity.sinner_id,
+    name: identity.name ?? identity.name_kr,
+    name_kr: identity.name_kr,
+    name_en: identity.name_en,
+    name_jp: identity.name_jp,
+    rarity: identity.rarity,
+    keywords: identity.keywords ?? [],
+    folder_name: identity.folder_name,
+    game_id: identity.game_id,
+    hp: identity.hp ?? 0,
+    speed_min: identity.speed_min ?? 0,
+    speed_max: identity.speed_max ?? 0,
+    def_level: identity.def_level ?? 0,
+    tier: 0,
+    sinner: sinner ?? null,
   }
 }
 
@@ -95,14 +151,17 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   // ── Deck data state ──
   const [decks, setDecks] = useState<DeckSummary[]>(() => initialDecks ?? [])
   const [loading, setLoading] = useState(!initialDecks || initialDecks.length === 0)
+  const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const initialDataUsed = useRef(Boolean(initialDecks && initialDecks.length > 0))
+  const deckRequestId = useRef(0)
 
   // ── URL-synced state ──
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  const latestSortRef = useRef(sort)
 
   // ── Search UI state ──
   const [inputValue, setInputValue] = useState(search)
@@ -114,19 +173,23 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   // ── Identity autocomplete data ──
   const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
   useEffect(() => {
-    createBrowserClient()
-      .schema('limbus')
-      .from('identities')
-      .select('name_kr, sinner_id, folder_name, game_id')
-      .then(({ data }) => {
-        if (data) {
-          const seen = new Set<string>()
-          const deduped = (data as IdentityNameEntry[])
-            .filter(d => { if (seen.has(d.name_kr)) return false; seen.add(d.name_kr); return true })
-            .sort((a, b) => a.name_kr.localeCompare(b.name_kr))
-          setAllIdentities(deduped)
-        }
-      })
+    async function loadIdentities() {
+      try {
+        const { data, error } = await createBrowserClient()
+          .schema('limbus')
+          .from('identities')
+          .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)')
+          .order('sinner_id')
+          .order('rarity', { ascending: false })
+          .order('name_kr')
+        if (error) throw error
+        if (data) setAllIdentities(data as IdentityNameEntry[])
+      } catch (error) {
+        console.error('인격 필터 데이터 로드 실패:', error)
+      }
+    }
+
+    loadIdentities()
   }, [])
 
   // ── Search suggestions ──
@@ -224,7 +287,10 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const [activeContentType, setActiveContentType] = useState('')
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set())
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
+  const [formationCount, setFormationCount] = useState<number | null>(null)
+  const [selectedIdentityIds, setSelectedIdentityIds] = useState<Set<string>>(new Set())
   const [keywordMode, setKeywordMode] = useState<'or' | 'and'>('or')
+  const [identityMode, setIdentityMode] = useState<'or' | 'and'>('or')
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(true)
   const [showTagFilter, setShowTagFilter] = useState(true)
   const [showKeywordFilter, setShowKeywordFilter] = useState(true)
@@ -246,9 +312,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     const c1 = animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] })
     const c2 = animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
     const c3 = animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] })
-    const c4 = animate('.decks-filters', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.5, ease: 'easeOut' })
-    const c5 = animate('.decks-divider-bottom', { scaleX: [0, 1] }, { duration: 0.6, delay: 0.7, ease: [0.33, 1, 0.68, 1] })
-    return () => { c1.stop(); c2.stop(); c3.stop(); c4.stop(); c5.stop() }
+    return () => { c1.stop(); c2.stop(); c3.stop() }
   }, [])
 
   // ── Initial deck load (skip if server data present) ──
@@ -257,36 +321,55 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
       initialDataUsed.current = false
       if (initialDecks && initialDecks.length < PAGE_SIZE) setHasMore(false)
       setLoading(false)
+      latestSortRef.current = sort
       return
     }
-    setLoading(true)
-    setDecks([])
+    latestSortRef.current = sort
+    const requestId = deckRequestId.current + 1
+    deckRequestId.current = requestId
+    const controller = new AbortController()
+    const hasExistingDecks = decks.length > 0
+    setLoading(!hasExistingDecks)
+    setRefreshing(hasExistingDecks)
     setHasMore(true)
-    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=0`)
+    fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=0`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
+        if (deckRequestId.current !== requestId) return
         if (Array.isArray(data)) {
           setDecks(data.map(mapDeck))
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
-      .catch(e => console.error('덱 목록 로드 실패:', e))
-      .finally(() => setLoading(false))
+      .catch(e => {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        console.error('덱 목록 로드 실패:', e)
+      })
+      .finally(() => {
+        if (deckRequestId.current !== requestId) return
+        setLoading(false)
+        setRefreshing(false)
+      })
+    return () => controller.abort()
   }, [sort]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load more ──
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
+    const requestSort = sort
     fetch(`/api/decks?sort=${sort}&limit=${PAGE_SIZE}&offset=${decks.length}`)
       .then(r => r.json())
       .then(data => {
+        if (latestSortRef.current !== requestSort) return
         if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => [...prev, ...data.map(mapDeck)])
       })
       .catch(e => console.error('덱 추가 로드 실패:', e))
-      .finally(() => setLoadingMore(false))
+      .finally(() => {
+        if (latestSortRef.current === requestSort) setLoadingMore(false)
+      })
   }, [sort, decks.length, loadingMore, hasMore])
 
   // ── Infinite scroll observer ──
@@ -367,12 +450,26 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const deckDerived = useMemo(() => {
     const byId = new Map<string, DeckDerivedIndex>()
     const tagFreq: Record<string, number> = {}
+    const keywordCandidateFreq: Record<string, number> = {}
     const themeKeywordSet = new Set<string>()
 
     for (const d of decks) {
       const index = buildDeckDerivedIndex(d)
       byId.set(d.id, index)
       for (const kw of index.themeKeywords) themeKeywordSet.add(kw)
+      for (const slot of d.deck_identities ?? []) {
+        const identity = slot?.identities
+        if (!identity || slot.slot_order >= 99) continue
+        for (const rawKeyword of identity.keywords ?? []) {
+          const kw = rawKeyword.trim()
+          if (!kw) continue
+          keywordCandidateFreq[kw] = (keywordCandidateFreq[kw] ?? 0) + 1
+          const normalized = normalizeThemeKeyword(kw)
+          if (normalized !== kw && THEME_KEYWORD_SET.has(normalized)) {
+            keywordCandidateFreq[normalized] = (keywordCandidateFreq[normalized] ?? 0) + 1
+          }
+        }
+      }
       for (const t of d.tags ?? []) {
         tagFreq[t] = (tagFreq[t] ?? 0) + 1
       }
@@ -384,12 +481,58 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 12)
         .map(([tag]) => tag),
-      availableKeywords: THEME_KEYWORDS.filter(kw => themeKeywordSet.has(kw)),
+      availableKeywords: [
+        ...PINNED_DECK_KEYWORDS,
+        ...THEME_KEYWORDS.filter(kw => !PINNED_DECK_KEYWORDS.includes(kw) && themeKeywordSet.has(kw)),
+      ],
+      keywordCandidates: Object.entries(keywordCandidateFreq)
+        .sort((a, b) => {
+          if (b[1] !== a[1]) return b[1] - a[1]
+          return a[0].localeCompare(b[0], 'ko')
+        })
+        .map(([kw]) => kw),
     }
   }, [decks])
 
   const allTags = deckDerived.allTags
   const availableKeywords = deckDerived.availableKeywords
+  const keywordCandidates = deckDerived.keywordCandidates
+  const filterIdentities = useMemo(
+    () => allIdentities.map(toDeckFilterIdentity),
+    [allIdentities],
+  )
+  const filterSinners = useMemo(() => {
+    const byId = new Map<string, { id: string; name_kr: string; order_num: number }>()
+    for (const identity of filterIdentities) {
+      if (!identity.sinner) continue
+      byId.set(identity.sinner.id, identity.sinner)
+    }
+    return [...byId.values()].sort((a, b) => a.order_num - b.order_num)
+  }, [filterIdentities])
+  const selectedIdentities = useMemo(
+    () => filterIdentities.filter(identity => selectedIdentityIds.has(identity.id)),
+    [filterIdentities, selectedIdentityIds],
+  )
+  const toggleSelectedIdentity = useCallback((identityId: string) => {
+    setSelectedIdentityIds(prev => {
+      const next = new Set(prev)
+      const target = filterIdentities.find(identity => identity.id === identityId)
+
+      if (next.has(identityId)) {
+        next.delete(identityId)
+        return next
+      }
+
+      if (target) {
+        for (const identity of filterIdentities) {
+          if (identity.sinner_id === target.sinner_id) next.delete(identity.id)
+        }
+      }
+
+      next.add(identityId)
+      return next
+    })
+  }, [filterIdentities])
 
   // ── Filter application ──
   const filtered = useMemo(() => {
@@ -422,7 +565,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
 
     if (activeKeywords.size > 0) {
       list = list.filter(d => {
-        const deckKws = deckDerived.byId.get(d.id)?.themeKeywords ?? []
+        const deckKws = deckDerived.byId.get(d.id)?.keywordValues ?? []
         if (keywordMode === 'and') {
           for (const kw of activeKeywords) {
             if (!deckKws.includes(kw)) return false
@@ -431,6 +574,27 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
         } else {
           for (const kw of activeKeywords) {
             if (deckKws.includes(kw)) return true
+          }
+          return false
+        }
+      })
+    }
+
+    if (formationCount !== null) {
+      list = list.filter(d => (deckDerived.byId.get(d.id)?.formationCount ?? 0) === formationCount)
+    }
+
+    if (selectedIdentityIds.size > 0) {
+      list = list.filter(d => {
+        const ids = deckDerived.byId.get(d.id)?.identityIds ?? []
+        if (identityMode === 'and') {
+          for (const id of selectedIdentityIds) {
+            if (!ids.includes(id)) return false
+          }
+          return true
+        } else {
+          for (const id of selectedIdentityIds) {
+            if (ids.includes(id)) return true
           }
           return false
         }
@@ -452,134 +616,107 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     }
 
     return list
-  }, [decks, deckDerived, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, deckDerived, debouncedSearch, activeContentType, activeTags, activeKeywords, keywordMode, formationCount, selectedIdentityIds, identityMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
-  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || filterOwnedIdentity || filterOwnedEgo)
-  const advancedFilterCount = activeTags.size + activeKeywords.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
+  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywords.size > 0 || formationCount !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo)
+  const advancedFilterCount = activeTags.size + activeKeywords.size + (formationCount !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
 
   return (
-    <div className="min-h-screen pt-0 pb-20 px-6 max-w-7xl mx-auto relative">
+    <div className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
 
-      {/* Background atmospheric glow */}
-      <div style={{
-        position: 'fixed',
-        top: '-10rem',
-        right: '-5rem',
-        width: '35rem',
-        height: '35rem',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }} />
+      <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
+        {/* ── 필터 패널 ── */}
+        <DeckListFilters
+          inputValue={inputValue}
+          onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}
+          onInputFocus={() => setShowSuggestions(true)}
+          onSearchClear={() => { setInputValue(''); setSearch(null); setDebouncedSearch(''); setShowSuggestions(false) }}
+          onSearchKeyDown={handleSearchKeyDown}
+          searchRef={searchRef}
+          showSuggestions={showSuggestions}
+          suggestions={suggestions}
+          acIndex={acIndex}
+          onSuggestionClick={label => {
+            const { prefix } = getActiveTerm(inputValue)
+            setInputValue(prefix + label)
+            setShowSuggestions(false)
+            setAcIndex(-1)
+          }}
+          getIconUrl={getIconUrl}
+          sort={sort}
+          onSortChange={s => setSort(s as SortKey)}
+          activeContentType={activeContentType}
+          onContentTypeChange={setActiveContentType}
+          showAdvancedFilter={showAdvancedFilter}
+          onToggleAdvancedFilter={() => setShowAdvancedFilter(v => !v)}
+          advancedFilterCount={advancedFilterCount}
+          allTags={allTags}
+          activeTags={activeTags}
+          showTagFilter={showTagFilter}
+          onToggleTagFilter={() => setShowTagFilter(v => !v)}
+          onToggleTag={toggleTag}
+          onClearTags={() => setActiveTags(new Set())}
+          keywordCandidates={keywordCandidates}
+          availableKeywords={availableKeywords}
+          activeKeywords={activeKeywords}
+          keywordMode={keywordMode}
+          showKeywordFilter={showKeywordFilter}
+          onToggleKeywordFilter={() => setShowKeywordFilter(v => !v)}
+          onToggleKeyword={toggleKeyword}
+          onClearKeywords={() => setActiveKeywords(new Set())}
+          onToggleKeywordMode={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
+          showCollectionFilter={showCollectionFilter}
+          onToggleCollectionFilter={() => setShowCollectionFilter(v => !v)}
+          collectionLoading={collectionLoading}
+          hasCollection={hasCollection}
+          filterOwnedIdentity={filterOwnedIdentity}
+          filterOwnedEgo={filterOwnedEgo}
+          onToggleFilterOwnedIdentity={() => setFilterOwnedIdentity(prev => !prev)}
+          onToggleFilterOwnedEgo={() => setFilterOwnedEgo(prev => !prev)}
+          onClearCollection={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
+          codeInput={codeInput}
+          onCodeInputChange={v => { setCodeInput(v); setCodeError(false) }}
+          onApplyCode={() => applyCollectionCode(codeInput)}
+          codeError={codeError}
+          formationCount={formationCount}
+          onFormationCountChange={setFormationCount}
+          identityFilterSinners={filterSinners}
+          identityFilterIdentities={filterIdentities}
+          selectedIdentityIds={selectedIdentityIds}
+          selectedIdentities={selectedIdentities}
+          identityMode={identityMode}
+          onToggleSelectedIdentity={toggleSelectedIdentity}
+          onToggleIdentityMode={() => setIdentityMode(m => m === 'or' ? 'and' : 'or')}
+          onClearSelectedIdentities={() => setSelectedIdentityIds(new Set())}
+        />
 
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <div style={{
-          position: 'absolute',
-          top: '8%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '50rem',
-          height: '50rem',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, transparent 60%)',
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '15%',
-          right: '20%',
-          width: '30rem',
-          height: '30rem',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,144,10,0.02) 0%, transparent 60%)',
-        }} />
+        <div className="min-h-0 flex-1 overflow-y-auto pb-16 pr-1 scrollbar-thin">
+          {/* ── 결과 수 ── */}
+          {!loading && (
+            <p
+              className="mb-4"
+              aria-live="polite"
+              style={{ color: '#888', fontFamily: 'var(--font-body)', fontSize: '1rem', lineHeight: 1.5 }}
+            >
+              <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{filtered.length}개</span>
+              {hasMore ? ' 이상의 덱' : '의 덱'}
+              {hasAnyFilter && <span style={{ color: '#777' }}> (필터 적용됨)</span>}
+            </p>
+          )}
+
+          {/* ── 덱 목록 ── */}
+          <DeckGrid
+            filtered={filtered}
+            loading={loading}
+            refreshing={refreshing}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            hasAnyFilter={hasAnyFilter}
+            sentinelRef={sentinelRef}
+            onTagClick={toggleTag}
+          />
+        </div>
       </div>
-
-      {/* ── 필터 패널 ── */}
-      <div className="decks-filters" suppressHydrationWarning>
-      <DeckListFilters
-        inputValue={inputValue}
-        onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}
-        onInputFocus={() => setShowSuggestions(true)}
-        onSearchClear={() => { setInputValue(''); setSearch(null); setDebouncedSearch(''); setShowSuggestions(false) }}
-        onSearchKeyDown={handleSearchKeyDown}
-        searchRef={searchRef}
-        showSuggestions={showSuggestions}
-        suggestions={suggestions}
-        acIndex={acIndex}
-        onSuggestionClick={label => {
-          const { prefix } = getActiveTerm(inputValue)
-          setInputValue(prefix + label)
-          setShowSuggestions(false)
-          setAcIndex(-1)
-        }}
-        getIconUrl={getIconUrl}
-        sort={sort}
-        onSortChange={s => setSort(s as SortKey)}
-        activeContentType={activeContentType}
-        onContentTypeChange={setActiveContentType}
-        showAdvancedFilter={showAdvancedFilter}
-        onToggleAdvancedFilter={() => setShowAdvancedFilter(v => !v)}
-        advancedFilterCount={advancedFilterCount}
-        allTags={allTags}
-        activeTags={activeTags}
-        showTagFilter={showTagFilter}
-        onToggleTagFilter={() => setShowTagFilter(v => !v)}
-        onToggleTag={toggleTag}
-        onClearTags={() => setActiveTags(new Set())}
-        availableKeywords={availableKeywords}
-        activeKeywords={activeKeywords}
-        keywordMode={keywordMode}
-        showKeywordFilter={showKeywordFilter}
-        onToggleKeywordFilter={() => setShowKeywordFilter(v => !v)}
-        onToggleKeyword={toggleKeyword}
-        onClearKeywords={() => setActiveKeywords(new Set())}
-        onToggleKeywordMode={() => setKeywordMode(m => m === 'or' ? 'and' : 'or')}
-        showCollectionFilter={showCollectionFilter}
-        onToggleCollectionFilter={() => setShowCollectionFilter(v => !v)}
-        collectionLoading={collectionLoading}
-        hasCollection={hasCollection}
-        filterOwnedIdentity={filterOwnedIdentity}
-        filterOwnedEgo={filterOwnedEgo}
-        onToggleFilterOwnedIdentity={() => setFilterOwnedIdentity(prev => !prev)}
-        onToggleFilterOwnedEgo={() => setFilterOwnedEgo(prev => !prev)}
-        onClearCollection={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
-        codeInput={codeInput}
-        onCodeInputChange={v => { setCodeInput(v); setCodeError(false) }}
-        onApplyCode={() => applyCollectionCode(codeInput)}
-        codeError={codeError}
-      />
-      </div>
-
-      {/* 하단 장식 디바이더 */}
-      <div className="decks-divider-bottom mx-auto" style={{
-        width: '100%',
-        maxWidth: '16rem',
-        height: '0.0625rem',
-        background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3), var(--gold-dim), rgba(200,144,10,0.3), transparent)',
-        marginBottom: '1.5rem',
-        transformOrigin: 'center',
-        transform: 'scaleX(0)',
-      }} />
-
-      {/* ── 결과 수 ── */}
-      {!loading && (
-        <p className="mb-5 text-xs" style={{ color: '#555570', fontFamily: 'var(--font-mono)' }}>
-          {filtered.length}개의 덱{hasMore && '+'}
-          {hasAnyFilter && ' (필터 적용됨)'}
-        </p>
-      )}
-
-      {/* ── 덱 목록 ── */}
-      <DeckGrid
-        filtered={filtered}
-        loading={loading}
-        hasMore={hasMore}
-        loadingMore={loadingMore}
-        hasAnyFilter={hasAnyFilter}
-        sentinelRef={sentinelRef}
-        onTagClick={toggleTag}
-      />
     </div>
   )
 }
