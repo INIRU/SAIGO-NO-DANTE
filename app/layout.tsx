@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Metadata } from 'next'
-import { Black_Han_Sans, Song_Myung, Noto_Sans_JP } from 'next/font/google'
+import { Black_Han_Sans, Song_Myung, Noto_Sans_JP, Noto_Sans_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
@@ -88,15 +88,15 @@ const scDream = localFont({
   weight: '500',
   variable: '--font-scdream',
   display: 'swap',
-  fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
+  fallback: ['Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
-// decorative — display:optional prevents FOUT
-const perfectDOS = localFont({
-  src: '../public/fonts/PerfectDOSVGA437.ttf',
-  variable: '--font-perfect-dos',
-  display: 'optional',
-  preload: false,
+const pretendard = localFont({
+  src: '../public/fonts/Pretendard-Regular.ttf',
+  weight: '400',
+  variable: '--font-pretendard',
+  display: 'swap',
+  fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
 // decorative — display:optional prevents FOUT
@@ -116,6 +116,13 @@ const notoSansJP = Noto_Sans_JP({
   weight: ['400', '500', '700'],
   variable: '--font-noto-jp',
   display: 'optional',
+})
+
+const notoSansMono = Noto_Sans_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-noto-sans-mono',
+  display: 'swap',
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
@@ -254,7 +261,7 @@ export default async function RootLayout({
   const keywords = await getKeywordData()
 
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${kotraBold.variable} ${scDream.variable} ${perfectDOS.variable} ${paperlogy.variable} ${notoSansJP.variable}`}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${kotraBold.variable} ${scDream.variable} ${pretendard.variable} ${paperlogy.variable} ${notoSansJP.variable} ${notoSansMono.variable}`}>
       <head>
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />

@@ -32,6 +32,7 @@ const TITLE_SUFFIX_RE = /^(?:대표|해결사|대행|아비)$/
 const COMPACT_DETERMINISTIC_LINE_UNITS = 6.1
 const REGULAR_DETERMINISTIC_LINE_UNITS = 9.4
 const SHORT_SINGLE_LINE_MAX_WEIGHT = 7
+const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
 let activePretextLocale: string | null = null
 
 function getLineTextWeight(value: string) {
@@ -546,10 +547,11 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             />
           ) : (
             <span
-              className="font-mono font-bold"
               style={{
                 color: rarity.border,
                 fontSize: 'var(--text-xs)',
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 700,
                 background: 'rgba(13,11,8,0.85)',
                 padding: '0.0625rem 0.3125rem',
                 borderRadius: 'var(--radius-sm)',
@@ -588,6 +590,18 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             height={300}
 
             className={`${styles.frame} transition-[filter] duration-300 group-hover:brightness-130 group-hover:drop-shadow-[0_0_8px_${rarity.glow}]`}
+          />
+        )}
+
+        {selected && (
+          <Image
+            src={SELECTED_BANNER_URL}
+            alt=""
+            width={320}
+            height={96}
+            className={styles.selectedRibbon}
+            sizes="(max-width: 640px) 6rem, 7.25rem"
+            aria-hidden="true"
           />
         )}
       </div>

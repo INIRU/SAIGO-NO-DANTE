@@ -233,19 +233,27 @@ limbus-assets/
 
 ## 핵심 패턴
 
-### rem 전용 사이징
+### 스케일 친화적 사이징
 
-모든 크기 값은 `rem`으로 지정한다. `px` 사용 금지.
+텍스트, spacing, layout, 주요 component dimension은 `rem` 또는 design token을 기본으로 둔다. 이 프로젝트는 `FloatingFontControl`로 root font-size를 조절하므로, 사용자가 읽고 조작하는 UI는 가능한 한 폰트 스케일을 따라가야 한다.
 
 ```css
-/* 올바름 */
+/* 권장: 사용자 font scale을 따라가는 visible UI */
 font-size: 0.875rem;
 padding: 1rem;
 
-/* 금지 */
-font-size: 14px;
-padding: 16px;
+/* 허용: 픽셀 정밀도나 브라우저/API 계약이 필요한 세부 표현 */
+border-width: 1px;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 ```
+
+`px`는 전면 금지가 아니다. hairline border, shadow offset, icon stroke, canvas/image 내부 처리, DOM 측정값, `next/image` intrinsic `width`/`height`, 외부 라이브러리/API 제약처럼 실제 픽셀 단위가 더 정확한 곳에 사용할 수 있다.
+
+피해야 할 것은 visible text/layout 전체를 fixed `px`로 고정해 font-control, 모바일 fit, 접근성 scaling을 무력화하는 것이다. 그런 결정이 필요하면 컴포넌트 근처에 이유를 남기고 browser/mobile에서 확인한다.
+
+### 폰트 런타임
+
+`font-mono`는 `next/font/google`의 `Noto Sans Mono`와 Pretendard/system Korean fallback을 사용한다. 기존 `PerfectDOS`는 로딩/렌더 문제가 있어 폐기했으며, 새 런타임이나 UI에서 다시 등록하지 않는다.
 
 ### 다크 테마
 

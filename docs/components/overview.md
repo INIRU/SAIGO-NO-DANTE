@@ -8,13 +8,18 @@
 
 | 항목 | 규칙 |
 |------|------|
-| 사이징 | rem 단위만 사용 (px 사용 금지) |
+| 사이징 | `rem`/design token 우선. `px`는 border, shadow, icon/canvas/image 내부, 측정값, 외부 API 제약처럼 픽셀 정밀도가 필요한 곳에 사용 |
+| 모노 폰트 | `font-mono`는 Noto Sans Mono + Pretendard/system fallback. PerfectDOS 사용 금지 |
 | 테마 | 다크 테마 기본 (배경 `#0d0b08`) |
 | 애니메이션 | GSAP (동적 임포트 필수) + Framer Motion |
 | 이미지 | Supabase Storage (`STORAGE_BASE` 상수 사용) |
 | 모달 | 반드시 `BaseModal` 래퍼 사용 |
 | 이미지 컴포넌트 | `ImageWithFallback` 사용 (폴백 처리) |
 | z-index | 부모에 `position: relative; zIndex: 0`으로 스태킹 컨텍스트 격리 |
+
+---
+
+visible text, spacing, layout, component dimension은 사용자 font scale과 모바일 fit을 우선한다. fixed `px`가 보이는 UI 크기를 결정할 때는 편의가 아니라 의도적인 시각 결정이어야 하며, 해당 컴포넌트의 font-control 동작과 viewport fit을 확인한다.
 
 ---
 

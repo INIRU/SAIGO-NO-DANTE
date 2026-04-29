@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DecksClient from './DecksClient'
+import DecksScrollLock from './DecksScrollLock'
 import type { DeckSummary } from '@/components/decks/DeckCard'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -75,9 +76,10 @@ export default async function DecksPage() {
   })
 
   return (
-    <div style={{ background: 'var(--bg-deep)', minHeight: '100dvh' }}>
+    <div className="flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
+      <DecksScrollLock />
       {/* Server-rendered header — instant paint */}
-      <div className="max-w-7xl mx-auto" style={{ padding: '7rem 1.5rem 2rem' }}>
+      <div className="w-full max-w-7xl mx-auto shrink-0" style={{ padding: '6.5rem 1.5rem 1.25rem' }}>
         <p className="decks-header-tag" suppressHydrationWarning style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>DECK BOARD</p>
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -103,7 +105,7 @@ export default async function DecksPage() {
       </div>
       {/* Client component — streams in with search/filter state from nuqs */}
       <Suspense fallback={
-        <div className="max-w-7xl mx-auto" style={{ padding: '0 1.5rem 4rem' }}>
+        <div className="min-h-0 flex-1 overflow-y-auto max-w-7xl mx-auto w-full" style={{ padding: '0 1.5rem 4rem' }}>
           <DecksPageSkeleton />
         </div>
       }>

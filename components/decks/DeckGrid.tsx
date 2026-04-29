@@ -11,6 +11,7 @@ const deckGridVariants = staggerContainer(0.06)
 interface DeckGridProps {
   filtered: DeckSummary[]
   loading: boolean
+  refreshing?: boolean
   hasMore: boolean
   loadingMore: boolean
   hasAnyFilter: boolean
@@ -21,6 +22,7 @@ interface DeckGridProps {
 function DeckGrid({
   filtered,
   loading,
+  refreshing = false,
   hasMore,
   loadingMore,
   hasAnyFilter,
@@ -69,15 +71,37 @@ function DeckGrid({
 
   return (
     <>
+      {refreshing && (
+        <div
+          className="mb-3 flex items-center gap-2 rounded-sm"
+          style={{
+            minHeight: '2rem',
+            padding: '0 0.625rem',
+            background: 'rgba(200,144,10,0.06)',
+            borderLeft: '0.125rem solid rgba(200,144,10,0.52)',
+            color: '#a99062',
+            fontSize: '0.875rem',
+          }}
+          aria-live="polite"
+        >
+          <span
+            className="rounded-full animate-spin"
+            style={{ width: '0.875rem', height: '0.875rem', border: '1px solid rgba(200,144,10,0.28)', borderTopColor: 'var(--gold)' }}
+            aria-hidden="true"
+          />
+          목록 갱신 중…
+        </div>
+      )}
+
       <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
         variants={deckGridVariants}
-        initial="initial"
+        initial={false}
         animate="animate"
       >
         {filtered.map(deck => (
-          <motion.div key={deck.id} variants={staggerItem} className="cv-card-lg h-full">
+          <motion.div key={deck.id} variants={staggerItem} className="h-full">
             <DeckCard deck={deck} onTagClick={onTagClick} />
           </motion.div>
         ))}
