@@ -8,17 +8,56 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
 
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 50
+
+function parsePositiveIntegerParam(value: string | null, fallback: number, name: string) {
+  if (value === null) return { value: fallback }
+  if (!/^\d+$/.test(value)) {
+    return { error: `${name} must be a positive integer` }
+  }
+
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    return { error: `${name} must be a positive integer` }
+  }
+
+  return { value: Math.min(parsed, MAX_PAGE_SIZE) }
+}
+
+function parseOffsetParam(value: string | null) {
+  if (value === null) return { value: 0 }
+  if (!/^\d+$/.test(value)) {
+    return { error: 'offset must be a non-negative integer' }
+  }
+
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    return { error: 'offset must be a non-negative integer' }
+  }
+
+  return { value: parsed }
+}
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const sort = searchParams.get('sort') || 'latest'
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = parseInt(searchParams.get('offset') || '0')
     const identityId = searchParams.get('identity_id')
 
-    const orderColumn = sort === 'popular' ? 'vote_count' : 'created_at'
+    const limitResult = parsePositiveIntegerParam(searchParams.get('limit'), DEFAULT_PAGE_SIZE, 'limit')
+    if ('error' in limitResult) {
+      return NextResponse.json({ error: limitResult.error }, { status: 400 })
+    }
+
+    const offsetResult = parseOffsetParam(searchParams.get('offset'))
+    if ('error' in offsetResult) {
+      return NextResponse.json({ error: offsetResult.error }, { status: 400 })
+    }
+
+    const { value: limit } = limitResult
+    const { value: offset } = offsetResult
 
     let query = supabase
       .schema('limbus')
@@ -29,15 +68,27 @@ export async function GET(request: NextRequest) {
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
         deck_egos(ego_id)
       `)
-      .order(orderColumn, { ascending: false })
+
+    query = sort === 'popular'
+      ? query
+        .order('vote_count', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+      : query
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
 
     // identity_id 필터: 해당 인격이 포함된 덱 ID를 먼저 조회 후 in() 필터
     if (identityId) {
-      const { data: matches } = await supabase
+      const { data: matches, error: matchesError } = await supabase
         .schema('limbus')
         .from('deck_identities')
         .select('deck_id')
         .eq('identity_id', identityId)
+
+      if (matchesError) {
+        return NextResponse.json({ error: matchesError.message }, { status: 500 })
+      }
 
       if (!matches || matches.length === 0) {
         return NextResponse.json([])

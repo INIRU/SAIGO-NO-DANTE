@@ -139,9 +139,14 @@ function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSum
 interface DecksClientProps {
   initialDecks?: DeckSummary[]
   initialTotal?: number
+  initialSort?: SortKey
 }
 
-export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
+function normalizeSortKey(value: string): SortKey {
+  return value === 'popular' ? 'popular' : 'latest'
+}
+
+export default function DecksClient({ initialDecks, initialSort = 'latest' }: DecksClientProps = {}) {
   const lang = useLocale()
   useRoutePrefetch([`/${lang}/decks/new`, `/${lang}/tier-list`])
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
@@ -149,17 +154,19 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const { status: authStatus } = useSession()
 
   // ── Deck data state ──
+  const hasServerInitialDecks = initialDecks !== undefined
   const [decks, setDecks] = useState<DeckSummary[]>(() => initialDecks ?? [])
-  const [loading, setLoading] = useState(!initialDecks || initialDecks.length === 0)
+  const [loading, setLoading] = useState(!hasServerInitialDecks)
   const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement>(null)
-  const initialDataUsed = useRef(Boolean(initialDecks && initialDecks.length > 0))
+  const initialDataSort = useRef<SortKey | null>(hasServerInitialDecks ? initialSort : null)
   const deckRequestId = useRef(0)
 
   // ── URL-synced state ──
-  const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
+  const [sortQuery, setSortQuery] = useQueryState('sort', parseAsString.withDefault('latest'))
+  const sort = normalizeSortKey(sortQuery)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
   const latestSortRef = useRef(sort)
 
@@ -305,22 +312,15 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
   const [collectionData, setCollectionData] = useState<CollectionData | null>(null)
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState(false)
-
-  // ── Entry animation ──
-  useEffect(() => {
-    const { animate } = require('framer-motion')
-    const c1 = animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] })
-    const c2 = animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
-    const c3 = animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] })
-    return () => { c1.stop(); c2.stop(); c3.stop() }
-  }, [])
+  const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
 
   // ── Initial deck load (skip if server data present) ──
   useEffect(() => {
-    if (initialDataUsed.current && sort === 'latest') {
-      initialDataUsed.current = false
+    if (initialDataSort.current === sort) {
+      initialDataSort.current = null
       if (initialDecks && initialDecks.length < PAGE_SIZE) setHasMore(false)
       setLoading(false)
+      setRefreshing(false)
       latestSortRef.current = sort
       return
     }
@@ -384,32 +384,52 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     return () => observer.disconnect()
   }, [loadMore])
 
-  // ── Collection master data ──
-  useEffect(() => {
-    fetch('/api/collection').then(r => r.json())
-      .then((d: CollectionData) => { if (d.sinners?.length > 0) setCollectionData(d) })
-      .catch(() => {})
-  }, [])
+  const ensureCollectionData = useCallback(async () => {
+    if (collectionData) return collectionData
+    if (!collectionRequestRef.current) {
+      setCollectionLoading(true)
+      collectionRequestRef.current = fetch('/api/collection')
+        .then(r => r.json())
+        .then((d: CollectionData) => {
+          if (!d.sinners?.length) return null
+          setCollectionData(d)
+          return d
+        })
+        .catch(() => null)
+        .finally(() => {
+          collectionRequestRef.current = null
+          setCollectionLoading(false)
+        })
+    }
+    return collectionRequestRef.current
+  }, [collectionData])
+
+  const loadProfileCollection = useCallback(async () => {
+    if (authStatus !== 'authenticated') return false
+    setCollectionLoading(true)
+    try {
+      const data = await ensureCollectionData()
+      if (!data) return false
+      const profileData = await fetch('/api/profile').then(r => r.json()) as { profile?: { collection_code?: string | null } }
+      const code = profileData.profile?.collection_code
+      if (!code) return false
+      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      setOwnedIds(decoded)
+      setHasCollection(true)
+      return true
+    } catch {
+      return false
+    } finally {
+      setCollectionLoading(false)
+    }
+  }, [authStatus, ensureCollectionData])
 
   // ── Auto-load collection for logged-in user ──
   useEffect(() => {
-    if (authStatus !== 'authenticated' || !collectionData) return
-    setCollectionLoading(true)
-    fetch('/api/profile').then(r => r.json())
-      .then(async (profileData: { profile?: { collection_code?: string | null } }) => {
-        const code = profileData.profile?.collection_code
-        if (code) {
-          const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
-          setOwnedIds(decoded)
-          setHasCollection(true)
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCollectionLoading(false))
-  }, [authStatus, collectionData])
+    void loadProfileCollection()
+  }, [loadProfileCollection])
 
   const applyCollectionCode = useCallback(async (rawInput: string) => {
-    if (!collectionData) return
     setCodeError(false)
     let code = rawInput.trim()
     try {
@@ -418,14 +438,34 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
     } catch { /* not a URL, use as-is */ }
     if (!code) return
     try {
-      const decoded = await decodeCollectionAsync(code, collectionData.sinners, collectionData.identities, collectionData.egos)
+      const data = await ensureCollectionData()
+      if (!data) { setCodeError(true); return }
+      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
       if (decoded.size === 0) { setCodeError(true); return }
       setOwnedIds(decoded)
       setHasCollection(true)
     } catch {
       setCodeError(true)
     }
-  }, [collectionData])
+  }, [ensureCollectionData])
+
+  const toggleFilterOwnedIdentity = useCallback(async () => {
+    let hasOwnedIds = ownedIds !== null
+    if (!hasOwnedIds && authStatus === 'authenticated') {
+      hasOwnedIds = await loadProfileCollection()
+    }
+    if (!hasOwnedIds) return
+    setFilterOwnedIdentity(prev => !prev)
+  }, [authStatus, loadProfileCollection, ownedIds])
+
+  const toggleFilterOwnedEgo = useCallback(async () => {
+    let hasOwnedIds = ownedIds !== null
+    if (!hasOwnedIds && authStatus === 'authenticated') {
+      hasOwnedIds = await loadProfileCollection()
+    }
+    if (!hasOwnedIds) return
+    setFilterOwnedEgo(prev => !prev)
+  }, [authStatus, loadProfileCollection, ownedIds])
 
   // ── Tag / keyword toggles ──
   const toggleTag = useCallback((tag: string) => {
@@ -644,7 +684,7 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
           }}
           getIconUrl={getIconUrl}
           sort={sort}
-          onSortChange={s => setSort(s as SortKey)}
+          onSortChange={s => setSortQuery(s as SortKey)}
           activeContentType={activeContentType}
           onContentTypeChange={setActiveContentType}
           showAdvancedFilter={showAdvancedFilter}
@@ -671,8 +711,8 @@ export default function DecksClient({ initialDecks }: DecksClientProps = {}) {
           hasCollection={hasCollection}
           filterOwnedIdentity={filterOwnedIdentity}
           filterOwnedEgo={filterOwnedEgo}
-          onToggleFilterOwnedIdentity={() => setFilterOwnedIdentity(prev => !prev)}
-          onToggleFilterOwnedEgo={() => setFilterOwnedEgo(prev => !prev)}
+          onToggleFilterOwnedIdentity={() => { void toggleFilterOwnedIdentity() }}
+          onToggleFilterOwnedEgo={() => { void toggleFilterOwnedEgo() }}
           onClearCollection={() => { setOwnedIds(null); setHasCollection(false); setFilterOwnedIdentity(false); setFilterOwnedEgo(false); setCodeInput('') }}
           codeInput={codeInput}
           onCodeInputChange={v => { setCodeInput(v); setCodeError(false) }}
