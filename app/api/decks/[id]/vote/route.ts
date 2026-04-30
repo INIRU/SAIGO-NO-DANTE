@@ -1,11 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { revalidatePath, updateTag } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+
+type SupabaseRouteError = {
+  code?: string
+  message?: string
+}
+
+function logVoteError(message: string, error: unknown) {
+  console.error(`[deck vote] ${message}`, error)
+}
+
+async function toggleVote(
+  admin: ReturnType<typeof createAdminClient>,
+  deckId: string,
+  userId: string,
+): Promise<{ voted: boolean; error?: SupabaseRouteError }> {
+  const { data: existingVote, error: selectError } = await admin
+    .schema('limbus')
+    .from('deck_votes')
+    .select('deck_id')
+    .eq('deck_id', deckId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (selectError) return { voted: false, error: selectError }
+
+  if (existingVote) {
+    const { data: deletedVote, error: deleteError } = await admin
+      .schema('limbus')
+      .from('deck_votes')
+      .delete()
+      .eq('deck_id', deckId)
+      .eq('user_id', userId)
+      .select('deck_id')
+      .maybeSingle()
+
+    if (deleteError) return { voted: true, error: deleteError }
+
+    if (deletedVote) {
+      const { error: decrementError } = await admin
+        .schema('limbus')
+        .rpc('decrement_vote', { deck_id: deckId })
+
+      if (decrementError) return { voted: false, error: decrementError }
+    }
+
+    return { voted: false }
+  }
+
+  const { data: insertedVote, error: insertError } = await admin
+    .schema('limbus')
+    .from('deck_votes')
+    .insert({ deck_id: deckId, user_id: userId })
+    .select('deck_id')
+    .single()
+
+  if (insertError) {
+    if (insertError.code === '23505') {
+      return { voted: true }
+    }
+
+    return { voted: false, error: insertError }
+  }
+
+  if (insertedVote) {
+    const { error: incrementError } = await admin
+      .schema('limbus')
+      .rpc('increment_vote', { deck_id: deckId })
+
+    if (incrementError) return { voted: true, error: incrementError }
+  }
+
+  return { voted: true }
+}
 
 
 export async function GET(
@@ -28,7 +101,7 @@ export async function GET(
     )
     if (!userId) return NextResponse.json({ voted: false })
 
-    const { data } = await admin
+    const { data, error } = await admin
       .schema('limbus')
       .from('deck_votes')
       .select('deck_id')
@@ -36,8 +109,14 @@ export async function GET(
       .eq('user_id', userId)
       .maybeSingle()
 
+    if (error) {
+      logVoteError('Failed to read vote state', error)
+      return NextResponse.json({ voted: false })
+    }
+
     return NextResponse.json({ voted: !!data })
-  } catch {
+  } catch (err: unknown) {
+    logVoteError('Unexpected vote GET failure', err)
     return NextResponse.json({ voted: false })
   }
 }
@@ -69,21 +148,20 @@ export async function POST(
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    const { data: voted, error: voteError } = await admin
-      .schema('limbus')
-      .rpc('toggle_vote', { p_deck_id: id, p_user_id: userId })
+    const { voted, error: voteError } = await toggleVote(admin, id, userId)
 
     if (voteError) {
-      return NextResponse.json({ error: voteError.message }, { status: 500 })
+      logVoteError('Failed to toggle vote', voteError)
+      return NextResponse.json({ error: '투표 처리 중 오류가 발생했습니다.' }, { status: 500 })
     }
 
     revalidatePath('/decks')
     revalidatePath(`/decks/${id}`)
-    updateTag(CACHE_TAGS.deck(id))
-    updateTag(CACHE_TAGS.decksList)
+    revalidateTag(CACHE_TAGS.decksList, 'max')
+    revalidateTag(CACHE_TAGS.deck(id), 'max')
     return NextResponse.json({ voted })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    logVoteError('Unexpected vote POST failure', err)
+    return NextResponse.json({ error: '투표 처리 중 오류가 발생했습니다.' }, { status: 500 })
   }
 }

@@ -93,6 +93,23 @@
   --text-xl:  1.75rem;
   --text-2xl: 2.25rem;
   --text-3xl: 3rem;
+
+  /* ── 덱 필터 표면 토큰 ───────────────────────── */
+  --deck-filter-surface: rgba(255,255,255,0.04);
+  --deck-filter-surface-muted: rgba(255,255,255,0.02);
+  --deck-filter-surface-active: rgba(200,144,10,0.1);
+  --deck-filter-border: rgba(255,255,255,0.08);
+  --deck-filter-border-strong: rgba(255,255,255,0.1);
+  --deck-filter-border-active: rgba(200,144,10,0.34);
+  --deck-filter-text: #ccc;
+  --deck-filter-text-muted: #777;
+  --deck-filter-text-dim: #666;
+  --deck-filter-text-soft: #888;
+  --deck-filter-control-min: 2.25rem;
+  --deck-filter-touch-min: 2.75rem;
+  --deck-filter-chip-min: 1.875rem;
+  --deck-filter-control-text: 0.8125rem;
+  --deck-filter-label-text: 0.875rem;
 }
 
 /* Japanese font override — Noto Sans JP for all text, no Korean-only fonts */

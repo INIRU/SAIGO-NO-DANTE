@@ -1,10 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+
+type SupabaseRouteError = {
+  code?: string
+  message?: string
+}
+
+function logBookmarkError(message: string, error: unknown) {
+  console.error(`[deck bookmark] ${message}`, error)
+}
+
+async function toggleBookmark(
+  admin: ReturnType<typeof createAdminClient>,
+  deckId: string,
+  userId: string,
+): Promise<{ bookmarked: boolean; error?: SupabaseRouteError }> {
+  const { data: existingBookmark, error: selectError } = await admin
+    .schema('limbus')
+    .from('deck_bookmarks')
+    .select('deck_id')
+    .eq('deck_id', deckId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (selectError) return { bookmarked: false, error: selectError }
+
+  if (existingBookmark) {
+    const { error: deleteError } = await admin
+      .schema('limbus')
+      .from('deck_bookmarks')
+      .delete()
+      .eq('deck_id', deckId)
+      .eq('user_id', userId)
+
+    if (deleteError) return { bookmarked: true, error: deleteError }
+
+    return { bookmarked: false }
+  }
+
+  const { error: insertError } = await admin
+    .schema('limbus')
+    .from('deck_bookmarks')
+    .insert({ deck_id: deckId, user_id: userId })
+
+  if (insertError) {
+    if (insertError.code === '23505') {
+      const { error: deleteError } = await admin
+        .schema('limbus')
+        .from('deck_bookmarks')
+        .delete()
+        .eq('deck_id', deckId)
+        .eq('user_id', userId)
+
+      if (deleteError) return { bookmarked: true, error: deleteError }
+
+      return { bookmarked: false }
+    }
+
+    return { bookmarked: false, error: insertError }
+  }
+
+  return { bookmarked: true }
+}
 
 
 export async function GET(
@@ -27,7 +87,7 @@ export async function GET(
     )
     if (!userId) return NextResponse.json({ bookmarked: false })
 
-    const { data } = await admin
+    const { data, error } = await admin
       .schema('limbus')
       .from('deck_bookmarks')
       .select('deck_id')
@@ -35,8 +95,14 @@ export async function GET(
       .eq('user_id', userId)
       .maybeSingle()
 
+    if (error) {
+      logBookmarkError('Failed to read bookmark state', error)
+      return NextResponse.json({ bookmarked: false })
+    }
+
     return NextResponse.json({ bookmarked: !!data })
-  } catch {
+  } catch (err: unknown) {
+    logBookmarkError('Unexpected bookmark GET failure', err)
     return NextResponse.json({ bookmarked: false })
   }
 }
@@ -62,25 +128,16 @@ export async function POST(
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    const { error: insertError } = await admin
-      .schema('limbus')
-      .from('deck_bookmarks')
-      .insert({ deck_id: id, user_id: userId })
+    const { bookmarked, error: bookmarkError } = await toggleBookmark(admin, id, userId)
 
-    if (insertError) {
-      if (insertError.code === '23505') {
-        await admin.schema('limbus').from('deck_bookmarks')
-          .delete().eq('deck_id', id).eq('user_id', userId)
-        updateTag(CACHE_TAGS.deck(id))
-        return NextResponse.json({ bookmarked: false })
-      }
-      return NextResponse.json({ error: insertError.message }, { status: 500 })
+    if (bookmarkError) {
+      logBookmarkError('Failed to toggle bookmark', bookmarkError)
+      return NextResponse.json({ error: '북마크 처리 중 오류가 발생했습니다.' }, { status: 500 })
     }
 
-    updateTag(CACHE_TAGS.deck(id))
-    return NextResponse.json({ bookmarked: true })
+    return NextResponse.json({ bookmarked })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    logBookmarkError('Unexpected bookmark POST failure', err)
+    return NextResponse.json({ error: '북마크 처리 중 오류가 발생했습니다.' }, { status: 500 })
   }
 }

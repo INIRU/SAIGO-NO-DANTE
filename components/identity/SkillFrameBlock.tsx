@@ -11,6 +11,20 @@ const SIN_FRAME_MAP: Record<string, string> = {
   gloom: 'azure', pride: 'indigo', envy: 'violet',
 }
 
+const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
+  slash: 'slash',
+  pierce: 'pierce',
+  blunt: 'blunt',
+  '참격': 'slash',
+  '관통': 'pierce',
+  '타격': 'blunt',
+}
+
+function normalizeAttackType(atkType?: string | null): 'slash' | 'pierce' | 'blunt' | null {
+  if (!atkType) return null
+  return ATTACK_TYPE_MAP[atkType.trim().toLowerCase()] ?? ATTACK_TYPE_MAP[atkType.trim()] ?? null
+}
+
 export interface SkillFrameBlockProps {
   /** Skill icon URL */
   skillIconUrl: string
@@ -74,13 +88,11 @@ export default function SkillFrameBlock({
   mentalConsume,
 }: SkillFrameBlockProps) {
   const t = useTranslations()
-  const isAttackSkill = !isDefense
   const frameSin = SIN_FRAME_MAP[sin] ?? 'crimson'
 
-  // Normalize attack type key (handles KR strings passed in)
-  const atkTypeKey = ({ '참격': 'slash', '관통': 'pierce', '타격': 'blunt' } as Record<string, string>)[atkType ?? ''] ?? atkType
-
-  const showAtkTypeIcon = isAttackSkill && atkTypeKey && ['slash', 'pierce', 'blunt'].includes(atkTypeKey)
+  const atkTypeKey = normalizeAttackType(atkType)
+  const showAtkTypeIcon = Boolean(atkTypeKey)
+  const showAtkWeight = Boolean(atkTypeKey) && atkWeight > 0
 
   // Base power font size scales with frame size — use 1.5rem for 4.5rem frame, 2rem for 6.5rem frame
   const frameRem = parseFloat(size)
@@ -122,7 +134,7 @@ export default function SkillFrameBlock({
           />
 
           {/* Attack type icon badge (bottom center) */}
-          {showAtkTypeIcon && (() => {
+          {showAtkTypeIcon && atkTypeKey && (() => {
             const badgeSize = frameRem >= 6 ? '1.75rem' : '1.25rem'
             const innerIconSize = frameRem >= 6 ? '0.875rem' : '0.625rem'
             return (
@@ -249,7 +261,7 @@ export default function SkillFrameBlock({
                 </span>
               </div>
             )}
-            {isAttackSkill && atkWeight > 0 && (
+            {showAtkWeight && (
               <div className="flex items-center gap-1">
                 <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>
                   {t('identity.skills.atkWeight')}

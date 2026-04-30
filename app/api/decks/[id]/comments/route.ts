@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateTag } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
@@ -7,6 +7,23 @@ import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function normalizeParentId(value: unknown): string | null | undefined {
+  if (value == null || value === '') return null
+  if (typeof value !== 'string') return undefined
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (!UUID_PATTERN.test(trimmed)) return undefined
+
+  return trimmed
+}
+
+function revalidateDeckCommentCaches(deckId: string) {
+  revalidateTag(CACHE_TAGS.deck(deckId), 'max')
+  revalidateTag(CACHE_TAGS.decksList, 'max')
+}
 
 export async function GET(
   _request: NextRequest,
@@ -66,12 +83,32 @@ export async function POST(
 
     const body = await request.json()
     const content = (body.content as string ?? '').trim()
-    const parentId = (body.parent_id as string) || null
+    const parentId = normalizeParentId(body.parent_id)
     if (!content || content.length > 500) {
       return NextResponse.json({ error: '댓글은 1~500자여야 합니다.' }, { status: 400 })
     }
+    if (parentId === undefined) {
+      return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
+    }
 
     const admin = createAdminClient()
+    if (parentId) {
+      const { data: parentComment, error: parentError } = await admin
+        .schema('limbus')
+        .from('deck_comments')
+        .select('id')
+        .eq('id', parentId)
+        .eq('deck_id', id)
+        .maybeSingle()
+
+      if (parentError) {
+        return NextResponse.json({ error: parentError.message }, { status: 500 })
+      }
+      if (!parentComment) {
+        return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
+      }
+    }
+
     const userId = await findOrCreateSupabaseUser(
       admin,
       session.user.email!,
@@ -93,7 +130,11 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    await admin.schema('limbus').rpc('increment_comment', { deck_id: id })
+    const { error: incrementError } = await admin.schema('limbus').rpc('increment_comment', { deck_id: id })
+    if (incrementError) {
+      revalidateDeckCommentCaches(id)
+      return NextResponse.json({ error: incrementError.message }, { status: 500 })
+    }
 
     // 프로필에서 username, role 조회
     const { data: profile } = await admin
@@ -103,7 +144,7 @@ export async function POST(
       .eq('id', userId)
       .single()
 
-    updateTag(CACHE_TAGS.deck(id))
+    revalidateDeckCommentCaches(id)
     return NextResponse.json({
       ...data,
       username: profile?.username ?? session.user.name,
@@ -183,12 +224,16 @@ export async function DELETE(
     // 본 댓글 + 답글 수만큼 감소
     const totalToDecrement = 1 + (replyCount ?? 0)
     for (let i = 0; i < totalToDecrement; i++) {
-      await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
+      const { error: decrementError } = await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
+      if (decrementError) {
+        revalidateDeckCommentCaches(id)
+        return NextResponse.json({ error: decrementError.message }, { status: 500 })
+      }
     }
 
     writeAuditLog({ actorId: userId, action: 'comment_delete', targetType: 'comment', targetId: commentId, details: { deck_id: id } })
 
-    updateTag(CACHE_TAGS.deck(id))
+    revalidateDeckCommentCaches(id)
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

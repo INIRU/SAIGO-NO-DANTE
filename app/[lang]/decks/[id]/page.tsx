@@ -4,18 +4,31 @@ import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
 import DeckHero from '@/components/deck-detail/DeckHero'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { HeroSlot } from '@/components/deck-detail/DeckHero'
+import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
+const MAX_OVERLAP_ROWS = 800
+const MAX_CANDIDATE_DECKS = 96
+const MAX_EXACT_OVERLAP_CANDIDATES = 128
+const OTHER_OPINIONS_LIMIT = 3
+const SIMILAR_DECKS_LIMIT = 6
+
 function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
 }
 
 function isSupportedLang(lang: string): lang is 'ko' | 'en' | 'ja' {
   return lang === 'ko' || lang === 'en' || lang === 'ja'
+}
+
+function toSupportedLang(lang: string | null | undefined): 'ko' | 'en' | 'ja' | undefined {
+  return lang && isSupportedLang(lang) ? lang : undefined
 }
 
 type Comment = {
@@ -35,21 +48,418 @@ type EgoSlot = {
   grade: string
   ego: {
     id: string
+    name?: string | null
     name_kr: string | null
+    name_en?: string | null
+    name_jp?: string | null
     grade: string
     sin_affinity: string | null
     sinner_id: string
     folder_name: string | null
     image_url: string | null
+    cost: number[] | null
+    ego_skills?: EgoAttackSkill[] | null
   } | null
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+type EgoAttackSkill = {
+  skill_type: string | null
+  category: string | null
+  construe_level: number | null
+  skill_order: number | null
+}
+
+type DeckRecommendationIdentity = {
+  id: string
+  sinner_id: string
+  folder_name: string | null
+  game_id: string | null
+  keywords: string[] | null
+  name: string | null
+  name_kr: string | null
+  name_en: string | null
+  name_jp: string | null
+}
+
+type DeckRecommendationIdentitySlot = {
+  slot_order: number
+  gacksung: boolean
+  identities: DeckRecommendationIdentity | null
+}
+
+type RecommendationSourceDeck = {
+  id: string
+  lang: string | null
+  title: string
+  description: string | null
+  tags: string[] | null
+  content_type: string | null
+  vote_count: number | null
+  view_count: number | null
+  comment_count: number | null
+  created_at: string
+  profiles: { username: string | null } | { username: string | null }[] | null
+  deck_identities: Array<{
+    slot_order: number | null
+    gacksung: boolean | null
+    identities: DeckRecommendationIdentity | DeckRecommendationIdentity[] | null
+  }> | null
+  deck_egos: Array<{ ego_id: string | null }> | null
+}
+
+type CurrentDeckForRecommendations = {
+  id: string
+  lang: string | null
+  tags: string[] | null
+  content_type: string | null
+  deck_identities: Array<{
+    slot_order: number | null
+    identities: { id: string; keywords: string[] | null } | Array<{ id: string; keywords: string[] | null }> | null
+  }> | null
+  deck_egos: Array<{
+    ego?: { id: string } | { id: string }[] | null
+    ego_id?: string | null
+  }> | null
+}
+
+const EMPTY_RECOMMENDATIONS: DeckRecommendationsData = {
+  otherOpinions: [],
+  similarDecks: [],
+}
+
+function unwrapOne<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
+
+function toSortedUnique(values: string[]): string[] {
+  return [...new Set(values)].sort()
+}
+
+function buildIdentityIdSet(slots: CurrentDeckForRecommendations['deck_identities'] | DeckRecommendationIdentitySlot[] | null | undefined): Set<string> {
+  const ids = new Set<string>()
+  for (const slot of slots ?? []) {
+    const identity = unwrapOne(slot.identities)
+    if (identity?.id) ids.add(identity.id)
+  }
+  return ids
+}
+
+function buildIdentitySetSignature(identityIds: Set<string>): string {
+  return toSortedUnique([...identityIds]).join('|')
+}
+
+function buildFormationSignature(slots: CurrentDeckForRecommendations['deck_identities'] | DeckRecommendationIdentitySlot[] | null | undefined): string {
+  const parts: string[] = []
+  for (const slot of slots ?? []) {
+    const identity = unwrapOne(slot.identities)
+    if (!identity?.id) continue
+    parts.push(`${identity.id}:${slot.slot_order ?? 99}`)
+  }
+  return parts.sort().join('|')
+}
+
+function buildEgoSignature(egos: CurrentDeckForRecommendations['deck_egos'] | Array<{ ego_id: string }> | null | undefined): string {
+  const egoIds: string[] = []
+  for (const row of egos ?? []) {
+    if ('ego_id' in row && row.ego_id) {
+      egoIds.push(row.ego_id)
+      continue
+    }
+    if ('ego' in row) {
+      const ego = unwrapOne(row.ego)
+      if (ego?.id) egoIds.push(ego.id)
+    }
+  }
+  return toSortedUnique(egoIds).join('|')
+}
+
+function buildThemeKeywordSet(slots: CurrentDeckForRecommendations['deck_identities'] | DeckRecommendationIdentitySlot[] | null | undefined): Set<string> {
+  const keywords = new Set<string>()
+  for (const slot of slots ?? []) {
+    const identity = unwrapOne(slot.identities)
+    for (const keyword of identity?.keywords ?? []) {
+      const normalized = normalizeThemeKeyword(keyword)
+      if (THEME_KEYWORD_SET.has(normalized)) keywords.add(normalized)
+    }
+  }
+  return keywords
+}
+
+function intersectionSize<T>(left: Set<T>, right: Set<T>): number {
+  let count = 0
+  for (const item of left) {
+    if (right.has(item)) count++
+  }
+  return count
+}
+
+function recencyBoost(createdAt: string): number {
+  const createdMs = Date.parse(createdAt)
+  if (!Number.isFinite(createdMs)) return 0
+  const ageDays = Math.max(0, (Date.now() - createdMs) / 86_400_000)
+  return Math.max(0, 30 - ageDays) / 30
+}
+
+function getUsername(profiles: RecommendationSourceDeck['profiles']): string | undefined {
+  return unwrapOne(profiles)?.username ?? undefined
+}
+
+function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommendationSummary {
+  return {
+    id: deck.id,
+    lang: toSupportedLang(deck.lang),
+    title: deck.title,
+    description: deck.description,
+    tags: deck.tags ?? [],
+    content_type: deck.content_type ?? undefined,
+    vote_count: deck.vote_count ?? 0,
+    view_count: deck.view_count ?? 0,
+    comment_count: deck.comment_count ?? 0,
+    created_at: deck.created_at,
+    username: getUsername(deck.profiles),
+    deck_identities: (deck.deck_identities ?? []).map((slot) => ({
+      slot_order: slot.slot_order ?? 99,
+      gacksung: slot.gacksung ?? false,
+      identities: unwrapOne(slot.identities),
+    })),
+    deck_egos: (deck.deck_egos ?? [])
+      .filter((ego): ego is { ego_id: string } => typeof ego.ego_id === 'string')
+      .map((ego) => ({ ego_id: ego.ego_id })),
+  }
+}
+
+function getRecommendationContentType(contentType: string | null | undefined): string | null {
+  const normalized = contentType?.trim()
+  return normalized && normalized !== '없음' ? normalized : null
+}
+
+function getSelectedEgoIds(deckEgos: Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null | undefined): string[] {
+  const egoIds = new Set<string>()
+  for (const row of deckEgos ?? []) {
+    const ego = unwrapOne(row.ego)
+    if (ego?.id) egoIds.add(ego.id)
+  }
+  return [...egoIds]
+}
+
+async function fetchEgoAttackSkillsByEgoId(
+  supabase: ReturnType<typeof createAdminClient>,
+  egoIds: string[],
+  deckId: string,
+): Promise<Map<string, EgoAttackSkill[]>> {
+  const skillsByEgoId = new Map<string, EgoAttackSkill[]>()
+  if (egoIds.length === 0) return skillsByEgoId
+
+  const { data, error } = await supabase
+    .schema('limbus')
+    .from('ego_skills')
+    .select('ego_id, skill_type, category, construe_level, skill_order')
+    .in('ego_id', egoIds)
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { location: 'decks/[id]/page:fetchEgoAttackSkillsByEgoId' },
+      extra: { deckId, msg: 'Failed to fetch selected E.G.O skill attack types' },
+    })
+    return skillsByEgoId
+  }
+
+  for (const row of data ?? []) {
+    if (typeof row.ego_id !== 'string') continue
+    const skill = {
+      skill_type: row.skill_type ?? null,
+      category: row.category ?? null,
+      construe_level: row.construe_level ?? null,
+      skill_order: row.skill_order ?? null,
+    }
+    const skills = skillsByEgoId.get(row.ego_id) ?? []
+    skills.push(skill)
+    skillsByEgoId.set(row.ego_id, skills)
+  }
+
+  return skillsByEgoId
+}
+
+async function fetchDeckRecommendations(
+  supabase: ReturnType<typeof createAdminClient>,
+  lang: 'ko' | 'en' | 'ja',
+  currentDeck: CurrentDeckForRecommendations
+): Promise<DeckRecommendationsData> {
+  const currentContentType = getRecommendationContentType(currentDeck.content_type)
+  if (!currentContentType) return EMPTY_RECOMMENDATIONS
+
+  const currentIdentityIds = buildIdentityIdSet(currentDeck.deck_identities)
+  if (currentIdentityIds.size === 0) return EMPTY_RECOMMENDATIONS
+
+  try {
+    const currentIdentitySignature = buildIdentitySetSignature(currentIdentityIds)
+    const currentFormationSignature = buildFormationSignature(currentDeck.deck_identities)
+    const currentEgoSignature = buildEgoSignature(currentDeck.deck_egos)
+    const currentThemeKeywords = buildThemeKeywordSet(currentDeck.deck_identities)
+    const currentEgoIds = new Set(currentEgoSignature ? currentEgoSignature.split('|') : [])
+
+    const { data: overlapRows, error: overlapError } = await supabase
+      .schema('limbus')
+      .from('deck_identities')
+      .select('deck_id, identity_id, decks!inner(content_type, lang)')
+      .in('identity_id', [...currentIdentityIds])
+      .eq('decks.content_type', currentContentType)
+      .eq('decks.lang', lang)
+      .neq('deck_id', currentDeck.id)
+      .limit(MAX_OVERLAP_ROWS)
+
+    if (overlapError) throw overlapError
+
+    const overlapByDeck = new Map<string, Set<string>>()
+    for (const row of overlapRows ?? []) {
+      if (typeof row.deck_id !== 'string' || typeof row.identity_id !== 'string') continue
+      const identityIds = overlapByDeck.get(row.deck_id) ?? new Set<string>()
+      identityIds.add(row.identity_id)
+      overlapByDeck.set(row.deck_id, identityIds)
+    }
+
+    const overlapEntries = [...overlapByDeck.entries()]
+      .map(([deckId, identityIds]) => ({ deckId, overlapCount: identityIds.size }))
+      .sort((a, b) => b.overlapCount - a.overlapCount || a.deckId.localeCompare(b.deckId))
+
+    const exactOverlapCandidateIds = overlapEntries
+      .filter(({ overlapCount }) => overlapCount === currentIdentityIds.size)
+      .slice(0, MAX_EXACT_OVERLAP_CANDIDATES)
+      .map(({ deckId }) => deckId)
+
+    const candidateIds = new Set<string>()
+    for (const deckId of exactOverlapCandidateIds) {
+      candidateIds.add(deckId)
+    }
+
+    const maxCandidateCount = Math.max(MAX_CANDIDATE_DECKS, exactOverlapCandidateIds.length)
+    const addCandidateId = (deckId: string): void => {
+      if (candidateIds.has(deckId) || candidateIds.size < maxCandidateCount) {
+        candidateIds.add(deckId)
+      }
+    }
+
+    for (const { deckId } of overlapEntries) {
+      addCandidateId(deckId)
+    }
+
+    const { data: sameTypeRows, error: sameTypeError } = await supabase
+      .schema('limbus')
+      .from('decks')
+      .select('id')
+      .eq('content_type', currentContentType)
+      .eq('lang', lang)
+      .neq('id', currentDeck.id)
+      .order('vote_count', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(32)
+
+    if (sameTypeError) throw sameTypeError
+    for (const row of sameTypeRows ?? []) {
+      if (typeof row.id === 'string') addCandidateId(row.id)
+    }
+
+    const currentTags = (currentDeck.tags ?? []).filter(Boolean)
+    if (currentTags.length > 0) {
+      const { data: tagRows, error: tagError } = await supabase
+        .schema('limbus')
+        .from('decks')
+        .select('id')
+        .overlaps('tags', currentTags)
+        .eq('content_type', currentContentType)
+        .eq('lang', lang)
+        .neq('id', currentDeck.id)
+        .order('vote_count', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(32)
+
+      if (tagError) throw tagError
+      for (const row of tagRows ?? []) {
+        if (typeof row.id === 'string') addCandidateId(row.id)
+      }
+    }
+
+    const candidateIdList = [...candidateIds]
+    if (candidateIdList.length === 0) return EMPTY_RECOMMENDATIONS
+
+    const { data: candidateRows, error: candidateError } = await supabase
+      .schema('limbus')
+      .from('decks')
+      .select(`
+        id, lang, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
+        profiles!decks_user_id_fkey(username),
+        deck_identities(
+          slot_order, gacksung,
+          identities(id, sinner_id, folder_name, game_id, keywords, name, name_kr, name_en, name_jp)
+        ),
+        deck_egos(ego_id)
+      `)
+      .in('id', candidateIdList)
+      .eq('content_type', currentContentType)
+      .eq('lang', lang)
+
+    if (candidateError) throw candidateError
+
+    const summaries = ((candidateRows ?? []) as unknown as RecommendationSourceDeck[])
+      .map(toRecommendationSummary)
+      .filter((deck) => deck.lang === lang && getRecommendationContentType(deck.content_type) === currentContentType)
+    const otherOpinions = summaries
+      .filter((deck) => {
+        if (getRecommendationContentType(deck.content_type) !== currentContentType) return false
+        const identitySignature = buildIdentitySetSignature(buildIdentityIdSet(deck.deck_identities))
+        if (identitySignature !== currentIdentitySignature) return false
+        const formationChanged = buildFormationSignature(deck.deck_identities) !== currentFormationSignature
+        const egoChanged = buildEgoSignature(deck.deck_egos) !== currentEgoSignature
+        return formationChanged || egoChanged
+      })
+      .sort((a, b) => b.vote_count - a.vote_count || Date.parse(b.created_at) - Date.parse(a.created_at))
+      .slice(0, OTHER_OPINIONS_LIMIT)
+
+    const otherOpinionIds = new Set(otherOpinions.map((deck) => deck.id))
+
+    const similarDecks = summaries
+      .filter((deck) => !otherOpinionIds.has(deck.id))
+      .map((deck) => {
+        const identityOverlap = intersectionSize(currentIdentityIds, buildIdentityIdSet(deck.deck_identities))
+        const keywordOverlap = intersectionSize(currentThemeKeywords, buildThemeKeywordSet(deck.deck_identities))
+        const egoIds = new Set((deck.deck_egos ?? []).map((ego) => ego.ego_id))
+        const egoOverlap = intersectionSize(currentEgoIds, egoIds)
+        const score =
+          identityOverlap * 100 +
+          keywordOverlap * 24 +
+          egoOverlap * 8 +
+          Math.min(deck.vote_count, 50) * 0.2 +
+          recencyBoost(deck.created_at) * 4
+
+        return {
+          deck: {
+            ...deck,
+          },
+          score,
+          identityOverlap,
+          keywordOverlap,
+        }
+      })
+      .filter(({ identityOverlap, keywordOverlap }) => identityOverlap > 0 || keywordOverlap > 0)
+      .sort((a, b) => b.score - a.score || b.deck.vote_count - a.deck.vote_count || Date.parse(b.deck.created_at) - Date.parse(a.deck.created_at))
+      .slice(0, SIMILAR_DECKS_LIMIT)
+      .map(({ deck }) => deck)
+
+    return { otherOpinions, similarDecks }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { location: 'decks/[id]/page:fetchDeckRecommendations' },
+      extra: { deckId: currentDeck.id, msg: 'Failed to fetch deck recommendations' },
+    })
+    return EMPTY_RECOMMENDATIONS
+  }
+}
+
+async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Promise<Metadata> {
   'use cache'
   cacheLife('max')
-  const { lang: rawLang, id } = await params
-  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
+
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .schema('limbus')
@@ -89,15 +499,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function DeckDetailPage({ params }: Props) {
+async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) {
   'use cache'
   cacheLife('max')
-  const { id } = await params
   cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP
   let initialDeck = null
   let initialComments: Comment[] = []
+  let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
   let heroSlots: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
 
   try {
@@ -108,20 +518,20 @@ export default async function DeckDetailPage({ params }: Props) {
         .schema('limbus')
         .from('decks')
         .select(`
-          id, user_id, title, description, tags, content_type, vote_count, view_count, created_at,
+          id, lang, user_id, title, description, tags, content_type, vote_count, view_count, created_at,
           profiles!decks_user_id_fkey(username),
           deck_identities(
             slot_order, gacksung, s1_count, s2_count, s3_count,
             identities(
-              id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
+              id, sinner_id, folder_name, game_id, keywords, name, name_kr, name_en, name_jp, tier, rarity,
               hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-              skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, uptie_level),
-              passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
+              skills(id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level),
+              passives(name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, passive_order, uptie_level)
             )
           ),
           deck_egos(
             grade,
-            ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url)
+            ego:ego_id(id, name, name_kr, name_en, name_jp, grade, sin_affinity, sinner_id, folder_name, image_url, cost)
           )
         `)
         .eq('id', id)
@@ -135,7 +545,30 @@ export default async function DeckDetailPage({ params }: Props) {
     ])
 
     const data = deckResult.data
+    if (deckResult.error) {
+      Sentry.captureException(deckResult.error, {
+        tags: { location: 'decks/[id]/page:DeckDetailPage' },
+        extra: { deckId: id, msg: 'Failed to fetch deck detail prefetch' },
+      })
+    }
+    if (commentsResult.error) {
+      Sentry.captureException(commentsResult.error, {
+        tags: { location: 'decks/[id]/page:DeckDetailPage' },
+        extra: { deckId: id, msg: 'Failed to fetch deck comments prefetch' },
+      })
+    }
     if (data) {
+      initialRecommendations = await fetchDeckRecommendations(
+        supabase,
+        lang,
+        data as unknown as CurrentDeckForRecommendations
+      )
+      const egoSkillsByEgoId = await fetchEgoAttackSkillsByEgoId(
+        supabase,
+        getSelectedEgoIds(data.deck_egos as Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null),
+        id,
+      )
+
       const sortedIdentities = (data.deck_identities ?? [])
         .map((slot) => ({
           ...slot,
@@ -174,12 +607,15 @@ export default async function DeckDetailPage({ params }: Props) {
         vote_count: data.vote_count ?? 0,
         view_count: data.view_count ?? 0,
         deck_identities: sortedIdentities,
-        deck_egos: (data.deck_egos ?? []).map((es) => ({
-          ...es,
-          ego: Array.isArray(es.ego)
+        deck_egos: (data.deck_egos ?? []).map((es) => {
+          const ego = Array.isArray(es.ego)
             ? ((es.ego[0] as EgoSlot['ego'] | undefined) ?? null)
-            : (es.ego as EgoSlot['ego']),
-        })) as EgoSlot[],
+            : (es.ego as EgoSlot['ego'])
+          return {
+            ...es,
+            ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
+          }
+        }) as EgoSlot[],
         profiles: Array.isArray(data.profiles) ? (data.profiles[0] ?? null) : data.profiles,
         all_sinner_egos: [],
         is_owner: false,
@@ -203,9 +639,37 @@ export default async function DeckDetailPage({ params }: Props) {
         }
       })
     }
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { location: 'decks/[id]/page:DeckDetailPage' },
+      extra: { deckId: id, msg: 'Deck detail server prefetch failed' },
+    })
     // Fall back to client-side fetch
   }
+
+  return {
+    initialDeck,
+    initialComments,
+    initialRecommendations,
+    heroSlots,
+  }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang: rawLang, id } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
+  return getCachedDeckMetadata(lang, id)
+}
+
+export default async function DeckDetailPage({ params }: Props) {
+  const { lang: rawLang, id } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
+  const {
+    initialDeck,
+    initialComments,
+    initialRecommendations,
+    heroSlots,
+  } = await getCachedDeckDetailPayload(lang, id)
 
   return (
     <>
@@ -218,7 +682,12 @@ export default async function DeckDetailPage({ params }: Props) {
           </div>
         </div>
       }>
-        <DeckDetailClient id={id} initialDeck={initialDeck} initialComments={initialComments} />
+        <DeckDetailClient
+          id={id}
+          initialDeck={initialDeck}
+          initialComments={initialComments}
+          initialRecommendations={initialRecommendations}
+        />
       </Suspense>
     </>
   )

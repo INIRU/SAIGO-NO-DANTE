@@ -3,23 +3,38 @@
 import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
-import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-import { getSinnerLogoUrl, computeSkillImageIndices, getIdentityPortraitUrl } from '@/lib/utils/images'
-import type { ActivationCondition } from '@/lib/types'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
+import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import type { Identity } from '@/lib/types'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
-import DeckIdentityCard, { type IdentitySlot, type IdentityDetail, type EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
-import PassiveBadgeDetail from '@/components/deck-detail/PassiveBadgeDetail'
-import DeckEgoGiftAccordion from '@/components/deck-detail/DeckEgoGiftAccordion'
+import {
+  localizeEgoName,
+  localizeIdentityName,
+  localizePassiveDescription,
+  localizePassiveName,
+  localizeSkillDescription,
+  localizeSkillName,
+  type EgoEntry,
+  type IdentityDetail,
+  type IdentitySlot,
+} from '@/components/deck-detail/DeckIdentityCard'
+import DeckIdentityPreviewModal from '@/components/deck-detail/DeckIdentityPreviewModal'
+import IdentityCard from '@/components/sinners/IdentityCard'
+import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
+import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
 import EgoDetailModal from '@/components/ui/EgoDetailModal'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 
@@ -30,18 +45,34 @@ type EgoSlot = {
   grade: string
   ego: {
     id: string
+    name?: string | null
     name_kr: string | null
+    name_en?: string | null
+    name_jp?: string | null
     grade: string
     sin_affinity: string | null
     sinner_id: string
     folder_name: string | null
     image_url: string | null
+    cost: number[] | null
+    ego_skills?: EgoAttackSkill[] | null
   } | null
+}
+
+type EgoAttackSkill = {
+  skill_type: string | null
+  category?: string | null
+  construe_level?: number | null
+  skill_order?: number | null
 }
 
 type SinnerEgo = {
   sinner_id: string
+  id?: string | null
+  name?: string | null
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: string | null
   image_url: string | null
@@ -65,22 +96,183 @@ type DeckDetail = {
   all_sinner_egos?: SinnerEgo[]
 }
 
-const GEODUN_TYPES = new Set(['거던5층', '거던10층', '거던15층'])
-
 // ── 상수 ──────────────────────────────────────────────────────────────────
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
-const RARITY_COLORS: Record<string, string> = {
-  '1성': '#667788',
-  '2성': '#4898b0',
-  '3성': '#c8900a',
-}
+const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
+const BACKUP_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-backup-banner.webp`
+const BOARD_SLOT_COUNT = 12
+const FRONTLINE_SLOT_COUNT = 7
+const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
+type AttackType = 'slash' | 'pierce' | 'blunt'
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 function sinColor(sin: string, isKr = false): string {
   const en = isKr ? (SIN_KR_TO_EN[sin] ?? sin) : sin
   return SIN_COLORS[en as keyof typeof SIN_COLORS] ?? '#888888'
+}
+
+function createSinTotals(): Record<string, number> {
+  return Object.fromEntries(SIN_ORDER.map((sin) => [sin, 0])) as Record<string, number>
+}
+
+function normalizeAttackType(value: string | null | undefined): AttackType | null {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase()
+  const mapped: Record<string, AttackType> = {
+    slash: 'slash',
+    pierce: 'pierce',
+    penetrate: 'pierce',
+    blunt: 'blunt',
+    hit: 'blunt',
+    '참격': 'slash',
+    '관통': 'pierce',
+    '타격': 'blunt',
+  }
+  return mapped[normalized] ?? null
+}
+
+function getSkillAttackType(skill: Pick<IdentityDetail['skills'][number], 'atk_type' | 'skill_type'>): AttackType | null {
+  return normalizeAttackType(skill.atk_type ?? skill.skill_type)
+}
+
+function getBaseProductionSkills(skills: IdentityDetail['skills']): IdentityDetail['skills'] {
+  const bestByOrder = new Map<number, IdentityDetail['skills'][number]>()
+
+  for (const skill of skills) {
+    if (!BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order]) continue
+    if (!normalizeSin(skill.sin_affinity)) continue
+
+    const existing = bestByOrder.get(skill.skill_order)
+    const variantOrder = skill.variant_order ?? 0
+    const existingVariantOrder = existing?.variant_order ?? 0
+    const isEarlierBaseVariant = !existing || variantOrder < existingVariantOrder
+    const isSameVariantHigherUptie =
+      existing &&
+      variantOrder === existingVariantOrder &&
+      (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)
+
+    if (isEarlierBaseVariant || isSameVariantHigherUptie) {
+      bestByOrder.set(skill.skill_order, skill)
+    }
+  }
+
+  return [...bestByOrder.values()].sort((a, b) => a.skill_order - b.skill_order)
+}
+
+function buildSinProductionTotals(slots: IdentitySlot[]): Record<string, number> {
+  const totals = createSinTotals()
+
+  for (const slot of slots) {
+    if (!slot.identities) continue
+    for (const skill of getBaseProductionSkills(slot.identities.skills)) {
+      const sin = normalizeSin(skill.sin_affinity)
+      if (!sin) continue
+      totals[sin] += BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order] ?? 0
+    }
+  }
+
+  return totals
+}
+
+function buildEgoCostTotals(deckEgos: EgoSlot[] | undefined): Record<string, number> {
+  const totals = createSinTotals()
+
+  for (const row of deckEgos ?? []) {
+    const costs = row.ego?.cost
+    if (!Array.isArray(costs)) continue
+
+    SIN_ORDER.forEach((sin, index) => {
+      const cost = costs[index] ?? 0
+      if (cost > 0) totals[sin] += cost
+    })
+  }
+
+  return totals
+}
+
+function getCountedIdentityAttackSkills(skills: IdentityDetail['skills']): IdentityDetail['skills'] {
+  const bestBySkillKey = new Map<string, IdentityDetail['skills'][number]>()
+
+  for (const skill of skills) {
+    const variantOrder = skill.variant_order ?? 0
+    const key = `${skill.skill_order}:${variantOrder}`
+    const existing = bestBySkillKey.get(key)
+    if (!existing || (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)) {
+      bestBySkillKey.set(key, skill)
+    }
+  }
+
+  return [...bestBySkillKey.values()]
+}
+
+function addEgoAttackTypeTotals(totals: Record<AttackType, number>, egoSkills: EgoAttackSkill[] | null | undefined): void {
+  const uniqueSkills = new Map<string, EgoAttackSkill>()
+
+  for (let index = 0; index < (egoSkills?.length ?? 0); index++) {
+    const skill = egoSkills?.[index]
+    if (!skill) continue
+    const attackType = normalizeAttackType(skill.skill_type)
+    if (!attackType) continue
+    const key = `${skill.category ?? 'awakening'}:${skill.skill_order ?? index}:${attackType}`
+    const existing = uniqueSkills.get(key)
+    if (!existing || (skill.construe_level ?? 0) > (existing.construe_level ?? 0)) {
+      uniqueSkills.set(key, skill)
+    }
+  }
+
+  for (const skill of uniqueSkills.values()) {
+    const attackType = normalizeAttackType(skill.skill_type)
+    if (attackType) totals[attackType]++
+  }
+}
+
+function buildAttackTypeTotals(slots: IdentitySlot[], deckEgos: EgoSlot[] | undefined): Record<AttackType, number> {
+  const totals: Record<AttackType, number> = { slash: 0, pierce: 0, blunt: 0 }
+
+  for (const slot of slots) {
+    if (!slot.identities) continue
+    for (const skill of getCountedIdentityAttackSkills(slot.identities.skills)) {
+      const attackType = getSkillAttackType(skill)
+      if (attackType) totals[attackType]++
+    }
+  }
+
+  for (const row of deckEgos ?? []) {
+    addEgoAttackTypeTotals(totals, row.ego?.ego_skills)
+  }
+
+  return totals
+}
+
+function buildBoardSlots(slots: IdentitySlot[]): (IdentitySlot | null)[] {
+  const board: (IdentitySlot | null)[] = Array.from({ length: BOARD_SLOT_COUNT }, () => null)
+  const bySinner = new Map<string, IdentitySlot>()
+
+  for (const slot of slots.filter(slot => slot.identities)) {
+    const sinnerId = slot.identities!.sinner_id
+    const existing = bySinner.get(sinnerId)
+    const shouldReplace =
+      !existing ||
+      (slot.slot_order < 99 && existing.slot_order === 99) ||
+      (slot.slot_order < 99 && existing.slot_order < 99 && slot.slot_order < existing.slot_order) ||
+      (slot.slot_order === 99 && existing.slot_order === 99 && slot.slot_order < existing.slot_order)
+
+    if (shouldReplace) bySinner.set(sinnerId, slot)
+  }
+
+  SINNER_ORDER.forEach((sinnerId, index) => {
+    board[index] = bySinner.get(sinnerId) ?? null
+  })
+
+  return board
+}
+
+function getBoardSlotKind(slot: IdentitySlot | null): 'selected' | 'backup' | 'empty' {
+  if (!slot?.identities) return 'empty'
+  if (slot.slot_order < FRONTLINE_SLOT_COUNT) return 'selected'
+  return slot.slot_order < 99 ? 'backup' : 'empty'
 }
 
 function topKeywords(slots: IdentitySlot[]): string[] {
@@ -104,6 +296,30 @@ function topKeywords(slots: IdentitySlot[]): string[] {
     .map(([kw]) => kw)
 }
 
+function adaptBoardIdentity(identity: IdentityDetail, locale: string): Identity {
+  const name = localizeIdentityName(identity, locale)
+  return {
+    id: identity.id,
+    sinner_id: identity.sinner_id,
+    name,
+    name_kr: identity.name_kr,
+    name_en: identity.name_en,
+    name_jp: identity.name_jp,
+    tier: identity.tier,
+    hp: identity.hp ?? 0,
+    speed_min: identity.speed_min ?? 0,
+    speed_max: identity.speed_max ?? 0,
+    def_level: identity.def_level ?? 0,
+    keywords: identity.keywords ?? [],
+    rarity: identity.rarity,
+    slash_res: identity.slash_res ?? undefined,
+    pierce_res: identity.pierce_res ?? undefined,
+    blunt_res: identity.blunt_res ?? undefined,
+    game_id: identity.game_id,
+    folder_name: identity.folder_name,
+  }
+}
+
 const SINNER_ORDER = [
   'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault', 'hong-lu',
   'heathcliff', 'ishmael', 'rodion', 'sinclair', 'outis', 'gregor',
@@ -116,7 +332,16 @@ const SINNER_NAMES: Record<string, string> = {
   'sinclair': '싱클레어', 'outis': '오티스', 'gregor': '그레고르',
 }
 
-function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
+function uniqueNames(...names: Array<string | null | undefined>): string[] {
+  return [...new Set(names.map(name => name?.trim()).filter((name): name is string => Boolean(name)))]
+}
+
+function buildNoteLookups(
+  slots: IdentitySlot[],
+  allEgos: SinnerEgo[],
+  locale: string,
+  localizeSinnerName: (sinnerId: string) => string,
+) {
   const skillLookup: Record<string, NoteSkillEntry> = {}
   const passiveLookup: Record<string, NotePassiveEntry> = {}
   const egoLookup: Record<string, NoteEgoEntry> = {}
@@ -124,7 +349,10 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
   for (const slot of slots) {
     const id_ = slot.identities
     if (!id_) continue
-    const sName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
+    const koreanSinnerName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
+    const localizedSinnerName = localizeSinnerName(id_.sinner_id)
+    const sinnerTokenNames = uniqueNames(koreanSinnerName, localizedSinnerName)
+    const identityName = localizeIdentityName(id_, locale)
 
     const rawSk = id_.skills ?? []
     const skBest = new Map<string, typeof rawSk[0]>()
@@ -141,21 +369,23 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
       const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
       const subIdx = orderCount[baseOrder] || 0
       orderCount[baseOrder] = subIdx + 1
-      const key = subIdx === 0
-        ? `${sName}:${baseOrder}`
-        : `${sName}:${baseOrder}:${subIdx}`
       const iconUrl = id_.game_id
         ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
         : undefined
       const entry = {
-        name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity,
-        skill_order: sk.skill_order, description: sk.description,
-        iconUrl, identityName: id_.name_kr, sinnerName: sName,
+        name: localizeSkillName(sk, locale), skill_type: sk.atk_type ?? sk.skill_type, sin_affinity: sk.sin_affinity,
+        skill_order: sk.skill_order, description: localizeSkillDescription(sk, locale),
+        iconUrl, identityName, sinnerName: localizedSinnerName,
       }
-      skillLookup[key] = entry
-      // 이전 형식 호환: skill_order >= 5 였던 토큰도 인식
-      if (sk.skill_order >= 5) {
-        skillLookup[`${sName}:${sk.skill_order}`] = entry
+      for (const sinnerName of sinnerTokenNames) {
+        const key = subIdx === 0
+          ? `${sinnerName}:${baseOrder}`
+          : `${sinnerName}:${baseOrder}:${subIdx}`
+        skillLookup[key] = entry
+        // 이전 형식 호환: skill_order >= 5 였던 토큰도 인식
+        if (sk.skill_order >= 5) {
+          skillLookup[`${sinnerName}:${sk.skill_order}`] = entry
+        }
       }
     }
     const rawPa = id_.passives ?? []
@@ -166,20 +396,29 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
       if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) paBest.set(key, p)
     }
     for (const pa of paBest.values()) {
-      passiveLookup[pa.name] = {
-        name: pa.name, sin_affinity: pa.sin_affinity,
+      const entry = {
+        name: localizePassiveName(pa, locale), sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
-        description: pa.description, sinnerName: sName,
+        description: localizePassiveDescription(pa, locale), sinnerName: localizedSinnerName,
         imageUrl: id_.game_id && id_.folder_name ? `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${id_.folder_name}/${id_.game_id}_normal_info.webp` : undefined,
+      }
+      for (const passiveName of uniqueNames(pa.name, localizePassiveName(pa, locale))) {
+        passiveLookup[passiveName] = entry
       }
     }
   }
   for (const ego of allEgos) {
-    const sName = SINNER_NAMES[ego.sinner_id] ?? ego.sinner_id
-    const name = ego.name_kr ?? sName
-    egoLookup[`${sName}:${name}`] = {
+    const koreanSinnerName = SINNER_NAMES[ego.sinner_id] ?? ego.sinner_id
+    const localizedSinnerName = localizeSinnerName(ego.sinner_id)
+    const name = localizeEgoName(ego, locale)
+    const entry = {
       name, grade: ego.grade, sin_affinity: ego.sin_affinity,
-      image_url: ego.image_url, sinnerName: sName,
+      image_url: ego.image_url, sinnerName: localizedSinnerName,
+    }
+    for (const sinnerName of uniqueNames(koreanSinnerName, localizedSinnerName)) {
+      for (const egoName of uniqueNames(ego.name_kr, ego.name, ego.name_en, ego.name_jp, name)) {
+        egoLookup[`${sinnerName}:${egoName}`] = entry
+      }
     }
   }
   return { skillLookup, passiveLookup, egoLookup }
@@ -188,7 +427,7 @@ function buildNoteLookups(slots: IdentitySlot[], allEgos: SinnerEgo[]) {
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="min-h-screen" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh]" style={{ background: '#0d0b08' }}>
       <div style={{ height: '360px', background: 'linear-gradient(to bottom, #080604, #0d0b08)' }} />
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6 flex gap-5">
         <div className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
@@ -217,7 +456,22 @@ type Comment = {
   role?: string
 }
 
-export default function DeckDetailClient({ id, initialDeck, initialComments }: { id: string; initialDeck?: DeckDetail | null; initialComments?: Comment[] }) {
+type IdentityPreviewState = {
+  slot: IdentitySlot
+}
+
+type DeckDetailClientProps = {
+  id: string
+  initialDeck?: DeckDetail | null
+  initialComments?: Comment[]
+  initialRecommendations?: DeckRecommendationsData | null
+}
+
+export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations }: DeckDetailClientProps) {
+  const router = useRouter()
+  const locale = useLocale() as SupportedLang
+  const t = useTranslations('decks.detail')
+  const rootT = useTranslations()
   const { status: authStatus } = useSession()
 
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
@@ -227,8 +481,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   const [voting, setVoting] = useState(false)
   const [copied, setCopied] = useState(false)
   const [selectedSinner, setSelectedSinner] = useState<string | null>(null)
+  const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
-  const [giftsOpen, setGiftsOpen] = useState(false)
 
   const [bookmarked, setBookmarked] = useState(false)
   const [bookmarking, setBookmarking] = useState(false)
@@ -239,7 +493,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
-  const [allEgoGifts, setAllEgoGifts] = useState<{ name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]>([])
 
   useEffect(() => {
     const viewKey = `deck-view:${id}`
@@ -267,11 +520,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   useEffect(() => {
     fetch('/api/ego-gifts')
       .then(r => r.ok ? r.json() : [])
-      .then((gifts: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]) => {
+      .then((gifts: NoteEgoGiftEntry[]) => {
         const map: Record<string, NoteEgoGiftEntry> = {}
         for (const g of gifts) map[g.name] = g
         setEgoGiftLookup(map)
-        setAllEgoGifts(gifts)
       })
       .catch(() => {})
   }, [])
@@ -320,7 +572,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
       .catch((err) => {
         if (cancelled) return
         console.error('Failed to fetch deck detail:', err)
-        if (!initialDeck) showError('덱 정보를 불러오지 못했습니다.')
+        if (!initialDeck) showError(t('loadFailed'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -329,7 +581,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
     return () => {
       cancelled = true
     }
-  }, [id, initialDeck])
+  }, [id, initialDeck, t])
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return
@@ -356,15 +608,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
       if (res.ok) {
         setVoted(data.voted)
         setVoteCount(c => data.voted ? c + 1 : c - 1)
+        router.refresh()
       } else {
-        showError('추천에 실패했습니다.')
+        showError(t('voteFailed'))
       }
     } catch {
-      showError('추천에 실패했습니다.')
+      showError(t('voteFailed'))
     } finally {
       setVoting(false)
     }
-  }, [authStatus, id, voting])
+  }, [authStatus, id, router, voting, t])
 
   const handleCopyCode = useCallback(async () => {
     if (!deck?.deck_code) return
@@ -381,16 +634,17 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
       const data = await res.json()
       if (res.ok) {
         setBookmarked(data.bookmarked)
-        showSuccess(data.bookmarked ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.')
+        showSuccess(data.bookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'))
+        router.refresh()
       } else {
-        showError('북마크에 실패했습니다.')
+        showError(t('bookmarkFailed'))
       }
     } catch {
-      showError('북마크에 실패했습니다.')
+      showError(t('bookmarkFailed'))
     } finally {
       setBookmarking(false)
     }
-  }, [authStatus, id, bookmarking])
+  }, [authStatus, id, bookmarking, router, t])
 
   const handleShare = useCallback(async () => {
     if (shareGenerating || !deck) return
@@ -421,11 +675,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
 
   if (!deck) {
     return (
-      <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="min-h-[100dvh] pt-24 flex items-center justify-center">
         <div className="text-center">
-          <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>덱을 찾을 수 없습니다</p>
+          <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
           <Link href="/decks" style={{ color: '#888888' }} className="hover:text-yellow-300 transition-colors">
-            ← 게시판으로 돌아가기
+            {t('backToBoard')}
           </Link>
         </div>
       </div>
@@ -438,26 +692,35 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
     if (b.slot_order === 99 && a.slot_order !== 99) return -1
     return a.slot_order - b.slot_order
   })
-  const slots = Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
+  const boardSlots = buildBoardSlots(sorted)
   const keywords = topKeywords(sorted)
   const filledSlots = sorted.filter(s => s.identities)
-  const customSkillSlots = filledSlots.filter(s => {
+  const localizedFilledSlots = filledSlots.map(slot => {
+    const identity = slot.identities
+    if (!identity) return slot
+    return {
+      ...slot,
+      identities: {
+        ...identity,
+        name_kr: localizeIdentityName(identity, locale),
+        passives: (identity.passives ?? []).map(passive => ({
+          ...passive,
+          name: localizePassiveName(passive, locale),
+          description: localizePassiveDescription(passive, locale) ?? passive.description,
+        })),
+      },
+    }
+  })
+  const formedSlots = filledSlots.filter(s => s.slot_order < 99)
+  const customSkillSlots = formedSlots.filter(s => {
     const s1 = s.s1_count ?? 3, s2 = s.s2_count ?? 2, s3 = s.s3_count ?? 1
     return !(s1 === 3 && s2 === 2 && s3 === 1)
   })
 
   // 죄악 자원 & 공격 유형
-  const sinAffinityTotals: Record<string, number> = {}
-  const atkTypeTotals: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
-  for (const slot of filledSlots) {
-    for (const sk of slot.identities!.skills) {
-      if (sk.sin_affinity) {
-        const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
-        sinAffinityTotals[en] = (sinAffinityTotals[en] ?? 0) + 1
-      }
-      if (sk.skill_type in atkTypeTotals) atkTypeTotals[sk.skill_type]++
-    }
-  }
+  const sinAffinityTotals = buildSinProductionTotals(formedSlots)
+  const egoCostTotals = buildEgoCostTotals(deck.deck_egos)
+  const atkTypeTotals = buildAttackTypeTotals(formedSlots, deck.deck_egos)
 
   // EGO 그룹핑
   const gradeOrder = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
@@ -487,16 +750,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
   })
 
-  const sinnerFormationOrder: Record<string, number> = {}
-  for (const slot of filledSlots) {
-    const sid = slot.identities!.sinner_id
-    if (slot.slot_order !== 99) sinnerFormationOrder[sid] = slot.slot_order + 1
-  }
   const activeSinner = selectedSinner ?? sinnerIds[0] ?? null
-  const activeSlots = activeSinner ? (slotsBySinner[activeSinner] ?? []) : []
-  const activeEgos = activeSinner ? (egoGrouped[activeSinner] ?? []) : []
 
-  const isGeodun = GEODUN_TYPES.has(deck.content_type ?? '')
   const date = deck.created_at.slice(0, 10).replace(/-/g, '.')
 
   // 공통 props for header components
@@ -521,6 +776,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
     shareGenerating,
     copied,
     sinAffinityTotals,
+    egoCostTotals,
     atkTypeTotals,
     filledSlotsCount: filledSlots.length,
     onVote: handleVote,
@@ -531,10 +787,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh]" style={{ background: '#0d0b08' }}>
 
       {/* ── 플래너 스타일 헤더 ── */}
-      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         {/* 라인 1: 뒤로가기 + 제목 */}
         <div className="flex items-center gap-3 mb-2">
           <Link
@@ -543,7 +799,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
             style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
           >
             <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
-            덱 게시판
+            {t('backToList')}
           </Link>
           <span style={{ color: 'var(--border)', fontSize: 'var(--text-xs)' }}>/</span>
           <h1
@@ -578,7 +834,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
               onClick={handleVote}
               disabled={authStatus !== 'authenticated' || voting}
               variant={voted ? 'gold' : 'muted'}
-              title="추천"
+              title={t('vote')}
             >
               {voteCount}
             </CompactButton>
@@ -587,35 +843,35 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
               onClick={handleBookmark}
               disabled={authStatus !== 'authenticated' || bookmarking}
               variant={bookmarked ? 'gold' : 'muted'}
-              title="북마크"
+              title={t('bookmark')}
             >
-              {bookmarked ? '저장됨' : '저장'}
+              {bookmarked ? t('saved') : t('save')}
             </CompactButton>
             <CompactButton
               icon={shared ? Check : Share2}
               onClick={handleShare}
               disabled={shareGenerating}
               variant={shared ? 'success' : 'muted'}
-              title="공유"
+              title={t('share')}
             >
-              {shared ? '복사됨' : '공유'}
+              {shared ? t('copied') : t('share')}
             </CompactButton>
             <CompactButton
               icon={GitFork}
               onClick={handleFork}
               variant="muted"
-              title="포크"
+              title={t('fork')}
             >
-              포크
+              {t('fork')}
             </CompactButton>
             {deck.deck_code && (
               <CompactButton
                 icon={copied ? Check : Copy}
                 onClick={handleCopyCode}
                 variant={copied ? 'success' : 'muted'}
-                title="덱 코드 복사"
+                title={t('copyDeckCode')}
               >
-                {copied ? '복사됨' : '코드'}
+                {copied ? t('copied') : t('code')}
               </CompactButton>
             )}
           </div>
@@ -623,7 +879,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
       </div>
 
       {/* ── 콘텐츠 ── */}
-      <div className="max-w-5xl mx-auto px-4 md:px-6 pb-24 pt-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-24 pt-6">
 
         {/* 모바일 액션바 */}
         <DeckMobileActionBar {...headerProps} />
@@ -638,107 +894,103 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
           {/* 수감자 탭 + 인격 상세 */}
           <main className="flex-1 min-w-0">
             {filledSlots.length === 0 ? (
-              <p className="text-sm italic" style={{ color: '#2a2a3a', fontFamily: 'var(--font-body)' }}>인격 정보 없음</p>
+              <p className="text-sm italic" style={{ color: '#2a2a3a', fontFamily: 'var(--font-body)' }}>{t('identityEmpty')}</p>
             ) : (
               <>
-                {/* 수감자 탭 그리드 */}
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 mb-4">
-                  {sinnerIds.map(sid => {
-                    const firstSlot = slotsBySinner[sid]?.[0] ?? null
-                    const id_ = firstSlot?.identities ?? null
-                    const imgUrl = id_ ? getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, firstSlot?.gacksung ?? false) : (egoGrouped[sid]?.[0]?.ego.image_url ?? '')
-                    const rc = id_ ? (RARITY_COLORS[id_.rarity] ?? '#667788') : (GRADE_COLORS[egoGrouped[sid]?.[0]?.grade ?? ''] ?? '#667788')
-                    const isActive = activeSinner === sid
-                    return (
-                      <button
-                        key={sid}
-                        onClick={() => setSelectedSinner(sid)}
-                        className="relative overflow-hidden"
-                        style={{
-                          aspectRatio: '2/3',
-                          borderRadius: 4,
-                          border: `1.5px solid ${isActive ? rc : 'rgba(38,24,10,0.5)'}`,
-                          background: '#0a0806',
-                          cursor: 'pointer',
-                          transition: 'border-color 0.15s, box-shadow 0.15s',
-                          boxShadow: isActive ? `0 0 12px ${rc}28` : 'none',
-                          padding: 0,
-                        }}
-                      >
-                        {imgUrl ? (
-                          <Image
-                            src={imgUrl}
-                            alt={id_?.name_kr ?? ''}
-                            fill
-                            sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, 16vw"
-                            className="object-cover"
-                            style={{
-                              objectPosition: 'center top',
-                              filter: isActive ? 'brightness(0.88)' : 'brightness(0.45) saturate(0.65)',
-                              transition: 'filter 0.15s',
-                            }}
-                          />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', background: '#080604' }} />
-                        )}
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: rc, opacity: isActive ? 1 : 0.4 }} />
-                        {sinnerFormationOrder[sid] != null && (() => {
-                          const n = sinnerFormationOrder[sid]
-                          const isFormation = n <= 7
-                          return (
-                            <div
-                              className="absolute inset-0 flex items-center justify-center"
-                              style={{ opacity: isActive ? 0.95 : 0.55, transition: 'opacity 0.15s', pointerEvents: 'none', gap: '3px' }}
-                            >
-                              <span style={{ fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 8px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)` }}>
-                                {isFormation ? '편성' : '대기'}
-                              </span>
-                              <span style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 10px ${isFormation ? 'rgba(200,144,10,0.5)' : 'rgba(90,176,208,0.5)'}, 0 2px 6px rgba(0,0,0,0.9)` }}>
-                                {n}
-                              </span>
-                            </div>
-                          )
-                        })()}
-                        <div
-                          className="absolute bottom-0 left-0 right-0 flex items-end justify-center"
-                          style={{ background: 'linear-gradient(to top, rgba(8,6,4,0.92) 0%, transparent 100%)', paddingBottom: 5, paddingTop: 16 }}
-                        >
-                          <Image src={getSinnerLogoUrl(sid)} alt="" width={14} height={14} style={{ height: '0.875rem', width: 'auto', opacity: isActive ? 0.75 : 0.3, transition: 'opacity 0.15s' }} />
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
+                {/* Dante Planner 스타일 12슬롯 편성 보드 */}
+                <section
+                  className="mb-5"
+                  aria-label={t('boardLabel')}
+                >
+                  <style>{`
+                    .deck-detail-board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:0.35rem;row-gap:0.6rem}
+                    @media (min-width:23.75rem){.deck-detail-board-grid{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:0.35rem;row-gap:0.6rem}}
+                    @media (min-width:40rem){.deck-detail-board-grid{column-gap:0.75rem;row-gap:0.8rem}}
+                    @media (min-width:64rem){.deck-detail-board-grid{grid-template-columns:repeat(6,minmax(0,1fr));column-gap:1.75rem;row-gap:1.25rem}}
+                    .deck-detail-board-button{transform:translate3d(0,0,0);transition:transform 220ms cubic-bezier(.22,1,.36,1),filter 220ms cubic-bezier(.22,1,.36,1)}
+                    .deck-detail-board-button:not(:disabled):is(:hover,:focus-visible){transform:translate3d(0,-0.25rem,0);filter:brightness(1.08) drop-shadow(0 .65rem 1.1rem rgba(200,144,10,.18))}
+                    .deck-detail-board-button:not(:disabled):active{transform:translate3d(0,-0.0625rem,0);filter:brightness(1.02)}
+                    @media (prefers-reduced-motion:reduce){.deck-detail-board-button{transition:filter 120ms ease}.deck-detail-board-button:not(:disabled):is(:hover,:focus-visible),.deck-detail-board-button:not(:disabled):active{transform:none}}
+                  `}</style>
+                  <div className="deck-detail-board-grid">
+                    {boardSlots.map((slot, index) => {
+                      const id_ = slot?.identities ?? null
+                      const identityName = id_ ? localizeIdentityName(id_, locale) : ''
+                      const kind = getBoardSlotKind(slot)
+                      const isFrontline = kind === 'selected'
+                      const isBackup = kind === 'backup'
+                      const isActive = !!id_ && activeSinner === id_.sinner_id
+                      const displayedOrder = slot && slot.slot_order < 99 ? slot.slot_order + 1 : null
+                      const bannerUrl = isFrontline ? SELECTED_BANNER_URL : isBackup ? BACKUP_BANNER_URL : null
 
-                {/* 인격 정보 */}
-                <SectionBlock title="편성 인격" badge={`${activeSlots.length}/12`} defaultOpen={true}>
-                  <div className="flex flex-col gap-2">
-                    {activeSlots.map((slot, i) => (
-                      <div key={i} onClick={() => slot.identities?.id && setIdentityModalId(slot.identities.id)} style={{ cursor: slot.identities?.id ? 'pointer' : 'default' }}>
-                        <DeckIdentityCard slot={slot} egos={i === 0 ? activeEgos : undefined} keywordMeta={keywordMeta} onEgoClick={setEgoModalId} />
-                      </div>
-                    ))}
+                      return (
+                        <div key={`${id_?.id ?? 'empty'}-${index}`} className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!id_ || !slot) return
+                              setSelectedSinner(id_.sinner_id)
+                              setIdentityPreview({ slot })
+                            }}
+                            disabled={!id_}
+                            aria-pressed={isActive}
+                            aria-label={id_ ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 })}
+                            className="deck-detail-board-button relative w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0c09] disabled:cursor-default disabled:opacity-45"
+                          >
+                            {id_ ? (
+                              <IdentityCard
+                                identity={adaptBoardIdentity(id_, locale)}
+                                compact
+                                board
+                                selected={isActive}
+                                gacksung={slot?.gacksung ?? false}
+                                disableHoverEffects
+                                formationOverlay={bannerUrl && displayedOrder != null
+                                  ? {
+                                      kind: isFrontline ? 'selected' : 'backup',
+                                      order: displayedOrder,
+                                      bannerUrl,
+                                    }
+                                  : undefined}
+                              />
+                            ) : (
+                              <div
+                                className="aspect-[2/3] w-full rounded"
+                                style={{ background: '#080604', border: '1px solid rgba(44,28,12,0.45)' }}
+                              />
+                            )}
+                          </button>
+                        </div>
+                      )
+                    })}
                   </div>
-                </SectionBlock>
+                  <p
+                    className="mt-3"
+                    style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', lineHeight: 1.55 }}
+                  >
+                    {t('boardHint')}
+                  </p>
+                </section>
 
                 {/* 덱 노트 */}
                 {(deck.description || customSkillSlots.length > 0) && (
-                  <SectionBlock title="덱 노트" defaultOpen={true}>
+                  <SectionBlock title={t('deckNote')} defaultOpen={true}>
                     {deck.description && (
                       <NoteRenderer
                         text={deck.description}
-                        {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [])}
+                        {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`))}
                         egoGiftLookup={egoGiftLookup}
                       />
                     )}
                     {customSkillSlots.length > 0 && (
                       <div style={{ marginTop: deck.description ? '0.75rem' : 0, borderTop: deck.description ? '1px solid rgba(32,20,8,0.5)' : 'none', paddingTop: deck.description ? '0.75rem' : 0 }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a6010', letterSpacing: '0.08em', fontWeight: 700 }}>SKILL DISTRIBUTION</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a6010', letterSpacing: '0.08em', fontWeight: 700 }}>{t('skillDistribution')}</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {customSkillSlots.map((slot, i) => {
                             const id_ = slot.identities!
+                            const identityName = localizeIdentityName(id_, locale)
                             const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
                             const rawSk2 = id_.skills ?? []
                             const skBest2 = new Map<string, typeof rawSk2[0]>()
@@ -752,9 +1004,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                             const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
                             return (
                               <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
-                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ height: '1rem', width: 'auto', opacity: 0.5, flexShrink: 0 }} />
+                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem', objectFit: 'contain', opacity: 0.5, flexShrink: 0 }} />
                                 <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '7.5rem' }}>
-                                  {id_.name_kr}
+                                  {identityName}
                                 </span>
                                 <div style={{ flex: 1 }} />
                                 {[0, 1, 2].map(idx => {
@@ -782,87 +1034,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
                 )}
 
                 {/* 패시브 패널 */}
-                <SectionBlock title="패시브" defaultOpen={false}>
-                  {(() => {
-                    const deckSinCounts: Record<string, number> = {}
-                    for (const slot of filledSlots) {
-                      const id__ = slot.identities!
-                      const rawSk__ = id__.skills ?? []
-                      const skBest__ = new Map<string, typeof rawSk__[0]>()
-                      for (const s of rawSk__) {
-                        if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
-                        const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-                        const ex = skBest__.get(key)
-                        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest__.set(key, s)
-                      }
-                      for (const sk of skBest__.values()) {
-                        if (sk.sin_affinity) {
-                          const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
-                          deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
-                        }
-                      }
-                    }
-                    return (
-                      <div style={{ borderTop: '1px solid var(--border)' }}>
-                        {filledSlots.map((slot, idx) => {
-                          const id_ = slot.identities!
-                          const rawPa = id_.passives ?? []
-                          const paBest = new Map<string, typeof rawPa[0]>()
-                          for (const p of rawPa) {
-                            const key = `${p.passive_type}:${p.passive_order}`
-                            const ex = paBest.get(key)
-                            if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) paBest.set(key, p)
-                          }
-                          const filtPa = [...paBest.values()]
-                          const battlePassives = filtPa.filter(p => p.passive_type === 'battle')
-                          const supportPassives = filtPa.filter(p => p.passive_type === 'support')
-                          return (
-                            <div
-                              key={idx}
-                              className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 px-4 py-2.5"
-                              style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
-                            >
-                              <div style={{ width: '130px', minWidth: 0, flexShrink: 0 }}>
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={14} height={14} style={{ height: '0.875rem', width: 'auto', opacity: 0.4 }} />
-                                  <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id}</span>
-                                </div>
-                                <p style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{id_.name_kr}</p>
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>일반 패시브</p>
-                                <div className="flex flex-col gap-1.5">
-                                  {battlePassives.length > 0 ? battlePassives.map((p, pi) => (
-                                    <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
-                                  )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
-                                </div>
-                              </div>
-                              <div className="hidden sm:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.04)', flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ color: '#555570', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', marginBottom: '4px', letterSpacing: '0.05em' }}>서포트 패시브</p>
-                                <div className="flex flex-col gap-1.5">
-                                  {supportPassives.length > 0 ? supportPassives.map((p, pi) => (
-                                    <PassiveBadgeDetail key={pi} p={p} deckSinCounts={deckSinCounts} />
-                                  )) : <span style={{ color: '#5a5260', fontSize: '0.625rem' }}>-</span>}
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
+                <SectionBlock title={t('passives')} defaultOpen={true}>
+                  <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
                 </SectionBlock>
 
-                {/* EGO 기프트 아코디언 (거던 유형만) */}
-                {isGeodun && (
-                  <DeckEgoGiftAccordion
-                    filledSlots={filledSlots.map(s => ({ slot_order: s.slot_order, identities: s.identities ? { keywords: s.identities.keywords } : null }))}
-                    allEgoGifts={allEgoGifts}
-                    open={giftsOpen}
-                    onToggle={() => setGiftsOpen(v => !v)}
-                  />
-                )}
+                <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
 
               </>
             )}
@@ -876,6 +1052,14 @@ export default function DeckDetailClient({ id, initialDeck, initialComments }: {
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
       )}
+      <DeckIdentityPreviewModal
+        open={!!identityPreview?.slot.identities}
+        slot={identityPreview?.slot ?? null}
+        egos={identityPreview?.slot.identities ? egoGrouped[identityPreview.slot.identities.sinner_id] : []}
+        keywordMeta={keywordMeta}
+        onEgoClick={setEgoModalId}
+        onClose={() => setIdentityPreview(null)}
+      />
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateTag } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
@@ -11,6 +11,13 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 // ── 덱 코드 인코딩 (DeckBuilderClient와 동일 로직) ─────────────────────────
 const BIT_POS = { identity: 4, formation: 8, ZAYIN: 15, TETH: 22, HE: 29, WAW: 36 } as const
+
+type EgoAttackSkill = {
+  skill_type: string | null
+  category: string | null
+  construe_level: number | null
+  skill_order: number | null
+}
 
 function writeBits(arr: string[], start: number, len: number, val: number) {
   const s = val.toString(2).padStart(len, '0')
@@ -91,13 +98,13 @@ export async function GET(
           identities(
             id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
             hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-            skills(id, name, skill_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, uptie_level),
+            skills(id, name, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, uptie_level),
             passives(name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level)
           )
         ),
         deck_egos(
           grade,
-          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url)
+          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url, cost)
         )
       `)
       .eq('id', id)
@@ -125,20 +132,26 @@ export async function GET(
   ]
 
   // 에고: 각 수감자의 전체 에고 목록 (grade, name 정렬 → index용)
-  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null } | null }
+  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; ego_skills?: EgoAttackSkill[] | null } | null }
   const deckEgoRows = (deck.deck_egos ?? []) as unknown as DeckEgoRow[]
   const egoSinnerIds = [
     ...new Set(deckEgoRows.map(r => r.ego?.sinner_id).filter((x): x is string => Boolean(x))),
   ]
   const allSinnerIds = [...new Set([...sinnerIds, ...egoSinnerIds])]
+  const selectedEgoIds = [
+    ...new Set(deckEgoRows.map(r => r.ego?.id).filter((x): x is string => Boolean(x))),
+  ]
 
-  const [identityRes, egoRes] = await Promise.all([
+  const [identityRes, egoRes, egoSkillsRes] = await Promise.all([
     sinnerIds.length > 0
       ? supabase.schema('limbus').from('identities').select('sinner_id, game_id').in('sinner_id', sinnerIds)
       : Promise.resolve({ data: [] }),
     allSinnerIds.length > 0
       ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
       : Promise.resolve({ data: [] }),
+    selectedEgoIds.length > 0
+      ? supabase.schema('limbus').from('ego_skills').select('ego_id, skill_type, category, construe_level, skill_order').in('ego_id', selectedEgoIds)
+      : Promise.resolve({ data: [], error: null }),
   ])
 
   // sinnerId → game_id[] sorted asc
@@ -155,6 +168,22 @@ export async function GET(
   const sinnerEgoIds: Record<string, string[]> = {}
   for (const ego of egoRes.data ?? []) {
     ;(sinnerEgoIds[ego.sinner_id] ??= []).push(ego.id)
+  }
+
+  if (egoSkillsRes.error) {
+    return NextResponse.json({ error: egoSkillsRes.error.message }, { status: 500 })
+  }
+  const egoSkillsByEgoId = new Map<string, EgoAttackSkill[]>()
+  for (const row of egoSkillsRes.data ?? []) {
+    if (typeof row.ego_id !== 'string') continue
+    const skills = egoSkillsByEgoId.get(row.ego_id) ?? []
+    skills.push({
+      skill_type: row.skill_type ?? null,
+      category: row.category ?? null,
+      construe_level: row.construe_level ?? null,
+      skill_order: row.skill_order ?? null,
+    })
+    egoSkillsByEgoId.set(row.ego_id, skills)
   }
 
   // 인격 슬롯 맵
@@ -199,7 +228,12 @@ export async function GET(
     image_url: (e as Record<string, unknown>).image_url as string | null,
   }))
 
-  return NextResponse.json({ ...deck, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })
+  const deckEgosWithSkills = deckEgoRows.map(row => ({
+    ...row,
+    ego: row.ego ? { ...row.ego, ego_skills: egoSkillsByEgoId.get(row.ego.id) ?? [] } : null,
+  }))
+
+  return NextResponse.json({ ...deck, deck_egos: deckEgosWithSkills, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })
@@ -256,8 +290,8 @@ export async function DELETE(
 
     await writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
 
-    updateTag(CACHE_TAGS.deck(id))
-    updateTag(CACHE_TAGS.decksList)
+    revalidateTag(CACHE_TAGS.deck(id), 'max')
+    revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
@@ -400,8 +434,8 @@ export async function PATCH(
       },
     })
 
-    updateTag(CACHE_TAGS.deck(id))
-    updateTag(CACHE_TAGS.decksList)
+    revalidateTag(CACHE_TAGS.deck(id), 'max')
+    revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

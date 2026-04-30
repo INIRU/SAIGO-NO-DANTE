@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateTag } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    updateTag(CACHE_TAGS.plansList)
+    revalidateTag(CACHE_TAGS.plansList, 'max')
     return NextResponse.json({ id: data.id }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

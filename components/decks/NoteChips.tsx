@@ -13,6 +13,7 @@ import {
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 
 function sinColorOf(sin: string | null): string {
   const en = normalizeSin(sin)
@@ -383,7 +384,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
               {entry.keywords.map((kw, idx) => {
                 const kwSin = kwSinMap[kw]
                 const kwColor = kwSin ? (SIN_COLORS[kwSin] ?? '#888') : '#888'
-                const localKwName = getLocalizedKeywordName(kw, keywords[kw], locale as SupportedLang)
+                const localKwName = localizeDeckKeyword(kw, keywords[kw], locale as SupportedLang)
                 return (
                   <span key={`${kw}-${idx}`} style={{ color: kwColor, fontSize: '0.75rem', fontWeight: 600 }}>{localKwName}</span>
                 )
@@ -409,7 +410,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
   const sinType = kwSinMap[keyword]
   const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
   const info = keywords[keyword]
-  const localName = getLocalizedKeywordName(keyword, info, locale as SupportedLang)
+  const localName = localizeDeckKeyword(keyword, info, locale as SupportedLang)
   return (
     <span
       ref={ref}
@@ -478,7 +479,7 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
               <Image src={entry.image_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
             )}
             <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{entry.name}</span>
-            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{getLocalizedKeywordName(entry.keyword, keywords[entry.keyword], locale as SupportedLang)} {entry.grade}</span>
+            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{localizeDeckKeyword(entry.keyword, keywords[entry.keyword], locale as SupportedLang)} {entry.grade}</span>
           </div>
           {entry.effect_base && (
             <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>

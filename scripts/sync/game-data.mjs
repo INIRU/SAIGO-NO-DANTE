@@ -901,6 +901,7 @@ async function main() {
           identity_id: identity.id,
           name,
           skill_type: isDefense ? (DEF_TYPE_MAP[r.defType] || null) : (ATK_TYPE_MAP[r.atkType] || null),
+          atk_type: ATK_TYPE_MAP[r.atkType] || null,
           sin_affinity: SIN_MAP[r.attributeType] || null,
           base_power: r.defaultValue ?? null,
           coin_power: coinList.length > 0 ? (coinList[0].operatorType === 'SUB' ? -coinList[0].scale : coinList[0].scale) : null,
@@ -928,7 +929,7 @@ async function main() {
         // 수비 스킬 (skill_order = 4) — defenseSkillIDList 원래 순서 유지, requireIDList 변형 제외
         const defSkills = defenseSkillIds
           .map(sid => skillMap.get(sid))
-          .filter(gs => gs && !(gs.requireIDList && gs.requireIDList.length > 0))
+          .filter(gs => gs && !gs.isHiddenForUI && !(gs.requireIDList && gs.requireIDList.length > 0))
 
         for (const gs of defSkills) {
           newSkills.push(makeSkillRow(gs, uptie, 4, ++variantIdx))

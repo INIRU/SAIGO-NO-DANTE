@@ -74,8 +74,9 @@ export default function MypageClient() {
     localStorage.setItem('mypage-tab', tab)
 
     // 탭 전환 애니메이션
-    const { animate } = require('framer-motion')
-    animate('.mypage-panel', { opacity: [0, 1], y: [8, 0] }, { duration: 0.3, ease: 'easeOut' })
+    void import('motion').then(({ animate }) => {
+      animate('.mypage-panel', { opacity: [0, 1], y: [8, 0] }, { duration: 0.3, ease: 'easeOut' })
+    })
   }, [router])
 
   // 초기 진입 애니메이션
@@ -83,11 +84,20 @@ export default function MypageClient() {
   useEffect(() => {
     if (loading || !data || animPlayed.current) return
     animPlayed.current = true
-    const { animate } = require('framer-motion')
-    const c1 = animate('.mypage-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] })
-    const c2 = animate('.mypage-tabs', { opacity: [0, 1], y: [10, 0] }, { duration: 0.4, delay: 0.15, ease: 'easeOut' })
-    const c3 = animate('.mypage-panel', { opacity: [0, 1], y: [15, 0] }, { duration: 0.4, delay: 0.25, ease: 'easeOut' })
-    return () => { c1.stop(); c2.stop(); c3.stop() }
+    let controls: Array<{ stop: () => void }> = []
+    let cancelled = false
+    void import('motion').then(({ animate }) => {
+      if (cancelled) return
+      controls = [
+        animate('.mypage-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] }),
+        animate('.mypage-tabs', { opacity: [0, 1], y: [10, 0] }, { duration: 0.4, delay: 0.15, ease: 'easeOut' }),
+        animate('.mypage-panel', { opacity: [0, 1], y: [15, 0] }, { duration: 0.4, delay: 0.25, ease: 'easeOut' }),
+      ]
+    })
+    return () => {
+      cancelled = true
+      controls.forEach(control => control.stop())
+    }
   }, [loading, data])
 
   // 덱 삭제

@@ -33,7 +33,7 @@ export async function GET(
       supabase
         .schema('limbus')
         .from('skills')
-        .select('id, name, skill_type, sin_affinity, coins, base_power, coin_power, description, skill_order, atk_weight, offense_level, quantity, uptie_level, variant_order')
+        .select('id, name, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, skill_order, atk_weight, offense_level, quantity, uptie_level, variant_order')
         .eq('identity_id', id)
         .order('skill_order')
         .order('variant_order'),

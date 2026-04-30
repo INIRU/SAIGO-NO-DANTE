@@ -45,6 +45,9 @@ export type Identity = {
   speed_max: number
   def_level: number
   keywords: string[]
+  skill_keyword_list?: string[]
+  unit_keyword_list?: string[]
+  association_list?: string[]
   rarity: number
   affiliation?: string
   quote?: string

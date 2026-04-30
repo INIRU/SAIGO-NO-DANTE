@@ -1,6 +1,6 @@
 # 데이터 모델 (DB Schema)
 
-SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-28 duplicate-signal event migration 기준.**
+SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-30 identity game tag arrays migration 기준.**
 
 > Supabase Dashboard > Settings > API > Extra search path에 `limbus`가 추가되어야 한다.
 
@@ -13,7 +13,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-
 | 테이블 | 컬럼 수 | 설명 |
 |--------|---------|------|
 | `sinners` | 8 | 12명의 수감자 기본 정보 |
-| `identities` | 28 | 인격 카드 |
+| `identities` | 31 | 인격 카드 |
 | `skills` | 20 | 인격 스킬 (업타이 3/4) |
 | `passives` | 14 | 인격 패시브 |
 | `ego` | 29 | E.G.O |
@@ -165,12 +165,15 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 | `speed_max` | INT | | 최대 속도 |
 | `def_level` | INT | | 방어 레벨 |
 | `keywords` | TEXT[] | | 키워드 배열 |
+| `skill_keyword_list` | TEXT[] | NOT NULL, DEFAULT `{}` | 게임 JSON `skillKeywordList` 기반 공식/대표 스킬 키워드 배열. `keywords`는 스킬/패시브/본문/buffKeyword까지 포함한 전체 추출 키워드로 유지 |
+| `unit_keyword_list` | TEXT[] | NOT NULL, DEFAULT `{}` | 게임 JSON `unitKeywordList` 기반 유닛 태그 배열. E.G.O 기프트 조건 판정용 태그 데이터로 소속 표시와 분리 |
+| `association_list` | TEXT[] | NOT NULL, DEFAULT `{}` | 게임 JSON `associationList` 기반 표시 소속 배열. `affiliation`은 호환용 첫 번째 값 |
 | `rarity` | INT | NOT NULL, DEFAULT 1 | 등급 (1, 2, 3) |
 | `game_id` | TEXT | | 게임 내부 ID (이미지 파일 접두사) |
 | `folder_name` | TEXT | | Supabase Storage 영문 폴더명 |
-| `affiliation` | TEXT | | 소속 (한글: `LCB`, `세븐 협회` 등) |
+| `affiliation` | TEXT | | 호환용 대표 소속. `association_list`에서 `림버스 컴퍼니` 같은 broad base보다 구체 소속을 우선 선택 |
 | `panic_type` | INT | FK → panic_types(id) | 패닉 유형 ID |
-| `quote` | TEXT | | 인격 대사 |
+| `quote` | TEXT | | 인격 획득 대사. `PersonalityVoiceDlg/KR_Voice_*.json`의 첫 `get_${game_id}_*` `dlg`에서 자동 동기화하며, 소스가 있을 때만 갱신 |
 | `slash_res` | TEXT | | 참격 내성 |
 | `pierce_res` | TEXT | | 관통 내성 |
 | `blunt_res` | TEXT | | 타격 내성 |
@@ -201,8 +204,8 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 ```
 
 - RLS: 모든 사용자 읽기 가능
-- 인덱스: `sinner_id`
-- sync: `scripts/sync-identities.mjs`
+- 인덱스: `sinner_id`, `skill_keyword_list` GIN, `unit_keyword_list` GIN, `association_list` GIN
+- sync: `scripts/sync/identity-data.ts`
 
 ---
 

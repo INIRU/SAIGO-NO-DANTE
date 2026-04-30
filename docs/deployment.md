@@ -105,7 +105,7 @@ ADMIN_EMAILS=admin@example.com
 | `serverExternalPackages` | `['sharp']` | sharp를 클라이언트 번들에서 제외 |
 | `cacheComponents` | `true` | `"use cache"` 디렉티브 + PPR 활성화 |
 | `cacheLife` | 커스텀 프로필 4개 | `page-1m`, `page-5m`, `page-10m`, `page-1h` |
-| `optimizePackageImports` | lucide, sonner, framer-motion 등 | 배럴 파일 트리 쉐이킹 |
+| `optimizePackageImports` | lucide, sonner, motion 등 | 배럴 파일 트리 쉐이킹 |
 | `images.remotePatterns` | Supabase Storage, Google 프로필 | 허용 이미지 소스 |
 | `images.minimumCacheTTL` | `2592000` (30일) | 게임 에셋은 거의 변경 없음 |
 | `images.formats` | `['image/avif', 'image/webp']` | 최적화 포맷 |

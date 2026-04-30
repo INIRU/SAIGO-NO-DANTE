@@ -2,12 +2,12 @@
 
 import { memo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 
 interface DeckGridProps {
   filtered: DeckSummary[]
   loading: boolean
-  refreshing?: boolean
   hasMore: boolean
   loadingMore: boolean
   hasAnyFilter: boolean
@@ -18,13 +18,13 @@ interface DeckGridProps {
 function DeckGrid({
   filtered,
   loading,
-  refreshing = false,
   hasMore,
   loadingMore,
   hasAnyFilter,
   sentinelRef,
   onTagClick,
 }: DeckGridProps) {
+  const t = useTranslations('decks')
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -50,7 +50,7 @@ function DeckGrid({
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
         <p className="font-serif text-base" style={{ color: '#555570' }}>
-          {hasAnyFilter ? '검색 결과가 없습니다.' : '아직 등록된 덱이 없습니다.'}
+          {hasAnyFilter ? t('grid.noResults') : t('grid.empty')}
         </p>
         {!hasAnyFilter && (
           <Link
@@ -58,7 +58,7 @@ function DeckGrid({
             style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
             className="hover:text-yellow-300 transition-colors underline underline-offset-2"
           >
-            첫 번째 덱을 만들어보세요 →
+            {t('grid.createFirst')}
           </Link>
         )}
       </div>
@@ -67,26 +67,6 @@ function DeckGrid({
 
   return (
     <>
-      <div
-        className={`mb-3 flex min-h-8 items-center gap-2 rounded-sm transition-opacity duration-200 ${refreshing ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-        style={{
-          padding: '0 0.625rem',
-          background: 'rgba(200,144,10,0.06)',
-          borderLeft: '0.125rem solid rgba(200,144,10,0.52)',
-          color: '#a99062',
-          fontSize: '0.875rem',
-        }}
-        aria-live="polite"
-        aria-hidden={!refreshing}
-      >
-        <div
-          className="rounded-full animate-spin"
-          style={{ width: '0.875rem', height: '0.875rem', border: '1px solid rgba(200,144,10,0.28)', borderTopColor: 'var(--gold)' }}
-          aria-hidden="true"
-        />
-        목록 갱신 중…
-      </div>
-
       <div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
@@ -107,7 +87,7 @@ function DeckGrid({
                 className="rounded-full animate-spin"
                 style={{ width: '1rem', height: '1rem', border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
               />
-              불러오는 중...
+              {t('grid.loadingMore')}
             </div>
           )}
         </div>
