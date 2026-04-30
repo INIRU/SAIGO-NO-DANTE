@@ -1,7 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import type { Variants, HTMLMotionProps } from 'framer-motion'
+import { motion } from 'motion/react'
+import type { Variants, HTMLMotionProps } from 'motion/react'
 import { fadeInUp } from '@/lib/animations'
 
 type MotionTag = 'div' | 'section' | 'article' | 'aside' | 'li' | 'span'

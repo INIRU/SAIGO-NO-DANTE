@@ -339,10 +339,19 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
   useEffect(() => {
-    const { animate } = require('framer-motion')
-    const c1 = animate('.ego-detail-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] })
-    const c2 = animate('.ego-detail-content', { opacity: [0, 1], y: [20, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
-    return () => { c1.stop(); c2.stop() }
+    let controls: Array<{ stop: () => void }> = []
+    let cancelled = false
+    void import('motion').then(({ animate }) => {
+      if (cancelled) return
+      controls = [
+        animate('.ego-detail-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] }),
+        animate('.ego-detail-content', { opacity: [0, 1], y: [20, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' }),
+      ]
+    })
+    return () => {
+      cancelled = true
+      controls.forEach(control => control.stop())
+    }
   }, [])
 
   return (

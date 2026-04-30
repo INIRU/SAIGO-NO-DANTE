@@ -25,6 +25,11 @@ type Props = {
   sinners: Sinner[]
 }
 
+type IdentityBrowserItemWithRepresentativeKeywords = IdentityBrowserItem & {
+  skill_keyword_list?: string[] | null
+  keywords?: string[] | null
+}
+
 const SORT_OPTIONS: DropdownOption<SortOption>[] = [
   { value: 'default', label: '기본' },
   { value: 'name', label: '이름순' },
@@ -33,13 +38,21 @@ const SORT_OPTIONS: DropdownOption<SortOption>[] = [
 
 export default function IdentityBrowserClient({ identities, sinners }: Props) {
   const [nameQuery, setNameQuery] = useState('')
+  const representativeKeywordIdentities = useMemo<IdentityBrowserItem[]>(() => (
+    (identities as IdentityBrowserItemWithRepresentativeKeywords[]).map(identity => ({
+      ...identity,
+      keywords: identity.skill_keyword_list && identity.skill_keyword_list.length > 0
+        ? identity.skill_keyword_list
+        : (identity.keywords ?? []),
+    }))
+  ), [identities])
 
   const {
     filters, sort, setSort,
     items: filterResult,
     totalCount, filteredCount: filterCount, activeCount,
     toggle, resetAll,
-  } = useIdentityBrowserFilters(identities)
+  } = useIdentityBrowserFilters(representativeKeywordIdentities)
 
   // 이름 검색 적용
   const filtered = useMemo(() => {
@@ -56,15 +69,15 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
   // 숫자 필터용 가능한 값 추출
   const availableWeights = useMemo(() => {
     const ws = new Set<number>()
-    identities.forEach(id => id.atk_weights.forEach(w => ws.add(w)))
+    representativeKeywordIdentities.forEach(id => id.atk_weights.forEach(w => ws.add(w)))
     return [...ws].sort((a, b) => a - b)
-  }, [identities])
+  }, [representativeKeywordIdentities])
 
   const availableCoins = useMemo(() => {
     const cs = new Set<number>()
-    identities.forEach(id => id.coin_counts.forEach(c => cs.add(c)))
+    representativeKeywordIdentities.forEach(id => id.coin_counts.forEach(c => cs.add(c)))
     return [...cs].sort((a, b) => a - b)
-  }, [identities])
+  }, [representativeKeywordIdentities])
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">

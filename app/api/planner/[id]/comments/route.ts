@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateTag } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function normalizeParentId(value: unknown): string | null | undefined {
+  if (value == null || value === '') return null
+  if (typeof value !== 'string') return undefined
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (!UUID_PATTERN.test(trimmed)) return undefined
+
+  return trimmed
+}
+
+function revalidatePlannerCommentCaches(planId: string) {
+  revalidateTag(CACHE_TAGS.plan(planId), 'max')
+  revalidateTag(CACHE_TAGS.plansList, 'max')
+}
 
 // GET /api/planner/[id]/comments — 댓글 목록
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,13 +60,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
-
     const body = await req.json()
-    const { content, parent_id } = body
+    const content = typeof body.content === 'string' ? body.content.trim() : ''
+    const parentId = normalizeParentId(body.parent_id)
 
-    if (!content?.trim()) return NextResponse.json({ error: '내용을 입력하세요' }, { status: 400 })
+    if (!content) return NextResponse.json({ error: '내용을 입력하세요' }, { status: 400 })
+    if (parentId === undefined) {
+      return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
+    }
+
+    const admin = createAdminClient()
+    if (parentId) {
+      const { data: parentComment, error: parentError } = await admin
+        .schema('limbus')
+        .from('md_plan_comments')
+        .select('id')
+        .eq('id', parentId)
+        .eq('plan_id', id)
+        .maybeSingle()
+
+      if (parentError) {
+        return NextResponse.json({ error: parentError.message }, { status: 500 })
+      }
+      if (!parentComment) {
+        return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
+      }
+    }
+
+    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
 
     const { data, error } = await admin
       .schema('limbus')
@@ -57,8 +95,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .insert({
         plan_id: id,
         user_id: userId,
-        content: content.trim(),
-        parent_id: parent_id ?? null,
+        content,
+        parent_id: parentId,
       })
       .select('id, content, parent_id, created_at')
       .single()
@@ -66,10 +104,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // comment_count 갱신
-    const { count } = await admin.schema('limbus').from('md_plan_comments').select('id', { count: 'exact', head: true }).eq('plan_id', id)
-    await admin.schema('limbus').from('md_plans').update({ comment_count: count ?? 0 }).eq('id', id)
+    const { count, error: countError } = await admin.schema('limbus').from('md_plan_comments').select('id', { count: 'exact', head: true }).eq('plan_id', id)
+    if (countError) {
+      revalidatePlannerCommentCaches(id)
+      return NextResponse.json({ error: countError.message }, { status: 500 })
+    }
 
-    updateTag(CACHE_TAGS.plan(id))
+    const { error: updateError } = await admin.schema('limbus').from('md_plans').update({ comment_count: count ?? 0 }).eq('id', id)
+    if (updateError) {
+      revalidatePlannerCommentCaches(id)
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+
+    revalidatePlannerCommentCaches(id)
     return NextResponse.json(data, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

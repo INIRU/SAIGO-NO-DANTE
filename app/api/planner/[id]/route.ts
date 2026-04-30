@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateTag } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
@@ -64,8 +64,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     })
 
-    updateTag(CACHE_TAGS.plan(id))
-    updateTag(CACHE_TAGS.plansList)
+    revalidateTag(CACHE_TAGS.plan(id), 'max')
+    revalidateTag(CACHE_TAGS.plansList, 'max')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -97,8 +97,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       targetId: id,
     })
 
-    updateTag(CACHE_TAGS.plan(id))
-    updateTag(CACHE_TAGS.plansList)
+    revalidateTag(CACHE_TAGS.plan(id), 'max')
+    revalidateTag(CACHE_TAGS.plansList, 'max')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

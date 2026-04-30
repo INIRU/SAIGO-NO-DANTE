@@ -44,6 +44,29 @@ const SIN_FRAME_MAP: Record<string, string> = {
   gloom: 'azure', pride: 'indigo', envy: 'violet',
 }
 
+const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
+  slash: 'slash',
+  pierce: 'pierce',
+  blunt: 'blunt',
+  '참격': 'slash',
+  '관통': 'pierce',
+  '타격': 'blunt',
+}
+
+function normalizeAttackType(atkType?: string | null): 'slash' | 'pierce' | 'blunt' | null {
+  if (!atkType) return null
+  return ATTACK_TYPE_MAP[atkType.trim().toLowerCase()] ?? ATTACK_TYPE_MAP[atkType.trim()] ?? null
+}
+
+function skillAttackType(skill: Skill): 'slash' | 'pierce' | 'blunt' | null {
+  const attackSkill = skill as Skill & {
+    atk_type?: string | null
+    atkType?: string | null
+    attack_type?: string | null
+  }
+  return normalizeAttackType(attackSkill.atk_type ?? attackSkill.atkType ?? attackSkill.attack_type ?? skill.skill_type)
+}
+
 interface IdentitySkillsTabProps {
   identity: Identity
   filteredSkills: Skill[]
@@ -145,6 +168,7 @@ export default function IdentitySkillsTab({
               : SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
             : (v && v.total > 1 ? `S${baseOrder}-${v.idx}` : `S${baseOrder}`)
           const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
+          const atkTypeKey = skillAttackType(skill)
 
           // 파괴 불가 코인 감지
           const unbreakableCoins = new Set<number>()
@@ -184,14 +208,14 @@ export default function IdentitySkillsTab({
                     size="100%"
                   />
                   {/* 공격 타입 (하단 중앙) */}
-                  {isAttackSkill && skill.skill_type && ['slash', 'pierce', 'blunt'].includes(skill.skill_type) && (
+                  {atkTypeKey && (
                     <div className="absolute z-20 pointer-events-none"
                       style={{ bottom: 0, left: '50%', marginLeft: '-0.875rem', transform: 'translateY(-30%)', width: '1.75rem', height: '1.75rem' }}>
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
                         alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
                         alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                      <Image src={`${STORAGE_BASE}/icons/stats/${skill.skill_type}.webp`}
+                      <Image src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
                         alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.875rem', height: '0.875rem' }} />
                     </div>
                   )}
@@ -254,7 +278,7 @@ export default function IdentitySkillsTab({
                         {offCorrStr && <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
                       </div>
                     )}
-                    {isAttackSkill && (
+                    {atkTypeKey && (skill.atk_weight || 1) > 0 && (
                       <div className="flex items-center gap-1.5">
                         <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>{t('identity.skills.atkWeight')}</span>
                         <div className="flex gap-0.5">

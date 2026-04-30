@@ -6,21 +6,25 @@ import { X } from 'lucide-react'
 import { STORAGE_BASE, ATK_TYPE_ICON_MAP, RARITY_ICON_MAP } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
-import { computeSkillImageIndices } from '@/lib/utils/images'
 import SkillDescription from '@/components/skill/SkillDescription'
-import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
+import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import BaseModal from '@/components/ui/BaseModal'
+import { useLocale } from 'next-intl'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type SkillData = {
   id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   skill_type: string
   sin_affinity: string
   coins: number
   base_power: number
   coin_power: number
   description: string | null
+  description_en?: string | null
+  description_jp?: string | null
   skill_order: number
   atk_weight: number | null
   offense_level: number | null
@@ -52,6 +56,7 @@ type IdentityData = {
   speed_max: number | null
   def_level: number | null
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
   slash_res: string | null
   pierce_res: string | null
   blunt_res: string | null
@@ -169,6 +174,12 @@ function sinIconUrl(sin: string): string {
   return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
 }
 
+function getRepresentativeKeywords(identity: IdentityData) {
+  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
+    ? identity.skill_keyword_list
+    : (identity.keywords ?? [])
+}
+
 function bestUptie<T extends { uptie_level: number | null }>(items: T[], groupKey: (item: T) => string): T[] {
   const best = new Map<string, T>()
   for (const item of items) {
@@ -265,6 +276,7 @@ type ModalTab = typeof MODAL_TABS[number]['key']
 function ModalContent({ data }: { data: ApiResponse }) {
   const { identity, sinner_name, skills, passives, sanity_conditions: sanityConditions = [], panic_info: panicInfo = null } = data
   const [activeTab, setActiveTab] = useState<ModalTab>('skill')
+  const lang = useLocale()
 
   // 4동기화 우선 스킬
   const sortedSkills = bestUptie(skills, s => `${s.skill_order}:${s.variant_order ?? 0}`)
@@ -276,13 +288,13 @@ function ModalContent({ data }: { data: ApiResponse }) {
 
   const atkSkills = sortedSkills.filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))
   const defSkills = sortedSkills.filter(s => ['evade', 'defense', 'counter'].includes(s.skill_type))
-  const skillImageIdx = computeSkillImageIndices(sortedSkills)
 
   const rarityColor = identity.rarity === 3 ? '#c8900a' : identity.rarity === 2 ? '#4898b0' : '#667788'
 
   const portraitUrl = identity.game_id && identity.folder_name
     ? `${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${encodeURIComponent(identity.folder_name)}/${identity.game_id}_normal_info.webp`
     : null
+  const representativeKeywords = getRepresentativeKeywords(identity)
 
   return (
     <div>
@@ -318,9 +330,9 @@ function ModalContent({ data }: { data: ApiResponse }) {
                 {sinner_name}
               </p>
             )}
-            {identity.keywords && identity.keywords.length > 0 && (
+            {representativeKeywords.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {identity.keywords.map(kw => (
+                {representativeKeywords.map(kw => (
                   <span key={kw} className="px-1.5 py-0.5 rounded" style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
                     {kw}
                   </span>
@@ -432,10 +444,10 @@ function ModalContent({ data }: { data: ApiResponse }) {
           ) : (
             <div className="flex flex-col gap-2">
               {atkSkills.map(skill => (
-                <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} atkSkills={atkSkills} />
+                <SkillCard key={skill.id} skill={skill} skills={sortedSkills} identity={identity} lang={lang} />
               ))}
               {defSkills.map(skill => (
-                <SkillCard key={skill.id} skill={skill} identity={identity} skillImageIdx={skillImageIdx} isDefense />
+                <SkillCard key={skill.id} skill={skill} skills={sortedSkills} identity={identity} lang={lang} />
               ))}
             </div>
           )}
@@ -590,71 +602,21 @@ function ModalContent({ data }: { data: ApiResponse }) {
 function SkillCard({
   skill,
   identity,
-  skillImageIdx,
-  atkSkills,
-  isDefense,
+  skills,
+  lang,
 }: {
   skill: SkillData
   identity: IdentityData
-  skillImageIdx: Record<string, number>
-  atkSkills?: SkillData[]
-  isDefense?: boolean
+  skills: SkillData[]
+  lang?: string
 }) {
-  const sc = sinColor(skill.sin_affinity)
-
-  // 스킬 라벨 계산
-  let skillLabel: string
-  if (isDefense) {
-    const typeLabels: Record<string, string> = { evade: '회피', defense: '수비', counter: '반격' }
-    skillLabel = typeLabels[skill.skill_type] ?? '수비'
-  } else {
-    const orderCount: Record<number, number> = {}
-    if (atkSkills) {
-      for (const s of atkSkills) orderCount[s.skill_order] = (orderCount[s.skill_order] ?? 0) + 1
-    }
-    const hasVariants = (orderCount[skill.skill_order] ?? 1) > 1
-    if (hasVariants) {
-      const idx = atkSkills?.filter(s => s.skill_order === skill.skill_order).indexOf(skill) ?? 0
-      skillLabel = `S${skill.skill_order}-${idx + 1}`
-    } else {
-      skillLabel = `S${skill.skill_order}`
-    }
-  }
-
-  const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
-  const iconUrl = identity.game_id
-    ? `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imgIdx).padStart(2, '0')}.webp`
-    : ''
-
-  // 파괴 불가 코인 파싱 (SkillFrameBlock은 0-based 인덱스 사용)
-  const unbreakableCoins = new Set<number>()
-  if (skill.description) {
-    const ubMatches = skill.description.matchAll(/\[코인\s?(\d+)\]\s*파괴 불가 코인/g)
-    for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]) - 1)
-  }
-
   return (
-    <div className="p-2.5 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}25` }}>
-      <SkillFrameBlock
-        skillIconUrl={iconUrl}
-        sin={skill.sin_affinity || 'neutral'}
-        sinColor={sc}
-        skillSlot={skill.skill_order <= 3 ? skill.skill_order : 1}
-        label={skillLabel}
-        size="3.5rem"
-        name={skill.name}
-        basePower={skill.base_power}
-        coinPower={skill.coin_power}
-        coins={skill.coins}
-        atkType={skill.skill_type}
-        offenseLevel={skill.offense_level}
-        atkWeight={skill.atk_weight || 1}
-        isDefense={isDefense}
-        description={skill.description}
-        unbreakableCoins={unbreakableCoins}
-        descVariant="compact"
-      />
-    </div>
+    <IdentitySkillFrameCard
+      skill={skill}
+      skills={skills}
+      identity={identity}
+      lang={lang}
+    />
   )
 }
 

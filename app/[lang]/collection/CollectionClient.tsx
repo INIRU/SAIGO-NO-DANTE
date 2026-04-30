@@ -13,7 +13,7 @@ import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 import CollectionSection from '@/components/mypage/CollectionSection'
 import { usePretextSingleLineTruncate } from '@/lib/hooks/usePretextTruncate'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 // CollectionViewer receives pre-fetched data from the Server Component page.
 // Only the ?code decoding (URL param → owned Set) remains client-side.

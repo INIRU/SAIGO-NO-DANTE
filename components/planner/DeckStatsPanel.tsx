@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
-import { getSinnerLogoUrl } from '@/lib/utils/images'
-import SkillDescription from '@/components/skill/SkillDescription'
+import PlannerPassivePanel from '@/components/planner/PlannerPassivePanel'
 
 const S = STORAGE_BASE
 
@@ -55,8 +53,6 @@ export interface DeckStatsPanelProps {
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function DeckStatsPanel({ identitySlots, skills, passives, sinners, egoCosts, egoSinAffinities }: DeckStatsPanelProps) {
-  const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
-
   if (identitySlots.length === 0) return null
 
   const slotIds = new Set(identitySlots.map(s => s.identity_id).filter(Boolean))
@@ -101,13 +97,6 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
     }
   }
   const hasEgoCosts = Object.values(egoCostTotal).some(v => v > 0)
-
-  // ── 패시브 조건 충족 체크 ──
-  const isCondMet = (p: PassiveLike) => {
-    if (!p.sin_affinity || !p.sin_count) return true
-    const en = SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity
-    return (deckSinCounts[en] ?? 0) >= p.sin_count
-  }
 
   return (
     <div className="flex flex-col md:flex-row gap-4 mt-4">
@@ -162,75 +151,12 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
       </div>
 
       {/* 패시브 — 배틀/서포트 탭 */}
-      <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
-        <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          {(['battle', 'support'] as const).map(tab => {
-            const active = passiveTab === tab
-            const cnt = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === tab).length
-            return (
-              <button key={tab} onClick={() => setPassiveTab(tab)} style={{
-                flex: 1, padding: '0.5rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400,
-                color: active ? (tab === 'battle' ? '#c84050' : '#4898b0') : '#555',
-                background: active ? (tab === 'battle' ? 'rgba(200,64,80,0.06)' : 'rgba(72,152,176,0.06)') : 'transparent',
-                borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-                borderBottom: `2px solid ${active ? (tab === 'battle' ? '#c84050' : '#4898b0') : 'transparent'}`,
-                cursor: 'pointer', fontFamily: 'var(--font-heading)',
-              }}>
-                {tab === 'battle' ? '배틀' : '서포트'} ({cnt})
-              </button>
-            )
-          })}
-        </div>
-        <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
-          {identitySlots.map((slot, idx) => {
-            const sName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id ?? ''
-            const slotP = passives
-              .filter(p => p.identity_id === slot.identity_id && p.passive_type === passiveTab)
-              .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
-            if (slotP.length === 0) return null
-            return (
-              <div key={idx} className="flex items-start gap-2 px-3 py-2"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
-                  <div className="flex items-center gap-1">
-                    {slot.sinner_id && (
-                      <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
-                    )}
-                    <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
-                  </div>
-                  <p className="truncate" style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {slotP.map((p, pi) => {
-                    const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                    const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                    const met = isCondMet(p)
-                    return (
-                      <div key={pi} style={{ marginBottom: '0.375rem', opacity: met ? 1 : 0.4 }}>
-                        <div className="flex items-center gap-1.5" style={{ fontSize: '0.75rem' }}>
-                          {met && <span style={{ color: '#40a060', fontSize: '0.5625rem', flexShrink: 0 }}>●</span>}
-                          {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
-                          {p.sin_count != null && sinEn && (() => {
-                            const have = deckSinCounts[sinEn] ?? 0
-                            return <span style={{ color: met ? '#40a060' : pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{have}/{p.sin_count}</span>
-                          })()}
-                          <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                          <span style={{ color: met ? '#9a8a70' : '#4a4030', fontWeight: 600 }}>{p.name}</span>
-                        </div>
-                        {p.description && (
-                          <div style={{ marginLeft: '0.75rem', marginTop: '0.125rem' }}>
-                            <SkillDescription description={p.description} accentColor={pc} variant="compact" />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      <PlannerPassivePanel
+        identitySlots={identitySlots}
+        passives={passives}
+        sinners={sinners}
+        deckSinCounts={deckSinCounts}
+      />
     </div>
   )
 }

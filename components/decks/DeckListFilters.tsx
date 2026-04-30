@@ -1,13 +1,23 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { ChevronDown, ChevronRight, Link2, Minus, Plus, Search, SlidersHorizontal, User, X } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { ChevronDown, ChevronRight, Info, Link2, Minus, Plus, Search, SlidersHorizontal, User, X } from 'lucide-react'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { getSinnerLogoUrl } from '@/lib/data/sinners'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
-import type { SearchSuggestion } from './decks-types'
+import { useKeywords } from '@/components/providers/KeywordProvider'
+import type { SupportedLang } from '@/lib/i18n'
+import {
+  DECK_LANGUAGE_FILTERS,
+  contentTypeMessageKey,
+  localizeDeckKeyword,
+  type DeckLanguageFilter,
+  type SearchSuggestion,
+} from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
 
 const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'), {
@@ -42,13 +52,18 @@ interface DeckListFiltersProps {
   onClearTags: () => void
   keywordCandidates: string[]
   availableKeywords: string[]
-  activeKeywords: Set<string>
-  keywordMode: 'or' | 'and'
+  activeKeywordTags: Set<string>
+  keywordTagMode: 'or' | 'and'
   showKeywordFilter: boolean
   onToggleKeywordFilter: () => void
-  onToggleKeyword: (kw: string) => void
-  onClearKeywords: () => void
-  onToggleKeywordMode: () => void
+  onToggleKeywordTag: (kw: string) => void
+  onClearKeywordTags: () => void
+  onToggleKeywordTagMode: () => void
+  activeMainKeywords: Set<string>
+  mainKeywordMode: 'or' | 'and'
+  onToggleMainKeyword: (kw: string) => void
+  onClearMainKeywords: () => void
+  onToggleMainKeywordMode: () => void
   showCollectionFilter: boolean
   onToggleCollectionFilter: () => void
   collectionLoading: boolean
@@ -64,6 +79,8 @@ interface DeckListFiltersProps {
   codeError: boolean
   formationCount: number | null
   onFormationCountChange: (count: number | null) => void
+  minInfoScore: number | null
+  onMinInfoScoreChange: (score: number | null) => void
   identityFilterSinners: DeckFilterSinner[]
   identityFilterIdentities: DeckFilterIdentity[]
   selectedIdentityIds: Set<string>
@@ -72,9 +89,12 @@ interface DeckListFiltersProps {
   onToggleSelectedIdentity: (identityId: string) => void
   onToggleIdentityMode: () => void
   onClearSelectedIdentities: () => void
+  languageFilter: DeckLanguageFilter
+  onLanguageFilterChange: (value: DeckLanguageFilter) => void
 }
 
 type SortKey = 'latest' | 'popular'
+const INFO_SCORE_OPTIONS = [1, 2, 3] as const
 
 function Divider() {
   return <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
@@ -85,14 +105,120 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <div
       className="mb-2"
       style={{
-        color: '#666',
+        color: 'var(--deck-filter-text-dim)',
         fontFamily: 'var(--font-heading)',
-        fontSize: '0.875rem',
+        fontSize: 'var(--deck-filter-label-text)',
         fontWeight: 700,
       }}
     >
       {children}
     </div>
+  )
+}
+
+function InfoScoreLabel({ active }: { active: boolean }) {
+  const t = useTranslations('decks')
+  const tooltipId = useId()
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
+  const [mounted, setMounted] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current
+      if (!trigger) return
+      const rect = trigger.getBoundingClientRect()
+      const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      const tooltipWidth = 13 * rootFontSize
+      const gap = 0.375 * rootFontSize
+      const viewportPadding = 0.75 * rootFontSize
+      const left = Math.min(
+        Math.max(rect.left, viewportPadding),
+        Math.max(viewportPadding, window.innerWidth - tooltipWidth - viewportPadding),
+      )
+      const tooltipHeight = tooltipRef.current?.offsetHeight ?? 0
+      const belowTop = rect.bottom + gap
+      const top = tooltipHeight > 0 && belowTop + tooltipHeight + viewportPadding > window.innerHeight
+        ? Math.max(viewportPadding, rect.top - tooltipHeight - gap)
+        : belowTop
+      setPosition({ top, left })
+    }
+
+    updatePosition()
+    const frame = window.requestAnimationFrame(updatePosition)
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open])
+
+  return (
+    <span className="relative inline-flex min-w-0 items-center gap-1.5">
+      <span
+        className="min-w-0 truncate"
+        style={{
+          color: active ? 'var(--gold)' : '#666',
+          fontFamily: 'var(--font-heading)',
+          fontSize: '0.875rem',
+          fontWeight: 700,
+        }}
+      >
+        {t('filters.infoScore')}
+      </span>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="inline-flex shrink-0 items-center justify-center rounded-sm transition-colors hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
+        style={{
+          width: '1.5rem',
+          height: '1.5rem',
+          color: active ? 'var(--gold)' : 'var(--deck-filter-text-soft)',
+          cursor: 'help',
+        }}
+        aria-label={t('filters.infoScoreHelpLabel')}
+        aria-describedby={open ? tooltipId : undefined}
+        onBlur={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+      >
+        <Info size={13} strokeWidth={1.75} aria-hidden="true" />
+      </button>
+      {mounted && open && createPortal(
+        <span
+          ref={tooltipRef}
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none fixed z-50 w-[13rem] rounded border px-2.5 py-2 text-left"
+          style={{
+            top: position.top,
+            left: position.left,
+            background: '#1a1510',
+            borderColor: 'rgba(200,144,10,0.28)',
+            boxShadow: '0 0.75rem 1.5rem rgba(0,0,0,0.32)',
+            color: 'var(--deck-filter-text-muted)',
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.875rem',
+            lineHeight: 1.45,
+            whiteSpace: 'normal',
+          }}
+        >
+          {t('filters.infoScoreHelp')}
+        </span>,
+        document.body,
+      )}
+    </span>
   )
 }
 
@@ -115,10 +241,10 @@ function SectionToggle({
       onClick={onClick}
       className="flex w-full items-center gap-2 text-left transition-colors hover:bg-white/[0.025]"
       style={{
-        minHeight: '2.25rem',
+        minHeight: 'var(--deck-filter-control-min)',
         color: active ? 'var(--gold)' : '#666',
         fontFamily: 'var(--font-heading)',
-        fontSize: '0.875rem',
+        fontSize: 'var(--deck-filter-label-text)',
       }}
       aria-expanded={open}
     >
@@ -132,7 +258,7 @@ function SectionToggle({
             minWidth: '1.375rem',
             padding: '0.0625rem 0.4375rem',
             borderRadius: '999rem',
-            fontSize: '0.8125rem',
+            fontSize: 'var(--deck-filter-control-text)',
             fontWeight: 400,
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.2,
@@ -147,9 +273,10 @@ function SectionToggle({
 }
 
 function SortControls({ sort, onSortChange }: { sort: string; onSortChange: (s: string) => void }) {
+  const t = useTranslations('decks')
   return (
     <section>
-      <SectionLabel>정렬</SectionLabel>
+      <SectionLabel>{t('sort.label')}</SectionLabel>
       <div className="grid grid-cols-2 gap-1.5">
         {(['latest', 'popular'] as SortKey[]).map(s => {
           const active = sort === s
@@ -161,15 +288,55 @@ function SortControls({ sort, onSortChange }: { sort: string; onSortChange: (s: 
               className="rounded transition-all duration-200"
               style={{
                 minHeight: '2.25rem',
-                border: `1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
-                background: active ? 'rgba(200,144,10,0.1)' : 'rgba(255,255,255,0.02)',
-                color: active ? 'var(--gold)' : '#777',
+                border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
+                color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
                 fontFamily: 'var(--font-heading)',
-                fontSize: '0.8125rem',
+                fontSize: 'var(--deck-filter-control-text)',
                 fontWeight: 700,
               }}
             >
-              {s === 'latest' ? '최신순' : '인기순'}
+              {t(`sort.${s}`)}
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function LanguageFilter({
+  value,
+  onChange,
+}: {
+  value: DeckLanguageFilter
+  onChange: (value: DeckLanguageFilter) => void
+}) {
+  const t = useTranslations('decks')
+  return (
+    <section>
+      <SectionLabel>{t('languageFilter.label')}</SectionLabel>
+      <div className="grid grid-cols-2 gap-1.5">
+        {DECK_LANGUAGE_FILTERS.map(option => {
+          const active = value === option
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange(option)}
+              aria-pressed={active}
+              className="rounded transition-all duration-200"
+              style={{
+                minHeight: 'var(--deck-filter-control-min)',
+                border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
+                color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
+                fontFamily: 'var(--font-heading)',
+                fontSize: 'var(--deck-filter-control-text)',
+                fontWeight: 700,
+              }}
+            >
+              {t(`languageFilter.${option === 'mine' ? 'current' : option}`)}
             </button>
           )
         })}
@@ -199,11 +366,11 @@ function SquareToggle({
       title={label}
       className="flex flex-col items-center justify-center rounded transition-all duration-200"
       style={{
-        minHeight: '2.75rem',
+        minHeight: 'var(--deck-filter-touch-min)',
         padding: '0.25rem 0.1875rem',
         cursor: 'pointer',
-        border: `1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
-        background: active ? 'rgba(200,144,10,0.1)' : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+        background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
         opacity: active ? 1 : 0.5,
         filter: active ? 'none' : 'grayscale(0.5)',
       }}
@@ -220,9 +387,9 @@ function SquareToggle({
         <span
           className="text-center leading-tight"
           style={{
-            color: active ? 'var(--gold)' : '#777',
+            color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
             fontFamily: 'var(--font-heading)',
-            fontSize: '0.8125rem',
+            fontSize: 'var(--deck-filter-control-text)',
             fontWeight: 700,
           }}
         >
@@ -250,6 +417,10 @@ function KeywordTagChip({
   iconUrl: string | null
   onRemove: () => void
 }) {
+  const t = useTranslations('decks')
+  const locale = useLocale() as SupportedLang
+  const keywords = useKeywords()
+  const localKeyword = localizeDeckKeyword(keyword, keywords[keyword], locale)
   return (
     <button
       onClick={onRemove}
@@ -268,7 +439,7 @@ function KeywordTagChip({
         lineHeight: 1.15,
         cursor: 'pointer',
       }}
-      aria-label={`${keyword} 키워드 제거`}
+      aria-label={t('filters.removeKeywordTag', { keyword: localKeyword })}
     >
       {iconUrl && (
         <Image
@@ -279,7 +450,7 @@ function KeywordTagChip({
           style={{ width: '0.75rem', height: '0.75rem', flexShrink: 0, objectFit: 'contain', opacity: 0.9 }}
         />
       )}
-      <span className="min-w-0 truncate">{keyword}</span>
+      <span className="min-w-0 truncate">{localKeyword}</span>
       <X size={10} strokeWidth={1.75} style={{ flexShrink: 0, color: '#8f8066' }} aria-hidden="true" />
     </button>
   )
@@ -292,19 +463,27 @@ export default function DeckListFilters({
   activeContentType, onContentTypeChange,
   advancedFilterCount,
   allTags, activeTags, showTagFilter, onToggleTagFilter, onToggleTag, onClearTags,
-  keywordCandidates, availableKeywords, activeKeywords, keywordMode,
-  onToggleKeyword, onClearKeywords, onToggleKeywordMode,
+  keywordCandidates, availableKeywords, activeKeywordTags, keywordTagMode,
+  onToggleKeywordTag, onClearKeywordTags, onToggleKeywordTagMode,
+  activeMainKeywords, mainKeywordMode, onToggleMainKeyword, onClearMainKeywords, onToggleMainKeywordMode,
   showCollectionFilter, onToggleCollectionFilter,
   collectionLoading, hasCollection,
   filterOwnedIdentity, filterOwnedEgo,
   onToggleFilterOwnedIdentity, onToggleFilterOwnedEgo, onClearCollection,
   codeInput, onCodeInputChange, onApplyCode, codeError,
   formationCount, onFormationCountChange,
+  minInfoScore, onMinInfoScoreChange,
   identityFilterSinners, identityFilterIdentities,
   selectedIdentityIds, selectedIdentities,
   identityMode,
   onToggleSelectedIdentity, onToggleIdentityMode, onClearSelectedIdentities,
+  languageFilter, onLanguageFilterChange,
 }: DeckListFiltersProps) {
+  const t = useTranslations('decks')
+  const rootT = useTranslations()
+  const locale = useLocale() as SupportedLang
+  const keywords = useKeywords()
+  const localKeyword = (keyword: string) => localizeDeckKeyword(keyword, keywords[keyword], locale)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showKeywordTagFilter, setShowKeywordTagFilter] = useState(true)
   const [showFormationFilter, setShowFormationFilter] = useState(true)
@@ -341,24 +520,28 @@ export default function DeckListFilters({
     const q = keywordTagInput.trim().toLowerCase()
     if (!q) return []
     return keywordCandidates
-      .filter(kw => !activeKeywords.has(kw) && kw.toLowerCase().includes(q))
+      .filter(kw => {
+        if (activeKeywordTags.has(kw)) return false
+        const localized = localKeyword(kw).toLowerCase()
+        return kw.toLowerCase().includes(q) || localized.includes(q)
+      })
       .sort((a, b) => {
-        const aLow = a.toLowerCase()
-        const bLow = b.toLowerCase()
+        const aLow = localKeyword(a).toLowerCase()
+        const bLow = localKeyword(b).toLowerCase()
         const aStarts = aLow.startsWith(q) ? 0 : 1
         const bStarts = bLow.startsWith(q) ? 0 : 1
         if (aStarts !== bStarts) return aStarts - bStarts
-        return a.localeCompare(b, 'ko')
+        return aLow.localeCompare(bLow, locale)
       })
       .slice(0, 8)
-  }, [activeKeywords, keywordCandidates, keywordTagInput])
+  }, [activeKeywordTags, keywordCandidates, keywordTagInput, localKeyword, locale])
 
   const addKeywordTag = (rawKeyword?: string) => {
     const value = (rawKeyword ?? keywordTagInput).trim()
     if (!value) return
     const matchedKeyword = keywordCandidates.find(kw => kw.toLowerCase() === value.toLowerCase()) ?? keywordTagSuggestions[0]
-    if (!matchedKeyword || activeKeywords.has(matchedKeyword)) return
-    onToggleKeyword(matchedKeyword)
+    if (!matchedKeyword || activeKeywordTags.has(matchedKeyword)) return
+    onToggleKeywordTag(matchedKeyword)
     setKeywordTagInput('')
   }
 
@@ -384,6 +567,9 @@ export default function DeckListFilters({
     onToggleSelectedIdentity(identityId)
     if (!wasSelected) setIdentityModalSinnerId(null)
   }
+  const localizeSinnerName = (sinner: DeckFilterSinner) => (
+    rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0])
+  )
 
   useEffect(() => {
     if (!mobileOpen) return
@@ -403,32 +589,32 @@ export default function DeckListFilters({
   const filterSurface = (
     <div className="flex flex-col gap-4">
       <section>
-        <SectionLabel>검색</SectionLabel>
+        <SectionLabel>{t('search.section')}</SectionLabel>
         <div className="relative" ref={searchRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#555', zIndex: 1 }} />
           <input
             type="text"
-            placeholder="인격, 키워드, 제목..."
+            placeholder={t('search.placeholder')}
             value={inputValue}
             onChange={e => { onInputChange(e.target.value) }}
             onFocus={onInputFocus}
             onKeyDown={onSearchKeyDown}
-            className="w-full rounded pl-7 pr-8 py-1.5 text-xs outline-none"
+          className="w-full rounded pl-7 pr-8 py-1.5 text-xs outline-none"
             style={{
-              minHeight: '2.25rem',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#ccc',
-              fontSize: '0.8125rem',
+              minHeight: 'var(--deck-filter-control-min)',
+              background: 'var(--deck-filter-surface)',
+              border: '1px solid var(--deck-filter-border-strong)',
+              color: 'var(--deck-filter-text)',
+              fontSize: 'var(--deck-filter-control-text)',
             }}
-            aria-label="덱 검색"
+            aria-label={t('search.label')}
           />
           {inputValue && (
             <button
               onClick={onSearchClear}
               className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center justify-center rounded transition-colors hover:bg-white/5"
-              style={{ width: '1.75rem', height: '1.75rem', color: '#777', cursor: 'pointer', zIndex: 1 }}
-              aria-label="검색어 지우기"
+              style={{ width: '1.75rem', height: '1.75rem', color: 'var(--deck-filter-text-muted)', cursor: 'pointer', zIndex: 1 }}
+              aria-label={t('search.clear')}
             >
               <X size={14} />
             </button>
@@ -452,10 +638,10 @@ export default function DeckListFilters({
                     className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-white/5"
                     onClick={() => onSuggestionClick(sg.label)}
                     style={{
-                      minHeight: '2.25rem',
+                      minHeight: 'var(--deck-filter-control-min)',
                       cursor: 'pointer',
-                      color: isFocused ? 'var(--gold)' : '#ccc',
-                      background: isFocused ? 'rgba(200,144,10,0.1)' : undefined,
+                      color: isFocused ? 'var(--gold)' : 'var(--deck-filter-text)',
+                      background: isFocused ? 'var(--deck-filter-surface-active)' : undefined,
                       borderLeft: isFocused ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
                       fontSize: '0.8125rem',
                     }}
@@ -469,9 +655,9 @@ export default function DeckListFilters({
                     ) : kwIconUrl ? (
                       <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
                     ) : null}
-                    <span className="min-w-0 flex-1 truncate">{sg.label}</span>
+                    <span className="min-w-0 flex-1 truncate">{sg.type === 'keyword' ? localKeyword(sg.label) : sg.label}</span>
                     <span style={{ marginLeft: 'auto', fontSize: '0.625rem', color: '#666', flexShrink: 0 }}>
-                      {sg.type === 'identity' ? '인격' : '키워드'}
+                      {sg.type === 'identity' ? t('search.suggestionIdentity') : t('search.suggestionKeyword')}
                     </span>
                   </button>
                 )
@@ -480,7 +666,7 @@ export default function DeckListFilters({
           )}
         </div>
         <p className="mt-2" style={{ color: '#666', fontSize: '0.75rem', lineHeight: 1.35 }}>
-          + OR, * AND 검색
+          {t('search.hint')}
         </p>
       </section>
 
@@ -492,7 +678,7 @@ export default function DeckListFilters({
 
       <section>
         <SectionToggle
-          label="편성 수"
+          label={t('filters.formationCount')}
           open={showFormationFilter}
           active={formationCount !== null}
           count={formationCount !== null ? 1 : undefined}
@@ -505,7 +691,7 @@ export default function DeckListFilters({
               style={{
                 minHeight: '2.75rem',
                 background: 'rgba(255,255,255,0.035)',
-                border: `1px solid ${formationCount !== null ? 'rgba(200,144,10,0.34)' : 'rgba(255,255,255,0.09)'}`,
+                border: `1px solid ${formationCount !== null ? 'var(--deck-filter-border-active)' : 'var(--deck-filter-border)'}`,
                 boxShadow: formationCount !== null ? 'inset 0 1px 0 rgba(200,144,10,0.08)' : 'none',
               }}
             >
@@ -514,7 +700,7 @@ export default function DeckListFilters({
                 onClick={() => stepFormationCount(-1)}
                 className="flex w-11 shrink-0 items-center justify-center rounded-l transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
                 style={{ color: formationCount !== null ? 'var(--gold)' : '#777', cursor: 'pointer' }}
-                aria-label="편성 수 1 감소"
+                aria-label={t('filters.formationDecrease')}
               >
                 <Minus size={15} aria-hidden="true" />
               </button>
@@ -528,35 +714,35 @@ export default function DeckListFilters({
                 className="min-w-0 flex-1 border-x text-center outline-none"
                 style={{
                   background: 'transparent',
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  color: formationCount !== null ? 'var(--gold)' : '#777',
+                  borderColor: 'var(--deck-filter-border)',
+                  color: formationCount !== null ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: '1rem',
                   fontWeight: 700,
                 }}
-                aria-label="편성 순서가 지정된 수감자 수"
+                aria-label={t('filters.formationInput')}
               />
               <button
                 type="button"
                 onClick={() => stepFormationCount(1)}
                 className="flex w-11 shrink-0 items-center justify-center rounded-r transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
                 style={{ color: formationCount !== null ? 'var(--gold)' : '#777', cursor: 'pointer' }}
-                aria-label="편성 수 1 증가"
+                aria-label={t('filters.formationIncrease')}
               >
                 <Plus size={15} aria-hidden="true" />
               </button>
             </div>
             <div className="flex min-h-[1.75rem] items-center justify-between gap-2">
-              <span style={{ color: '#777', fontSize: '0.875rem', lineHeight: 1.35 }}>
-                {formationCount ? `정확히 ${formationCount}명` : '편성 순서가 지정된 수감자 수'}
+              <span style={{ color: 'var(--deck-filter-text-muted)', fontSize: 'var(--deck-filter-label-text)', lineHeight: 1.35 }}>
+                {formationCount ? t('filters.formationExact', { count: formationCount }) : t('filters.formationInput')}
               </span>
               {formationCount !== null && (
                 <button
                   onClick={() => onFormationCountChange(null)}
                   className="rounded transition-colors hover:bg-white/5"
-                  style={{ minHeight: '1.75rem', padding: '0 0.5rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
+                  style={{ minHeight: '1.75rem', padding: '0 0.5rem', color: 'var(--deck-filter-text-soft)', border: '1px solid var(--deck-filter-border)', fontSize: '0.75rem' }}
                 >
-                  초기화
+                  {t('filters.clear')}
                 </button>
               )}
             </div>
@@ -570,7 +756,7 @@ export default function DeckListFilters({
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
             <SectionToggle
-              label="수감자 인격"
+              label={t('filters.identity')}
               open={showIdentityFilter}
               active={selectedIdentityIds.size > 0}
               count={selectedIdentityIds.size}
@@ -594,10 +780,10 @@ export default function DeckListFilters({
                 fontWeight: 400,
                 cursor: 'pointer',
               }}
-              aria-label="인격 필터 OR/AND 조건 전환"
+              aria-label={t('filters.identityModeToggle')}
               aria-pressed={identityMode === 'and'}
             >
-              {identityMode === 'and' ? 'AND' : 'OR'}
+              {identityMode === 'and' ? t('filters.and') : t('filters.or')}
             </button>
           )}
         </div>
@@ -606,16 +792,16 @@ export default function DeckListFilters({
             <div
               className="grid grid-cols-2 gap-1.5"
               style={{
-                borderTop: '1px solid rgba(200,144,10,0.16)',
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                 padding: '0.25rem 0',
               }}
-              aria-label="수감자 인격 필터"
+              aria-label={t('filters.identity')}
             >
               {identityFilterSinners.map(sinner => {
                 const selectedForSinner = selectedIdentitiesBySinner.get(sinner.id) ?? []
                 const representativeIdentity = selectedForSinner[0]
                 const representativeImageUrl = representativeIdentity ? getIdentityInfoUrl(representativeIdentity) : null
+                const sinnerName = localizeSinnerName(sinner)
                 return (
                   <button
                     key={sinner.id}
@@ -629,7 +815,7 @@ export default function DeckListFilters({
                       color: selectedForSinner.length > 0 ? 'var(--gold)' : '#9a8460',
                       cursor: 'pointer',
                     }}
-                    aria-label={`${sinner.name_kr} 인격 선택${selectedForSinner.length > 0 ? `, ${selectedForSinner.length}개 선택됨` : ''}`}
+                    aria-label={`${sinnerName} ${t('identityFilter.fallbackTitle')}${selectedForSinner.length > 0 ? `, ${selectedForSinner.length} ${t('filters.identitySelected')}` : ''}`}
                   >
                     {representativeImageUrl ? (
                       <>
@@ -673,11 +859,6 @@ export default function DeckListFilters({
                             }}
                           />
                         </span>
-                        <span
-                          className="pointer-events-none absolute inset-0"
-                          style={{ background: 'radial-gradient(circle at 50% 45%, rgba(200,144,10,0.08), rgba(13,11,8,0.18) 62%, rgba(13,11,8,0.48) 100%)' }}
-                          aria-hidden="true"
-                        />
                       </>
                     )}
                   </button>
@@ -691,7 +872,7 @@ export default function DeckListFilters({
                   className="rounded transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
                   style={{ minHeight: '1.75rem', padding: '0 0.5rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
                 >
-                  초기화
+                  {t('filters.clear')}
                 </button>
               </div>
             )}
@@ -703,10 +884,10 @@ export default function DeckListFilters({
 
       <section>
         <SectionToggle
-          label="키워드 태그"
+          label={t('filters.keywordTags')}
           open={showKeywordTagFilter}
-          active={activeKeywords.size > 0}
-          count={activeKeywords.size}
+          active={activeKeywordTags.size > 0}
+          count={activeKeywordTags.size}
           onClick={() => setShowKeywordTagFilter(v => !v)}
         />
         {showKeywordTagFilter && (
@@ -727,7 +908,7 @@ export default function DeckListFilters({
                     setKeywordTagInput('')
                   }
                 }}
-                placeholder="키워드 입력"
+                placeholder={t('filters.keywordTagPlaceholder')}
                 className="w-full rounded py-1.5 pl-7 pr-3 outline-none"
                 style={{
                   minHeight: '2.25rem',
@@ -738,7 +919,7 @@ export default function DeckListFilters({
                 }}
                 role="combobox"
                 aria-expanded={keywordTagSuggestions.length > 0}
-                aria-label="키워드 태그 입력"
+                aria-label={t('filters.keywordTagInput')}
                 autoComplete="off"
               />
             </div>
@@ -751,7 +932,7 @@ export default function DeckListFilters({
                   boxShadow: 'var(--shadow-lg)',
                 }}
                 role="listbox"
-                aria-label="키워드 태그 추천"
+                aria-label={t('filters.keywordTagSuggestions')}
               >
                 {keywordTagSuggestions.map((kw, i) => {
                   const iconUrl = getIconUrl(kw)
@@ -780,22 +961,53 @@ export default function DeckListFilters({
                           style={{ width: '1rem', height: '1rem', flexShrink: 0, objectFit: 'contain' }}
                         />
                       )}
-                      <span className="min-w-0 flex-1 truncate">{kw}</span>
+                      <span className="min-w-0 flex-1 truncate">{localKeyword(kw)}</span>
                     </button>
                   )
                 })}
               </div>
             )}
-            {activeKeywords.size > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {[...activeKeywords].map(kw => (
+            {activeKeywordTags.size > 0 && (
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap gap-1.5">
+                  {[...activeKeywordTags].map(kw => (
                   <KeywordTagChip
                     key={kw}
                     keyword={kw}
                     iconUrl={getIconUrl(kw)}
-                    onRemove={() => onToggleKeyword(kw)}
+                    onRemove={() => onToggleKeywordTag(kw)}
                   />
                 ))}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {activeKeywordTags.size >= 2 && (
+                    <button
+                      onClick={onToggleKeywordTagMode}
+                      className="rounded transition-all"
+                      style={{
+                        minHeight: '1.5rem',
+                        padding: '0 0.4375rem',
+                        background: keywordTagMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
+                        color: keywordTagMode === 'and' ? 'var(--gold)' : '#888',
+                        border: `1px solid ${keywordTagMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '0.8125rem',
+                        letterSpacing: '0.05em',
+                        fontWeight: 400,
+                      }}
+                      aria-label={t('filters.keywordTagModeToggle')}
+                    >
+                      {keywordTagMode === 'and' ? t('filters.and') : t('filters.or')}
+                    </button>
+                  )}
+                  <button
+                    onClick={onClearKeywordTags}
+                    className="rounded transition-colors hover:bg-white/5"
+                    style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
+                  >
+                    {t('filters.clear')}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -803,7 +1015,7 @@ export default function DeckListFilters({
       </section>
 
       <section>
-        <SectionLabel>콘텐츠 유형</SectionLabel>
+        <SectionLabel>{t('filters.contentType')}</SectionLabel>
         <div className="grid grid-cols-2 gap-1.5">
           {CONTENT_TYPES.map(ct => {
             const active = activeContentType === ct
@@ -826,7 +1038,7 @@ export default function DeckListFilters({
                   fontWeight: 700,
                 }}
               >
-                <span className="block truncate">{ct}</span>
+                <span className="block truncate">{t(`contentTypes.${contentTypeMessageKey(ct)}`)}</span>
               </button>
             )
           })}
@@ -837,7 +1049,7 @@ export default function DeckListFilters({
         <>
           <Divider />
           <section>
-            <SectionToggle label="태그" open={showTagFilter} active={activeTags.size > 0} count={activeTags.size} onClick={onToggleTagFilter} />
+            <SectionToggle label={t('filters.tags')} open={showTagFilter} active={activeTags.size > 0} count={activeTags.size} onClick={onToggleTagFilter} />
             {showTagFilter && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {activeTags.size > 0 && (
@@ -846,7 +1058,7 @@ export default function DeckListFilters({
                     className="rounded-full transition-colors hover:bg-white/5"
                     style={{ minHeight: '1.875rem', padding: '0.1875rem 0.5625rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
                   >
-                    초기화
+                    {t('filters.clear')}
                   </button>
                 )}
                 {allTags.map(tag => {
@@ -880,35 +1092,35 @@ export default function DeckListFilters({
           <Divider />
           <section>
             <div className="flex items-start justify-between gap-2">
-              <SectionLabel>상시 키워드</SectionLabel>
-              {activeKeywords.size > 0 && (
+              <SectionLabel>{t('filters.alwaysKeywords')}</SectionLabel>
+              {activeMainKeywords.size > 0 && (
                 <div className="flex items-center gap-1">
-                  {activeKeywords.size >= 2 && (
+                  {activeMainKeywords.size >= 2 && (
                     <button
-                      onClick={onToggleKeywordMode}
+                      onClick={onToggleMainKeywordMode}
                       className="rounded transition-all"
                       style={{
                         minHeight: '1.5rem',
                         padding: '0 0.4375rem',
-                        background: keywordMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
-                        color: keywordMode === 'and' ? 'var(--gold)' : '#888',
-                        border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
+                        background: mainKeywordMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
+                        color: mainKeywordMode === 'and' ? 'var(--gold)' : '#888',
+                        border: `1px solid ${mainKeywordMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
                         fontFamily: 'var(--font-heading)',
                         fontSize: '0.8125rem',
                         letterSpacing: '0.05em',
                         fontWeight: 400,
                       }}
-                      aria-label="키워드 OR/AND 조건 전환"
+                      aria-label={t('filters.mainKeywordModeToggle')}
                     >
-                      {keywordMode === 'and' ? 'AND' : 'OR'}
+                      {mainKeywordMode === 'and' ? t('filters.and') : t('filters.or')}
                     </button>
                   )}
                   <button
-                    onClick={onClearKeywords}
+                    onClick={onClearMainKeywords}
                     className="rounded transition-colors hover:bg-white/5"
                     style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
                   >
-                    초기화
+                    {t('filters.clear')}
                   </button>
                 </div>
               )}
@@ -917,10 +1129,10 @@ export default function DeckListFilters({
               {availableKeywords.map(kw => (
                 <SquareToggle
                   key={kw}
-                  active={activeKeywords.has(kw)}
-                  label={kw}
+                  active={activeMainKeywords.has(kw)}
+                  label={localKeyword(kw)}
                   iconUrl={getIconUrl(kw)}
-                  onClick={() => onToggleKeyword(kw)}
+                  onClick={() => onToggleMainKeyword(kw)}
                 />
               ))}
             </div>
@@ -931,23 +1143,89 @@ export default function DeckListFilters({
       <Divider />
 
       <section>
-        <SectionToggle label="보유 필터" open={showCollectionFilter} active={collectionCount > 0} count={collectionCount} onClick={onToggleCollectionFilter} />
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <InfoScoreLabel active={minInfoScore !== null} />
+          {minInfoScore !== null && (
+            <button
+              onClick={() => onMinInfoScoreChange(null)}
+              className="rounded transition-colors hover:bg-white/5"
+              style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
+            >
+              {t('filters.clear')}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1.5" role="group" aria-label={t('filters.infoScoreMin')}>
+          {INFO_SCORE_OPTIONS.map(score => {
+            const active = minInfoScore === score
+            return (
+              <button
+                key={score}
+                type="button"
+                onClick={() => onMinInfoScoreChange(active ? null : score)}
+                aria-pressed={active}
+                className="flex-1 rounded transition-all duration-200"
+                style={{
+                  minHeight: '2.25rem',
+                  border: `1px solid ${active ? 'rgba(200,144,10,0.42)' : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.02)',
+                  color: active ? 'var(--gold)' : '#777',
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {score === 3 ? '3' : `${score}+`}
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1">
+          {[
+            t('filters.infoScoreFormation'),
+            t('filters.infoScoreEgo'),
+            t('filters.infoScoreMemo'),
+          ].map(label => (
+            <span
+              key={label}
+              className="rounded-sm"
+              style={{
+                minHeight: '1.375rem',
+                padding: '0.125rem 0.375rem',
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                color: '#777',
+                fontSize: '0.75rem',
+                lineHeight: 1.35,
+              }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <Divider />
+
+      <section>
+        <SectionToggle label={t('filters.collection')} open={showCollectionFilter} active={collectionCount > 0} count={collectionCount} onClick={onToggleCollectionFilter} />
         {showCollectionFilter && (
           <div className="flex flex-col gap-2 pt-1">
             {collectionLoading ? (
               <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
-                컬렉션 로딩 중...
+                {t('filters.collectionLoading')}
               </span>
             ) : hasCollection ? (
               <div className="grid grid-cols-2 gap-1.5">
-                <SquareToggle active={filterOwnedIdentity} label="인격" onClick={onToggleFilterOwnedIdentity} ariaLabel="보유 인격 덱" />
-                <SquareToggle active={filterOwnedEgo} label="에고" onClick={onToggleFilterOwnedEgo} ariaLabel="보유 에고 덱" />
+                <SquareToggle active={filterOwnedIdentity} label={t('filters.collectionIdentity')} onClick={onToggleFilterOwnedIdentity} ariaLabel={t('filters.ownedIdentityDeck')} />
+                <SquareToggle active={filterOwnedEgo} label={t('filters.collectionEgo')} onClick={onToggleFilterOwnedEgo} ariaLabel={t('filters.ownedEgoDeck')} />
                 <button
                   onClick={onClearCollection}
                   className="col-span-2 rounded transition-colors hover:bg-white/5"
                   style={{ minHeight: '2rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
                 >
-                  초기화
+                  {t('filters.clear')}
                 </button>
               </div>
             ) : (
@@ -959,7 +1237,7 @@ export default function DeckListFilters({
                     value={codeInput}
                     onChange={e => { onCodeInputChange(e.target.value) }}
                     onKeyDown={e => { if (e.key === 'Enter') onApplyCode() }}
-                    placeholder="보유 현황 URL 또는 코드"
+                    placeholder={t('filters.collectionCodePlaceholder')}
                     className="min-w-0 flex-1 rounded px-2 py-1.5 outline-none"
                     style={{
                       minHeight: '2.25rem',
@@ -969,7 +1247,7 @@ export default function DeckListFilters({
                       fontFamily: 'var(--font-body)',
                       fontSize: '0.875rem',
                     }}
-                    aria-label="보유 현황 URL 또는 코드"
+                    aria-label={t('filters.collectionCodeLabel')}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -987,11 +1265,11 @@ export default function DeckListFilters({
                       cursor: 'pointer',
                     }}
                   >
-                    적용
+                    {t('filters.apply')}
                   </button>
                   {codeError && (
                     <span style={{ color: '#c85050', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
-                      잘못된 코드
+                      {t('filters.invalidCode')}
                     </span>
                   )}
                 </div>
@@ -1000,6 +1278,10 @@ export default function DeckListFilters({
           </div>
         )}
       </section>
+
+      <Divider />
+
+      <LanguageFilter value={languageFilter} onChange={onLanguageFilterChange} />
     </div>
   )
 
@@ -1011,7 +1293,7 @@ export default function DeckListFilters({
           width: '16rem',
           borderRight: '1px solid rgba(200,144,10,0.18)',
         }}
-        aria-label="덱 필터"
+        aria-label={t('filters.aside')}
       >
         {filterSurface}
       </aside>
@@ -1030,7 +1312,7 @@ export default function DeckListFilters({
           }}
         >
           <SlidersHorizontal size={17} />
-          필터{totalActiveCount > 0 ? ` (${totalActiveCount})` : ''}
+          {t('filters.button')}{totalActiveCount > 0 ? ` (${totalActiveCount})` : ''}
         </button>
       </div>
 
@@ -1039,12 +1321,12 @@ export default function DeckListFilters({
           className="fixed inset-0 z-50 lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="덱 필터 패널"
+          aria-label={t('filters.panel')}
         >
           <button
             className="absolute inset-0 h-full w-full bg-black/60"
             onClick={() => setMobileOpen(false)}
-            aria-label="필터 패널 닫기"
+            aria-label={t('filters.closePanel')}
           />
           <div
             ref={panelRef}
@@ -1065,13 +1347,13 @@ export default function DeckListFilters({
               }}
             >
               <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
-                FILTERS
+                {t('filters.button').toUpperCase()}
               </span>
               <button
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-center rounded transition-colors hover:bg-white/5"
                 style={{ width: '2.75rem', height: '2.75rem', cursor: 'pointer', color: '#9a938a' }}
-                aria-label="필터 닫기"
+                aria-label={t('filters.close')}
               >
                 <X size={20} />
               </button>

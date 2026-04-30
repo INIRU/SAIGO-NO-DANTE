@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
 import { useRouter, usePathname } from '@/lib/i18n/navigation'
@@ -28,8 +28,18 @@ interface Props {
 
 type Tab = 'identities' | 'ego'
 type OwnershipFilter = 'all' | 'owned' | 'unowned'
+type IdentityWithRepresentativeKeywords = Identity & {
+  skill_keyword_list?: string[] | null
+  keywords?: string[] | null
+}
 
 const LOCAL_STORAGE_KEY = 'limbus-collection'
+
+function getRepresentativeKeywords(identity: IdentityWithRepresentativeKeywords) {
+  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
+    ? identity.skill_keyword_list
+    : (identity.keywords ?? [])
+}
 
 const getEgoReleaseTime = (ego: EGO) => {
   if (!ego.release_date) return null
@@ -137,8 +147,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const keywordStats = useMemo(() => {
     const freq = new Map<string, number>()
     for (const i of identities) {
-      if (!i.keywords) continue
-      for (const kw of i.keywords) {
+      const keywords = getRepresentativeKeywords(i)
+      if (keywords.length === 0) continue
+      for (const kw of keywords) {
         freq.set(kw, (freq.get(kw) ?? 0) + 1)
       }
     }
@@ -189,12 +200,12 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         i.name_kr.toLowerCase().includes(q) ||
         i.name.toLowerCase().includes(q) ||
         (i.affiliation && i.affiliation.toLowerCase().includes(q)) ||
-        (i.keywords && i.keywords.some(kw => kw.toLowerCase().startsWith(q)))
+        getRepresentativeKeywords(i).some(kw => kw.toLowerCase().startsWith(q))
       )
     }
     if (selectedKeywords.size > 0) {
       result = result.filter(i =>
-        i.keywords && [...selectedKeywords].every(kw => i.keywords.includes(kw))
+        [...selectedKeywords].every(kw => getRepresentativeKeywords(i).includes(kw))
       )
     }
     if (ownershipFilter !== 'all' && ownedIds) {
