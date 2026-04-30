@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -27,16 +27,16 @@ import {
   type IdentityDetail,
   type IdentitySlot,
 } from '@/components/deck-detail/DeckIdentityCard'
-import DeckIdentityPreviewModal from '@/components/deck-detail/DeckIdentityPreviewModal'
 import IdentityCard from '@/components/sinners/IdentityCard'
 import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
-import EgoDetailModal from '@/components/ui/EgoDetailModal'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
+const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
+const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 
 const postedDeckViews = new Set<string>()
 
@@ -105,6 +105,7 @@ const BACKUP_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-backup-banner.webp`
 const BOARD_SLOT_COUNT = 12
 const FRONTLINE_SLOT_COUNT = 7
 const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
+const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 type AttackType = 'slash' | 'pierce' | 'blunt'
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
@@ -671,31 +672,19 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     window.location.href = `/decks/new?fork=${id}`
   }, [id])
 
-  if (loading) return <Skeleton />
-
-  if (!deck) {
-    return (
-      <div className="min-h-[100dvh] pt-24 flex items-center justify-center">
-        <div className="text-center">
-          <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
-          <Link href="/decks" style={{ color: '#888888' }} className="hover:text-yellow-300 transition-colors">
-            {t('backToBoard')}
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   // 정렬
-  const sorted = [...deck.deck_identities].sort((a, b) => {
-    if (a.slot_order === 99 && b.slot_order !== 99) return 1
-    if (b.slot_order === 99 && a.slot_order !== 99) return -1
-    return a.slot_order - b.slot_order
-  })
-  const boardSlots = buildBoardSlots(sorted)
-  const keywords = topKeywords(sorted)
-  const filledSlots = sorted.filter(s => s.identities)
-  const localizedFilledSlots = filledSlots.map(slot => {
+  const sorted = useMemo(() => {
+    if (!deck) return []
+    return [...deck.deck_identities].sort((a, b) => {
+      if (a.slot_order === 99 && b.slot_order !== 99) return 1
+      if (b.slot_order === 99 && a.slot_order !== 99) return -1
+      return a.slot_order - b.slot_order
+    })
+  }, [deck?.deck_identities])
+  const boardSlots = useMemo(() => buildBoardSlots(sorted), [sorted])
+  const keywords = useMemo(() => topKeywords(sorted), [sorted])
+  const filledSlots = useMemo(() => sorted.filter(s => s.identities), [sorted])
+  const localizedFilledSlots = useMemo(() => filledSlots.map(slot => {
     const identity = slot.identities
     if (!identity) return slot
     return {
@@ -710,49 +699,70 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         })),
       },
     }
-  })
-  const formedSlots = filledSlots.filter(s => s.slot_order < 99)
-  const customSkillSlots = formedSlots.filter(s => {
+  }), [filledSlots, locale])
+  const formedSlots = useMemo(() => filledSlots.filter(s => s.slot_order < 99), [filledSlots])
+  const customSkillSlots = useMemo(() => formedSlots.filter(s => {
     const s1 = s.s1_count ?? 3, s2 = s.s2_count ?? 2, s3 = s.s3_count ?? 1
     return !(s1 === 3 && s2 === 2 && s3 === 1)
-  })
+  }), [formedSlots])
 
   // 죄악 자원 & 공격 유형
-  const sinAffinityTotals = buildSinProductionTotals(formedSlots)
-  const egoCostTotals = buildEgoCostTotals(deck.deck_egos)
-  const atkTypeTotals = buildAttackTypeTotals(formedSlots, deck.deck_egos)
+  const sinAffinityTotals = useMemo(() => buildSinProductionTotals(formedSlots), [formedSlots])
+  const egoCostTotals = useMemo(() => buildEgoCostTotals(deck?.deck_egos), [deck?.deck_egos])
+  const atkTypeTotals = useMemo(() => buildAttackTypeTotals(formedSlots, deck?.deck_egos), [formedSlots, deck?.deck_egos])
 
   // EGO 그룹핑
-  const gradeOrder = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-  const egoGrouped: Record<string, EgoEntry[]> = {}
-  for (const row of deck.deck_egos ?? []) {
-    if (!row.ego) continue
-    const sid = row.ego.sinner_id
-    ;(egoGrouped[sid] ??= []).push({ grade: row.grade, ego: row.ego })
-  }
-  for (const sid of Object.keys(egoGrouped)) {
-    egoGrouped[sid].sort((a, b) => gradeOrder.indexOf(a.grade) - gradeOrder.indexOf(b.grade))
-  }
-  const egoSinnerIds = Object.keys(egoGrouped)
+  const egoGrouped = useMemo(() => {
+    const grouped: Record<string, EgoEntry[]> = {}
+    for (const row of deck?.deck_egos ?? []) {
+      if (!row.ego) continue
+      const sid = row.ego.sinner_id
+      ;(grouped[sid] ??= []).push({ grade: row.grade, ego: row.ego })
+    }
+    for (const sid of Object.keys(grouped)) {
+      grouped[sid].sort((a, b) => EGO_GRADE_ORDER.indexOf(a.grade) - EGO_GRADE_ORDER.indexOf(b.grade))
+    }
+    return grouped
+  }, [deck?.deck_egos])
+  const egoSinnerIds = useMemo(() => Object.keys(egoGrouped), [egoGrouped])
 
   // 수감자별 그룹핑
-  const slotsBySinner = filledSlots.reduce<Record<string, IdentitySlot[]>>((acc, slot) => {
+  const slotsBySinner = useMemo(() => filledSlots.reduce<Record<string, IdentitySlot[]>>((acc, slot) => {
     const sid = slot.identities!.sinner_id
     ;(acc[sid] ??= []).push(slot)
     return acc
-  }, {})
-  const sinnerIds = [
+  }, {}), [filledSlots])
+  const sinnerIds = useMemo(() => [
     ...Object.keys(slotsBySinner),
     ...egoSinnerIds.filter(sid => !slotsBySinner[sid]),
   ].sort((a, b) => {
     const ai = SINNER_ORDER.indexOf(a as typeof SINNER_ORDER[number])
     const bi = SINNER_ORDER.indexOf(b as typeof SINNER_ORDER[number])
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-  })
+  }), [egoSinnerIds, slotsBySinner])
 
   const activeSinner = selectedSinner ?? sinnerIds[0] ?? null
 
-  const date = deck.created_at.slice(0, 10).replace(/-/g, '.')
+  const date = deck ? deck.created_at.slice(0, 10).replace(/-/g, '.') : ''
+  const noteLookups = useMemo(
+    () => buildNoteLookups(sorted, deck?.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`)),
+    [deck?.all_sinner_egos, locale, rootT, sorted],
+  )
+
+  if (loading) return <Skeleton />
+
+  if (!deck) {
+    return (
+      <div className="min-h-[100dvh] pt-24 flex items-center justify-center">
+        <div className="text-center">
+          <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
+          <Link href="/decks" style={{ color: '#888888' }} className="hover:text-yellow-300 transition-colors">
+            {t('backToBoard')}
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   // 공통 props for header components
   const headerProps = {
@@ -978,7 +988,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                     {deck.description && (
                       <NoteRenderer
                         text={deck.description}
-                        {...buildNoteLookups(sorted, deck.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`))}
+                        {...noteLookups}
                         egoGiftLookup={egoGiftLookup}
                       />
                     )}
@@ -1052,14 +1062,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
       )}
-      <DeckIdentityPreviewModal
-        open={!!identityPreview?.slot.identities}
-        slot={identityPreview?.slot ?? null}
-        egos={identityPreview?.slot.identities ? egoGrouped[identityPreview.slot.identities.sinner_id] : []}
-        keywordMeta={keywordMeta}
-        onEgoClick={setEgoModalId}
-        onClose={() => setIdentityPreview(null)}
-      />
+      {identityPreview?.slot.identities && (
+        <DeckIdentityPreviewModal
+          open
+          slot={identityPreview.slot}
+          egos={egoGrouped[identityPreview.slot.identities.sinner_id] ?? []}
+          keywordMeta={keywordMeta}
+          onEgoClick={setEgoModalId}
+          onClose={() => setIdentityPreview(null)}
+        />
+      )}
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}

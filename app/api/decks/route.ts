@@ -7,7 +7,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
-import { parseSearchQuery, termMatchesAny } from '@/lib/utils/search'
+import { parseSearchQuery, type ParsedSearch } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -16,7 +16,24 @@ const ADVANCED_FILTER_CANDIDATE_LIMIT = 1000
 const SUPPORTED_DECK_LANGS = ['ko', 'en', 'ja'] as const
 const MODE_VALUES = ['or', 'and'] as const
 const PINNED_DECK_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '호흡', '진동', '침잠', '충전', '출혈']
+const PINNED_DECK_KEYWORD_SET = new Set<string>(PINNED_DECK_KEYWORDS)
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
+const DECK_LIST_FILTER_BASE_SELECT = `
+        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        profiles!decks_user_id_fkey(username)
+      `
+const DECK_LIST_FILTER_SELECT_WITH_SKILL_KEYWORDS = `
+        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        profiles!decks_user_id_fkey(username),
+        deck_identities(slot_order, identities(id, keywords, skill_keyword_list)),
+        deck_egos(grade)
+      `
+const DECK_LIST_FILTER_SELECT_LEGACY = `
+        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        profiles!decks_user_id_fkey(username),
+        deck_identities(slot_order, identities(id, keywords)),
+        deck_egos(grade)
+      `
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
         id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
@@ -67,6 +84,8 @@ type DeckListRow = {
 }
 type AdvancedDeckFilters = {
   q: string
+  parsedSearch: ParsedSearch
+  searchTermsLower: string[]
   contentType: string | null
   tags: string[]
   mainKeywords: string[]
@@ -79,10 +98,9 @@ type AdvancedDeckFilters = {
   identityMode: FilterMode
 }
 type DeckFilterIndex = {
-  searchValues: string[]
-  mainKeywords: string[]
-  keywordTags: string[]
-  identityIds: string[]
+  mainKeywords: Set<string>
+  keywordTags: Set<string>
+  identityIds: Set<string>
   formationCount: number
   infoScore: number
 }
@@ -166,8 +184,12 @@ function parseAdvancedDeckFilters(searchParams: URLSearchParams): { value: Advan
   )
   if ('error' in minInfoScoreResult) return minInfoScoreResult
 
+  const q = searchParams.get('q')?.trim() ?? ''
+  const parsedSearch = parseSearchQuery(q)
   const value = {
-    q: searchParams.get('q')?.trim() ?? '',
+    q,
+    parsedSearch,
+    searchTermsLower: parsedSearch.terms.map(term => term.toLowerCase()),
     contentType: getParam(searchParams, 'content_type', 'ct')?.trim() || null,
     tags: parseCsvParam(searchParams.get('tags')),
     mainKeywords: parseCsvParam(getParam(searchParams, 'main_keywords', 'kw')),
@@ -239,17 +261,16 @@ function getIdentityKeywords(identity: NonNullable<DeckIdentityRow['identities']
 }
 
 function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
-  const formed = (deck.deck_identities ?? []).filter(slot => (slot.slot_order ?? 99) !== 99 && slot.identities)
-  const formationCount = formed.length
-  const identityIds = (deck.deck_identities ?? [])
-    .map(slot => slot.identities?.id)
-    .filter((id): id is string => Boolean(id))
   const keywordTags = new Set<string>()
+  const identityIds = new Set<string>()
   const mainKeywordFrequency: Record<string, number> = {}
+  let formationCount = 0
 
-  for (const slot of formed) {
+  for (const slot of deck.deck_identities ?? []) {
     const identity = slot.identities
-    if (!identity) continue
+    if (identity?.id) identityIds.add(identity.id)
+    if ((slot.slot_order ?? 99) === 99 || !identity) continue
+    formationCount++
 
     for (const rawKeyword of getIdentityKeywords(identity)) {
       const keyword = rawKeyword.trim()
@@ -258,7 +279,7 @@ function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
 
       const normalized = normalizeThemeKeyword(keyword)
       if (THEME_KEYWORD_SET.has(normalized)) keywordTags.add(normalized)
-      if (PINNED_DECK_KEYWORDS.includes(normalized)) {
+      if (PINNED_DECK_KEYWORD_SET.has(normalized)) {
         mainKeywordFrequency[normalized] = (mainKeywordFrequency[normalized] ?? 0) + 1
       }
     }
@@ -274,7 +295,7 @@ function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
 
   for (const rawTag of deck.tags ?? []) {
     const normalized = normalizeThemeKeyword(rawTag.trim())
-    if (PINNED_DECK_KEYWORDS.includes(normalized)) mainKeywords.add(normalized)
+    if (PINNED_DECK_KEYWORD_SET.has(normalized)) mainKeywords.add(normalized)
   }
 
   const hasFormationOrder = formationCount > 0
@@ -285,43 +306,51 @@ function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
   const hasDescription = (deck.description?.trim().length ?? 0) >= 20
 
   return {
-    searchValues: [
-      deck.title,
-      deck.description ?? '',
-      getProfileUsername(deck),
-      ...(deck.tags ?? []),
-    ],
-    mainKeywords: [...mainKeywords],
-    keywordTags: [...keywordTags],
+    mainKeywords,
+    keywordTags,
     identityIds,
     formationCount,
     infoScore: Number(hasFormationOrder) + Number(hasNonDefaultEgo) + Number(hasDescription),
   }
 }
 
-function matchesMode(required: string[], available: string[], mode: FilterMode) {
+function matchesMode(required: string[], available: Set<string>, mode: FilterMode) {
   if (required.length === 0) return true
   return mode === 'and'
-    ? required.every(item => available.includes(item))
-    : required.some(item => available.includes(item))
+    ? required.every(item => available.has(item))
+    : required.some(item => available.has(item))
+}
+
+function deckMatchesSearch(deck: DeckListRow, filters: AdvancedDeckFilters) {
+  if (filters.searchTermsLower.length === 0) return true
+  const searchText = [
+    deck.title,
+    deck.description ?? '',
+    getProfileUsername(deck),
+    ...(deck.tags ?? []),
+  ].join('\n').toLowerCase()
+
+  return filters.parsedSearch.mode === 'and'
+    ? filters.searchTermsLower.every(term => searchText.includes(term))
+    : filters.searchTermsLower.some(term => searchText.includes(term))
+}
+
+function needsDeckFilterIndex(filters: AdvancedDeckFilters) {
+  return filters.mainKeywords.length > 0 ||
+    filters.keywordTags.length > 0 ||
+    filters.formationCount !== null ||
+    filters.minInfoScore !== null ||
+    filters.identityIds.length > 0
 }
 
 function deckMatchesAdvancedFilters(deck: DeckListRow, filters: AdvancedDeckFilters) {
-  const index = buildDeckFilterIndex(deck)
-
   if (filters.contentType && deck.content_type !== filters.contentType) return false
-
-  if (filters.q) {
-    const parsed = parseSearchQuery(filters.q)
-    if (parsed.terms.length > 0) {
-      const matchesSearch = parsed.mode === 'and'
-        ? parsed.terms.every(term => termMatchesAny(term, index.searchValues))
-        : parsed.terms.some(term => termMatchesAny(term, index.searchValues))
-      if (!matchesSearch) return false
-    }
-  }
-
   if (filters.tags.length > 0 && !filters.tags.some(tag => (deck.tags ?? []).includes(tag))) return false
+  if (!deckMatchesSearch(deck, filters)) return false
+
+  if (!needsDeckFilterIndex(filters)) return true
+
+  const index = buildDeckFilterIndex(deck)
   if (!matchesMode(filters.mainKeywords, index.mainKeywords, filters.mainKeywordMode)) return false
   if (!matchesMode(filters.keywordTags, index.keywordTags, filters.keywordTagMode)) return false
   if (filters.formationCount !== null && index.formationCount !== filters.formationCount) return false
@@ -381,7 +410,7 @@ export async function GET(request: NextRequest) {
       deckIds = [...new Set(matches.map(m => m.deck_id))]
     }
 
-    const buildQuery = (select: string, rangeStart: number, rangeEnd: number) => {
+    const buildQuery = (select: string, rangeStart?: number, rangeEnd?: number) => {
       let query = supabase
         .schema('limbus')
         .from('decks')
@@ -398,14 +427,25 @@ export async function GET(request: NextRequest) {
 
       if (deckIds) query = query.in('id', deckIds)
       if (lang !== 'all') query = query.eq('lang', lang)
-      return query.range(rangeStart, rangeEnd)
+      return typeof rangeStart === 'number' && typeof rangeEnd === 'number'
+        ? query.range(rangeStart, rangeEnd)
+        : query
     }
 
     const rangeStart = hasAdvancedFilters ? 0 : offset
     const rangeEnd = hasAdvancedFilters ? ADVANCED_FILTER_CANDIDATE_LIMIT - 1 : offset + limit - 1
-    let { data, error } = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS, rangeStart, rangeEnd)
+    const needsIndex = hasAdvancedFilters && needsDeckFilterIndex(advancedFilters)
+    const candidateSelect = needsIndex
+      ? DECK_LIST_FILTER_SELECT_WITH_SKILL_KEYWORDS
+      : hasAdvancedFilters
+        ? DECK_LIST_FILTER_BASE_SELECT
+        : DECK_LIST_SELECT_WITH_SKILL_KEYWORDS
+    let { data, error } = await buildQuery(candidateSelect, rangeStart, rangeEnd)
     if (isMissingSkillKeywordListError(error)) {
-      const legacyResult = await buildQuery(DECK_LIST_SELECT_LEGACY, rangeStart, rangeEnd)
+      const legacySelect = needsIndex
+        ? DECK_LIST_FILTER_SELECT_LEGACY
+        : DECK_LIST_SELECT_LEGACY
+      const legacyResult = await buildQuery(legacySelect, rangeStart, rangeEnd)
       data = legacyResult.data
       error = legacyResult.error
     }
@@ -415,11 +455,32 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = (data ?? []) as unknown as DeckListRow[]
-    const result = hasAdvancedFilters
-      ? rows.filter(deck => deckMatchesAdvancedFilters(deck, advancedFilters)).slice(offset, offset + limit)
-      : rows
+    if (!hasAdvancedFilters) {
+      return NextResponse.json(rows)
+    }
 
-    return NextResponse.json(result)
+    const pageIds = rows
+      .filter(deck => deckMatchesAdvancedFilters(deck, advancedFilters))
+      .slice(offset, offset + limit)
+      .map(deck => deck.id)
+
+    if (pageIds.length === 0) {
+      return NextResponse.json([])
+    }
+
+    let fullResult = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS)
+      .in('id', pageIds)
+    if (isMissingSkillKeywordListError(fullResult.error)) {
+      fullResult = await buildQuery(DECK_LIST_SELECT_LEGACY).in('id', pageIds)
+    }
+
+    if (fullResult.error) {
+      return NextResponse.json({ error: fullResult.error.message }, { status: 500 })
+    }
+
+    const fullRows = (fullResult.data ?? []) as unknown as DeckListRow[]
+    const fullRowsById = new Map(fullRows.map(deck => [deck.id, deck]))
+    return NextResponse.json(pageIds.map(id => fullRowsById.get(id)).filter(Boolean))
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })
