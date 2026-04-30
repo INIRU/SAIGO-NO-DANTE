@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react'
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryState, useQueryStates } from 'nuqs'
 import { useSession } from 'next-auth/react'
 import { type DeckSummary } from '@/components/decks/DeckCard'
@@ -26,6 +26,7 @@ import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const PINNED_DECK_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '호흡', '진동', '침잠', '충전', '출혈']
+const PINNED_DECK_KEYWORD_SET = new Set<string>(PINNED_DECK_KEYWORDS)
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
@@ -108,7 +109,7 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
       const kw = rawKeyword.trim()
       if (!kw) continue
       const normalized = normalizeThemeKeyword(kw)
-      if (isNewFormationSinner && PINNED_DECK_KEYWORDS.includes(normalized)) {
+      if (isNewFormationSinner && PINNED_DECK_KEYWORD_SET.has(normalized)) {
         freq[normalized] = (freq[normalized] ?? 0) + 1
       }
     }
@@ -243,6 +244,9 @@ export default function DecksClient({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const initialDataKey = useRef<string | null>(hasServerInitialDecks ? `${initialSort}:${initialLanguageFilter}` : null)
   const deckRequestId = useRef(0)
+  const loadMoreRequestId = useRef(0)
+  const loadMoreAbortRef = useRef<AbortController | null>(null)
+  const [, startTransition] = useTransition()
 
   // ── URL-synced state ──
   const [sortQuery, setSortQuery] = useQueryState('sort', parseAsString.withDefault('latest'))
@@ -378,11 +382,18 @@ export default function DecksClient({
   // ── Search debounce ──
   useEffect(() => {
     const t = setTimeout(() => {
-      void setSearch(inputValue || null, QUERY_OPTIONS)
+      const nextSearch = inputValue.trim()
+      if (nextSearch === search.trim()) {
+        setDebouncedSearch(inputValue)
+        return
+      }
+      startTransition(() => {
+        void setSearch(nextSearch || null, QUERY_OPTIONS)
+      })
       setDebouncedSearch(inputValue)
     }, 300)
     return () => clearTimeout(t)
-  }, [inputValue, setSearch])
+  }, [inputValue, search, setSearch, startTransition])
 
   // ── URL-synced filter state ──
   const [filterQuery, setFilterQuery] = useQueryStates({
@@ -535,25 +546,38 @@ export default function DecksClient({
   const loadMore = useCallback(() => {
     if (loading || refreshing || loadingMore || !hasMore) return
     setLoadingMore(true)
+    loadMoreAbortRef.current?.abort()
+    const requestId = loadMoreRequestId.current + 1
+    loadMoreRequestId.current = requestId
+    const controller = new AbortController()
+    loadMoreAbortRef.current = controller
     const requestSort = sort
     const requestDeckLanguage = deckLanguageParam
     const requestQueryKey = serverQueryKey
     const params = buildDeckSearchParams(decks.length)
-    fetch(`/api/decks?${params.toString()}`)
+    fetch(`/api/decks?${params.toString()}`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
-        if (latestSortRef.current !== requestSort || latestDeckLanguageRef.current !== requestDeckLanguage || latestServerQueryRef.current !== requestQueryKey) return
+        if (loadMoreRequestId.current !== requestId || latestSortRef.current !== requestSort || latestDeckLanguageRef.current !== requestDeckLanguage || latestServerQueryRef.current !== requestQueryKey) return
         if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => mergeDeckRows(prev, data.map(mapDeck)))
       })
-      .catch(e => console.error('덱 추가 로드 실패:', e))
+      .catch(e => {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        console.error('덱 추가 로드 실패:', e)
+      })
       .finally(() => {
-        if (latestSortRef.current === requestSort && latestDeckLanguageRef.current === requestDeckLanguage && latestServerQueryRef.current === requestQueryKey) setLoadingMore(false)
+        if (loadMoreRequestId.current === requestId) {
+          loadMoreAbortRef.current = null
+        }
+        if (loadMoreRequestId.current === requestId && latestSortRef.current === requestSort && latestDeckLanguageRef.current === requestDeckLanguage && latestServerQueryRef.current === requestQueryKey) setLoadingMore(false)
       })
   }, [sort, deckLanguageParam, serverQueryKey, buildDeckSearchParams, decks.length, loading, refreshing, loadingMore, hasMore])
 
   useEffect(() => {
+    loadMoreAbortRef.current?.abort()
+    loadMoreRequestId.current += 1
     setLoadingMore(false)
   }, [serverQueryKey])
 

@@ -122,6 +122,16 @@ type CurrentDeckForRecommendations = {
   }> | null
 }
 
+type RecommendationCandidate = {
+  deck: DeckRecommendationSummary
+  identityIds: Set<string>
+  identitySignature: string
+  formationSignature: string
+  egoSignature: string
+  themeKeywords: Set<string>
+  egoIds: Set<string>
+}
+
 const EMPTY_RECOMMENDATIONS: DeckRecommendationsData = {
   otherOpinions: [],
   similarDecks: [],
@@ -226,6 +236,39 @@ function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommenda
       .filter((ego): ego is { ego_id: string } => typeof ego.ego_id === 'string')
       .map((ego) => ({ ego_id: ego.ego_id })),
   }
+}
+
+function toRecommendationCandidate(deck: RecommendationSourceDeck): RecommendationCandidate | null {
+  const summary = toRecommendationSummary(deck)
+  const identityIds = buildIdentityIdSet(summary.deck_identities)
+  return {
+    deck: summary,
+    identityIds,
+    identitySignature: buildIdentitySetSignature(identityIds),
+    formationSignature: buildFormationSignature(summary.deck_identities),
+    egoSignature: buildEgoSignature(summary.deck_egos),
+    themeKeywords: buildThemeKeywordSet(summary.deck_identities),
+    egoIds: new Set((summary.deck_egos ?? []).map((ego) => ego.ego_id)),
+  }
+}
+
+function scoreRecommendationCandidate(
+  candidate: RecommendationCandidate,
+  currentIdentityIds: Set<string>,
+  currentThemeKeywords: Set<string>,
+  currentEgoIds: Set<string>,
+) {
+  const identityOverlap = intersectionSize(currentIdentityIds, candidate.identityIds)
+  const keywordOverlap = intersectionSize(currentThemeKeywords, candidate.themeKeywords)
+  const egoOverlap = intersectionSize(currentEgoIds, candidate.egoIds)
+  const score =
+    identityOverlap * 100 +
+    keywordOverlap * 24 +
+    egoOverlap * 8 +
+    Math.min(candidate.deck.vote_count, 50) * 0.2 +
+    recencyBoost(candidate.deck.created_at) * 4
+
+  return { score, identityOverlap, keywordOverlap }
 }
 
 function getRecommendationContentType(contentType: string | null | undefined): string | null {
@@ -400,41 +443,40 @@ async function fetchDeckRecommendations(
 
     if (candidateError) throw candidateError
 
-    const summaries = ((candidateRows ?? []) as unknown as RecommendationSourceDeck[])
-      .map(toRecommendationSummary)
-      .filter((deck) => deck.lang === lang && getRecommendationContentType(deck.content_type) === currentContentType)
-    const otherOpinions = summaries
-      .filter((deck) => {
-        if (getRecommendationContentType(deck.content_type) !== currentContentType) return false
-        const identitySignature = buildIdentitySetSignature(buildIdentityIdSet(deck.deck_identities))
-        if (identitySignature !== currentIdentitySignature) return false
-        const formationChanged = buildFormationSignature(deck.deck_identities) !== currentFormationSignature
-        const egoChanged = buildEgoSignature(deck.deck_egos) !== currentEgoSignature
+    const candidates = ((candidateRows ?? []) as unknown as RecommendationSourceDeck[])
+      .map(toRecommendationCandidate)
+      .filter((candidate): candidate is RecommendationCandidate => {
+        if (!candidate) return false
+        return (
+          candidate.deck.lang === lang &&
+          getRecommendationContentType(candidate.deck.content_type) === currentContentType
+        )
+      })
+    const otherOpinions = candidates
+      .filter((candidate) => {
+        if (candidate.identitySignature !== currentIdentitySignature) return false
+        const formationChanged = candidate.formationSignature !== currentFormationSignature
+        const egoChanged = candidate.egoSignature !== currentEgoSignature
         return formationChanged || egoChanged
       })
-      .sort((a, b) => b.vote_count - a.vote_count || Date.parse(b.created_at) - Date.parse(a.created_at))
+      .sort((a, b) => b.deck.vote_count - a.deck.vote_count || Date.parse(b.deck.created_at) - Date.parse(a.deck.created_at))
       .slice(0, OTHER_OPINIONS_LIMIT)
+      .map(({ deck }) => deck)
 
     const otherOpinionIds = new Set(otherOpinions.map((deck) => deck.id))
 
-    const similarDecks = summaries
-      .filter((deck) => !otherOpinionIds.has(deck.id))
-      .map((deck) => {
-        const identityOverlap = intersectionSize(currentIdentityIds, buildIdentityIdSet(deck.deck_identities))
-        const keywordOverlap = intersectionSize(currentThemeKeywords, buildThemeKeywordSet(deck.deck_identities))
-        const egoIds = new Set((deck.deck_egos ?? []).map((ego) => ego.ego_id))
-        const egoOverlap = intersectionSize(currentEgoIds, egoIds)
-        const score =
-          identityOverlap * 100 +
-          keywordOverlap * 24 +
-          egoOverlap * 8 +
-          Math.min(deck.vote_count, 50) * 0.2 +
-          recencyBoost(deck.created_at) * 4
+    const similarDecks = candidates
+      .filter((candidate) => !otherOpinionIds.has(candidate.deck.id))
+      .map((candidate) => {
+        const { score, identityOverlap, keywordOverlap } = scoreRecommendationCandidate(
+          candidate,
+          currentIdentityIds,
+          currentThemeKeywords,
+          currentEgoIds,
+        )
 
         return {
-          deck: {
-            ...deck,
-          },
+          deck: candidate.deck,
           score,
           identityOverlap,
           keywordOverlap,
