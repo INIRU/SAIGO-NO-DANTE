@@ -18,6 +18,7 @@ const MAX_CANDIDATE_DECKS = 96
 const MAX_EXACT_OVERLAP_CANDIDATES = 128
 const OTHER_OPINIONS_LIMIT = 3
 const SIMILAR_DECKS_LIMIT = 6
+const EMPTY_HERO_SLOTS: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
 
 function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
@@ -705,7 +706,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return getCachedDeckMetadata(lang, id)
 }
 
-export default async function DeckDetailPage({ params }: Props) {
+function DeckDetailFallback() {
+  return (
+    <>
+      <DeckHero slots={EMPTY_HERO_SLOTS} />
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
+          <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '20rem', marginBottom: '1rem' }} />
+          <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '10rem' }} />
+        </div>
+      </div>
+    </>
+  )
+}
+
+async function DeckDetailRuntime({ params }: Props) {
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   const {
@@ -734,5 +749,13 @@ export default async function DeckDetailPage({ params }: Props) {
         />
       </Suspense>
     </>
+  )
+}
+
+export default function DeckDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<DeckDetailFallback />}>
+      <DeckDetailRuntime params={params} />
+    </Suspense>
   )
 }
