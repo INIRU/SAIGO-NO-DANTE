@@ -443,6 +443,7 @@
       "type": {
         "default": "Default",
         "standard": "Extraction",
+        "limited": "Limited",
         "event": "Event",
         "walpurgis": "Walpurgis",
         "attendance": "Attendance"
@@ -450,9 +451,11 @@
       "gacha": {
         "always": "Standard",
         "seasonal": "Seasonal",
+        "pickup": "Target Extraction",
         "walpurgis": "Walpurgis Night",
         "none": "Not Available"
       },
+      "gachaBanner": "Banner",
       "walpurgisEdition": "Edition",
       "walpurgisLimited": "Walpurgis Night limited",
       "targetExtraction": "Rate-up",

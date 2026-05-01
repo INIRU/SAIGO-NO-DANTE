@@ -443,6 +443,7 @@
       "type": {
         "default": "기본",
         "standard": "추출",
+        "limited": "한정",
         "event": "이벤트",
         "walpurgis": "발푸르기스",
         "attendance": "출석"
@@ -450,9 +451,11 @@
       "gacha": {
         "always": "상시 추출",
         "seasonal": "시즌 한정",
+        "pickup": "특정 추출",
         "walpurgis": "발푸밤 한정",
         "none": "추출 불가"
       },
+      "gachaBanner": "배너",
       "walpurgisEdition": "회차",
       "walpurgisLimited": "발푸르기스밤 한정",
       "targetExtraction": "특정 추출",

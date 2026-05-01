@@ -443,6 +443,7 @@
       "type": {
         "default": "デフォルト",
         "standard": "抽出",
+        "limited": "限定",
         "event": "イベント",
         "walpurgis": "ヴァルプルギス",
         "attendance": "出席"
@@ -450,9 +451,11 @@
       "gacha": {
         "always": "常時抽出",
         "seasonal": "シーズン限定",
+        "pickup": "特定抽出",
         "walpurgis": "ヴァルプルギスの夜限定",
         "none": "抽出不可"
       },
+      "gachaBanner": "バナー",
       "walpurgisEdition": "回",
       "walpurgisLimited": "ヴァルプルギスの夜限定",
       "targetExtraction": "特定抽出",

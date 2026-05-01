@@ -30,12 +30,26 @@ function getAssociationChips(identity: Identity, locale: SupportedLang) {
   return identity.affiliation ? [getLocalizedAffiliation(identity.affiliation, locale)] : []
 }
 
+function getLocalizedGachaName(
+  info: NonNullable<Identity['acquisition_info']>,
+  locale: SupportedLang,
+) {
+  if (locale === 'en') return info.gacha_name_en ?? info.gacha_name ?? null
+  if (locale === 'ja') return info.gacha_name_jp ?? info.gacha_name ?? null
+  return info.gacha_name ?? null
+}
+
 export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7 }: IdentityInfoCardProps) {
   const { sinMap: kwSinMap } = useKeywordData()
   const kwAll = useKeywords()
   const t = useTranslations()
   const locale = useLocale()
   const associationChips = getAssociationChips(identity, locale as SupportedLang)
+  const representativeKeywords = identity.skill_keyword_list && identity.skill_keyword_list.length > 0
+    ? identity.skill_keyword_list
+    : (identity.keywords ?? [])
+  const specialChargeKeywords = representativeKeywords.filter(kw => SPECIAL_CHARGE_KEYWORDS.has(kw))
+  const sinKeywords = representativeKeywords.filter(kw => kwSinMap[kw])
   return (
     <div className="card p-6">
       <h2
@@ -66,11 +80,11 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
         </div>
 
         {/* 키워드 (메인 상태이상 + 특수 충전) */}
-        {identity.keywords && (identity.keywords.filter(kw => kwSinMap[kw]).length > 0 || identity.keywords.some(kw => SPECIAL_CHARGE_KEYWORDS.has(kw))) && (
+        {(sinKeywords.length > 0 || specialChargeKeywords.length > 0) && (
           <>
             <div style={{ width: '1px', height: '18px', background: 'var(--border)' }} />
             <div className="flex items-center gap-2 flex-wrap">
-              {identity.keywords.filter(kw => SPECIAL_CHARGE_KEYWORDS.has(kw)).map(kw => (
+              {specialChargeKeywords.map(kw => (
                 <KeywordWithTooltip key={kw} keyword={kw}>
                   <span
                     className="inline-flex items-center gap-1 text-xs font-semibold"
@@ -80,7 +94,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   </span>
                 </KeywordWithTooltip>
               ))}
-              {identity.keywords.filter(kw => kwSinMap[kw]).map(kw => {
+              {sinKeywords.map(kw => {
                 const kwColor = SIN_COLORS[kwSinMap[kw]] || '#888'
                 return (
                   <KeywordWithTooltip key={kw} keyword={kw}>
@@ -174,6 +188,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
             const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
               default:    { label: t('identity.info.type.default'),    color: '#8a8a8a', bg: 'rgba(138,138,138,0.12)' },
               standard:   { label: t('identity.info.type.standard'),   color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' },
+              limited:    { label: t('identity.info.type.limited'),    color: '#ffa502', bg: 'rgba(255,165,2,0.12)' },
               event:      { label: t('identity.info.type.event'),      color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' },
               walpurgis:  { label: t('identity.info.type.walpurgis'),  color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' },
               attendance: { label: t('identity.info.type.attendance'), color: '#a29bfe', bg: 'rgba(162,155,254,0.12)' },
@@ -181,12 +196,14 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
             const GACHA_LABELS: Record<string, { label: string; color: string }> = {
               always:   { label: t('identity.info.gacha.always'),    color: '#6bbbff' },
               seasonal: { label: t('identity.info.gacha.seasonal'),  color: '#ffa502' },
+              pickup:   { label: t('identity.info.gacha.pickup'),    color: '#ffa502' },
               walpurgis:{ label: t('identity.info.gacha.walpurgis'), color: '#7bed9f' },
               none:     { label: t('identity.info.gacha.none'),      color: '#999' },
             }
 
             const typeInfo = TYPE_LABELS[info.type] ?? TYPE_LABELS.standard
             const gachaInfo = GACHA_LABELS[info.gacha] ?? GACHA_LABELS.none
+            const gachaName = getLocalizedGachaName(info, locale as SupportedLang)
 
             return (
               <div className="space-y-2">
@@ -262,6 +279,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                       <span style={{ fontSize: '0.75rem', color: gachaInfo.color }}>
                         {gachaInfo.label}
                         {info.gacha === 'seasonal' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
+                        {info.gacha === 'pickup' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
                       </span>
                       {info.target_sinner && (
                         <span style={{ fontSize: '0.75rem', color: '#ffa502' }}>
@@ -272,11 +290,21 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   </div>
                 )}
 
+                {gachaName && (
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.gachaBanner')}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#bbb' }}>{gachaName}</span>
+                  </div>
+                )}
+
                 {/* 파편 교환 (자판기 + 파편 통합) */}
                 {info.fragment_cost && (() => {
                   const releaseSeason = Number(info.release_season ?? 0)
                   const diff = currentSeason - releaseSeason
-                  const isSeasonalOrEvent = info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')
+                  const isSeasonalOrEvent = info.gacha === 'seasonal'
+                    || info.gacha === 'pickup'
+                    || info.type === 'limited'
+                    || (info.type === 'event' && info.gacha === 'none')
                   const permanentExchangeSeason = info.exchange_from_season ?? (
                     isSeasonalOrEvent && releaseSeason > 0 ? releaseSeason + 2 : undefined
                   )

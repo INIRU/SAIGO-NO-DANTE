@@ -52,6 +52,9 @@ type EgoData = {
   keywords: string[] | null
   description: string | null
   corrosion_risk: string | null
+  obtaining_method: string | null
+  obtaining_method_en?: string | null
+  obtaining_method_jp?: string | null
 }
 
 type ApiResponse = {
@@ -97,6 +100,12 @@ function bestConstrue<T extends { construe_level: number | null; name: string }>
     }
   }
   return [...groups.values()]
+}
+
+function getLocalizedObtainingMethod(ego: EgoData, lang: SupportedLang): string | null {
+  if (lang === 'en') return ego.obtaining_method_en ?? ego.obtaining_method
+  if (lang === 'ja') return ego.obtaining_method_jp ?? ego.obtaining_method
+  return ego.obtaining_method
 }
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
@@ -197,6 +206,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
   const costs = SIN_ORDER
     .map(sin => ({ sin, amount: ego.costs?.[sin] ?? 0 }))
     .filter(c => c.amount > 0)
+  const obtainingMethod = getLocalizedObtainingMethod(ego, lang)
 
   return (
     <div>
@@ -280,6 +290,29 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
           </>
         )}
       </div>
+
+      {obtainingMethod && (
+        <Section title={t('ego.acquisition')}>
+          <div className="flex flex-wrap gap-1.5">
+            {obtainingMethod.split(/\s*\/\s*/).map((part, index) => (
+              <span
+                key={`${part}-${index}`}
+                className="rounded"
+                style={{
+                  color: index === 0 ? '#d8b768' : '#aaa',
+                  background: index === 0 ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: index === 0 ? '1px solid rgba(200,144,10,0.28)' : '1px solid rgba(255,255,255,0.08)',
+                  fontSize: '0.6875rem',
+                  lineHeight: 1.5,
+                  padding: '0.1875rem 0.5rem',
+                }}
+              >
+                {part}
+              </span>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* ── 패시브 섹션 ──────────────────────────────────────── */}
       {ego.passive_name && (
