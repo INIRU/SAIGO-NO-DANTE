@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Image from 'next/image'
 import {
   Identity,
@@ -36,7 +37,7 @@ interface Props {
   onOpenGiftModal: () => void
 }
 
-export default function DeckPreviewPanel({
+function DeckPreviewPanel({
   deckSlots, activatableGifts,
   contentType,
   showGiftPanel, setShowGiftPanel,
@@ -241,3 +242,5 @@ export default function DeckPreviewPanel({
     </>
   )
 }
+
+export default memo(DeckPreviewPanel)
