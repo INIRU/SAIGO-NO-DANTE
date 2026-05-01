@@ -638,6 +638,7 @@ export function NoteRenderer({
   egoGiftConditionLookup = {},
   inline,
   allowedKeywords,
+  textScale = 'default',
 }: {
   text: string
   skillLookup?: Record<string, NoteSkillEntry>
@@ -648,6 +649,7 @@ export function NoteRenderer({
   egoGiftConditionLookup?: Record<string, GiftConditionStatus | null>
   inline?: boolean
   allowedKeywords?: Set<string>
+  textScale?: 'default' | 'comfortable'
 }) {
   const formatSkillDesc = useFormatSkillDesc()
   const locale = useLocale()
@@ -983,5 +985,16 @@ export function NoteRenderer({
     i = j
   }
 
-  return <div style={{ fontSize: '0.9375rem', color: '#b0a898', lineHeight: 1.85, maxWidth: '72ch' }}>{blocks}</div>
+  return (
+    <div
+      style={{
+        fontSize: textScale === 'comfortable' ? '1rem' : '0.9375rem',
+        color: '#b0a898',
+        lineHeight: textScale === 'comfortable' ? 1.8 : 1.85,
+        maxWidth: '72ch',
+      }}
+    >
+      {blocks}
+    </div>
+  )
 }
