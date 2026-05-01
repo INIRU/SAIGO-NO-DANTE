@@ -60,12 +60,13 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
     let formationHave = 0, allHave = 0, label = ''
     if (cond.type === 'keyword' && cond.keyword) {
-      formationHave = formationKwCounts[cond.keyword] ?? 0
-      allHave = allKwCounts[cond.keyword] ?? 0
+      const normalizedKeyword = normalizeThemeKeyword(cond.keyword)
+      formationHave = formationKwCounts[normalizedKeyword] ?? 0
+      allHave = allKwCounts[normalizedKeyword] ?? 0
       label = cond.keyword
     } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      formationHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[kw] ?? 0), 0)
-      allHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[kw] ?? 0), 0)
+      formationHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
+      allHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
       label = cond.keywords.join('+')
     } else {
       return null

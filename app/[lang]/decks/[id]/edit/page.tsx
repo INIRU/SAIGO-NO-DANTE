@@ -23,18 +23,39 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
     session.user.image,
   )
 
-  // 덱 데이터 + 게임 데이터 병렬 fetch
-  const [deckRes, sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
-    admin
+  const deckSelectWithMainKeywords = `
+    id, user_id, title, description, tags, main_keywords, content_type,
+    deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
+    deck_egos(ego_id, grade)
+  `
+  const deckSelectLegacy = `
+    id, user_id, title, description, tags, content_type,
+    deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
+    deck_egos(ego_id, grade)
+  `
+  const loadDeck = async () => {
+    const result = await admin
       .schema('limbus')
       .from('decks')
-      .select(`
-        id, user_id, title, description, tags, content_type,
-        deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
-        deck_egos(ego_id, grade)
-      `)
+      .select(deckSelectWithMainKeywords)
       .eq('id', id)
-      .single(),
+      .single()
+
+    if (result.error && result.error.message.includes('main_keywords')) {
+      return admin
+        .schema('limbus')
+        .from('decks')
+        .select(deckSelectLegacy)
+        .eq('id', id)
+        .single()
+    }
+
+    return result
+  }
+
+  // 덱 데이터 + 게임 데이터 병렬 fetch
+  const [deckRes, sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
+    loadDeck(),
     getSinners(),
     getIdentities(),
     getEGOs(),
@@ -104,6 +125,9 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
         title: deck.title ?? '',
         description: deck.description ?? '',
         tags: deck.tags ?? [],
+        mainKeywords: Array.isArray((deck as Record<string, unknown>).main_keywords)
+          ? ((deck as Record<string, unknown>).main_keywords as string[])
+          : [],
         content_type: (deck as Record<string, unknown>).content_type as string ?? '없음',
         identitySlotIds,
         gacksungSlots,

@@ -93,6 +93,7 @@ type RecommendationSourceDeck = {
   title: string
   description: string | null
   tags: string[] | null
+  main_keywords?: string[] | null
   content_type: string | null
   vote_count: number | null
   view_count: number | null
@@ -111,6 +112,7 @@ type CurrentDeckForRecommendations = {
   id: string
   lang: string | null
   tags: string[] | null
+  main_keywords?: string[] | null
   content_type: string | null
   deck_identities: Array<{
     slot_order: number | null
@@ -429,7 +431,7 @@ async function fetchDeckRecommendations(
       .schema('limbus')
       .from('decks')
       .select(`
-        id, lang, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
+        id, lang, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung,
@@ -560,7 +562,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         .schema('limbus')
         .from('decks')
         .select(`
-          id, lang, user_id, title, description, tags, content_type, vote_count, view_count, created_at,
+          id, lang, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, created_at,
           profiles!decks_user_id_fkey(username),
           deck_identities(
             slot_order, gacksung, s1_count, s2_count, s3_count,

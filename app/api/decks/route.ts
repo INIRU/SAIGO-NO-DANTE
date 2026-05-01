@@ -9,23 +9,27 @@ import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
 import { parseSearchQuery, type ParsedSearch } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import {
+  DECK_MAIN_KEYWORDS,
+  computeDeckMainKeywordsFromSlots,
+  parseDeckMainKeywordsInput,
+} from '@/lib/decks/keyword-rules'
 
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 50
 const ADVANCED_FILTER_CANDIDATE_LIMIT = 1000
 const SUPPORTED_DECK_LANGS = ['ko', 'en', 'ja'] as const
 const MODE_VALUES = ['or', 'and'] as const
-const PINNED_DECK_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '호흡', '진동', '침잠', '충전', '출혈']
-const PINNED_DECK_KEYWORD_SET = new Set<string>(PINNED_DECK_KEYWORDS)
+const PINNED_DECK_KEYWORD_SET = new Set<string>(DECK_MAIN_KEYWORDS)
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const DECK_LIST_FILTER_BASE_SELECT = `
-        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username)
       `
 const DECK_LIST_FILTER_SELECT_WITH_SKILL_KEYWORDS = `
-        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
-        deck_identities(slot_order, identities(id, keywords, skill_keyword_list)),
+        deck_identities(slot_order, identities(id, keywords, skill_keyword_list, skills(atk_type, skill_type))),
         deck_egos(grade)
       `
 const DECK_LIST_FILTER_SELECT_LEGACY = `
@@ -35,7 +39,7 @@ const DECK_LIST_FILTER_SELECT_LEGACY = `
         deck_egos(grade)
       `
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
-        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
         deck_egos(ego_id, grade)
@@ -60,6 +64,10 @@ type DeckIdentityRow = {
     game_id?: string | null
     keywords?: string[] | null
     skill_keyword_list?: string[] | null
+    skills?: Array<{
+      atk_type?: string | null
+      skill_type?: string | null
+    }> | null
     name_kr?: string | null
   } | null
 }
@@ -72,6 +80,7 @@ type DeckListRow = {
   title: string
   description: string | null
   tags: string[] | null
+  main_keywords?: string[] | null
   content_type?: string | null
   lang?: DeckLang | null
   vote_count: number
@@ -245,8 +254,11 @@ function parseOffsetParam(value: string | null) {
   return { value: parsed }
 }
 
-function isMissingSkillKeywordListError(error: { message?: string } | null) {
-  return Boolean(error?.message?.includes('skill_keyword_list'))
+function isMissingDeckKeywordColumnError(error: { message?: string } | null) {
+  return Boolean(
+    error?.message?.includes('skill_keyword_list') ||
+    error?.message?.includes('main_keywords')
+  )
 }
 
 function getProfileUsername(deck: DeckListRow) {
@@ -263,7 +275,6 @@ function getIdentityKeywords(identity: NonNullable<DeckIdentityRow['identities']
 function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
   const keywordTags = new Set<string>()
   const identityIds = new Set<string>()
-  const mainKeywordFrequency: Record<string, number> = {}
   let formationCount = 0
 
   for (const slot of deck.deck_identities ?? []) {
@@ -279,18 +290,16 @@ function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
 
       const normalized = normalizeThemeKeyword(keyword)
       if (THEME_KEYWORD_SET.has(normalized)) keywordTags.add(normalized)
-      if (PINNED_DECK_KEYWORD_SET.has(normalized)) {
-        mainKeywordFrequency[normalized] = (mainKeywordFrequency[normalized] ?? 0) + 1
-      }
     }
   }
 
-  const minKeywordCount = formationCount <= 1 ? formationCount : Math.max(2, Math.ceil(formationCount * 0.4))
+  const persistedMainKeywords = (deck.main_keywords ?? [])
+    .map(keyword => normalizeThemeKeyword(keyword.trim()))
+    .filter(keyword => PINNED_DECK_KEYWORD_SET.has(keyword))
   const mainKeywords = new Set(
-    Object.entries(mainKeywordFrequency)
-      .filter(([, count]) => count >= minKeywordCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([keyword]) => keyword)
+    persistedMainKeywords.length > 0
+      ? persistedMainKeywords
+      : computeDeckMainKeywordsFromSlots(deck.deck_identities ?? [])
   )
 
   for (const rawTag of deck.tags ?? []) {
@@ -441,7 +450,7 @@ export async function GET(request: NextRequest) {
         ? DECK_LIST_FILTER_BASE_SELECT
         : DECK_LIST_SELECT_WITH_SKILL_KEYWORDS
     let { data, error } = await buildQuery(candidateSelect, rangeStart, rangeEnd)
-    if (isMissingSkillKeywordListError(error)) {
+    if (isMissingDeckKeywordColumnError(error)) {
       const legacySelect = needsIndex
         ? DECK_LIST_FILTER_SELECT_LEGACY
         : DECK_LIST_SELECT_LEGACY
@@ -470,7 +479,7 @@ export async function GET(request: NextRequest) {
 
     let fullResult = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS)
       .in('id', pageIds)
-    if (isMissingSkillKeywordListError(fullResult.error)) {
+    if (isMissingDeckKeywordColumnError(fullResult.error)) {
       fullResult = await buildQuery(DECK_LIST_SELECT_LEGACY).in('id', pageIds)
     }
 
@@ -502,6 +511,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
+    const mainKeywordsResult = parseDeckMainKeywordsInput(body?.main_keywords)
+    if ('error' in mainKeywordsResult) {
+      return NextResponse.json({ error: mainKeywordsResult.error }, { status: 400 })
+    }
     const lang = parseDeckMutationLang(body?.lang, body?.locale)
     // identitySlots: [{ identity_id, gacksung, slot_order }]
     // egoSlots: [{ ego_id, grade }]
@@ -522,7 +535,15 @@ export async function POST(request: NextRequest) {
     const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
-      .insert({ user_id: userId, title, description, tags: tags || [], content_type: content_type || '없음', lang })
+      .insert({
+        user_id: userId,
+        title,
+        description,
+        tags: tags || [],
+        main_keywords: mainKeywordsResult.value,
+        content_type: content_type || '없음',
+        lang,
+      })
       .select()
       .single()
 
@@ -570,6 +591,7 @@ export async function POST(request: NextRequest) {
       details: {
         contentType: deck.content_type,
         tagCount: Array.isArray(deck.tags) ? deck.tags.length : 0,
+        mainKeywordCount: mainKeywordsResult.value.length,
         identityCount: Array.isArray(identitySlots) ? identitySlots.length : 0,
         egoCount: Array.isArray(egoSlots) ? egoSlots.length : 0,
       },

@@ -96,7 +96,11 @@ npx tsx scripts/sync/mirror-dungeon-data.ts [options]
 [1/4] EGO 기프트 동기화 (syncGifts)
   - ego-gift-mirrordungeon*.txt 로드
   - KR 이름 매핑 (KR_EGOgift_*.txt)
-  - activation_condition 추출
+  - KR 효과 설명의 조건 문장에서 `activation_condition` 추출
+    - 예: `... 공격 스킬을 보유한 인격이 5인 이상` → `{ type: "keyword", keyword, count: 5 }`
+    - 예: `검계 소속 인격이 3인 이상` → `{ type: "affiliation", affiliation: "검계", count: 3 }`
+    - 예: `혈찬을 소모하는 스킬을 보유한 인격이 3인 이상` → `{ type: "skill", skill_condition: "혈찬 소모", count: 3 }`
+    - 추출 실패 시 기존 DB 값을 보존하며 null로 덮어쓰지 않음
   - DB upsert (ego_gifts)
 
 [2/4] 테마팩 동기화 (syncThemes)
@@ -301,6 +305,19 @@ npx tsx scripts/sync/identity-data.ts [options]
 - `identities.quote`: `PersonalityVoiceDlg/KR_Voice_*.json`의 첫 `get_${gameId}_*` 항목 `dlg`를 인격 획득 대사로 자동 반영한다. LCB 기본 인격을 포함해 소스 대사가 있으면 insert/update payload에 포함하며, 소스가 없는 경우 기존 DB 값을 null로 덮지 않는다.
 - `identities.keywords`: `skillKeywordList`, `unitKeywordList`, `buffKeyword`, 패시브/스킬 본문 태그까지 모은 전체 키워드 매핑. 기존처럼 보호 필드이며, 기존 인격은 `--keywords`를 함께 줄 때만 업데이트한다.
 - migration 적용 전 환경에서는 새 배열 컬럼 select가 실패하면 해당 컬럼을 제외하고 재시도해 dry-run 비교를 계속한다. 실제 반영은 `supabase/migrations/*_add_identity_skill_keyword_list.sql` 적용 후 실행한다.
+
+### 덱 상시 키워드 백필
+
+```bash
+npx tsx scripts/backfill-deck-main-keywords.ts --dry-run
+npx tsx scripts/backfill-deck-main-keywords.ts --fix
+```
+
+- 대상 컬럼: `decks.main_keywords` (`text[]`, 최대 5개, 고정 키워드 집합)
+- 기본 백필은 편성 순서 1~7(`deck_identities.slot_order` 0~6)만 집계하며, 대기/미배정(`slot_order` 7~11/99)은 제외한다.
+- 화상/파열/침잠/호흡/진동/충전/출혈은 `identities.skill_keyword_list`만 사용한다. `identities.keywords`는 넓은 추출 필드이므로 덱 상시 키워드 조건 판정에 사용하지 않는다.
+- 참격/관통/타격은 허용된 `main_keywords` 값이지만 자동 백필/추천 집계에 포함하지 않는다. 이 세 키워드는 덱 빌더에서 사용자가 직접 선택한 경우에만 저장한다.
+- `--fix`는 dry-run 결과 확인 후 사용자 승인받고 실행한다.
 
 ---
 

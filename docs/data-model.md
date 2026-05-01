@@ -462,7 +462,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 
 - RLS: 모든 사용자 읽기 가능
 - 인덱스: `keyword`, `grade`
-- sync: `scripts/sync-ego-gifts.mjs`
+- sync: `scripts/sync/mirror-dungeon-data.ts`
 
 ---
 
@@ -722,6 +722,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 | `title` | TEXT | NOT NULL | 덱 제목 |
 | `description` | TEXT | | 덱 설명 |
 | `tags` | TEXT[] | DEFAULT `{}` | 태그 배열 |
+| `main_keywords` | TEXT[] | NOT NULL, DEFAULT `{}`, CHECK max 5 | 덱 카드/필터용 상시 키워드. 현재 허용값: 참격, 관통, 타격, 화상, 파열, 침잠, 호흡, 진동, 충전, 출혈 |
 | `vote_count` | INT | DEFAULT 0 | 좋아요 수 |
 | `view_count` | INT | DEFAULT 0 | 조회 수 |
 | `created_at` | TIMESTAMPTZ | DEFAULT now() | |
@@ -733,6 +734,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 
 - RLS: 모든 사용자 읽기, 로그인 유저 생성, 본인만 수정/삭제
 - RPC: `increment_vote`, `decrement_vote`, `increment_view`, `increment_comment`, `decrement_comment`
+- `main_keywords` 자동 백필/추천 계산은 `deck_identities.slot_order` 0~6(편성 1~7)만 사용한다. 자동 집계 대상은 `identities.skill_keyword_list`의 상태 키워드(화상/파열/침잠/호흡/진동/충전/출혈)뿐이다. 참격/관통/타격은 허용값이지만 사용자 수동 선택으로만 저장한다.
 
 ---
 
