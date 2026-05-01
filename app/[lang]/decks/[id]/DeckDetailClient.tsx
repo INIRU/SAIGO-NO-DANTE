@@ -12,8 +12,9 @@ import { showSuccess, showError } from '@/lib/toast'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
 import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
-import type { Identity } from '@/lib/types'
-import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import type { Identity, Skill } from '@/lib/types'
+import { computeFormationGiftKeywordCounts, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
+import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
 import {
@@ -32,6 +33,7 @@ import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
+import { getGiftActivationConditionStatus } from '@/components/planner/PlannerGiftModal'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
@@ -337,6 +339,12 @@ function uniqueNames(...names: Array<string | null | undefined>): string[] {
   return [...new Set(names.map(name => name?.trim()).filter((name): name is string => Boolean(name)))]
 }
 
+function getNoteSkillBaseOrder(skill: Pick<IdentityDetail['skills'][number], 'skill_order' | 'skill_type'>): number {
+  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
+  if (skill.skill_order >= 5) return 3
+  return skill.skill_order
+}
+
 function buildNoteLookups(
   slots: IdentitySlot[],
   allEgos: SinnerEgo[],
@@ -346,6 +354,7 @@ function buildNoteLookups(
   const skillLookup: Record<string, NoteSkillEntry> = {}
   const passiveLookup: Record<string, NotePassiveEntry> = {}
   const egoLookup: Record<string, NoteEgoEntry> = {}
+  const identityLookup: Record<string, NoteIdentityEntry> = {}
 
   for (const slot of slots) {
     const id_ = slot.identities
@@ -354,6 +363,22 @@ function buildNoteLookups(
     const localizedSinnerName = localizeSinnerName(id_.sinner_id)
     const sinnerTokenNames = uniqueNames(koreanSinnerName, localizedSinnerName)
     const identityName = localizeIdentityName(id_, locale)
+    const identityImageUrl = id_.game_id && id_.folder_name
+      ? `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${id_.folder_name}/${id_.game_id}_normal_info.webp`
+      : undefined
+
+    const identityEntry: NoteIdentityEntry = {
+      name: identityName,
+      rarity: id_.rarity,
+      imageUrl: identityImageUrl,
+      sinnerName: localizedSinnerName,
+      keywords: id_.keywords ?? undefined,
+    }
+    for (const sinnerName of sinnerTokenNames) {
+      for (const name of uniqueNames(id_.name_kr, id_.name, id_.name_en, id_.name_jp, identityName)) {
+        identityLookup[`${sinnerName}:${name}`] = identityEntry
+      }
+    }
 
     const rawSk = id_.skills ?? []
     const skBest = new Map<string, typeof rawSk[0]>()
@@ -363,11 +388,21 @@ function buildNoteLookups(
       if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(key, s)
     }
     const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
+    const frameSkills: Skill[] = sortedSkills.map(skill => ({
+      ...skill,
+      identity_id: id_.id,
+      sin_affinity: (normalizeSin(skill.sin_affinity) ?? 'wrath') as Skill['sin_affinity'],
+      description: localizeSkillDescription(skill, locale) ?? skill.description ?? '',
+      atk_weight: skill.atk_weight ?? undefined,
+      offense_level: skill.offense_level ?? undefined,
+      uptie_level: skill.uptie_level ?? undefined,
+      variant_order: skill.variant_order ?? undefined,
+    }))
+    const frameSkillById = new Map(frameSkills.map(skill => [skill.id, skill]))
     const imgIdx = computeSkillImageIndices(sortedSkills)
-    const atkSkills = sortedSkills.filter(sk => !['evade', 'defense', 'counter'].includes(sk.skill_type))
     const orderCount: Record<number, number> = {}
-    for (const sk of atkSkills) {
-      const baseOrder = sk.skill_order >= 5 ? 3 : sk.skill_order
+    for (const sk of sortedSkills) {
+      const baseOrder = getNoteSkillBaseOrder(sk)
       const subIdx = orderCount[baseOrder] || 0
       orderCount[baseOrder] = subIdx + 1
       const iconUrl = id_.game_id
@@ -377,14 +412,20 @@ function buildNoteLookups(
         name: localizeSkillName(sk, locale), skill_type: sk.atk_type ?? sk.skill_type, sin_affinity: sk.sin_affinity,
         skill_order: sk.skill_order, description: localizeSkillDescription(sk, locale),
         iconUrl, identityName, sinnerName: localizedSinnerName,
+        skill: frameSkillById.get(sk.id),
+        skills: frameSkills,
+        identity: { sinner_id: id_.sinner_id, game_id: id_.game_id },
       }
       for (const sinnerName of sinnerTokenNames) {
         const key = subIdx === 0
           ? `${sinnerName}:${baseOrder}`
-          : `${sinnerName}:${baseOrder}:${subIdx}`
+          : `${sinnerName}:${baseOrder}:${subIdx + 1}`
         skillLookup[key] = entry
-        // 이전 형식 호환: skill_order >= 5 였던 토큰도 인식
-        if (sk.skill_order >= 5) {
+        if (subIdx === 1) {
+          skillLookup[`${sinnerName}:${baseOrder}:1`] = entry
+        }
+        // 이전 형식 호환: S3 변형처럼 원래 skill_order로 저장된 토큰도 인식
+        if (sk.skill_order !== baseOrder) {
           skillLookup[`${sinnerName}:${sk.skill_order}`] = entry
         }
       }
@@ -401,7 +442,7 @@ function buildNoteLookups(
         name: localizePassiveName(pa, locale), sin_affinity: pa.sin_affinity,
         sin_count: pa.sin_count, active_cond: pa.active_cond,
         description: localizePassiveDescription(pa, locale), sinnerName: localizedSinnerName,
-        imageUrl: id_.game_id && id_.folder_name ? `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${id_.folder_name}/${id_.game_id}_normal_info.webp` : undefined,
+        imageUrl: identityImageUrl,
       }
       for (const passiveName of uniqueNames(pa.name, localizePassiveName(pa, locale))) {
         passiveLookup[passiveName] = entry
@@ -422,7 +463,7 @@ function buildNoteLookups(
       }
     }
   }
-  return { skillLookup, passiveLookup, egoLookup }
+  return { skillLookup, passiveLookup, egoLookup, identityLookup }
 }
 
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
@@ -748,6 +789,43 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     () => buildNoteLookups(sorted, deck?.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`)),
     [deck?.all_sinner_egos, locale, rootT, sorted],
   )
+  const egoGiftConditionLookup = useMemo(() => {
+    const activeFormationSlots = filledSlots.filter(slot => slot.slot_order >= 0 && slot.slot_order < FRONTLINE_SLOT_COUNT)
+    const deckKeywordSlots: DeckKeywordSlot[] = activeFormationSlots.map(slot => {
+      const identity = slot.identities
+      const keywordIdentity = identity as (IdentityDetail & { skill_keyword_list?: string[] | null }) | null
+      return {
+        slot_order: slot.slot_order,
+        identities: {
+          skill_keyword_list: keywordIdentity?.skill_keyword_list ?? identity?.keywords ?? [],
+          skills: (identity?.skills ?? []).map(skill => ({
+            skill_type: skill.skill_type,
+            atk_type: skill.atk_type ?? skill.skill_type,
+          })),
+        },
+      }
+    })
+    const formationKeywordCounts = computeFormationGiftKeywordCounts(deckKeywordSlots)
+    const formationAffiliationCounts: Record<string, number> = {}
+
+    for (const slot of activeFormationSlots) {
+      const affiliation = (slot.identities as { affiliation?: string | null } | null)?.affiliation
+      if (!affiliation) continue
+      formationAffiliationCounts[affiliation] = (formationAffiliationCounts[affiliation] ?? 0) + 1
+    }
+
+    const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
+    for (const gift of Object.values(egoGiftLookup)) {
+      map[gift.name] = getGiftActivationConditionStatus({
+        gift: { activation_condition: gift.activation_condition ?? null },
+        formationKeywordCounts,
+        allKeywordCounts: formationKeywordCounts,
+        formationAffiliationCounts,
+        allAffiliationCounts: formationAffiliationCounts,
+      })
+    }
+    return map
+  }, [egoGiftLookup, filledSlots])
 
   if (loading) return <Skeleton />
 
@@ -983,64 +1061,155 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 </section>
 
                 {/* 덱 노트 */}
-                {(deck.description || customSkillSlots.length > 0) && (
-                  <SectionBlock title={t('deckNote')} defaultOpen={true}>
-                    {deck.description && (
-                      <NoteRenderer
-                        text={deck.description}
-                        {...noteLookups}
-                        egoGiftLookup={egoGiftLookup}
-                      />
-                    )}
-                    {customSkillSlots.length > 0 && (
-                      <div style={{ marginTop: deck.description ? '0.75rem' : 0, borderTop: deck.description ? '1px solid rgba(32,20,8,0.5)' : 'none', paddingTop: deck.description ? '0.75rem' : 0 }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: '#8a6010', letterSpacing: '0.08em', fontWeight: 700 }}>{t('skillDistribution')}</span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {customSkillSlots.map((slot, i) => {
-                            const id_ = slot.identities!
-                            const identityName = localizeIdentityName(id_, locale)
-                            const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                            const rawSk2 = id_.skills ?? []
-                            const skBest2 = new Map<string, typeof rawSk2[0]>()
-                            for (const s of rawSk2) {
-                              if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
-                              const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-                              const ex = skBest2.get(key)
-                              if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
-                            }
-                            const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
-                            const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
-                            return (
-                              <div key={i} className="flex items-center gap-2 rounded px-2.5 py-1.5" style={{ background: 'rgba(200,144,10,0.04)', border: '1px solid rgba(200,144,10,0.15)' }}>
-                                <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem', objectFit: 'contain', opacity: 0.5, flexShrink: 0 }} />
-                                <span className="truncate" style={{ fontSize: '0.6875rem', color: '#a09080', fontFamily: 'var(--font-body)', minWidth: 0, flex: '0 1 auto', maxWidth: '7.5rem' }}>
-                                  {identityName}
-                                </span>
-                                <div style={{ flex: 1 }} />
-                                {[0, 1, 2].map(idx => {
-                                  const skill = sortedSk.find(s => s.skill_order === idx + 1)
-                                  const sc = skill ? sinColor(skill.sin_affinity) : '#888'
-                                  const iconUrl = skillIconBase ? `${skillIconBase}${String(idx + 1).padStart(2, '0')}.webp` : ''
-                                  return (
-                                    <div key={idx} className="flex items-center gap-1" style={{ minWidth: '42px' }}>
-                                      {iconUrl && (
-                                        <Image src={iconUrl} alt={`S${idx + 1}`} width={18} height={18} style={{ borderRadius: '3px', border: `1px solid ${sc}40` }} />
-                                      )}
-                                      <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: dist[idx] > 0 ? sc : '#2a2015' }}>
-                                        {dist[idx]}
-                                      </span>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )
-                          })}
-                        </div>
+                {deck.description?.trim() && (
+                  <>
+                    <style>{`
+                      .deck-detail-note-section{
+                        position:relative;
+                        overflow:hidden;
+                        border:1px solid rgba(200,144,10,.24);
+                        border-radius:.5rem;
+                        background:#14100c;
+                      }
+                      .deck-detail-note-section::before{
+                        content:"";
+                        position:absolute;
+                        left:0;
+                        top:0;
+                        bottom:0;
+                        width:.1875rem;
+                        background:#c8900a;
+                        opacity:.62;
+                      }
+                      .deck-detail-note-header{
+                        display:flex;
+                        align-items:center;
+                        justify-content:space-between;
+                        gap:.75rem;
+                        padding:1rem 1rem .75rem 1.125rem;
+                        border-bottom:1px solid rgba(200,144,10,.2);
+                      }
+                      .deck-detail-note-title{
+                        margin:0;
+                        color:#e4d3b0;
+                        font-family:var(--font-serif);
+                        font-size:1.125rem;
+                        font-weight:700;
+                        line-height:1.35;
+                        text-wrap:balance;
+                      }
+                      .deck-detail-note-body{
+                        padding:1rem 1.125rem 1.125rem;
+                      }
+                      .deck-detail-skill-mix{
+                        margin-top:1rem;
+                        border-top:1px solid rgba(200,144,10,.18);
+                        padding-top:.875rem;
+                      }
+                      .deck-detail-skill-mix-label{
+                        display:block;
+                        margin-bottom:.625rem;
+                        color:#c8900a;
+                        font-family:var(--font-mono);
+                        font-size:.875rem;
+                        font-weight:700;
+                        line-height:1.45;
+                      }
+                      .deck-detail-skill-mix-row{
+                        display:flex;
+                        align-items:center;
+                        gap:.625rem;
+                        min-height:2.75rem;
+                        border:1px solid rgba(200,144,10,.15);
+                        border-radius:.375rem;
+                        background:#100d0a;
+                        padding:.5rem .625rem;
+                      }
+                      .deck-detail-skill-mix-name{
+                        min-width:0;
+                        max-width:10rem;
+                        flex:0 1 auto;
+                        color:#b8a890;
+                        font-family:var(--font-body);
+                        font-size:.9375rem;
+                        line-height:1.45;
+                      }
+                      .deck-detail-skill-count{
+                        display:flex;
+                        align-items:center;
+                        gap:.25rem;
+                        min-width:2.75rem;
+                        justify-content:flex-end;
+                      }
+                      @media (max-width:40rem){
+                        .deck-detail-note-header{padding:.875rem .875rem .625rem 1rem}
+                        .deck-detail-note-body{padding:.875rem 1rem 1rem}
+                        .deck-detail-skill-mix-row{align-items:flex-start;flex-wrap:wrap}
+                        .deck-detail-skill-mix-name{max-width:calc(100% - 2rem)}
+                        .deck-detail-skill-count{justify-content:flex-start}
+                      }
+                    `}</style>
+                    <section className="deck-detail-note-section mb-5" aria-labelledby="deck-detail-note-title">
+                      <div className="deck-detail-note-header">
+                        <h2 id="deck-detail-note-title" className="deck-detail-note-title">{t('deckNote')}</h2>
                       </div>
-                    )}
-                  </SectionBlock>
+                      <div className="deck-detail-note-body">
+                        <NoteRenderer
+                          text={deck.description}
+                          {...noteLookups}
+                          egoGiftLookup={egoGiftLookup}
+                          egoGiftConditionLookup={egoGiftConditionLookup}
+                          textScale="comfortable"
+                        />
+                        {customSkillSlots.length > 0 && (
+                          <div className="deck-detail-skill-mix">
+                            <span className="deck-detail-skill-mix-label">{t('skillDistribution')}</span>
+                            <div className="flex flex-col gap-2">
+                              {customSkillSlots.map((slot, i) => {
+                                const id_ = slot.identities!
+                                const identityName = localizeIdentityName(id_, locale)
+                                const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
+                                const rawSk2 = id_.skills ?? []
+                                const skBest2 = new Map<string, typeof rawSk2[0]>()
+                                for (const s of rawSk2) {
+                                  if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
+                                  const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
+                                  const ex = skBest2.get(key)
+                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
+                                }
+                                const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
+                                const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
+                                return (
+                                  <div key={i} className="deck-detail-skill-mix-row">
+                                    <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain', opacity: 0.58, flexShrink: 0 }} />
+                                    <span className="deck-detail-skill-mix-name truncate">
+                                      {identityName}
+                                    </span>
+                                    <div style={{ flex: 1 }} />
+                                    {[0, 1, 2].map(idx => {
+                                      const skill = sortedSk.find(s => s.skill_order === idx + 1)
+                                      const sc = skill ? sinColor(skill.sin_affinity) : '#888'
+                                      const iconUrl = skillIconBase ? `${skillIconBase}${String(idx + 1).padStart(2, '0')}.webp` : ''
+                                      return (
+                                        <div key={idx} className="deck-detail-skill-count">
+                                          {iconUrl && (
+                                            <Image src={iconUrl} alt={`S${idx + 1}`} width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', borderRadius: '0.1875rem', border: `1px solid ${sc}40` }} />
+                                          )}
+                                          <span style={{ fontSize: '0.9375rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: dist[idx] > 0 ? sc : '#3a2d1d' }}>
+                                            {dist[idx]}
+                                          </span>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  </>
                 )}
 
                 {/* 패시브 패널 */}
