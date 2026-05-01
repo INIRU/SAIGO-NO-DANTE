@@ -6,6 +6,7 @@ import { type ActivationCondition } from '@/lib/data/sinners'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
+import { getLocalizedAffiliations } from '@/lib/i18n'
 
 export type EgoGiftEntry = {
   name: string
@@ -118,9 +119,10 @@ export default function DeckEgoGiftAccordion({
               <div className="flex flex-col gap-1">
                 {grouped[kw].map(g => {
                   const c = g.activation_condition!
+                  const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
                   const condLabel = c.type === 'keyword' ? t('egoGifts.conditionKeyword', { keyword: localizeDeckKeyword(c.keyword!, keywords[c.keyword!], locale), count: c.count })
                     : c.type === 'multi_keyword' ? t('egoGifts.conditionMultiKeyword', { keywords: c.keywords!.map(kw => localizeDeckKeyword(kw, keywords[kw], locale)).join('+'), count: c.count })
-                    : c.type === 'affiliation' ? t('egoGifts.conditionAffiliation', { affiliation: c.affiliation ?? c.affiliations!.join('/'), count: c.count })
+                    : c.type === 'affiliation' ? t('egoGifts.conditionAffiliation', { affiliation: getLocalizedAffiliations(affiliations, locale).join('/'), count: c.count })
                     : t('egoGifts.conditionCount', { count: c.count })
                   return (
                     <div key={g.name} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(200,144,10,0.06)' }}>

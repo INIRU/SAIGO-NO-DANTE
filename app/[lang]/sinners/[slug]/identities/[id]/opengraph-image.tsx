@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getIdentityById, getSinnerById } from '@/lib/db/queries'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { getLocalizedAffiliation, getLocalizedName } from '@/lib/i18n/localize'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import {
   OG_CONTENT_TYPE,
@@ -69,6 +69,7 @@ export default async function IdentityOgImage({
 
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const identityName = getLocalizedName(identity, lang)
+  const affiliation = identity.affiliation ? getLocalizedAffiliation(identity.affiliation, lang) : null
   const keywords = (identity.keywords ?? []).slice(0, 4)
   const rarity = `${'0'.repeat(Math.max(1, identity.rarity))}`
   const label = lang === 'en' ? 'IDENTITY ARCHIVE' : lang === 'ja' ? '人格アーカイブ' : '인격 아카이브'
@@ -195,9 +196,9 @@ export default async function IdentityOgImage({
             >
               {rarity}
             </span>
-            {identity.affiliation && (
+            {affiliation && (
               <span style={{ display: 'flex', color: 'rgba(244,234,213,0.62)', fontSize: 19 }}>
-                {identity.affiliation}
+                {affiliation}
               </span>
             )}
           </div>
