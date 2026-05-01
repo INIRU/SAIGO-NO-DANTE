@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import PageError from '@/components/ui/PageError'
 
 export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <PageError quote="이 덱이 말을 안 들어." subQuote="엔진이 과열된 것 같아." reset={reset} homeHref="/decks" homeLabel="덱 목록으로" />
+  const t = useTranslations('decks.detail')
+  return <PageError quote={t('errorQuote')} subQuote={t('errorSubQuote')} reset={reset} homeHref="/decks" homeLabel={t('errorHome')} />
 }

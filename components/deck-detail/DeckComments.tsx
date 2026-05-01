@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Trash2, Reply, X } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
@@ -25,6 +26,7 @@ type Props = {
 }
 
 export default function DeckComments({ deckId, initialComments }: Props) {
+  const t = useTranslations('decks.comments')
   const { status: authStatus } = useSession()
 
   const [comments, setComments] = useState<Comment[]>(initialComments)
@@ -52,14 +54,14 @@ export default function DeckComments({ deckId, initialComments }: Props) {
         setComments(prev => [...prev, comment])
         setCommentText('')
       } else {
-        showError('댓글 작성에 실패했습니다.')
+        showError(t('createFailed'))
       }
     } catch {
-      showError('댓글 작성에 실패했습니다.')
+      showError(t('createFailed'))
     } finally {
       setCommentSubmitting(false)
     }
-  }, [commentText, commentSubmitting, authStatus, deckId])
+  }, [commentText, commentSubmitting, authStatus, deckId, t])
 
   const handleReplySubmit = useCallback(async () => {
     if (!replyingTo || !replyText.trim() || commentSubmitting || authStatus !== 'authenticated') return
@@ -76,14 +78,14 @@ export default function DeckComments({ deckId, initialComments }: Props) {
         setReplyText('')
         setReplyingTo(null)
       } else {
-        showError('답글 작성에 실패했습니다.')
+        showError(t('replyFailed'))
       }
     } catch {
-      showError('답글 작성에 실패했습니다.')
+      showError(t('replyFailed'))
     } finally {
       setCommentSubmitting(false)
     }
-  }, [replyingTo, replyText, commentSubmitting, authStatus, deckId])
+  }, [replyingTo, replyText, commentSubmitting, authStatus, deckId, t])
 
   const handleCommentDelete = useCallback(async (commentId: string) => {
     try {
@@ -92,14 +94,14 @@ export default function DeckComments({ deckId, initialComments }: Props) {
       })
       if (res.ok) {
         setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
-        showSuccess('댓글이 삭제되었습니다.')
+        showSuccess(t('deleteSuccess'))
       } else {
-        showError('댓글 삭제에 실패했습니다.')
+        showError(t('deleteFailed'))
       }
     } catch {
-      showError('댓글 삭제에 실패했습니다.')
+      showError(t('deleteFailed'))
     }
-  }, [deckId])
+  }, [deckId, t])
 
   const renderAvatar = (comment: Comment, size: number) => (
     <div
@@ -154,7 +156,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
             letterSpacing: '0.05em',
           }}
         >
-          완장
+          {t('moderator')}
         </span>
       )}
     </>
@@ -175,7 +177,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
 
   return (
     <div className="mt-8">
-      <SectionBlock title="댓글" badge={comments.length} defaultOpen={true}>
+      <SectionBlock title={t('title')} badge={comments.length} defaultOpen={true}>
 
         {authStatus === 'authenticated' ? (
           <div
@@ -187,7 +189,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
               onChange={e => setCommentText(e.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="덱에 대한 의견을 남겨보세요..."
+              placeholder={t('placeholder')}
               className="w-full px-3 py-2 outline-none resize-none"
               style={{
                 background: 'var(--bg-deep)',
@@ -221,7 +223,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                   opacity: commentSubmitting ? 0.5 : 1,
                 }}
               >
-                {commentSubmitting ? '등록 중...' : '등록'}
+                {commentSubmitting ? t('submitting') : t('submit')}
               </button>
             </div>
           </div>
@@ -236,7 +238,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
               fontFamily: 'var(--font-body)',
             }}
           >
-            로그인 후 댓글을 작성할 수 있습니다.
+            {t('loginRequired')}
           </div>
         )}
 
@@ -257,7 +259,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span style={{ color: '#9a8a70', fontSize: '0.75rem', fontWeight: 600 }}>
-                            {comment.username ?? '익명'}
+                            {comment.username ?? t('anonymous')}
                           </span>
                           {renderBadge(comment.role)}
                           <span
@@ -287,9 +289,9 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                               onClick={() => {
                                 setReplyingTo(prev =>
                                   prev?.rootId === comment.id &&
-                                  prev?.targetName === (comment.username ?? '익명')
+                                  prev?.targetName === (comment.username ?? t('anonymous'))
                                     ? null
-                                    : { rootId: comment.id, targetName: comment.username ?? '익명' }
+                                    : { rootId: comment.id, targetName: comment.username ?? t('anonymous') }
                                 )
                                 setReplyText('')
                               }}
@@ -305,7 +307,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                               }}
                             >
                               <Reply size={11} />
-                              답글{replies.length > 0 ? ` ${replies.length}` : ''}
+                              {replies.length > 0 ? t('replyCount', { count: replies.length }) : t('reply')}
                             </button>
                           )}
                           {authStatus !== 'authenticated' && replies.length > 0 && (
@@ -318,7 +320,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                               }}
                             >
                               <Reply size={11} />
-                              답글 {replies.length}
+                              {t('replyCount', { count: replies.length })}
                             </span>
                           )}
                         </div>
@@ -328,7 +330,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                           onClick={() => handleCommentDelete(comment.id)}
                           className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70"
                           style={{ color: '#3a2020', cursor: 'pointer' }}
-                          title="댓글 삭제"
+                          title={t('deleteComment')}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -369,7 +371,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                                   fontWeight: 600,
                                 }}
                               >
-                                {reply.username ?? '익명'}
+                                {reply.username ?? t('anonymous')}
                               </span>
                               {renderBadge(reply.role)}
                               <span
@@ -398,9 +400,9 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                                 onClick={() => {
                                   setReplyingTo({
                                     rootId: comment.id,
-                                    targetName: reply.username ?? '익명',
+                                    targetName: reply.username ?? t('anonymous'),
                                   })
-                                  setReplyText(`@${reply.username ?? '익명'} `)
+                                  setReplyText(`@${reply.username ?? t('anonymous')} `)
                                 }}
                                 className="flex items-center gap-1 mt-1 transition-colors hover:text-yellow-600"
                                 style={{
@@ -411,7 +413,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                                 }}
                               >
                                 <Reply size={10} />
-                                답글
+                                {t('reply')}
                               </button>
                             )}
                           </div>
@@ -420,7 +422,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                               onClick={() => handleCommentDelete(reply.id)}
                               className="flex-shrink-0 p-1 rounded transition-opacity hover:opacity-70"
                               style={{ color: '#3a2020', cursor: 'pointer' }}
-                              title="답글 삭제"
+                              title={t('deleteReply')}
                             >
                               <Trash2 size={11} />
                             </button>
@@ -458,7 +460,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                                   fontFamily: 'var(--font-body)',
                                 }}
                               >
-                                <b style={{ color: '#9a8a70' }}>{replyingTo.targetName}</b>에게 답글
+                                <b style={{ color: '#9a8a70' }}>{replyingTo.targetName}</b>{t('replyingToSuffix')}
                               </span>
                               <button
                                 onClick={() => setReplyingTo(null)}
@@ -473,7 +475,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                               onChange={e => setReplyText(e.target.value)}
                               maxLength={500}
                               rows={2}
-                              placeholder="답글을 작성하세요..."
+                              placeholder={t('replyPlaceholder')}
                               className="w-full px-3 py-2 text-sm outline-none resize-none"
                               style={{
                                 background: '#0a0806',
@@ -511,7 +513,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
                                   fontSize: '0.6875rem',
                                 }}
                               >
-                                {commentSubmitting ? '등록 중...' : '답글 등록'}
+                                {commentSubmitting ? t('submitting') : t('replySubmit')}
                               </button>
                             </div>
                           </div>
@@ -533,7 +535,7 @@ export default function DeckComments({ deckId, initialComments }: Props) {
               fontFamily: 'var(--font-body)',
             }}
           >
-            아직 댓글이 없습니다.
+            {t('empty')}
           </div>
         )}
 

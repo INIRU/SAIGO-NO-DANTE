@@ -4,14 +4,14 @@ import { memo, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { STORAGE_BASE } from '@/lib/data/sinners'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
-
-// 덱 테마를 정의하는 핵심 상태이상 키워드만 표시
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
-const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
+import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
+import type { SupportedLang } from '@/lib/i18n'
+import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 
 type IdentityPreview = {
@@ -23,9 +23,15 @@ type IdentityPreview = {
     folder_name: string | null
     game_id: string | null
     keywords: string[] | null
+    skill_keyword_list?: string[] | null
+    name?: string | null
     name_kr: string | null
+    name_en?: string | null
+    name_jp?: string | null
   } | null
 }
+
+export type DeckLanguage = 'ko' | 'en' | 'ja'
 
 export type DeckSummary = {
   id: string
@@ -33,13 +39,15 @@ export type DeckSummary = {
   description: string | null
   tags: string[]
   content_type?: string
+  lang?: DeckLanguage
   vote_count: number
   view_count: number
   comment_count?: number
   created_at: string
   username?: string
+  main_keywords?: string[] | null
   deck_identities?: IdentityPreview[]
-  deck_egos?: { ego_id: string }[]
+  deck_egos?: { ego_id: string; grade?: string | null }[]
 }
 
 interface DeckCardProps {
@@ -93,12 +101,15 @@ function PortraitSlot({ slot }: { slot: IdentityPreview }) {
 }
 
 function DeckCard({ deck, onTagClick }: DeckCardProps) {
+  const locale = useLocale() as SupportedLang
+  const t = useTranslations('decks')
   const { getIconUrl } = useKeywordData()
+  const keywords = useKeywords()
   const date = useMemo(() => {
     const d = deck.created_at.slice(0, 10) // "YYYY-MM-DD"
     const [, mm, dd] = d.split('-')
-    return `${parseInt(mm)}월 ${parseInt(dd)}일`
-  }, [deck.created_at])
+    return t('card.date', { month: Number.parseInt(mm, 10), day: Number.parseInt(dd, 10) })
+  }, [deck.created_at, t])
 
   // 슬롯 순서로 정렬, slot_order=99는 뒤로
   const sorted = useMemo(() => [...(deck.deck_identities ?? [])].sort((a, b) => {
@@ -112,29 +123,15 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
   const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
-  // 편성(slot_order<99) 인격 기준 키워드 비율 집계
+  // Persisted main keywords are canonical. Fallback only covers legacy rows where the column is absent/empty.
   const topKeywords = useMemo(() => {
-    const formed = sorted.filter(s => s && s.slot_order < 99 && s.identities)
-    const total = formed.length
-    if (total === 0) return []
+    const persisted = (deck.main_keywords ?? [])
+      .map(normalizeDeckMainKeyword)
+      .filter((keyword): keyword is string => Boolean(keyword))
+    if (persisted.length > 0) return persisted
 
-    const freq: Record<string, number> = {}
-    for (const slot of formed) {
-      for (const kw of slot!.identities!.keywords ?? []) {
-        const normalized = normalizeThemeKeyword(kw)
-        if (THEME_KW_SET.has(normalized)) {
-          freq[normalized] = (freq[normalized] ?? 0) + 1
-        }
-      }
-    }
-
-    // 1명: 해당 인격 키워드 표시, 2명+: 40% 이상 & 최소 2명 공유
-    const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
-    return Object.entries(freq)
-      .filter(([, n]) => n >= minCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([kw]) => kw)
-  }, [sorted])
+    return computeDeckMainKeywordsFromSlots(sorted.filter((slot): slot is IdentityPreview => Boolean(slot)))
+  }, [deck.main_keywords, sorted])
 
   // 키워드 최대 3개 + 넘치면 "+N" 뱃지
   const visibleKeywords = useMemo(() => topKeywords.slice(0, 3), [topKeywords])
@@ -250,7 +247,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     letterSpacing: '0.03em',
                   }}
                 >
-                  {deck.content_type}
+                  {t(`contentTypes.${contentTypeMessageKey(deck.content_type)}`)}
                 </span>
               )}
               {visibleKeywords.map(kw => {
@@ -281,7 +278,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                         style={{ width: '0.6875rem', height: '0.6875rem', flexShrink: 0 }}
                       />
                     )}
-                    {kw}
+                    {localizeDeckKeyword(kw, keywords[kw], locale)}
                   </span>
                 )
               })}

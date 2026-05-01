@@ -209,7 +209,7 @@ const KNOWN_SLUGS = {
   '과열된 가스 작살': 'overheated-gas-harpoon',
   '가열된 가스 작살[21]': 'heated-gas-harpoon',
   '과열된 가스 작살[22]': 'overheated-gas-harpoon',
-  '원호 공격': 'support-attack', '원호 방어': 'support-defense',
+  '원호 공격': 'assist-attack', '원호 방어': 'assist-defense',
   '시[始]': 'beginning', '대[待]': 'waiting', '원[援]': 'support',
   '천구성도': 'celestial-chart',
   '뜻에 따라, 베겠습니다.': 'by-your-will-i-shall-cut',

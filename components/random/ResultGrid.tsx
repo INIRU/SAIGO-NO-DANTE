@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { RARITY_COLORS, RARITY_ICON_MAP, GRADE_COLORS, STORAGE_BASE } from '@/lib/constants/game'

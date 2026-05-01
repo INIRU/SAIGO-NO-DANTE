@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, Pin, ChevronDown } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 interface Announcement {
   id: string

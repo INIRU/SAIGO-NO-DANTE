@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { STORAGE_BASE, SIN_COLORS, SIN_KR_TO_EN, type SinType } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
 
@@ -28,6 +29,7 @@ export default function PassiveBadgeDetail({
   p: PassiveDetail
   deckSinCounts: Record<string, number>
 }) {
+  const t = useTranslations('decks.detail')
   const [hover, setHover] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const [tipPos, setTipPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
@@ -65,7 +67,7 @@ export default function PassiveBadgeDetail({
           <span style={{ color: pc, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{current}/{required}</span>
         </div>
       )}
-      {p.active_cond && <span style={{ color: pc, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', opacity: 0.8, flexShrink: 0 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : p.active_cond}</span>}
+      {p.active_cond && <span style={{ color: pc, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', opacity: 0.8, flexShrink: 0 }}>{p.active_cond === 'resonance' ? t('passiveResonance') : p.active_cond === 'stock' ? t('passiveStock') : p.active_cond}</span>}
       <span style={{ color: pc, fontSize: '0.6875rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.name}</span>
 
       {hover && tipPos && p.description && (

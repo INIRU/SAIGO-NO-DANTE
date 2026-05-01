@@ -20,6 +20,7 @@ type EgoDisplayCardProps = {
   sinnerId: string
   className?: string
   lang?: SupportedLang
+  selected?: boolean
 }
 
 const EGO_UI_BASE = '/assets/ego-ui'
@@ -47,6 +48,7 @@ const EGO_RANK_BANNER_SRC_BY_GRADE: Record<string, string> = {
   HE: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/he.webp`,
   WAW: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/waw.webp`,
 }
+const EGO_SELECTED_BANNER_SRC = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
 const EGO_UPTIE_IV_SRC = `${STORAGE_BASE}/icons/ego-ui/dante-planner/iv/tier-4-construe-iv.webp`
 const EGO_BADGE_RING_SRC = `${STORAGE_BASE}/icons/ui/portrait-frame-1star.webp`
 const EGO_CG_FALLBACK_SRC_BY_GAME_ID: Record<string, string> = {
@@ -425,7 +427,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
   )
 }
 
-function EgoDisplayCardBody({ ego, name, sinnerId, lang }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'sinnerId' | 'lang'>>) {
+function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang'>>) {
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinType = normalizeSin(ego.sin_affinity ?? null)
   const sinFrameSrc = sinType ? EGO_SIN_FRAME_SRC[sinType] : EGO_SIN_FRAME_SRC.gloom
@@ -487,7 +489,10 @@ function EgoDisplayCardBody({ ego, name, sinnerId, lang }: Required<Pick<EgoDisp
           className="absolute"
           style={{
             inset: '0.2rem',
-            boxShadow: 'inset 0 0 1rem rgba(0,0,0,0.75), 0 0.375rem 0.625rem rgba(0,0,0,0.55)',
+            borderRadius: '9999px',
+            clipPath: 'circle(47.5% at 50% 50%)',
+            overflow: 'hidden',
+            boxShadow: 'inset 0 0 1rem rgba(0,0,0,0.72), 0 0.28rem 0.55rem rgba(0,0,0,0.42)',
           }}
         >
           {egoArtworkSrc ? (
@@ -515,6 +520,10 @@ function EgoDisplayCardBody({ ego, name, sinnerId, lang }: Required<Pick<EgoDisp
                 fill
                 className="object-contain"
                 sizes="8.35rem"
+                style={{
+                  filter: selected ? 'brightness(0.58) saturate(0.86)' : 'none',
+                  transition: 'filter 160ms ease-out',
+                }}
                 onError={() => setArtLoaded(false)}
                 onLoad={event => {
                   if (isFinalEgoArtworkLoad(event.currentTarget.currentSrc, egoArtworkSrc)) {
@@ -524,9 +533,43 @@ function EgoDisplayCardBody({ ego, name, sinnerId, lang }: Required<Pick<EgoDisp
               />
             </>
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center" style={{ filter: selected ? 'brightness(0.58) saturate(0.86)' : 'none' }}>
               <span style={{ fontFamily: 'monospace', color: gradeColor, fontSize: '0.875rem' }}>{ego.grade?.[0]}</span>
             </div>
+          )}
+          {selected && (
+            <>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(5,3,2,0.2) 0%, rgba(5,3,2,0.08) 42%, rgba(5,3,2,0.34) 100%)',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 justify-center overflow-hidden"
+                style={{
+                  width: '7.95rem',
+                  height: '2.35rem',
+                }}
+              >
+                <Image
+                  src={EGO_SELECTED_BANNER_SRC}
+                  alt=""
+                  width={320}
+                  height={96}
+                  className="select-none object-contain"
+                  sizes="7.95rem"
+                  style={{
+                    width: '7.95rem',
+                    height: 'auto',
+                    filter: 'drop-shadow(0 0.25rem 0.65rem rgba(0,0,0,0.58))',
+                  }}
+                  aria-hidden="true"
+                />
+              </div>
+            </>
           )}
         </div>
         <Image
@@ -545,6 +588,8 @@ function EgoDisplayCardBody({ ego, name, sinnerId, lang }: Required<Pick<EgoDisp
           width: '7.75rem',
           maxWidth: '100%',
           aspectRatio: '358 / 155',
+          filter: selected ? 'brightness(0.62) saturate(0.86)' : 'none',
+          transition: 'filter 160ms ease-out',
         }}
       >
         <Image
@@ -659,6 +704,7 @@ export default function EgoDisplayCard({
   lang = 'ko',
   name,
   onClick,
+  selected = false,
   sinnerId,
 }: EgoDisplayCardProps) {
   const rootClassName = [
@@ -666,7 +712,7 @@ export default function EgoDisplayCard({
     className,
   ].filter(Boolean).join(' ')
   const rootStyle = { cursor: 'pointer', borderRadius: '0.875rem' }
-  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} sinnerId={sinnerId} />
+  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} />
 
   if (href) {
     return (
@@ -688,6 +734,7 @@ export default function EgoDisplayCard({
       className={rootClassName}
       style={rootStyle}
       aria-label={`${name} 상세 보기`}
+      aria-pressed={selected || undefined}
     >
       {body}
     </button>

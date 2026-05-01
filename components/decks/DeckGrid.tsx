@@ -1,12 +1,9 @@
 'use client'
 
 import { memo } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from '@/lib/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
-import { staggerContainer, staggerItem } from '@/lib/animations'
-
-const deckGridVariants = staggerContainer(0.06)
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -27,6 +24,7 @@ function DeckGrid({
   sentinelRef,
   onTagClick,
 }: DeckGridProps) {
+  const t = useTranslations('decks')
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -52,7 +50,7 @@ function DeckGrid({
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
         <p className="font-serif text-base" style={{ color: '#555570' }}>
-          {hasAnyFilter ? '검색 결과가 없습니다.' : '아직 등록된 덱이 없습니다.'}
+          {hasAnyFilter ? t('grid.noResults') : t('grid.empty')}
         </p>
         {!hasAnyFilter && (
           <Link
@@ -60,7 +58,7 @@ function DeckGrid({
             style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
             className="hover:text-yellow-300 transition-colors underline underline-offset-2"
           >
-            첫 번째 덱을 만들어보세요 →
+            {t('grid.createFirst')}
           </Link>
         )}
       </div>
@@ -69,19 +67,16 @@ function DeckGrid({
 
   return (
     <>
-      <motion.div
+      <div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
-        variants={deckGridVariants}
-        initial="initial"
-        animate="animate"
       >
         {filtered.map(deck => (
-          <motion.div key={deck.id} variants={staggerItem} className="cv-card-lg h-full">
+          <div key={deck.id} className="h-full">
             <DeckCard deck={deck} onTagClick={onTagClick} />
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* 무한 스크롤 센티널 */}
       {hasMore && (
@@ -92,7 +87,7 @@ function DeckGrid({
                 className="rounded-full animate-spin"
                 style={{ width: '1rem', height: '1rem', border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
               />
-              불러오는 중...
+              {t('grid.loadingMore')}
             </div>
           )}
         </div>

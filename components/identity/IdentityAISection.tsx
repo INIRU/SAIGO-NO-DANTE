@@ -5,11 +5,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Sparkles, RefreshCw, Loader2, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
-import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
+import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { splitSections, parseRichContent, type AISection } from '@/lib/utils/ai-summary-parser'
-import { SIN_COLORS, SKILL_TYPE_LABELS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
-import { getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import { useTranslations, useLocale } from 'next-intl'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import type { TranslationKey } from '@/lib/i18n/translations'
@@ -127,72 +126,6 @@ function AccordionSection({
   )
 }
 
-/* ─── 단일 스킬 프레임 렌더 헬퍼 (SkillEmbed와 변형 모두에서 사용) ─── */
-function SkillFrameBlockWrapper({
-  skill, skills, identity, sinColor, allowedKeywords, variantIndex, lang,
-}: {
-  skill: Skill
-  skills: Skill[]
-  identity?: Identity
-  sinColor: string
-  allowedKeywords?: Set<string>
-  variantIndex?: number
-  lang?: string
-}) {
-  const skillImgIdx = computeSkillImageIndices(skills)
-  const imgIdx = skillImgIdx[skill.id] ?? 0
-  const iconUrl = identity ? getSkillIconUrl(identity, imgIdx) : ''
-  const skillSinColor = SIN_COLORS[skill.sin_affinity] || sinColor
-  const baseOrder = skill.skill_order
-  const isDefense = baseOrder === 4
-  const skillLabel = isDefense
-    ? (SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
-    : variantIndex
-      ? `S${baseOrder}-${variantIndex}`
-      : `S${baseOrder}`
-
-  const localizedName = lang === 'en'
-    ? (skill.name_en || skill.name)
-    : lang === 'ja'
-      ? (skill.name_jp || skill.name)
-      : skill.name
-
-  const localizedDescription = lang === 'en'
-    ? (skill.description_en || skill.description)
-    : lang === 'ja'
-      ? (skill.description_jp || skill.description)
-      : skill.description
-
-  const unbreakableCoins = new Set<number>()
-  if (skill.description) {
-    const ubMatches = skill.description.matchAll(/\[코인\s?(\d+)\]\s*파괴 불가 코인/g)
-    for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]))
-  }
-
-  return (
-    <SkillFrameBlock
-      skillIconUrl={iconUrl}
-      sin={skill.sin_affinity || 'neutral'}
-      sinColor={skillSinColor}
-      skillSlot={baseOrder <= 3 ? baseOrder : 1}
-      label={skillLabel}
-      size="4.5rem"
-      name={localizedName}
-      basePower={skill.base_power}
-      coinPower={skill.coin_power}
-      coins={skill.coins}
-      atkType={skill.skill_type}
-      offenseLevel={skill.offense_level}
-      atkWeight={skill.atk_weight || 1}
-      isDefense={isDefense}
-      description={localizedDescription}
-      unbreakableCoins={unbreakableCoins}
-      descVariant="compact"
-      allowedKeywords={allowedKeywords}
-    />
-  )
-}
-
 /* ─── 스킬 임베드 (대표 + 변형 토글) ─── */
 function SkillEmbed({
   order, variant, skills, identity, sinColor, allowedKeywords, lang,
@@ -232,14 +165,15 @@ function SkillEmbed({
           marginBlock: '0.5rem',
         }}
       >
-        <SkillFrameBlockWrapper
+        <IdentitySkillFrameCard
           skill={targetSkill}
           skills={skills}
           identity={identity}
-          sinColor={sinColor}
           allowedKeywords={allowedKeywords}
-          variantIndex={variant > 1 ? variant : undefined}
           lang={lang}
+          size="4.5rem"
+          className=""
+          style={{ padding: 0, background: 'transparent', border: 'none' }}
         />
       </div>
     )
@@ -261,13 +195,15 @@ function SkillEmbed({
       }}
     >
       {/* 대표 스킬 */}
-      <SkillFrameBlockWrapper
+      <IdentitySkillFrameCard
         skill={mainSkill}
         skills={skills}
         identity={identity}
-        sinColor={sinColor}
         allowedKeywords={allowedKeywords}
         lang={lang}
+        size="4.5rem"
+        className=""
+        style={{ padding: 0, background: 'transparent', border: 'none' }}
       />
 
       {/* 변형 토글 */}
@@ -303,15 +239,16 @@ function SkillEmbed({
               gap: '0.75rem',
             }}>
               {variants.map((v, i) => (
-                <SkillFrameBlockWrapper
+                <IdentitySkillFrameCard
                   key={v.id}
                   skill={v}
                   skills={skills}
                   identity={identity}
-                  sinColor={sinColor}
                   allowedKeywords={allowedKeywords}
-                  variantIndex={i + 2}
                   lang={lang}
+                  size="4.5rem"
+                  className=""
+                  style={{ padding: 0, background: 'transparent', border: 'none' }}
                 />
               ))}
             </div>

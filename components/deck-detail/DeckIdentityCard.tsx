@@ -8,19 +8,24 @@ import {
   getSinnerLogoUrl,
   GRADE_COLORS,
   RARITY_ICON_MAP,
-  computeSkillImageIndices,
   SIN_COLORS,
   SIN_KR_TO_EN,
   type SinType,
 } from '@/lib/data/sinners'
-import { useFormatSkillDesc, useKeywordData } from '@/components/sinners/KeywordTooltip'
-import SkillDescription from '@/components/skill/SkillDescription'
+import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/components/sinners/KeywordTooltip'
+import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
+import { useLocale, useTranslations } from 'next-intl'
+import { type SupportedLang } from '@/lib/i18n'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
   id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   skill_type: string
+  atk_type?: string | null
   sin_affinity: string
   coins: number
   base_power: number
@@ -29,16 +34,23 @@ export type SkillDetail = {
   atk_weight: number | null
   offense_level: number | null
   description?: string | null
+  description_en?: string | null
+  description_jp?: string | null
   uptie_level?: number | null
+  variant_order?: number | null
 }
 
 export type PassiveDetail = {
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
   active_cond: string | null
   description: string
+  description_en?: string | null
+  description_jp?: string | null
   passive_order: number
   uptie_level?: number | null
 }
@@ -49,7 +61,10 @@ export type IdentityDetail = {
   folder_name: string | null
   game_id: string | null
   keywords: string[] | null
+  name?: string | null
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   tier: number
   rarity: number
   hp: number | null
@@ -76,7 +91,10 @@ export type EgoEntry = {
   grade: string
   ego: {
     id: string
+    name?: string | null
     name_kr: string | null
+    name_en?: string | null
+    name_jp?: string | null
     grade: string
     sin_affinity: string | null
     sinner_id: string
@@ -100,12 +118,6 @@ const GRADE_ICON_URL: Record<string, string> = {
   TETH:  `${STORAGE_BASE}/icons/grade/TETH.webp`,
   HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
   WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
-}
-
-const ATK_ICON_URL: Record<string, string> = {
-  'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  'pierce': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  'blunt': `${STORAGE_BASE}/icons/stats/blunt.webp`,
 }
 
 const STAT_ICON_URL: Record<string, string> = {
@@ -136,7 +148,75 @@ function sinIconUrl(sin: string): string {
 }
 
 function sinColor(sin: string): string {
-  return SIN_COLORS[sin as SinType] ?? '#cccccc'
+  const en = SIN_KR_TO_EN[sin] ?? sin
+  return SIN_COLORS[en as SinType] ?? '#cccccc'
+}
+
+function resistanceMessageKey(value: string): 'fatal' | 'normal' | 'endured' | 'ineffective' | 'nullified' {
+  if (value === '효율' || value === '취약') return 'fatal'
+  if (value === '내성') return 'endured'
+  if (value === '견딤') return 'ineffective'
+  if (value === '무효') return 'nullified'
+  return 'normal'
+}
+
+function present(value: string | null | undefined): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+export function localizeIdentityName(
+  identity: { name_en?: string | null; name_jp?: string | null; name_kr?: string | null; name?: string | null; id?: string | null },
+  locale: string,
+): string {
+  if (locale === 'en') return present(identity.name_en) ?? present(identity.name_jp) ?? present(identity.name_kr) ?? present(identity.name) ?? identity.id ?? ''
+  if (locale === 'ja') return present(identity.name_jp) ?? present(identity.name_en) ?? present(identity.name_kr) ?? present(identity.name) ?? identity.id ?? ''
+  return present(identity.name_kr) ?? present(identity.name) ?? present(identity.name_en) ?? present(identity.name_jp) ?? identity.id ?? ''
+}
+
+export function localizeSkillName(
+  skill: { name: string; name_en?: string | null; name_jp?: string | null },
+  locale: string,
+): string {
+  if (locale === 'en') return present(skill.name_en) ?? present(skill.name_jp) ?? skill.name
+  if (locale === 'ja') return present(skill.name_jp) ?? present(skill.name_en) ?? skill.name
+  return skill.name
+}
+
+export function localizeSkillDescription(
+  skill: { description?: string | null; description_en?: string | null; description_jp?: string | null },
+  locale: string,
+): string | null {
+  if (locale === 'en') return present(skill.description_en) ?? present(skill.description_jp) ?? present(skill.description)
+  if (locale === 'ja') return present(skill.description_jp) ?? present(skill.description_en) ?? present(skill.description)
+  return present(skill.description)
+}
+
+export function localizePassiveName(
+  passive: { name: string; name_en?: string | null; name_jp?: string | null },
+  locale: string,
+): string {
+  if (locale === 'en') return present(passive.name_en) ?? present(passive.name_jp) ?? passive.name
+  if (locale === 'ja') return present(passive.name_jp) ?? present(passive.name_en) ?? passive.name
+  return passive.name
+}
+
+export function localizePassiveDescription(
+  passive: { description?: string | null; description_en?: string | null; description_jp?: string | null },
+  locale: string,
+): string | null {
+  if (locale === 'en') return present(passive.description_en) ?? present(passive.description_jp) ?? present(passive.description)
+  if (locale === 'ja') return present(passive.description_jp) ?? present(passive.description_en) ?? present(passive.description)
+  return present(passive.description)
+}
+
+export function localizeEgoName(
+  ego: { name_en?: string | null; name_jp?: string | null; name_kr?: string | null; name?: string | null; id?: string | null },
+  locale: string,
+): string {
+  if (locale === 'en') return present(ego.name_en) ?? present(ego.name_jp) ?? present(ego.name_kr) ?? present(ego.name) ?? ego.id ?? ''
+  if (locale === 'ja') return present(ego.name_jp) ?? present(ego.name_en) ?? present(ego.name_kr) ?? present(ego.name) ?? ego.id ?? ''
+  return present(ego.name_kr) ?? present(ego.name) ?? present(ego.name_en) ?? present(ego.name_jp) ?? ego.id ?? ''
 }
 
 export function portraitUrl(
@@ -163,10 +243,15 @@ export default function DeckIdentityCard({
   keywordMeta?: Record<string, { description: string }>
   onEgoClick?: (egoId: string) => void
 }) {
+  const lang = useLocale() as SupportedLang
+  const detailT = useTranslations('decks.detail')
+  const previewT = useTranslations('decks.identityPreview')
   const formatSkillDesc = useFormatSkillDesc()
   const { getIconUrl } = useKeywordData()
+  const keywords = useKeywords()
   const id_ = slot.identities!
   const [activeTab, setActiveTab] = useState<'skills' | 'passives' | 'ego'>('skills')
+  const identityName = localizeIdentityName(id_, lang)
 
   const rarityColor = RARITY_COLORS[id_.rarity] ?? '#667788'
   const imgUrl = portraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, slot.gacksung)
@@ -193,13 +278,8 @@ export default function DeckIdentityCard({
   }
   const sortedPassives = [...passiveBest.values()].sort((a, b) => a.passive_order - b.passive_order)
 
-  const skillImageIdx = computeSkillImageIndices(sortedSkills)
-
   const s1 = sortedSkills.find(s => s.skill_order === 1) ?? sortedSkills[0]
   const primaryColor = s1 ? sinColor(s1.sin_affinity) : rarityColor
-
-  const skillIconUrl = (order: number) =>
-    id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(order).padStart(2, '0')}.webp` : ''
 
   return (
     <div
@@ -217,7 +297,7 @@ export default function DeckIdentityCard({
             {imgUrl ? (
               <Image
                 src={imgUrl}
-                alt={id_.name_kr}
+                alt={identityName}
                 fill
                 sizes="88px"
                 className="object-cover"
@@ -236,13 +316,13 @@ export default function DeckIdentityCard({
         <div className="flex-1 min-w-0 p-3">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-light text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{id_.name_kr}</Link>
+              <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-light text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{identityName}</Link>
             </div>
             {RARITY_ICON_MAP[id_.rarity] ? (
-              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={`${id_.rarity}성`} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9, height: '0.875rem', width: 'auto' }} />
+              <Image src={RARITY_ICON_MAP[id_.rarity]} alt={previewT('rarity', { rarity: id_.rarity })} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9, height: '0.875rem', width: 'auto' }} />
             ) : (
               <span className="flex-shrink-0 px-1.5 py-px rounded" style={{ background: `${rarityColor}18`, color: rarityColor, border: `1px solid ${rarityColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                {id_.rarity}성
+                {previewT('rarity', { rarity: id_.rarity })}
               </span>
             )}
           </div>
@@ -256,7 +336,7 @@ export default function DeckIdentityCard({
                 return (
                   <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', cursor: desc ? 'help' : 'default' }}>
                     {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
-                    {kw}
+                    {localizeDeckKeyword(kw, keywords[kw], lang)}
                   </span>
                 )
               })}
@@ -288,16 +368,16 @@ export default function DeckIdentityCard({
           {/* 저항 */}
           <div className="flex flex-wrap gap-1">
             {([
-              { label: '참', val: id_.slash_res },
-              { label: '관', val: id_.pierce_res },
-              { label: '타', val: id_.blunt_res },
-            ] as { label: string; val: string | null }[]).map(({ label, val }) => {
+              { label: 'slash', iconKey: '참', val: id_.slash_res },
+              { label: 'pierce', iconKey: '관', val: id_.pierce_res },
+              { label: 'blunt', iconKey: '타', val: id_.blunt_res },
+            ] as { label: string; iconKey: string; val: string | null }[]).map(({ label, iconKey, val }) => {
               if (!val) return null
               const st = RES_STYLE[val] ?? { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' }
               return (
                 <span key={label} className="inline-flex items-center gap-0.5 px-1.5 py-px rounded" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                  <Image src={RES_ATK_ICON[label]} alt={label} width={12} height={12} style={{ opacity: 0.75 }} />
-                  {val}
+                  <Image src={RES_ATK_ICON[iconKey]} alt={localizeDeckKeyword(label, keywords[label], lang)} width={12} height={12} style={{ opacity: 0.75 }} />
+                  {previewT(`resistance.${resistanceMessageKey(val)}`)}
                 </span>
               )
             })}
@@ -308,9 +388,9 @@ export default function DeckIdentityCard({
       {/* 스킬 / 패시브 / E.G.O 탭 바 */}
       <div className="flex" style={{ borderTop: '1px solid rgba(28,16,6,0.9)', background: 'rgba(0,0,0,0.18)' }}>
         {([
-          { key: 'skills' as const, label: '스킬', count: sortedSkills.length },
-          { key: 'passives' as const, label: '패시브', count: sortedPassives.length },
-          ...(egos && egos.length > 0 ? [{ key: 'ego' as const, label: 'E.G.O', count: egos.length }] : []),
+          { key: 'skills' as const, label: previewT('skills'), count: sortedSkills.length },
+          { key: 'passives' as const, label: previewT('passives'), count: sortedPassives.length },
+          ...(egos && egos.length > 0 ? [{ key: 'ego' as const, label: previewT('ego'), count: egos.length }] : []),
         ]).map(tab => {
           const isActive = activeTab === tab.key
           return (
@@ -339,82 +419,16 @@ export default function DeckIdentityCard({
       {activeTab === 'skills' && (
         <div className="flex flex-col gap-2 p-3">
           {sortedSkills.length === 0 ? (
-            <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>스킬 정보 없음</p>
-          ) : (() => {
-            const atkSkills = sortedSkills.filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))
-            const labelCount: Record<number, number> = {}
-            // 각 skill_order에 몇 개의 변형이 있는지 카운트
-            for (const sk of atkSkills) labelCount[sk.skill_order] = (labelCount[sk.skill_order] ?? 0) + 1
-            const labelIdx: Record<number, number> = {}
-            return atkSkills.map(skill => {
-            const varIdx = labelIdx[skill.skill_order] ?? 0
-            labelIdx[skill.skill_order] = varIdx + 1
-            const hasVariants = (labelCount[skill.skill_order] ?? 1) > 1
-            const sc = sinColor(skill.sin_affinity)
-            const maxPower = skill.coin_power < 0 ? skill.base_power : skill.base_power + skill.coins * skill.coin_power
-            const minPower = skill.coin_power < 0 ? skill.base_power + skill.coins * skill.coin_power : null
-            const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
-            const skillLabel = hasVariants ? `S${skill.skill_order}-${varIdx + 1}` : `S${skill.skill_order}`
-            const imgIdx = skillImageIdx[skill.id] ?? skill.skill_order
-            const iconUrl = skillIconUrl(imgIdx)
-            return (
-              <div key={skill.id} className="p-3 rounded" style={{ background: `${sc}08`, border: `1px solid ${sc}28` }}>
-                {/* 헤더 */}
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {iconUrl && (
-                      <Image src={iconUrl} alt="" width={24} height={24} unoptimized style={{ borderRadius: 3, border: `1px solid ${sc}40`, flexShrink: 0 }} />
-                    )}
-                    <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${sc}20`, color: sc, border: `1px solid ${sc}40` }}>
-                      {skillLabel}
-                    </span>
-                    <span className="font-semibold truncate" style={{ color: sc, fontSize: '0.8125rem' }}>{skill.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {skill.atk_weight != null && skill.atk_weight > 0 && (
-                      <div className="flex gap-0.5">
-                        {Array.from({ length: skill.atk_weight }).map((_, i) => (
-                          <div key={i} style={{ width: 7, height: 7, borderRadius: 1, background: `${sc}50`, border: `1.5px solid ${sc}` }} />
-                        ))}
-                      </div>
-                    )}
-                    {skill.offense_level != null && (
-                      <span style={{ color: '#999', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>ATK Lv.{skill.offense_level}</span>
-                    )}
-                    {ATK_ICON_URL[skill.skill_type] && (
-                      <Image src={ATK_ICON_URL[skill.skill_type]} alt={skill.skill_type} width={16} height={16} style={{ opacity: 0.65 }} />
-                    )}
-                  </div>
-                </div>
-
-                {/* 위력 수치 */}
-                <div className="flex items-center gap-3 mb-2">
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.base_power}</strong></span>
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>코인 <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{skill.coins}</strong></span>
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>코인위력 <strong style={{ color: sc, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{coinPowerStr}</strong></span>
-                  <span style={{ fontSize: '0.75rem', color: '#999', marginLeft: 'auto' }}>
-                    {minPower != null && <><span style={{ color: '#e04040' }}>최소 <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{minPower}</strong></span> / </>}
-                    최대 <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{maxPower}</strong>
-                  </span>
-                </div>
-
-                {/* 코인 시각화 */}
-                <div className="flex gap-1">
-                  {Array.from({ length: skill.coins }).map((_, i) => (
-                    <Image key={i} src={`${STORAGE_BASE}/icons/stats/coin.webp`} alt="" width={16} height={16} style={{ filter: `drop-shadow(0 0 2px ${sc}60)` }} />
-                  ))}
-                </div>
-
-                {/* 스킬 설명 */}
-                {skill.description && (
-                  <div style={{ marginTop: 8, borderTop: `1px solid ${sc}18`, paddingTop: 8 }}>
-                    <SkillDescription description={skill.description} accentColor={sc} variant="compact" />
-                  </div>
-                )}
-              </div>
-            )
-          })
-          })()}
+            <p style={{ color: '#8a8095', fontSize: '0.875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>{previewT('noSkills')}</p>
+          ) : sortedSkills.map(skill => (
+            <IdentitySkillFrameCard
+              key={skill.id}
+              skill={skill}
+              skills={sortedSkills}
+              identity={id_}
+              lang={lang}
+            />
+          ))}
         </div>
       )}
 
@@ -422,12 +436,14 @@ export default function DeckIdentityCard({
       {activeTab === 'passives' && (
         <div className="flex flex-col gap-2 p-3">
           {sortedPassives.length === 0 ? (
-            <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>패시브 정보 없음</p>
+            <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>{previewT('noPassives')}</p>
           ) : sortedPassives.map((passive, idx) => {
             const isBattle = passive.passive_type === 'battle'
             const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
             const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
             const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
+            const passiveName = localizePassiveName(passive, lang)
+            const passiveDescription = localizePassiveDescription(passive, lang)
             return (
               <div key={idx} className="p-3 rounded" style={{ background: `${pc}08`, border: `1px solid ${pc}25` }}>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -440,9 +456,9 @@ export default function DeckIdentityCard({
                       fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    {isBattle ? '배틀' : '서포트'}
+                    {isBattle ? detailT('battlePassive') : detailT('supportPassive')}
                   </span>
-                  <span className="font-semibold" style={{ color: pc, fontSize: '0.8125rem' }}>{passive.name}</span>
+                  <span className="font-semibold" style={{ color: pc, fontSize: '0.8125rem' }}>{passiveName}</span>
                 </div>
 
                 {(sinTypes.length > 0 || passive.active_cond) && (
@@ -455,15 +471,15 @@ export default function DeckIdentityCard({
                     )}
                     {passive.active_cond && (
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${pc}18`, color: pc, border: `1px solid ${pc}35` }}>
-                        {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
+                        {passive.active_cond === 'resonance' ? detailT('passiveResonance') : passive.active_cond === 'stock' ? detailT('passiveStock') : passive.active_cond}
                       </span>
                     )}
                   </div>
                 )}
 
-                {passive.description && (
+                {passiveDescription && (
                   <div style={{ fontSize: '0.6875rem', lineHeight: 1.8 }}>
-                    {passive.description.split('\n').map((line, li) => (
+                    {passiveDescription.split('\n').map((line, li) => (
                       <div key={li}>
                         <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, pc)}</span>
                       </div>
@@ -483,13 +499,14 @@ export default function DeckIdentityCard({
             const gc = GRADE_COLORS[grade] ?? '#667788'
             const sinEn = ego.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
             const sc = sinEn ? (SIN_COLORS[sinEn as SinType] ?? gc) : gc
+            const egoName = localizeEgoName(ego, lang)
             return (
               <div key={ego.id} className="p-3 rounded flex items-center gap-3"
                 onClick={e => { e.stopPropagation(); onEgoClick?.(ego.id) }}
                 style={{ background: `${sc}08`, border: `1px solid ${sc}28`, cursor: onEgoClick ? 'pointer' : 'default' }}>
                 <div style={{ width: 2, alignSelf: 'stretch', background: sc, borderRadius: 1, flexShrink: 0 }} />
                 {ego.image_url ? (
-                  <Image src={ego.image_url} alt={ego.name_kr ?? ''} width={52} height={52}
+                  <Image src={ego.image_url} alt={egoName} width={52} height={52}
                     style={{ borderRadius: 4, objectFit: 'cover', border: `1px solid ${sc}30`, flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 52, height: 52, borderRadius: 4, background: '#0a0806', border: `1px solid ${gc}20`, flexShrink: 0 }} />
@@ -508,7 +525,7 @@ export default function DeckIdentityCard({
                       <Image src={sinIconUrl(sinEn)} alt="" width={12} height={12} style={{ opacity: 0.8 }} />
                     )}
                   </div>
-                  <span className="font-serif font-light" style={{ color: sc, fontSize: '0.8125rem' }}>{ego.name_kr ?? ego.id}</span>
+                  <span className="font-serif font-light" style={{ color: sc, fontSize: '0.8125rem' }}>{egoName}</span>
                 </div>
               </div>
             )
