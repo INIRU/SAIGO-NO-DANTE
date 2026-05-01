@@ -286,7 +286,8 @@ export default function GiftModal({
               } else if (c.type === 'multi_keyword') {
                 label = `${c.keywords!.join('+')}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'affiliation') {
-                label = `${c.affiliation ?? c.affiliations!.join('/')}${affiliationSuffix}`; value = `${c.count}${orMoreSuffix}`
+                const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
+                label = `${affiliations.map(affiliation => getLocalizedAffiliation(affiliation, lang)).join('/')}${affiliationSuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'skill') {
                 label = c.skill_condition!; value = `${c.count}${orMoreSuffix}`
               }

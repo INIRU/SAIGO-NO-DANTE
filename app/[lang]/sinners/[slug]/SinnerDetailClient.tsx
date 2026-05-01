@@ -17,6 +17,7 @@ import IdentityCard from '@/components/sinners/IdentityCard'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
+import { getLocalizedAffiliations } from '@/lib/i18n/localize'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 
@@ -196,12 +197,21 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     if (rarityFilter) result = result.filter(i => `${i.rarity}성` === rarityFilter)
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
-      result = result.filter(i =>
-        i.name_kr.toLowerCase().includes(q) ||
-        i.name.toLowerCase().includes(q) ||
-        (i.affiliation && i.affiliation.toLowerCase().includes(q)) ||
-        getRepresentativeKeywords(i).some(kw => kw.toLowerCase().startsWith(q))
-      )
+      result = result.filter(i => {
+        const rawAffiliations = [
+          i.affiliation,
+          ...(i.association_list ?? []),
+        ].filter((affiliation): affiliation is string => Boolean(affiliation))
+        const affiliationTerms = [
+          ...rawAffiliations,
+          ...getLocalizedAffiliations(rawAffiliations, lang),
+        ]
+
+        return i.name_kr.toLowerCase().includes(q) ||
+          i.name.toLowerCase().includes(q) ||
+          affiliationTerms.some(affiliation => affiliation.toLowerCase().includes(q)) ||
+          getRepresentativeKeywords(i).some(kw => kw.toLowerCase().startsWith(q))
+      })
     }
     if (selectedKeywords.size > 0) {
       result = result.filter(i =>
