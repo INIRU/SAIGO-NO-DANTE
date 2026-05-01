@@ -40,7 +40,7 @@ const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {
   '흑운회': { en: 'Dark Cloud', ja: '黒雲会' },
   '기술해방연합': { en: 'Tech Liberation Alliance', ja: '技術解放連合' },
   '도서관 옛 손님': { en: 'Library Patron', ja: '図書館の旧客' },
-  '로보토미 본사': { en: 'Lobotomy HQ', ja: 'ロボトミー本社' },
+  '로보토미 본사': { en: 'Lobotomy Corp. Headquarters', ja: 'ロボトミー本社' },
   '마침표 사무소': { en: 'Full-Stop Office', ja: '終止符事務所' },
   '멀티크랙 사무소': { en: 'Multicrack Office', ja: 'マルチクラック事務所' },
   '불주먹 사무소': { en: 'Fist of Flame Office', ja: '火拳事務所' },

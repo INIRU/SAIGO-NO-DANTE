@@ -26,7 +26,9 @@ function getAssociationChips(identity: Identity, locale: SupportedLang) {
     ?.map(association => association.trim())
     .filter(Boolean)
 
-  if (associations && associations.length > 0) return associations
+  if (associations && associations.length > 0) {
+    return associations.map(association => getLocalizedAffiliation(association, locale))
+  }
   return identity.affiliation ? [getLocalizedAffiliation(identity.affiliation, locale)] : []
 }
 

@@ -12,6 +12,8 @@
  *   --sinner <slug>    특정 수감자만 처리 (e.g. --sinner yi-sang)
  *   --verbose          상세 로그 출력
  *   --new-only         신규 인격만 표시/처리 (기존 비교 스킵)
+ *   --ego-only         EGO 스킬/패시브 로케일만 처리
+ *   --no-acquisition   인격 획득 경로 동기화 스킵
  *   --keywords         기존 인격 keywords 필드도 업데이트 (기본적으로 protected)
  *
  * ⚠️ keyword_meta upsert 경로는 공통/Common/None/공용 placeholder를 반드시 필터링해야 함
@@ -24,6 +26,7 @@ import { homedir } from 'os'
 import { z } from 'zod'
 import { config } from 'dotenv'
 import { triggerRevalidation } from './_revalidate'
+import { syncIdentityAcquisition } from './identity-acquisition'
 
 config({ path: '.env.local' })
 
@@ -35,6 +38,10 @@ const FIX = args.includes('--fix')
 const DRY_RUN = !FIX
 const VERBOSE = args.includes('--verbose')
 const NEW_ONLY = args.includes('--new-only')
+const EGO_ONLY = args.includes('--ego-only')
+const SKIP_ACQUISITION = args.includes('--no-acquisition')
+const REWRITE_ACQUISITION_TEXT = args.includes('--rewrite-acquisition-text')
+const ENRICH_ACQUISITION_GACHA = !args.includes('--no-enrich-gacha')
 const UPDATE_KEYWORDS = args.includes('--keywords')
 const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 
@@ -2072,6 +2079,7 @@ async function main(): Promise<void> {
   console.log(BOLD('╠══════════════════════════════════════════════════════════╣'))
   console.log(BOLD(`║  모드: ${DRY_RUN ? '  DRY RUN (비교만)' : RED('  FIX (DB 반영)')}                         `))
   console.log(BOLD(`║  대상: ${SINNER_FILTER ? `  ${SINNER_FILTER}` : '  전체 12명'}                              `))
+  if (EGO_ONLY) console.log(BOLD('║  범위:   EGO 스킬/패시브 로케일만 처리                 ║'))
   console.log(BOLD(`║  키워드: ${UPDATE_KEYWORDS ? YELLOW('  --keywords 활성 (기존 인격 키워드 업데이트)') : '  protected (기존 인격 키워드 보호)'}  `))
   console.log(BOLD('║  대표/유닛/소속 배열: --fix에서 공식 JSON 기준 자동 동기화 ║'))
   console.log(BOLD('╚══════════════════════════════════════════════════════════╝\n'))
@@ -2151,7 +2159,7 @@ async function main(): Promise<void> {
 
   // Run before any mutating sync stages so --fix cannot partially update other
   // tables when the release_date migration is missing.
-  await syncEgoReleaseDates(targetSinners)
+  if (!EGO_ONLY) await syncEgoReleaseDates(targetSinners)
 
   // ── Keyword context store (gameId → context) ──────────────────────────────
   const keywordContexts = new Map<string, KeywordContext>()
@@ -2168,10 +2176,11 @@ async function main(): Promise<void> {
   const missingQuoteSourceCases: Array<{ gameId: string; name: string }> = []
 
   // ── Per-sinner processing: identities + skills ────────────────────────────
-  for (const sinner of targetSinners) {
-    console.log(`${'═'.repeat(60)}`)
-    console.log(BOLD(`  ${sinner.name.toUpperCase()} (${sinner.slug})`))
-    console.log('═'.repeat(60))
+  if (!EGO_ONLY) {
+    for (const sinner of targetSinners) {
+      console.log(`${'═'.repeat(60)}`)
+      console.log(BOLD(`  ${sinner.name.toUpperCase()} (${sinner.slug})`))
+      console.log('═'.repeat(60))
 
     const sinnerPersonalities = [...gamePersonMap.values()]
       .filter(p => p.characterId === sinner.id)
@@ -2394,18 +2403,20 @@ async function main(): Promise<void> {
         }
       }
     }
+    }
   }
-
-  // ══════════════════════════════════════════════════════════
-  //  Passive sync
-  // ══════════════════════════════════════════════════════════
-  console.log(`\n${'═'.repeat(60)}`)
-  console.log(BOLD('  패시브 동기화'))
-  console.log('═'.repeat(60))
 
   let passiveInserted = 0, passiveDeleted = 0
 
-  for (const sinner of targetSinners) {
+  if (!EGO_ONLY) {
+    // ══════════════════════════════════════════════════════════
+    //  Passive sync
+    // ══════════════════════════════════════════════════════════
+    console.log(`\n${'═'.repeat(60)}`)
+    console.log(BOLD('  패시브 동기화'))
+    console.log('═'.repeat(60))
+
+    for (const sinner of targetSinners) {
     const { data: dbIdentities } = await supabase
       .from('identities')
       .select('id,game_id,name')
@@ -2461,21 +2472,21 @@ async function main(): Promise<void> {
     }
   }
 
-  if (!DRY_RUN) {
-    console.log(GREEN(`  패시브 삭제: ${passiveDeleted}개 / 삽입: ${passiveInserted}개`))
-  }
+    if (!DRY_RUN) {
+      console.log(GREEN(`  패시브 삭제: ${passiveDeleted}개 / 삽입: ${passiveInserted}개`))
+    }
 
-  // ══════════════════════════════════════════════════════════
-  //  Keyword extraction + diff/update
-  // ══════════════════════════════════════════════════════════
-  console.log(`\n${'═'.repeat(60)}`)
-  console.log(BOLD('  키워드 추출 (스킬 + 패시브 + 텍스트 태그)'))
-  console.log('═'.repeat(60))
+    // ══════════════════════════════════════════════════════════
+    //  Keyword extraction + diff/update
+    // ══════════════════════════════════════════════════════════
+    console.log(`\n${'═'.repeat(60)}`)
+    console.log(BOLD('  키워드 추출 (스킬 + 패시브 + 텍스트 태그)'))
+    console.log('═'.repeat(60))
 
-  let kwUpdated = 0
-  let kwDiffCount = 0
+    let kwUpdated = 0
+    let kwDiffCount = 0
 
-  for (const [gameId, ctx] of keywordContexts) {
+    for (const [gameId, ctx] of keywordContexts) {
     if (!ctx.gamePerson) continue
 
     const extracted = extractKeywords(ctx)
@@ -2519,16 +2530,19 @@ async function main(): Promise<void> {
     }
   }
 
-  if (kwDiffCount === 0) {
-    console.log(GRAY(`  키워드 diff 없음 (${keywordContexts.size}개 인격)`))
-  } else {
-    console.log(YELLOW(`  키워드 차이 발견: ${kwDiffCount}개`))
-    if (!UPDATE_KEYWORDS) {
-      console.log(YELLOW(`  --keywords 플래그로 재실행하면 키워드 필드도 업데이트됩니다.`))
+    if (kwDiffCount === 0) {
+      console.log(GRAY(`  키워드 diff 없음 (${keywordContexts.size}개 인격)`))
+    } else {
+      console.log(YELLOW(`  키워드 차이 발견: ${kwDiffCount}개`))
+      if (!UPDATE_KEYWORDS) {
+        console.log(YELLOW(`  --keywords 플래그로 재실행하면 키워드 필드도 업데이트됩니다.`))
+      }
     }
-  }
-  if (UPDATE_KEYWORDS && !DRY_RUN && kwUpdated > 0) {
-    console.log(GREEN(`  키워드 업데이트: ${kwUpdated}개`))
+    if (UPDATE_KEYWORDS && !DRY_RUN && kwUpdated > 0) {
+      console.log(GREEN(`  키워드 업데이트: ${kwUpdated}개`))
+    }
+  } else {
+    console.log(GRAY('  --ego-only: 인격/패시브/키워드 동기화 단계 스킵'))
   }
 
   // ── EGO skill/passive locale sync ──────────────────────────────────────────
@@ -2668,6 +2682,23 @@ async function main(): Promise<void> {
     )
   }
 
+  // ── Identity acquisition sync ─────────────────────────────────────────────
+  let acquisitionChanged = 0
+  let acquisitionApplied = 0
+  if (!EGO_ONLY && !SKIP_ACQUISITION) {
+    console.log('\n── 인격 획득 경로 동기화 ──')
+    const result = await syncIdentityAcquisition({
+      fix: FIX,
+      verbose: VERBOSE,
+      rewriteText: REWRITE_ACQUISITION_TEXT,
+      enrichGacha: ENRICH_ACQUISITION_GACHA,
+      sinnerIds: targetSinners.map(s => s.slug),
+      revalidate: false,
+    })
+    acquisitionChanged = result.changed
+    acquisitionApplied = result.applied
+  }
+
   // ── Summary ───────────────────────────────────────────────────────────────
   console.log(`\n${'═'.repeat(60)}`)
   console.log(BOLD('  요약'))
@@ -2678,6 +2709,9 @@ async function main(): Promise<void> {
   if (totalSkipped > 0) console.log(GRAY(`  스킵:          ${totalSkipped}개`))
   if (!DRY_RUN && totalSkillsInserted > 0) console.log(GREEN(`  삽입된 스킬:   ${totalSkillsInserted}개`))
   if (!DRY_RUN && passiveInserted > 0) console.log(GREEN(`  삽입된 패시브: ${passiveInserted}개`))
+  if (!EGO_ONLY && !SKIP_ACQUISITION) {
+    console.log(CYAN(`  획득 경로 ${DRY_RUN ? '변경 후보' : '반영'}: ${DRY_RUN ? acquisitionChanged : acquisitionApplied}개`))
+  }
   if (DRY_RUN) {
     console.log(CYAN('\n  (DRY RUN — DB 미변경. 반영하려면 --fix 옵션 사용)'))
   } else {
@@ -2695,10 +2729,8 @@ async function main(): Promise<void> {
   if (totalNew > 0 && !DRY_RUN) {
     console.log(YELLOW('\n  [수동 입력 필요 필드]'))
     console.log(YELLOW('  다음 필드는 자동으로 채워지지 않습니다:'))
-    console.log(YELLOW('    • acquisition      — 획득 방법 (가챠/파편 교환)'))
-    console.log(YELLOW('    • acquisition_info — JSONB (type, gacha, fragment_cost, release_season)'))
     console.log(YELLOW('    • keywords         — 추출 키워드 확인 및 보완 필요 (--keywords로 확인)'))
-    console.log(YELLOW('  quote는 KR PersonalityVoiceDlg get_* 소스가 있을 때 자동 입력되며, 소스가 없는 인격만 확인하세요.'))
+    console.log(YELLOW('  획득 경로와 quote는 소스가 있을 때 자동 동기화되며, 소스가 없는 항목만 확인하세요.'))
   }
 
   // On-demand cache invalidation after successful --fix run.

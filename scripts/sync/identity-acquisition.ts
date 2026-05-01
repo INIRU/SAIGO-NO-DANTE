@@ -11,8 +11,10 @@
  * Usage:
  *   npx tsx scripts/sync/identity-acquisition.ts --dry-run
  *   npx tsx scripts/sync/identity-acquisition.ts --id 10715 --fix
+ *   npx tsx scripts/sync/identity-acquisition.ts --sinner heathcliff --fix
  *   npx tsx scripts/sync/identity-acquisition.ts --all --fix
  *   npx tsx scripts/sync/identity-acquisition.ts --dry-run --rewrite-text
+ *   npx tsx scripts/sync/identity-acquisition.ts --dry-run --no-enrich-gacha
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -20,6 +22,7 @@ import { config } from 'dotenv'
 import { existsSync, readFileSync, readdirSync } from 'fs'
 import { homedir } from 'os'
 import { join, resolve } from 'path'
+import { pathToFileURL } from 'url'
 import { triggerRevalidation } from './_revalidate'
 
 config({ path: '.env.local' })
@@ -49,15 +52,33 @@ interface DerivedAcquisition {
   acquisition: string
   acquisition_info: AcquisitionInfo
   evidence: string[]
+  rewrite_acquisition?: boolean
 }
 
 interface DbIdentity {
   id: string
   game_id: string
+  sinner_id: string | null
   name_kr: string | null
   rarity: number | null
   acquisition: string | null
   acquisition_info: AcquisitionInfo | null
+}
+
+export interface IdentityAcquisitionSyncOptions {
+  fix?: boolean
+  all?: boolean
+  verbose?: boolean
+  rewriteText?: boolean
+  enrichGacha?: boolean
+  ids?: string[]
+  sinnerIds?: string[]
+  revalidate?: boolean
+}
+
+export interface IdentityAcquisitionSyncResult {
+  changed: number
+  applied: number
 }
 
 interface Personality {
@@ -93,38 +114,10 @@ interface GachaPickupHit {
 
 type JsonRecord = Record<string, unknown>
 
-const args = process.argv.slice(2)
-const FIX = args.includes('--fix')
-const DRY_RUN = !FIX
-const ALL = args.includes('--all')
-const VERBOSE = args.includes('--verbose')
-const REWRITE_TEXT = args.includes('--rewrite-text')
-const ENRICH_GACHA = args.includes('--enrich-gacha')
-const idArgIndex = args.indexOf('--id')
-const ID_FILTER = new Set<string>(
-  idArgIndex >= 0 && args[idArgIndex + 1]
-    ? args[idArgIndex + 1].split(',').map(id => id.trim()).filter(Boolean)
-    : [],
-)
-
-if (FIX && ID_FILTER.size === 0 && !ALL) {
-  console.error('--fix without --id requires --all. This prevents accidental whole-table acquisition rewrites.')
-  process.exit(1)
-}
-
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
 const KR_DIR = join(DATA_DIR, 'KR')
 const PERSONALITY_FILE_RE = /^personality-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
 const GACHA_FILE_RE = /^gacha-\d+\.txt$/i
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY')
-  process.exit(1)
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: 'limbus' } })
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : null
@@ -150,6 +143,7 @@ function extractList(data: unknown): JsonRecord[] {
   if (Array.isArray(data)) return data.map(asRecord).filter((item): item is JsonRecord => item !== null)
   const record = asRecord(data)
   if (!record) return []
+  if (Array.isArray(record.eventRewardDatas)) return [record]
   const list = Array.isArray(record.list) ? record.list : record.dataList
   return asArray(list).map(asRecord).filter((item): item is JsonRecord => item !== null)
 }
@@ -230,6 +224,7 @@ function inferEventName(file: string): string | null {
     'twining-threads-event.txt': '사영 전투',
     'night-clean-up-event.txt': '심야청소 BokGak',
     'night-cleanup-returns-event.txt': '심야청소 BokGak',
+    'hells-chicken-event.txt': '헬스 치킨',
     'umida-event.txt': '우.미.다',
     'mowe-event.txt': '워프특급 살인사건',
     'mowe-returns-event.txt': '워프특급 살인사건',
@@ -239,6 +234,7 @@ function inferEventName(file: string): string | null {
     'ycgd-returns-event.txt': '육참골단',
     'lcbcheckup-event.txt': 'LCB 정기검진',
     'lcbcheckup-returns-event.txt': 'LCB 정기검진',
+    'cultivation-event.txt': '절차탁춘',
     'pilgrimage-event.txt': '선의의 순례',
   }
   return names[file] ?? names[normalized] ?? null
@@ -320,10 +316,10 @@ function loadGachaPickupHits(gachaTitles: ReturnType<typeof loadGachaTitles>): M
   return map
 }
 
-function gachaFields(identity: DbIdentity, hit: GachaPickupHit | null): Partial<AcquisitionInfo> {
+function gachaFields(identity: DbIdentity, hit: GachaPickupHit | null, enrichGacha: boolean): Partial<AcquisitionInfo> {
   if (!hit) return {}
   const existing = identity.acquisition_info
-  const shouldInclude = ENRICH_GACHA
+  const shouldInclude = enrichGacha
     || existing == null
     || existing.gacha_id != null
     || existing.gacha_name != null
@@ -410,6 +406,7 @@ function deriveAcquisition(
   personality: Personality,
   eventRewards: Map<string, EventRewardHit>,
   gachaPickups: Map<string, GachaPickupHit[]>,
+  enrichGacha: boolean,
 ): DerivedAcquisition {
   const gameId = identity.game_id
   const rank = identity.rarity ?? personality.rank
@@ -444,7 +441,7 @@ function deriveAcquisition(
         release_season: season,
         fragment_cost: cost,
         gacha: 'walpurgis',
-        ...gachaFields(identity, releasePickup),
+        ...gachaFields(identity, releasePickup, enrichGacha),
         ...(edition ? { walpurgis_edition: edition } : {}),
       },
       evidence,
@@ -459,9 +456,7 @@ function deriveAcquisition(
       type: existing?.type === 'attendance' ? 'attendance' : 'event',
       release_season: season,
       fragment_cost: cost,
-      gacha: existing?.gacha && existing.gacha !== 'none' ? existing.gacha : 'none',
-      ...(existing?.gacha_from_season != null ? { gacha_from_season: existing.gacha_from_season } : {}),
-      ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+      gacha: 'none',
       ...existingExchangeOverride(identity),
       ...(eventName ? { event_name: eventName } : {}),
       ...(eventCurrency ? { event_currency: eventCurrency } : {}),
@@ -473,16 +468,21 @@ function deriveAcquisition(
       : `${eventPrefix}이벤트 교환 보상`
     const exSeason = existing?.exchange_from_season ?? exchangeSeason(season)
     const shardText = cost && exSeason ? ` / 자아 파편 ${cost} 교환(시즌 ${exSeason} 이후)` : ''
-    return { acquisition: `${rewardText}${shardText}`, acquisition_info: info, evidence }
+    return {
+      acquisition: `${rewardText}${shardText}`,
+      acquisition_info: info,
+      evidence,
+      rewrite_acquisition: Boolean(reward.currencyName && reward.eventCost),
+    }
   }
 
   if (personality.additionalAttachment === 'EVENT') {
     const exSeason = existing?.exchange_from_season ?? exchangeSeason(season)
-    const gacha = existing?.gacha ?? 'seasonal'
+    const gacha = existing?.gacha && existing.gacha !== 'none' ? existing.gacha : releasePickup ? 'pickup' : 'none'
     return {
       acquisition: `${releasePickup?.gachaName ?? `이벤트 한정 추출(시즌 ${season})`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
       acquisition_info: {
-        type: existing?.type ?? 'limited',
+        type: 'limited',
         release_season: season,
         fragment_cost: cost,
         gacha,
@@ -493,7 +493,7 @@ function deriveAcquisition(
             : {}),
         ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
         ...existingEventFields(identity),
-        ...gachaFields(identity, releasePickup),
+        ...(gacha !== 'none' ? gachaFields(identity, releasePickup, enrichGacha) : {}),
         ...existingExchangeOverride(identity),
       },
       evidence,
@@ -517,7 +517,7 @@ function deriveAcquisition(
             : {}),
         ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
         ...existingEventFields(identity),
-        ...gachaFields(identity, releasePickup),
+        ...gachaFields(identity, releasePickup, enrichGacha),
         ...existingExchangeOverride(identity),
       },
       evidence,
@@ -549,7 +549,47 @@ function sameInfo(left: AcquisitionInfo | null, right: AcquisitionInfo): boolean
   return stable(left) === stable(right)
 }
 
-async function main() {
+function parseIdentityAcquisitionArgs(args = process.argv.slice(2)): IdentityAcquisitionSyncOptions {
+  const idArgIndex = args.indexOf('--id')
+  const sinnerArgIndex = args.indexOf('--sinner')
+  return {
+    fix: args.includes('--fix'),
+    all: args.includes('--all'),
+    verbose: args.includes('--verbose'),
+    rewriteText: args.includes('--rewrite-text'),
+    enrichGacha: !args.includes('--no-enrich-gacha'),
+    ids: idArgIndex >= 0 && args[idArgIndex + 1]
+      ? args[idArgIndex + 1].split(',').map(id => id.trim()).filter(Boolean)
+      : [],
+    sinnerIds: sinnerArgIndex >= 0 && args[sinnerArgIndex + 1]
+      ? args[sinnerArgIndex + 1].split(',').map(id => id.trim()).filter(Boolean)
+      : [],
+  }
+}
+
+export async function syncIdentityAcquisition(
+  options: IdentityAcquisitionSyncOptions = {},
+): Promise<IdentityAcquisitionSyncResult> {
+  const fix = options.fix === true
+  const dryRun = !fix
+  const all = options.all === true
+  const verbose = options.verbose === true
+  const rewriteText = options.rewriteText === true
+  const enrichGacha = options.enrichGacha !== false
+  const idFilter = new Set((options.ids ?? []).map(id => id.trim()).filter(Boolean))
+  const sinnerFilter = new Set((options.sinnerIds ?? []).map(id => id.trim()).filter(Boolean))
+
+  if (fix && idFilter.size === 0 && sinnerFilter.size === 0 && !all) {
+    throw new Error('--fix without --id, --sinner, or --all is blocked to prevent accidental whole-table acquisition rewrites.')
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY')
+  }
+  const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: 'limbus' } })
+
   const personalities = loadPersonalities()
   const itemNames = loadItemNames()
   const gachaTitles = loadGachaTitles()
@@ -558,9 +598,10 @@ async function main() {
 
   let query = supabase
     .from('identities')
-    .select('id, game_id, name_kr, rarity, acquisition, acquisition_info')
+    .select('id, game_id, sinner_id, name_kr, rarity, acquisition, acquisition_info')
     .order('game_id')
-  if (ID_FILTER.size > 0) query = query.in('game_id', [...ID_FILTER])
+  if (idFilter.size > 0) query = query.in('game_id', [...idFilter])
+  if (sinnerFilter.size > 0) query = query.in('sinner_id', [...sinnerFilter])
 
   const { data, error } = await query
   if (error) throw error
@@ -575,8 +616,8 @@ async function main() {
       continue
     }
 
-    const derived = deriveAcquisition(identity, personality, eventRewards, gachaPickups)
-    const desiredAcquisition = REWRITE_TEXT || !identity.acquisition ? derived.acquisition : identity.acquisition
+    const derived = deriveAcquisition(identity, personality, eventRewards, gachaPickups, enrichGacha)
+    const desiredAcquisition = rewriteText || derived.rewrite_acquisition || !identity.acquisition ? derived.acquisition : identity.acquisition
     const differs = identity.acquisition !== desiredAcquisition || !sameInfo(identity.acquisition_info, derived.acquisition_info)
     if (!differs) continue
     changed++
@@ -586,11 +627,11 @@ async function main() {
     console.log(`           -> ${desiredAcquisition}`)
     console.log(`  info: ${stable(identity.acquisition_info)}`)
     console.log(`    -> ${stable(derived.acquisition_info)}`)
-    if (VERBOSE) {
+    if (verbose) {
       for (const item of derived.evidence) console.log(`  evidence: ${item}`)
     }
 
-    if (FIX) {
+    if (fix) {
       const { error: updateError } = await supabase
         .from('identities')
         .update({
@@ -603,11 +644,18 @@ async function main() {
     }
   }
 
-  console.log(DRY_RUN ? `[dry-run] changed candidates: ${changed}` : `[fix] applied: ${applied}`)
-  if (FIX && applied > 0) await triggerRevalidation({ scope: 'all-game-data' })
+  console.log(dryRun ? `[dry-run] changed candidates: ${changed}` : `[fix] applied: ${applied}`)
+  if (fix && applied > 0 && options.revalidate !== false) await triggerRevalidation({ scope: 'all-game-data' })
+  return { changed, applied }
 }
 
-main().catch(error => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exit(1)
-})
+async function main() {
+  await syncIdentityAcquisition(parseIdentityAcquisitionArgs())
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(error => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exit(1)
+  })
+}
