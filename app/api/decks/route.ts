@@ -597,7 +597,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    for (const locale of ['ko', 'en', 'ja'] as const) {
+      revalidatePath(`/${locale}/decks`)
+      revalidatePath(`/${locale}/decks/${deck.id}`)
+    }
     revalidatePath('/decks')
+    revalidateTag(CACHE_TAGS.deck(deck.id), 'max')
     revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json(deck, { status: 201 })
   } catch (err: unknown) {

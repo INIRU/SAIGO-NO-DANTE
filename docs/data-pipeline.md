@@ -277,6 +277,7 @@ sync-mirror-dungeon-data.ts (npx tsx)
 ### sync-identity-data.ts (인격/스킬/패시브/EGO 출시일 통합 동기화)
 
 TypeScript + Zod 기반 범용 인격 동기화 스크립트. 신규 인격 추가, 기존 인격 필드 업데이트, EGO 스킬/패시브 로케일 보강, EGO 출시일 비교/업데이트를 지원한다.
+EGO 스킬 보강 단계는 `KR_Skills_Ego*` 원문도 함께 읽어 `ego_skills.description`을 재생성하므로, 게임 태그에서 온 키워드 대괄호는 조건 태그와 분리해 정규화한다. 이 EGO 보강 단계도 `--sinner` 필터를 따른다.
 
 ```bash
 npx tsx scripts/sync/identity-data.ts [options]
@@ -305,6 +306,22 @@ npx tsx scripts/sync/identity-data.ts [options]
 - `identities.quote`: `PersonalityVoiceDlg/KR_Voice_*.json`의 첫 `get_${gameId}_*` 항목 `dlg`를 인격 획득 대사로 자동 반영한다. LCB 기본 인격을 포함해 소스 대사가 있으면 insert/update payload에 포함하며, 소스가 없는 경우 기존 DB 값을 null로 덮지 않는다.
 - `identities.keywords`: `skillKeywordList`, `unitKeywordList`, `buffKeyword`, 패시브/스킬 본문 태그까지 모은 전체 키워드 매핑. 기존처럼 보호 필드이며, 기존 인격은 `--keywords`를 함께 줄 때만 업데이트한다.
 - migration 적용 전 환경에서는 새 배열 컬럼 select가 실패하면 해당 컬럼을 제외하고 재시도해 dry-run 비교를 계속한다. 실제 반영은 `supabase/migrations/*_add_identity_skill_keyword_list.sql` 적용 후 실행한다.
+
+### identity-acquisition.ts (인격 획득처 보정)
+
+`personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*`를 읽어 `identities.acquisition_info`를 비교/보정하는 스크립트.
+
+```bash
+npx tsx scripts/sync/identity-acquisition.ts --dry-run
+npx tsx scripts/sync/identity-acquisition.ts --id 10515,10805 --fix
+npx tsx scripts/sync/identity-acquisition.ts --all --fix
+```
+
+- 기본 동작은 기존 `acquisition` 텍스트를 보존하고 `acquisition_info`만 비교한다. 텍스트까지 재작성해야 할 때만 `--rewrite-text`를 명시한다.
+- `gacha-*`는 `bannerInfo.pickupIdList`만 release pickup 근거로 사용한다. `contents[*].*_pickup` 풀은 현재 특정 추출/복각 풀이 과거 인격을 포함할 수 있어 획득처 보정 근거로 쓰지 않는다.
+- 기존 DB에 있는 `release_season`, `exchange_from_season`, `target_sinner`, 이벤트 필드, 수동 분류(`attendance`, `event`, `limited`)는 보존한다. `exchange_from_season`은 UI에서 `release_season + 2` fallback을 쓰므로 신규로 중복 저장하지 않는다.
+- `--enrich-gacha`를 주면 `gacha_id/name` 계열 선택 필드까지 채운다. 기본 모드에서는 기존에 해당 필드가 있거나 신규 row일 때만 반영한다.
+- `--fix`는 dry-run diff 확인 후 승인받고 실행한다. 전체 반영은 `--all --fix`가 필요하다.
 
 ### 덱 상시 키워드 백필
 
@@ -458,6 +475,6 @@ npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 4. 신규 인격 삽입: 시딩 스크립트 (--dry-run 먼저)
 5. 스킬 동기화: `scripts/sync/game-data.mjs --dry-run` → `--fix`
 6. 거울 던전 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → `--fix`
-7. 획득처 보정: `npx tsx scripts/sync/identity-acquisition.ts --dry-run`으로 `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle` 기반 diff를 확인한 뒤 필요한 ID만 `--id <game_id> --fix`로 반영. quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
+7. 획득처 보정: `npx tsx scripts/sync/identity-acquisition.ts --dry-run`으로 `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*` 기반 diff를 확인한 뒤 필요한 ID만 `--id <game_id> --fix`로 반영. 전체 반영은 dry-run 검토 후 `--all --fix`를 사용한다. quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
 8. 에셋 업로드 (Google Drive → sharp → Supabase Storage)
 9. 프론트엔드 확인
