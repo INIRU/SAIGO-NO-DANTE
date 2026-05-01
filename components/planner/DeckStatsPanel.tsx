@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
@@ -152,7 +153,7 @@ function addEgoAttackTypeTotals(totals: Record<AttackType, number>, egoSkills: E
   }
 }
 
-export default function DeckStatsPanel({
+function DeckStatsPanel({
   identitySlots,
   skills,
   passives,
@@ -285,3 +286,5 @@ export default function DeckStatsPanel({
     </div>
   )
 }
+
+export default memo(DeckStatsPanel)

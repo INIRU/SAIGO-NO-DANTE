@@ -1,35 +1,22 @@
 'use client'
 
-import { showSuccess, showError } from '@/lib/toast'
+import { showError } from '@/lib/toast'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Link } from '@/lib/i18n/navigation'
-import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import {
   Sinner,
   Identity,
   EGO,
   Skill,
   Passive,
-  getSkillIconUrl,
-  getIdentityInfoUrl,
-  computeSkillImageIndices,
-  SIN_COLORS,
-  getSkillOrderLabel,
   type ActivationCondition,
 } from '@/lib/data/sinners'
-import {
-  type NoteSkillEntry,
-  type NotePassiveEntry,
-  type NoteEgoEntry,
-  type NoteIdentityEntry,
-  type NoteEgoGiftEntry,
-} from '@/components/decks/NoteChips'
-import { useNoteAutocomplete, buildKeywordPool, buildEgoGiftPool, type AutocompleteSuggestion } from '@/components/notes/NoteAutocomplete'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
@@ -44,8 +31,6 @@ import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/Deck
 import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import EgoGiftModal from '@/components/deck-builder/EgoGiftModal'
-import DeckNoteEditor from '@/components/deck-builder/DeckNoteEditor'
-import { getGiftActivationConditionStatus } from '@/components/planner/PlannerGiftModal'
 import {
   localizeIdentityName,
   localizePassiveDescription,
@@ -110,11 +95,10 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
 
 const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
-function getNoteSkillBaseOrder(skill: Skill): number {
-  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
-  if (skill.skill_order >= 5) return 3
-  return skill.skill_order
-}
+const DeckNoteEditor = dynamic(() => import('@/components/deck-builder/DeckNoteEditor'), {
+  ssr: false,
+  loading: () => null,
+})
 
 function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[] {
   if (!value) return []
@@ -128,7 +112,7 @@ function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[
 }
 
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode, forkMode }: Props) {
-  const { keywords: kwContext, getIconUrl: kwGetIconUrl } = useKeywordData()
+  const { getIconUrl: kwGetIconUrl } = useKeywordData()
   const locale = useLocale()
   const sinnerT = useTranslations('sinner')
   const deckT = useTranslations('decks')
@@ -177,11 +161,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [selectedMainKeywords, setSelectedMainKeywords] = useState<string[]>(() => sanitizeDeckMainKeywords(initData?.mainKeywords))
   const [mainKeywordsManual, setMainKeywordsManual] = useState(() => Array.isArray(initData?.mainKeywords))
   const [saving, setSaving] = useState(false)
-  // toast는 Sonner가 글로벌로 처리 (showSuccess/showError from lib/toast)
+  // toast는 Sonner가 글로벌로 처리 (showError from lib/toast)
   const [descPreview, setDescPreview] = useState(false)
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(initData?.skillDistribution ?? {})
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [codeInput, setCodeInput] = useState('')
   const [codeCopied, setCodeCopied] = useState(false)
   const [codeApplying, setCodeApplying] = useState(false)
@@ -336,87 +319,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     })
   }
 
-  const skillTokenLookup = useMemo(() => {
-    const map: Record<string, NoteSkillEntry> = {}
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      const idSkills = skillsByIdentityId[identity.id] ?? []
-      const imgIdx = computeSkillImageIndices(idSkills)
-      const orderCount: Record<number, number> = {}
-      for (const sk of idSkills) {
-        const baseOrder = getNoteSkillBaseOrder(sk)
-        const subIdx = orderCount[baseOrder] || 0
-        orderCount[baseOrder] = subIdx + 1
-        const key = subIdx === 0
-          ? `${sinnerName}:${baseOrder}`
-          : `${sinnerName}:${baseOrder}:${subIdx + 1}`
-        const entry = {
-          name: sk.name, skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
-          skill_order: sk.skill_order, description: sk.description,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
-          identityName: identity.name_kr, sinnerName,
-          skill: sk,
-          skills: idSkills,
-          identity: { sinner_id: identity.sinner_id, game_id: identity.game_id },
-        }
-        map[key] = entry
-        if (subIdx === 1) map[`${sinnerName}:${baseOrder}:1`] = entry
-        // 이전 형식 호환
-        if (sk.skill_order !== baseOrder) map[`${sinnerName}:${sk.skill_order}`] = entry
-      }
-    }
-    return map
-  }, [deckSlots, skillsByIdentityId, sinners])
-
-  const passiveTokenLookup = useMemo(() => {
-    const map: Record<string, NotePassiveEntry> = {}
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      for (const p of passivesByIdentityId[identity.id] ?? []) {
-        map[p.name] = {
-          name: p.name, sin_affinity: p.sin_affinity,
-          sin_count: p.sin_count, active_cond: p.active_cond,
-          description: p.description, sinnerName,
-          imageUrl: getIdentityInfoUrl(identity) || undefined,
-        }
-      }
-    }
-    return map
-  }, [deckSlots, passivesByIdentityId, sinners])
-
-  const egoTokenLookup = useMemo(() => {
-    const map: Record<string, NoteEgoEntry> = {}
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      for (const ego of Object.values(egoSlots[identity.sinner_id] ?? {})) {
-        const name = ego.name_kr || ego.name
-        map[`${sinnerName}:${name}`] = {
-          name, grade: ego.grade, sin_affinity: ego.sin_affinity,
-          image_url: ego.image_url, sinnerName,
-        }
-      }
-    }
-    return map
-  }, [deckSlots, egoSlots, sinners])
-
-  const identityLookup = useMemo(() => {
-    const map: Record<string, NoteIdentityEntry> = {}
-    for (const identity of identities) {
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      map[`${sinnerName}:${identity.name_kr}`] = {
-        name: localizeIdentityName(identity, locale),
-        rarity: identity.rarity,
-        imageUrl: getIdentityInfoUrl(identity) || undefined,
-        sinnerName,
-        keywords: identity.keywords,
-      }
-    }
-    return map
-  }, [identities, locale, sinners])
-
   // 활성 가능한 EGO 기프트 계산
   const activatableGifts = useMemo(() => {
     const formedIdentities = formationOrder
@@ -475,150 +377,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     })
     return results
   }, [deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
-
-  const egoGiftLookup = useMemo(() => {
-    const map: Record<string, NoteEgoGiftEntry> = {}
-    for (const g of egoGifts) {
-      map[g.name] = {
-        name: g.name,
-        keyword: g.keyword,
-        grade: g.grade,
-        image_url: g.image_url,
-        effect_base: g.effect_base,
-        activation_condition: g.activation_condition,
-      }
-    }
-    return map
-  }, [egoGifts])
-
-  const egoGiftConditionLookup = useMemo(() => {
-    const formationAffiliationCounts: Record<string, number> = {}
-    const activeFormationIds = new Set(formationOrder.slice(0, 7))
-
-    for (const [sinnerId, identity] of Object.entries(deckSlots)) {
-      if (!identity) continue
-      const isFormation = activeFormationIds.has(sinnerId)
-      if (identity.affiliation) {
-        if (isFormation) formationAffiliationCounts[identity.affiliation] = (formationAffiliationCounts[identity.affiliation] ?? 0) + 1
-      }
-    }
-
-    const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
-    for (const gift of egoGifts) {
-      map[gift.name] = getGiftActivationConditionStatus({
-        gift,
-        formationKeywordCounts: formationGiftKeywordCounts,
-        allKeywordCounts: formationGiftKeywordCounts,
-        formationAffiliationCounts,
-        allAffiliationCounts: formationAffiliationCounts,
-      })
-    }
-    return map
-  }, [deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
-
-  const noteAcPool = useMemo((): AutocompleteSuggestion[] => {
-    const pool: AutocompleteSuggestion[] = []
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      const idSkills = skillsByIdentityId[identity.id] ?? []
-      const imgIdx = computeSkillImageIndices(idSkills)
-      const acOrderCount: Record<number, number> = {}
-      for (const sk of idSkills) {
-        const baseOrder = getNoteSkillBaseOrder(sk)
-        const subIdx = acOrderCount[baseOrder] || 0
-        acOrderCount[baseOrder] = subIdx + 1
-        const sc = SIN_COLORS[sk.sin_affinity] || '#888'
-        const orderLabel = subIdx === 0 ? getSkillOrderLabel(baseOrder, sk.skill_type) : `${getSkillOrderLabel(baseOrder, sk.skill_type)}-${subIdx + 1}`
-        const token = subIdx === 0
-          ? `[s:${sinnerName}:${baseOrder}]`
-          : `[s:${sinnerName}:${baseOrder}:${subIdx + 1}]`
-        pool.push({
-          label: `${orderLabel} ${sk.name}`, type: 'skill', typeLabel: '스킬', color: sc,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
-          token,
-          syntax: 'inline',
-        })
-        pool.push({
-          label: `${sinnerName} ${orderLabel} ${sk.name}`,
-          type: 'skill',
-          typeLabel: '스킬 프레임',
-          color: sc,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
-          token: subIdx === 0
-            ? `{{skill:${sinnerName}:${baseOrder}}}`
-            : `{{skill:${sinnerName}:${baseOrder}:${subIdx + 1}}}`,
-          syntax: 'block',
-        })
-      }
-    }
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      for (const p of passivesByIdentityId[identity.id] ?? []) {
-        const sinEn = p.sin_affinity ? (SIN_COLORS as Record<string, string>)[p.sin_affinity] : undefined
-        pool.push({
-          label: p.name, type: 'passive', typeLabel: '패시브', color: sinEn || '#88a830',
-          token: `[p:${p.name}]`,
-          syntax: 'inline',
-        })
-        pool.push({
-          label: p.name,
-          type: 'passive',
-          typeLabel: '패시브 설명',
-          color: sinEn || '#88a830',
-          token: `{{passive:${p.name}}}`,
-          syntax: 'block',
-        })
-      }
-    }
-    for (const identity of Object.values(deckSlots)) {
-      if (!identity) continue
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      for (const ego of Object.values(egoSlots[identity.sinner_id] ?? {})) {
-        const name = ego.name_kr || ego.name
-        const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity] ?? '#c8900a') : '#c8900a'
-        pool.push({
-          label: name, type: 'ego', typeLabel: 'E.G.O', color: sc,
-          imageUrl: ego.image_url ?? undefined,
-          token: `[e:${sinnerName}:${name}]`,
-          syntax: 'inline',
-        })
-      }
-    }
-    for (const identity of identities) {
-      const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
-      pool.push({
-        label: localizeIdentityName(identity, locale),
-        type: 'identity',
-        typeLabel: '인격',
-        color: '#c8900a',
-        imageUrl: getIdentityInfoUrl(identity) || undefined,
-        token: `[i:${sinnerName}:${identity.name_kr}]`,
-        syntax: 'inline',
-      })
-    }
-    pool.push(...buildKeywordPool(kwContext))
-    pool.push(...buildEgoGiftPool(egoGifts))
-    for (const gift of egoGifts) {
-      pool.push({
-        label: gift.name,
-        type: 'egogift',
-        typeLabel: '기프트 카드',
-        color: '#d0a020',
-        imageUrl: gift.image_url ?? undefined,
-        token: gift.activation_condition ? `{{gift:${gift.name}:true}}` : `{{gift:${gift.name}}}`,
-        syntax: 'block',
-      })
-    }
-    return pool
-  }, [deckSlots, skillsByIdentityId, passivesByIdentityId, egoSlots, sinners, identities, locale, kwContext, egoGifts])
-
-  const noteAc = useNoteAutocomplete({
-    text: description,
-    setText: setDescription,
-    textareaRef,
-    pool: noteAcPool,
-  })
 
   const identityCount = Object.values(deckSlots).filter(Boolean).length
   const egoCount = Object.values(egoSlots).reduce((s, g) => s + Object.keys(g).length, 0)
@@ -1006,30 +764,19 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         {tab === 'note' && (
           <DeckNoteEditor
             sinners={sinners}
+            identities={identities}
             deckSlots={deckSlots}
             egoSlots={egoSlots}
             skillsByIdentityId={skillsByIdentityId}
             passivesByIdentityId={passivesByIdentityId}
+            egoGifts={egoGifts}
+            formationOrder={formationOrder}
+            formationGiftKeywordCounts={formationGiftKeywordCounts}
+            locale={locale as SupportedLang}
             description={description}
             setDescription={setDescription}
             descPreview={descPreview}
             setDescPreview={setDescPreview}
-            textareaRef={textareaRef}
-            noteAc={noteAc}
-            skillTokenLookup={skillTokenLookup}
-            passiveTokenLookup={passiveTokenLookup}
-            egoTokenLookup={egoTokenLookup}
-            identityLookup={identityLookup}
-            egoGiftLookup={egoGiftLookup}
-            egoGiftConditionLookup={egoGiftConditionLookup}
-            activatableGifts={activatableGifts.map(gift => ({
-              name: gift.name,
-              keyword: gift.keyword,
-              grade: gift.grade,
-              image_url: gift.image_url,
-              effect_base: gift.effect_base,
-              activation_condition: gift.condition,
-            }))}
           />
         )}
 
