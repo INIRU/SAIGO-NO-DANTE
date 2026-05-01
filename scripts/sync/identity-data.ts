@@ -957,6 +957,35 @@ function loadLangLocale(lang: 'en' | 'jp'): LangLocaleData {
 
 type EgoSkillLocaleEntry = { name: string; desc: string; coinlist?: any[] }
 
+function loadKrEgoSkillLocale(): Map<string, EgoSkillLocaleEntry> {
+  const map = new Map<string, EgoSkillLocaleEntry>()
+
+  for (const { dir, ext } of [
+    { dir: KR_LATEST_DIR, ext: '.json' },
+    { dir: KR_DIR, ext: '.txt' },
+  ]) {
+    if (!existsSync(dir)) continue
+    const files = globFiles(dir, /^KR_Skills_Ego/i).filter(f => f.endsWith(ext))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const id = (item as any)?.id as number
+        if (!id) continue
+        const levelList = (item as any).levelList ?? []
+        for (const lvl of levelList) {
+          const level = lvl.level ?? lvl.gaksungLevel
+          if (!level) continue
+          const key = `${id}_${level}`
+          if (map.has(key)) continue
+          map.set(key, { name: lvl.name ?? '', desc: lvl.desc ?? '', coinlist: lvl.coinlist })
+        }
+      }
+    }
+  }
+
+  return map
+}
+
 function loadEgoSkillLocale(lang: 'en' | 'jp'): Map<string, EgoSkillLocaleEntry> {
   // Key: `${skillGameId}_${level}` e.g. "2010111_3"
   // Only ego skill files — exclude EN_Skills_Ego_Personality-* (those are identity skills)
@@ -1057,6 +1086,25 @@ function buildDescriptionLang(
     if (descs.length > 0) {
       const coinLabel = lang === 'en' ? `[Coin ${i + 1}]` : `[コイン ${i + 1}]`
       parts.push(`${coinLabel} ${descs[0]}`)
+      for (let j = 1; j < descs.length; j++) parts.push(descs[j])
+    }
+  }
+  return parts.join('\n')
+}
+
+function buildDescriptionKr(langSkillEntry: EgoSkillLocaleEntry | undefined): string {
+  if (!langSkillEntry) return ''
+  const parts: string[] = []
+  const globalDesc = translateDesc(langSkillEntry.desc).trim()
+  if (globalDesc) parts.push(globalDesc)
+
+  for (let i = 0; i < (langSkillEntry.coinlist ?? []).length; i++) {
+    const coin = langSkillEntry.coinlist![i]
+    const descs = (coin.coindescs ?? [])
+      .map((cd: any) => translateDesc(cd.desc ?? '').trim())
+      .filter(Boolean)
+    if (descs.length > 0) {
+      parts.push(`[코인 ${i + 1}] ${descs[0]}`)
       for (let j = 1; j < descs.length; j++) parts.push(descs[j])
     }
   }
@@ -2486,17 +2534,20 @@ async function main(): Promise<void> {
   // ── EGO skill/passive locale sync ──────────────────────────────────────────
   console.log('\n── EGO 스킬/패시브 로케일 동기화 ──')
 
+  const krEgoSkills = loadKrEgoSkillLocale()
   const enEgoSkills = loadEgoSkillLocale('en')
   const jpEgoSkills = loadEgoSkillLocale('jp')
   const enEgoPassives = loadEgoPassiveLocale('en')
   const jpEgoPassives = loadEgoPassiveLocale('jp')
+  console.log(`  KR ego skills: ${krEgoSkills.size}`)
   console.log(`  EN ego skills: ${enEgoSkills.size}, JP: ${jpEgoSkills.size}`)
   console.log(`  EN ego passives: ${enEgoPassives.size}, JP: ${jpEgoPassives.size}`)
 
   // Get egos with game_id
   const { data: egoRows, error: egoErr } = await supabase
     .from('ego')
-    .select('id, game_id, passive_name, passive_content, passive_name_en, passive_name_jp, passive_content_en, passive_content_jp')
+    .select('id, game_id, sinner_id, passive_name, passive_content, passive_name_en, passive_name_jp, passive_content_en, passive_content_jp')
+    .in('sinner_id', targetSinners.map(s => s.slug))
     .limit(500)
   if (egoErr) console.error(RED(`  ego 로드 실패: ${egoErr.message}`))
 
@@ -2526,6 +2577,7 @@ async function main(): Promise<void> {
       const key = `${skillGameId}_${level}`
       const fallbackKey = level === 4 ? `${skillGameId}_3` : key
 
+      const krEntry = krEgoSkills.get(key) ?? krEgoSkills.get(fallbackKey)
       const enEntry = enEgoSkills.get(key) ?? enEgoSkills.get(fallbackKey)
       const jpEntry = jpEgoSkills.get(key) ?? jpEgoSkills.get(fallbackKey)
 
@@ -2535,9 +2587,11 @@ async function main(): Promise<void> {
       if (enEntry?.name && !skill.name_en) updates.name_en = enEntry.name
       if (jpEntry?.name && !skill.name_jp) updates.name_jp = jpEntry.name
 
-      // Description — use buildDescriptionLang for proper formatting
+      // Description — rebuild from locale source for consistent tag formatting.
+      const krDesc = krEntry ? buildDescriptionKr(krEntry) : ''
       const enDesc = enEntry ? buildDescriptionLang(enEntry, enTagMap, CONDITION_TAG_EN, 'en') : ''
       const jpDesc = jpEntry ? buildDescriptionLang(jpEntry, jpTagMap, CONDITION_TAG_JP, 'jp') : ''
+      if (krDesc && skill.description !== krDesc) updates.description = krDesc
       if (enDesc && !skill.description_en) updates.description_en = enDesc
       if (jpDesc && !skill.description_jp) updates.description_jp = jpDesc
 

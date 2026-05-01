@@ -5,13 +5,14 @@
  * Source roles:
  * - personality-*.txt: rank, season, and coarse additionalAttachment.
  * - *-event.txt eventRewardDatas: event exchange/reward identities.
- * - gacha-*.txt pickup groups: extraction/release pickup identities.
+ * - gacha-*.txt banner pickup IDs: extraction/release pickup identities.
  * - KR_Items*.txt: event currency names.
  *
  * Usage:
  *   npx tsx scripts/sync/identity-acquisition.ts --dry-run
  *   npx tsx scripts/sync/identity-acquisition.ts --id 10715 --fix
  *   npx tsx scripts/sync/identity-acquisition.ts --all --fix
+ *   npx tsx scripts/sync/identity-acquisition.ts --dry-run --rewrite-text
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -62,8 +63,10 @@ interface DbIdentity {
 interface Personality {
   id: number
   rank: number
-  season: number
+  season: number | null
+  updatedDate: number | null
   additionalAttachment?: string
+  walpurgisType?: string
 }
 
 interface EventRewardHit {
@@ -79,6 +82,9 @@ interface GachaPickupHit {
   gachaId: number | null
   bannerType: string | null
   walpurgisType: string | null
+  category: string | null
+  festival: boolean
+  startDate: string | null
   endDate: string | null
   gachaName: string | null
   gachaNameEn: string | null
@@ -92,6 +98,8 @@ const FIX = args.includes('--fix')
 const DRY_RUN = !FIX
 const ALL = args.includes('--all')
 const VERBOSE = args.includes('--verbose')
+const REWRITE_TEXT = args.includes('--rewrite-text')
+const ENRICH_GACHA = args.includes('--enrich-gacha')
 const idArgIndex = args.indexOf('--id')
 const ID_FILTER = new Set<string>(
   idArgIndex >= 0 && args[idArgIndex + 1]
@@ -158,12 +166,14 @@ function loadPersonalities(): Map<string, Personality> {
       const id = asNumber(item.id)
       const rank = asNumber(item.rank)
       const season = asNumber(item.season)
-      if (id == null || rank == null || season == null) continue
+      if (id == null || rank == null) continue
       map.set(String(id), {
         id,
         rank,
         season,
+        updatedDate: asNumber(item.updatedDate),
         additionalAttachment: asString(item.additionalAttachment) ?? undefined,
+        walpurgisType: asString(item.walpurgisType) ?? undefined,
       })
     }
   }
@@ -218,11 +228,13 @@ function inferEventName(file: string): string | null {
   const names: Record<string, string> = {
     'tkt-event.txt': '시간살인시간',
     'twining-threads-event.txt': '사영 전투',
-    'night-cleanup-event.txt': '심야청소 BokGak',
+    'night-clean-up-event.txt': '심야청소 BokGak',
     'night-cleanup-returns-event.txt': '심야청소 BokGak',
     'umida-event.txt': '우.미.다',
-    'mowe-event.txt': '20번구의 기적',
-    'mowe-returns-event.txt': '20번구의 기적',
+    'mowe-event.txt': '워프특급 살인사건',
+    'mowe-returns-event.txt': '워프특급 살인사건',
+    'miracleofdistrict20-event.txt': '20번구의 기적',
+    'miracleofdistrict20-returns-event.txt': '20번구의 기적',
     'ycgd-event.txt': '육참골단',
     'ycgd-returns-event.txt': '육참골단',
     'lcbcheckup-event.txt': 'LCB 정기검진',
@@ -282,15 +294,6 @@ function loadGachaPickupHits(gachaTitles: ReturnType<typeof loadGachaTitles>): M
         const numericId = asNumber(id)
         if (numericId != null) ids.add(numericId)
       }
-      for (const rawContent of asArray(entry.contents)) {
-        const content = asRecord(rawContent)
-        const groupType = asString(content?.groupType) ?? ''
-        if (!groupType.endsWith('_pickup')) continue
-        for (const id of asArray(content?.elementIdList)) {
-          const numericId = asNumber(id)
-          if (numericId != null) ids.add(numericId)
-        }
-      }
 
       for (const id of ids) {
         const key = String(id)
@@ -300,6 +303,9 @@ function loadGachaPickupHits(gachaTitles: ReturnType<typeof loadGachaTitles>): M
           gachaId,
           bannerType: asString(banner?.bannerType),
           walpurgisType: asString(banner?.walpurgisType),
+          category: asString(entry.category),
+          festival: banner?.festival === true,
+          startDate: asString(entry.startDate),
           endDate: asString(entry.endDate),
           gachaName: gachaId != null ? gachaTitles.ko.get(gachaId) ?? null : null,
           gachaNameEn: gachaId != null ? gachaTitles.en.get(gachaId) ?? null : null,
@@ -314,8 +320,16 @@ function loadGachaPickupHits(gachaTitles: ReturnType<typeof loadGachaTitles>): M
   return map
 }
 
-function gachaFields(hit: GachaPickupHit | null): Partial<AcquisitionInfo> {
+function gachaFields(identity: DbIdentity, hit: GachaPickupHit | null): Partial<AcquisitionInfo> {
   if (!hit) return {}
+  const existing = identity.acquisition_info
+  const shouldInclude = ENRICH_GACHA
+    || existing == null
+    || existing.gacha_id != null
+    || existing.gacha_name != null
+    || existing.gacha_name_en != null
+    || existing.gacha_name_jp != null
+  if (!shouldInclude) return {}
   return {
     ...(hit.gachaId != null ? { gacha_id: hit.gachaId } : {}),
     ...(hit.gachaName ? { gacha_name: hit.gachaName } : {}),
@@ -336,14 +350,59 @@ function exchangeSeason(season: number): number | undefined {
 
 function pickReleasePickup(hits: GachaPickupHit[] | undefined): GachaPickupHit | null {
   if (!hits || hits.length === 0) return null
+  const newMain = hits.filter(hit => hit.category === 'TARGET_NEW' && hit.bannerType === 'TEMPORARY_MAIN')
   const temporaryMain = hits.filter(hit => hit.bannerType === 'TEMPORARY_MAIN')
-  const candidates = temporaryMain.length > 0 ? temporaryMain : hits
+  const candidates = newMain.length > 0 ? newMain : temporaryMain.length > 0 ? temporaryMain : hits
   return [...candidates].sort((a, b) => {
-    const aDate = a.endDate ?? ''
-    const bDate = b.endDate ?? ''
+    const aDate = a.startDate ?? a.endDate ?? ''
+    const bDate = b.startDate ?? b.endDate ?? ''
     if (aDate !== bDate) return bDate.localeCompare(aDate)
     return (b.gachaId ?? 0) - (a.gachaId ?? 0)
   })[0] ?? null
+}
+
+function existingExchangeOverride(identity: DbIdentity): Partial<AcquisitionInfo> {
+  return identity.acquisition_info?.exchange_from_season != null
+    ? { exchange_from_season: identity.acquisition_info.exchange_from_season }
+    : {}
+}
+
+function existingEventFields(identity: DbIdentity): Partial<AcquisitionInfo> {
+  const existing = identity.acquisition_info
+  if (!existing) return {}
+  return {
+    ...(existing.event_name ? { event_name: existing.event_name } : {}),
+    ...(existing.event_currency ? { event_currency: existing.event_currency } : {}),
+    ...(existing.event_cost != null ? { event_cost: existing.event_cost } : {}),
+  }
+}
+
+function releaseSeason(identity: DbIdentity, personality: Personality, rank: number): number {
+  if (rank === 1) return 0
+  const existing = identity.acquisition_info?.release_season
+  const sourceSeason = personality.season ?? 0
+  if (existing && existing > 0) return existing
+  if (sourceSeason >= 9000) return 0
+  if (sourceSeason === 0) return 1
+  return sourceSeason
+}
+
+function walpurgisEdition(identity: DbIdentity, hit: GachaPickupHit | null): number | undefined {
+  const existing = identity.acquisition_info?.walpurgis_edition
+  if (existing != null) return existing
+  const textMatch = identity.acquisition?.match(/(\d+)\s*회차/)
+  if (textMatch) return Number(textMatch[1])
+  const titleMatch = hit?.gachaName?.match(/제\s*(\d+)\s*회/)
+  return titleMatch ? Number(titleMatch[1]) : undefined
+}
+
+function isWalpurgis(personality: Personality, releasePickup: GachaPickupHit | null): boolean {
+  return Boolean(
+    personality.walpurgisType
+      || (personality.season ?? 0) >= 9000
+      || releasePickup?.walpurgisType
+      || releasePickup?.festival,
+  )
 }
 
 function deriveAcquisition(
@@ -355,11 +414,13 @@ function deriveAcquisition(
   const gameId = identity.game_id
   const rank = identity.rarity ?? personality.rank
   const cost = fragmentCost(rank)
-  const season = personality.season
+  const sourceSeason = personality.season
+  const season = releaseSeason(identity, personality, rank)
+  const existing = identity.acquisition_info
   const reward = eventRewards.get(gameId)
   const releasePickup = pickReleasePickup(gachaPickups.get(gameId))
   const evidence: string[] = [
-    `personality: season=${season}, rank=${rank}, additionalAttachment=${personality.additionalAttachment ?? 'none'}`,
+    `personality: season=${sourceSeason}, releaseSeason=${season}, rank=${rank}, additionalAttachment=${personality.additionalAttachment ?? 'none'}`,
   ]
   if (reward) evidence.push(`event reward: ${reward.file}`)
   if (releasePickup) {
@@ -374,9 +435,8 @@ function deriveAcquisition(
     }
   }
 
-  if (releasePickup?.walpurgisType) {
-    const editionMatch = /gacha-(\d+)/.exec(releasePickup.file)
-    const edition = editionMatch ? undefined : undefined
+  if (isWalpurgis(personality, releasePickup)) {
+    const edition = walpurgisEdition(identity, releasePickup)
     return {
       acquisition: `발푸르기스의 밤 기간 내 추출 / 발푸르기스의 밤 기간 내 자아 파편 ${cost} 교환`,
       acquisition_info: {
@@ -384,7 +444,7 @@ function deriveAcquisition(
         release_season: season,
         fragment_cost: cost,
         gacha: 'walpurgis',
-        ...gachaFields(releasePickup),
+        ...gachaFields(identity, releasePickup),
         ...(edition ? { walpurgis_edition: edition } : {}),
       },
       evidence,
@@ -392,54 +452,73 @@ function deriveAcquisition(
   }
 
   if (reward) {
-    const exSeason = exchangeSeason(season)
+    const eventName = existing?.event_name ?? reward.eventName
+    const eventCurrency = existing?.event_currency ?? reward.currencyName
+    const eventCost = existing?.event_cost ?? reward.eventCost
     const info: AcquisitionInfo = {
-      type: 'event',
+      type: existing?.type === 'attendance' ? 'attendance' : 'event',
       release_season: season,
       fragment_cost: cost,
-      gacha: 'none',
-      ...(exSeason ? { exchange_from_season: exSeason } : {}),
-      ...(reward.eventName ? { event_name: reward.eventName } : {}),
-      ...(reward.currencyName ? { event_currency: reward.currencyName } : {}),
-      ...(reward.eventCost ? { event_cost: reward.eventCost } : {}),
+      gacha: existing?.gacha && existing.gacha !== 'none' ? existing.gacha : 'none',
+      ...(existing?.gacha_from_season != null ? { gacha_from_season: existing.gacha_from_season } : {}),
+      ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+      ...existingExchangeOverride(identity),
+      ...(eventName ? { event_name: eventName } : {}),
+      ...(eventCurrency ? { event_currency: eventCurrency } : {}),
+      ...(eventCost != null ? { event_cost: eventCost } : {}),
     }
     const eventPrefix = reward.eventName ? `${reward.eventName} ` : ''
     const rewardText = reward.currencyName && reward.eventCost
       ? `${eventPrefix}이벤트 ${reward.currencyName} ${reward.eventCost}개 교환`
       : `${eventPrefix}이벤트 교환 보상`
+    const exSeason = existing?.exchange_from_season ?? exchangeSeason(season)
     const shardText = cost && exSeason ? ` / 자아 파편 ${cost} 교환(시즌 ${exSeason} 이후)` : ''
     return { acquisition: `${rewardText}${shardText}`, acquisition_info: info, evidence }
   }
 
   if (personality.additionalAttachment === 'EVENT') {
-    const exSeason = exchangeSeason(season)
+    const exSeason = existing?.exchange_from_season ?? exchangeSeason(season)
+    const gacha = existing?.gacha ?? 'seasonal'
     return {
       acquisition: `${releasePickup?.gachaName ?? `이벤트 한정 추출(시즌 ${season})`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
       acquisition_info: {
-        type: 'limited',
+        type: existing?.type ?? 'limited',
         release_season: season,
         fragment_cost: cost,
-        gacha: 'seasonal',
-        gacha_from_season: season,
-        ...gachaFields(releasePickup),
-        ...(exSeason ? { exchange_from_season: exSeason } : {}),
+        gacha,
+        ...(existing?.gacha_from_season != null
+          ? { gacha_from_season: existing.gacha_from_season }
+          : existing == null && (gacha === 'seasonal' || gacha === 'pickup')
+            ? { gacha_from_season: season }
+            : {}),
+        ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+        ...existingEventFields(identity),
+        ...gachaFields(identity, releasePickup),
+        ...existingExchangeOverride(identity),
       },
       evidence,
     }
   }
 
   if (season > 0) {
-    const exSeason = exchangeSeason(season)
+    const exSeason = existing?.exchange_from_season ?? exchangeSeason(season)
+    const gacha = existing?.gacha ?? 'seasonal'
     return {
       acquisition: `${releasePickup?.gachaName ?? `추출(시즌 ${season} 이후)`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
       acquisition_info: {
         type: 'standard',
         release_season: season,
         fragment_cost: cost,
-        gacha: 'seasonal',
-        gacha_from_season: season,
-        ...gachaFields(releasePickup),
-        ...(exSeason ? { exchange_from_season: exSeason } : {}),
+        gacha,
+        ...(existing?.gacha_from_season != null
+          ? { gacha_from_season: existing.gacha_from_season }
+          : existing == null && (gacha === 'seasonal' || gacha === 'pickup')
+            ? { gacha_from_season: season }
+            : {}),
+        ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+        ...existingEventFields(identity),
+        ...gachaFields(identity, releasePickup),
+        ...existingExchangeOverride(identity),
       },
       evidence,
     }
@@ -449,9 +528,11 @@ function deriveAcquisition(
     acquisition: `추출(상시) / 자아 파편 ${cost} 교환(상시)`,
     acquisition_info: {
       type: 'standard',
-      release_season: 0,
+      release_season: season,
       fragment_cost: cost,
       gacha: 'always',
+      ...existingEventFields(identity),
+      ...existingExchangeOverride(identity),
     },
     evidence,
   }
@@ -495,13 +576,14 @@ async function main() {
     }
 
     const derived = deriveAcquisition(identity, personality, eventRewards, gachaPickups)
-    const differs = identity.acquisition !== derived.acquisition || !sameInfo(identity.acquisition_info, derived.acquisition_info)
+    const desiredAcquisition = REWRITE_TEXT || !identity.acquisition ? derived.acquisition : identity.acquisition
+    const differs = identity.acquisition !== desiredAcquisition || !sameInfo(identity.acquisition_info, derived.acquisition_info)
     if (!differs) continue
     changed++
 
     console.log(`[diff] ${identity.game_id} ${identity.name_kr ?? ''}`)
     console.log(`  acquisition: ${identity.acquisition ?? '(null)'}`)
-    console.log(`           -> ${derived.acquisition}`)
+    console.log(`           -> ${desiredAcquisition}`)
     console.log(`  info: ${stable(identity.acquisition_info)}`)
     console.log(`    -> ${stable(derived.acquisition_info)}`)
     if (VERBOSE) {
@@ -512,7 +594,7 @@ async function main() {
       const { error: updateError } = await supabase
         .from('identities')
         .update({
-          acquisition: derived.acquisition,
+          acquisition: desiredAcquisition,
           acquisition_info: derived.acquisition_info,
         })
         .eq('id', identity.id)
