@@ -10,6 +10,8 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import styles from '@/styles/components/IdentityCard.module.css'
 import { useTranslations, useLocale } from 'next-intl'
+import { getLocalizedAffiliation } from '@/lib/i18n'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 
 interface IdentityCardProps {
@@ -18,6 +20,18 @@ interface IdentityCardProps {
   selected?: boolean
   gacksung?: boolean
   compact?: boolean
+  board?: boolean
+  disableHoverEffects?: boolean
+  formationOverlay?: {
+    kind: 'selected' | 'backup'
+    order: number
+    bannerUrl: string
+  }
+}
+
+type IdentityWithRepresentativeKeywords = Identity & {
+  skill_keyword_list?: string[] | null
+  keywords?: string[] | null
 }
 
 const DEFAULT_MAX_MANUAL_NAME_LINES = 3
@@ -32,7 +46,23 @@ const TITLE_SUFFIX_RE = /^(?:대표|해결사|대행|아비)$/
 const COMPACT_DETERMINISTIC_LINE_UNITS = 6.1
 const REGULAR_DETERMINISTIC_LINE_UNITS = 9.4
 const SHORT_SINGLE_LINE_MAX_WEIGHT = 7
+const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
 let activePretextLocale: string | null = null
+
+function getRepresentativeKeywords(identity: IdentityWithRepresentativeKeywords) {
+  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
+    ? identity.skill_keyword_list
+    : (identity.keywords ?? [])
+}
+
+function getAssociationChips(identity: Identity, locale: SupportedLang) {
+  const associations = identity.association_list
+    ?.map(association => association.trim())
+    .filter(Boolean)
+
+  if (associations && associations.length > 0) return associations
+  return identity.affiliation ? [getLocalizedAffiliation(identity.affiliation, locale)] : []
+}
 
 function getLineTextWeight(value: string) {
   return Array.from(value.replace(/\s+/g, '')).length
@@ -51,7 +81,6 @@ function shouldPreferMeasuredSingleLine(value: string) {
 
 function getMaxManualNameLines(locale: string, compact: boolean) {
   if (!compact) return DEFAULT_MAX_MANUAL_NAME_LINES
-  if (locale === 'en') return 5
   if (locale === 'ja') return 4
   return DEFAULT_MAX_MANUAL_NAME_LINES
 }
@@ -168,6 +197,15 @@ function buildNameLineCandidates(value: string, maxLines: number, locale: string
     candidates.push([prefix, rest])
 
     if (maxLines >= 3) {
+      const prefixBreakpoints = getSemanticBreakpoints(prefix, locale)
+      for (const breakpoint of prefixBreakpoints) {
+        candidates.push([
+          prefix.slice(0, breakpoint).trim(),
+          prefix.slice(breakpoint).trim(),
+          rest,
+        ])
+      }
+
       const restBreakpoints = getSemanticBreakpoints(rest, locale)
       for (const breakpoint of restBreakpoints) {
         candidates.push([
@@ -239,7 +277,8 @@ function scoreNameLines(lines: string[], widths: number[], maxWidth: number) {
     const compact = line.replace(/\s+/g, '')
     if (SINGLE_HANGUL_RE.test(compact)) score += 140
     if (LEADING_PARTICLE_RE.test(line.trim())) score += 180
-    if (/^[)\]】」』,.:;:：-]/.test(compact)) score += 45
+    if (/^[)\]】」』,.:;:：]/.test(compact)) score += 45
+    if (/^[-–—]/.test(compact)) score += 180
     if (/^[\u3040-\u30ff][【「『（(\[]/.test(compact)) score += 100
     if (BROKEN_EGO_PREFIX_RE.test(compact)) score += 240
     if (/E\.G\.$|E\.G$|E\.$/i.test(compact)) score += 240
@@ -381,7 +420,16 @@ function chooseMeasuredNameLines(value: string, maxWidth: number, font: string, 
   return null
 }
 
-export default function IdentityCard({ identity, onClick, selected = false, gacksung = false, compact = false }: IdentityCardProps) {
+export default function IdentityCard({
+  identity,
+  onClick,
+  selected = false,
+  gacksung = false,
+  compact = false,
+  board = false,
+  disableHoverEffects = false,
+  formationOverlay,
+}: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const t = useTranslations()
   const locale = useLocale()
@@ -391,13 +439,31 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
     return kr ?? ''
   }
   const displayName = getName(identity.name_kr, identity.name_en, identity.name_jp)
-  const sinColor = getIdentitySinColor(identity, kwSinMap)
+  const associationChips = getAssociationChips(identity, locale as SupportedLang)
+  const representativeKeywords = getRepresentativeKeywords(identity)
+  const representativeIdentity = representativeKeywords === identity.keywords
+    ? identity
+    : { ...identity, keywords: representativeKeywords }
+  const sinColor = getIdentitySinColor(representativeIdentity, kwSinMap)
   const rarity = RARITY_COLORS[identity.rarity] || RARITY_COLORS[1]
   const rarityNum = identity.rarity
+  const hoverEnabled = !disableHoverEffects && !board
+  const cardClassName = [
+    styles.card,
+    compact ? styles.compact : '',
+    board ? styles.board : '',
+    selected ? styles.selected : '',
+    hoverEnabled ? 'group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]' : 'group',
+  ].filter(Boolean).join(' ')
+  const frameClassName = [
+    styles.frame,
+    hoverEnabled ? `transition-[filter] duration-300 group-hover:brightness-130 group-hover:drop-shadow-[0_0_8px_${rarity.glow}]` : '',
+  ].filter(Boolean).join(' ')
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
   const [imgSrc, setImgSrc] = useState(infoUrl)
   const [imgKey, setImgKey] = useState(infoUrl)
+  const cardRef = useRef<HTMLDivElement>(null)
   const nameRef = useRef<HTMLDivElement>(null)
   const [measuredNameLines, setMeasuredNameLines] = useState<string[] | null>(null)
   const deterministicNameLines = useMemo(
@@ -421,21 +487,57 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
 
   useEffect(() => {
     const node = nameRef.current
+    const cardNode = cardRef.current
     if (!node) return
 
     let cancelled = false
+    let scheduled = false
+    let pendingMeasure = false
+    let lastRequestedFontLoad: string | null = null
+    const rafIds = new Set<number>()
+    const timeoutIds = new Set<number>()
+    const minimumStableNameWidth = compact ? 64 : 96
+
+    const runAnimationFrame = (callback: () => void) => {
+      const rafId = window.requestAnimationFrame(() => {
+        rafIds.delete(rafId)
+        callback()
+      })
+      rafIds.add(rafId)
+    }
+
+    const runTimeout = (callback: () => void, delay: number) => {
+      const timeoutId = window.setTimeout(() => {
+        timeoutIds.delete(timeoutId)
+        callback()
+      }, delay)
+      timeoutIds.add(timeoutId)
+    }
 
     const measure = () => {
       if (cancelled) return
 
       try {
+        const measuredWidth = node.clientWidth
+        if (measuredWidth < minimumStableNameWidth) return
+
         const style = window.getComputedStyle(node)
         const font = getCanvasFont(style)
         const parsedLineHeight = Number.parseFloat(style.lineHeight)
         const parsedFontSize = Number.parseFloat(style.fontSize)
         const lineHeight = Number.isFinite(parsedLineHeight) ? parsedLineHeight : parsedFontSize * 1.2
         const letterSpacing = parseLetterSpacing(style)
-        const lines = chooseMeasuredNameLines(displayName, node.clientWidth, font, lineHeight, locale, compact, letterSpacing)
+        const fontLoadKey = `${font}\n${displayName}`
+
+        if (document.fonts && fontLoadKey !== lastRequestedFontLoad) {
+          lastRequestedFontLoad = fontLoadKey
+          document.fonts.load(font, displayName).then(scheduleMeasure).catch(() => undefined)
+        }
+        if (locale === 'en' && document.fonts && !document.fonts.check(font, displayName)) {
+          return
+        }
+
+        const lines = chooseMeasuredNameLines(displayName, measuredWidth, font, lineHeight, locale, compact, letterSpacing)
 
         if (!cancelled) {
           setMeasuredNameLines(previous => {
@@ -449,18 +551,56 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
       }
     }
 
-    setMeasuredNameLines(null)
-    const rafId = window.requestAnimationFrame(measure)
-    const fontsReady = document.fonts?.ready
-    fontsReady?.then(measure).catch(() => undefined)
+    const scheduleMeasure = () => {
+      if (cancelled) return
+      if (scheduled) {
+        pendingMeasure = true
+        return
+      }
+      scheduled = true
 
-    const resizeObserver = new ResizeObserver(measure)
+      runAnimationFrame(() => {
+        runAnimationFrame(() => {
+          scheduled = false
+          measure()
+          if (pendingMeasure) {
+            pendingMeasure = false
+            scheduleMeasure()
+          }
+        })
+      })
+    }
+
+    setMeasuredNameLines(null)
+    scheduleMeasure()
+    const fontsReady = document.fonts?.ready
+    fontsReady?.then(scheduleMeasure).catch(() => undefined)
+
+    runTimeout(scheduleMeasure, 80)
+    runTimeout(scheduleMeasure, 240)
+
+    const resizeObserver = new ResizeObserver(scheduleMeasure)
     resizeObserver.observe(node)
+    if (cardNode) resizeObserver.observe(cardNode)
+
+    const intersectionObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) scheduleMeasure()
+        })
+      : null
+    if (cardNode && intersectionObserver) intersectionObserver.observe(cardNode)
+
+    window.addEventListener('resize', scheduleMeasure)
+    window.visualViewport?.addEventListener('resize', scheduleMeasure)
 
     return () => {
       cancelled = true
-      window.cancelAnimationFrame(rafId)
+      rafIds.forEach(rafId => window.cancelAnimationFrame(rafId))
+      timeoutIds.forEach(timeoutId => window.clearTimeout(timeoutId))
       resizeObserver.disconnect()
+      intersectionObserver?.disconnect()
+      window.removeEventListener('resize', scheduleMeasure)
+      window.visualViewport?.removeEventListener('resize', scheduleMeasure)
     }
   }, [displayName, locale, compact])
 
@@ -472,10 +612,12 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
 
   return (
     <div
+      ref={cardRef}
       onClick={onClick}
-      className={`${styles.card} ${compact ? styles.compact : ''} ${selected ? styles.selected : ''} group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]`}
+      className={cardClassName}
       data-rarity={rarityNum}
       data-gacksung={gacksung || undefined}
+      data-formation={formationOverlay?.kind}
       style={{ transformOrigin: 'center center' }}
     >
       {/* 포트레이트 영역 */}
@@ -516,6 +658,22 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           <div className={styles.gradient} />
         </div>
 
+        {formationOverlay && (
+          <div className={styles.formationOverlay} aria-hidden="true">
+            <Image
+              src={formationOverlay.bannerUrl}
+              alt=""
+              width={320}
+              height={96}
+              className={styles.formationBanner}
+              sizes="(max-width: 640px) 6.5rem, 8rem"
+            />
+            <span className={styles.formationNumber}>
+              {formationOverlay.order}
+            </span>
+          </div>
+        )}
+
         {/* 인격명 */}
         <div
           ref={nameRef}
@@ -546,10 +704,11 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             />
           ) : (
             <span
-              className="font-mono font-bold"
               style={{
                 color: rarity.border,
                 fontSize: 'var(--text-xs)',
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 700,
                 background: 'rgba(13,11,8,0.85)',
                 padding: '0.0625rem 0.3125rem',
                 borderRadius: 'var(--radius-sm)',
@@ -563,13 +722,15 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
 
         {/* 수감자 로고 배지 */}
         <div className={styles.sinnerBadge} aria-hidden="true">
-          <Image
-            src={getSinnerLogoUrl(identity.sinner_id)}
-            alt=""
-            fill
-            className={styles.sinnerBadgeLogo}
-            sizes="(max-width: 640px) 2.55rem, 3.4rem"
-          />
+          <span className={styles.sinnerBadgeLogoSlot}>
+            <Image
+              src={getSinnerLogoUrl(identity.sinner_id)}
+              alt=""
+              fill
+              className={styles.sinnerBadgeLogo}
+              sizes="(max-width: 420px) 1.9rem, (max-width: 640px) 2.25rem, 3.1rem"
+            />
+          </span>
           <Image
             src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
             alt=""
@@ -587,7 +748,19 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
             width={200}
             height={300}
 
-            className={`${styles.frame} transition-[filter] duration-300 group-hover:brightness-130 group-hover:drop-shadow-[0_0_8px_${rarity.glow}]`}
+            className={frameClassName}
+          />
+        )}
+
+        {selected && !formationOverlay && !board && (
+          <Image
+            src={SELECTED_BANNER_URL}
+            alt=""
+            width={320}
+            height={96}
+            className={styles.selectedRibbon}
+            sizes="(max-width: 640px) 6rem, 7.25rem"
+            aria-hidden="true"
           />
         )}
       </div>
@@ -617,9 +790,9 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           </div>
 
           {/* 키워드 배지 (특수 충전→충전 정규화) */}
-          {identity.keywords && identity.keywords.length > 0 && (
+          {representativeKeywords.length > 0 && (
             <div className="flex flex-wrap gap-0.5 mt-1">
-              {[...new Set(identity.keywords.map(normalizeThemeKeyword))].filter(kw => kwSinMap[kw]).slice(0, 3).map(kw => {
+              {[...new Set(representativeKeywords.map(normalizeThemeKeyword))].filter(kw => kwSinMap[kw]).slice(0, 3).map(kw => {
                 const kwColor = SIN_COLORS[kwSinMap[kw]] || sinColor
                 const iconUrl = getIconUrl(kw)
                 return (
@@ -646,20 +819,23 @@ export default function IdentityCard({ identity, onClick, selected = false, gack
           )}
 
           {/* 소속 */}
-          {identity.affiliation && (
-            <div className="mt-1">
-              <span
-                style={{
-                  background: `${sinColor}18`,
-                  color: sinColor,
-                  border: `1px solid ${sinColor}40`,
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.5rem',
-                  padding: '0 0.25rem',
-                }}
-              >
-                {identity.affiliation}
-              </span>
+          {associationChips.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-0.5">
+              {associationChips.map(association => (
+                <span
+                  key={association}
+                  style={{
+                    background: `${sinColor}18`,
+                    color: sinColor,
+                    border: `1px solid ${sinColor}40`,
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.5rem',
+                    padding: '0 0.25rem',
+                  }}
+                >
+                  {association}
+                </span>
+              ))}
             </div>
           )}
         </div>

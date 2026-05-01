@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useEffect, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import { ArrowLeft, RotateCcw, ChevronRight, ChevronsRight, ChevronsLeft } from 'lucide-react'
 import { type RunState } from '@/lib/planner/run-types'

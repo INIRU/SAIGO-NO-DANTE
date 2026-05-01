@@ -48,7 +48,7 @@ async function getCachedSinnerData(slug: string) {
     supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, folder_name, game_id')
+      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, association_list, folder_name, game_id')
       .eq('sinner_id', slug)
       .order('rarity')
       .order('name'),
@@ -61,7 +61,16 @@ async function getCachedSinnerData(slug: string) {
       .order('name'),
   ])
 
-  return { sinner, identities: (identitiesRes.data ?? []) as unknown as Identity[], egos: (egosRes.data ?? []) as unknown as EGO[] }
+  const identities = ((identitiesRes.data ?? []) as unknown as Identity[]).map(identity => {
+    const associations = identity.association_list?.map(item => item.trim()).filter(Boolean) ?? []
+    if (associations.length === 0) return identity
+    return {
+      ...identity,
+      affiliation: [identity.affiliation, ...associations].filter(Boolean).join(' '),
+    }
+  })
+
+  return { sinner, identities, egos: (egosRes.data ?? []) as unknown as EGO[] }
 }
 
 export default async function SinnerPage({ params }: { params: Promise<{ slug: string }> }) {

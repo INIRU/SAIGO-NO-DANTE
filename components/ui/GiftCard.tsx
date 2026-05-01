@@ -18,6 +18,10 @@ interface GiftCardGift {
 interface GiftCardProps {
   gift: GiftCardGift
   onClick: () => void
+  className?: string
+  variant?: 'default' | 'insert'
+  ariaLabel?: string
+  title?: string
   /** Fixed card width */
   size?: string
   /** Show name text below card (default: true) */
@@ -39,6 +43,10 @@ interface GiftCardProps {
 const GiftCard = memo(function GiftCard({
   gift,
   onClick,
+  className,
+  variant = 'default',
+  ariaLabel,
+  title,
   size,
   showName = true,
   disabled,
@@ -49,6 +57,7 @@ const GiftCard = memo(function GiftCard({
   conditionStatus,
 }: GiftCardProps) {
   const [hovered, setHovered] = useState(false)
+  const isInsert = variant === 'insert'
   const isEX = gift.grade === 'EX'
   const gradeLabel = GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade
   const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
@@ -56,7 +65,9 @@ const GiftCard = memo(function GiftCard({
 
   return (
     <button
-      className="gift-card"
+      className={className ? `gift-card ${className}` : 'gift-card'}
+      aria-label={ariaLabel}
+      title={title}
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setHovered(true)}
@@ -87,34 +98,42 @@ const GiftCard = memo(function GiftCard({
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         clipPath: OCTAGON_CLIP,
+        containerType: 'inline-size',
         outline: isSelected ? '2px solid #c8900a' : 'none',
         outlineOffset: '2px',
         boxShadow: hovered && !disabled ? '0 0 0.75rem rgba(200,144,10,0.3)' : 'none',
       }}>
         {/* Grade label */}
-        <span style={{
-          position: 'absolute',
-          top: '4%',
-          left: '3%',
-          zIndex: 10,
-          pointerEvents: 'none',
-          fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-          fontWeight: 700,
-          fontSize: '1.25rem',
-          lineHeight: 1,
-          color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-          textShadow: isEX
-            ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
-            : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-        }}>
-          {gradeLabel}
-        </span>
+        {!isInsert && (
+          <span style={{
+            position: 'absolute',
+            top: '4%',
+            left: '3%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
+            fontWeight: 700,
+            fontSize: 'clamp(1rem, 28cqw, 2.5rem)',
+            lineHeight: 1,
+            color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
+            textShadow: isEX
+              ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
+              : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
+          }}>
+            {gradeLabel}
+          </span>
+        )}
 
         {/* Keyword icon */}
-        {kwIconUrl && (
+        {!isInsert && kwIconUrl && (
           <div style={{
-            position: 'absolute', bottom: 0, right: 0, zIndex: 10,
-            pointerEvents: 'none', width: '30%', height: '30%',
+            position: 'absolute',
+            right: '5%',
+            bottom: '5%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            width: '28%',
+            height: '28%',
           }}>
             <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
           </div>
@@ -125,7 +144,18 @@ const GiftCard = memo(function GiftCard({
           position: 'absolute', inset: '15%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {gift.image_url ? (
+          {isInsert ? (
+            <span style={{
+              color: '#f0d48a',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'clamp(1rem, 32cqw, 2rem)',
+              fontWeight: 800,
+              lineHeight: 1,
+              textShadow: '0 0 0.375rem rgba(0,0,0,0.85)',
+            }}>
+              +
+            </span>
+          ) : gift.image_url ? (
             <div className="relative w-full h-full">
               <ImageWithFallback src={gift.image_url} alt={gift.name} fill fallbackType="gift" className="object-contain" sizes="120px" />
             </div>
@@ -135,7 +165,7 @@ const GiftCard = memo(function GiftCard({
         </div>
 
         {/* Selected checkmark */}
-        {isSelected && (
+        {!isInsert && isSelected && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 20,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -146,7 +176,7 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {/* Enhancement badge */}
-        {enhance != null && enhance > 0 && (
+        {!isInsert && enhance != null && enhance > 0 && (
           <div
             onClick={e => { e.stopPropagation(); onEnhance?.() }}
             style={{
@@ -174,7 +204,7 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {/* Enhancement available indicator */}
-        {enhance === 0 && onEnhance && (
+        {!isInsert && enhance === 0 && onEnhance && (
           <div
             onClick={e => { e.stopPropagation(); onEnhance() }}
             style={{
@@ -186,7 +216,7 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {/* Remove button */}
-        {onRemove && (
+        {!isInsert && onRemove && (
           <div
             role="button"
             tabIndex={0}
@@ -206,7 +236,7 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {/* Condition overlay */}
-        {conditionStatus && (
+        {!isInsert && conditionStatus && (
           <div
             title={conditionStatus.level === 'unmet'
               ? `조건 미달: ${conditionStatus.text} — 편성+대기 포함해도 부족`
@@ -239,7 +269,7 @@ const GiftCard = memo(function GiftCard({
       </div>
 
       {/* Name below card */}
-      {showName && (
+      {showName && !isInsert && (
         <p style={{
           fontSize: '0.5625rem',
           color: conditionStatus?.level === 'unmet' ? '#ef4444'
@@ -260,7 +290,7 @@ const GiftCard = memo(function GiftCard({
           {gift.name}
         </p>
       )}
-      {conditionStatus && (
+      {!isInsert && conditionStatus && (
         <p style={{ fontSize: '0.5rem', color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2, marginTop: '0.0625rem' }}>
           {conditionStatus.text}
         </p>

@@ -23,6 +23,7 @@ const contentSecurityPolicyDirectives = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  allowedDevOrigins: ['127.0.0.1'],
 
   // NOTE: turbopack.root intentionally unset — worktree node_modules symlink to parent
   //       repo breaks Turbopack when root is forced to __dirname. The "multiple lockfiles"
@@ -58,7 +59,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       'lucide-react',
       'sonner',
-      'framer-motion',
+      'motion',
       '@ai-sdk/react',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',

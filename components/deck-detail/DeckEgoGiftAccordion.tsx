@@ -1,8 +1,11 @@
 'use client'
 
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import { type ActivationCondition } from '@/lib/data/sinners'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import type { SupportedLang } from '@/lib/i18n'
 
 export type EgoGiftEntry = {
   name: string
@@ -64,6 +67,9 @@ export default function DeckEgoGiftAccordion({
   onToggle: () => void
 }) {
   const { getIconUrl } = useKeywordData()
+  const keywords = useKeywords()
+  const locale = useLocale() as SupportedLang
+  const t = useTranslations('decks')
   const formedSlots = filledSlots.filter(s => s.slot_order !== 99)
   if (formedSlots.length === 0 || allEgoGifts.length === 0) return null
 
@@ -84,7 +90,7 @@ export default function DeckEgoGiftAccordion({
       >
         <div className="flex items-center gap-2">
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: open ? '#8a7040' : 'var(--text-tertiary)', letterSpacing: '0.12em' }}>
-            EGO GIFTS
+            {t('detail.egoGifts')}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8900a' }}>
             {activated.length}
@@ -106,16 +112,16 @@ export default function DeckEgoGiftAccordion({
                   <Image src={getIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
                 )}
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#8a7040', letterSpacing: '0.05em' }}>
-                  {kw} ({grouped[kw].length})
+                  {localizeDeckKeyword(kw, keywords[kw], locale)} ({grouped[kw].length})
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 {grouped[kw].map(g => {
                   const c = g.activation_condition!
-                  const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
-                    : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
-                    : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
-                    : `${c.count}인`
+                  const condLabel = c.type === 'keyword' ? t('egoGifts.conditionKeyword', { keyword: localizeDeckKeyword(c.keyword!, keywords[c.keyword!], locale), count: c.count })
+                    : c.type === 'multi_keyword' ? t('egoGifts.conditionMultiKeyword', { keywords: c.keywords!.map(kw => localizeDeckKeyword(kw, keywords[kw], locale)).join('+'), count: c.count })
+                    : c.type === 'affiliation' ? t('egoGifts.conditionAffiliation', { affiliation: c.affiliation ?? c.affiliations!.join('/'), count: c.count })
+                    : t('egoGifts.conditionCount', { count: c.count })
                   return (
                     <div key={g.name} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(200,144,10,0.06)' }}>
                       {g.image_url && (
@@ -125,7 +131,7 @@ export default function DeckEgoGiftAccordion({
                         <span style={{ fontSize: '0.6875rem', color: '#c8a450', fontWeight: 600 }}>{g.name}</span>
                         <span style={{ fontSize: '0.75rem', color: '#8a8060', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
                       </div>
-                      <span style={{ fontSize: '0.75rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ON</span>
+                      <span style={{ fontSize: '0.75rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{t('egoGifts.on')}</span>
                     </div>
                   )
                 })}

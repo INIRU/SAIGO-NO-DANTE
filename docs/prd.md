@@ -158,7 +158,7 @@
 | SEO | 정적 메타데이터 + `generateMetadata` |
 | 모니터링 | Sentry 에러 트래킹, Vercel Analytics |
 | 다크 테마 | 기본 다크 테마 (밝은 테마 없음) |
-| 사이징 | rem 전용 (px 사용 금지) |
+| 사이징 | 사용자 폰트 조절과 반응형 UI 우선. `rem`/design token을 기본으로 하고, `px`는 정밀 픽셀 표현·측정·외부 API 제약에 허용 |
 
 ---
 

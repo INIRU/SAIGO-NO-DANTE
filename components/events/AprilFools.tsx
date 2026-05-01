@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { motion, AnimatePresence, useAnimate } from 'framer-motion'
+import { motion, AnimatePresence, useAnimate } from 'motion/react'
 import { X } from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────

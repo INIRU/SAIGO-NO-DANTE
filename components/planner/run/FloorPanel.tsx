@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { Users, Map, Calendar, Gift } from 'lucide-react'
 import type { RunState, RunAction, FloorSubTab } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'

@@ -1,7 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import type { HTMLMotionProps } from 'framer-motion'
+import { motion } from 'motion/react'
+import type { HTMLMotionProps } from 'motion/react'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 
 type MotionTag = 'div' | 'section' | 'article' | 'ul' | 'ol' | 'aside'
@@ -21,7 +21,7 @@ interface StaggerRevealProps extends Omit<HTMLMotionProps<'div'>, 'variants' | '
  * variant with matching `initial` / `animate` keys).
  *
  * The container itself is invisible (no layout style) — it only orchestrates
- * the timing of child animations via framer-motion's stagger mechanism.
+ * the timing of child animations via Motion's stagger mechanism.
  *
  * Usage:
  *   import { staggerItem } from '@/lib/animations'

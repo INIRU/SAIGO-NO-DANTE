@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { memo } from 'react'
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
-import { getSinnerLogoUrl } from '@/lib/utils/images'
-import SkillDescription from '@/components/skill/SkillDescription'
+import PlannerPassivePanel from '@/components/planner/PlannerPassivePanel'
 
 const S = STORAGE_BASE
 
@@ -22,6 +21,9 @@ interface SkillLike {
   sin_affinity: string
   skill_type: string
   skill_order: number
+  atk_type?: string | null
+  uptie_level?: number | null
+  variant_order?: number | null
 }
 
 interface PassiveLike {
@@ -43,6 +45,16 @@ interface EgoCostEntry {
   cost: number[] | null  // SIN_ORDER 순서 (wrath, lust, sloth, gluttony, gloom, pride, envy)
 }
 
+interface EgoAttackSkillLike {
+  skill_type?: string | null
+  atkType?: string | null
+  attack_type?: string | null
+  category?: string | null
+  construe_level?: number | null
+  construeLevel?: number | null
+  skill_order?: number | null
+}
+
 export interface DeckStatsPanelProps {
   identitySlots: IdentitySlotLike[]
   skills: SkillLike[]
@@ -50,24 +62,128 @@ export interface DeckStatsPanelProps {
   sinners: SinnerLike[]
   egoCosts?: EgoCostEntry[]  // 선택된 EGO들의 코스트 배열
   egoSinAffinities?: string[]  // 선택된 EGO들의 죄악 속성 (sin resource 생성에 포함)
+  egoAttackSkills?: EgoAttackSkillLike[][]
+  calculationMode?: 'planner' | 'deckDetail'
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function DeckStatsPanel({ identitySlots, skills, passives, sinners, egoCosts, egoSinAffinities }: DeckStatsPanelProps) {
-  const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
+const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
+type AttackType = 'slash' | 'pierce' | 'blunt'
 
+function normalizeSinValue(value: string | null | undefined): string | null {
+  if (!value) return null
+  const normalized = SIN_KR_TO_EN[value] ?? value.trim().toLowerCase()
+  return SIN_ORDER.includes(normalized as (typeof SIN_ORDER)[number]) ? normalized : null
+}
+
+function normalizeAttackType(value: string | null | undefined): AttackType | null {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase()
+  const mapped: Record<string, AttackType> = {
+    slash: 'slash',
+    pierce: 'pierce',
+    penetrate: 'pierce',
+    blunt: 'blunt',
+    hit: 'blunt',
+    '참격': 'slash',
+    '관통': 'pierce',
+    '타격': 'blunt',
+  }
+  return mapped[normalized] ?? null
+}
+
+function getBaseProductionSkills(skills: SkillLike[]): SkillLike[] {
+  const bestByIdentityOrder = new Map<string, SkillLike>()
+
+  for (const skill of skills) {
+    if (!BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order]) continue
+    if (!normalizeSinValue(skill.sin_affinity)) continue
+
+    const key = `${skill.identity_id}:${skill.skill_order}`
+    const existing = bestByIdentityOrder.get(key)
+    const variantOrder = skill.variant_order ?? 0
+    const existingVariantOrder = existing?.variant_order ?? 0
+    const isEarlierBaseVariant = !existing || variantOrder < existingVariantOrder
+    const isSameVariantHigherUptie =
+      existing &&
+      variantOrder === existingVariantOrder &&
+      (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)
+
+    if (isEarlierBaseVariant || isSameVariantHigherUptie) {
+      bestByIdentityOrder.set(key, skill)
+    }
+  }
+
+  return [...bestByIdentityOrder.values()]
+}
+
+function getCountedIdentityAttackSkills(skills: SkillLike[]): SkillLike[] {
+  const bestBySkillKey = new Map<string, SkillLike>()
+
+  for (const skill of skills) {
+    const key = `${skill.identity_id}:${skill.skill_order}:${skill.variant_order ?? 0}`
+    const existing = bestBySkillKey.get(key)
+    if (!existing || (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)) {
+      bestBySkillKey.set(key, skill)
+    }
+  }
+
+  return [...bestBySkillKey.values()]
+}
+
+function addEgoAttackTypeTotals(totals: Record<AttackType, number>, egoSkills: EgoAttackSkillLike[] | undefined): void {
+  const uniqueSkills = new Map<string, EgoAttackSkillLike>()
+
+  for (let index = 0; index < (egoSkills?.length ?? 0); index++) {
+    const skill = egoSkills?.[index]
+    if (!skill) continue
+    const attackType = normalizeAttackType(skill.skill_type ?? skill.atkType ?? skill.attack_type)
+    if (!attackType) continue
+    const key = `${skill.category ?? 'awakening'}:${skill.skill_order ?? index}:${attackType}`
+    const existing = uniqueSkills.get(key)
+    if (!existing || (skill.construe_level ?? skill.construeLevel ?? 0) > (existing.construe_level ?? existing.construeLevel ?? 0)) {
+      uniqueSkills.set(key, skill)
+    }
+  }
+
+  for (const skill of uniqueSkills.values()) {
+    const attackType = normalizeAttackType(skill.skill_type ?? skill.atkType ?? skill.attack_type)
+    if (attackType) totals[attackType]++
+  }
+}
+
+function DeckStatsPanel({
+  identitySlots,
+  skills,
+  passives,
+  sinners,
+  egoCosts,
+  egoSinAffinities,
+  egoAttackSkills,
+  calculationMode = 'planner',
+}: DeckStatsPanelProps) {
   if (identitySlots.length === 0) return null
 
   const slotIds = new Set(identitySlots.map(s => s.identity_id).filter(Boolean))
+  const selectedSkills = skills.filter(sk => slotIds.has(sk.identity_id))
 
   // ── 공격 유형 집계 ──
   const atkCount: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
   const defCount: Record<string, number> = { evade: 0, defense: 0, counter: 0 }
-  for (const sk of skills) {
-    if (!slotIds.has(sk.identity_id)) continue
-    if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
-    if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
+  if (calculationMode === 'deckDetail') {
+    for (const sk of getCountedIdentityAttackSkills(selectedSkills)) {
+      const attackType = normalizeAttackType(sk.atk_type ?? sk.skill_type)
+      if (attackType) atkCount[attackType]++
+    }
+    for (const egoSkills of egoAttackSkills ?? []) {
+      addEgoAttackTypeTotals(atkCount as Record<AttackType, number>, egoSkills)
+    }
+  } else {
+    for (const sk of selectedSkills) {
+      if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
+      if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
+    }
   }
   const atkTotal = Object.values(atkCount).reduce((a, b) => a + b, 0) || 1
 
@@ -77,15 +193,21 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
 
   // ── 죄악 자원 집계 (모든 스킬 + EGO 스킬 죄악) ──
   const deckSinCounts: Record<string, number> = {}
-  for (const sk of skills) {
-    if (!slotIds.has(sk.identity_id)) continue
-    const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
-    if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
-  }
-  if (egoSinAffinities) {
-    for (const sin of egoSinAffinities) {
-      const en = SIN_KR_TO_EN[sin] ?? sin
+  if (calculationMode === 'deckDetail') {
+    for (const sk of getBaseProductionSkills(selectedSkills)) {
+      const en = normalizeSinValue(sk.sin_affinity)
+      if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + (BASE_SKILL_PRODUCTION_WEIGHT[sk.skill_order] ?? 0)
+    }
+  } else {
+    for (const sk of selectedSkills) {
+      const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
       if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+    }
+    if (egoSinAffinities) {
+      for (const sin of egoSinAffinities) {
+        const en = SIN_KR_TO_EN[sin] ?? sin
+        if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+      }
     }
   }
 
@@ -102,15 +224,8 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
   }
   const hasEgoCosts = Object.values(egoCostTotal).some(v => v > 0)
 
-  // ── 패시브 조건 충족 체크 ──
-  const isCondMet = (p: PassiveLike) => {
-    if (!p.sin_affinity || !p.sin_count) return true
-    const en = SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity
-    return (deckSinCounts[en] ?? 0) >= p.sin_count
-  }
-
   return (
-    <div className="flex flex-col md:flex-row gap-4 mt-4">
+    <div className="deck-stats-panel flex flex-col md:flex-row gap-4 mt-4">
       {/* 공격 유형 + 죄악 자원 */}
       <div style={{ flex: '0 0 auto', width: '14rem', background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
         <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginBottom: '0.5rem' }}>공격 유형 분포</p>
@@ -162,75 +277,14 @@ export default function DeckStatsPanel({ identitySlots, skills, passives, sinner
       </div>
 
       {/* 패시브 — 배틀/서포트 탭 */}
-      <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
-        <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          {(['battle', 'support'] as const).map(tab => {
-            const active = passiveTab === tab
-            const cnt = passives.filter(p => slotIds.has(p.identity_id) && p.passive_type === tab).length
-            return (
-              <button key={tab} onClick={() => setPassiveTab(tab)} style={{
-                flex: 1, padding: '0.5rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400,
-                color: active ? (tab === 'battle' ? '#c84050' : '#4898b0') : '#555',
-                background: active ? (tab === 'battle' ? 'rgba(200,64,80,0.06)' : 'rgba(72,152,176,0.06)') : 'transparent',
-                borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-                borderBottom: `2px solid ${active ? (tab === 'battle' ? '#c84050' : '#4898b0') : 'transparent'}`,
-                cursor: 'pointer', fontFamily: 'var(--font-heading)',
-              }}>
-                {tab === 'battle' ? '배틀' : '서포트'} ({cnt})
-              </button>
-            )
-          })}
-        </div>
-        <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
-          {identitySlots.map((slot, idx) => {
-            const sName = sinners.find(s => s.id === slot.sinner_id)?.name_kr ?? slot.sinner_id ?? ''
-            const slotP = passives
-              .filter(p => p.identity_id === slot.identity_id && p.passive_type === passiveTab)
-              .sort((a, b) => (isCondMet(b) ? 1 : 0) - (isCondMet(a) ? 1 : 0))
-            if (slotP.length === 0) return null
-            return (
-              <div key={idx} className="flex items-start gap-2 px-3 py-2"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                <div style={{ width: '5.5rem', minWidth: 0, flexShrink: 0 }}>
-                  <div className="flex items-center gap-1">
-                    {slot.sinner_id && (
-                      <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
-                    )}
-                    <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
-                  </div>
-                  <p className="truncate" style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {slotP.map((p, pi) => {
-                    const sinEn = p.sin_affinity ? (SIN_KR_TO_EN[p.sin_affinity] ?? p.sin_affinity) : null
-                    const pc = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? '#888') : '#888'
-                    const met = isCondMet(p)
-                    return (
-                      <div key={pi} style={{ marginBottom: '0.375rem', opacity: met ? 1 : 0.4 }}>
-                        <div className="flex items-center gap-1.5" style={{ fontSize: '0.75rem' }}>
-                          {met && <span style={{ color: '#40a060', fontSize: '0.5625rem', flexShrink: 0 }}>●</span>}
-                          {sinEn && <Image src={getSinIconUrl(sinEn)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
-                          {p.sin_count != null && sinEn && (() => {
-                            const have = deckSinCounts[sinEn] ?? 0
-                            return <span style={{ color: met ? '#40a060' : pc, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{have}/{p.sin_count}</span>
-                          })()}
-                          <span style={{ color: pc, fontWeight: 600 }}>{p.active_cond === 'resonance' ? '공명' : p.active_cond === 'stock' ? '보유' : ''}</span>
-                          <span style={{ color: met ? '#9a8a70' : '#4a4030', fontWeight: 600 }}>{p.name}</span>
-                        </div>
-                        {p.description && (
-                          <div style={{ marginLeft: '0.75rem', marginTop: '0.125rem' }}>
-                            <SkillDescription description={p.description} accentColor={pc} variant="compact" />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      <PlannerPassivePanel
+        identitySlots={identitySlots}
+        passives={passives}
+        sinners={sinners}
+        deckSinCounts={deckSinCounts}
+      />
     </div>
   )
 }
+
+export default memo(DeckStatsPanel)

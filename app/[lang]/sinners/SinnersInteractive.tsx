@@ -2,7 +2,7 @@
 
 import { Link } from '@/lib/i18n/navigation'
 import { Users, Sparkles } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeIn } from '@/lib/animations'
 import { useTranslations, useLocale } from 'next-intl'

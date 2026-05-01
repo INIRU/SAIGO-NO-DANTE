@@ -46,6 +46,13 @@ const KEYWORD_ICON_SLUG_OVERRIDES: Record<string, string> = {
   '관통': 'stat:pierce',
   '타격': 'stat:blunt',
   '지령 탐닉': 'directive-indulgence',
+  '아이언 메이든': 'iron-maiden',
+  '원호 공격': 'assist-attack',
+  '원호 방어': 'assist-defense',
+}
+const KEYWORD_DESCRIPTION_OVERRIDES: Record<string, string> = {
+  '원호 공격': '- 이 효과를 부여한 대상의 공격 스킬 종료 시, 부여 대상이 공격한 적을 스킬 1로 일방 공격 함.\n- 원호 공격 시 해당 캐릭터의 사용할 스킬 목록에 영향을 주지 않음.',
+  '원호 방어': '- 최댓값 : 3\n- 아군이 적에게 일방공격 당할 때, 수치를 1 소모하여 적의 공격 대상을 자신으로 변경하고, 원호 방어 전용 스킬 사용\n- 원호 방어를 보유한 아군이 여러 명이면, 가장 높은 수치를 가진 아군이 우선 발동\n- 수비 스킬을 장착한 아군에게는 발동하지 않음\n- 턴 종료시 소멸',
 }
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
@@ -56,7 +63,11 @@ const EN_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/en')
 const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp'))
 const EN_DIR = join(DATA_DIR, 'EN')
 const JP_DIR = join(DATA_DIR, 'JP')
+const KR_PERSONALITY_VOICE_LATEST_DIR = join(KR_LATEST_DIR, 'PersonalityVoiceDlg')
 const TRUE_EGO_FILE_RE = /^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_FILE_RE = /^personality-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_SKILL_FILE_RE = /^personality-skill-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_PASSIVE_FILE_RE = /^personality-passive-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -108,8 +119,14 @@ const ASSOCIATION_MAP: Record<string, string> = {
   T_CORP: 'T사', SWORD_GROUP: '칼잡이', SPIDER_HOUSE: '거미집', LEGO: '레고',
   CINQ: '다섯손가락', CINQ_EAST: '다섯손가락', HEISHOU: '흑수',
   BLOODFIEND: '피멍울', FULLSTOP: '마침표', BLACKWATER: '흑강', XICHUN: '씻김',
+  L_CORP: '로보토미 본사', FIREPUNCH_OFFICE: '불주먹 사무소',
 }
-const AFFILIATION_KEYS = new Set(Object.keys(ASSOCIATION_MAP))
+const UNIT_KEYWORD_FALLBACK_MAP: Record<string, string> = {
+  SMALL: '소형',
+}
+const BROAD_AFFILIATION_NAMES = new Set([
+  '림버스 컴퍼니',
+])
 
 const CONDITION_TAG_MAP: Record<string, string> = {
   OnSucceedAttack: '적중시', OnSucceedAttackHead: '앞면 적중시',
@@ -142,12 +159,22 @@ const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 const EXCLUDED_TAGS = new Set(['Target', 'Result', 'Damage', 'Attack', 'Return', 'Recover', 'Shield'])
 const UPTIE_LEVELS = [3, 4] as const
 
-// Fields compared for existing identities — only game-sourced stats.
-// name_kr, folder_name, keywords, affiliation are hand-curated and must NOT be overwritten.
+// Fields compared for existing identities — only game-sourced stats, tags, and source-backed quote.
+// keywords remains protected below; manual fields such as acquisition/acquisition_info are not touched.
 const STAT_FIELDS = [
   'hp', 'base_hp', 'hp_per_level', 'speed_min', 'speed_max', 'def_level',
   'rarity', 'slash_res', 'pierce_res', 'blunt_res', 'break_section',
+  'skill_keyword_list', 'unit_keyword_list', 'association_list', 'affiliation', 'quote',
 ] as const
+const GAME_ARRAY_COLUMNS = ['skill_keyword_list', 'unit_keyword_list', 'association_list'] as const
+type GameArrayColumn = typeof GAME_ARRAY_COLUMNS[number]
+
+const BASE_IDENTITY_SELECT = [
+  'id', 'game_id', 'sinner_id', 'name', 'name_kr', 'name_en', 'name_jp',
+  'hp', 'base_hp', 'hp_per_level', 'speed_min', 'speed_max', 'def_level',
+  'rarity', 'slash_res', 'pierce_res', 'blunt_res', 'break_section',
+  'keywords', 'folder_name', 'affiliation', 'quote',
+].join(',')
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -226,6 +253,7 @@ const SkillDataLevelSchema = z.object({
 const PersonalitySkillSchema = z.object({
   id: z.number(),
   skillTier: z.number().optional(),
+  isHiddenForUI: z.boolean().optional(),
   requireIDList: z.array(z.union([z.number(), z.string()])).optional(),
   skillData: z.array(SkillDataLevelSchema),
 })
@@ -321,9 +349,13 @@ interface ComputedIdentity {
   pierce_res: string | null
   blunt_res: string | null
   break_section: unknown
+  skill_keyword_list: string[]
+  unit_keyword_list: string[]
+  association_list: string[]
   keywords: string[]
   folder_name: string | null
   affiliation: string | null
+  quote?: string
 }
 
 interface SkillRow {
@@ -332,6 +364,7 @@ interface SkillRow {
   name_en?: string | null
   name_jp?: string | null
   skill_type: string | null
+  atk_type: string | null
   sin_affinity: string | null
   base_power: number | null
   coin_power: number | null
@@ -427,6 +460,20 @@ function sleep(ms: number): Promise<void> {
 
 // ── KR data loaders ───────────────────────────────────────────────────────────
 
+function cleanLocaleContent(value: string): string {
+  return value
+    .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
+    .replace(/<\/?i>/g, '')
+    .replace(/<\/?s>/g, '')
+    .replace(/<\/?noparse>/g, '')
+    .replace(/<\/?u>/g, '')
+    .replace(/<color=[^>]*>/g, '').replace(/<\/color>/g, '')
+    .replace(/<link=[^>]*>/g, '').replace(/<\/link>/g, '')
+    .replace(/<sprite[^>]*\/?>/g, '')
+    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
+    .trim()
+}
+
 function loadKrTagMap(): Record<string, string> {
   const map: Record<string, string> = { ...CONDITION_TAG_MAP }
 
@@ -462,6 +509,78 @@ function loadKrTagMap(): Record<string, string> {
 
   return map
 }
+
+function loadKrContentMap(filePattern: RegExp, idPrefix: string): Record<string, string> {
+  const map: Record<string, string> = {}
+
+  for (const { dir, ext } of [
+    { dir: KR_LATEST_DIR, ext: '.json' },
+    { dir: KR_DIR, ext: '.txt' },
+  ]) {
+    if (!existsSync(dir)) continue
+    const files = globFiles(dir, filePattern).filter(f => f.endsWith(ext))
+    for (const f of files) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const parsed = z.object({ id: z.string(), content: z.string() }).safeParse(item)
+        if (!parsed.success) continue
+        const key = parsed.data.id.startsWith(idPrefix)
+          ? parsed.data.id.slice(idPrefix.length)
+          : parsed.data.id
+        if (!map[key]) map[key] = cleanLocaleContent(parsed.data.content)
+      }
+    }
+  }
+
+  return map
+}
+
+function loadKrPersonalityGetQuotes(): Map<string, string> {
+  const map = new Map<string, string>()
+  const entrySchema = z.object({
+    id: z.string(),
+    dlg: z.string().optional(),
+  })
+
+  for (const { dir, pattern } of [
+    { dir: KR_PERSONALITY_VOICE_LATEST_DIR, pattern: /^KR_Voice_.*\.json$/i },
+    { dir: KR_DIR, pattern: /^KR_Voice_.*\.txt$/i },
+  ]) {
+    if (!existsSync(dir)) continue
+    for (const f of globFiles(dir, pattern)) {
+      const data = readTxt(join(dir, f))
+      for (const item of extractList(data)) {
+        const parsed = entrySchema.safeParse(item)
+        if (!parsed.success) continue
+        const match = /^get_(\d+)_\d+$/.exec(parsed.data.id)
+        const quote = parsed.data.dlg ? cleanLocaleContent(parsed.data.dlg) : ''
+        if (match?.[1] && quote && !map.has(match[1])) {
+          map.set(match[1], quote)
+        }
+      }
+    }
+  }
+
+  return map
+}
+
+function loadKrUnitKeywordMap(): Record<string, string> {
+  return {
+    ...UNIT_KEYWORD_FALLBACK_MAP,
+    ...loadKrContentMap(/^KR_UnitKeyword/i, 'UnitKeyword_'),
+  }
+}
+
+function loadKrAssociationMap(unitKeywordMap: Record<string, string>): Record<string, string> {
+  return {
+    ...ASSOCIATION_MAP,
+    ...unitKeywordMap,
+    ...loadKrContentMap(/^KR_AssociationName/i, 'associationName_'),
+  }
+}
+
+let UNIT_KEYWORD_MAP: Record<string, string> = { ...UNIT_KEYWORD_FALLBACK_MAP }
+let ASSOCIATION_NAME_MAP: Record<string, string> = { ...ASSOCIATION_MAP }
 
 function loadKrKeywordDescriptions(): Map<string, { id: string; description: string | null }> {
   const map = new Map<string, { id: string; description: string | null }>()
@@ -610,13 +729,9 @@ function loadKrSkills(): Map<number, KrSkill> {
 
 function loadPersonalities(): Map<string, Personality> {
   const map = new Map<string, Personality>()
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-${pad}.txt`))
-    if (!data) {
-      console.warn(YELLOW(`  [경고] personality-${pad}.txt 없음`))
-      continue
-    }
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
+    if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PersonalitySchema.safeParse(item)
       if (parsed.success) map.set(String(parsed.data.id), parsed.data)
@@ -627,9 +742,8 @@ function loadPersonalities(): Map<string, Personality> {
 
 function loadPersonalitySkills(): Map<number, PersonalitySkill> {
   const map = new Map<number, PersonalitySkill>()
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-skill-${pad}.txt`))
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_SKILL_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
     if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PersonalitySkillSchema.safeParse(item)
@@ -643,9 +757,8 @@ function loadPersonalitySkills(): Map<number, PersonalitySkill> {
 
 function loadPassiveMappings(): PassiveMapping[] {
   const all: PassiveMapping[] = []
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-passive-${pad}.txt`))
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_PASSIVE_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
     if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PassiveMappingSchema.safeParse(item)
@@ -967,7 +1080,40 @@ function translateKeywords(keywordList: string[] | undefined): string[] {
   return result
 }
 
-function calcIdentityStats(p: Personality, krName: KrPersonality | undefined): ComputedIdentity {
+function translateUnitKeywords(keywordList: string[] | undefined): string[] {
+  const result: string[] = []
+  for (const kw of keywordList ?? []) {
+    const kr = UNIT_KEYWORD_MAP[kw]
+    if (kr) result.push(kr)
+  }
+  return result
+}
+
+function translateAssociations(associationList: string[] | undefined): string[] {
+  const result: string[] = []
+  for (const association of associationList ?? []) {
+    const kr = ASSOCIATION_NAME_MAP[association]
+    if (kr) result.push(kr)
+  }
+  return result
+}
+
+function pickRepresentativeAffiliation(associationList: string[]): string | null {
+  if (associationList.length === 0) return null
+
+  for (const association of associationList) {
+    if (BROAD_AFFILIATION_NAMES.has(association) && associationList.length > 1) continue
+    return association
+  }
+
+  return associationList[0] ?? null
+}
+
+function calcIdentityStats(
+  p: Personality,
+  krName: KrPersonality | undefined,
+  quoteMap: Map<string, string>,
+): ComputedIdentity {
   const base_hp = p.hp?.defaultStat ?? null
   const hp = base_hp != null ? Math.round(base_hp + (p.hp?.incrementByLevel ?? 0) * 60) : null
   const hp_per_level = p.hp?.incrementByLevel ?? null
@@ -979,7 +1125,10 @@ function calcIdentityStats(p: Personality, krName: KrPersonality | undefined): C
   const pierce_res = getResistance(p, 'PENETRATE')
   const blunt_res = getResistance(p, 'HIT')
   const break_section = (p.breakSection as { sectionList: unknown } | undefined)?.sectionList ?? null
-  const keywords = translateKeywords(p.skillKeywordList)
+  const skill_keyword_list = translateKeywords(p.skillKeywordList)
+  const unit_keyword_list = translateUnitKeywords(p.unitKeywordList)
+  const association_list = translateAssociations(p.associationList)
+  const keywords = [...skill_keyword_list]
 
   const folder_name = p.appearance ? p.appearance.replace(/^\d+_/, '') : null
   const name_kr = krName?.nameWithTitle ?? krName?.name ?? null
@@ -988,10 +1137,10 @@ function calcIdentityStats(p: Personality, krName: KrPersonality | undefined): C
   const sinner = SINNERS.find(s => s.id === p.characterId)
   const sinner_slug = sinner?.slug ?? null
 
-  const affiliationEntry = (p.associationList ?? []).find(a => AFFILIATION_KEYS.has(a))
-  const affiliation = affiliationEntry ? (ASSOCIATION_MAP[affiliationEntry] ?? null) : null
+  const affiliation = pickRepresentativeAffiliation(association_list)
+  const quote = quoteMap.get(String(p.id))
 
-  return {
+  const identity: ComputedIdentity = {
     game_id: String(p.id),
     sinner_slug,
     name,
@@ -1007,10 +1156,15 @@ function calcIdentityStats(p: Personality, krName: KrPersonality | undefined): C
     pierce_res,
     blunt_res,
     break_section,
+    skill_keyword_list,
+    unit_keyword_list,
+    association_list,
     keywords,
     folder_name,
     affiliation,
   }
+  if (quote) identity.quote = quote
+  return identity
 }
 
 // ── Skill building ────────────────────────────────────────────────────────────
@@ -1122,6 +1276,7 @@ function buildSkillRows(
         name_en: enSkillLvl?.name ?? null,
         name_jp: jpSkillLvl?.name ?? null,
         skill_type: isDefense ? (DEF_TYPE_MAP[r.defType!] ?? null) : (ATK_TYPE_MAP[r.atkType ?? ''] ?? null),
+        atk_type: ATK_TYPE_MAP[r.atkType ?? ''] ?? null,
         sin_affinity: SIN_MAP[r.attributeType ?? ''] ?? null,
         base_power: r.defaultValue ?? null,
         coin_power: coinList.length > 0
@@ -1142,7 +1297,7 @@ function buildSkillRows(
     // Defense skills (exclude variants with requireIDList)
     const defSkills = defenseSkillIds
       .map(sid => skillMap.get(sid))
-      .filter((gs): gs is PersonalitySkill => !!gs && !(gs.requireIDList && gs.requireIDList.length > 0))
+      .filter((gs): gs is PersonalitySkill => !!gs && !gs.isHiddenForUI && !(gs.requireIDList && gs.requireIDList.length > 0))
 
     for (const gs of defSkills) {
       const r = resolveToLevel(gs, uptie)
@@ -1161,6 +1316,7 @@ function buildSkillRows(
         name_en: enDefLvl?.name ?? null,
         name_jp: jpDefLvl?.name ?? null,
         skill_type: isDefense ? (DEF_TYPE_MAP[r.defType!] ?? null) : (ATK_TYPE_MAP[r.atkType ?? ''] ?? null),
+        atk_type: ATK_TYPE_MAP[r.atkType ?? ''] ?? null,
         sin_affinity: SIN_MAP[r.attributeType ?? ''] ?? null,
         base_power: r.defaultValue ?? null,
         coin_power: coinList.length > 0
@@ -1268,7 +1424,7 @@ function buildPassiveRows(
 // ── Four-source keyword extraction ───────────────────────────────────────────
 
 function addMappedKeyword(keywords: Set<string>, tag: string): void {
-  const keyword = TAG_MAP[tag]
+  const keyword = TAG_MAP[tag] ?? UNIT_KEYWORD_MAP[tag]
   if (keyword) keywords.add(keyword)
 }
 
@@ -1372,12 +1528,56 @@ function diffIdentity(
   const changes: Partial<Record<StatField, { from: unknown; to: unknown }>> = {}
   for (const field of STAT_FIELDS) {
     const newVal = computed[field as keyof ComputedIdentity]
+    if (field === 'quote' && newVal === undefined) continue
     const oldVal = dbRow[field]
     if (!valuesEqual(newVal, oldVal)) {
       changes[field] = { from: oldVal, to: newVal }
     }
   }
   return changes
+}
+
+function isMissingColumnError(error: { code?: string; message?: string }, column: string): boolean {
+  return error.code === '42703' || (error.message ?? '').includes(column)
+}
+
+async function loadIdentityRows(): Promise<{
+  rows: Record<string, unknown>[]
+  availableGameArrayColumns: Set<GameArrayColumn>
+}> {
+  const available = new Set<GameArrayColumn>(GAME_ARRAY_COLUMNS)
+  const missing = new Set<GameArrayColumn>()
+
+  while (true) {
+    const selectedColumns = GAME_ARRAY_COLUMNS.filter(column => available.has(column))
+    const select = selectedColumns.length > 0
+      ? `${BASE_IDENTITY_SELECT},${selectedColumns.join(',')}`
+      : BASE_IDENTITY_SELECT
+
+    const result = await supabase
+      .from('identities')
+      .select(select)
+      .limit(2000)
+
+    if (!result.error) {
+      return {
+        rows: ((result.data ?? []) as unknown as Record<string, unknown>[])
+          .map(row => {
+            const filled = { ...row }
+            for (const column of missing) filled[column] = []
+            return filled
+          }),
+        availableGameArrayColumns: available,
+      }
+    }
+
+    const missingColumn = selectedColumns.find(column => isMissingColumnError(result.error!, column))
+    if (!missingColumn) throw new Error(`DB 인격 로드 실패: ${result.error.message}`)
+
+    console.warn(YELLOW(`  [경고] identities.${missingColumn} 컬럼이 없어 해당 필드를 제외하고 재시도합니다. migration 적용 전 dry-run 호환 경로입니다.`))
+    available.delete(missingColumn)
+    missing.add(missingColumn)
+  }
 }
 
 // ── Supabase batch helpers ────────────────────────────────────────────────────
@@ -1777,7 +1977,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     const icon_slug = KEYWORD_ICON_SLUG_OVERRIDES[name] ?? existing?.icon_slug ?? null
     rows.push({
       name,
-      description: krData?.description ?? existing?.description ?? null,
+      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? krData?.description ?? existing?.description ?? null,
       name_en,
       name_jp,
       description_en: enData?.description ?? existing?.description_en ?? null,
@@ -1825,6 +2025,7 @@ async function main(): Promise<void> {
   console.log(BOLD(`║  모드: ${DRY_RUN ? '  DRY RUN (비교만)' : RED('  FIX (DB 반영)')}                         `))
   console.log(BOLD(`║  대상: ${SINNER_FILTER ? `  ${SINNER_FILTER}` : '  전체 12명'}                              `))
   console.log(BOLD(`║  키워드: ${UPDATE_KEYWORDS ? YELLOW('  --keywords 활성 (기존 인격 키워드 업데이트)') : '  protected (기존 인격 키워드 보호)'}  `))
+  console.log(BOLD('║  대표/유닛/소속 배열: --fix에서 공식 JSON 기준 자동 동기화 ║'))
   console.log(BOLD('╚══════════════════════════════════════════════════════════╝\n'))
 
   // ── Load game data ────────────────────────────────────────────────────────
@@ -1832,6 +2033,10 @@ async function main(): Promise<void> {
 
   TAG_MAP = loadKrTagMap()
   console.log(`  KR 태그 맵: ${Object.keys(TAG_MAP).length}개`)
+  UNIT_KEYWORD_MAP = loadKrUnitKeywordMap()
+  ASSOCIATION_NAME_MAP = loadKrAssociationMap(UNIT_KEYWORD_MAP)
+  console.log(`  KR 유닛 태그 맵: ${Object.keys(UNIT_KEYWORD_MAP).length}개`)
+  console.log(`  KR 소속 맵: ${Object.keys(ASSOCIATION_NAME_MAP).length}개`)
 
   if (REBUILD_KEYWORD_META) {
     await rebuildKeywordMeta()
@@ -1840,6 +2045,9 @@ async function main(): Promise<void> {
 
   const krPersonMap = loadKrPersonalities()
   console.log(`  KR 인격 이름: ${krPersonMap.size}개`)
+
+  const krQuoteMap = loadKrPersonalityGetQuotes()
+  console.log(`  KR 인격 획득 대사(get_*): ${krQuoteMap.size}개`)
 
   const krSkillMap = loadKrSkills()
   console.log(`  KR 스킬 텍스트: ${krSkillMap.size}개`)
@@ -1871,17 +2079,16 @@ async function main(): Promise<void> {
 
   // ── Load DB data ──────────────────────────────────────────────────────────
   console.log('  DB 데이터 로드 중...')
-  const { data: dbIdentityRows, error: dbErr } = await supabase
-    .from('identities')
-    .select('id,game_id,sinner_id,name,name_kr,name_en,name_jp,hp,base_hp,hp_per_level,speed_min,speed_max,def_level,rarity,slash_res,pierce_res,blunt_res,break_section,keywords,folder_name,affiliation')
-    .limit(2000)
-  if (dbErr) throw new Error(`DB 인격 로드 실패: ${dbErr.message}`)
+  const { rows: dbIdentityRows, availableGameArrayColumns } = await loadIdentityRows()
 
   const dbIdentityMap = new Map<string, Record<string, unknown>>()
   for (const row of dbIdentityRows ?? []) {
     if (row.game_id) dbIdentityMap.set(String(row.game_id), row as Record<string, unknown>)
   }
-  console.log(`  DB 인격: ${dbIdentityMap.size}개 로드\n`)
+  console.log(`  DB 인격: ${dbIdentityMap.size}개 로드`)
+  console.log(`  skill_keyword_list: ${availableGameArrayColumns.has('skill_keyword_list') ? '동기화 가능' : 'migration 미적용 (dry-run diff만 표시)'}`)
+  console.log(`  unit_keyword_list: ${availableGameArrayColumns.has('unit_keyword_list') ? '동기화 가능' : 'migration 미적용 (dry-run diff만 표시)'}`)
+  console.log(`  association_list: ${availableGameArrayColumns.has('association_list') ? '동기화 가능' : 'migration 미적용 (dry-run diff만 표시)'}\n`)
 
   // ── Filter sinners ────────────────────────────────────────────────────────
   const targetSinners = SINNER_FILTER
@@ -1910,6 +2117,7 @@ async function main(): Promise<void> {
   // Counters
   let totalNew = 0, totalChanged = 0, totalUnchanged = 0, totalSkipped = 0
   let totalSkillsInserted = 0
+  const missingQuoteSourceCases: Array<{ gameId: string; name: string }> = []
 
   // ── Per-sinner processing: identities + skills ────────────────────────────
   for (const sinner of targetSinners) {
@@ -1943,8 +2151,11 @@ async function main(): Promise<void> {
       const p = sinnerPersonalities[i]
       const gameId = String(p.id)
       const krName = krPersonMap.get(gameId)
-      const computed = calcIdentityStats(p, krName)
+      const computed = calcIdentityStats(p, krName, krQuoteMap)
       const displayName = krName?.nameWithTitle ?? krName?.name ?? gameId
+      if (!computed.quote) {
+        missingQuoteSourceCases.push({ gameId, name: displayName })
+      }
 
       const dbRow = dbIdentityMap.get(gameId)
 
@@ -1955,10 +2166,14 @@ async function main(): Promise<void> {
         console.log(GREEN(`    rank=${computed.rarity} hp=${computed.hp} spd=${computed.speed_min}~${computed.speed_max}`))
         console.log(GREEN(`    folder: ${computed.folder_name}`))
         console.log(GREEN(`    affiliation: ${computed.affiliation ?? '(없음)'}`))
+        console.log(GREEN(`    skill_keyword_list: [${computed.skill_keyword_list.join(', ')}]`))
+        console.log(GREEN(`    unit_keyword_list: [${computed.unit_keyword_list.join(', ')}]`))
+        console.log(GREEN(`    association_list: [${computed.association_list.join(', ')}]`))
+        if (computed.quote) console.log(GREEN(`    quote: ${computed.quote}`))
         console.log(GREEN(`    keywords: [${computed.keywords.join(', ')}]`))
 
         if (!DRY_RUN) {
-          const identityRow = {
+          const identityRow: Record<string, unknown> = {
             sinner_id: sinnerUuid,
             name: computed.name,
             name_kr: computed.name_kr,
@@ -1980,6 +2195,14 @@ async function main(): Promise<void> {
             blunt_res: computed.blunt_res,
             break_section: computed.break_section,
             keywords: computed.keywords,
+          }
+          if (computed.quote) identityRow.quote = computed.quote
+          for (const column of GAME_ARRAY_COLUMNS) {
+            if (availableGameArrayColumns.has(column)) {
+              identityRow[column] = computed[column]
+            } else {
+              console.warn(YELLOW(`    [경고] ${column} 컬럼이 없어 신규 삽입 payload에서 제외합니다. migration 적용 후 재실행하세요.`))
+            }
           }
 
           const { data: inserted, error: insertErr } = await supabase
@@ -2106,14 +2329,21 @@ async function main(): Promise<void> {
 
       if (!DRY_RUN) {
         const updatePayload: Record<string, unknown> = {}
-        for (const [field, { to }] of Object.entries(changes)) updatePayload[field] = to
-        const { error: patchErr } = await supabase
-          .from('identities')
-          .update(updatePayload)
-          .eq('id', (dbRow as { id: string }).id)
-        if (patchErr) console.error(RED(`    [ERROR] 업데이트 실패: ${patchErr.message}`))
-        else console.log(YELLOW(`    업데이트 완료`))
-        await sleep(80)
+        for (const [field, { to }] of Object.entries(changes)) {
+          if (GAME_ARRAY_COLUMNS.includes(field as GameArrayColumn) && !availableGameArrayColumns.has(field as GameArrayColumn)) continue
+          updatePayload[field] = to
+        }
+        if (Object.keys(updatePayload).length === 0) {
+          console.warn(YELLOW(`    [경고] 새 게임 배열 컬럼이 없어 업데이트를 건너뜁니다. migration 적용 후 재실행하세요.`))
+        } else {
+          const { error: patchErr } = await supabase
+            .from('identities')
+            .update(updatePayload)
+            .eq('id', (dbRow as { id: string }).id)
+          if (patchErr) console.error(RED(`    [ERROR] 업데이트 실패: ${patchErr.message}`))
+          else console.log(YELLOW(`    업데이트 완료`))
+          await sleep(80)
+        }
       }
     }
   }
@@ -2400,13 +2630,21 @@ async function main(): Promise<void> {
     console.log(CYAN('\n  DB 반영 완료'))
   }
 
+  if (missingQuoteSourceCases.length > 0) {
+    console.log(YELLOW('\n  [quote 소스 확인 필요]'))
+    console.log(YELLOW('  KR PersonalityVoiceDlg get_* 대사를 찾지 못한 인격:'))
+    for (const item of missingQuoteSourceCases) {
+      console.log(YELLOW(`    • ${item.gameId} ${item.name}`))
+    }
+  }
+
   if (totalNew > 0 && !DRY_RUN) {
     console.log(YELLOW('\n  [수동 입력 필요 필드]'))
     console.log(YELLOW('  다음 필드는 자동으로 채워지지 않습니다:'))
     console.log(YELLOW('    • acquisition      — 획득 방법 (가챠/파편 교환)'))
     console.log(YELLOW('    • acquisition_info — JSONB (type, gacha, fragment_cost, release_season)'))
-    console.log(YELLOW('    • quote            — 특색 있는 대사 (KR_Voice_*.json → smalltalk)'))
     console.log(YELLOW('    • keywords         — 추출 키워드 확인 및 보완 필요 (--keywords로 확인)'))
+    console.log(YELLOW('  quote는 KR PersonalityVoiceDlg get_* 소스가 있을 때 자동 입력되며, 소스가 없는 인격만 확인하세요.'))
   }
 
   // On-demand cache invalidation after successful --fix run.

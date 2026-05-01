@@ -21,11 +21,21 @@ interface IdentityInfoCardProps {
   currentSeason?: number
 }
 
+function getAssociationChips(identity: Identity, locale: SupportedLang) {
+  const associations = identity.association_list
+    ?.map(association => association.trim())
+    .filter(Boolean)
+
+  if (associations && associations.length > 0) return associations
+  return identity.affiliation ? [getLocalizedAffiliation(identity.affiliation, locale)] : []
+}
+
 export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7 }: IdentityInfoCardProps) {
   const { sinMap: kwSinMap } = useKeywordData()
   const kwAll = useKeywords()
   const t = useTranslations()
   const locale = useLocale()
+  const associationChips = getAssociationChips(identity, locale as SupportedLang)
   return (
     <div className="card p-6">
       <h2
@@ -127,19 +137,24 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
       })()}
 
       {/* 소속 */}
-      {identity.affiliation && (
+      {associationChips.length > 0 && (
         <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
           <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>{t('identity.info.affiliation')}</div>
-          <span
-            className="px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1"
-            style={{
-              background: `${sinColor}18`,
-              color: sinColor,
-              border: `1px solid ${sinColor}40`,
-            }}
-          >
-            {getLocalizedAffiliation(identity.affiliation, locale as SupportedLang)}
-          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {associationChips.map(association => (
+              <span
+                key={association}
+                className="px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1"
+                style={{
+                  background: `${sinColor}18`,
+                  color: sinColor,
+                  border: `1px solid ${sinColor}40`,
+                }}
+              >
+                {association}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

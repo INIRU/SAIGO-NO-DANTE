@@ -340,7 +340,71 @@ interface GiftRow {
   convert_to: number | null
   difficulty?: string
   image_url?: string
-  activation_condition?: unknown
+  activation_condition?: GiftActivationCondition
+}
+
+type GiftActivationCondition = {
+  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+  keyword?: string
+  keywords?: string[]
+  affiliation?: string
+  affiliations?: string[]
+  skill_condition?: string
+  count: number
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function stableJson(value: unknown): string {
+  if (value === null || value === undefined) return JSON.stringify(value)
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return `{${Object.keys(record).sort().map(k => `${JSON.stringify(k)}:${stableJson(record[k])}`).join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+function sameJson(a: unknown, b: unknown): boolean {
+  return stableJson(a ?? null) === stableJson(b ?? null)
+}
+
+function extractActivationCondition(effect: string | null, keyword: string): GiftActivationCondition | undefined {
+  if (!effect) return undefined
+
+  const keywordTrimmed = keyword.trim()
+
+  const affiliationMatch = effect.match(/(?:편성된\s*)?(?:아래 효과는\s*)?(?:전투 내\s*)?([가-힣A-Za-z0-9 .·-]+?)\s*소속 인격이\s*(\d+)인 이상(?:\s*일 때|이면| 있다면)?/)
+  if (affiliationMatch) {
+    return {
+      type: 'affiliation',
+      count: Number(affiliationMatch[2]),
+      affiliation: affiliationMatch[1].trim(),
+    }
+  }
+
+  const bloodfeastMatch = effect.match(/혈찬을 소모하는 스킬을 보유한 인격이\s*(\d+)인 이상/)
+  if (bloodfeastMatch) {
+    return {
+      type: 'skill',
+      count: Number(bloodfeastMatch[1]),
+      skill_condition: '혈찬 소모',
+    }
+  }
+
+  if (!keywordTrimmed || keywordTrimmed === '공통') return undefined
+
+  const keywordPattern = new RegExp(`${escapeRegExp(keywordTrimmed)}[^\\n]*?(?:공격\\s*)?스킬[^\\n]*?보유한 인격이\\s*(\\d+)인 이상`)
+  const keywordMatch = effect.match(keywordPattern)
+  if (!keywordMatch) return undefined
+
+  return {
+    type: 'keyword',
+    count: Number(keywordMatch[1]),
+    keyword: keywordTrimmed,
+  }
 }
 
 async function syncGifts(): Promise<void> {
@@ -528,6 +592,8 @@ async function syncGifts(): Promise<void> {
       effectBase = effectBase.replace('{0}', `→ [${convertName}]`)
     }
 
+    const activationCondition = extractActivationCondition(effectBase, keyword)
+
     gifts.push({
       game_id: id,
       name: baseLoc.name,
@@ -566,6 +632,7 @@ async function syncGifts(): Promise<void> {
       effect_plusplus_jp: ppLocalizeId ? cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp') : null,
       is_synthesis: false,
       convert_to: convertTo,
+      activation_condition: activationCondition,
     })
 
     // Replace runtime placeholders {0}, {1}, etc. with default value "0"
@@ -700,16 +767,17 @@ async function syncGifts(): Promise<void> {
       if (existing.is_synthesis !== gift.is_synthesis) changes.push(`is_synthesis: ${existing.is_synthesis} → ${gift.is_synthesis}`)
       if (existing.difficulty !== gift.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${gift.difficulty}`)
       if (existing.game_id !== gift.game_id) changes.push(`game_id: ${existing.game_id} → ${gift.game_id}`)
+      if (gift.activation_condition && !sameJson(existing.activation_condition, gift.activation_condition)) changes.push('activation_condition 변경')
 
       if (changes.length > 0) {
         updateCount++
         console.log(YELLOW(`  🔄 ${gift.name}: ${changes.join(', ')}`))
-        // CRITICAL: preserve activation_condition and image_url — never overwrite
+        // Keep image_url stable; only update activation_condition when source text yields one.
         toUpsert.push({
           ...gift,
           id: existing.id,
           image_url: existing.image_url ?? undefined,
-          activation_condition: existing.activation_condition ?? undefined,
+          activation_condition: gift.activation_condition ?? existing.activation_condition ?? undefined,
         })
       } else {
         matchCount++
@@ -720,7 +788,7 @@ async function syncGifts(): Promise<void> {
             ...gift,
             id: existing.id,
             image_url: existing.image_url ?? undefined,
-            activation_condition: existing.activation_condition ?? undefined,
+            activation_condition: gift.activation_condition ?? existing.activation_condition ?? undefined,
           })
         }
       }

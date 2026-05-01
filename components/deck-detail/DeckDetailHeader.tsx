@@ -3,14 +3,28 @@
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, GitFork } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { STORAGE_BASE, SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import type { SupportedLang } from '@/lib/i18n'
 
 const ATK_ICON_URL: Record<string, string> = {
   'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
   'pierce': `${STORAGE_BASE}/icons/stats/pierce.webp`,
   'blunt': `${STORAGE_BASE}/icons/stats/blunt.webp`,
 }
+
+const sidebarActionTextStyle = {
+  fontFamily: 'var(--font-heading), var(--font-scdream), sans-serif',
+  fontSize: '0.8125rem',
+  fontWeight: 800,
+  lineHeight: 1.05,
+  letterSpacing: '0.045em',
+  textShadow: '0 0.0625rem 0.125rem rgba(0, 0, 0, 0.92)',
+}
+
+const EMPTY_TOTALS: Record<string, number> = {}
 
 function sinIconUrl(sin: string): string {
   const cap = sin.charAt(0).toUpperCase() + sin.slice(1)
@@ -38,6 +52,7 @@ export type DeckHeaderProps = {
   shareGenerating: boolean
   copied: boolean
   sinAffinityTotals: Record<string, number>
+  egoCostTotals?: Record<string, number>
   atkTypeTotals: Record<string, number>
   filledSlotsCount: number
   onVote: () => void
@@ -64,6 +79,7 @@ export function DeckSidebarPanel({
   tags,
   keywords,
   sinAffinityTotals,
+  egoCostTotals = EMPTY_TOTALS,
   atkTypeTotals,
   filledSlotsCount,
   onVote,
@@ -73,6 +89,9 @@ export function DeckSidebarPanel({
   onFork,
 }: DeckHeaderProps) {
   const { getIconUrl } = useKeywordData()
+  const keywordMessages = useKeywords()
+  const locale = useLocale() as SupportedLang
+  const t = useTranslations('decks.detail')
   return (
     <div className="flex flex-col gap-3" style={{ position: 'sticky', top: 88 }}>
       {/* 추천 */}
@@ -85,7 +104,7 @@ export function DeckSidebarPanel({
           disabled={voting || authStatus !== 'authenticated'}
           className="flex flex-col items-center gap-2 transition-all duration-200"
           style={{ opacity: voting ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-          title={authStatus !== 'authenticated' ? '로그인 후 추천 가능' : voted ? '추천 취소' : '추천'}
+          title={authStatus !== 'authenticated' ? t('loginToVote') : voted ? t('undoVote') : t('vote')}
         >
           <div
             className="flex items-center justify-center rounded-full transition-all duration-300"
@@ -106,7 +125,7 @@ export function DeckSidebarPanel({
             {voteCount}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: voted ? '#c84050' : (authStatus !== 'authenticated' ? '#222233' : 'var(--text-tertiary)') }}>
-            {authStatus !== 'authenticated' ? 'LOGIN TO VOTE' : voted ? 'LIKED' : 'LIKE'}
+            {authStatus !== 'authenticated' ? t('loginToVote') : voted ? t('undoVote') : t('vote')}
           </span>
         </button>
       </div>
@@ -120,13 +139,11 @@ export function DeckSidebarPanel({
             background: 'rgba(200,144,10,0.1)',
             border: '1px solid rgba(200,144,10,0.3)',
             color: 'var(--gold)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.1em',
+            ...sidebarActionTextStyle,
           }}
         >
-          <Pencil size={11} />
-          EDIT DECK
+          <Pencil size={13} strokeWidth={2.4} />
+          {t('editDeck')}
         </Link>
       )}
 
@@ -138,13 +155,11 @@ export function DeckSidebarPanel({
           background: 'rgba(72,120,160,0.1)',
           border: '1px solid rgba(72,120,160,0.3)',
           color: '#4898b0',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.75rem',
-          letterSpacing: '0.1em',
+          ...sidebarActionTextStyle,
         }}
       >
-        <GitFork size={11} />
-        FORK DECK
+        <GitFork size={13} strokeWidth={2.4} />
+        {t('forkDeck')}
       </button>
 
       {/* 편성코드 */}
@@ -156,13 +171,11 @@ export function DeckSidebarPanel({
             background: copied ? 'rgba(88,136,40,0.12)' : '#120e09',
             border: `1px solid ${copied ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
             color: copied ? '#88a830' : 'var(--text-tertiary)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.1em',
+            ...sidebarActionTextStyle,
           }}
         >
-          {copied ? <Check size={11} /> : <Copy size={11} />}
-          {copied ? 'COPIED!' : 'COPY DECK CODE'}
+          {copied ? <Check size={13} strokeWidth={2.4} /> : <Copy size={13} strokeWidth={2.4} />}
+          {copied ? t('copied') : t('copyDeckCode')}
         </button>
       )}
 
@@ -176,16 +189,14 @@ export function DeckSidebarPanel({
             background: bookmarked ? 'rgba(200,144,10,0.12)' : '#120e09',
             border: `1px solid ${bookmarked ? 'rgba(200,144,10,0.4)' : 'var(--border)'}`,
             color: bookmarked ? 'var(--gold)' : 'var(--text-tertiary)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.1em',
+            ...sidebarActionTextStyle,
             opacity: bookmarking ? 0.5 : 1,
             cursor: authStatus !== 'authenticated' ? 'default' : 'pointer',
           }}
-          title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
+          title={authStatus !== 'authenticated' ? t('loginToBookmark') : bookmarked ? t('undoBookmark') : t('bookmark')}
         >
-          <Bookmark size={11} fill={bookmarked ? 'currentColor' : 'none'} />
-          {bookmarked ? 'SAVED' : 'SAVE'}
+          <Bookmark size={13} strokeWidth={2.4} fill={bookmarked ? 'currentColor' : 'none'} />
+          {bookmarked ? t('saved') : t('save')}
         </button>
         <button
           onClick={onShare}
@@ -195,14 +206,12 @@ export function DeckSidebarPanel({
             background: shared ? 'rgba(88,136,40,0.12)' : '#120e09',
             border: `1px solid ${shared ? 'rgba(88,136,40,0.4)' : 'var(--border)'}`,
             color: shared ? '#88a830' : 'var(--text-tertiary)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.1em',
+            ...sidebarActionTextStyle,
             opacity: shareGenerating ? 0.5 : 1,
           }}
         >
-          {shared ? <Check size={11} /> : <Share2 size={11} />}
-          {shared ? 'COPIED!' : 'SHARE'}
+          {shared ? <Check size={13} strokeWidth={2.4} /> : <Share2 size={13} strokeWidth={2.4} />}
+          {shared ? t('copied') : t('share')}
         </button>
       </div>
 
@@ -235,7 +244,7 @@ export function DeckSidebarPanel({
                     {iconUrl && (
                       <Image src={iconUrl} alt="" width={11} height={11} />
                     )}
-                    {kw}
+                    {localizeDeckKeyword(kw, keywordMessages[kw], locale)}
                   </span>
                 )
               })}
@@ -248,15 +257,19 @@ export function DeckSidebarPanel({
       {filledSlotsCount > 0 && (
         <div className="rounded-lg p-3 flex flex-col gap-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
           <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>죄악 자원</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>{t('sinResourceCost')}</div>
             <div className="flex items-center gap-2 flex-wrap">
               {SIN_ORDER.map(sin => {
                 const count = sinAffinityTotals[sin] ?? 0
-                if (count === 0) return null
+                const cost = egoCostTotals[sin] ?? 0
+                if (count === 0 && cost === 0) return null
+                const color = cost > 0 && count < cost ? '#cc4444' : SIN_COLORS[sin]
                 return (
                   <div key={sin} className="flex items-center gap-1">
-                    <Image src={sinIconUrl(sin)} alt="" width={16} height={16} />
-                    <span style={{ color: SIN_COLORS[sin], fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
+                    <Image src={sinIconUrl(sin)} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
+                    <span style={{ color, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>
+                      {cost > 0 ? `${count}/${cost}` : count}
+                    </span>
                   </div>
                 )
               })}
@@ -266,7 +279,7 @@ export function DeckSidebarPanel({
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} />
 
           <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>공격 유형</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', marginBottom: 6 }}>{t('attackTypes')}</div>
             <div className="flex items-center gap-3">
               {(['slash', 'pierce', 'blunt'] as const).map(type => {
                 const count = atkTypeTotals[type]
@@ -302,6 +315,7 @@ export function DeckMobileActionBar({
   copied,
   tags,
   sinAffinityTotals,
+  egoCostTotals = EMPTY_TOTALS,
   atkTypeTotals,
   filledSlotsCount,
   onVote,
@@ -310,6 +324,7 @@ export function DeckMobileActionBar({
   onCopyCode,
   onFork,
 }: DeckHeaderProps) {
+  const t = useTranslations('decks.detail')
   return (
     <div className="flex lg:hidden flex-wrap items-center gap-2.5 mb-5 rounded-lg px-4 py-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
       {/* 추천 */}
@@ -318,7 +333,8 @@ export function DeckMobileActionBar({
         disabled={voting || authStatus !== 'authenticated'}
         className="inline-flex items-center gap-2 transition-all duration-200"
         style={{ opacity: voting ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-        title={authStatus !== 'authenticated' ? '로그인 후 추천 가능' : voted ? '추천 취소' : '추천'}
+        aria-label={authStatus !== 'authenticated' ? t('loginToVote') : voted ? t('undoVote') : t('vote')}
+        title={authStatus !== 'authenticated' ? t('loginToVote') : voted ? t('undoVote') : t('vote')}
       >
         <div
           className="flex items-center justify-center rounded-full transition-all duration-300"
@@ -346,7 +362,8 @@ export function DeckMobileActionBar({
         disabled={bookmarking || authStatus !== 'authenticated'}
         className="inline-flex items-center justify-center transition-all duration-200"
         style={{ opacity: bookmarking ? 0.5 : 1, cursor: authStatus !== 'authenticated' ? 'default' : 'pointer' }}
-        title={authStatus !== 'authenticated' ? '로그인 후 북마크 가능' : bookmarked ? '북마크 해제' : '북마크'}
+        aria-label={authStatus !== 'authenticated' ? t('loginToBookmark') : bookmarked ? t('undoBookmark') : t('bookmark')}
+        title={authStatus !== 'authenticated' ? t('loginToBookmark') : bookmarked ? t('undoBookmark') : t('bookmark')}
       >
         <div
           className="flex items-center justify-center rounded-full transition-all duration-300"
@@ -371,6 +388,8 @@ export function DeckMobileActionBar({
         disabled={shareGenerating}
         className="inline-flex items-center justify-center transition-all duration-200"
         style={{ opacity: shareGenerating ? 0.5 : 1 }}
+        aria-label={shared ? t('shareCopied') : t('share')}
+        title={shared ? t('shareCopied') : t('share')}
       >
         <div
           className="flex items-center justify-center rounded-full transition-all duration-300"
@@ -388,7 +407,8 @@ export function DeckMobileActionBar({
       <button
         onClick={onFork}
         className="inline-flex items-center justify-center transition-all duration-200"
-        title="덱 포크"
+        aria-label={t('fork')}
+        title={t('fork')}
       >
         <div
           className="flex items-center justify-center rounded-full transition-all duration-300"
@@ -419,7 +439,7 @@ export function DeckMobileActionBar({
           }}
         >
           <Pencil size={10} />
-          EDIT
+          {t('edit')}
         </Link>
       )}
 
@@ -438,7 +458,7 @@ export function DeckMobileActionBar({
           }}
         >
           {copied ? <Check size={10} /> : <Copy size={10} />}
-          {copied ? 'COPIED!' : 'COPY CODE'}
+          {copied ? t('copied') : t('code')}
         </button>
       )}
 
@@ -449,11 +469,15 @@ export function DeckMobileActionBar({
           <div className="flex items-center gap-2 flex-wrap">
             {SIN_ORDER.map(sin => {
               const count = sinAffinityTotals[sin] ?? 0
-              if (count === 0) return null
+              const cost = egoCostTotals[sin] ?? 0
+              if (count === 0 && cost === 0) return null
+              const color = cost > 0 && count < cost ? '#cc4444' : SIN_COLORS[sin]
               return (
                 <div key={sin} className="flex items-center gap-0.5">
-                  <Image src={sinIconUrl(sin)} alt="" width={14} height={14} />
-                  <span style={{ color: SIN_COLORS[sin], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>{count}</span>
+                  <Image src={sinIconUrl(sin)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />
+                  <span style={{ color, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>
+                    {cost > 0 ? `${count}/${cost}` : count}
+                  </span>
                 </div>
               )
             })}

@@ -36,7 +36,7 @@ export async function GET() {
         .schema('limbus')
         .from('decks')
         .select(`
-          id, title, description, tags, vote_count, view_count, comment_count, created_at,
+          id, title, description, tags, main_keywords, vote_count, view_count, comment_count, created_at,
           deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
         `)
         .eq('user_id', userId)
@@ -47,7 +47,7 @@ export async function GET() {
         .select(`
           deck_id,
           decks!deck_id(
-            id, title, description, tags, vote_count, view_count, comment_count, created_at,
+            id, title, description, tags, main_keywords, vote_count, view_count, comment_count, created_at,
             profiles!decks_user_id_fkey(username),
             deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id, keywords))
           )

@@ -43,7 +43,7 @@ SAIGO NO DANTE는 모바일 게임 **림버스 컴퍼니**의 데이터를 한 �
 
 | 문서 | 설명 |
 |------|------|
-| [conventions.md](./conventions.md) | 코딩 컨벤션 (rem, Supabase, 파일 구조, i18n 등) |
+| [conventions.md](./conventions.md) | 코딩 컨벤션 (UI 사이징, Supabase, 파일 구조, i18n 등) |
 | [boundaries.md](./boundaries.md) | Agent별 파일 경계 매트릭스 (allowed_paths ↔ 실제 구조) |
 | [specs/](./specs/) | 7-doc spec (`00-context → 06-lore`) · `_template/`에서 복제 |
 | [plans/](./plans/) | Trivial 작업용 단일 파일 plan (`_template.md` 참고) |

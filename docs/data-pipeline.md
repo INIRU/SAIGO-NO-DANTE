@@ -50,7 +50,8 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 | `KR_EGOgift_*.json` | 기프트 이름 매핑 (`dataList[].id` + `dataList[].name`) |
 | `KR_ActionEvents_Mirror*.json` | 거울 던전 이벤트 텍스트 |
 | `KR_AbEvents*.txt` | 이상현상 이벤트 텍스트 |
-| `KR_UnitKeyword*.json` | 소속(affiliation) 한글명 매핑 |
+| `KR_UnitKeyword*.json`, `KR_AssociationName.json` | 유닛 태그/표시 소속 한글명 매핑 |
+| `PersonalityVoiceDlg/KR_Voice_*.json` | 인격 획득 대사 `get_${gameId}_*` → `identities.quote` |
 | `KR_MirrorDungeonTheme-1.txt` | 테마팩 이름 매핑 |
 | `KR_BattleKeywords.json` | 전투 키워드 사전 |
 
@@ -95,7 +96,11 @@ npx tsx scripts/sync/mirror-dungeon-data.ts [options]
 [1/4] EGO 기프트 동기화 (syncGifts)
   - ego-gift-mirrordungeon*.txt 로드
   - KR 이름 매핑 (KR_EGOgift_*.txt)
-  - activation_condition 추출
+  - KR 효과 설명의 조건 문장에서 `activation_condition` 추출
+    - 예: `... 공격 스킬을 보유한 인격이 5인 이상` → `{ type: "keyword", keyword, count: 5 }`
+    - 예: `검계 소속 인격이 3인 이상` → `{ type: "affiliation", affiliation: "검계", count: 3 }`
+    - 예: `혈찬을 소모하는 스킬을 보유한 인격이 3인 이상` → `{ type: "skill", skill_condition: "혈찬 소모", count: 3 }`
+    - 추출 실패 시 기존 DB 값을 보존하며 null로 덮어쓰지 않음
   - DB upsert (ego_gifts)
 
 [2/4] 테마팩 동기화 (syncThemes)
@@ -258,11 +263,9 @@ sync-mirror-dungeon-data.ts (npx tsx)
        │
        ▼
 4. 수동 필드 업데이트
-   ├── affiliation (소속 한글명)
    ├── acquisition (획득 방법 텍스트)
    ├── acquisition_info (JSONB)
-   ├── keywords (키워드 배열)
-   └── quote (인격 대사)
+   └── keywords (전체 추출 키워드 배열, 기존 인격은 --keywords 필요)
        │
        ▼
 5. sync-game-data.mjs --fix (스킬 데이터 동기화)
@@ -291,8 +294,30 @@ npx tsx scripts/sync/identity-data.ts [options]
 | `--keywords` | 기존 인격 keywords 필드도 업데이트 |
 | `--rebuild-keyword-meta` | keyword_meta 테이블 재구축 |
 
-> **참고:** 이 스크립트가 `sync/game-data.mjs`의 상위 집합. 신규 인격 삽입을 포함한 전체 파이프라인에 사용할 것.
+> **참고:** 이 스크립트가 `sync/game-data.mjs`의 상위 집합. 빈 DB라도 신규 인격 row, 인격 스킬, 패시브를 채우는 통합 경로로 사용할 것.
 > EGO 출시일은 로컬 게임 JSON true EGO 파일의 `updatedDate`를 `YYYY-MM-DD`로 변환해 `ego.release_date`에 반영한다. `--dry-run`은 비교만 수행하고, `--fix`는 `limbus.ego.release_date` 마이그레이션 적용 후 승인받고 실행한다.
+
+**인격 자동 동기화 계약:**
+- `identities.skill_keyword_list`: `personality-*.txt`의 `skillKeywordList`를 `KR_BattleKeywords`/태그 매핑으로 번역한 공식 대표 스킬 키워드. 일반 스탯과 같이 `--dry-run`에서 diff를 보여주고 `--fix`에서 자동 반영한다.
+- `identities.unit_keyword_list`: `personality-*.txt`의 `unitKeywordList`를 `KR_UnitKeyword` 매핑으로 번역한 유닛 태그 배열. E.G.O 기프트 조건 판정용으로 사용하며 소속 표시와 분리한다.
+- `identities.association_list`: `personality-*.txt`의 `associationList`를 `KR_AssociationName`/`KR_UnitKeyword` 매핑으로 번역한 표시 소속 배열. 원본 순서를 보존한다.
+- `identities.affiliation`: 기존 호환용 단일 대표 소속. `association_list`에서 `림버스 컴퍼니` 같은 broad base보다 `LCB`/`LCE`/`LCC`/`LCA` 등 구체 소속을 우선 선택한다.
+- `identities.quote`: `PersonalityVoiceDlg/KR_Voice_*.json`의 첫 `get_${gameId}_*` 항목 `dlg`를 인격 획득 대사로 자동 반영한다. LCB 기본 인격을 포함해 소스 대사가 있으면 insert/update payload에 포함하며, 소스가 없는 경우 기존 DB 값을 null로 덮지 않는다.
+- `identities.keywords`: `skillKeywordList`, `unitKeywordList`, `buffKeyword`, 패시브/스킬 본문 태그까지 모은 전체 키워드 매핑. 기존처럼 보호 필드이며, 기존 인격은 `--keywords`를 함께 줄 때만 업데이트한다.
+- migration 적용 전 환경에서는 새 배열 컬럼 select가 실패하면 해당 컬럼을 제외하고 재시도해 dry-run 비교를 계속한다. 실제 반영은 `supabase/migrations/*_add_identity_skill_keyword_list.sql` 적용 후 실행한다.
+
+### 덱 상시 키워드 백필
+
+```bash
+npx tsx scripts/backfill-deck-main-keywords.ts --dry-run
+npx tsx scripts/backfill-deck-main-keywords.ts --fix
+```
+
+- 대상 컬럼: `decks.main_keywords` (`text[]`, 최대 5개, 고정 키워드 집합)
+- 기본 백필은 편성 순서 1~7(`deck_identities.slot_order` 0~6)만 집계하며, 대기/미배정(`slot_order` 7~11/99)은 제외한다.
+- 화상/파열/침잠/호흡/진동/충전/출혈은 `identities.skill_keyword_list`만 사용한다. `identities.keywords`는 넓은 추출 필드이므로 덱 상시 키워드 조건 판정에 사용하지 않는다.
+- 참격/관통/타격은 허용된 `main_keywords` 값이지만 자동 백필/추천 집계에 포함하지 않는다. 이 세 키워드는 덱 빌더에서 사용자가 직접 선택한 경우에만 저장한다.
+- `--fix`는 dry-run 결과 확인 후 사용자 승인받고 실행한다.
 
 ---
 
@@ -433,6 +458,6 @@ npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 4. 신규 인격 삽입: 시딩 스크립트 (--dry-run 먼저)
 5. 스킬 동기화: `scripts/sync/game-data.mjs --dry-run` → `--fix`
 6. 거울 던전 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → `--fix`
-7. 수동 필드 업데이트 (affiliation, acquisition 등)
+7. 수동 필드 업데이트 (acquisition, acquisition_info 등). quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
 8. 에셋 업로드 (Google Drive → sharp → Supabase Storage)
 9. 프론트엔드 확인
