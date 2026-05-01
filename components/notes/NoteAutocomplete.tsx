@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, type RefObject } from 'react'
+import { useState, useMemo, useCallback, useRef, type CompositionEvent as ReactCompositionEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import {
@@ -384,6 +384,7 @@ export function useNoteAutocomplete({
   const [selectedIdx, setSelectedIdx] = useState(-1)
   const [isOpen, setIsOpen] = useState(true)
   const [caretAnchor, setCaretAnchor] = useState<CaretAnchor | null>(null)
+  const isComposingRef = useRef(false)
 
   const updateCaretAnchor = useCallback((target?: HTMLTextAreaElement | null) => {
     const ta = target ?? textareaRef.current
@@ -410,6 +411,7 @@ export function useNoteAutocomplete({
   }, [currentContext, pool])
 
   const select = useCallback((sugg: AutocompleteSuggestion) => {
+    if (isComposingRef.current) return
     const ta = textareaRef.current
     if (!ta) return
     const liveText = ta.value
@@ -424,14 +426,25 @@ export function useNoteAutocomplete({
     setCursorPos(newPos)
     setSelectedIdx(-1)
     setIsOpen(sugg.token.endsWith(':'))
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
     requestAnimationFrame(() => {
-      ta.focus()
+      ta.focus({ preventScroll: true })
       ta.setSelectionRange(newPos, newPos)
+      window.scrollTo(scrollX, scrollY)
       updateCaretAnchor(ta)
     })
   }, [setText, textareaRef, currentContext, updateCaretAnchor])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    const maybeComposingEvent = e as ReactKeyboardEvent<HTMLTextAreaElement> & { isComposing?: boolean }
+    if (maybeComposingEvent.isComposing || e.nativeEvent.isComposing || isComposingRef.current) {
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      return
+    }
     if (suggestions.length === 0) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -441,6 +454,7 @@ export function useNoteAutocomplete({
       setSelectedIdx(i => Math.max(i - 1, 0))
     } else if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault()
+      if (e.key === 'Tab') e.stopPropagation()
       select(suggestions[Math.max(selectedIdx, 0)])
     } else if (e.key === 'Escape') {
       setIsOpen(false)
@@ -454,6 +468,15 @@ export function useNoteAutocomplete({
   const onTextSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
     const target = e.target as HTMLTextAreaElement
     syncContextFromTextarea(target)
+  }, [syncContextFromTextarea])
+
+  const onCompositionStart = useCallback(() => {
+    isComposingRef.current = true
+  }, [])
+
+  const onCompositionEnd = useCallback((e: ReactCompositionEvent<HTMLTextAreaElement>) => {
+    isComposingRef.current = false
+    requestAnimationFrame(() => syncContextFromTextarea(e.currentTarget))
   }, [syncContextFromTextarea])
 
   /** 커서 위치에 토큰 삽입 (수동 버튼용) */
@@ -479,6 +502,8 @@ export function useNoteAutocomplete({
     handleKeyDown,
     onTextChange,
     onTextSelect,
+    onCompositionStart,
+    onCompositionEnd,
     updateCaretAnchor,
     caretAnchor,
     insertToken,

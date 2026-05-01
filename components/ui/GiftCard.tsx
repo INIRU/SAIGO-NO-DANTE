@@ -127,8 +127,13 @@ const GiftCard = memo(function GiftCard({
         {/* Keyword icon */}
         {!isInsert && kwIconUrl && (
           <div style={{
-            position: 'absolute', bottom: 0, right: 0, zIndex: 10,
-            pointerEvents: 'none', width: '30%', height: '30%',
+            position: 'absolute',
+            right: '5%',
+            bottom: '5%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            width: '28%',
+            height: '28%',
           }}>
             <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
           </div>
