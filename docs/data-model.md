@@ -190,11 +190,15 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 **acquisition_info JSONB 구조:**
 ```jsonc
 {
-  "type": "default" | "standard" | "event" | "walpurgis" | "attendance",
+  "type": "default" | "standard" | "event" | "limited" | "walpurgis" | "attendance",
   "release_season": 3,
   "fragment_cost": 400,         // 자아 파편 교환 비용 (null이면 교환 불가)
-  "gacha": "always" | "seasonal" | "walpurgis" | "none",
+  "gacha": "always" | "seasonal" | "pickup" | "walpurgis" | "none",
   "gacha_from_season": 4,       // 상시 추출 가능 시즌 (optional)
+  "gacha_id": 276,              // gacha-*.txt id (optional)
+  "gacha_name": "...",          // KR_GachaTitle 표시명 (optional)
+  "gacha_name_en": "...",       // EN_GachaTitle 표시명 (optional)
+  "gacha_name_jp": "...",       // JP_GachaTitle 표시명 (optional)
   "exchange_from_season": 4,    // 교환 가능 시즌 (optional)
   "walpurgis_edition": 1,       // 발푸르기스 에디션 (optional)
   "event_name": "...",          // 이벤트명 (optional)
@@ -205,7 +209,7 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 
 - RLS: 모든 사용자 읽기 가능
 - 인덱스: `sinner_id`, `skill_keyword_list` GIN, `unit_keyword_list` GIN, `association_list` GIN
-- sync: `scripts/sync/identity-data.ts`
+- sync: `scripts/sync/identity-data.ts`, 획득처 보정은 `scripts/sync/identity-acquisition.ts`
 
 ---
 

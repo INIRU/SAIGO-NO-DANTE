@@ -458,6 +458,6 @@ npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 4. 신규 인격 삽입: 시딩 스크립트 (--dry-run 먼저)
 5. 스킬 동기화: `scripts/sync/game-data.mjs --dry-run` → `--fix`
 6. 거울 던전 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → `--fix`
-7. 수동 필드 업데이트 (acquisition, acquisition_info 등). quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
+7. 획득처 보정: `npx tsx scripts/sync/identity-acquisition.ts --dry-run`으로 `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle` 기반 diff를 확인한 뒤 필요한 ID만 `--id <game_id> --fix`로 반영. quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
 8. 에셋 업로드 (Google Drive → sharp → Supabase Storage)
 9. 프론트엔드 확인

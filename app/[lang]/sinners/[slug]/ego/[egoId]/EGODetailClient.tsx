@@ -57,6 +57,12 @@ function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
   )
 }
 
+function getLocalizedObtainingMethod(ego: EGO, lang: SupportedLang) {
+  if (lang === 'en') return ego.obtaining_method_en ?? ego.obtaining_method
+  if (lang === 'ja') return ego.obtaining_method_jp ?? ego.obtaining_method
+  return ego.obtaining_method
+}
+
 // ─── EGO 스킬 프레임 패널 ────────────────────────────────────────────
 function SkillFramePanel({
   skill, sinColor, skillIconUrl, lang,
@@ -295,6 +301,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
+  const obtainingMethod = getLocalizedObtainingMethod(ego, lang)
 
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
@@ -479,10 +486,10 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               )}
 
               {/* 입수 방법 */}
-              {ego.obtaining_method && (
+              {obtainingMethod && (
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
                   <p style={{ color: '#666', fontSize: '0.625rem', marginBottom: '0.375rem', letterSpacing: '0.1em' }} suppressHydrationWarning>{t('ego.acquisition')}</p>
-                  <EgoAcquisitionBadges text={ego.obtaining_method} fragmentLabel={t('ego.fragmentExchange')} lang={lang} />
+                  <EgoAcquisitionBadges text={obtainingMethod} fragmentLabel={t('ego.fragmentExchange')} lang={lang} />
                 </div>
               )}
             </div>

@@ -65,12 +65,16 @@ export type Identity = {
   bg_image_url?: string | null
   sanity_conditions?: SanityCondition[]
   acquisition_info?: {
-    type: 'default' | 'standard' | 'event' | 'walpurgis' | 'attendance'
+    type: 'default' | 'standard' | 'event' | 'limited' | 'walpurgis' | 'attendance'
     release_season: number
     fragment_cost: number | null
-    gacha: 'always' | 'seasonal' | 'walpurgis' | 'none'
+    gacha: 'always' | 'seasonal' | 'walpurgis' | 'none' | 'pickup'
     gacha_from_season?: number
     target_sinner?: string
+    gacha_id?: number
+    gacha_name?: string
+    gacha_name_en?: string
+    gacha_name_jp?: string
     exchange_from_season?: number
     walpurgis_edition?: number
     event_name?: string

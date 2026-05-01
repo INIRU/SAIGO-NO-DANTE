@@ -94,6 +94,7 @@ const MODAL_COPY = {
     acquisitionTypes: {
       default: '기본',
       standard: '상시',
+      limited: '한정',
       event: '이벤트',
       walpurgis: '발푸르기스',
       attendance: '출석',
@@ -101,9 +102,11 @@ const MODAL_COPY = {
     gachaTypes: {
       always: '상시 추출',
       seasonal: '시즌 추출',
+      pickup: '특정 추출',
       walpurgis: '발푸르기스 밤',
       none: '추출 불가',
     },
+    gachaBanner: '배너',
     fragmentAlways: (cost: number) => `파편 ${cost}개 · 상시`,
     fragmentWalpurgis: (cost: number) => `파편 ${cost}개 · 발푸르기스밤 한정`,
     fragmentSeasonal: (cost: number, releaseSeason: number, permanentSeason?: number) => (
@@ -174,6 +177,7 @@ const MODAL_COPY = {
     acquisitionTypes: {
       default: 'Default',
       standard: 'Standard',
+      limited: 'Limited',
       event: 'Event',
       walpurgis: 'Walpurgis',
       attendance: 'Login',
@@ -181,9 +185,11 @@ const MODAL_COPY = {
     gachaTypes: {
       always: 'Standard extraction',
       seasonal: 'Seasonal extraction',
+      pickup: 'Target extraction',
       walpurgis: 'Walpurgis Night',
       none: 'No extraction',
     },
+    gachaBanner: 'Banner',
     fragmentAlways: (cost: number) => `${cost} shards · always`,
     fragmentWalpurgis: (cost: number) => `${cost} shards · Walpurgis Night limited`,
     fragmentSeasonal: (cost: number, releaseSeason: number, permanentSeason?: number) => (
@@ -254,6 +260,7 @@ const MODAL_COPY = {
     acquisitionTypes: {
       default: '基本',
       standard: '恒常',
+      limited: '限定',
       event: 'イベント',
       walpurgis: 'ヴァルプルギス',
       attendance: 'ログイン',
@@ -261,9 +268,11 @@ const MODAL_COPY = {
     gachaTypes: {
       always: '恒常抽出',
       seasonal: 'シーズン抽出',
+      pickup: '特定抽出',
       walpurgis: 'ヴァルプルギスの夜',
       none: '抽出不可',
     },
+    gachaBanner: 'バナー',
     fragmentAlways: (cost: number) => `破片${cost}個 · 常設`,
     fragmentWalpurgis: (cost: number) => `破片${cost}個 · ヴァルプルギスの夜限定`,
     fragmentSeasonal: (cost: number, releaseSeason: number, permanentSeason?: number) => (
@@ -388,6 +397,7 @@ function getAcquisitionType(info: Identity['acquisition_info'], copy: typeof MOD
   const labels: Record<string, { label: string; color: string; bg: string }> = {
     default: { label: copy.acquisitionTypes.default, color: '#8a8a8a', bg: 'rgba(138,138,138,0.12)' },
     standard: { label: copy.acquisitionTypes.standard, color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' },
+    limited: { label: copy.acquisitionTypes.limited, color: '#ffa502', bg: 'rgba(255,165,2,0.12)' },
     event: { label: copy.acquisitionTypes.event, color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' },
     walpurgis: { label: copy.acquisitionTypes.walpurgis, color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' },
     attendance: { label: copy.acquisitionTypes.attendance, color: '#a29bfe', bg: 'rgba(162,155,254,0.12)' },
@@ -400,10 +410,18 @@ function getGachaLabel(info: Identity['acquisition_info'], copy: typeof MODAL_CO
   const labels: Record<string, { label: string; color: string }> = {
     always: { label: copy.gachaTypes.always, color: '#6bbbff' },
     seasonal: { label: copy.gachaTypes.seasonal, color: '#ffa502' },
+    pickup: { label: copy.gachaTypes.pickup, color: '#ffa502' },
     walpurgis: { label: copy.gachaTypes.walpurgis, color: '#7bed9f' },
     none: { label: copy.gachaTypes.none, color: '#999' },
   }
   return labels[info.gacha] ?? labels.none
+}
+
+function getLocalizedGachaName(info: Identity['acquisition_info'], locale: SupportedLocale) {
+  if (!info) return null
+  if (locale === 'en') return info.gacha_name_en ?? info.gacha_name ?? null
+  if (locale === 'ja') return info.gacha_name_jp ?? info.gacha_name ?? null
+  return info.gacha_name ?? null
 }
 
 function getFragmentSummary(identity: TierIdentity, copy: typeof MODAL_COPY[SupportedLocale]) {
@@ -415,7 +433,10 @@ function getFragmentSummary(identity: TierIdentity, copy: typeof MODAL_COPY[Supp
 
   const releaseSeason = Number(info.release_season ?? 0)
   const diff = CURRENT_SEASON - releaseSeason
-  const isSeasonalOrEvent = info.gacha === 'seasonal' || (info.type === 'event' && info.gacha === 'none')
+  const isSeasonalOrEvent = info.gacha === 'seasonal'
+    || info.gacha === 'pickup'
+    || info.type === 'limited'
+    || (info.type === 'event' && info.gacha === 'none')
   const permanentExchangeSeason = info.exchange_from_season ?? (
     isSeasonalOrEvent && releaseSeason > 0 ? releaseSeason + 2 : undefined
   )
@@ -632,13 +653,16 @@ function ScoreControl({
 function IdentityAcquisitionPanel({
   identity,
   copy,
+  locale,
 }: {
   identity: TierIdentity
   copy: typeof MODAL_COPY[SupportedLocale]
+  locale: SupportedLocale
 }) {
   const info = identity.acquisition_info
   const typeInfo = getAcquisitionType(info, copy)
   const gachaInfo = getGachaLabel(info, copy)
+  const gachaName = getLocalizedGachaName(info, locale)
   const fragment = getFragmentSummary(identity, copy)
   const egoShardIconUrl = getEgoShardIconUrl(identity.sinner_id)
 
@@ -690,6 +714,7 @@ function IdentityAcquisitionPanel({
               <span style={{ fontSize: '0.75rem', color: gachaInfo.color }}>
                 {gachaInfo.label}
                 {info.gacha === 'seasonal' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
+                {info.gacha === 'pickup' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
               </span>
               {info.target_sinner && (
                 <span style={{ fontSize: '0.75rem', color: '#ffa502' }}>
@@ -697,6 +722,14 @@ function IdentityAcquisitionPanel({
                 </span>
               )}
             </div>
+          </div>
+        )}
+
+        {info && gachaName && (
+          <div className="flex items-start gap-2">
+            <Sparkles size={14} style={{ color: '#8a7855', flexShrink: 0, marginTop: '0.125rem' }} />
+            <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '3.25rem', marginTop: '0.125rem' }}>{copy.gachaBanner}</span>
+            <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{gachaName}</span>
           </div>
         )}
 
@@ -1295,7 +1328,7 @@ export function TierRatingModal({
           </button>
         </div>
 
-        <IdentityAcquisitionPanel identity={identity} copy={copy} />
+        <IdentityAcquisitionPanel identity={identity} copy={copy} locale={locale} />
 
         <div className="tier-rating-modal-body-grid grid gap-4 md:grid-cols-[0.9fr_1.1fr]" style={{ padding: '1rem' }}>
           <section style={{ background: '#0d0b08', border: '1px solid var(--border)', borderRadius: '0.375rem', padding: '0.875rem' }}>

@@ -68,6 +68,7 @@ const FILTER_COPY = {
 const ACQUISITION_LABELS: Record<string, Record<SupportedLocale, string>> = {
   default: { ko: '기본', en: 'Default', ja: '基本' },
   standard: { ko: '상시', en: 'Standard', ja: '恒常' },
+  limited: { ko: '한정', en: 'Limited', ja: '限定' },
   event: { ko: '이벤트', en: 'Event', ja: 'イベント' },
   walpurgis: { ko: '발푸르기스', en: 'Walpurgis', ja: 'ヴァルプルギス' },
   attendance: { ko: '출석', en: 'Login', ja: 'ログイン' },

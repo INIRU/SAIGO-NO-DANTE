@@ -1,0 +1,531 @@
+#!/usr/bin/env tsx
+/**
+ * Derive identity acquisition metadata from game client JSON.
+ *
+ * Source roles:
+ * - personality-*.txt: rank, season, and coarse additionalAttachment.
+ * - *-event.txt eventRewardDatas: event exchange/reward identities.
+ * - gacha-*.txt pickup groups: extraction/release pickup identities.
+ * - KR_Items*.txt: event currency names.
+ *
+ * Usage:
+ *   npx tsx scripts/sync/identity-acquisition.ts --dry-run
+ *   npx tsx scripts/sync/identity-acquisition.ts --id 10715 --fix
+ *   npx tsx scripts/sync/identity-acquisition.ts --all --fix
+ */
+
+import { createClient } from '@supabase/supabase-js'
+import { config } from 'dotenv'
+import { existsSync, readFileSync, readdirSync } from 'fs'
+import { homedir } from 'os'
+import { join, resolve } from 'path'
+import { triggerRevalidation } from './_revalidate'
+
+config({ path: '.env.local' })
+
+type AcquisitionType = 'default' | 'standard' | 'event' | 'limited' | 'walpurgis' | 'attendance'
+type GachaType = 'always' | 'seasonal' | 'walpurgis' | 'none' | 'pickup'
+
+interface AcquisitionInfo {
+  type: AcquisitionType
+  release_season: number
+  fragment_cost: number | null
+  gacha: GachaType
+  gacha_from_season?: number
+  target_sinner?: string
+  gacha_id?: number
+  gacha_name?: string
+  gacha_name_en?: string
+  gacha_name_jp?: string
+  exchange_from_season?: number
+  walpurgis_edition?: number
+  event_name?: string
+  event_currency?: string
+  event_cost?: number
+}
+
+interface DerivedAcquisition {
+  acquisition: string
+  acquisition_info: AcquisitionInfo
+  evidence: string[]
+}
+
+interface DbIdentity {
+  id: string
+  game_id: string
+  name_kr: string | null
+  rarity: number | null
+  acquisition: string | null
+  acquisition_info: AcquisitionInfo | null
+}
+
+interface Personality {
+  id: number
+  rank: number
+  season: number
+  additionalAttachment?: string
+}
+
+interface EventRewardHit {
+  file: string
+  startDate: string | null
+  eventName: string | null
+  currencyName: string | null
+  eventCost: number | null
+}
+
+interface GachaPickupHit {
+  file: string
+  gachaId: number | null
+  bannerType: string | null
+  walpurgisType: string | null
+  endDate: string | null
+  gachaName: string | null
+  gachaNameEn: string | null
+  gachaNameJp: string | null
+}
+
+type JsonRecord = Record<string, unknown>
+
+const args = process.argv.slice(2)
+const FIX = args.includes('--fix')
+const DRY_RUN = !FIX
+const ALL = args.includes('--all')
+const VERBOSE = args.includes('--verbose')
+const idArgIndex = args.indexOf('--id')
+const ID_FILTER = new Set<string>(
+  idArgIndex >= 0 && args[idArgIndex + 1]
+    ? args[idArgIndex + 1].split(',').map(id => id.trim()).filter(Boolean)
+    : [],
+)
+
+if (FIX && ID_FILTER.size === 0 && !ALL) {
+  console.error('--fix without --id requires --all. This prevents accidental whole-table acquisition rewrites.')
+  process.exit(1)
+}
+
+const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
+const KR_DIR = join(DATA_DIR, 'KR')
+const PERSONALITY_FILE_RE = /^personality-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
+const GACHA_FILE_RE = /^gacha-\d+\.txt$/i
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: 'limbus' } })
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : null
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function readJson(filePath: string): unknown {
+  return JSON.parse(readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '')) as unknown
+}
+
+function extractList(data: unknown): JsonRecord[] {
+  if (Array.isArray(data)) return data.map(asRecord).filter((item): item is JsonRecord => item !== null)
+  const record = asRecord(data)
+  if (!record) return []
+  const list = Array.isArray(record.list) ? record.list : record.dataList
+  return asArray(list).map(asRecord).filter((item): item is JsonRecord => item !== null)
+}
+
+function listFiles(dir: string, pattern: RegExp): string[] {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir).filter(file => pattern.test(file)).sort()
+}
+
+function loadPersonalities(): Map<string, Personality> {
+  const map = new Map<string, Personality>()
+  for (const file of listFiles(DATA_DIR, PERSONALITY_FILE_RE)) {
+    for (const item of extractList(readJson(join(DATA_DIR, file)))) {
+      const id = asNumber(item.id)
+      const rank = asNumber(item.rank)
+      const season = asNumber(item.season)
+      if (id == null || rank == null || season == null) continue
+      map.set(String(id), {
+        id,
+        rank,
+        season,
+        additionalAttachment: asString(item.additionalAttachment) ?? undefined,
+      })
+    }
+  }
+  return map
+}
+
+function loadItemNames(): Map<number, string> {
+  const map = new Map<number, string>()
+  for (const file of listFiles(KR_DIR, /^KR_Items.*\.txt$/i)) {
+    for (const item of extractList(readJson(join(KR_DIR, file)))) {
+      const id = asNumber(item.id)
+      const name = asString(item.name)
+      if (id != null && name) map.set(id, name)
+    }
+  }
+  return map
+}
+
+function loadGachaTitles(): {
+  ko: Map<number, string>
+  en: Map<number, string>
+  jp: Map<number, string>
+} {
+  const readTitleMap = (lang: 'KR' | 'EN' | 'JP', latestDir: string, fallbackDir: string) => {
+    const map = new Map<number, string>()
+    for (const { dir, ext } of [
+      { dir: fallbackDir, ext: '.txt' },
+      { dir: latestDir, ext: '.json' },
+    ]) {
+      if (!existsSync(dir)) continue
+      for (const file of listFiles(dir, new RegExp(`^${lang}_GachaTitle.*\\${ext}$`, 'i'))) {
+        for (const item of extractList(readJson(join(dir, file)))) {
+          const rawId = asString(item.id) ?? asNumber(item.id)
+          const id = rawId == null ? NaN : Number(rawId)
+          const content = asString(item.content)
+          if (Number.isFinite(id) && content) map.set(id, content)
+        }
+      }
+    }
+    return map
+  }
+
+  return {
+    ko: readTitleMap('KR', resolve(join(homedir(), 'Documents/Limbus/assets/data/kr')), join(DATA_DIR, 'KR')),
+    en: readTitleMap('EN', resolve(join(homedir(), 'Documents/Limbus/assets/data/en')), join(DATA_DIR, 'EN')),
+    jp: readTitleMap('JP', resolve(join(homedir(), 'Documents/Limbus/assets/data/jp')), join(DATA_DIR, 'JP')),
+  }
+}
+
+function inferEventName(file: string): string | null {
+  const normalized = file.replace(/-returns-event\.txt$/i, '-event.txt')
+  const names: Record<string, string> = {
+    'tkt-event.txt': '시간살인시간',
+    'twining-threads-event.txt': '사영 전투',
+    'night-cleanup-event.txt': '심야청소 BokGak',
+    'night-cleanup-returns-event.txt': '심야청소 BokGak',
+    'umida-event.txt': '우.미.다',
+    'mowe-event.txt': '20번구의 기적',
+    'mowe-returns-event.txt': '20번구의 기적',
+    'ycgd-event.txt': '육참골단',
+    'ycgd-returns-event.txt': '육참골단',
+    'lcbcheckup-event.txt': 'LCB 정기검진',
+    'lcbcheckup-returns-event.txt': 'LCB 정기검진',
+    'pilgrimage-event.txt': '선의의 순례',
+  }
+  return names[file] ?? names[normalized] ?? null
+}
+
+function loadEventRewardHits(itemNames: Map<number, string>): Map<string, EventRewardHit> {
+  const map = new Map<string, EventRewardHit>()
+  for (const file of listFiles(DATA_DIR, /event.*\.txt$/i)) {
+    const list = extractList(readJson(join(DATA_DIR, file)))
+    for (const event of list) {
+      const rewards = asArray(event.eventRewardDatas)
+      if (rewards.length === 0) continue
+      for (const rawReward of rewards) {
+        const reward = asRecord(rawReward)
+        if (!reward) continue
+        const rewardPrice = asRecord(reward.rewardPrice)
+        const currencyId = asNumber(rewardPrice?.id)
+        const eventCost = asNumber(rewardPrice?.num)
+        for (const rawItem of asArray(reward.rewardItemList)) {
+          const item = asRecord(rawItem)
+          const type = asString(item?.type)
+          const id = asNumber(item?.id)
+          if (type !== 'PERSONALITY' || id == null) continue
+          const hit: EventRewardHit = {
+            file,
+            startDate: asString(event.startDate),
+            eventName: inferEventName(file),
+            currencyName: currencyId != null ? itemNames.get(currencyId) ?? null : null,
+            eventCost,
+          }
+          const key = String(id)
+          const previous = map.get(key)
+          if (!previous || (hit.startDate && previous.startDate && hit.startDate < previous.startDate)) {
+            map.set(key, hit)
+          } else if (!previous) {
+            map.set(key, hit)
+          }
+        }
+      }
+    }
+  }
+  return map
+}
+
+function loadGachaPickupHits(gachaTitles: ReturnType<typeof loadGachaTitles>): Map<string, GachaPickupHit[]> {
+  const map = new Map<string, GachaPickupHit[]>()
+  for (const file of listFiles(DATA_DIR, GACHA_FILE_RE)) {
+    const list = extractList(readJson(join(DATA_DIR, file)))
+    for (const entry of list) {
+      const banner = asRecord(entry.bannerInfo)
+      const ids = new Set<number>()
+      for (const id of asArray(banner?.pickupIdList)) {
+        const numericId = asNumber(id)
+        if (numericId != null) ids.add(numericId)
+      }
+      for (const rawContent of asArray(entry.contents)) {
+        const content = asRecord(rawContent)
+        const groupType = asString(content?.groupType) ?? ''
+        if (!groupType.endsWith('_pickup')) continue
+        for (const id of asArray(content?.elementIdList)) {
+          const numericId = asNumber(id)
+          if (numericId != null) ids.add(numericId)
+        }
+      }
+
+      for (const id of ids) {
+        const key = String(id)
+        const gachaId = asNumber(entry.id)
+        const hit: GachaPickupHit = {
+          file,
+          gachaId,
+          bannerType: asString(banner?.bannerType),
+          walpurgisType: asString(banner?.walpurgisType),
+          endDate: asString(entry.endDate),
+          gachaName: gachaId != null ? gachaTitles.ko.get(gachaId) ?? null : null,
+          gachaNameEn: gachaId != null ? gachaTitles.en.get(gachaId) ?? null : null,
+          gachaNameJp: gachaId != null ? gachaTitles.jp.get(gachaId) ?? null : null,
+        }
+        const current = map.get(key) ?? []
+        current.push(hit)
+        map.set(key, current)
+      }
+    }
+  }
+  return map
+}
+
+function gachaFields(hit: GachaPickupHit | null): Partial<AcquisitionInfo> {
+  if (!hit) return {}
+  return {
+    ...(hit.gachaId != null ? { gacha_id: hit.gachaId } : {}),
+    ...(hit.gachaName ? { gacha_name: hit.gachaName } : {}),
+    ...(hit.gachaNameEn ? { gacha_name_en: hit.gachaNameEn } : {}),
+    ...(hit.gachaNameJp ? { gacha_name_jp: hit.gachaNameJp } : {}),
+  }
+}
+
+function fragmentCost(rank: number): number | null {
+  if (rank === 2) return 150
+  if (rank === 3) return 400
+  return null
+}
+
+function exchangeSeason(season: number): number | undefined {
+  return season > 0 ? season + 2 : undefined
+}
+
+function pickReleasePickup(hits: GachaPickupHit[] | undefined): GachaPickupHit | null {
+  if (!hits || hits.length === 0) return null
+  const temporaryMain = hits.filter(hit => hit.bannerType === 'TEMPORARY_MAIN')
+  const candidates = temporaryMain.length > 0 ? temporaryMain : hits
+  return [...candidates].sort((a, b) => {
+    const aDate = a.endDate ?? ''
+    const bDate = b.endDate ?? ''
+    if (aDate !== bDate) return bDate.localeCompare(aDate)
+    return (b.gachaId ?? 0) - (a.gachaId ?? 0)
+  })[0] ?? null
+}
+
+function deriveAcquisition(
+  identity: DbIdentity,
+  personality: Personality,
+  eventRewards: Map<string, EventRewardHit>,
+  gachaPickups: Map<string, GachaPickupHit[]>,
+): DerivedAcquisition {
+  const gameId = identity.game_id
+  const rank = identity.rarity ?? personality.rank
+  const cost = fragmentCost(rank)
+  const season = personality.season
+  const reward = eventRewards.get(gameId)
+  const releasePickup = pickReleasePickup(gachaPickups.get(gameId))
+  const evidence: string[] = [
+    `personality: season=${season}, rank=${rank}, additionalAttachment=${personality.additionalAttachment ?? 'none'}`,
+  ]
+  if (reward) evidence.push(`event reward: ${reward.file}`)
+  if (releasePickup) {
+    evidence.push(`gacha pickup: ${releasePickup.file} type=${releasePickup.bannerType ?? 'unknown'}${releasePickup.walpurgisType ? ` walpurgis=${releasePickup.walpurgisType}` : ''}`)
+  }
+
+  if (rank === 1) {
+    return {
+      acquisition: '기본',
+      acquisition_info: { type: 'default', release_season: 0, fragment_cost: null, gacha: 'none' },
+      evidence,
+    }
+  }
+
+  if (releasePickup?.walpurgisType) {
+    const editionMatch = /gacha-(\d+)/.exec(releasePickup.file)
+    const edition = editionMatch ? undefined : undefined
+    return {
+      acquisition: `발푸르기스의 밤 기간 내 추출 / 발푸르기스의 밤 기간 내 자아 파편 ${cost} 교환`,
+      acquisition_info: {
+        type: 'walpurgis',
+        release_season: season,
+        fragment_cost: cost,
+        gacha: 'walpurgis',
+        ...gachaFields(releasePickup),
+        ...(edition ? { walpurgis_edition: edition } : {}),
+      },
+      evidence,
+    }
+  }
+
+  if (reward) {
+    const exSeason = exchangeSeason(season)
+    const info: AcquisitionInfo = {
+      type: 'event',
+      release_season: season,
+      fragment_cost: cost,
+      gacha: 'none',
+      ...(exSeason ? { exchange_from_season: exSeason } : {}),
+      ...(reward.eventName ? { event_name: reward.eventName } : {}),
+      ...(reward.currencyName ? { event_currency: reward.currencyName } : {}),
+      ...(reward.eventCost ? { event_cost: reward.eventCost } : {}),
+    }
+    const eventPrefix = reward.eventName ? `${reward.eventName} ` : ''
+    const rewardText = reward.currencyName && reward.eventCost
+      ? `${eventPrefix}이벤트 ${reward.currencyName} ${reward.eventCost}개 교환`
+      : `${eventPrefix}이벤트 교환 보상`
+    const shardText = cost && exSeason ? ` / 자아 파편 ${cost} 교환(시즌 ${exSeason} 이후)` : ''
+    return { acquisition: `${rewardText}${shardText}`, acquisition_info: info, evidence }
+  }
+
+  if (personality.additionalAttachment === 'EVENT') {
+    const exSeason = exchangeSeason(season)
+    return {
+      acquisition: `${releasePickup?.gachaName ?? `이벤트 한정 추출(시즌 ${season})`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
+      acquisition_info: {
+        type: 'limited',
+        release_season: season,
+        fragment_cost: cost,
+        gacha: 'seasonal',
+        gacha_from_season: season,
+        ...gachaFields(releasePickup),
+        ...(exSeason ? { exchange_from_season: exSeason } : {}),
+      },
+      evidence,
+    }
+  }
+
+  if (season > 0) {
+    const exSeason = exchangeSeason(season)
+    return {
+      acquisition: `${releasePickup?.gachaName ?? `추출(시즌 ${season} 이후)`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
+      acquisition_info: {
+        type: 'standard',
+        release_season: season,
+        fragment_cost: cost,
+        gacha: 'seasonal',
+        gacha_from_season: season,
+        ...gachaFields(releasePickup),
+        ...(exSeason ? { exchange_from_season: exSeason } : {}),
+      },
+      evidence,
+    }
+  }
+
+  return {
+    acquisition: `추출(상시) / 자아 파편 ${cost} 교환(상시)`,
+    acquisition_info: {
+      type: 'standard',
+      release_season: 0,
+      fragment_cost: cost,
+      gacha: 'always',
+    },
+    evidence,
+  }
+}
+
+function stable(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`
+  const record = asRecord(value)
+  if (!record) return JSON.stringify(value)
+  return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stable(record[key])}`).join(',')}}`
+}
+
+function sameInfo(left: AcquisitionInfo | null, right: AcquisitionInfo): boolean {
+  return stable(left) === stable(right)
+}
+
+async function main() {
+  const personalities = loadPersonalities()
+  const itemNames = loadItemNames()
+  const gachaTitles = loadGachaTitles()
+  const eventRewards = loadEventRewardHits(itemNames)
+  const gachaPickups = loadGachaPickupHits(gachaTitles)
+
+  let query = supabase
+    .from('identities')
+    .select('id, game_id, name_kr, rarity, acquisition, acquisition_info')
+    .order('game_id')
+  if (ID_FILTER.size > 0) query = query.in('game_id', [...ID_FILTER])
+
+  const { data, error } = await query
+  if (error) throw error
+  const rows = (data ?? []) as DbIdentity[]
+
+  let changed = 0
+  let applied = 0
+  for (const identity of rows) {
+    const personality = personalities.get(identity.game_id)
+    if (!personality) {
+      console.warn(`[skip] ${identity.game_id} ${identity.name_kr ?? ''}: personality source not found`)
+      continue
+    }
+
+    const derived = deriveAcquisition(identity, personality, eventRewards, gachaPickups)
+    const differs = identity.acquisition !== derived.acquisition || !sameInfo(identity.acquisition_info, derived.acquisition_info)
+    if (!differs) continue
+    changed++
+
+    console.log(`[diff] ${identity.game_id} ${identity.name_kr ?? ''}`)
+    console.log(`  acquisition: ${identity.acquisition ?? '(null)'}`)
+    console.log(`           -> ${derived.acquisition}`)
+    console.log(`  info: ${stable(identity.acquisition_info)}`)
+    console.log(`    -> ${stable(derived.acquisition_info)}`)
+    if (VERBOSE) {
+      for (const item of derived.evidence) console.log(`  evidence: ${item}`)
+    }
+
+    if (FIX) {
+      const { error: updateError } = await supabase
+        .from('identities')
+        .update({
+          acquisition: derived.acquisition,
+          acquisition_info: derived.acquisition_info,
+        })
+        .eq('id', identity.id)
+      if (updateError) throw updateError
+      applied++
+    }
+  }
+
+  console.log(DRY_RUN ? `[dry-run] changed candidates: ${changed}` : `[fix] applied: ${applied}`)
+  if (FIX && applied > 0) await triggerRevalidation({ scope: 'all-game-data' })
+}
+
+main().catch(error => {
+  console.error(error instanceof Error ? error.message : error)
+  process.exit(1)
+})
