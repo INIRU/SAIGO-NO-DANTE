@@ -178,6 +178,9 @@
     "detail": {
       "backToList": "Deck Board",
       "notFound": "Deck not found",
+      "notFoundEyebrow": "Route check needed",
+      "notFoundDescription": "We could not find a deck at this address. The deck may have been removed, or the shared link may be incorrect.",
+      "notFoundAction": "Back to Deck Board",
       "backToBoard": "← Back to Board",
       "identityEmpty": "No identity information",
       "boardLabel": "Deck formation board",

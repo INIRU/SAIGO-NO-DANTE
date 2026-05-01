@@ -427,7 +427,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     })
     setSaving(false)
     if (res.ok) {
-      router.push(editMode ? `/decks/${editMode.deckId}` : '/decks')
+      router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
     } else {
       const data = await res.json().catch(() => null)
       showError(data?.error ?? (editMode ? '덱 수정에 실패했습니다.' : '덱 저장에 실패했습니다.'))
@@ -535,7 +535,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       <div className="max-w-5xl mx-auto px-3 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <Link href="/decks" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+            <Link href="/decks" locale={locale as SupportedLang} className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 덱 게시판
             </Link>
             <h1 className="font-serif text-lg sm:text-2xl" style={{ color: 'var(--text-primary)' }}>{editMode ? '덱 수정' : '덱 편성'}</h1>

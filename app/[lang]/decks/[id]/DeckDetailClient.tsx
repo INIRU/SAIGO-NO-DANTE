@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { Link } from '@/lib/i18n/navigation'
+import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
@@ -13,7 +12,7 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
 import { getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
-import { computeFormationGiftKeywordCounts, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
+import { computeFormationGiftKeywordCounts, normalizeDeckMainKeyword, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
@@ -85,6 +84,7 @@ type DeckDetail = {
   title: string
   description: string | null
   tags: string[]
+  main_keywords?: string[] | null
   content_type?: string
   vote_count: number
   view_count: number
@@ -692,7 +692,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     if (shareGenerating || !deck) return
     setShareGenerating(true)
     try {
-      const shareUrl = `${window.location.origin}/decks/${id}`
+      const shareUrl = `${window.location.origin}/${locale}/decks/${id}`
       if (navigator.share) {
         try {
           await navigator.share({ url: shareUrl, title: deck.title })
@@ -707,11 +707,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     } finally {
       setShareGenerating(false)
     }
-  }, [shareGenerating, deck, id])
+  }, [shareGenerating, deck, id, locale])
 
   const handleFork = useCallback(() => {
-    window.location.href = `/decks/new?fork=${id}`
-  }, [id])
+    router.push(`/decks/new?fork=${id}`, { locale })
+  }, [id, locale, router])
 
   // 정렬
   const sorted = useMemo(() => {
@@ -723,7 +723,13 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     })
   }, [deck?.deck_identities])
   const boardSlots = useMemo(() => buildBoardSlots(sorted), [sorted])
-  const keywords = useMemo(() => topKeywords(sorted), [sorted])
+  const keywords = useMemo(() => {
+    const persistedKeywords = (deck?.main_keywords ?? [])
+      .map(normalizeDeckMainKeyword)
+      .filter((keyword): keyword is string => Boolean(keyword))
+
+    return persistedKeywords.length > 0 ? persistedKeywords : topKeywords(sorted)
+  }, [deck?.main_keywords, sorted])
   const filledSlots = useMemo(() => sorted.filter(s => s.identities), [sorted])
   const localizedFilledSlots = useMemo(() => filledSlots.map(slot => {
     const identity = slot.identities
@@ -827,14 +833,46 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     return map
   }, [egoGiftLookup, filledSlots])
 
+  useEffect(() => {
+    if (loading || deck) return
+
+    const styleId = 'deck-detail-missing-footer-style'
+    const className = 'deck-detail-missing'
+    let styleElement = document.getElementById(styleId)
+
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = styleId
+      styleElement.textContent = `body.${className} footer { display: none !important; }`
+      document.head.appendChild(styleElement)
+    }
+
+    document.body.classList.add(className)
+
+    return () => {
+      document.body.classList.remove(className)
+      if (styleElement?.parentNode) {
+        styleElement.parentNode.removeChild(styleElement)
+      }
+    }
+  }, [deck, loading])
+
   if (loading) return <Skeleton />
 
   if (!deck) {
     return (
-      <div className="min-h-[100dvh] pt-24 flex items-center justify-center">
+      <div
+        className="flex items-center justify-center px-4"
+        style={{ minHeight: 'calc(100dvh - 4rem)', background: '#0d0b08' }}
+      >
         <div className="text-center">
-          <p className="font-serif text-2xl mb-4" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
-          <Link href="/decks" style={{ color: '#888888' }} className="hover:text-yellow-300 transition-colors">
+          <p className="mb-4 font-serif text-2xl" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
+          <Link
+            href="/decks"
+            locale={locale}
+            style={{ color: '#888888' }}
+            className="transition-colors hover:text-yellow-300"
+          >
             {t('backToBoard')}
           </Link>
         </div>
@@ -883,6 +921,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         <div className="flex items-center gap-3 mb-2">
           <Link
             href="/decks"
+            locale={locale}
             className="inline-flex items-center gap-1 transition-opacity hover:opacity-70 flex-shrink-0"
             style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
           >

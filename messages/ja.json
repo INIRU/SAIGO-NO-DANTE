@@ -178,6 +178,9 @@
     "detail": {
       "backToList": "デッキ掲示板",
       "notFound": "デッキが見つかりません",
+      "notFoundEyebrow": "経路の確認が必要です",
+      "notFoundDescription": "このアドレスで開けるデッキが見つかりませんでした。デッキが削除されたか、共有リンクが正しくない可能性があります。",
+      "notFoundAction": "デッキ掲示板へ戻る",
       "backToBoard": "← 掲示板へ戻る",
       "identityEmpty": "人格情報がありません",
       "boardLabel": "デッキ編成ボード",
