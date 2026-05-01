@@ -166,7 +166,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
         }}
       />
 
-      <Link href={`/decks/${deck.id}`} className="flex flex-col flex-1">
+      <Link href={`/decks/${deck.id}`} locale={locale} className="flex flex-col flex-1">
         {/* 인격 포트레이트 그리드 (2×6) */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
           {slots.map((slot, i) => (

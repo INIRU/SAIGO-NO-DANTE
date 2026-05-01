@@ -717,7 +717,7 @@ export default async function DeckDetailPage({ params }: Props) {
 
   return (
     <>
-      <DeckHero slots={heroSlots} />
+      {initialDeck ? <DeckHero slots={heroSlots} /> : null}
       <Suspense fallback={
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>

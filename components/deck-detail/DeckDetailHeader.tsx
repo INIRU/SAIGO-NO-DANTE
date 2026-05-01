@@ -134,6 +134,7 @@ export function DeckSidebarPanel({
       {(isOwner || isAdmin) && (
         <Link
           href={`/decks/${deckId}/edit`}
+          locale={locale}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-150 hover:brightness-125"
           style={{
             background: 'rgba(200,144,10,0.1)',
@@ -325,6 +326,7 @@ export function DeckMobileActionBar({
   onFork,
 }: DeckHeaderProps) {
   const t = useTranslations('decks.detail')
+  const locale = useLocale() as SupportedLang
   return (
     <div className="flex lg:hidden flex-wrap items-center gap-2.5 mb-5 rounded-lg px-4 py-3" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
       {/* 추천 */}
@@ -428,6 +430,7 @@ export function DeckMobileActionBar({
       {(isOwner || isAdmin) && (
         <Link
           href={`/decks/${deckId}/edit`}
+          locale={locale}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 hover:brightness-125"
           style={{
             background: 'rgba(200,144,10,0.1)',

@@ -2,8 +2,9 @@
 
 import { memo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import type { SupportedLang } from '@/lib/i18n'
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -25,6 +26,7 @@ function DeckGrid({
   onTagClick,
 }: DeckGridProps) {
   const t = useTranslations('decks')
+  const locale = useLocale() as SupportedLang
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -55,6 +57,7 @@ function DeckGrid({
         {!hasAnyFilter && (
           <Link
             href="/decks/new"
+            locale={locale}
             style={{ color: 'var(--gold-dim)', fontSize: '0.8125rem' }}
             className="hover:text-yellow-300 transition-colors underline underline-offset-2"
           >

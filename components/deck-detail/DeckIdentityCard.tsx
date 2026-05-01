@@ -316,7 +316,7 @@ export default function DeckIdentityCard({
         <div className="flex-1 min-w-0 p-3">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} className="font-serif font-light text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{identityName}</Link>
+              <Link href={`/sinners/${id_.sinner_id}/identities/${id_.id}`} locale={lang} className="font-serif font-light text-base leading-tight hover:underline" style={{ color: '#e8e0d0' }}>{identityName}</Link>
             </div>
             {RARITY_ICON_MAP[id_.rarity] ? (
               <Image src={RARITY_ICON_MAP[id_.rarity]} alt={previewT('rarity', { rarity: id_.rarity })} width={id_.rarity === 1 ? 16 : id_.rarity === 2 ? 30 : 36} height={14} style={{ flexShrink: 0, opacity: 0.9, height: '0.875rem', width: 'auto' }} />
