@@ -11,6 +11,7 @@ import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import DeckListFilters from '@/components/decks/DeckListFilters'
 import DeckGrid from '@/components/decks/DeckGrid'
 import {
@@ -25,8 +26,7 @@ import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
-const PINNED_DECK_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '호흡', '진동', '침잠', '충전', '출혈']
-const PINNED_DECK_KEYWORD_SET = new Set<string>(PINNED_DECK_KEYWORDS)
+const PINNED_DECK_KEYWORDS = [...DECK_MAIN_KEYWORDS]
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
@@ -68,14 +68,7 @@ type DeckDerivedIndex = {
   infoScore: number
 }
 
-function getRepresentativeKeywords(identity: { keywords?: string[] | null; skill_keyword_list?: string[] | null }) {
-  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
-    ? identity.skill_keyword_list
-    : (identity.keywords ?? [])
-}
-
 function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
-  const freq: Record<string, number> = {}
   const allKeywords = new Set<string>()
   const keywordTagValues = new Set<string>()
   const identityNames: string[] = []
@@ -94,7 +87,6 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
 
     if (slot.slot_order < 99) hasFormationOrder = true
     if (!identity || slot.slot_order >= 99) continue
-    const isNewFormationSinner = Boolean(identity.sinner_id) && !formationSinnerIds.has(identity.sinner_id)
     if (identity.sinner_id) formationSinnerIds.add(identity.sinner_id)
 
     for (const rawKeyword of identity.keywords ?? []) {
@@ -105,14 +97,6 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
       if (THEME_KEYWORD_SET.has(normalized)) keywordTagValues.add(normalized)
     }
 
-    for (const rawKeyword of getRepresentativeKeywords(identity)) {
-      const kw = rawKeyword.trim()
-      if (!kw) continue
-      const normalized = normalizeThemeKeyword(kw)
-      if (isNewFormationSinner && PINNED_DECK_KEYWORD_SET.has(normalized)) {
-        freq[normalized] = (freq[normalized] ?? 0) + 1
-      }
-    }
   }
 
   const formationCount = formationSinnerIds.size
@@ -122,11 +106,12 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
   })
   const hasDescription = (deck.description?.trim().length ?? 0) >= 20
   const infoScore = Number(hasFormationOrder) + Number(hasNonDefaultEgo) + Number(hasDescription)
-  const minKeywordCount = formationCount <= 1 ? formationCount : Math.max(2, Math.ceil(formationCount * 0.4))
-  const mainKeywords = Object.entries(freq)
-    .filter(([, n]) => n >= minKeywordCount)
-    .sort((a, b) => b[1] - a[1])
-    .map(([kw]) => kw)
+  const persistedMainKeywords = (deck.main_keywords ?? [])
+    .map(normalizeDeckMainKeyword)
+    .filter((keyword): keyword is string => Boolean(keyword))
+  const mainKeywords = persistedMainKeywords.length > 0
+    ? persistedMainKeywords
+    : computeDeckMainKeywordsFromSlots(deck.deck_identities ?? [])
 
   return {
     searchValues: [

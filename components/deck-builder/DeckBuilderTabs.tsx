@@ -17,7 +17,12 @@ import {
   GRADE_COLORS,
 } from '@/lib/data/sinners'
 import IdentityCard from '@/components/sinners/IdentityCard'
+import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import BaseModal from '@/components/ui/BaseModal'
+import { localizeEgoName } from '@/components/deck-detail/DeckIdentityCard'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
+import type { SupportedLang } from '@/lib/i18n/types'
+import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 
 /* ── 수감자 빈 카드 (공통) ────────────────────────────── */
 function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: React.ReactNode }) {
@@ -49,29 +54,36 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
 
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 const SKILL_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
-
+const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
   sinners, identities, deckSlots, gacksungSlots, onGacksungToggle,
   formationOrder, onFormationToggle, onIdentitySelect, onIdentityDeselect,
+  mainKeywordCounts, selectedMainKeywords, maxMainKeywords, mainKeywordLabel, onMainKeywordToggle,
 }: {
   sinners: Sinner[]
   identities: Identity[]
   deckSlots: Record<string, Identity | undefined>
   gacksungSlots: Record<string, boolean>
+  mainKeywordCounts: Record<string, number>
+  selectedMainKeywords: string[]
+  maxMainKeywords: number
+  mainKeywordLabel: string
   onGacksungToggle: (sinnerId: string) => void
   formationOrder: string[]
   onFormationToggle: (sinnerId: string) => void
+  onMainKeywordToggle: (keyword: string) => void
   onIdentitySelect: (identity: Identity) => void
   onIdentityDeselect: (sinnerId: string) => void
 }) {
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
+  const { getIconUrl } = useKeywordData()
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) : null
   const modalIdentities = modalSinnerId ? identities.filter(i => i.sinner_id === modalSinnerId).sort((a, b) => b.rarity - a.rarity) : []
 
   return (
     <>
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
+    <div className="deck-builder-identity-grid grid grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-x-1.5 gap-y-2 sm:gap-x-4 sm:gap-y-6">
       {sinners.map(sinner => {
         const identity = deckSlots[sinner.id]
         const isGacksung = gacksungSlots[sinner.id] ?? false
@@ -81,7 +93,7 @@ export function IdentityTab({
         return (
           <div key={sinner.id} className="relative" style={{ overflow: 'visible' }}>
             <div
-              className="group cursor-pointer relative w-full"
+              className={`deck-builder-identity-slot ${identity ? 'deck-builder-identity-slot--filled' : 'deck-builder-identity-slot--empty'} group cursor-pointer relative w-full`}
               style={{
                 aspectRatio: '2/3',
                 background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
@@ -103,19 +115,19 @@ export function IdentityTab({
                   />
                   {/* 이름 오버레이 */}
                   <div className="absolute bottom-0 left-0 right-0 z-10 text-center" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.5rem', paddingBottom: '0.375rem' }}>
-                    <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.8125rem', lineHeight: 1.2 }}>{identity.name_kr}</p>
+                    <p className="font-serif text-[0.75rem] sm:text-[0.8125rem]" style={{ color: '#e8dcc8', lineHeight: 1.2 }}>{identity.name_kr}</p>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32} style={{ width: '2rem', height: '2rem', opacity: 0.35 }} />
+                    <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32} className="deck-builder-empty-slot-logo h-6 w-6 sm:h-8 sm:w-8" style={{ opacity: 0.45 }} />
                   </div>
                   <div className="absolute" style={{ top: 0, right: 0, width: '36%', opacity: 0.15, pointerEvents: 'none' }}>
                     <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 text-center z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.25rem', paddingBottom: '0.375rem' }}>
-                    <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.75rem' }}>{sinner.name_kr}</p>
+                    <p className="deck-builder-empty-slot-name font-serif font-light text-[0.75rem]" style={{ color: '#3a2a10' }}>{sinner.name_kr}</p>
                   </div>
                 </>
               )}
@@ -123,8 +135,8 @@ export function IdentityTab({
               {/* 편성 순서 오버레이 */}
               {identity && isFormed && (
                 <div className="absolute inset-0 flex items-center justify-center z-[15] pointer-events-none" style={{ background: 'rgba(13,11,8,0.5)' }}>
-                  <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: '#e8b030', textShadow: '0 0 0.75rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)' }}>편성</span>
-                  <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: '#e8b030', textShadow: '0 0 1rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)', marginLeft: '0.25rem' }}>{formIdx + 1}</span>
+                  <span className="text-[0.875rem] sm:text-[1.125rem]" style={{ fontWeight: 700, fontFamily: 'var(--font-body)', color: '#e8b030', textShadow: '0 0 0.75rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)' }}>편성</span>
+                  <span className="text-[1.25rem] sm:text-[1.75rem]" style={{ fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: '#e8b030', textShadow: '0 0 1rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)', marginLeft: '0.25rem' }}>{formIdx + 1}</span>
                 </div>
               )}
 
@@ -139,7 +151,7 @@ export function IdentityTab({
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.15)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.6)' }}
                     >
-                      <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
+                      <span className="text-[0.75rem] sm:text-[0.875rem]" style={{ color: '#e8b030', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
                     </div>
                     <div
                       onClick={() => onFormationToggle(sinner.id)}
@@ -148,7 +160,7 @@ export function IdentityTab({
                       onMouseEnter={e => { e.currentTarget.style.background = isFormed ? 'rgba(90,176,208,0.12)' : 'rgba(200,144,10,0.12)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                     >
-                      <span style={{ color: isFormed ? '#5ab0d0' : '#e8b030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
+                      <span className="text-[0.75rem]" style={{ color: isFormed ? '#5ab0d0' : '#e8b030', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
                         {isFormed ? '편성 해제' : '편성하기'}
                       </span>
                     </div>
@@ -161,7 +173,7 @@ export function IdentityTab({
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.12)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                   >
-                    <span style={{ color: '#e8b030', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성</span>
+                    <span className="text-[0.8125rem] sm:text-[1rem]" style={{ color: '#e8b030', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성</span>
                   </div>
                 )}
               </div>
@@ -191,6 +203,144 @@ export function IdentityTab({
         )
       })}
     </div>
+
+    <div className="deck-builder-pinned-keywords" aria-label={mainKeywordLabel}>
+      {DECK_MAIN_KEYWORDS.map(keyword => {
+        const iconUrl = getIconUrl(keyword)
+        const count = mainKeywordCounts[keyword] ?? 0
+        const selected = selectedMainKeywords.includes(keyword)
+        const isManualAttackKeyword = MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword)
+        const disabled = (!isManualAttackKeyword && count <= 0) || (!selected && selectedMainKeywords.length >= maxMainKeywords)
+        const accessibleName = isManualAttackKeyword ? keyword : `${keyword} ${count}`
+        return (
+          <button
+            key={keyword}
+            type="button"
+            className="deck-builder-pinned-keyword"
+            data-selected={selected}
+            disabled={disabled}
+            onClick={() => onMainKeywordToggle(keyword)}
+            aria-pressed={selected}
+            aria-label={accessibleName}
+            title={accessibleName}
+          >
+            {iconUrl && (
+              <Image
+                src={iconUrl}
+                alt=""
+                width={16}
+                height={16}
+                className="deck-builder-pinned-keyword__icon"
+              />
+            )}
+            <span>{keyword}</span>
+            {!isManualAttackKeyword && (
+              <span className="deck-builder-pinned-keyword__count">{count}</span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+
+    <style jsx global>{`
+      .deck-builder-pinned-keywords {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.375rem;
+        margin-top: 0.75rem;
+      }
+      .deck-builder-pinned-keyword {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        min-height: 2.75rem;
+        padding: 0.375rem 0.625rem;
+        border: 1px solid rgba(200, 144, 10, 0.16);
+        border-radius: 0.375rem;
+        background: rgba(18, 14, 9, 0.74);
+        color: rgba(232, 220, 200, 0.84);
+        font-size: 0.9375rem;
+        line-height: 1;
+        font-family: var(--font-sans);
+        cursor: pointer;
+        transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+      }
+      .deck-builder-pinned-keyword:hover:not(:disabled),
+      .deck-builder-pinned-keyword:focus-visible {
+        border-color: rgba(232, 176, 48, 0.42);
+        background: rgba(200, 144, 10, 0.12);
+        color: #f0d48a;
+      }
+      .deck-builder-pinned-keyword:focus-visible {
+        outline: 1px solid rgba(232, 176, 48, 0.6);
+        outline-offset: 2px;
+      }
+      .deck-builder-pinned-keyword[data-selected="true"] {
+        border-color: rgba(232, 176, 48, 0.58);
+        background: rgba(200, 144, 10, 0.18);
+        color: #f0d48a;
+        box-shadow: inset 0 0 0 1px rgba(232, 176, 48, 0.12);
+      }
+      .deck-builder-pinned-keyword:disabled {
+        cursor: not-allowed;
+        opacity: 0.42;
+      }
+      .deck-builder-pinned-keyword__count {
+        display: inline-flex;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(200, 144, 10, 0.18);
+        border-radius: 999px;
+        background: rgba(13, 11, 8, 0.52);
+        color: inherit;
+        font-family: var(--font-mono);
+        font-size: 0.875rem;
+        line-height: 1;
+      }
+      .deck-builder-pinned-keyword__icon {
+        width: 1rem;
+        height: 1rem;
+        object-fit: contain;
+      }
+      @media (max-width: 639px) {
+        .deck-builder-identity-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.5rem 0.375rem;
+        }
+        .deck-builder-identity-slot {
+          border-width: 1px !important;
+        }
+        .deck-builder-identity-slot--empty {
+          aspect-ratio: 1 / 1.12 !important;
+        }
+        .deck-builder-empty-slot-logo {
+          width: 1.25rem !important;
+          height: 1.25rem !important;
+        }
+        .deck-builder-empty-slot-name {
+          font-size: 0.625rem !important;
+          line-height: 1.15;
+        }
+        .deck-builder-pinned-keywords {
+          margin-top: 0.625rem;
+          gap: 0.3125rem;
+        }
+        .deck-builder-pinned-keyword {
+          min-height: 2.5rem;
+          padding: 0.3125rem 0.5rem;
+          font-size: 0.875rem;
+        }
+      }
+      @media (max-width: 359px) {
+        .deck-builder-identity-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+    `}</style>
 
     {/* ── 인격 선택 모달 (플래너 패턴) ── */}
     <BaseModal open={!!(modalSinnerId && modalSinner)} onClose={() => setModalSinnerId(null)} maxWidth="48rem" padding="1rem" title="인격 선택">
@@ -273,11 +423,12 @@ export function IdentityTab({
 
 /* ── 탭 2: 에고 편성 ─────────────────────────────────── */
 export function EgoTab({
-  sinners, egos, egoSlots, onEgoSelect, onEgoDeselect,
+  sinners, egos, egoSlots, lang, onEgoSelect, onEgoDeselect,
 }: {
   sinners: Sinner[]
   egos: EGO[]
   egoSlots: Record<string, Record<string, EGO>>
+  lang: SupportedLang
   onEgoSelect: (ego: EGO) => void
   onEgoDeselect: (sinnerId: string, grade: string) => void
 }) {
@@ -393,7 +544,7 @@ export function EgoTab({
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.5625rem', color: gc, letterSpacing: '0.1em' }}>ALEPH</span>
                     )}
                     <div style={{ flex: 1, height: '1px', background: `${gc}33` }} />
-                    {selectedEgo && (
+                    {selectedEgo && grade !== 'ZAYIN' && (
                       <button
                         onClick={() => onEgoDeselect(modalSinnerId, grade)}
                         style={{
@@ -409,31 +560,24 @@ export function EgoTab({
                   {gradeEgos.length === 0 ? (
                     <p style={{ color: '#3a2e20', fontSize: '0.625rem', fontFamily: 'var(--font-mono)', paddingLeft: '0.25rem' }}>없음</p>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {gradeEgos.map(ego => {
-                        const sc = ego.sin_affinity ? (SIN_COLORS[ego.sin_affinity as SinType] ?? gc) : gc
                         const isSelected = selectedEgo?.id === ego.id
+                        const egoName = localizeEgoName(ego, lang)
                         return (
-                          <button
+                          <EgoDisplayCard
                             key={ego.id}
                             onClick={() => onEgoSelect(ego)}
-                            className="flex flex-col items-center gap-1.5"
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <div style={{
-                              position: 'relative', width: '5.625rem', height: '5.625rem',
-                              borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                              border: `0.125rem solid ${isSelected ? 'var(--gold)' : sc + '55'}`,
-                              boxShadow: isSelected ? `0 0 1rem rgba(200,144,10,0.6)` : `0 0 0.375rem ${sc}25`,
-                              background: '#0d0a06', transition: 'all 0.2s',
-                            }}>
-                              {ego.image_url
-                                ? <Image src={ego.image_url} alt="" fill className="object-cover" style={{ objectPosition: '50% 10%' }} sizes="90px" />
-                                : <div className="w-full h-full flex items-center justify-center"><span style={{ fontFamily: 'monospace', color: gc, fontSize: '0.75rem' }}>{ego.grade?.[0]}</span></div>
-                              }
-                            </div>
-                            <p className="font-serif font-light leading-snug text-center" style={{ color: isSelected ? '#f0d060' : '#c8a450', fontSize: '0.6875rem' }}>{ego.name_kr || ego.name}</p>
-                          </button>
+                            ego={ego}
+                            name={egoName}
+                            sinnerId={ego.sinner_id}
+                            lang={lang}
+                            selected={isSelected}
+                            className={[
+                              'transition-[filter] duration-200 ease-out',
+                              'brightness-95 hover:brightness-105 hover:saturate-110',
+                            ].join(' ')}
+                          />
                         )
                       })}
                     </div>

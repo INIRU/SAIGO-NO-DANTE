@@ -65,6 +65,9 @@ const EN_DIR = join(DATA_DIR, 'EN')
 const JP_DIR = join(DATA_DIR, 'JP')
 const KR_PERSONALITY_VOICE_LATEST_DIR = join(KR_LATEST_DIR, 'PersonalityVoiceDlg')
 const TRUE_EGO_FILE_RE = /^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_FILE_RE = /^personality-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_SKILL_FILE_RE = /^personality-skill-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
+const PERSONALITY_PASSIVE_FILE_RE = /^personality-passive-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -726,13 +729,9 @@ function loadKrSkills(): Map<number, KrSkill> {
 
 function loadPersonalities(): Map<string, Personality> {
   const map = new Map<string, Personality>()
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-${pad}.txt`))
-    if (!data) {
-      console.warn(YELLOW(`  [경고] personality-${pad}.txt 없음`))
-      continue
-    }
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
+    if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PersonalitySchema.safeParse(item)
       if (parsed.success) map.set(String(parsed.data.id), parsed.data)
@@ -743,9 +742,8 @@ function loadPersonalities(): Map<string, Personality> {
 
 function loadPersonalitySkills(): Map<number, PersonalitySkill> {
   const map = new Map<number, PersonalitySkill>()
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-skill-${pad}.txt`))
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_SKILL_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
     if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PersonalitySkillSchema.safeParse(item)
@@ -759,9 +757,8 @@ function loadPersonalitySkills(): Map<number, PersonalitySkill> {
 
 function loadPassiveMappings(): PassiveMapping[] {
   const all: PassiveMapping[] = []
-  for (const sinner of SINNERS) {
-    const pad = String(sinner.id).padStart(2, '0')
-    const data = readTxt(join(DATA_DIR, `personality-passive-${pad}.txt`))
+  for (const sourceFile of globFiles(DATA_DIR, PERSONALITY_PASSIVE_FILE_RE).sort()) {
+    const data = readTxt(join(DATA_DIR, sourceFile))
     if (!data) continue
     for (const item of extractList(data)) {
       const parsed = PassiveMappingSchema.safeParse(item)

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 const PAGE_SIZE = 12
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
-      id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+      id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
       profiles!decks_user_id_fkey(username),
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
       deck_egos(ego_id, grade)
@@ -59,8 +59,11 @@ function normalizeDeckLangQuery(queryLang: string | string[] | undefined): DeckL
   return normalizeDeckLanguageFilter(value)
 }
 
-function isMissingSkillKeywordListError(error: { message?: string } | null) {
-  return Boolean(error?.message?.includes('skill_keyword_list'))
+function isMissingDeckKeywordColumnError(error: { message?: string } | null) {
+  return Boolean(
+    error?.message?.includes('skill_keyword_list') ||
+    error?.message?.includes('main_keywords')
+  )
 }
 
 function DecksPageSkeleton() {
@@ -117,7 +120,7 @@ async function getCachedInitialDecks({
   }
 
   let { data, error } = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS)
-  if (isMissingSkillKeywordListError(error)) {
+  if (isMissingDeckKeywordColumnError(error)) {
     const legacyResult = await buildQuery(DECK_LIST_SELECT_LEGACY)
     data = legacyResult.data
     error = legacyResult.error

@@ -7,6 +7,7 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 
 
 // ── 덱 코드 인코딩 (DeckBuilderClient와 동일 로직) ─────────────────────────
@@ -91,7 +92,7 @@ export async function GET(
       .schema('limbus')
       .from('decks')
       .select(`
-        id, user_id, title, description, tags, content_type, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, s1_count, s2_count, s3_count,
@@ -332,7 +333,7 @@ export async function PATCH(
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('user_id, title, description, tags, content_type')
+      .select('user_id, title, description, tags, main_keywords, content_type')
       .eq('id', id)
       .single()
 
@@ -345,11 +346,21 @@ export async function PATCH(
       return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
     }
 
+    const mainKeywordsResult = parseDeckMainKeywordsInput(
+      Object.prototype.hasOwnProperty.call(body, 'main_keywords')
+        ? body.main_keywords
+        : deck.main_keywords
+    )
+    if ('error' in mainKeywordsResult) {
+      return NextResponse.json({ error: mainKeywordsResult.error }, { status: 400 })
+    }
+
     // 롤백용 원본 값 저장
     const originalValues = {
       title: deck.title,
       description: deck.description,
       tags: deck.tags,
+      main_keywords: deck.main_keywords,
       content_type: deck.content_type,
     }
 
@@ -363,7 +374,13 @@ export async function PATCH(
     const { error: updateError } = await admin
       .schema('limbus')
       .from('decks')
-      .update({ title, description, tags: tags || [], content_type: content_type || '없음' })
+      .update({
+        title,
+        description,
+        tags: tags || [],
+        main_keywords: mainKeywordsResult.value,
+        content_type: content_type || '없음',
+      })
       .eq('id', id)
 
     if (updateError) {
@@ -428,6 +445,7 @@ export async function PATCH(
       details: {
         contentType: content_type || '없음',
         tagCount: Array.isArray(tags) ? tags.length : 0,
+        mainKeywordCount: mainKeywordsResult.value.length,
         identityCount: Array.isArray(identitySlots) ? identitySlots.length : 0,
         egoCount: Array.isArray(egoSlots) ? egoSlots.length : 0,
         isAdmin: !isOwner && isAdmin,

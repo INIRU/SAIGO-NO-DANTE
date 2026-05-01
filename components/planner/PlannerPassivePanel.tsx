@@ -59,6 +59,62 @@ function getCondition(passive: PlannerPassiveLike, deckSinCounts: Record<string,
   return { sins, current, required, met, primarySin, color }
 }
 
+export function PlannerPassiveNoteRow({
+  passive,
+  deckSinCounts = {},
+  imageUrl,
+}: {
+  passive: PlannerPassiveLike
+  deckSinCounts?: Record<string, number>
+  imageUrl?: string
+}) {
+  const t = useTranslations('decks.detail')
+  const condition = getCondition(passive, deckSinCounts)
+
+  return (
+    <div
+      className="flex items-start gap-2 rounded px-3 py-2"
+      style={{
+        background: '#120e09',
+        border: '1px solid #221a0f',
+        opacity: condition.met ? 1 : 0.55,
+        maxWidth: '32rem',
+      }}
+    >
+      {imageUrl && (
+        <Image
+          src={imageUrl}
+          alt=""
+          width={24}
+          height={36}
+          quality={50}
+          style={{ width: '1.5rem', height: '2.25rem', borderRadius: '0.125rem', objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }}
+        />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex flex-wrap items-center gap-1.5" style={{ fontSize: '0.875rem' }}>
+          {condition.met && <span style={{ color: '#40a060', fontSize: '0.625rem', flexShrink: 0 }}>●</span>}
+          {condition.primarySin && <Image src={getSinIconUrl(condition.primarySin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
+          {condition.required > 0 && condition.primarySin && (
+            <span style={{ color: condition.met ? '#40a060' : condition.color, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+              {condition.current}/{condition.required}
+            </span>
+          )}
+          <span style={{ color: condition.color, fontWeight: 600 }}>
+            {passive.active_cond === 'resonance' ? t('passiveResonance') : passive.active_cond === 'stock' ? t('passiveStock') : ''}
+          </span>
+          <span style={{ color: condition.met ? '#9a8a70' : '#6a5e38', fontWeight: 700 }}>{passive.name}</span>
+        </div>
+        {passive.description && (
+          <div style={{ marginTop: '0.25rem' }}>
+            <SkillDescription description={passive.description} accentColor={condition.color} variant="compact" />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PlannerPassivePanel({
   identitySlots,
   passives,

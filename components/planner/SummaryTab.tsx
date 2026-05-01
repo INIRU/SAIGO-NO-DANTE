@@ -236,12 +236,13 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     if (!cond || !cond.count) return null
     let fHave = 0, aHave = 0, label = ''
     if (cond.type === 'keyword' && cond.keyword) {
-      fHave = formationKwCounts[cond.keyword] ?? 0
-      aHave = allKwCounts[cond.keyword] ?? 0
+      const normalizedKeyword = normalizeThemeKeyword(cond.keyword)
+      fHave = formationKwCounts[normalizedKeyword] ?? 0
+      aHave = allKwCounts[normalizedKeyword] ?? 0
       label = cond.keyword
     } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[kw] ?? 0), 0)
-      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[kw] ?? 0), 0)
+      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
+      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
       label = cond.keywords.join('+')
     } else { return null }
     if (fHave >= cond.count) return null
