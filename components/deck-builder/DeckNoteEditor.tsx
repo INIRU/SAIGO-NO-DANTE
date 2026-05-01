@@ -453,6 +453,7 @@ export default function DeckNoteEditor({
   const [editorSuggestions, setEditorSuggestions] = useState<AutocompleteSuggestion[]>([])
   const [editorSelectedIdx, setEditorSelectedIdx] = useState(-1)
   const [editorAnchor, setEditorAnchor] = useState<CaretAnchor | null>(null)
+  const editorComposingRef = useRef(false)
   const [selectedSinnerId, setSelectedSinnerId] = useState<string | null>(null)
   const [insertOpen, setInsertOpen] = useState(false)
   const editorContent = useMemo(() => markdownToTiptapContent(description), [description])
@@ -712,8 +713,12 @@ export default function DeckNoteEditor({
     }
   }, [selectedSinnerId, sinners])
 
-  const refreshEditorAutocomplete = useCallback((editor: Editor) => {
-    const { state, view } = editor
+  const refreshEditorAutocompleteFromView = useCallback((state: Editor['state'], view: Editor['view']) => {
+    if (editorComposingRef.current) {
+      setEditorSuggestions([])
+      setEditorAnchor(null)
+      return
+    }
     const { selection } = state
     if (!selection.empty) {
       setEditorSuggestions([])
@@ -736,6 +741,10 @@ export default function DeckNoteEditor({
       width: 17.5 * rootFontSize,
     })
   }, [noteAc.pool])
+
+  const refreshEditorAutocomplete = useCallback((editor: Editor) => {
+    refreshEditorAutocompleteFromView(editor.state, editor.view)
+  }, [refreshEditorAutocompleteFromView])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -762,6 +771,21 @@ export default function DeckNoteEditor({
         'aria-label': '덱 노트',
         class: 'deck-note-prosemirror',
       },
+      handleDOMEvents: {
+        compositionstart: () => {
+          editorComposingRef.current = true
+          setEditorSuggestions([])
+          setEditorAnchor(null)
+          return false
+        },
+        compositionend: view => {
+          editorComposingRef.current = false
+          requestAnimationFrame(() => {
+            if (!editorComposingRef.current) refreshEditorAutocompleteFromView(view.state, view)
+          })
+          return false
+        },
+      },
     },
     onUpdate: ({ editor: nextEditor }) => {
       setDescription(tiptapContentToMarkdown(nextEditor.getJSON()))
@@ -770,7 +794,7 @@ export default function DeckNoteEditor({
     onSelectionUpdate: ({ editor: nextEditor }) => {
       refreshEditorAutocomplete(nextEditor)
     },
-  }, [refreshEditorAutocomplete])
+  }, [refreshEditorAutocomplete, refreshEditorAutocompleteFromView])
 
   useEffect(() => {
     editor?.setEditable(!descPreview)
@@ -828,6 +852,7 @@ export default function DeckNoteEditor({
   }, [descPreview, editor, noteAc])
 
   const selectEditorSuggestion = useCallback((sugg: AutocompleteSuggestion) => {
+    if (editorComposingRef.current) return
     if (!editor || descPreview) return
     const { selection } = editor.state
     const textBefore = selection.$from.parent.textBetween(0, selection.$from.parentOffset, '\n')
@@ -835,14 +860,29 @@ export default function DeckNoteEditor({
     if (context.mode === 'closed' || context.mode === 'word') return
     const from = selection.$from.start() + context.replaceStart
     const to = selection.$from.start() + context.replaceEnd
-    editor.chain().focus().deleteRange({ from, to }).insertContent(sugg.token).run()
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+    editor.chain().focus(undefined, { scrollIntoView: false }).deleteRange({ from, to }).insertContent(sugg.token).run()
+    requestAnimationFrame(() => {
+      editor.commands.focus(undefined, { scrollIntoView: false })
+      window.scrollTo(scrollX, scrollY)
+      refreshEditorAutocomplete(editor)
+    })
     if (!sugg.token.endsWith(':')) {
       setEditorSuggestions([])
       setEditorAnchor(null)
     }
-  }, [descPreview, editor])
+  }, [descPreview, editor, refreshEditorAutocomplete])
 
   const handleEditorKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const maybeComposingEvent = event as KeyboardEvent<HTMLDivElement> & { isComposing?: boolean }
+    if (maybeComposingEvent.isComposing || event.nativeEvent.isComposing || editorComposingRef.current) {
+      if (event.key === 'Tab') {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      return
+    }
     if (editorSuggestions.length === 0) return
     if (event.key === 'ArrowDown') {
       event.preventDefault()
@@ -852,6 +892,7 @@ export default function DeckNoteEditor({
       setEditorSelectedIdx(idx => Math.max(idx - 1, 0))
     } else if (event.key === 'Enter' || event.key === 'Tab') {
       event.preventDefault()
+      if (event.key === 'Tab') event.stopPropagation()
       selectEditorSuggestion(editorSuggestions[Math.max(editorSelectedIdx, 0)])
     } else if (event.key === 'Escape') {
       setEditorSuggestions([])

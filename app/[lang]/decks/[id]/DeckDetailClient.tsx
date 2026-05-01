@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide
 import { showSuccess, showError } from '@/lib/toast'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
-import { getSinnerLogoUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
 import { computeFormationGiftKeywordCounts, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
@@ -1115,38 +1115,103 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                         font-weight:700;
                         line-height:1.45;
                       }
-                      .deck-detail-skill-mix-row{
-                        display:flex;
-                        align-items:center;
-                        gap:.625rem;
-                        min-height:2.75rem;
+                      .deck-detail-skill-mix-grid{
+                        display:grid;
+                        grid-template-columns:repeat(2,minmax(0,1fr));
+                        gap:.7rem;
+                      }
+                      @media (min-width:40rem){
+                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+                      }
+                      @media (min-width:52rem){
+                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+                      }
+                      @media (min-width:64rem){
+                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:.75rem}
+                      }
+                      .deck-detail-skill-mix-card{
+                        position:relative;
+                        overflow:hidden;
                         border:1px solid rgba(200,144,10,.15);
-                        border-radius:.375rem;
+                        border-radius:.5rem;
                         background:#100d0a;
-                        padding:.5rem .625rem;
+                        transform:translate3d(0,0,0);
+                        transition:transform 180ms cubic-bezier(.22,1,.36,1),filter 180ms cubic-bezier(.22,1,.36,1),border-color 180ms cubic-bezier(.22,1,.36,1);
+                      }
+                      .deck-detail-skill-mix-card:hover{
+                        transform:translate3d(0,-.125rem,0);
+                        filter:brightness(1.06);
+                        border-color:rgba(200,144,10,.32);
+                      }
+                      .deck-detail-skill-mix-art{
+                        position:relative;
+                        aspect-ratio:2/3;
+                        width:100%;
+                        overflow:hidden;
+                        background:#080604;
+                        border-bottom:1px solid rgba(200,144,10,.13);
+                      }
+                      .deck-detail-skill-mix-art::after{
+                        content:"";
+                        position:absolute;
+                        inset:0;
+                        background:linear-gradient(to bottom, rgba(13,11,8,0) 58%, rgba(13,11,8,.88) 100%);
+                        pointer-events:none;
+                      }
+                      .deck-detail-skill-mix-info{
+                        padding:.5rem .5rem .55rem;
                       }
                       .deck-detail-skill-mix-name{
+                        display:block;
                         min-width:0;
-                        max-width:10rem;
-                        flex:0 1 auto;
                         color:#b8a890;
                         font-family:var(--font-body);
-                        font-size:.9375rem;
-                        line-height:1.45;
+                        font-size:.875rem;
+                        font-weight:600;
+                        line-height:1.35;
+                        margin-bottom:.45rem;
+                      }
+                      .deck-detail-skill-counts{
+                        display:grid;
+                        grid-template-columns:repeat(3,minmax(0,1fr));
+                        gap:.35rem;
                       }
                       .deck-detail-skill-count{
-                        display:flex;
-                        align-items:center;
-                        gap:.25rem;
-                        min-width:2.75rem;
-                        justify-content:flex-end;
+                        display:grid;
+                        min-width:0;
+                        grid-template-columns:1fr;
+                        justify-items:center;
+                        gap:.2rem;
+                        border:1px solid var(--skill-color-soft, rgba(200,144,10,.22));
+                        border-radius:.375rem;
+                        background:color-mix(in srgb, var(--skill-color, #c8900a) 12%, transparent);
+                        padding:.35rem .2rem .3rem;
+                      }
+                      .deck-detail-skill-count-label{
+                        color:#d7c6a5;
+                        font-family:var(--font-mono);
+                        font-size:.875rem;
+                        font-weight:700;
+                        line-height:1;
+                        font-variant-numeric:tabular-nums;
+                      }
+                      .deck-detail-skill-count-value{
+                        color:var(--skill-color, #c8900a);
+                        font-family:var(--font-mono);
+                        font-size:.9375rem;
+                        font-weight:800;
+                        line-height:1;
+                        font-variant-numeric:tabular-nums;
                       }
                       @media (max-width:40rem){
                         .deck-detail-note-header{padding:.875rem .875rem .625rem 1rem}
                         .deck-detail-note-body{padding:.875rem 1rem 1rem}
-                        .deck-detail-skill-mix-row{align-items:flex-start;flex-wrap:wrap}
-                        .deck-detail-skill-mix-name{max-width:calc(100% - 2rem)}
-                        .deck-detail-skill-count{justify-content:flex-start}
+                        .deck-detail-skill-mix-grid{gap:.625rem}
+                        .deck-detail-skill-mix-info{padding:.45rem}
+                      }
+                      @media (prefers-reduced-motion:reduce){
+                        .deck-detail-skill-mix-card{transition:filter 120ms ease}
+                        .deck-detail-skill-mix-card:hover{transform:none}
                       }
                     `}</style>
                     <section className="deck-detail-note-section mb-5" aria-labelledby="deck-detail-note-title">
@@ -1164,7 +1229,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                         {customSkillSlots.length > 0 && (
                           <div className="deck-detail-skill-mix">
                             <span className="deck-detail-skill-mix-label">{t('skillDistribution')}</span>
-                            <div className="flex flex-col gap-2">
+                            <div className="deck-detail-skill-mix-grid">
                               {customSkillSlots.map((slot, i) => {
                                 const id_ = slot.identities!
                                 const identityName = localizeIdentityName(id_, locale)
@@ -1178,29 +1243,55 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                                   if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
                                 }
                                 const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
-                                const skillIconBase = id_.game_id ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}` : ''
+                                const skillImageIndices = computeSkillImageIndices(sortedSk)
+                                const adaptedIdentity = adaptBoardIdentity(id_, locale)
+                                const identityImageUrl = getIdentityInfoUrl(adaptedIdentity)
                                 return (
-                                  <div key={i} className="deck-detail-skill-mix-row">
-                                    <Image src={getSinnerLogoUrl(id_.sinner_id)} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain', opacity: 0.58, flexShrink: 0 }} />
-                                    <span className="deck-detail-skill-mix-name truncate">
-                                      {identityName}
-                                    </span>
-                                    <div style={{ flex: 1 }} />
-                                    {[0, 1, 2].map(idx => {
-                                      const skill = sortedSk.find(s => s.skill_order === idx + 1)
-                                      const sc = skill ? sinColor(skill.sin_affinity) : '#888'
-                                      const iconUrl = skillIconBase ? `${skillIconBase}${String(idx + 1).padStart(2, '0')}.webp` : ''
-                                      return (
-                                        <div key={idx} className="deck-detail-skill-count">
-                                          {iconUrl && (
-                                            <Image src={iconUrl} alt={`S${idx + 1}`} width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', borderRadius: '0.1875rem', border: `1px solid ${sc}40` }} />
-                                          )}
-                                          <span style={{ fontSize: '0.9375rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: dist[idx] > 0 ? sc : '#3a2d1d' }}>
-                                            {dist[idx]}
-                                          </span>
-                                        </div>
-                                      )
-                                    })}
+                                  <div key={`${id_.id}-${i}`} className="deck-detail-skill-mix-card">
+                                    <div className="deck-detail-skill-mix-art">
+                                      {identityImageUrl && (
+                                        <Image
+                                          src={identityImageUrl}
+                                          alt={identityName}
+                                          fill
+                                          sizes="(max-width: 40rem) 42vw, (max-width: 64rem) 18vw, 7rem"
+                                          style={{ objectFit: 'cover', objectPosition: 'top center' }}
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="deck-detail-skill-mix-info">
+                                      <span className="deck-detail-skill-mix-name truncate">{identityName}</span>
+                                      <div className="deck-detail-skill-counts">
+                                        {[0, 1, 2].map(idx => {
+                                          const skill = sortedSk.find(s => s.skill_order === idx + 1)
+                                          const sc = skill ? sinColor(skill.sin_affinity) : '#888'
+                                          const iconUrl = skill ? getSkillIconUrl(adaptedIdentity, skillImageIndices[skill.id] ?? idx + 1) : ''
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className="deck-detail-skill-count"
+                                              style={{
+                                                '--skill-color': dist[idx] > 0 ? sc : '#5a4a35',
+                                                '--skill-color-soft': `${sc}3a`,
+                                              } as CSSProperties}
+                                              aria-label={`S${idx + 1} x${dist[idx]}`}
+                                            >
+                                              {iconUrl && (
+                                                <Image
+                                                  src={iconUrl}
+                                                  alt=""
+                                                  width={24}
+                                                  height={24}
+                                                  style={{ borderRadius: '0.25rem', border: `1px solid ${sc}55` }}
+                                                />
+                                              )}
+                                              <span className="deck-detail-skill-count-label">S{idx + 1}</span>
+                                              <span className="deck-detail-skill-count-value">x{dist[idx]}</span>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </div>
                                   </div>
                                 )
                               })}
