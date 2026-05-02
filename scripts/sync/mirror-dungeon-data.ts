@@ -68,6 +68,13 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1)
 }
 const supabase = createClient(supabaseUrl, supabaseKey)
+const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+
+const EVENT_IMAGE_ALIASES = new Map<number, number>([
+  [971082, 971081],
+  [971098, 971097],
+  [971099, 971097],
+])
 
 // ── Zod Schemas ───────────────────────────────────────────────────────────────
 
@@ -940,6 +947,35 @@ function stableJsonEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(stableJsonValue(left)) === JSON.stringify(stableJsonValue(right))
 }
 
+function collectFixedMapEventIds(value: unknown, out = new Set<number>()): Set<number> {
+  if (Array.isArray(value)) {
+    for (const item of value) collectFixedMapEventIds(item, out)
+    return out
+  }
+  if (!value || typeof value !== 'object') return out
+
+  const record = value as Record<string, unknown>
+  if (record.encounterType === 3 && typeof record.encounterId === 'number') {
+    out.add(record.encounterId)
+  }
+  for (const child of Object.values(record)) collectFixedMapEventIds(child, out)
+  return out
+}
+
+function getEventImageCandidates(eventId: number): number[] {
+  const candidates = [eventId]
+  const alias = EVENT_IMAGE_ALIASES.get(eventId)
+  if (alias) candidates.unshift(alias)
+
+  const idText = String(eventId)
+  if (idText.length > 6) {
+    const parentId = Number(idText.slice(0, -2))
+    if (Number.isInteger(parentId)) candidates.push(parentId)
+  }
+
+  return [...new Set(candidates)]
+}
+
 async function syncThemes(): Promise<void> {
   console.log(BOLD('\n[2/4] 테마팩 동기화'))
 
@@ -963,8 +999,6 @@ async function syncThemes(): Promise<void> {
     ...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-t\d+\.txt$/),
     ...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-hidden\.txt$/),
   ]
-
-  const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
   // dungeonIdx → difficulty label
   const DUNGEON_LABELS: Record<number, string> = {
@@ -1925,11 +1959,16 @@ async function syncEvents(): Promise<void> {
   try {
     const hiddenData = safeLoadJson(join(DATA_DIR, 'mirrordungeon-theme-floor-hidden.txt'))
     for (const item of extractList(hiddenData)) {
-      const t = item as { id?: number; mapGenOption?: { eventPool?: number[]; specialEventPool?: number[] } }
+      const t = item as {
+        id?: number
+        mapGenOption?: { eventPool?: number[]; specialEventPool?: number[] }
+        mapGenSequence?: unknown
+      }
       if (typeof t.id !== 'number') continue
       for (const eid of [
         ...(t.mapGenOption?.eventPool ?? []),
         ...(t.mapGenOption?.specialEventPool ?? []),
+        ...collectFixedMapEventIds(t.mapGenSequence),
       ]) {
         if (!eventToThemes.has(eid)) eventToThemes.set(eid, new Set())
         eventToThemes.get(eid)!.add(t.id)
@@ -2341,6 +2380,18 @@ async function syncEvents(): Promise<void> {
   const existingByIdFull = new Map<number, NonNullable<typeof existingForDiff>[0]>()
   for (const ev of existingForDiff ?? []) existingByIdFull.set(ev.id, ev)
 
+  const { data: eventImageFiles, error: eventImageErr } = await supabase
+    .storage
+    .from('limbus-assets')
+    .list('icons/events', { limit: 1000 })
+  if (eventImageErr) throw new Error(`event image list 실패: ${eventImageErr.message}`)
+  const availableEventImageIds = new Set<number>()
+  for (const file of eventImageFiles ?? []) {
+    const m = file.name.match(/^(\d+)\.webp$/)
+    if (m) availableEventImageIds.add(parseInt(m[1], 10))
+  }
+  console.log(`  Storage 이벤트 이미지: ${availableEventImageIds.size}개`)
+
   // ── Preserve image_url from DB ──────────────────────────────────────────────
   const existingImageMap = new Map<number, string>()
   for (const ev of existingForDiff ?? []) {
@@ -2351,11 +2402,31 @@ async function syncEvents(): Promise<void> {
   for (const r of rows) {
     if (existingImageMap.has(r.id)) {
       r.image_url = existingImageMap.get(r.id)!
-    } else if (r.desc_text && descToImageId.has(r.desc_text)) {
-      const origId = descToImageId.get(r.desc_text)!
-      r.image_url = existingImageMap.get(origId) ?? null
     } else {
-      r.image_url = null
+      const imageCandidates = getEventImageCandidates(r.id)
+      const aliasImageUrl = imageCandidates
+        .map(id => existingImageMap.get(id))
+        .find((url): url is string => Boolean(url))
+
+      if (aliasImageUrl) {
+        r.image_url = aliasImageUrl
+      } else if (r.desc_text && descToImageId.has(r.desc_text)) {
+        const origId = descToImageId.get(r.desc_text)!
+        const descImageUrl = existingImageMap.get(origId)
+        if (descImageUrl) {
+          r.image_url = descImageUrl
+        } else {
+          const storageImageId = imageCandidates.find(id => availableEventImageIds.has(id))
+          r.image_url = storageImageId
+            ? `${STORAGE_BASE}/icons/events/${storageImageId}.webp`
+            : null
+        }
+      } else {
+        const storageImageId = imageCandidates.find(id => availableEventImageIds.has(id))
+        r.image_url = storageImageId
+          ? `${STORAGE_BASE}/icons/events/${storageImageId}.webp`
+          : null
+      }
     }
   }
   const imageCount = rows.filter(r => r.image_url).length
@@ -2383,6 +2454,7 @@ async function syncEvents(): Promise<void> {
         normalize(existing.name_jp) !== normalize(row.name_jp) ||
         normalize(existing.desc_text_en) !== normalize(row.desc_text_en) ||
         normalize(existing.desc_text_jp) !== normalize(row.desc_text_jp) ||
+        normalize(existing.image_url) !== normalize(row.image_url) ||
         normalize(existing.event_type) !== normalize(row.event_type) ||
         (existing.variant_of ?? null) !== (row.variant_of ?? null)
       if (changed) toUpdate.push(row)

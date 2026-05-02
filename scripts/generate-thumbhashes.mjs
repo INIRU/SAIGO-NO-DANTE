@@ -244,6 +244,21 @@ async function collectEgoGiftThemes() {
   return entries
 }
 
+async function collectMdEvents() {
+  console.log('Fetching md_events...')
+  const rows = await fetchAllRows('md_events', 'id, image_url')
+
+  const entries = []
+  for (const row of rows) {
+    if (row.image_url) {
+      entries.push({ path: toStoragePath(row.image_url), url: row.image_url })
+    }
+  }
+
+  console.log(`  ${entries.length} event images to process`)
+  return entries
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -269,15 +284,16 @@ async function main() {
     }
   }
 
-  // Collect all image entries from all 4 tables
-  const [identityEntries, egoEntries, giftEntries, themeEntries] = await Promise.all([
+  // Collect all image entries from asset-backed tables
+  const [identityEntries, egoEntries, giftEntries, themeEntries, eventEntries] = await Promise.all([
     collectIdentities(),
     collectEgo(),
     collectEgoGifts(),
     collectEgoGiftThemes(),
+    collectMdEvents(),
   ])
 
-  const allEntries = [...identityEntries, ...egoEntries, ...giftEntries, ...themeEntries]
+  const allEntries = [...identityEntries, ...egoEntries, ...giftEntries, ...themeEntries, ...eventEntries]
 
   // Deduplicate by path
   const seen = new Set()
@@ -292,6 +308,17 @@ async function main() {
   // Skip entries already in the map
   const toProcess = uniqueEntries.filter(e => !(e.path in existingMap))
   const total = toProcess.length
+  const missingEntriesByPath = new Map(toProcess.map(entry => [entry.path, entry]))
+  const missingUniqueEntries = entries => {
+    const selected = new Set()
+    const unique = []
+    for (const entry of entries) {
+      if (!missingEntriesByPath.has(entry.path) || selected.has(entry.path)) continue
+      selected.add(entry.path)
+      unique.push(entry)
+    }
+    return unique
+  }
 
   console.log(`\nTotal unique images: ${uniqueEntries.length}`)
   console.log(`Already processed:   ${uniqueEntries.length - total}`)
@@ -302,10 +329,11 @@ async function main() {
   } else {
     // Process in labelled groups for clean progress output
     const groups = [
-      { label: 'Processing identities', entries: identityEntries.filter(e => !(e.path in existingMap)) },
-      { label: 'Processing ego',        entries: egoEntries.filter(e => !(e.path in existingMap)) },
-      { label: 'Processing ego_gifts',  entries: giftEntries.filter(e => !(e.path in existingMap)) },
-      { label: 'Processing themes',     entries: themeEntries.filter(e => !(e.path in existingMap)) },
+      { label: 'Processing identities', entries: missingUniqueEntries(identityEntries) },
+      { label: 'Processing ego',        entries: missingUniqueEntries(egoEntries) },
+      { label: 'Processing ego_gifts',  entries: missingUniqueEntries(giftEntries) },
+      { label: 'Processing themes',     entries: missingUniqueEntries(themeEntries) },
+      { label: 'Processing events',     entries: missingUniqueEntries(eventEntries) },
     ]
 
     let processed = 0
