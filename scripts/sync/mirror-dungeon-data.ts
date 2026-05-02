@@ -109,7 +109,7 @@ const ThemeRawSchema = z.object({
     packSpriteId: z.string().optional(),
     bossSpriteId: z.string().optional(),
   }).optional(),
-  unlockCondition: z.object({ unlockCode: z.number() }).optional(),
+  unlockCondition: z.object({ unlockCode: z.number().optional() }).optional(),
   exceptionConditions: z.array(z.object({
     dungeonIdx: z.number(),
     selectableFloors: z.array(z.number()).optional(),
@@ -210,6 +210,46 @@ function globFiles(dir: string, pattern: RegExp): string[] {
   } catch {
     return []
   }
+}
+
+const RECIPE_COMMON_FILES = [
+  'mirror-dungeon-common-data-md7.txt',
+  'mirror-dungeon-common-data-md7-nextupdate.txt',
+  'mirror-dungeon-common-data-md6.txt',
+  'mirror-dungeon-common-data.txt',
+]
+
+type LoadedRecipeData = {
+  sourceFile: string | null
+  recipes: z.infer<typeof RecipeRawSchema>[]
+}
+
+function loadLatestRecipeData(): LoadedRecipeData {
+  for (const fn of RECIPE_COMMON_FILES) {
+    const data = safeLoadJson(join(DATA_DIR, fn))
+    if (!data) continue
+    const table = (data as Record<string, unknown>).egoGiftCombineFixedTable as Record<string, unknown> | undefined
+    if (!table?.combineFixed) continue
+
+    const recipes: z.infer<typeof RecipeRawSchema>[] = []
+    for (const item of table.combineFixed as unknown[]) {
+      const parsed = RecipeRawSchema.safeParse(item)
+      if (parsed.success) recipes.push(parsed.data)
+      else if (VERBOSE) console.warn('  ⚠ 레시피 파싱 실패:', parsed.error.issues[0])
+    }
+    return { sourceFile: fn, recipes }
+  }
+
+  return { sourceFile: null, recipes: [] }
+}
+
+function collectRecipeGiftIds(rawRecipes: z.infer<typeof RecipeRawSchema>[]): Set<number> {
+  const ids = new Set<number>()
+  for (const recipe of rawRecipes) {
+    ids.add(recipe.resultEgoGiftId)
+    for (const id of recipe.requiredEgoGiftIds) ids.add(id)
+  }
+  return ids
 }
 
 
@@ -431,6 +471,25 @@ async function syncGifts(): Promise<void> {
       }
     }
     if (VERBOSE) console.log(`  ${f}: ${list.length} items`)
+  }
+
+  // Some BokGak/return gifts live in story-scoped files that are normally skipped,
+  // but the latest fixed-combination table references them directly.
+  const { recipes: recipeRefs } = loadLatestRecipeData()
+  const recipeGiftIds = collectRecipeGiftIds(recipeRefs)
+  let recipeRefGiftCount = 0
+  for (const f of globFiles(DATA_DIR, GIFT_PATTERN).filter(f => SKIP_PATTERN.test(f))) {
+    const data = loadJson(join(DATA_DIR, f))
+    for (const item of extractList(data)) {
+      const parsed = RawGiftSchema.safeParse(item)
+      if (!parsed.success) continue
+      if (!recipeGiftIds.has(parsed.data.id) || giftMap.has(parsed.data.id)) continue
+      giftMap.set(parsed.data.id, parsed.data)
+      recipeRefGiftCount++
+    }
+  }
+  if (recipeRefGiftCount > 0) {
+    console.log(`  레시피 참조 기프트 보강: ${recipeRefGiftCount}종`)
   }
 
   // Hidden boss gift IDs
@@ -655,23 +714,7 @@ async function syncGifts(): Promise<void> {
 
   // 1d-2. Mark is_synthesis: load recipe result IDs from common data files
   const synthesisIds = new Set<number>()
-  const recipeCommonFiles = [
-    'mirror-dungeon-common-data-md7.txt',
-    'mirror-dungeon-common-data-md7-nextupdate.txt',
-    'mirror-dungeon-common-data-md6.txt',
-    'mirror-dungeon-common-data.txt',
-  ]
-  for (const fn of recipeCommonFiles) {
-    const data = safeLoadJson(join(DATA_DIR, fn))
-    if (!data) continue
-    const table = (data as Record<string, unknown>).egoGiftCombineFixedTable as Record<string, unknown> | undefined
-    if (!table?.combineFixed) continue
-    for (const item of table.combineFixed as unknown[]) {
-      const parsed = RecipeRawSchema.safeParse(item)
-      if (parsed.success) synthesisIds.add(parsed.data.resultEgoGiftId)
-    }
-    break
-  }
+  for (const recipe of recipeRefs) synthesisIds.add(recipe.resultEgoGiftId)
   for (const gift of gifts) {
     if (synthesisIds.has(gift.game_id)) gift.is_synthesis = true
   }
@@ -1067,30 +1110,8 @@ async function syncRecipes(): Promise<void> {
   console.log(BOLD('\n[3/4] 레시피 동기화'))
 
   // Load latest common data (md7 > md6 > base)
-  const commonFiles = [
-    'mirror-dungeon-common-data-md7.txt',
-    'mirror-dungeon-common-data-md7-nextupdate.txt',
-    'mirror-dungeon-common-data-md6.txt',
-    'mirror-dungeon-common-data.txt',
-  ]
-
-  let rawRecipes: z.infer<typeof RecipeRawSchema>[] = []
-  for (const fn of commonFiles) {
-    const fullPath = join(DATA_DIR, fn)
-    const data = safeLoadJson(fullPath)
-    if (!data) continue
-    const d = data as Record<string, unknown>
-    const table = d.egoGiftCombineFixedTable as Record<string, unknown> | undefined
-    if (!table?.combineFixed) continue
-    const list = table.combineFixed as unknown[]
-    for (const item of list) {
-      const parsed = RecipeRawSchema.safeParse(item)
-      if (parsed.success) rawRecipes.push(parsed.data)
-      else if (VERBOSE) console.warn('  ⚠ 레시피 파싱 실패:', parsed.error.issues[0])
-    }
-    console.log(`  ${fn}: ${rawRecipes.length}개 레시피 로드`)
-    break // use first file that has data
-  }
+  const { sourceFile, recipes: rawRecipes } = loadLatestRecipeData()
+  if (sourceFile) console.log(`  ${sourceFile}: ${rawRecipes.length}개 레시피 로드`)
 
   if (rawRecipes.length === 0) {
     console.log('  ⚠ 레시피 데이터 없음, 건너뜀')
@@ -1121,13 +1142,13 @@ async function syncRecipes(): Promise<void> {
 
   // Build gift keyword lookup (game_id → Korean keyword) from raw gift files
   const rawGiftKeywordMap = new Map<number, string>()
+  const recipeGiftIds = collectRecipeGiftIds(rawRecipes)
   const GIFT_PATTERN_RECIPE = /^ego-gift-.*\.txt$/
-  const SKIP_PATTERN_RECIPE = /^ego-gift-(buff|a1c|walpu|hellschicken|story-(?!twth))/
-  for (const f of globFiles(DATA_DIR, GIFT_PATTERN_RECIPE).filter(f => !SKIP_PATTERN_RECIPE.test(f))) {
+  for (const f of globFiles(DATA_DIR, GIFT_PATTERN_RECIPE)) {
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
       const parsed = RawGiftSchema.safeParse(item)
-      if (parsed.success && parsed.data.keyword) {
+      if (parsed.success && recipeGiftIds.has(parsed.data.id) && parsed.data.keyword) {
         const kw = parsed.data.keyword
         if (kw !== 'None' && kw !== 'Common') {
           const krKeyword = categoryMap.get(kw) ?? KEYWORD_FALLBACK_KR[kw] ?? kw
@@ -1176,24 +1197,27 @@ async function syncRecipes(): Promise<void> {
 
   if (fetchErr) throw new Error(`ego_gift_recipes fetch 실패: ${fetchErr.message}`)
 
-  const existingByName = new Map<string, typeof existingRecipes[0]>()
-  for (const r of existingRecipes ?? []) existingByName.set(r.result_name, r)
+  const recipeKey = (resultName: string, ingredients: string[] | null | undefined): string =>
+    `${resultName}:${JSON.stringify([...(ingredients ?? [])].sort())}`
+
+  const existingByKey = new Map<string, typeof existingRecipes[0]>()
+  for (const r of existingRecipes ?? []) {
+    const key = recipeKey(r.result_name, r.ingredients)
+    if (!existingByKey.has(key)) existingByKey.set(key, r)
+  }
 
   let newCount = 0, updateCount = 0, matchCount = 0
   const toInsert: RecipeRow[] = []
   const toUpdate: RecipeRow[] = []
 
   for (const recipe of recipes) {
-    const existing = existingByName.get(recipe.result_name)
+    const existing = existingByKey.get(recipeKey(recipe.result_name, recipe.ingredients))
     if (!existing) {
       newCount++
       console.log(GREEN(`  🆕 ${recipe.result_name} (재료: ${recipe.ingredients.length}개)`))
       toInsert.push(recipe)
     } else {
-      const existIngr = JSON.stringify([...(existing.ingredients ?? [])].sort())
-      const newIngr = JSON.stringify([...recipe.ingredients].sort())
       const changes: string[] = []
-      if (existIngr !== newIngr) changes.push('재료 변경')
       if (existing.keyword !== recipe.keyword) changes.push(`keyword: ${existing.keyword} → ${recipe.keyword}`)
       if ((existing.final_result ?? null) !== recipe.final_result) changes.push(`final_result: ${existing.final_result} → ${recipe.final_result}`)
       if (changes.length > 0) {
@@ -1358,6 +1382,7 @@ const EFFECT_MAP: Record<string, (item?: ItemReward, rf?: Record<string, unknown
   'GetConfirmedEgogift':           (item) => ({ type: 'gift', gift_id: item?.rewardId ?? null, count: item?.num ?? 1 }),
   'GetConfirmedEgogiftOnWinBattle':(item) => ({ type: 'gift_battle', gift_id: item?.rewardId ?? null, count: item?.num ?? 1 }),
   'StartBattle_Abnormality': (_item, rf) => ({ type: 'battle_abnormality', battle_id: rf?.nextBattleID ?? null }),
+  'StartBattle_Normal':      (_item, rf) => ({ type: 'battle', battle_id: rf?.nextBattleID ?? null }),
   'StartBattle':             (_item, rf) => ({ type: 'battle', battle_id: rf?.nextBattleID ?? null }),
   'Nothing':                 () => ({ type: 'nothing' }),
   'GetCharacter':            () => ({ type: 'get_character' }),
@@ -2008,9 +2033,11 @@ async function syncEvents(): Promise<void> {
     'ActionEvents-cultivation':     [1121],
     'ActionEvents-pilgrimage':       [1122],
     'ActionEvents_lcbcheckup':       [1115, 1125],
+    'ActionEvents_lcbcheckup-re':    [1125],
     'ActionEvents_mowe':             [1106, 1123],
     'ActionEvents_mowe-re':          [1123],
     'ActionEvents_night-clean-up':   [1117],
+    'ActionEvents_night-clean-up-re': [1127],
     'ActionEvents_tkt':              [1105, 1120],
     'ActionEvents-tktRe':            [1120],
     'ActionEvents_Ycgd':             [1104, 1116],
@@ -2018,12 +2045,17 @@ async function syncEvents(): Promise<void> {
     'AbEvents-tktRe':                [1120],
     'AbEvents_Ycgd':                 [1104, 1116],
     'AbEvents_lcbcheckup':           [1115, 1125],
+    'AbEvents_lcbcheckup-re':        [1125],
     'AbEvents_mowe':                 [1106, 1123],
     'AbEvents_mowe-re':              [1123],
     'AbEvents_night-clean-up':       [1117],
+    'AbEvents_night-clean-up-re':    [1127],
     'AbEvents-cultivation':          [1121],
     'AbEvents-pilgrimage':           [1122],
   }
+  const FORCE_ALLOWED_EVENT_SOURCES = new Set<string>([
+    'ActionEvents_night-clean-up-re',
+  ])
   console.log(`  테마 eventPool: ${eventToThemes.size}개 이벤트`)
 
   /* ── 4. 부모-자식 관계 + 선택지별 기프트 ────────────────────────────────── */
@@ -2059,6 +2091,27 @@ async function syncEvents(): Promise<void> {
     }
 
     if (og.some(g => g.length > 0)) parentOptionGifts.set(ev.id, og)
+    if (allGifts.size > 0) eventAllGifts.set(ev.id, [...allGifts])
+  }
+
+  for (const ev of personalityGameList) {
+    const allGifts = new Set<number>(extractGiftsRecursive(ev))
+    const nextIds = extractNextEventIds(ev)
+
+    for (const nid of nextIds) {
+      if (!childToParent.has(nid)) childToParent.set(nid, ev.id)
+      const child = allGameEvents.get(nid)
+      if (child) {
+        extractGiftsRecursive(child).forEach(g => allGifts.add(g))
+        for (const cnid of extractNextEventIds(child)) {
+          const grandChild = allGameEvents.get(cnid)
+          if (grandChild) {
+            extractGiftsRecursive(grandChild).forEach(g => allGifts.add(g))
+          }
+        }
+      }
+    }
+
     if (allGifts.size > 0) eventAllGifts.set(ev.id, [...allGifts])
   }
   console.log(`  부모-자식: ${childToParent.size}개`)
@@ -2101,19 +2154,32 @@ async function syncEvents(): Promise<void> {
   const allowedEvents = new Set(
     [...eventToThemes.keys()].filter(eid => !CANONICAL_EVENT_EXCLUDE_IDS.has(eid))
   )
+  let sourceForcedEventCount = 0
+  for (const [eid, kr] of krTexts) {
+    if (CANONICAL_EVENT_EXCLUDE_IDS.has(eid)) continue
+    if (!FORCE_ALLOWED_EVENT_SOURCES.has(kr.source)) continue
+    if (!allowedEvents.has(eid)) {
+      allowedEvents.add(eid)
+      sourceForcedEventCount++
+    }
+  }
   let addedChild = true
   let childEventCount = 0
   while (addedChild) {
     addedChild = false
     for (const [childId, parentId] of childToParent) {
-      if (allowedEvents.has(parentId) && !allowedEvents.has(childId)) {
+      if (
+        allowedEvents.has(parentId) &&
+        !allowedEvents.has(childId) &&
+        !CANONICAL_EVENT_EXCLUDE_IDS.has(childId)
+      ) {
         allowedEvents.add(childId)
         childEventCount++
         addedChild = true
       }
     }
   }
-  console.log(`  current pool roots: ${rootEventCount}개, nextEventID children: ${childEventCount}개`)
+  console.log(`  current pool roots: ${rootEventCount}개, source 보강: ${sourceForcedEventCount}개, nextEventID children: ${childEventCount}개`)
 
   /* ── 7. DB 행 구성 ──────────────────────────────────────────────────────── */
   console.log(`\n  DB 행 구성... (거던 등장 이벤트: ${allowedEvents.size}개)`)

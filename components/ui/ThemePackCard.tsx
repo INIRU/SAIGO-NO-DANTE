@@ -31,6 +31,7 @@ interface ThemePackCardProps {
 
 const TITLE_MIN_FONT_REM = 0.9375
 const TITLE_SIDE_PADDING_REM = 0.5
+const THEME_CARD_ASPECT_RATIO = '420/720'
 
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
   const locale = useLocale()
@@ -161,14 +162,21 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
         </div>
       )}
       {theme.image_url ? (
-        <div className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]" style={{ aspectRatio: '380/690', borderRadius: 'var(--radius-md)' }}>
+        <div
+          className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]"
+          style={{
+            aspectRatio: THEME_CARD_ASPECT_RATIO,
+            borderRadius: 'var(--radius-md)',
+            background: '#0d0b08',
+          }}
+        >
           <ImageWithFallback
             src={theme.image_url}
             alt={displayName}
             fill
             fallbackType="theme"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-            className="object-cover"
+            className="object-contain"
           />
           <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
@@ -176,7 +184,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           <div
             ref={titleTrackRef}
             className="absolute left-0 right-0 flex items-center justify-center"
-            style={{ bottom: '12.5%', height: '2.25rem', paddingInline: `${TITLE_SIDE_PADDING_REM}rem` }}
+            style={{ bottom: '9.5%', height: '2.875rem', paddingInline: `${TITLE_SIDE_PADDING_REM}rem` }}
           >
             <div
               ref={titleTextRef}
@@ -185,15 +193,16 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
                 '--theme-title-auto-size': `${fontSize}rem`,
                 color: nameColor,
                 fontSize: shouldWrapTitle ? `${TITLE_MIN_FONT_REM}rem` : 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
-                lineHeight: 1.04,
+                lineHeight: 1.2,
                 textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
                 width: '100%',
                 maxWidth: '100%',
                 minWidth: 0,
+                paddingBlock: '0.125rem',
                 whiteSpace: shouldWrapTitle ? 'normal' : 'nowrap',
-                overflow: 'hidden',
+                overflow: shouldWrapTitle ? 'hidden' : 'visible',
                 overflowWrap: 'break-word',
-                display: '-webkit-box',
+                display: shouldWrapTitle ? '-webkit-box' : 'block',
                 WebkitBoxOrient: 'vertical',
                 WebkitLineClamp: shouldWrapTitle ? 2 : 1,
               } as CSSProperties}
