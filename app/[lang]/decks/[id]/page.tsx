@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/nextjs'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
@@ -22,6 +22,14 @@ const EMPTY_HERO_SLOTS: (HeroSlot | null)[] = Array.from({ length: 12 }, () => n
 
 function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
+}
+
+function createDeckReadClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 }
 
 function isSupportedLang(lang: string): lang is 'ko' | 'en' | 'ja' {
@@ -289,7 +297,7 @@ function getSelectedEgoIds(deckEgos: Array<{ ego: { id?: string | null } | { id?
 }
 
 async function fetchEgoAttackSkillsByEgoId(
-  supabase: ReturnType<typeof createAdminClient>,
+  supabase: ReturnType<typeof createDeckReadClient>,
   egoIds: string[],
   deckId: string,
 ): Promise<Map<string, EgoAttackSkill[]>> {
@@ -327,7 +335,7 @@ async function fetchEgoAttackSkillsByEgoId(
 }
 
 async function fetchDeckRecommendations(
-  supabase: ReturnType<typeof createAdminClient>,
+  supabase: ReturnType<typeof createDeckReadClient>,
   lang: 'ko' | 'en' | 'ja',
   currentDeck: CurrentDeckForRecommendations
 ): Promise<DeckRecommendationsData> {
@@ -505,7 +513,7 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
   cacheLife('max')
   cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
 
-  const supabase = createAdminClient()
+  const supabase = createDeckReadClient()
   const { data, error } = await supabase
     .schema('limbus')
     .from('decks')
@@ -556,7 +564,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
   let heroSlots: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
 
   try {
-    const supabase = createAdminClient()
+    const supabase = createDeckReadClient()
 
     const [deckResult, commentsResult] = await Promise.all([
       supabase
