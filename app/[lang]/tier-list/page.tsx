@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 const CATEGORIES = ['overall', 'reroll', 'goodstuff', 'mirror_dungeon'] as const
 type TierCategory = typeof CATEGORIES[number]
 const RATING_PERIODS = ['7d', '30d', '1y', 'all'] as const
-const TIER_DATA_MODEL_VERSION = 'identity-rating-v11-refined-tier-model'
+const TIER_DATA_MODEL_VERSION = 'identity-rating-v12-ai-tier-ratings'
 const OVERALL_SOURCE_CATEGORIES = ['reroll', 'goodstuff', 'mirror_dungeon'] as const
 const MIN_ACCOUNT_AGE_DAYS = 14
 type SupportedLocale = 'ko' | 'en' | 'ja'
@@ -146,11 +146,33 @@ async function getTierData(category: TierCategory, period: RatingPeriod, locale:
     console.error('[TierListPage] ratings fetch error:', ratingsError)
   }
 
+  let aiRatingsQuery = supabase
+    .schema('limbus')
+    .from('ai_tier_ratings')
+    .select(`
+      identity_id,
+      category,
+      score,
+      weight,
+      created_at
+    `)
+    .in('category', category === 'overall' ? [...OVERALL_SOURCE_CATEGORIES] : [category])
+  if (periodStart) {
+    aiRatingsQuery = aiRatingsQuery.gte('created_at', periodStart)
+  }
+  const { data: aiRatingRows, error: aiRatingsError } = await aiRatingsQuery
+
+  if (aiRatingsError && aiRatingsError.code !== '42P01' && aiRatingsError.code !== 'PGRST205') {
+    console.error('[TierListPage] ai ratings fetch error:', aiRatingsError)
+  }
+
   const rows = ratingsError || !ratingRows ? [] : ratingRows as TierRatingRow[]
+  const aiRows = aiRatingsError || !aiRatingRows ? [] : aiRatingRows as TierRatingRow[]
+  const combinedRows = [...rows, ...aiRows]
   const normalizedIdentities = normalizeIdentities(identities as unknown as RawTierIdentity[])
   return category === 'overall'
-    ? groupIdentitiesByOverall(normalizedIdentities, rows, locale)
-    : groupIdentitiesByRatings(normalizedIdentities, rows, category, locale)
+    ? groupIdentitiesByOverall(normalizedIdentities, combinedRows, locale)
+    : groupIdentitiesByRatings(normalizedIdentities, combinedRows, category, locale)
 }
 
 async function getCachedTierData(
@@ -244,6 +266,7 @@ type TierRatingRow = {
   identity_id: string
   category: TierCategory
   score: number
+  weight?: number
   created_at?: string
 }
 
@@ -298,17 +321,21 @@ function groupIdentitiesByRatings(
   category: TierCategory,
   locale: SupportedLocale,
 ): Record<Tier, TierIdentity[]> {
-  const ratingMap = new Map<string, { total: number; count: number; distribution: Record<number, number> }>()
+  const ratingMap = new Map<string, { weightedTotal: number; weightTotal: number; count: number; distribution: Record<number, number> }>()
 
   for (const row of ratingRows.filter(item => item.category === category)) {
+    const parsedWeight = Number(row.weight)
+    const weight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 1
     const current = ratingMap.get(row.identity_id)
     if (current) {
-      current.total += row.score
+      current.weightedTotal += row.score * weight
+      current.weightTotal += weight
       current.count += 1
       current.distribution[row.score] = (current.distribution[row.score] ?? 0) + 1
     } else {
       ratingMap.set(row.identity_id, {
-        total: row.score,
+        weightedTotal: row.score * weight,
+        weightTotal: weight,
         count: 1,
         distribution: { [row.score]: 1 },
       })
@@ -323,7 +350,7 @@ function groupIdentitiesByRatings(
     seen.add(identity.id)
 
     const rating = ratingMap.get(identity.id)
-    const averageScore = rating ? rating.total / rating.count : null
+    const averageScore = rating && rating.weightTotal > 0 ? rating.weightedTotal / rating.weightTotal : null
     const tier = rating && averageScore !== null ? deriveTier(averageScore, rating.count) : 'N/A'
     tiers[tier].push({
       ...identity,
@@ -346,18 +373,21 @@ function groupIdentitiesByOverall(
   ratingRows: TierRatingRow[],
   locale: SupportedLocale,
 ): Record<Tier, TierIdentity[]> {
-  const ratingMap = new Map<string, Map<typeof OVERALL_SOURCE_CATEGORIES[number], { total: number; count: number }>>()
+  const ratingMap = new Map<string, Map<typeof OVERALL_SOURCE_CATEGORIES[number], { weightedTotal: number; weightTotal: number; count: number }>>()
 
   for (const row of ratingRows) {
     if (!OVERALL_SOURCE_CATEGORIES.includes(row.category as typeof OVERALL_SOURCE_CATEGORIES[number])) continue
     const category = row.category as typeof OVERALL_SOURCE_CATEGORIES[number]
-    const identityRatings = ratingMap.get(row.identity_id) ?? new Map<typeof OVERALL_SOURCE_CATEGORIES[number], { total: number; count: number }>()
+    const parsedWeight = Number(row.weight)
+    const weight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 1
+    const identityRatings = ratingMap.get(row.identity_id) ?? new Map<typeof OVERALL_SOURCE_CATEGORIES[number], { weightedTotal: number; weightTotal: number; count: number }>()
     const current = identityRatings.get(category)
     if (current) {
-      current.total += row.score
+      current.weightedTotal += row.score * weight
+      current.weightTotal += weight
       current.count += 1
     } else {
-      identityRatings.set(category, { total: row.score, count: 1 })
+      identityRatings.set(category, { weightedTotal: row.score * weight, weightTotal: weight, count: 1 })
     }
     ratingMap.set(row.identity_id, identityRatings)
   }
@@ -373,7 +403,7 @@ function groupIdentitiesByOverall(
     const usable = OVERALL_SOURCE_CATEGORIES.flatMap(sourceCategory => {
       const rating = categoryRatings?.get(sourceCategory)
       return rating && rating.count >= MIN_RATINGS_FOR_TIER
-        ? [{ category: sourceCategory, average: rating.total / rating.count, count: rating.count }]
+        ? [{ category: sourceCategory, average: rating.weightedTotal / rating.weightTotal, count: rating.count }]
         : []
     })
     const averageScore = usable.length > 0
