@@ -23,6 +23,37 @@ type RatingAggregate = {
   derivedTier: Tier
   distribution: Record<number, number>
 }
+type RatingStats = {
+  count: number
+  weightedTotal: number
+  weightTotal: number
+  scores: number[]
+}
+type AiTierRatingRow = {
+  id: string
+  score: number
+  comment: string
+  created_at: string
+  category: OverallSourceCategory
+  source_type: string
+  source_kind: string
+  source_url: string | null
+  weight: number
+}
+type TierRatingCommentResponse = {
+  id: string
+  score: number
+  comment: string
+  created_at: string
+  category?: string
+  source: 'user' | 'ai'
+  source_type?: string
+  source_kind?: string
+  source_url?: string | null
+  username: unknown
+  avatar_url: unknown
+  role: unknown
+}
 
 const MIN_ACCOUNT_AGE_DAYS = 14
 const MAX_COMMENT_LENGTH = 280
@@ -72,6 +103,87 @@ function emptyAggregate(): RatingAggregate {
     derivedTier: 'N/A',
     distribution: emptyDistribution(),
   }
+}
+
+function emptyRatingStats(): RatingStats {
+  return { count: 0, weightedTotal: 0, weightTotal: 0, scores: [] }
+}
+
+function addRatingScore(stats: RatingStats, score: number, weight = 1) {
+  const normalizedWeight = Number.isFinite(weight) && weight > 0 ? weight : 1
+  stats.count += 1
+  stats.weightedTotal += score * normalizedWeight
+  stats.weightTotal += normalizedWeight
+  stats.scores.push(score)
+}
+
+function getAverageScore(stats: RatingStats): number | null {
+  return stats.weightTotal > 0 ? Number((stats.weightedTotal / stats.weightTotal).toFixed(2)) : null
+}
+
+function isMissingTableError(error: { code?: string } | null): boolean {
+  return error?.code === '42P01' || error?.code === 'PGRST205'
+}
+
+function normalizeScore(value: unknown): number | null {
+  const score = Number(value)
+  return Number.isInteger(score) && score >= 1 && score <= 10 ? score : null
+}
+
+function normalizeWeight(value: unknown): number {
+  const weight = Number(value)
+  return Number.isFinite(weight) && weight > 0 ? weight : 1
+}
+
+async function getAiTierRatingRows(
+  admin: ReturnType<typeof createAdminClient>,
+  identityId: string,
+  categories: readonly OverallSourceCategory[],
+  periodStart: string | null,
+): Promise<{ rows: AiTierRatingRow[]; error: string | null }> {
+  let query = admin
+    .schema('limbus')
+    .from('ai_tier_ratings')
+    .select('id, score, comment, created_at, category, source_type, source_kind, source_url, weight')
+    .eq('identity_id', identityId)
+    .in('category', [...categories])
+    .order('created_at', { ascending: false })
+
+  if (periodStart) {
+    query = query.gte('created_at', periodStart)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    if (isMissingTableError(error)) return { rows: [], error: null }
+    return { rows: [], error: error.message }
+  }
+
+  const rows = (data ?? []).flatMap((row: Record<string, unknown>) => {
+    const score = normalizeScore(row.score)
+    const category = row.category
+    if (
+      score === null
+      || typeof category !== 'string'
+      || !OVERALL_SOURCE_CATEGORIES.includes(category as OverallSourceCategory)
+    ) {
+      return []
+    }
+
+    return [{
+      id: String(row.id),
+      score,
+      comment: typeof row.comment === 'string' ? row.comment : '',
+      created_at: typeof row.created_at === 'string' ? row.created_at : new Date(0).toISOString(),
+      category: category as OverallSourceCategory,
+      source_type: typeof row.source_type === 'string' ? row.source_type : 'community',
+      source_kind: typeof row.source_kind === 'string' ? row.source_kind : 'comment',
+      source_url: typeof row.source_url === 'string' ? row.source_url : null,
+      weight: normalizeWeight(row.weight),
+    }]
+  })
+
+  return { rows, error: null }
 }
 
 function emptySourceAggregates(): Record<OverallSourceCategory, RatingAggregate> {
@@ -178,11 +290,17 @@ async function getOverallRatingResponse(
     ratingsQuery = ratingsQuery.gte('created_at', periodStart)
   }
   const { data: ratings, error } = await ratingsQuery
+  const { rows: aiRatings, error: aiRatingsError } = await getAiTierRatingRows(
+    admin,
+    identityId,
+    OVERALL_SOURCE_CATEGORIES,
+    periodStart,
+  )
 
   const viewer = getOverallReadonlyViewer(viewerState.viewer)
 
   if (error) {
-    if (error.code === '42P01' || error.code === 'PGRST205') {
+    if (isMissingTableError(error)) {
       return NextResponse.json({
         aggregate: emptyAggregate(),
         sourceAggregates: emptySourceAggregates(),
@@ -193,27 +311,26 @@ async function getOverallRatingResponse(
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+  if (aiRatingsError) {
+    return NextResponse.json({ error: aiRatingsError }, { status: 500 })
+  }
 
-  const sourceStats = new Map<string, { count: number; total: number; scores: number[] }>()
-  const comments = []
+  const sourceStats = new Map<string, RatingStats>()
+  const comments: TierRatingCommentResponse[] = []
 
   for (const rating of ratings ?? []) {
-    const score = Number((rating as { score: unknown }).score)
+    const score = normalizeScore((rating as { score: unknown }).score)
     const category = (rating as { category: unknown }).category
     if (
       typeof category !== 'string'
       || !OVERALL_SOURCE_CATEGORIES.includes(category as typeof OVERALL_SOURCE_CATEGORIES[number])
-      || !Number.isInteger(score)
-      || score < 1
-      || score > 10
+      || score === null
     ) {
       continue
     }
 
-    const stats = sourceStats.get(category) ?? { count: 0, total: 0, scores: [] }
-    stats.count += 1
-    stats.total += score
-    stats.scores.push(score)
+    const stats = sourceStats.get(category) ?? emptyRatingStats()
+    addRatingScore(stats, score)
     sourceStats.set(category, stats)
 
     const comment = (rating as { comment: unknown }).comment
@@ -223,14 +340,38 @@ async function getOverallRatingResponse(
         : (rating as { profiles: unknown }).profiles
 
       comments.push({
-        id: (rating as { id: unknown }).id,
+        id: String((rating as { id: unknown }).id),
         score,
         comment,
-        created_at: (rating as { created_at: unknown }).created_at,
+        created_at: String((rating as { created_at: unknown }).created_at),
         category,
+        source: 'user',
         username: (profile as Record<string, unknown> | null)?.username ?? null,
         avatar_url: (profile as Record<string, unknown> | null)?.avatar_url ?? null,
         role: (profile as Record<string, unknown> | null)?.role ?? 'user',
+      })
+    }
+  }
+
+  for (const rating of aiRatings) {
+    const stats = sourceStats.get(rating.category) ?? emptyRatingStats()
+    addRatingScore(stats, rating.score, rating.weight)
+    sourceStats.set(rating.category, stats)
+
+    if (rating.comment.trim().length > 0) {
+      comments.push({
+        id: rating.id,
+        score: rating.score,
+        comment: rating.comment,
+        created_at: rating.created_at,
+        category: rating.category,
+        source: 'ai',
+        source_type: rating.source_type,
+        source_kind: rating.source_kind,
+        source_url: rating.source_url,
+        username: null,
+        avatar_url: null,
+        role: 'ai',
       })
     }
   }
@@ -245,9 +386,7 @@ async function getOverallRatingResponse(
       sourceDistribution[score] = (sourceDistribution[score] ?? 0) + 1
     }
 
-    const sourceAverageScore = stats.count > 0
-      ? Number((stats.total / stats.count).toFixed(2))
-      : null
+    const sourceAverageScore = getAverageScore(stats)
 
     sourceAggregates[category] = {
       averageScore: sourceAverageScore,
@@ -258,7 +397,7 @@ async function getOverallRatingResponse(
   }
 
   const usableStats = [...sourceStats.values()].filter(stats => stats.count > 0)
-  const usableAverages = usableStats.map(stats => stats.total / stats.count)
+  const usableAverages = usableStats.map(stats => stats.weightedTotal / stats.weightTotal)
   const distribution = emptyDistribution()
   for (const stats of usableStats) {
     for (const score of stats.scores) {
@@ -279,7 +418,9 @@ async function getOverallRatingResponse(
       distribution,
     },
     sourceAggregates,
-    comments,
+    comments: comments.sort((a, b) => (
+      new Date(String(b.created_at)).getTime() - new Date(String(a.created_at)).getTime()
+    )),
     myRating: null,
     viewer,
   })
@@ -305,6 +446,7 @@ export async function GET(request: NextRequest) {
       return getOverallRatingResponse(admin, identityId, viewerState, period)
     }
 
+    const periodStart = getPeriodStart(period)
     let ratingsQuery = admin
       .schema('limbus')
       .from('tier_ratings')
@@ -312,14 +454,19 @@ export async function GET(request: NextRequest) {
       .eq('identity_id', identityId)
       .eq('category', category)
       .order('created_at', { ascending: false })
-    const periodStart = getPeriodStart(period)
     if (periodStart) {
       ratingsQuery = ratingsQuery.gte('created_at', periodStart)
     }
     const { data: ratings, error } = await ratingsQuery
+    const { rows: aiRatings, error: aiRatingsError } = await getAiTierRatingRows(
+      admin,
+      identityId,
+      [category as OverallSourceCategory],
+      periodStart,
+    )
 
     if (error) {
-      if (error.code === '42P01' || error.code === 'PGRST205') {
+      if (isMissingTableError(error)) {
         return NextResponse.json({
           aggregate: {
             averageScore: null,
@@ -334,30 +481,38 @@ export async function GET(request: NextRequest) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+    if (aiRatingsError) {
+      return NextResponse.json({ error: aiRatingsError }, { status: 500 })
+    }
 
     const allRatings = (ratings ?? []).map((rating: Record<string, unknown>) => {
       const profile = Array.isArray(rating.profiles) ? rating.profiles[0] : rating.profiles
       return {
         id: rating.id as string,
-        score: rating.score as number,
+        score: Number(rating.score),
         comment: rating.comment as string,
         created_at: rating.created_at as string,
         user_id: rating.user_id as string,
+        source: 'user' as const,
         username: (profile as Record<string, unknown> | null)?.username ?? null,
         avatar_url: (profile as Record<string, unknown> | null)?.avatar_url ?? null,
         role: (profile as Record<string, unknown> | null)?.role ?? 'user',
       }
-    })
+    }).filter(rating => normalizeScore(rating.score) !== null)
 
     const distribution = emptyDistribution()
-    let scoreTotal = 0
+    const stats = emptyRatingStats()
     for (const rating of allRatings) {
       distribution[rating.score] = (distribution[rating.score] ?? 0) + 1
-      scoreTotal += rating.score
+      addRatingScore(stats, rating.score)
+    }
+    for (const rating of aiRatings) {
+      distribution[rating.score] = (distribution[rating.score] ?? 0) + 1
+      addRatingScore(stats, rating.score, rating.weight)
     }
 
-    const ratingCount = allRatings.length
-    const averageScore = ratingCount > 0 ? Number((scoreTotal / ratingCount).toFixed(2)) : null
+    const ratingCount = stats.count
+    const averageScore = getAverageScore(stats)
     const { data: myRatingSource, error: myRatingError } = viewerState.userId
       ? await admin
         .schema('limbus')
@@ -373,6 +528,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: myRatingError.message }, { status: 500 })
     }
 
+    const comments: TierRatingCommentResponse[] = [
+      ...allRatings
+        .filter(rating => rating.comment.trim().length > 0)
+        .map(({ user_id: _userId, ...rating }) => rating),
+      ...aiRatings
+        .filter(rating => rating.comment.trim().length > 0)
+        .map(rating => ({
+          id: rating.id,
+          score: rating.score,
+          comment: rating.comment,
+          created_at: rating.created_at,
+          source: 'ai' as const,
+          source_type: rating.source_type,
+          source_kind: rating.source_kind,
+          source_url: rating.source_url,
+          username: null,
+          avatar_url: null,
+          role: 'ai',
+        })),
+    ]
+
     return NextResponse.json({
       aggregate: {
         averageScore,
@@ -380,9 +556,7 @@ export async function GET(request: NextRequest) {
         derivedTier: deriveTier(averageScore, ratingCount),
         distribution,
       },
-      comments: allRatings
-        .filter(rating => rating.comment.trim().length > 0)
-        .map(({ user_id: _userId, ...rating }) => rating),
+      comments: comments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
       myRating: myRatingSource
         ? {
           id: myRatingSource.id,

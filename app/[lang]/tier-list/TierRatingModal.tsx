@@ -84,6 +84,14 @@ const MODAL_COPY = {
     auto: '자동 산출',
     comments: '평가 코멘트',
     noComments: '아직 등록된 코멘트가 없습니다.',
+    aiCollected: 'AI 수집',
+    sourceKindLabels: {
+      comment: '댓글',
+      post: '게시물',
+      image: '이미지',
+      video: '영상',
+      other: '기타',
+    },
     close: '닫기',
     identityInfo: '인격 정보',
     release: '출시',
@@ -167,6 +175,14 @@ const MODAL_COPY = {
     auto: 'Auto',
     comments: 'Rating Comments',
     noComments: 'No comments yet.',
+    aiCollected: 'AI collected',
+    sourceKindLabels: {
+      comment: 'Comment',
+      post: 'Post',
+      image: 'Image',
+      video: 'Video',
+      other: 'Other',
+    },
     close: 'Close',
     identityInfo: 'Identity Info',
     release: 'Release',
@@ -250,6 +266,14 @@ const MODAL_COPY = {
     auto: '自動算出',
     comments: '評価コメント',
     noComments: 'コメントはまだありません。',
+    aiCollected: 'AI収集',
+    sourceKindLabels: {
+      comment: 'コメント',
+      post: '投稿',
+      image: '画像',
+      video: '動画',
+      other: 'その他',
+    },
     close: '閉じる',
     identityInfo: '人格情報',
     release: 'リリース',
@@ -314,6 +338,10 @@ type TierRatingResponse = {
     comment: string
     created_at: string
     category?: TierCategory
+    source?: 'user' | 'ai'
+    source_type?: string
+    source_kind?: string
+    source_url?: string | null
     username: string | null
     avatar_url: string | null
     role: string | null
@@ -775,6 +803,11 @@ function normalizeSourceAggregates(sourceAggregates: TierRatingResponse['sourceA
     return normalized
   }
   return sourceAggregates ?? normalized
+}
+
+function getSourceKindLabel(kind: string | null | undefined, copy: typeof MODAL_COPY[SupportedLocale]) {
+  const labels = copy.sourceKindLabels as Record<string, string>
+  return kind ? labels[kind] ?? kind : labels.comment
 }
 
 function SourceAverageOverview({
@@ -1505,79 +1538,113 @@ export function TierRatingModal({
               <div style={{ border: '1px dashed rgba(200,144,10,0.2)', borderRadius: '0.375rem', padding: '0.875rem', color: '#8a7855', fontSize: '0.8125rem' }}>
                 {copy.noComments}
               </div>
-            ) : ratingData.comments.map(item => (
-              <div key={item.id} style={{ background: '#0d0b08', border: '1px solid var(--border)', borderRadius: '0.375rem', padding: '0.75rem' }}>
-                <div className="flex items-center justify-between gap-2" style={{ marginBottom: '0.375rem' }}>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {item.category && (
-                      <span
+            ) : ratingData.comments.map(item => {
+              const isAiComment = item.source === 'ai'
+              return (
+                <div key={`${item.source ?? 'user'}-${item.id}`} style={{ background: '#0d0b08', border: '1px solid var(--border)', borderRadius: '0.375rem', padding: '0.75rem' }}>
+                  <div className="flex items-center justify-between gap-2" style={{ marginBottom: '0.375rem' }}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {item.category && (
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            borderRadius: '0.25rem',
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            borderColor: 'rgba(200,144,10,0.22)',
+                            background: 'rgba(200,144,10,0.08)',
+                            color: 'var(--gold)',
+                            fontSize: '0.625rem',
+                            fontWeight: 800,
+                            padding: '0.0625rem 0.375rem',
+                          }}
+                        >
+                          {getTierCategoryLabel(item.category, locale)}
+                        </span>
+                      )}
+                      {isAiComment && (
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            borderRadius: '0.25rem',
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            borderColor: 'rgba(96,165,250,0.28)',
+                            background: 'rgba(96,165,250,0.1)',
+                            color: '#93c5fd',
+                            fontSize: '0.625rem',
+                            fontWeight: 800,
+                            padding: '0.0625rem 0.375rem',
+                          }}
+                        >
+                          {copy.aiCollected}
+                        </span>
+                      )}
+                      {isAiComment && (
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            color: '#8a7855',
+                            fontSize: '0.6875rem',
+                          }}
+                        >
+                          {getSourceKindLabel(item.source_kind, copy)}
+                        </span>
+                      )}
+                      <span className="truncate" style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700 }}>
+                        {isAiComment ? (item.source_type ?? copy.aiCollected) : item.username ?? copy.adminFallback}
+                      </span>
+                    </div>
+                    <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                      {item.score}/10
+                    </span>
+                  </div>
+                  {item.comment && (
+                    <p style={{ color: '#b8a887', fontSize: '0.8125rem', lineHeight: 1.6 }}>
+                      {item.comment}
+                    </p>
+                  )}
+                  {!isAiComment && (
+                    <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.5rem' }}>
+                      {reportStates[item.id]?.message && (
+                        <span
+                          style={{
+                            color: reportStates[item.id].status === 'error' ? '#ff8a70' : '#8a7855',
+                            fontSize: '0.6875rem',
+                          }}
+                        >
+                          {reportStates[item.id].message}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void handleReport(item.id)}
+                        disabled={reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success'}
+                        className="inline-flex items-center gap-1"
                         style={{
-                          flexShrink: 0,
+                          minHeight: '1.75rem',
+                          padding: '0 0.5rem',
                           borderRadius: '0.25rem',
                           borderWidth: '1px',
                           borderStyle: 'solid',
-                          borderColor: 'rgba(200,144,10,0.22)',
-                          background: 'rgba(200,144,10,0.08)',
-                          color: 'var(--gold)',
-                          fontSize: '0.625rem',
-                          fontWeight: 800,
-                          padding: '0.0625rem 0.375rem',
+                          borderColor: 'rgba(138,120,85,0.22)',
+                          background: 'rgba(20,16,12,0.72)',
+                          color: '#8a7855',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          cursor: reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success' ? 'not-allowed' : 'pointer',
+                          opacity: reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success' ? 0.6 : 1,
                         }}
+                        aria-label={copy.report}
                       >
-                        {getTierCategoryLabel(item.category, locale)}
-                      </span>
-                    )}
-                    <span className="truncate" style={{ color: '#c8a450', fontSize: '0.75rem', fontWeight: 700 }}>
-                      {item.username ?? copy.adminFallback}
-                    </span>
-                  </div>
-                  <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                    {item.score}/10
-                  </span>
-                </div>
-                {item.comment && (
-                  <p style={{ color: '#b8a887', fontSize: '0.8125rem', lineHeight: 1.6 }}>
-                    {item.comment}
-                  </p>
-                )}
-                <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.5rem' }}>
-                  {reportStates[item.id]?.message && (
-                    <span
-                      style={{
-                        color: reportStates[item.id].status === 'error' ? '#ff8a70' : '#8a7855',
-                        fontSize: '0.6875rem',
-                      }}
-                    >
-                      {reportStates[item.id].message}
-                    </span>
+                        <Flag size={12} />
+                        {reportStates[item.id]?.status === 'pending' ? copy.reporting : copy.report}
+                      </button>
+                    </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => void handleReport(item.id)}
-                    disabled={reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success'}
-                    className="inline-flex items-center gap-1"
-                    style={{
-                      minHeight: '1.75rem',
-                      padding: '0 0.5rem',
-                      borderRadius: '0.25rem',
-                      borderWidth: '1px',
-                      borderStyle: 'solid',
-                      borderColor: 'rgba(138,120,85,0.22)',
-                      background: 'rgba(20,16,12,0.72)',
-                      color: '#8a7855',
-                      fontSize: '0.6875rem',
-                      fontWeight: 700,
-                      cursor: reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success' ? 'not-allowed' : 'pointer',
-                      opacity: reportStates[item.id]?.status === 'pending' || reportStates[item.id]?.status === 'success' ? 0.6 : 1,
-                    }}
-                    aria-label={copy.report}
-                  >
-                    <Flag size={12} />
-                    {reportStates[item.id]?.status === 'pending' ? copy.reporting : copy.report}
-                  </button>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       </motion.div>

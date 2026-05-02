@@ -50,6 +50,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-
 | `deck_comments` | 6 | 덱 댓글 |
 | `identity_reviews` | 6 | 인격 리뷰 (개추/비추) |
 | `tier_ratings` | 8 | 티어표 평가/댓글 |
+| `ai_tier_ratings` | 20 | AI 수집 티어표 의견 표본 |
 | `tier_rating_reports` | 6 | 티어표 평가 댓글 신고 |
 | `identity_guides` | 8 | 인격 운영법 가이드 |
 | `identity_sentiment` | 16 | 인격 커뮤니티 감성 분석 |
@@ -932,6 +933,40 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 - 집계 티어 기준: 5개 미만 `N/A`, 평균 9.2 이상 `S+`, 8.4 이상 `S`, 7.2 이상 `A`, 6.0 이상 `B`, 그 미만 `C`
 - 저장되는 사용자 평가 category 값은 `reroll`, `mirror_dungeon`, `goodstuff` 중 하나이다.
 - `overall`/`종합`은 `reroll`, `goodstuff`, `mirror_dungeon` 평가에서 파생되는 읽기 전용 집계이며 `tier_ratings`에 직접 저장하지 않는다.
+
+---
+
+### ai_tier_ratings (AI 수집 티어표 의견 표본)
+
+AI 자동화가 웹 커뮤니티 의견을 개별 표본으로 저장하는 테이블. 실제 로그인 유저 평가인 `tier_ratings`와 분리하여 더미 `auth.users`/`profiles`를 만들지 않는다. 티어 산정 로직은 필요 시 `tier_ratings`와 이 테이블을 합산한다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | |
+| `identity_id` | UUID | NOT NULL, FK → identities(id) ON DELETE CASCADE | |
+| `category` | VARCHAR | NOT NULL | 평가 맥락 (`reroll`, `mirror_dungeon`, `goodstuff`) |
+| `score` | INT | NOT NULL, CHECK 1-10 | AI가 산정한 표본 점수 |
+| `comment` | TEXT | NOT NULL, DEFAULT '', 최대 280자 | 사이트에 표시 가능한 요약 코멘트 |
+| `evidence_excerpt` | TEXT | NOT NULL, DEFAULT '', 최대 1000자 | 근거 발췌/요약 |
+| `source_type` | TEXT | NOT NULL, DEFAULT 'community', 1~64자 | 출처 플랫폼/분류 (`dcinside`, `arca`, `youtube` 등) |
+| `source_kind` | TEXT | NOT NULL, DEFAULT 'comment' | 출처 단위 (`comment`, `post`, `image`, `video`, `other`) |
+| `source_url` | TEXT | NULL | 원문 URL |
+| `source_hash` | TEXT | NOT NULL, 16~128자 | 출처 식별 해시 |
+| `source_author_hash` | TEXT | NULL | 원문 작성자 식별 해시 |
+| `content_hash` | TEXT | NOT NULL, 16~128자 | 의견 내용 중복 방지 해시 |
+| `run_id` | TEXT | NOT NULL, 1~128자 | 수집 실행 ID |
+| `model` | TEXT | NOT NULL, DEFAULT '', 최대 128자 | 사용 모델 |
+| `confidence` | NUMERIC(4,3) | NOT NULL, DEFAULT 1, 0~1 | 분류 신뢰도 |
+| `weight` | NUMERIC(6,3) | NOT NULL, DEFAULT 1, 0 초과 10 이하 | 집계 반영 가중치 |
+| `source_published_at` | TIMESTAMPTZ | NULL | 원문 게시 시각 |
+| `collected_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 수집 시각 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 자동 갱신 트리거 |
+
+- UNIQUE: (`identity_id`, `category`, `source_hash`, `content_hash`)
+- RLS: 모든 사용자 읽기, 클라이언트 직접 쓰기 정책 없음. 자동화/서버는 `service_role`로 작성한다.
+- Index: (`identity_id`, `category`), (`identity_id`, `category`, `created_at DESC`), (`run_id`), (`source_hash`, `content_hash`), (`source_kind`)
+- 같은 인격/카테고리에는 여러 AI 코멘트를 저장할 수 있고, 같은 출처의 같은 내용만 중복으로 막는다.
 
 ---
 
