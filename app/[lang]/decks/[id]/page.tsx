@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nextjs'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -709,6 +710,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection()
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   return getCachedDeckMetadata(lang, id)
@@ -729,6 +731,7 @@ function DeckDetailFallback() {
 }
 
 async function DeckDetailRuntime({ params }: Props) {
+  await connection()
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   const {
