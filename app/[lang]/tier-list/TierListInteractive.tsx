@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { useCallback, useMemo, useState } from 'react'
-import { AlertTriangle, Calculator, RotateCcw } from 'lucide-react'
+import { type MouseEvent, useCallback, useMemo, useState } from 'react'
+import { AlertTriangle, Calculator, ExternalLink, RotateCcw } from 'lucide-react'
 import { TIERS, type Tier } from '@/lib/tier-list/tierModel'
 import type { TierIdentity } from './TierCardInteractive'
 import { getTierCategoryLabel, TIER_CATEGORIES, type RatingPeriod, type TierCategory, type TierRatingViewer } from './TierRatingModal'
@@ -11,10 +11,13 @@ import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeInUp } from '@/lib/animations'
 import TierGrid from './TierGrid'
+import { showError, showSuccess } from '@/lib/toast'
 
 type TierData = Partial<Record<Tier, TierIdentity[]>>
 type SupportedLocale = 'ko' | 'en' | 'ja'
 const PERIOD_OPTIONS: RatingPeriod[] = ['7d', '30d', '1y', 'all']
+const DC_QUESTION_URL = 'https://gall.dcinside.com/mgallery/board/write/?id=limbuscompany'
+const QUESTION_NAVIGATION_DELAY_MS = 1000
 
 type DiagnosisEntry = {
   id: string
@@ -61,6 +64,10 @@ const DIAGNOSIS_COPY = {
     counted: '반영',
     duplicate: '중복 제외',
     reset: '초기화',
+    ask: '질문해보기',
+    askAria: '질문 글 양식을 복사하고 림버스 컴퍼니 갤러리 글쓰기 열기',
+    askCopySuccess: '질문 글 양식이 복사되었습니다. 잠시 후 글쓰기 페이지로 이동합니다.',
+    askCopyError: '질문 글 양식을 복사하지 못했습니다.',
     score: '진단 점수',
     strong: '강한 이륙권',
     strongDetail: '핵심 수감자가 겹치지 않아 바로 시작해도 좋습니다.',
@@ -84,6 +91,10 @@ const DIAGNOSIS_COPY = {
     counted: 'Counted',
     duplicate: 'Duplicates ignored',
     reset: 'Reset',
+    ask: 'Ask',
+    askAria: 'Copy a question draft and open the Limbus Company gallery editor',
+    askCopySuccess: 'Question draft copied. Moving to the editor shortly.',
+    askCopyError: 'Could not copy the question draft.',
     score: 'Score',
     strong: 'Strong launch',
     strongDetail: 'Enough non-overlapping core sinners to start confidently.',
@@ -107,6 +118,10 @@ const DIAGNOSIS_COPY = {
     counted: '反映',
     duplicate: '重複除外',
     reset: 'リセット',
+    ask: '質問する',
+    askAria: '質問文をコピーしてLimbus Companyギャラリーの投稿画面を開く',
+    askCopySuccess: '質問文をコピーしました。まもなく投稿画面へ移動します。',
+    askCopyError: '質問文をコピーできませんでした。',
     score: '診断点',
     strong: '強く開始推奨',
     strongDetail: '主要囚人が重複せず、安心して開始できます。',
@@ -114,6 +129,39 @@ const DIAGNOSIS_COPY = {
     launchableDetail: '十分に開始できます。迷う場合は相談して決めてください。',
     reroll: '続行推奨',
     rerollDetail: '有効な非重複人格が不足しています。',
+  },
+} as const
+
+const DIAGNOSIS_QUESTION_COPY = {
+  ko: {
+    intro: '리세 이륙 질문드립니다.',
+    selected: '선택한 인격',
+    counted: '반영 인격(중복 제외)',
+    ignored: '중복 제외',
+    score: '자가진단 점수',
+    verdict: '판정',
+    none: '없음',
+    closing: '이 계정으로 이륙해도 될까요? 아니면 리세를 더 하는 게 나을까요?',
+  },
+  en: {
+    intro: 'Asking for a reroll launch check.',
+    selected: 'Selected identities',
+    counted: 'Counted identities (duplicates ignored)',
+    ignored: 'Ignored duplicates',
+    score: 'Diagnosis score',
+    verdict: 'Verdict',
+    none: 'None',
+    closing: 'Is this account good enough to start, or should I keep rerolling?',
+  },
+  ja: {
+    intro: 'リセマラ開始判断の相談です。',
+    selected: '選択した人格',
+    counted: '反映人格(重複除外)',
+    ignored: '重複除外',
+    score: '診断点',
+    verdict: '判定',
+    none: 'なし',
+    closing: 'このアカウントで開始してもよいですか？ それともリセマラを続けるべきですか？',
   },
 } as const
 
@@ -144,6 +192,59 @@ function getTierListHref(locale: SupportedLocale, category: TierCategory, period
   if (period !== 'all') params.set('period', period)
   const query = params.toString()
   return query ? `/${locale}/tier-list?${query}` : `/${locale}/tier-list`
+}
+
+function formatDiagnosisEntry(entry: DiagnosisEntry) {
+  return `- [${entry.tier}] ${entry.sinnerName} - ${entry.name}`
+}
+
+function buildDiagnosisQuestion(result: DiagnosisResult, locale: SupportedLocale) {
+  const copy = DIAGNOSIS_QUESTION_COPY[locale]
+  const selected = result.selected.length > 0
+    ? result.selected.map(formatDiagnosisEntry).join('\n')
+    : `- ${copy.none}`
+  const counted = result.counted.length > 0
+    ? result.counted.map(formatDiagnosisEntry).join('\n')
+    : `- ${copy.none}`
+  const ignored = result.ignored.length > 0
+    ? result.ignored.map(formatDiagnosisEntry).join('\n')
+    : `- ${copy.none}`
+
+  return [
+    copy.intro,
+    '',
+    `${copy.selected}:`,
+    selected,
+    '',
+    `${copy.counted}:`,
+    counted,
+    '',
+    `${copy.ignored}:`,
+    ignored,
+    '',
+    `${copy.score}: ${result.score.toFixed(1)}`,
+    `${copy.verdict}: ${result.verdict.label}`,
+    '',
+    copy.closing,
+  ].join('\n')
+}
+
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  if (!copied) throw new Error('Clipboard copy failed')
 }
 
 function getLocalizedIdentityName(identity: TierIdentity, locale: SupportedLocale) {
@@ -250,6 +351,19 @@ function RerollDiagnosisPanel({
   const locale = normalizeLocale(useLocale())
   const copy = DIAGNOSIS_COPY[locale]
   const hasSelection = result.selected.length > 0
+  const canAskQuestion = locale === 'ko'
+  const handleAskQuestion = useCallback(async (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    try {
+      await copyTextToClipboard(buildDiagnosisQuestion(result, locale))
+      showSuccess(copy.askCopySuccess)
+      window.setTimeout(() => {
+        window.location.assign(DC_QUESTION_URL)
+      }, QUESTION_NAVIGATION_DELAY_MS)
+    } catch {
+      showError(copy.askCopyError)
+    }
+  }, [copy.askCopyError, copy.askCopySuccess, locale, result])
 
   return (
     <>
@@ -276,7 +390,7 @@ function RerollDiagnosisPanel({
             <h2
               id="reroll-diagnosis-title"
               className="font-serif"
-              style={{ color: '#f0dfba', fontSize: '1rem', fontWeight: 500, lineHeight: 1.45, marginTop: '0.375rem' }}
+              style={{ color: '#f0dfba', fontSize: '1.125rem', fontWeight: 450, lineHeight: 1.4, marginTop: '0.375rem' }}
             >
               {copy.title}
             </h2>
@@ -401,29 +515,54 @@ function RerollDiagnosisPanel({
                 </span>
               </div>
             )}
-            <button
-              type="button"
-              onClick={onReset}
-              disabled={!hasSelection}
-              style={{
-                justifySelf: 'start',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                minHeight: '2rem',
-                padding: '0 0.625rem',
-                borderRadius: '0.375rem',
-                border: '1px solid rgba(200,144,10,0.26)',
-                background: hasSelection ? 'rgba(200,144,10,0.08)' : 'rgba(117,104,90,0.08)',
-                color: hasSelection ? '#d8c99b' : '#75685a',
-                cursor: hasSelection ? 'pointer' : 'not-allowed',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-              }}
-            >
-              <RotateCcw size={13} aria-hidden="true" />
-              {copy.reset}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onReset}
+                disabled={!hasSelection}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  minHeight: '2rem',
+                  padding: '0 0.625rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid rgba(200,144,10,0.26)',
+                  background: hasSelection ? 'rgba(200,144,10,0.08)' : 'rgba(117,104,90,0.08)',
+                  color: hasSelection ? '#d8c99b' : '#75685a',
+                  cursor: hasSelection ? 'pointer' : 'not-allowed',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                {copy.reset}
+              </button>
+              {canAskQuestion && (
+                <a
+                  href={DC_QUESTION_URL}
+                  onClick={handleAskQuestion}
+                  aria-label={copy.askAria}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    minHeight: '2rem',
+                    padding: '0 0.625rem',
+                    borderRadius: '0.375rem',
+                    border: '1px solid rgba(96,165,250,0.28)',
+                    background: 'rgba(96,165,250,0.08)',
+                    color: '#93c5fd',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <ExternalLink size={13} aria-hidden="true" />
+                  {copy.ask}
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </section>
