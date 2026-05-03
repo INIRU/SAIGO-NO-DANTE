@@ -37,6 +37,18 @@ const TITLE_MIN_FONT_REM = 0.9375
 const TITLE_SIDE_PADDING_PERCENT = 15
 const THEME_CARD_ASPECT_RATIO = '416/684'
 
+function getPreferredKoreanTitleLines(title: string, shouldWrap: boolean): string[] | null {
+  if (!shouldWrap) return null
+
+  const words = title.trim().split(/\s+/).filter(Boolean)
+  if (words.length < 3 || words[words.length - 1] !== '것') return null
+
+  return [
+    words.slice(0, -2).join(' '),
+    words.slice(-2).join(' '),
+  ].filter(Boolean)
+}
+
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
   const locale = useLocale()
   const lang = langProp ?? (locale as SupportedLang)
@@ -52,7 +64,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
   const [minTitleOverflows, setMinTitleOverflows] = useState(false)
   const [titleSingleLineOverflows, setTitleSingleLineOverflows] = useState(false)
-  const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+  const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang).replace(/\s+/g, ' ').trim()
   const displayNameSegments = getThemePackNameSegments(numId, lang)
   const visualConfig = getThemePackVisualConfig(numId)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
@@ -63,6 +75,9 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
       : 'var(--font-kotra-bold), var(--font-scdream), sans-serif'
   const fontSize = useAutoFontSize(displayName, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily)
   const shouldWrapTitle = titleSingleLineOverflows || minTitleOverflows || fontSize <= TITLE_MIN_FONT_REM + 0.001
+  const preferredTitleLines = lang === 'ko' && !displayNameSegments
+    ? getPreferredKoreanTitleLines(displayName, shouldWrapTitle)
+    : null
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -221,13 +236,20 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
                 paddingBlock: '0.125rem',
                 whiteSpace: shouldWrapTitle ? 'normal' : 'nowrap',
                 overflow: shouldWrapTitle ? 'hidden' : 'visible',
-                overflowWrap: 'break-word',
-                display: shouldWrapTitle ? '-webkit-box' : 'block',
+                overflowWrap: 'normal',
+                wordBreak: lang === 'ko' || lang === 'ja' ? 'keep-all' : 'normal',
+                display: preferredTitleLines ? 'block' : shouldWrapTitle ? '-webkit-box' : 'block',
                 WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: shouldWrapTitle ? 2 : 1,
+                WebkitLineClamp: preferredTitleLines ? undefined : shouldWrapTitle ? 2 : 1,
               } as CSSProperties}
             >
-              {displayNameSegments
+              {preferredTitleLines
+                ? preferredTitleLines.map(line => (
+                    <span key={line} style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                      {line}
+                    </span>
+                  ))
+                : displayNameSegments
                 ? displayNameSegments.map((segment, index) => (
                     <span key={`${segment.text}-${index}`} style={{ color: segment.color ?? nameColor }}>
                       {segment.text}
