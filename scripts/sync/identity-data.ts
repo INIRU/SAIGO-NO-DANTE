@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * sync-identity-data.ts
+ * identity-data.ts
  * 게임 클라이언트 JSON → DB 인격/스킬/패시브 동기화 (TypeScript + Zod)
  *
  * Usage:
@@ -25,8 +25,6 @@ import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { z } from 'zod'
 import { config } from 'dotenv'
-import { triggerRevalidation } from './_revalidate'
-import { syncIdentityAcquisition } from './identity-acquisition'
 
 config({ path: '.env.local' })
 
@@ -78,9 +76,9 @@ const PERSONALITY_PASSIVE_FILE_RE = /^personality-passive-(?:\d{2}|a\d+c\d+p\d+)
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SECRET_KEY
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
 const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: 'limbus' } })
@@ -92,6 +90,34 @@ const GRAY = (s: string) => `\x1b[90m${s}\x1b[0m`
 const CYAN = (s: string) => `\x1b[36m${s}\x1b[0m`
 const RED = (s: string) => `\x1b[31m${s}\x1b[0m`
 const BOLD = (s: string) => `\x1b[1m${s}\x1b[0m`
+
+async function triggerRevalidation(options: { scope?: 'all-game-data' | 'announcements' } = {}): Promise<void> {
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL
+  const secret = process.env.REVALIDATION_SECRET
+  if (!siteUrl || !secret) {
+    console.warn('[sync] SITE_URL or REVALIDATION_SECRET not set — skipping revalidate')
+    return
+  }
+
+  try {
+    const res = await fetch(`${siteUrl}/api/revalidate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-revalidation-secret': secret,
+      },
+      body: JSON.stringify({ scope: options.scope ?? 'all-game-data' }),
+    })
+    if (!res.ok) {
+      console.warn(`[sync] revalidate call failed: ${res.status} ${res.statusText}`)
+      return
+    }
+    const data = await res.json().catch(() => ({}))
+    console.log('[sync] revalidated:', (data as { revalidated?: unknown }).revalidated)
+  } catch (err) {
+    console.warn('[sync] revalidate call threw:', err instanceof Error ? err.message : err)
+  }
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SINNERS = [
@@ -202,6 +228,10 @@ const PersonalitySchema = z.object({
   id: z.number(),
   characterId: z.number(),
   rank: z.number().optional(),
+  season: z.number().nullable().optional(),
+  updatedDate: z.number().nullable().optional(),
+  additionalAttachment: z.string().optional(),
+  walpurgisType: z.string().optional(),
   hp: z.object({
     defaultStat: z.number().optional(),
     incrementByLevel: z.number().optional(),
@@ -407,6 +437,75 @@ interface KeywordContext {
   skillMap: Map<number, PersonalitySkill>
   rawKrTexts: string[]
   passiveDetails: PassiveDetail[]
+}
+
+type AcquisitionType = 'default' | 'standard' | 'event' | 'limited' | 'walpurgis' | 'attendance'
+type GachaType = 'always' | 'seasonal' | 'walpurgis' | 'none' | 'pickup'
+
+interface AcquisitionInfo {
+  type: AcquisitionType
+  release_season: number
+  fragment_cost: number | null
+  gacha: GachaType
+  gacha_from_season?: number
+  target_sinner?: string
+  gacha_id?: number
+  gacha_name?: string
+  gacha_name_en?: string
+  gacha_name_jp?: string
+  exchange_from_season?: number
+  walpurgis_edition?: number
+  event_name?: string
+  event_currency?: string
+  event_cost?: number
+}
+
+interface DerivedAcquisition {
+  acquisition: string
+  acquisition_info: AcquisitionInfo
+  evidence: string[]
+  rewrite_acquisition?: boolean
+}
+
+interface AcquisitionIdentityRow {
+  id: string
+  game_id: string
+  sinner_id: string | null
+  name_kr: string | null
+  rarity: number | null
+  acquisition: string | null
+  acquisition_info: AcquisitionInfo | null
+}
+
+interface EventRewardHit {
+  file: string
+  startDate: string | null
+  eventName: string | null
+  currencyName: string | null
+  eventCost: number | null
+}
+
+interface GachaPickupHit {
+  file: string
+  gachaId: number | null
+  bannerType: string | null
+  walpurgisType: string | null
+  category: string | null
+  festival: boolean
+  startDate: string | null
+  endDate: string | null
+  gachaName: string | null
+  gachaNameEn: string | null
+  gachaNameJp: string | null
+}
+
+interface IdentityAcquisitionSyncOptions {
+  fix?: boolean
+  verbose?: boolean
+  rewriteText?: boolean
+  enrichGacha?: boolean
+  sinnerIds?: string[]
+  revalidate?: boolean
 }
 
 // ── File I/O helpers ──────────────────────────────────────────────────────────
@@ -745,6 +844,474 @@ function loadPersonalities(): Map<string, Personality> {
     }
   }
   return map
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
+function toArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
+}
+
+function toStringValue(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function toNumberValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function extractRecordList(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) return data.map(toRecord).filter((item): item is Record<string, unknown> => item !== null)
+  const record = toRecord(data)
+  if (!record) return []
+  if (Array.isArray(record.eventRewardDatas)) return [record]
+  const list = Array.isArray(record.list) ? record.list : record.dataList
+  return toArray(list).map(toRecord).filter((item): item is Record<string, unknown> => item !== null)
+}
+
+function loadAcquisitionItemNames(): Map<number, string> {
+  const map = new Map<number, string>()
+  for (const file of globFiles(KR_DIR, /^KR_Items.*\.txt$/i)) {
+    for (const item of extractRecordList(readTxt(join(KR_DIR, file)))) {
+      const id = toNumberValue(item.id)
+      const name = toStringValue(item.name)
+      if (id != null && name) map.set(id, name)
+    }
+  }
+  return map
+}
+
+function loadAcquisitionGachaTitles(): {
+  ko: Map<number, string>
+  en: Map<number, string>
+  jp: Map<number, string>
+} {
+  const readTitleMap = (lang: 'KR' | 'EN' | 'JP', latestDir: string, fallbackDir: string) => {
+    const map = new Map<number, string>()
+    for (const { dir, ext } of [
+      { dir: fallbackDir, ext: '.txt' },
+      { dir: latestDir, ext: '.json' },
+    ]) {
+      if (!existsSync(dir)) continue
+      for (const file of globFiles(dir, new RegExp(`^${lang}_GachaTitle.*\\${ext}$`, 'i'))) {
+        for (const item of extractRecordList(readTxt(join(dir, file)))) {
+          const rawId = toStringValue(item.id) ?? toNumberValue(item.id)
+          const id = rawId == null ? NaN : Number(rawId)
+          const content = toStringValue(item.content)
+          if (Number.isFinite(id) && content) map.set(id, content)
+        }
+      }
+    }
+    return map
+  }
+
+  return {
+    ko: readTitleMap('KR', KR_LATEST_DIR, KR_DIR),
+    en: readTitleMap('EN', EN_LATEST_DIR, EN_DIR),
+    jp: readTitleMap('JP', JP_LATEST_DIR, JP_DIR),
+  }
+}
+
+function inferAcquisitionEventName(file: string): string | null {
+  const normalized = file.replace(/-returns-event\.txt$/i, '-event.txt')
+  const names: Record<string, string> = {
+    'tkt-event.txt': '시간살인시간',
+    'twining-threads-event.txt': '사영 전투',
+    'night-clean-up-event.txt': '심야청소 BokGak',
+    'night-cleanup-returns-event.txt': '심야청소 BokGak',
+    'hells-chicken-event.txt': '헬스 치킨',
+    'umida-event.txt': '우.미.다',
+    'mowe-event.txt': '워프특급 살인사건',
+    'mowe-returns-event.txt': '워프특급 살인사건',
+    'miracleofdistrict20-event.txt': '20번구의 기적',
+    'miracleofdistrict20-returns-event.txt': '20번구의 기적',
+    'ycgd-event.txt': '육참골단',
+    'ycgd-returns-event.txt': '육참골단',
+    'lcbcheckup-event.txt': 'LCB 정기검진',
+    'lcbcheckup-returns-event.txt': 'LCB 정기검진',
+    'cultivation-event.txt': '절차탁춘',
+    'pilgrimage-event.txt': '선의의 순례',
+  }
+  return names[file] ?? names[normalized] ?? null
+}
+
+function loadAcquisitionEventRewardHits(itemNames: Map<number, string>): Map<string, EventRewardHit> {
+  const map = new Map<string, EventRewardHit>()
+  for (const file of globFiles(DATA_DIR, /event.*\.txt$/i)) {
+    for (const event of extractRecordList(readTxt(join(DATA_DIR, file)))) {
+      const rewards = toArray(event.eventRewardDatas)
+      if (rewards.length === 0) continue
+      for (const rawReward of rewards) {
+        const reward = toRecord(rawReward)
+        if (!reward) continue
+        const rewardPrice = toRecord(reward.rewardPrice)
+        const currencyId = toNumberValue(rewardPrice?.id)
+        const eventCost = toNumberValue(rewardPrice?.num)
+        for (const rawItem of toArray(reward.rewardItemList)) {
+          const item = toRecord(rawItem)
+          const type = toStringValue(item?.type)
+          const id = toNumberValue(item?.id)
+          if (type !== 'PERSONALITY' || id == null) continue
+          const hit: EventRewardHit = {
+            file,
+            startDate: toStringValue(event.startDate),
+            eventName: inferAcquisitionEventName(file),
+            currencyName: currencyId != null ? itemNames.get(currencyId) ?? null : null,
+            eventCost,
+          }
+          const key = String(id)
+          const previous = map.get(key)
+          if (!previous || (hit.startDate && previous.startDate && hit.startDate < previous.startDate)) {
+            map.set(key, hit)
+          } else if (!previous) {
+            map.set(key, hit)
+          }
+        }
+      }
+    }
+  }
+  return map
+}
+
+function loadAcquisitionGachaPickupHits(gachaTitles: ReturnType<typeof loadAcquisitionGachaTitles>): Map<string, GachaPickupHit[]> {
+  const map = new Map<string, GachaPickupHit[]>()
+  for (const file of globFiles(DATA_DIR, /^gacha-\d+\.txt$/i)) {
+    for (const entry of extractRecordList(readTxt(join(DATA_DIR, file)))) {
+      const banner = toRecord(entry.bannerInfo)
+      const ids = new Set<number>()
+      for (const id of toArray(banner?.pickupIdList)) {
+        const numericId = toNumberValue(id)
+        if (numericId != null) ids.add(numericId)
+      }
+
+      for (const id of ids) {
+        const gameId = String(id)
+        const gachaId = toNumberValue(entry.id)
+        const hit: GachaPickupHit = {
+          file,
+          gachaId,
+          bannerType: toStringValue(banner?.bannerType),
+          walpurgisType: toStringValue(banner?.walpurgisType),
+          category: toStringValue(entry.category),
+          festival: banner?.festival === true,
+          startDate: toStringValue(entry.startDate),
+          endDate: toStringValue(entry.endDate),
+          gachaName: gachaId != null ? gachaTitles.ko.get(gachaId) ?? null : null,
+          gachaNameEn: gachaId != null ? gachaTitles.en.get(gachaId) ?? null : null,
+          gachaNameJp: gachaId != null ? gachaTitles.jp.get(gachaId) ?? null : null,
+        }
+        const current = map.get(gameId) ?? []
+        current.push(hit)
+        map.set(gameId, current)
+      }
+    }
+  }
+  return map
+}
+
+function acquisitionGachaFields(identity: AcquisitionIdentityRow, hit: GachaPickupHit | null, enrichGacha: boolean): Partial<AcquisitionInfo> {
+  if (!hit) return {}
+  const existing = identity.acquisition_info
+  const shouldInclude = enrichGacha
+    || existing == null
+    || existing.gacha_id != null
+    || existing.gacha_name != null
+    || existing.gacha_name_en != null
+    || existing.gacha_name_jp != null
+  if (!shouldInclude) return {}
+  return {
+    ...(hit.gachaId != null ? { gacha_id: hit.gachaId } : {}),
+    ...(hit.gachaName ? { gacha_name: hit.gachaName } : {}),
+    ...(hit.gachaNameEn ? { gacha_name_en: hit.gachaNameEn } : {}),
+    ...(hit.gachaNameJp ? { gacha_name_jp: hit.gachaNameJp } : {}),
+  }
+}
+
+function acquisitionFragmentCost(rank: number): number | null {
+  if (rank === 2) return 150
+  if (rank === 3) return 400
+  return null
+}
+
+function acquisitionExchangeSeason(season: number): number | undefined {
+  return season > 0 ? season + 2 : undefined
+}
+
+function pickReleasePickup(hits: GachaPickupHit[] | undefined): GachaPickupHit | null {
+  if (!hits || hits.length === 0) return null
+  const newMain = hits.filter(hit => hit.category === 'TARGET_NEW' && hit.bannerType === 'TEMPORARY_MAIN')
+  const temporaryMain = hits.filter(hit => hit.bannerType === 'TEMPORARY_MAIN')
+  const candidates = newMain.length > 0 ? newMain : temporaryMain.length > 0 ? temporaryMain : hits
+  return [...candidates].sort((a, b) => {
+    const aDate = a.startDate ?? a.endDate ?? ''
+    const bDate = b.startDate ?? b.endDate ?? ''
+    if (aDate !== bDate) return bDate.localeCompare(aDate)
+    return (b.gachaId ?? 0) - (a.gachaId ?? 0)
+  })[0] ?? null
+}
+
+function existingAcquisitionExchangeOverride(identity: AcquisitionIdentityRow): Partial<AcquisitionInfo> {
+  return identity.acquisition_info?.exchange_from_season != null
+    ? { exchange_from_season: identity.acquisition_info.exchange_from_season }
+    : {}
+}
+
+function existingAcquisitionEventFields(identity: AcquisitionIdentityRow): Partial<AcquisitionInfo> {
+  const existing = identity.acquisition_info
+  if (!existing) return {}
+  return {
+    ...(existing.event_name ? { event_name: existing.event_name } : {}),
+    ...(existing.event_currency ? { event_currency: existing.event_currency } : {}),
+    ...(existing.event_cost != null ? { event_cost: existing.event_cost } : {}),
+  }
+}
+
+function acquisitionReleaseSeason(identity: AcquisitionIdentityRow, personality: Personality, rank: number): number {
+  if (rank === 1) return 0
+  const existing = identity.acquisition_info?.release_season
+  const sourceSeason = personality.season ?? 0
+  if (existing && existing > 0) return existing
+  if (sourceSeason >= 9000) return 0
+  if (sourceSeason === 0) return 1
+  return sourceSeason
+}
+
+function acquisitionWalpurgisEdition(identity: AcquisitionIdentityRow, hit: GachaPickupHit | null): number | undefined {
+  const existing = identity.acquisition_info?.walpurgis_edition
+  if (existing != null) return existing
+  const textMatch = identity.acquisition?.match(/(\d+)\s*회차/)
+  if (textMatch) return Number(textMatch[1])
+  const titleMatch = hit?.gachaName?.match(/제\s*(\d+)\s*회/)
+  return titleMatch ? Number(titleMatch[1]) : undefined
+}
+
+function isAcquisitionWalpurgis(personality: Personality, releasePickup: GachaPickupHit | null): boolean {
+  return Boolean(
+    personality.walpurgisType
+      || (personality.season ?? 0) >= 9000
+      || releasePickup?.walpurgisType
+      || releasePickup?.festival,
+  )
+}
+
+function deriveIdentityAcquisition(
+  identity: AcquisitionIdentityRow,
+  personality: Personality,
+  eventRewards: Map<string, EventRewardHit>,
+  gachaPickups: Map<string, GachaPickupHit[]>,
+  enrichGacha: boolean,
+): DerivedAcquisition {
+  const gameId = identity.game_id
+  const rank = identity.rarity ?? personality.rank ?? 0
+  const cost = acquisitionFragmentCost(rank)
+  const sourceSeason = personality.season ?? null
+  const season = acquisitionReleaseSeason(identity, personality, rank)
+  const existing = identity.acquisition_info
+  const reward = eventRewards.get(gameId)
+  const releasePickup = pickReleasePickup(gachaPickups.get(gameId))
+  const evidence = [
+    `personality: season=${sourceSeason}, releaseSeason=${season}, rank=${rank}, additionalAttachment=${personality.additionalAttachment ?? 'none'}`,
+  ]
+  if (reward) evidence.push(`event reward: ${reward.file}`)
+  if (releasePickup) {
+    evidence.push(`gacha pickup: ${releasePickup.file} type=${releasePickup.bannerType ?? 'unknown'}${releasePickup.walpurgisType ? ` walpurgis=${releasePickup.walpurgisType}` : ''}`)
+  }
+
+  if (rank === 1) {
+    return {
+      acquisition: '기본',
+      acquisition_info: { type: 'default', release_season: 0, fragment_cost: null, gacha: 'none' },
+      evidence,
+    }
+  }
+
+  if (isAcquisitionWalpurgis(personality, releasePickup)) {
+    const edition = acquisitionWalpurgisEdition(identity, releasePickup)
+    return {
+      acquisition: `발푸르기스의 밤 기간 내 추출 / 발푸르기스의 밤 기간 내 자아 파편 ${cost} 교환`,
+      acquisition_info: {
+        type: 'walpurgis',
+        release_season: season,
+        fragment_cost: cost,
+        gacha: 'walpurgis',
+        ...acquisitionGachaFields(identity, releasePickup, enrichGacha),
+        ...(edition ? { walpurgis_edition: edition } : {}),
+      },
+      evidence,
+    }
+  }
+
+  if (reward) {
+    const eventName = existing?.event_name ?? reward.eventName
+    const eventCurrency = existing?.event_currency ?? reward.currencyName
+    const eventCost = existing?.event_cost ?? reward.eventCost
+    const info: AcquisitionInfo = {
+      type: existing?.type === 'attendance' ? 'attendance' : 'event',
+      release_season: season,
+      fragment_cost: cost,
+      gacha: 'none',
+      ...existingAcquisitionExchangeOverride(identity),
+      ...(eventName ? { event_name: eventName } : {}),
+      ...(eventCurrency ? { event_currency: eventCurrency } : {}),
+      ...(eventCost != null ? { event_cost: eventCost } : {}),
+    }
+    const eventPrefix = reward.eventName ? `${reward.eventName} ` : ''
+    const rewardText = reward.currencyName && reward.eventCost
+      ? `${eventPrefix}이벤트 ${reward.currencyName} ${reward.eventCost}개 교환`
+      : `${eventPrefix}이벤트 교환 보상`
+    const exSeason = existing?.exchange_from_season ?? acquisitionExchangeSeason(season)
+    const shardText = cost && exSeason ? ` / 자아 파편 ${cost} 교환(시즌 ${exSeason} 이후)` : ''
+    return {
+      acquisition: `${rewardText}${shardText}`,
+      acquisition_info: info,
+      evidence,
+      rewrite_acquisition: Boolean(reward.currencyName && reward.eventCost),
+    }
+  }
+
+  if (personality.additionalAttachment === 'EVENT') {
+    const exSeason = existing?.exchange_from_season ?? acquisitionExchangeSeason(season)
+    const gacha = existing?.gacha && existing.gacha !== 'none' ? existing.gacha : releasePickup ? 'pickup' : 'none'
+    return {
+      acquisition: `${releasePickup?.gachaName ?? `이벤트 한정 추출(시즌 ${season})`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
+      acquisition_info: {
+        type: 'limited',
+        release_season: season,
+        fragment_cost: cost,
+        gacha,
+        ...(existing?.gacha_from_season != null
+          ? { gacha_from_season: existing.gacha_from_season }
+          : existing == null && (gacha === 'seasonal' || gacha === 'pickup')
+            ? { gacha_from_season: season }
+            : {}),
+        ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+        ...existingAcquisitionEventFields(identity),
+        ...(gacha !== 'none' ? acquisitionGachaFields(identity, releasePickup, enrichGacha) : {}),
+        ...existingAcquisitionExchangeOverride(identity),
+      },
+      evidence,
+    }
+  }
+
+  if (season > 0) {
+    const exSeason = existing?.exchange_from_season ?? acquisitionExchangeSeason(season)
+    const gacha = existing?.gacha ?? 'seasonal'
+    return {
+      acquisition: `${releasePickup?.gachaName ?? `추출(시즌 ${season} 이후)`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
+      acquisition_info: {
+        type: 'standard',
+        release_season: season,
+        fragment_cost: cost,
+        gacha,
+        ...(existing?.gacha_from_season != null
+          ? { gacha_from_season: existing.gacha_from_season }
+          : existing == null && (gacha === 'seasonal' || gacha === 'pickup')
+            ? { gacha_from_season: season }
+            : {}),
+        ...(existing?.target_sinner ? { target_sinner: existing.target_sinner } : {}),
+        ...existingAcquisitionEventFields(identity),
+        ...acquisitionGachaFields(identity, releasePickup, enrichGacha),
+        ...existingAcquisitionExchangeOverride(identity),
+      },
+      evidence,
+    }
+  }
+
+  return {
+    acquisition: `추출(상시) / 자아 파편 ${cost} 교환(상시)`,
+    acquisition_info: {
+      type: 'standard',
+      release_season: season,
+      fragment_cost: cost,
+      gacha: 'always',
+      ...existingAcquisitionEventFields(identity),
+      ...existingAcquisitionExchangeOverride(identity),
+    },
+    evidence,
+  }
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
+  const record = toRecord(value)
+  if (!record) return JSON.stringify(value)
+  return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stableJson(record[key])}`).join(',')}}`
+}
+
+function sameAcquisitionInfo(left: AcquisitionInfo | null, right: AcquisitionInfo): boolean {
+  return stableJson(left) === stableJson(right)
+}
+
+async function syncIdentityAcquisition(options: IdentityAcquisitionSyncOptions = {}): Promise<{ changed: number; applied: number }> {
+  const fix = options.fix === true
+  const dryRun = !fix
+  const verbose = options.verbose === true
+  const rewriteText = options.rewriteText === true
+  const enrichGacha = options.enrichGacha !== false
+  const sinnerFilter = new Set((options.sinnerIds ?? []).map(id => id.trim()).filter(Boolean))
+
+  const personalities = loadPersonalities()
+  const itemNames = loadAcquisitionItemNames()
+  const gachaTitles = loadAcquisitionGachaTitles()
+  const eventRewards = loadAcquisitionEventRewardHits(itemNames)
+  const gachaPickups = loadAcquisitionGachaPickupHits(gachaTitles)
+
+  let query = supabase
+    .from('identities')
+    .select('id, game_id, sinner_id, name_kr, rarity, acquisition, acquisition_info')
+    .order('game_id')
+  if (sinnerFilter.size > 0) query = query.in('sinner_id', [...sinnerFilter])
+
+  const { data, error } = await query
+  if (error) throw error
+  const rows = (data ?? []) as AcquisitionIdentityRow[]
+
+  let changed = 0
+  let applied = 0
+  for (const identity of rows) {
+    const personality = personalities.get(identity.game_id)
+    if (!personality) {
+      console.warn(`[skip] ${identity.game_id} ${identity.name_kr ?? ''}: personality source not found`)
+      continue
+    }
+
+    const derived = deriveIdentityAcquisition(identity, personality, eventRewards, gachaPickups, enrichGacha)
+    const desiredAcquisition = rewriteText || derived.rewrite_acquisition || !identity.acquisition
+      ? derived.acquisition
+      : identity.acquisition
+    const differs = identity.acquisition !== desiredAcquisition || !sameAcquisitionInfo(identity.acquisition_info, derived.acquisition_info)
+    if (!differs) continue
+    changed++
+
+    console.log(`[diff] ${identity.game_id} ${identity.name_kr ?? ''}`)
+    console.log(`  acquisition: ${identity.acquisition ?? '(null)'}`)
+    console.log(`           -> ${desiredAcquisition}`)
+    console.log(`  info: ${stableJson(identity.acquisition_info)}`)
+    console.log(`    -> ${stableJson(derived.acquisition_info)}`)
+    if (verbose) {
+      for (const item of derived.evidence) console.log(`  evidence: ${item}`)
+    }
+
+    if (fix) {
+      const { error: updateError } = await supabase
+        .from('identities')
+        .update({
+          acquisition: desiredAcquisition,
+          acquisition_info: derived.acquisition_info,
+        })
+        .eq('id', identity.id)
+      if (updateError) throw updateError
+      applied++
+    }
+  }
+
+  console.log(dryRun ? `[dry-run] changed candidates: ${changed}` : `[fix] applied: ${applied}`)
+  if (fix && applied > 0 && options.revalidate !== false) await triggerRevalidation({ scope: 'all-game-data' })
+  return { changed, applied }
 }
 
 function loadPersonalitySkills(): Map<number, PersonalitySkill> {

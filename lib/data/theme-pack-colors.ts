@@ -1,5 +1,12 @@
+import type { SupportedLang } from '@/lib/i18n/types'
+
 // Theme pack name text colors (from game visual identity)
 // 10xx: grouped by dungeon chapter, 11xx: unique per story, 12xx+: default beige
+
+export interface ThemePackNameSegment {
+  text: string
+  color?: string
+}
 
 export const THEME_PACK_NAME_COLORS: Record<number, string> = {
   // 10xx — Mirror Dungeon base packs
@@ -31,13 +38,15 @@ export const THEME_PACK_NAME_COLORS: Record<number, string> = {
   1116: '#5CE6FF',
   1117: '#625AFF',
   1118: '#7F2AB0',
-  1119: '#0060C5',
+  1119: '#EE4893',
   1120: '#E7B03B',
   1121: '#C92F32',
   1122: '#B1BEFF',
   1123: '#2C9AF7',
   1124: '#EB9010',
   1125: '#990000',
+  1126: '#BEBAF7',
+  1127: '#625AFF',
 
   // 15xx exception
   1503: '#FF6600',
@@ -48,4 +57,44 @@ export const THEME_PACK_DEFAULT_COLOR = '#E5C6A0'
 
 export function getThemePackNameColor(id: number): string {
   return THEME_PACK_NAME_COLORS[id] ?? THEME_PACK_DEFAULT_COLOR
+}
+
+// Extract source: KR/EN/JP_MirrorDungeonTheme-1 specialName.
+export const THEME_PACK_SPECIAL_NAME_SEGMENTS: Partial<Record<number, Record<SupportedLang, ThemePackNameSegment[]>>> = {
+  1119: {
+    ko: [
+      { text: '증오와', color: '#ee4893' },
+      { text: ' ' },
+      { text: '절망', color: '#0060c5' },
+    ],
+    en: [
+      { text: 'Hatred', color: '#ee4893' },
+      { text: ' and ' },
+      { text: 'Despair', color: '#0060c5' },
+    ],
+    ja: [
+      { text: '憎悪と', color: '#ee4893' },
+      { text: '絶望', color: '#0060c5' },
+    ],
+  },
+  1126: {
+    ko: [
+      { text: '타래', color: '#d9dcff' },
+      { text: ' ' },
+      { text: '엮기', color: '#c65348' },
+    ],
+    en: [
+      { text: 'Twining', color: '#d9dcff' },
+      { text: ' ' },
+      { text: 'Threads', color: '#c65348' },
+    ],
+    ja: [
+      { text: '縒り', color: '#d9dcff' },
+      { text: '合せ', color: '#c65348' },
+    ],
+  },
+}
+
+export function getThemePackNameSegments(id: number, lang: SupportedLang): ThemePackNameSegment[] | null {
+  return THEME_PACK_SPECIAL_NAME_SEGMENTS[id]?.[lang] ?? THEME_PACK_SPECIAL_NAME_SEGMENTS[id]?.ko ?? null
 }
