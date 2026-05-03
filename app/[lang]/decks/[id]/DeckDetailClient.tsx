@@ -12,7 +12,7 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
 import { getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
-import { computeFormationGiftKeywordCounts, normalizeDeckMainKeyword, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
+import { computeAllGiftKeywordCounts, computeFormationGiftKeywordCounts, normalizeDeckMainKeyword, type DeckKeywordSlot } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
 import CompactButton from '@/components/ui/CompactButton'
 import SectionBlock from '@/components/ui/SectionBlock'
@@ -797,7 +797,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   )
   const egoGiftConditionLookup = useMemo(() => {
     const activeFormationSlots = filledSlots.filter(slot => slot.slot_order >= 0 && slot.slot_order < FRONTLINE_SLOT_COUNT)
-    const deckKeywordSlots: DeckKeywordSlot[] = activeFormationSlots.map(slot => {
+    const assignedSlots = filledSlots.filter(slot => slot.slot_order >= 0 && slot.slot_order < 99)
+    const deckKeywordSlots: DeckKeywordSlot[] = assignedSlots.map(slot => {
       const identity = slot.identities
       const keywordIdentity = identity as (IdentityDetail & { skill_keyword_list?: string[] | null }) | null
       return {
@@ -812,12 +813,19 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       }
     })
     const formationKeywordCounts = computeFormationGiftKeywordCounts(deckKeywordSlots)
+    const allKeywordCounts = computeAllGiftKeywordCounts(deckKeywordSlots)
     const formationAffiliationCounts: Record<string, number> = {}
+    const allAffiliationCounts: Record<string, number> = {}
 
     for (const slot of activeFormationSlots) {
       const affiliation = (slot.identities as { affiliation?: string | null } | null)?.affiliation
       if (!affiliation) continue
       formationAffiliationCounts[affiliation] = (formationAffiliationCounts[affiliation] ?? 0) + 1
+    }
+    for (const slot of assignedSlots) {
+      const affiliation = (slot.identities as { affiliation?: string | null } | null)?.affiliation
+      if (!affiliation) continue
+      allAffiliationCounts[affiliation] = (allAffiliationCounts[affiliation] ?? 0) + 1
     }
 
     const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
@@ -825,9 +833,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       map[gift.name] = getGiftActivationConditionStatus({
         gift: { activation_condition: gift.activation_condition ?? null },
         formationKeywordCounts,
-        allKeywordCounts: formationKeywordCounts,
+        allKeywordCounts,
         formationAffiliationCounts,
-        allAffiliationCounts: formationAffiliationCounts,
+        allAffiliationCounts,
       })
     }
     return map
