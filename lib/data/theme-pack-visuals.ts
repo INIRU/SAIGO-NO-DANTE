@@ -128,12 +128,11 @@ export const THEME_PACK_VISUALS: Record<number, ThemePackVisualConfig> = {
 }
 
 const THEME_PACK_BASE = `${STORAGE_BASE}/icons/theme-packs`
-const THEME_PACK_ASSET_VERSION = '20260503-composite-v2'
 
 export function getThemePackVisualConfig(id: number): ThemePackVisualConfig | null {
   return THEME_PACK_VISUALS[id] ?? null
 }
 
 export function getThemePackCompositeImageUrl(id: number): string {
-  return `${THEME_PACK_BASE}/${id}.webp?v=${THEME_PACK_ASSET_VERSION}`
+  return `${THEME_PACK_BASE}/${id}.webp`
 }
