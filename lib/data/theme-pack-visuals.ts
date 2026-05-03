@@ -128,23 +128,12 @@ export const THEME_PACK_VISUALS: Record<number, ThemePackVisualConfig> = {
 }
 
 const THEME_PACK_BASE = `${STORAGE_BASE}/icons/theme-packs`
-
-export const THEME_PACK_LAYER_IMAGES = {
-  vinyl: `${THEME_PACK_BASE}/layers/vinyl.webp`,
-  warning: `${THEME_PACK_BASE}/layers/warning.webp`,
-  baton: `${THEME_PACK_BASE}/layers/baton.webp`,
-  limbusLogo: `${THEME_PACK_BASE}/layers/limbus-logo.webp`,
-  extremeFrame: `${THEME_PACK_BASE}/layers/extreme-frame.webp`,
-} as const
+const THEME_PACK_ASSET_VERSION = '20260503-composite-v2'
 
 export function getThemePackVisualConfig(id: number): ThemePackVisualConfig | null {
   return THEME_PACK_VISUALS[id] ?? null
 }
 
-export function getThemePackBaseImageUrl(id: number): string {
-  return `${THEME_PACK_BASE}/base/${id}.webp`
-}
-
-export function getThemePackBossLayerUrl(spriteId: string): string {
-  return `${THEME_PACK_BASE}/layers/boss/${spriteId}.webp`
+export function getThemePackCompositeImageUrl(id: number): string {
+  return `${THEME_PACK_BASE}/${id}.webp?v=${THEME_PACK_ASSET_VERSION}`
 }
