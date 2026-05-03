@@ -40,6 +40,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
+  computeAllGiftKeywordCounts,
   computeDeckKeywordCounts,
   computeDeckMainKeywordsFromSlots,
   computeFormationGiftKeywordCounts,
@@ -299,6 +300,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const autoMainKeywords = useMemo(() => computeDeckMainKeywordsFromSlots(deckKeywordSlots), [deckKeywordSlots])
   const effectiveMainKeywords = mainKeywordsManual ? selectedMainKeywords : autoMainKeywords
   const formationGiftKeywordCounts = useMemo(() => computeFormationGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
+  const allGiftKeywordCounts = useMemo(() => computeAllGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
 
   useEffect(() => {
     if (!mainKeywordsManual) return
@@ -321,62 +323,79 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   // 활성 가능한 EGO 기프트 계산
   const activatableGifts = useMemo(() => {
-    const formedIdentities = formationOrder
+    const formationIdentities = formationOrder
       .slice(0, 7)
       .map(sid => deckSlots[sid])
       .filter(Boolean) as Identity[]
-    if (formedIdentities.length === 0) return []
+    const assignedIdentities = formationOrder
+      .map(sid => deckSlots[sid])
+      .filter(Boolean) as Identity[]
+    if (assignedIdentities.length === 0) return []
 
-    const affCounts: Record<string, number> = {}
-
-    for (const id of formedIdentities) {
-      if (id.affiliation) {
-        affCounts[id.affiliation] = (affCounts[id.affiliation] ?? 0) + 1
+    const countAffiliations = (list: Identity[]) => {
+      const counts: Record<string, number> = {}
+      for (const id of list) {
+        if (id.affiliation) {
+          counts[id.affiliation] = (counts[id.affiliation] ?? 0) + 1
+        }
       }
+      return counts
     }
+    const formationAffiliationCounts = countAffiliations(formationIdentities)
+    const allAffiliationCounts = countAffiliations(assignedIdentities)
 
     type GiftStatus = {
       name: string; keyword: string; grade: string; image_url: string | null
       effect_base: string | null; condition: ActivationCondition
-      current: number; met: boolean
+      current: number; formationCurrent: number; allCurrent: number
+      met: boolean; level: 'met' | 'warn' | 'unmet'
     }
 
     const results: GiftStatus[] = []
-    const countFormationKeyword = (keyword: string) => formationGiftKeywordCounts[normalizeThemeKeyword(keyword)] ?? 0
+    const countCondition = (
+      c: ActivationCondition,
+      keywordCounts: Record<string, number>,
+      affiliationCounts: Record<string, number>,
+    ) => {
+      if (c.type === 'keyword') {
+        return keywordCounts[normalizeThemeKeyword(c.keyword!)] ?? 0
+      }
+      if (c.type === 'multi_keyword') {
+        return c.keywords!.reduce((sum, kw) => sum + (keywordCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
+      }
+      if (c.type === 'affiliation') {
+        const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
+        return affiliations.reduce((sum, aff) => sum + (affiliationCounts[aff] ?? 0), 0)
+      }
+      return 0
+    }
+
     for (const g of egoGifts) {
       const c = g.activation_condition
       if (!c) continue
-
-      let current = 0
-      if (c.type === 'keyword') {
-        current = countFormationKeyword(c.keyword!)
-      } else if (c.type === 'multi_keyword') {
-        for (const kw of c.keywords!) current += countFormationKeyword(kw)
-      } else if (c.type === 'affiliation') {
-        if (c.affiliations) {
-          for (const aff of c.affiliations) current += affCounts[aff] ?? 0
-        } else {
-          current = affCounts[c.affiliation!] ?? 0
-        }
-      } else if (c.type === 'skill') {
-        continue
-      }
+      if (c.type === 'skill') continue
+      const formationCurrent = countCondition(c, formationGiftKeywordCounts, formationAffiliationCounts)
+      const allCurrent = countCondition(c, allGiftKeywordCounts, allAffiliationCounts)
+      const level = formationCurrent >= c.count ? 'met' : allCurrent >= c.count ? 'warn' : 'unmet'
+      const current = level === 'met' ? formationCurrent : allCurrent
 
       if (current > 0) {
         results.push({
           name: g.name, keyword: g.keyword, grade: g.grade,
           image_url: g.image_url, effect_base: g.effect_base,
-          condition: c, current, met: current >= c.count,
+          condition: c, current, formationCurrent, allCurrent,
+          met: level === 'met', level,
         })
       }
     }
 
+    const levelOrder = { met: 0, warn: 1, unmet: 2 } satisfies Record<GiftStatus['level'], number>
     results.sort((a, b) => {
-      if (a.met !== b.met) return a.met ? -1 : 1
+      if (a.level !== b.level) return levelOrder[a.level] - levelOrder[b.level]
       return (b.current / b.condition.count) - (a.current / a.condition.count)
     })
     return results
-  }, [deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
+  }, [allGiftKeywordCounts, deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
 
   const identityCount = Object.values(deckSlots).filter(Boolean).length
   const egoCount = Object.values(egoSlots).reduce((s, g) => s + Object.keys(g).length, 0)
@@ -772,6 +791,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             egoGifts={egoGifts}
             formationOrder={formationOrder}
             formationGiftKeywordCounts={formationGiftKeywordCounts}
+            allGiftKeywordCounts={allGiftKeywordCounts}
             locale={locale as SupportedLang}
             description={description}
             setDescription={setDescription}

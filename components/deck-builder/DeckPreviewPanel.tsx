@@ -17,7 +17,10 @@ interface GiftStatus {
   effect_base: string | null
   condition: ActivationCondition
   current: number
+  formationCurrent?: number
+  allCurrent?: number
   met: boolean
+  level?: 'met' | 'warn' | 'unmet'
 }
 
 interface Props {
@@ -194,39 +197,46 @@ function DeckPreviewPanel({
                           : `${c.count}인`
                         const pct = Math.min(g.current / c.count, 1)
                         const kwIcon = getIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null
+                        const statusLevel = g.level ?? (g.met ? 'met' : 'unmet')
+                        const statusColor = statusLevel === 'met' ? 'var(--gold)' : statusLevel === 'warn' ? '#d8b040' : '#777'
+                        const statusBorder = statusLevel === 'met' ? 'rgba(200,144,10,0.2)' : statusLevel === 'warn' ? 'rgba(216,176,64,0.24)' : 'rgba(255,255,255,0.03)'
+                        const statusBg = statusLevel === 'met' ? 'rgba(200,144,10,0.06)' : statusLevel === 'warn' ? 'rgba(216,176,64,0.05)' : 'rgba(255,255,255,0.01)'
+                        const conditionProgress = statusLevel === 'warn' && g.formationCurrent !== undefined && g.allCurrent !== undefined
+                          ? `편성 ${g.formationCurrent}/${c.count} · 전체 ${g.allCurrent}/${c.count}`
+                          : `${g.current}/${c.count}`
 
                         return (
                           <div
                             key={g.name}
                             className="flex items-center gap-2.5 px-3 py-2 rounded"
                             style={{
-                              background: g.met ? 'rgba(200,144,10,0.06)' : 'rgba(255,255,255,0.01)',
-                              border: `1px solid ${g.met ? 'rgba(200,144,10,0.2)' : 'rgba(255,255,255,0.03)'}`,
-                              opacity: g.met ? 1 : 0.6,
+                              background: statusBg,
+                              border: `1px solid ${statusBorder}`,
+                              opacity: statusLevel === 'unmet' ? 0.6 : 1,
                             }}
                           >
                             {g.image_url ? (
-                              <Image src={g.image_url} alt="" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: g.met ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)' }} />
+                              <Image src={g.image_url} alt="" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: statusLevel === 'met' ? '1.5px solid var(--gold)' : statusLevel === 'warn' ? '1.5px solid rgba(216,176,64,0.7)' : '1px solid rgba(255,255,255,0.08)' }} />
                             ) : (
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1510', flexShrink: 0 }} />
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="flex items-center gap-1.5">
-                                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: g.met ? 'var(--gold)' : '#777', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
+                                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: statusColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: '#444', flexShrink: 0 }}>{g.grade}</span>
                               </div>
                               <div className="flex items-center gap-1 mt-0.5">
                                 {kwIcon && <Image src={kwIcon} alt="" width={10} height={10} style={{ flexShrink: 0 }} />}
-                                <span style={{ fontSize: '0.75rem', color: g.met ? '#88a830' : '#666' }}>
-                                  {condLabel} ({g.current}/{c.count})
+                                <span style={{ fontSize: '0.75rem', color: statusLevel === 'met' ? '#88a830' : statusLevel === 'warn' ? '#b89540' : '#666' }}>
+                                  {condLabel} ({conditionProgress})
                                 </span>
                                 <div style={{ width: 40, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, flexShrink: 0, marginLeft: 4 }}>
-                                  <div style={{ width: `${pct * 100}%`, height: '100%', background: g.met ? 'var(--gold)' : '#555', borderRadius: 2, transition: 'width 0.3s' }} />
+                                  <div style={{ width: `${pct * 100}%`, height: '100%', background: statusLevel === 'met' ? 'var(--gold)' : statusLevel === 'warn' ? '#d8b040' : '#555', borderRadius: 2, transition: 'width 0.3s' }} />
                                 </div>
                               </div>
                             </div>
-                            {g.met && (
-                              <span style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>ON</span>
+                            {statusLevel !== 'unmet' && (
+                              <span style={{ fontSize: '0.75rem', color: statusColor, fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0, letterSpacing: '0.05em' }}>{statusLevel === 'met' ? 'ON' : '주의'}</span>
                             )}
                           </div>
                         )

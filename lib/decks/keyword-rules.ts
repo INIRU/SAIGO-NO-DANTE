@@ -64,17 +64,24 @@ export function isFormationKeywordSlot(slotOrder: number | null | undefined): bo
   return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder <= 6
 }
 
+export function isAssignedKeywordSlot(slotOrder: number | null | undefined): boolean {
+  return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder < 99
+}
+
 function getSlotIdentity(slot: DeckKeywordSlot): DeckKeywordIdentity {
   const identity = Array.isArray(slot.identities) ? slot.identities[0] : slot.identities
   return identity ?? slot
 }
 
-export function computeDeckKeywordCounts(slots: readonly DeckKeywordSlot[]): DeckKeywordCounts {
+function computeKeywordCounts(
+  slots: readonly DeckKeywordSlot[],
+  includeSlot: (slotOrder: number | null | undefined) => boolean,
+): DeckKeywordCounts {
   const counts: Record<string, number> = {}
   let formationCount = 0
 
   for (const slot of slots) {
-    if (!isFormationKeywordSlot(slot.slot_order)) continue
+    if (!includeSlot(slot.slot_order)) continue
     formationCount += 1
 
     const identity = getSlotIdentity(slot)
@@ -92,6 +99,10 @@ export function computeDeckKeywordCounts(slots: readonly DeckKeywordSlot[]): Dec
   }
 
   return { formationCount, counts }
+}
+
+export function computeDeckKeywordCounts(slots: readonly DeckKeywordSlot[]): DeckKeywordCounts {
+  return computeKeywordCounts(slots, isFormationKeywordSlot)
 }
 
 export function computeDeckMainKeywordsFromSlots(slots: readonly DeckKeywordSlot[], limit = MAX_DECK_MAIN_KEYWORDS): string[] {
@@ -115,4 +126,8 @@ export function computeDeckMainKeywordsFromSlots(slots: readonly DeckKeywordSlot
 
 export function computeFormationGiftKeywordCounts(slots: readonly DeckKeywordSlot[]): Record<string, number> {
   return computeDeckKeywordCounts(slots).counts
+}
+
+export function computeAllGiftKeywordCounts(slots: readonly DeckKeywordSlot[]): Record<string, number> {
+  return computeKeywordCounts(slots, isAssignedKeywordSlot).counts
 }

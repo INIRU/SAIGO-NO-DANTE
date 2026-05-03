@@ -41,6 +41,55 @@ export default function GiftModal({
     if (!entry) return key
     return (entry as Record<string, string>)[lang] ?? (entry as Record<string, string>)['ko'] ?? key
   }
+  const copy = ({
+    ko: {
+      title: '기프트 상세',
+      acquisition: '획득 방법',
+      recipe: '조합 레시피',
+      recipeFragments: '조각 중 택 2종',
+      finalSynthesis: '최종 조합',
+      condition: '발동 조건',
+      conditionUnit: '인',
+      conditionOrMore: '인 이상',
+      conditionPersonality: ' 인격',
+      conditionAffiliation: ' 소속',
+    },
+    en: {
+      title: 'Gift Details',
+      acquisition: 'Acquisition',
+      recipe: 'Recipe',
+      recipeFragments: 'Choose 2 Fragments',
+      finalSynthesis: 'Final Synthesis',
+      condition: 'Activation Condition',
+      conditionUnit: '',
+      conditionOrMore: '+',
+      conditionPersonality: ' Identity',
+      conditionAffiliation: ' Affiliation',
+    },
+    ja: {
+      title: 'ギフト詳細',
+      acquisition: '獲得方法',
+      recipe: '合成レシピ',
+      recipeFragments: '破片から2種選択',
+      finalSynthesis: '最終合成',
+      condition: '発動条件',
+      conditionUnit: '人',
+      conditionOrMore: '人以上',
+      conditionPersonality: ' 人格',
+      conditionAffiliation: ' 所属',
+    },
+  } as const)[lang] ?? ({
+    title: '기프트 상세',
+    acquisition: '획득 방법',
+    recipe: '조합 레시피',
+    recipeFragments: '조각 중 택 2종',
+    finalSynthesis: '최종 조합',
+    condition: '발동 조건',
+    conditionUnit: '인',
+    conditionOrMore: '인 이상',
+    conditionPersonality: ' 인격',
+    conditionAffiliation: ' 소속',
+  } as const)
 
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
   const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
@@ -91,21 +140,6 @@ export default function GiftModal({
     return text
   }
 
-  const DUNGEON_NAMES: Record<string, { en: string; ja: string }> = {
-    '시작의 거울 (거울 던전 1)': { en: 'Mirror of Starting (Mirror Dungeon 1)', ja: '始まりの鏡 (ミラーダンジョン1)' },
-    '거울의 거울 (거울 던전 2)': { en: 'Mirror of Mirrors (Mirror Dungeon 2)', ja: '鏡の鏡 (ミラーダンジョン2)' },
-    '호수의 거울 (거울 던전 3)': { en: 'Mirror of the Lake (Mirror Dungeon 3)', ja: '湖の鏡 (ミラーダンジョン3)' },
-    '꿈결의 거울 (거울 던전 3)': { en: 'Mirror of Dreams (Mirror Dungeon 3)', ja: '夢の鏡 (ミラーダンジョン3)' },
-    '폭풍의 거울 (거울 던전 4)': { en: 'Mirror of Storms (Mirror Dungeon 4)', ja: '嵐の鏡 (ミラーダンジョン4)' },
-    '꿈결의 거울 (거울 던전 5)': { en: 'Mirror of Dreams (Mirror Dungeon 5)', ja: '夢の鏡 (ミラーダンジョン5)' },
-    '영생의 거울 (거울 던전 6)': { en: 'Mirror of Immortality (Mirror Dungeon 6)', ja: '永生の鏡 (ミラーダンジョン6)' },
-    '이름과 거미의 거울 (거울 던전 7)': { en: 'Mirror of Names and Spiders (Mirror Dungeon 7)', ja: '名前と蜘蛛の鏡 (ミラーダンジョン7)' },
-    '거울 던전 7': { en: 'Mirror Dungeon 7', ja: 'ミラーダンジョン7' },
-  }
-  const localizedAppearance = lang === 'ko'
-    ? gift.first_appearance
-    : (DUNGEON_NAMES[gift.first_appearance ?? '']?.[lang] ?? gift.first_appearance)
-
   const exclusiveThemes = gift.game_id
     ? themes.filter(t => t.specific_ego_gift_ids.includes(gift.game_id!))
     : []
@@ -113,7 +147,7 @@ export default function GiftModal({
   const [themesOpen, setThemesOpen] = useState(false)
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="32rem" title="선물 상세">
+    <BaseModal open={true} onClose={onClose} maxWidth="32rem" title={copy.title}>
       <div
         className="relative w-full max-h-[85vh] overflow-y-auto rounded-xl"
         style={{
@@ -275,12 +309,12 @@ export default function GiftModal({
             )}
             {gift.activation_condition != null && (() => {
               const c = gift.activation_condition
-              const unitSuffix = t('mirrorDungeon.gift.conditionUnit')
-              const orMoreSuffix = t('mirrorDungeon.gift.conditionOrMore')
-              const personalitySuffix = t('mirrorDungeon.gift.conditionPersonality')
-              const affiliationSuffix = t('mirrorDungeon.gift.conditionAffiliation')
-              let label = t('mirrorDungeon.gift.condition')
-              let value = `${c.count}${unitSuffix}`
+              const unitSuffix = copy.conditionUnit
+              const orMoreSuffix = copy.conditionOrMore
+              const personalitySuffix = copy.conditionPersonality
+              const affiliationSuffix = copy.conditionAffiliation
+              let label: string = copy.condition
+              let value: string = `${c.count}${unitSuffix}`
               if (c.type === 'keyword') {
                 label = `${c.keyword}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'multi_keyword') {
@@ -293,9 +327,6 @@ export default function GiftModal({
               }
               return <MetaItem label={label} value={value} valueColor="#6090d0" />
             })()}
-            {gift.first_appearance && (
-              <MetaItem label={t('mirrorDungeon.gift.firstAppearance')} value={localizedAppearance ?? gift.first_appearance} />
-            )}
             {gift.related && gift.related !== '불명' && gift.related !== '-' && (
               <MetaItem label={t('mirrorDungeon.gift.related')} value={localizeRelated(gift.related)} />
             )}
@@ -311,7 +342,7 @@ export default function GiftModal({
                 className="font-bold mb-1"
                 style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}
               >
-                {t('mirrorDungeon.gift.acquisition')}
+                {copy.acquisition}
               </p>
               <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
                 {gift.acquisition}
@@ -431,7 +462,7 @@ export default function GiftModal({
                 style={{ color: '#b478dc', fontFamily: 'var(--font-heading)' }}
               >
                 <FlaskConical size={13} />
-                {t('mirrorDungeon.gift.recipe')}
+                {copy.recipe}
               </p>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {recipe.ingredients.map((ing, i) => (
@@ -445,7 +476,7 @@ export default function GiftModal({
                           fontStyle: 'italic',
                         }}
                       >
-                        {t('mirrorDungeon.gift.recipeFragments')}
+                        {copy.recipeFragments}
                       </span>
                     ) : (
                       <span
@@ -482,7 +513,7 @@ export default function GiftModal({
               </div>
               {recipe.final_result && (
                 <p className="mt-2 text-[0.6875rem]" style={{ color: '#888' }}>
-                  <span style={{ color: '#666' }}>{t('mirrorDungeon.gift.finalSynthesis')}:</span>{' '}
+                  <span style={{ color: '#666' }}>{copy.finalSynthesis}:</span>{' '}
                   <span style={{ color: '#e8b030' }}>{recipe.final_result}</span>
                 </p>
               )}
