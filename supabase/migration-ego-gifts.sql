@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS limbus.ego_gifts (
   effect_plusplus  TEXT,
   min_identities  INT,
   is_synthesis    BOOLEAN DEFAULT false,
-  first_appearance TEXT,
   related         TEXT,
   image_url       TEXT,
   created_at      TIMESTAMPTZ DEFAULT now()

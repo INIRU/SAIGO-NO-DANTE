@@ -89,6 +89,10 @@ export function IdentityTab({
         const isGacksung = gacksungSlots[sinner.id] ?? false
         const formIdx = formationOrder.indexOf(sinner.id)
         const isFormed = formIdx >= 0
+        const isBackup = formIdx >= 7
+        const formationColor = isBackup ? '#5ab0d0' : '#e8b030'
+        const formationGlow = isBackup ? 'rgba(90,176,208,0.7)' : 'rgba(200,144,10,0.7)'
+        const formationBorder = isBackup ? 'rgba(90,176,208,0.5)' : 'rgba(200,144,10,0.5)'
 
         return (
           <div key={sinner.id} className="relative" style={{ overflow: 'visible' }}>
@@ -97,10 +101,10 @@ export function IdentityTab({
               style={{
                 aspectRatio: '2/3',
                 background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                border: `0.09375rem ${identity ? 'solid' : 'dashed'} ${identity ? (isFormed ? 'rgba(200,144,10,0.5)' : '#2a2015') : '#2a2015'}`,
+                border: `0.09375rem ${identity ? 'solid' : 'dashed'} ${identity ? (isFormed ? formationBorder : '#2a2015') : '#2a2015'}`,
                 borderRadius: '0.25rem',
                 overflow: 'hidden',
-                boxShadow: identity && isFormed ? '0 0 0.5rem rgba(200,144,10,0.2)' : 'none',
+                boxShadow: identity && isFormed ? `0 0 0.5rem ${isBackup ? 'rgba(90,176,208,0.2)' : 'rgba(200,144,10,0.2)'}` : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -135,8 +139,8 @@ export function IdentityTab({
               {/* 편성 순서 오버레이 */}
               {identity && isFormed && (
                 <div className="absolute inset-0 flex items-center justify-center z-[15] pointer-events-none" style={{ background: 'rgba(13,11,8,0.5)' }}>
-                  <span className="text-[0.875rem] sm:text-[1.125rem]" style={{ fontWeight: 700, fontFamily: 'var(--font-body)', color: '#e8b030', textShadow: '0 0 0.75rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)' }}>편성</span>
-                  <span className="text-[1.25rem] sm:text-[1.75rem]" style={{ fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: '#e8b030', textShadow: '0 0 1rem rgba(200,144,10,0.7), 0 0.125rem 0.5rem rgba(0,0,0,1)', marginLeft: '0.25rem' }}>{formIdx + 1}</span>
+                  <span className="text-[0.875rem] sm:text-[1.125rem]" style={{ fontWeight: 700, fontFamily: 'var(--font-body)', color: formationColor, textShadow: `0 0 0.75rem ${formationGlow}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>{isBackup ? '대기' : '편성'}</span>
+                  <span className="text-[1.25rem] sm:text-[1.75rem]" style={{ fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: formationColor, textShadow: `0 0 1rem ${formationGlow}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>{formIdx + 1}</span>
                 </div>
               )}
 

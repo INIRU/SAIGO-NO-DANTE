@@ -13,6 +13,7 @@ export function useAutoFontSize(
   minRem: number,
   maxWidthPx: number,
   fontFamily: string = 'var(--font-kotra-bold), serif',
+  fontWeight: number | string = 700,
 ): number {
   const [fontSizeRem, setFontSizeRem] = useState(maxRem)
 
@@ -35,13 +36,20 @@ export function useAutoFontSize(
       // Resolve CSS variables (e.g. var(--font-kotra-bold)) to actual font-family names
       const rootStyle = getComputedStyle(document.documentElement)
       const resolvedFamily = fontFamily.replace(/var\(([^)]+)\)/g, (_, v) => rootStyle.getPropertyValue(v).trim() || '')
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
 
       for (let sizePx = maxPx; sizePx >= minPx; sizePx -= step) {
-        const font = `bold ${sizePx}px ${resolvedFamily}`
+        const font = `${fontWeight} ${sizePx}px ${resolvedFamily}`
+        const measuredWidth = (() => {
+          if (!context) return 0
+          context.font = font
+          return context.measureText(text).width
+        })()
         const prepared = prepare(text, font)
         const result = layout(prepared, maxWidthPx, sizePx * 1.2)
 
-        if (result.lineCount <= 1) {
+        if (result.lineCount <= 1 && measuredWidth <= maxWidthPx) {
           if (!cancelled) setFontSizeRem(sizePx / rootFontSize)
           return
         }
@@ -53,7 +61,7 @@ export function useAutoFontSize(
     })
 
     return () => { cancelled = true }
-  }, [text, maxRem, minRem, maxWidthPx, fontFamily])
+  }, [text, maxRem, minRem, maxWidthPx, fontFamily, fontWeight])
 
   return fontSizeRem
 }
