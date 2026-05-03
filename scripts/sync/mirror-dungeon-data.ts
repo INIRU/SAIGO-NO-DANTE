@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * sync-mirror-dungeon-data.ts
+ * mirror-dungeon-data.ts
  * 거울 던전 관련 전체 데이터 동기화 (TypeScript + Zod)
  *
  * Usage:
@@ -22,7 +22,6 @@ import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { z } from 'zod'
 import { config } from 'dotenv'
-import { triggerRevalidation } from './_revalidate'
 
 config({ path: '.env.local' })
 
@@ -49,7 +48,16 @@ const DO_RECIPES = !ANY_FILTER || RECIPES_ONLY
 // they render as the same visible root event. 971107 also points its illustId to
 // 971105, so keep 971105 as the display-canonical row and drop 971107 plus its
 // nextEventID child from the public DB target.
-const CANONICAL_EVENT_EXCLUDE_IDS = new Set<number>([971107])
+const CANONICAL_EVENT_EXCLUDE_IDS = new Set<number>([971107, 97110701])
+
+// Known same-event variants from older event sync logic. These should remain
+// reachable as event rows when present, but not appear as separate theme entries.
+const MANUAL_EVENT_VARIANT_PARENT = new Map<number, number>([
+  [900012, 900011], // 자판기 이벤트 (층별 동일)
+  [900013, 900011],
+  [971071, 971070], // 가시춘 학생의 수업 복습
+  [971072, 971070],
+])
 
 // ── Data dir ──────────────────────────────────────────────────────────────────
 const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
@@ -62,13 +70,41 @@ const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp')
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SECRET_KEY
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
 const supabase = createClient(supabaseUrl, supabaseKey)
 const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
+
+async function triggerRevalidation(options: { scope?: 'all-game-data' | 'announcements' } = {}): Promise<void> {
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL
+  const secret = process.env.REVALIDATION_SECRET
+  if (!siteUrl || !secret) {
+    console.warn('[sync] SITE_URL or REVALIDATION_SECRET not set — skipping revalidate')
+    return
+  }
+
+  try {
+    const res = await fetch(`${siteUrl}/api/revalidate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-revalidation-secret': secret,
+      },
+      body: JSON.stringify({ scope: options.scope ?? 'all-game-data' }),
+    })
+    if (!res.ok) {
+      console.warn(`[sync] revalidate call failed: ${res.status} ${res.statusText}`)
+      return
+    }
+    const data = await res.json().catch(() => ({}))
+    console.log('[sync] revalidated:', (data as { revalidated?: unknown }).revalidated)
+  } catch (err) {
+    console.warn('[sync] revalidate call threw:', err instanceof Error ? err.message : err)
+  }
+}
 
 const EVENT_IMAGE_ALIASES = new Map<number, number>([
   [971082, 971081],
@@ -2229,13 +2265,26 @@ async function syncEvents(): Promise<void> {
     const en = enTexts.get(eid)
     const jp = jpTexts.get(eid)
 
+    const numericParentId = String(eid).length === 8
+      ? Math.floor(eid / 100)
+      : null
+    const candidateVariantParentId =
+      childToParent.get(eid) ??
+      MANUAL_EVENT_VARIANT_PARENT.get(eid) ??
+      (numericParentId != null && allGameEvents.has(numericParentId) ? numericParentId : null)
+    const variantParentId =
+      candidateVariantParentId != null && allowedEvents.has(candidateVariantParentId)
+        ? candidateVariantParentId
+        : null
+
     // Theme IDs: tier 1 > tier 2 > tier 3 fallback
     const themeSet = eventToThemes.get(eid)
-    const themeIds: number[] | null = themeSet
+    const mappedThemeIds: number[] | null = themeSet
       ? [...themeSet]
       : nodepoolEventThemes.has(eid)
         ? nodepoolEventThemes.get(eid)!
         : (sourceToThemes[kr.source] ?? null)
+    const themeIds = variantParentId == null ? mappedThemeIds : null
 
     const evType: string | null = kr.source.startsWith('AbEvents')
       ? 'ab'
@@ -2257,7 +2306,7 @@ async function syncEvents(): Promise<void> {
       name_jp: jp?.name ?? null,
       desc_text_en: en?.desc ?? null,
       desc_text_jp: jp?.desc ?? null,
-      variant_of: null,
+      variant_of: variantParentId,
       event_type: evType,
       category: null,
     })

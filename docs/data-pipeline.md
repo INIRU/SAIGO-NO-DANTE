@@ -59,141 +59,75 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 
 ## 동기화 스크립트
 
-### 개요
+운영용 데이터 동기화 스크립트는 두 개만 유지한다. 둘 다 게임 클라이언트 JSON과 KR/EN/JP 로컬라이즈를 함께 읽으며, 기본 동작은 dry-run이다. `--fix` 실행은 dry-run 결과 확인 후 사용자 승인받고 수행한다.
 
 | 스크립트 | 런타임 | 설명 | 대상 테이블 |
 |----------|--------|------|-------------|
-| `sync/identity-data.ts` | tsx | 인격/스킬/패시브/EGO 출시일 통합 동기화 (TypeScript+Zod) | `identities`, `skills`, `passives`, `ego.release_date` |
-| `sync/mirror-dungeon-data.ts` | tsx | 거울 던전 전체 동기화 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `mirror_dungeon_events` |
-| `sync/game-data.mjs` | Node.js | 인격 + EGO 스킬 동기화 | `skills`, `ego_skills` |
-| `backfill-ego-release-dates.mjs` | Node.js | 로컬 게임 JSON `ego-*.txt`의 `updatedDate`로 EGO 출시일 백필 (dry-run 기본) | `ego.release_date` |
-| `sync/translations.mjs` | Node.js | EN/JP 게임 텍스트 동기화 (스킬/패시브/키워드/기프트) | `game_translations`, `skills`, `passives` |
-| `sync/wiki-namu.mjs` | Node.js | Namuwiki 레거시 동기화 (유지보수 전용) | `identities`, `ego`, `keyword_meta` |
+| `scripts/sync/identity-data.ts` | tsx | 인격 정보 전체 동기화. 인격 row, 인격 스킬, 패시브, EGO 스킬/패시브 로컬라이즈, EGO 출시일, 인격 획득처, 키워드 메타를 한 번에 처리 | `identities`, `skills`, `passives`, `ego`, `ego_skills`, `keyword_meta` |
+| `scripts/sync/mirror-dungeon-data.ts` | tsx | 거던 데이터 전체 동기화. E.G.O 기프트, 테마팩, 레시피, 이벤트/선택지, KR/EN/JP 이름·설명을 한 번에 처리 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices` |
 
-### sync-mirror-dungeon-data.ts (거울 던전 통합 동기화)
-
-TypeScript + Zod 기반 통합 동기화 스크립트. 4개 동기화 단계를 순차 실행.
+### identity-data.ts
 
 ```bash
-npx tsx scripts/sync/mirror-dungeon-data.ts [options]
+npx tsx scripts/sync/identity-data.ts --dry-run
+npx tsx scripts/sync/identity-data.ts --sinner yi-sang --dry-run
+npx tsx scripts/sync/identity-data.ts --fix
 ```
 
-**옵션:**
+주요 옵션:
 
 | 옵션 | 설명 |
 |------|------|
-| `--dry-run` | 비교만 수행 (기본값) |
-| `--fix` | DB 자동 수정 |
+| `--dry-run` | 비교만 수행. 기본값 |
+| `--fix` | DB 반영 |
+| `--sinner <slug>` | 특정 수감자만 처리 |
 | `--verbose` | 상세 로그 |
-| `--gifts-only` | EGO 기프트만 동기화 |
-| `--themes-only` | 테마팩만 동기화 |
-| `--recipes-only` | 레시피만 동기화 |
-| `--events-only` | 이벤트만 동기화 |
+| `--new-only` | 신규 인격 중심으로 확인 |
+| `--ego-only` | EGO 스킬/패시브 로컬라이즈만 처리 |
+| `--no-acquisition` | 인격 획득처 동기화 스킵 |
+| `--rewrite-acquisition-text` | 획득처 텍스트까지 소스 기준으로 재작성 |
+| `--no-enrich-gacha` | 가챠명 보강 스킵 |
+| `--keywords` | 기존 인격 `keywords` 필드도 업데이트 |
+| `--rebuild-keyword-meta` | `keyword_meta` 재구축 |
 
-**동기화 단계:**
+처리 범위:
 
-```
-[1/4] EGO 기프트 동기화 (syncGifts)
-  - ego-gift-mirrordungeon*.txt 로드
-  - KR 이름 매핑 (KR_EGOgift_*.txt)
-  - KR 효과 설명의 조건 문장에서 `activation_condition` 추출
-    - 예: `... 공격 스킬을 보유한 인격이 5인 이상` → `{ type: "keyword", keyword, count: 5 }`
-    - 예: `검계 소속 인격이 3인 이상` → `{ type: "affiliation", affiliation: "검계", count: 3 }`
-    - 예: `혈찬을 소모하는 스킬을 보유한 인격이 3인 이상` → `{ type: "skill", skill_condition: "혈찬 소모", count: 3 }`
-    - 추출 실패 시 기존 DB 값을 보존하며 null로 덮어쓰지 않음
-  - DB upsert (ego_gifts)
+- `KR/EN/JP_Personalities*`에서 `name_kr`, `name_en`, `name_jp` 구성
+- `personality-*`, `personality-skill-*`, `personality-passive-*`에서 인격 스탯, 스킬, 패시브 구성
+- `KR/EN/JP_Skills*`, `KR/EN/JP_Passive*`에서 스킬/패시브 로컬라이즈 구성
+- `KR/EN/JP_Skills_Ego*`, `KR/EN/JP_Passive_Ego*`에서 EGO 스킬/패시브 로컬라이즈 구성
+- `ego-*` true EGO 파일의 `updatedDate`로 `ego.release_date` 구성
+- `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*`에서 `acquisition`/`acquisition_info` 구성
+- `KR/EN/JP_BattleKeywords`, `Bufs`, `BuffAbilities`에서 키워드명/설명 보강
 
-[2/4] 테마팩 동기화 (syncThemes)
-  - mirrordungeon-theme-floor-t{1~6}.txt 로드
-  - KR/EN/JP 테마명 매핑 (`name`, `name_en`, `name_jp`)
-  - floor_info 구성 (난이도별)
-  - DB upsert (ego_gift_themes)
-
-[3/4] 레시피 동기화 (syncRecipes)
-  - mirror-dungeon-common-data-md7.txt → combineFixed 테이블
-  - KR 기프트명 매핑
-  - DB upsert (ego_gift_recipes)
-
-[4/4] 이벤트 동기화 (syncEvents)
-  - action/personality choice event 로드
-  - KR 이벤트 텍스트 매핑 (KR_ActionEvents_Mirror*, KR_AbEvents*)
-  - EN/JP 이벤트/선택지 텍스트 매핑 (ActionEvents/AbEvents)
-  - 테마별 이벤트 매핑
-  - 현재 테마팩 `eventPool`/`specialEventPool` root와 `nextEventID` child만 동기화 대상으로 사용
-  - source 근거가 명확한 current-pool 중복 visible 이벤트는 canonical winner만 유지
-  - 보상(rewards), `nextEventID`, result effects 추출 및 `md_event_choices.next_event_id/effects` 구성
-  - 연쇄 child 이벤트는 카드 목록에서 숨기고 parent 이벤트 모달에서 `next_event_id`로 중첩 표시
-  - DB 삽입 (dry-run 비교 기본, `--fix` 승인 후 반영)
-```
-
-### sync-game-data.mjs (인격 + EGO 스킬 동기화)
-
-게임 클라이언트 JSON에서 스킬 수치를 추출하여 DB에 동기화.
+### mirror-dungeon-data.ts
 
 ```bash
-node --env-file=.env.local scripts/sync/game-data.mjs [options]
+npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
+npx tsx scripts/sync/mirror-dungeon-data.ts --events-only --dry-run
+npx tsx scripts/sync/mirror-dungeon-data.ts --fix
 ```
 
-**옵션:**
+주요 옵션:
 
 | 옵션 | 설명 |
 |------|------|
-| `--dry-run` | 비교만 수행 (기본값) |
-| `--fix` | DB 자동 수정 |
-| `--sinner <slug>` | 특정 수감자만 동기화 |
+| `--dry-run` | 비교만 수행. 기본값 |
+| `--fix` | DB 반영 |
+| `--verbose` | 상세 로그 |
+| `--gifts-only` | E.G.O 기프트만 처리 |
+| `--themes-only` | 테마팩만 처리 |
+| `--recipes-only` | 레시피만 처리 |
+| `--events-only` | 이벤트/선택지만 처리 |
+| `--dump-events=<path>` | 이벤트 dry-run 타겟 JSON 덤프 |
 
-**동기화 내용:**
-- 인격 스킬: 업타이 3/4 각각 별도 row 삽입
-- EGO 스킬: 해석 3/4, 각성/침식 각각 별도 row 삽입
-- 코인 수, 위력, 스킬 타입, 죄악 속성 100% 정확 (게임 데이터 직접 추출)
-- KR 스킬 텍스트: `KR/KR_Skills*.json`에서 매핑
+처리 범위:
 
-> **주의:** 이 스크립트는 기존 DB에 존재하는 인격의 스킬만 sync한다. 신규 인격 row 자체를 생성하지 않는다.
-
-### backfill-ego-release-dates.mjs (EGO 출시일 백필)
-
-로컬 게임 JSON의 true EGO 파일(`ego-1.txt`, `ego-a1c9p3.txt` 등)에서 `updatedDate`를 읽어 `YYYY-MM-DD`로 변환하고, `limbus.ego.game_id` 기준으로 `release_date`를 비교한다. `ego-skill-*`, `ego-gift-*`, `ego-empty*` 계열은 출시일 소스가 아니므로 제외한다.
-
-```bash
-node --env-file=.env.local scripts/backfill-ego-release-dates.mjs --dry-run
-node --env-file=.env.local scripts/backfill-ego-release-dates.mjs --fix
-```
-
-**옵션:**
-
-| 옵션 | 설명 |
-|------|------|
-| `--dry-run` | 비교만 수행 (기본값) |
-| `--fix` | DB 자동 수정. `limbus.ego.release_date` 마이그레이션 적용 후 승인받고 실행 |
-| `--data-dir <path>` | 로컬 게임 JSON 경로 오버라이드 |
-
-> **주의:** 이 스크립트는 dry-run 결과로 matched/changed/missing/ambiguous counts를 먼저 확인한 뒤에만 `--fix`를 실행한다.
-
-### sync-wiki-namu.mjs (Namuwiki 레거시)
-
-Namuwiki에서 인격/EGO 데이터를 추출. **신규 스크래핑 금지** - 기존 스크립트 유지보수만.
-
-```bash
-node --env-file=.env.local scripts/sync/wiki-namu.mjs --sinner ryoshu --dry-run
-node --env-file=.env.local scripts/sync/wiki-namu.mjs --fix
-```
-
-**옵션:** `--sinner <slug>`, `--dry-run` (기본값), `--fix`, `--identity-only`, `--ego-only`, `--verbose`
-
----
-
-## 시딩 스크립트
-
-| 스크립트 | 설명 |
-|----------|------|
-| `seed/sinners.mjs` | 12 수감자 기본 데이터 |
-| `seed/keyword-icons.mjs` | 키워드 icon_slug + sin_affinity 매핑 |
-| `seed/spider-house-identities.mjs` | 신규 인격 삽입 템플릿 |
-
-**실행:**
-```bash
-node --env-file=.env.local scripts/seed/sinners.mjs
-```
+- `ego-gift-mirrordungeon*`와 KR/EN/JP `EGOgift*`에서 기프트/효과/로컬라이즈 구성
+- `mirrordungeon-theme-floor-*`와 KR/EN/JP `MirrorDungeonTheme*`에서 테마팩/난이도/층/로컬라이즈 구성
+- `mirror-dungeon-common-data-md7`에서 조합 레시피 구성
+- `ActionEvents*`, `AbEvents*`, `choice-event`에서 이벤트/선택지/보상/`nextEventID` 구성
+- 테마 이벤트는 루트 이벤트만 테마에 연결하고, 하위 이벤트와 known duplicate는 `variant_of`로 묶어 중복 노출을 방지
 
 ---
 
@@ -212,8 +146,8 @@ node --env-file=.env.local scripts/seed/sinners.mjs
 └── Json (Text)/KR/KR_Skills_Ego.txt          ─────┤
                                                     │
                                                     ▼
-                                        sync-game-data.mjs
-                                        (--dry-run → --fix)
+                                        identity-data.ts (npx tsx)
+                                        (--dry-run -> 승인 후 --fix)
                                                     │
                                                     ▼
                                         ┌───────────────────┐
@@ -237,7 +171,7 @@ node --env-file=.env.local scripts/seed/sinners.mjs
 └── KR/KR_ActionEvents_Mirror*.txt           ──── [4/4] 이벤트 텍스트
        │
        ▼
-sync-mirror-dungeon-data.ts (npx tsx)
+mirror-dungeon-data.ts (npx tsx)
        │
        ▼
 ┌──────────────────────────────────────┐
@@ -245,126 +179,10 @@ sync-mirror-dungeon-data.ts (npx tsx)
 │  limbus.ego_gifts                    │
 │  limbus.ego_gift_themes              │
 │  limbus.ego_gift_recipes             │
-│  limbus.mirror_dungeon_events        │
+│  limbus.md_events                    │
+│  limbus.md_event_choices             │
 └──────────────────────────────────────┘
 ```
-
-### 신규 인격 추가 플로우
-
-```
-1. 패치 적용 후 데이터 추출
-       │
-       ▼
-2. 신규 ID 확인 (KR_Personalities.json 비교)
-       │
-       ▼
-3. 삽입 스크립트 실행 (seed-spider-house-identities.mjs 기반)
-   --dry-run → --fix
-       │
-       ▼
-4. 수동 필드 업데이트
-   ├── acquisition (획득 방법 텍스트)
-   ├── acquisition_info (JSONB)
-   └── keywords (전체 추출 키워드 배열, 기존 인격은 --keywords 필요)
-       │
-       ▼
-5. sync-game-data.mjs --fix (스킬 데이터 동기화)
-       │
-       ▼
-6. 에셋 업로드 (이미지 파이프라인)
-```
-
-### sync-identity-data.ts (인격/스킬/패시브/EGO 출시일 통합 동기화)
-
-TypeScript + Zod 기반 범용 인격 동기화 스크립트. 신규 인격 추가, 기존 인격 필드 업데이트, EGO 스킬/패시브 로케일 보강, EGO 출시일 비교/업데이트를 지원한다.
-EGO 스킬 보강 단계는 `KR_Skills_Ego*` 원문도 함께 읽어 `ego_skills.description`을 재생성하므로, 게임 태그에서 온 키워드 대괄호는 조건 태그와 분리해 정규화한다. 이 EGO 보강 단계도 `--sinner` 필터를 따른다.
-
-```bash
-npx tsx scripts/sync/identity-data.ts [options]
-```
-
-**옵션:**
-
-| 옵션 | 설명 |
-|------|------|
-| `--dry-run` | 비교만 수행 (기본값) |
-| `--fix` | DB 자동 수정 |
-| `--sinner <slug>` | 특정 수감자만 처리 |
-| `--verbose` | 상세 로그 |
-| `--new-only` | 신규 인격만 표시/처리 |
-| `--keywords` | 기존 인격 keywords 필드도 업데이트 |
-| `--rebuild-keyword-meta` | keyword_meta 테이블 재구축 |
-
-> **참고:** 이 스크립트가 `sync/game-data.mjs`의 상위 집합. 빈 DB라도 신규 인격 row, 인격 스킬, 패시브를 채우는 통합 경로로 사용할 것.
-> EGO 출시일은 로컬 게임 JSON true EGO 파일의 `updatedDate`를 `YYYY-MM-DD`로 변환해 `ego.release_date`에 반영한다. `--dry-run`은 비교만 수행하고, `--fix`는 `limbus.ego.release_date` 마이그레이션 적용 후 승인받고 실행한다.
-
-**인격 자동 동기화 계약:**
-- `identities.skill_keyword_list`: `personality-*.txt`의 `skillKeywordList`를 `KR_BattleKeywords`/태그 매핑으로 번역한 공식 대표 스킬 키워드. 일반 스탯과 같이 `--dry-run`에서 diff를 보여주고 `--fix`에서 자동 반영한다.
-- `identities.unit_keyword_list`: `personality-*.txt`의 `unitKeywordList`를 `KR_UnitKeyword` 매핑으로 번역한 유닛 태그 배열. E.G.O 기프트 조건 판정용으로 사용하며 소속 표시와 분리한다.
-- `identities.association_list`: `personality-*.txt`의 `associationList`를 `KR_AssociationName`/`KR_UnitKeyword` 매핑으로 번역한 표시 소속 배열. 원본 순서를 보존한다.
-- `identities.affiliation`: 기존 호환용 단일 대표 소속. `association_list`에서 `림버스 컴퍼니` 같은 broad base보다 `LCB`/`LCE`/`LCC`/`LCA` 등 구체 소속을 우선 선택한다.
-- `identities.quote`: `PersonalityVoiceDlg/KR_Voice_*.json`의 첫 `get_${gameId}_*` 항목 `dlg`를 인격 획득 대사로 자동 반영한다. LCB 기본 인격을 포함해 소스 대사가 있으면 insert/update payload에 포함하며, 소스가 없는 경우 기존 DB 값을 null로 덮지 않는다.
-- `identities.keywords`: `skillKeywordList`, `unitKeywordList`, `buffKeyword`, 패시브/스킬 본문 태그까지 모은 전체 키워드 매핑. 기존처럼 보호 필드이며, 기존 인격은 `--keywords`를 함께 줄 때만 업데이트한다.
-- migration 적용 전 환경에서는 새 배열 컬럼 select가 실패하면 해당 컬럼을 제외하고 재시도해 dry-run 비교를 계속한다. 실제 반영은 `supabase/migrations/*_add_identity_skill_keyword_list.sql` 적용 후 실행한다.
-
-### identity-acquisition.ts (인격 획득처 보정)
-
-`personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*`를 읽어 `identities.acquisition_info`를 비교/보정하는 스크립트.
-
-```bash
-npx tsx scripts/sync/identity-acquisition.ts --dry-run
-npx tsx scripts/sync/identity-acquisition.ts --id 10515,10805 --fix
-npx tsx scripts/sync/identity-acquisition.ts --all --fix
-```
-
-- 기본 동작은 기존 `acquisition` 텍스트를 보존하고 `acquisition_info`만 비교한다. 텍스트까지 재작성해야 할 때만 `--rewrite-text`를 명시한다.
-- `gacha-*`는 `bannerInfo.pickupIdList`만 release pickup 근거로 사용한다. `contents[*].*_pickup` 풀은 현재 특정 추출/복각 풀이 과거 인격을 포함할 수 있어 획득처 보정 근거로 쓰지 않는다.
-- 기존 DB에 있는 `release_season`, `exchange_from_season`, `target_sinner`, 이벤트 필드, 수동 분류(`attendance`, `event`, `limited`)는 보존한다. `exchange_from_season`은 UI에서 `release_season + 2` fallback을 쓰므로 신규로 중복 저장하지 않는다.
-- `--enrich-gacha`를 주면 `gacha_id/name` 계열 선택 필드까지 채운다. 기본 모드에서는 기존에 해당 필드가 있거나 신규 row일 때만 반영한다.
-- `--fix`는 dry-run diff 확인 후 승인받고 실행한다. 전체 반영은 `--all --fix`가 필요하다.
-
-### 덱 상시 키워드 백필
-
-```bash
-npx tsx scripts/backfill-deck-main-keywords.ts --dry-run
-npx tsx scripts/backfill-deck-main-keywords.ts --fix
-```
-
-- 대상 컬럼: `decks.main_keywords` (`text[]`, 최대 5개, 고정 키워드 집합)
-- 기본 백필은 편성 순서 1~7(`deck_identities.slot_order` 0~6)만 집계하며, 대기/미배정(`slot_order` 7~11/99)은 제외한다.
-- 화상/파열/침잠/호흡/진동/충전/출혈은 `identities.skill_keyword_list`만 사용한다. `identities.keywords`는 넓은 추출 필드이므로 덱 상시 키워드 조건 판정에 사용하지 않는다.
-- 참격/관통/타격은 허용된 `main_keywords` 값이지만 자동 백필/추천 집계에 포함하지 않는다. 이 세 키워드는 덱 빌더에서 사용자가 직접 선택한 경우에만 저장한다.
-- `--fix`는 dry-run 결과 확인 후 사용자 승인받고 실행한다.
-
----
-
-## 번역 동기화 스크립트
-
-루트 `scripts/` 아래의 번역 전용 스크립트들. 각각 대상 테이블/컬럼이 다름.
-
-| 스크립트 | 설명 | 대상 |
-|----------|------|------|
-| `sync/translations.mjs` | EN/JP 스킬/패시브/키워드/기프트 텍스트 → `game_translations` 및 `skills`/`passives` 직접 업데이트 | `game_translations`, `skills.name_en/jp`, `passives.name_en/jp` |
-| `sync-game-translations.mjs` | EN/JP 로케일 파일 → `game_translations` upsert (CLI 필터 지원) | `game_translations` |
-| `sync-keyword-translations.mjs` | `game_translations`에서 EN/JP 번역을 가져와 `keyword_meta` 컬럼 채움 | `keyword_meta.name_en/jp`, `description_en/jp` |
-| `sync-name-translations.mjs` | EN/JP 인격/EGO/수감자 이름을 각 테이블에 직접 채움 | `identities.name_en/jp`, `ego.name_en/jp`, `sinners.name_jp` |
-
-**번역 동기화 순서 (패치 후):**
-```bash
-# 1. 게임 텍스트 → game_translations
-node --env-file=.env.local scripts/sync-game-translations.mjs --dry-run
-node --env-file=.env.local scripts/sync-game-translations.mjs
-
-# 2. keyword_meta 번역 채움
-node --env-file=.env.local scripts/sync-keyword-translations.mjs --dry-run
-node --env-file=.env.local scripts/sync-keyword-translations.mjs
-
-# 3. 인격/EGO/수감자 이름 채움
-node --env-file=.env.local scripts/sync-name-translations.mjs --dry-run
-node --env-file=.env.local scripts/sync-name-translations.mjs
-```
-
----
 
 ## 에셋 파이프라인
 
@@ -382,17 +200,6 @@ Supabase Storage (limbus-assets 버킷)
        ▼
 프론트엔드 (next/image 최적화)
 ```
-
-### 에셋 업로드 스크립트
-
-| 스크립트 | 설명 |
-|----------|------|
-| `upload/assets.mjs` | 범용 이미지 업로드 |
-| `upload/keyword-icons.mjs` | 키워드 아이콘 업로드 |
-| `upload/missing-assets.mjs` | 누락 에셋 탐지 및 업로드 |
-| `upload/sinner-numbers.mjs` | 수감자 번호 이미지 업로드 |
-| `upload/skill-icons.mjs` | 스킬 아이콘 업로드 |
-| `scrape-keyword-icons.mjs` | Namuwiki에서 전용 키워드 아이콘 수집 + 업로드 |
 
 ### Google Drive 에셋 소스
 
@@ -454,14 +261,11 @@ Base URL: `https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/lim
 | 변수 | 용도 | 필수 |
 |------|------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 필수 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서비스 롤 키 (RLS 바이패스) | 필수 |
+| `SUPABASE_SECRET_KEY` 또는 `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서비스 롤 키 (RLS 바이패스) | 필수 |
 
 스크립트 실행 시 `.env.local`에서 환경 변수를 로드:
 ```bash
-# .mjs 스크립트
-node --env-file=.env.local scripts/sync/game-data.mjs --dry-run
-
-# .ts 스크립트 (dotenv 내장)
+npx tsx scripts/sync/identity-data.ts --dry-run
 npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 ```
 
@@ -472,9 +276,7 @@ npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
 1. 게임 클라이언트에서 JSON 데이터 추출
 2. `~/Documents/Limbus/assets/data/` 경로에 배치
 3. 신규 인격 확인: `KR_Personalities.json` 비교
-4. 신규 인격 삽입: 시딩 스크립트 (--dry-run 먼저)
-5. 스킬 동기화: `scripts/sync/game-data.mjs --dry-run` → `--fix`
-6. 거울 던전 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → `--fix`
-7. 획득처 보정: `npx tsx scripts/sync/identity-acquisition.ts --dry-run`으로 `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*` 기반 diff를 확인한 뒤 필요한 ID만 `--id <game_id> --fix`로 반영. 전체 반영은 dry-run 검토 후 `--all --fix`를 사용한다. quote는 KR PersonalityVoiceDlg `get_*` 소스가 없는 인격만 검토
-8. 에셋 업로드 (Google Drive → sharp → Supabase Storage)
-9. 프론트엔드 확인
+4. 인격 전체 동기화: `npx tsx scripts/sync/identity-data.ts --dry-run` → 승인 후 `--fix`
+5. 거던 전체 동기화: `npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run` → 승인 후 `--fix`
+6. 필요한 이미지 에셋은 별도 수동 작업으로 Supabase Storage에 업로드하고 DB URL/정적 매핑을 확인
+7. 프론트엔드 확인

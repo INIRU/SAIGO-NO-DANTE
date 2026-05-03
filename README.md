@@ -92,8 +92,11 @@ npx tsc --noEmit     # 타입 체크
 ### 데이터 동기화
 
 ```bash
-node --env-file=.env.local scripts/sync/wiki-namu.mjs --dry-run   # 전체 확인
-node --env-file=.env.local scripts/sync/wiki-namu.mjs --fix        # DB 반영
+npx tsx scripts/sync/identity-data.ts --dry-run        # 인격/EGO 전체 확인
+npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run  # 거던 전체 확인
+
+npx tsx scripts/sync/identity-data.ts --fix            # 승인 후 DB 반영
+npx tsx scripts/sync/mirror-dungeon-data.ts --fix      # 승인 후 DB 반영
 ```
 
 ## Project Structure

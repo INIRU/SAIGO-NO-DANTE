@@ -536,6 +536,7 @@ export const translations = {
   'mirrorDungeon.theme.autocompleteTheme': { ko: '테마팩', en: 'Theme', ja: 'テーマ' },
   'mirrorDungeon.theme.autocompleteGift': { ko: '기프트', en: 'Gift', ja: 'ギフト' },
   'mirrorDungeon.theme.selected': { ko: '선택됨', en: 'Selected', ja: '選択済み' },
+  'mirrorDungeon.theme.chainBattle': { ko: '장기 전투', en: 'Long Battle', ja: '長期戦闘' },
   'mirrorDungeon.theme.modalTitle': { ko: '테마 상세', en: 'Theme Details', ja: 'テーマ詳細' },
   'mirrorDungeon.theme.close': { ko: '닫기', en: 'Close', ja: '閉じる' },
   'mirrorDungeon.theme.countSuffix': { ko: '개', en: '', ja: '件' },

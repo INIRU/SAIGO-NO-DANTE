@@ -1,12 +1,19 @@
 'use client'
 
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import { getThemePackNameColor } from '@/lib/data/theme-pack-colors'
+import { getThemePackNameColor, getThemePackNameSegments } from '@/lib/data/theme-pack-colors'
+import {
+  getThemePackBaseImageUrl,
+  getThemePackBossLayerUrl,
+  getThemePackVisualConfig,
+  THEME_PACK_LAYER_IMAGES,
+} from '@/lib/data/theme-pack-visuals'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { Check } from 'lucide-react'
+import Image from 'next/image'
 import { useLocale } from 'next-intl'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
@@ -30,7 +37,7 @@ interface ThemePackCardProps {
 }
 
 const TITLE_MIN_FONT_REM = 0.9375
-const TITLE_SIDE_PADDING_REM = 0.5
+const TITLE_SIDE_PADDING_REM = 0.625
 const THEME_CARD_ASPECT_RATIO = '420/720'
 
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
@@ -49,6 +56,10 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const [minTitleOverflows, setMinTitleOverflows] = useState(false)
   const [titleSingleLineOverflows, setTitleSingleLineOverflows] = useState(false)
   const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+  const displayNameSegments = getThemePackNameSegments(numId, lang)
+  const visualConfig = getThemePackVisualConfig(numId)
+  const imageSrc = visualConfig ? getThemePackBaseImageUrl(numId) : theme.image_url
+  const chainBattleLabel = lang === 'en' ? 'Long Battle' : lang === 'ja' ? '長期戦闘' : '장기 전투'
   const fontSize = useAutoFontSize(displayName, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, 'var(--font-kotra-bold), serif')
   const shouldWrapTitle = titleSingleLineOverflows || minTitleOverflows || fontSize <= TITLE_MIN_FONT_REM + 0.001
   const giftCount = (theme.ego_gift_ids ?? []).length
@@ -79,7 +90,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
     observer.observe(element)
 
     return () => observer.disconnect()
-  }, [theme.image_url])
+  }, [imageSrc])
 
   useEffect(() => {
     if (!displayName || titleMeasureWidth <= 0) {
@@ -155,13 +166,13 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
       }}
     >
       {/* Selected indicator */}
-      {isSelected && !theme.image_url && (
+      {isSelected && !imageSrc && (
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
           <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
           <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
         </div>
       )}
-      {theme.image_url ? (
+      {imageSrc ? (
         <div
           className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]"
           style={{
@@ -171,13 +182,95 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           }}
         >
           <ImageWithFallback
-            src={theme.image_url}
+            src={imageSrc}
             alt={displayName}
             fill
             fallbackType="theme"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
             className="object-contain"
           />
+          {visualConfig && (
+            <>
+              {visualConfig.bossSpriteId && (
+                <Image
+                  src={getThemePackBossLayerUrl(visualConfig.bossSpriteId)}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  aria-hidden="true"
+                />
+              )}
+              {!visualConfig.hideLogo && visualConfig.kind === 'normal' && (
+                <Image
+                  src={THEME_PACK_LAYER_IMAGES.limbusLogo}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  aria-hidden="true"
+                />
+              )}
+              {visualConfig.showWarning && (
+                <Image
+                  src={THEME_PACK_LAYER_IMAGES.warning}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  aria-hidden="true"
+                />
+              )}
+              {visualConfig.showBaton && (
+                <Image
+                  src={THEME_PACK_LAYER_IMAGES.baton}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  aria-hidden="true"
+                />
+              )}
+              {visualConfig.kind === 'extreme' && (
+                <Image
+                  src={THEME_PACK_LAYER_IMAGES.extremeFrame}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  aria-hidden="true"
+                />
+              )}
+              {visualConfig.kind === 'normal' && (
+                <Image
+                  src={THEME_PACK_LAYER_IMAGES.vinyl}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                  className="pointer-events-none select-none object-contain"
+                  style={{ transform: 'translateY(-0.0625rem) scale(1.025)', transformOrigin: 'center top' }}
+                  aria-hidden="true"
+                />
+              )}
+              {visualConfig.showBaton && (
+                <div
+                  aria-hidden="true"
+                  className="absolute left-0 right-0 pointer-events-none select-none text-center font-sans"
+                  style={{
+                    top: visualConfig.kind === 'extreme' ? '29.8%' : '29.25%',
+                    color: '#5ff4e6',
+                    fontSize: '0.5rem',
+                    fontWeight: 500,
+                    lineHeight: 1.05,
+                    letterSpacing: '0.02em',
+                    textShadow: '0 0 0.25rem rgba(95,244,230,0.65), 0 0.0625rem 0 rgba(0,0,0,0.9)',
+                  }}
+                >
+                  {chainBattleLabel}
+                </div>
+              )}
+            </>
+          )}
           <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
 
           {/* Theme name */}
@@ -207,7 +300,13 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
                 WebkitLineClamp: shouldWrapTitle ? 2 : 1,
               } as CSSProperties}
             >
-              {displayName}
+              {displayNameSegments
+                ? displayNameSegments.map((segment, index) => (
+                    <span key={`${segment.text}-${index}`} style={{ color: segment.color ?? nameColor }}>
+                      {segment.text}
+                    </span>
+                  ))
+                : displayName}
             </div>
           </div>
 

@@ -210,7 +210,7 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 
 - RLS: 모든 사용자 읽기 가능
 - 인덱스: `sinner_id`, `skill_keyword_list` GIN, `unit_keyword_list` GIN, `association_list` GIN
-- sync: `scripts/sync/identity-data.ts`, 획득처 보정은 `scripts/sync/identity-acquisition.ts`
+- sync: `scripts/sync/identity-data.ts`가 인격 기본 정보, 스킬/패시브, 로컬라이즈, EGO 보강, 출시일, 획득처 보정을 함께 처리한다.
 
 ---
 
@@ -242,7 +242,7 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 | `description_jp` | TEXT | | 일본어 설명 (i18n) |
 
 - RLS: **비활성화** (⚠️ 보안 갭)
-- sync: `scripts/sync-skills.mjs`
+- sync: `scripts/sync/identity-data.ts`
 
 ---
 
@@ -505,7 +505,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 ```
 
 - RLS: 모든 사용자 읽기 가능
-- sync: `scripts/sync-ego-gift-themes.mjs`
+- sync: `scripts/sync/mirror-dungeon-data.ts`
 
 ---
 

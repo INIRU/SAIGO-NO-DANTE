@@ -80,7 +80,7 @@ limbus-archive/
 │   ├── constants/              # 게임 상수 (STORAGE_BASE, SIN_ICON_MAP 등)
 │   ├── utils/                  # 이미지 URL 헬퍼 (images.ts), 공통 유틸
 │   └── supabase/               # Supabase 클라이언트 설정
-├── scripts/                    # 데이터 동기화 스크립트 (.mjs)
+├── scripts/                    # 데이터 동기화 스크립트 (최종 2개 tsx)
 ├── public/                     # 정적 에셋 (폰트)
 ├── proxy.ts                    # 라우트 미들웨어 (점검 리다이렉트, 레이트 리밋)
 ├── tailwind.config.ts          # Tailwind 설정
@@ -94,9 +94,9 @@ limbus-archive/
 ```
 게임 클라이언트 JSON ──→ 동기화 스크립트 ──→ Supabase DB ──→ API Routes ──→ Client Components
         │                     │                   │              │               │
- Json (Text)/*.txt     sync-game-data.mjs    limbus.*      app/api/*     React 19 + SWR
- Json-2/*.json         sync-ego-gifts.mjs    테이블들       Route Handler  Zustand
- kr/*.json             seed-*.mjs                                         nuqs
+ Json (Text)/*.txt     identity-data.ts      limbus.*      app/api/*     React 19 + SWR
+ Json-2/*.json         mirror-dungeon-data.ts 테이블들      Route Handler  Zustand
+ kr/en/jp/*.json       로컬라이즈 포함                                   nuqs
 ```
 
 ### 1단계: 게임 데이터 추출
@@ -112,17 +112,16 @@ limbus-archive/
 ### 2단계: 동기화 스크립트
 
 ```bash
-node --env-file=.env.local scripts/sync/game-data.mjs --dry-run   # 프리뷰
-node --env-file=.env.local scripts/sync/game-data.mjs --fix        # DB 반영
+npx tsx scripts/sync/identity-data.ts --dry-run        # 인격 정보 전체 프리뷰
+npx tsx scripts/sync/identity-data.ts --fix            # 인격 정보 전체 DB 반영
+npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run  # 거던 데이터 전체 프리뷰
+npx tsx scripts/sync/mirror-dungeon-data.ts --fix      # 거던 데이터 전체 DB 반영
 ```
 
 | 스크립트 | 용도 |
 |----------|------|
-| `sync-game-data.mjs` | 인격/E.G.O 스킬 동기화 (업타이 3/4) |
-| `sync-ego-gifts.mjs` | E.G.O 기프트 동기화 |
-| `sync-wiki-namu.mjs` | Namuwiki 데이터 동기화 (레거시, 유지보수만) |
-| `seed-*.mjs` | 초기 데이터 시딩 (죄수, 키워드 아이콘, 법률 문서) |
-| `upload-*.mjs` | 이미지 에셋 → Supabase Storage 업로드 |
+| `identity-data.ts` | 인격 정보 전체 동기화 (로컬라이즈 포함) |
+| `mirror-dungeon-data.ts` | 거던 데이터 전체 동기화 (로컬라이즈 포함) |
 
 ### 3단계: Supabase DB
 

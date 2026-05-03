@@ -97,9 +97,21 @@ export default function ThemeModal({
     byKeyword[g.keyword].push(g)
   }
 
-  const themeEvents = (events ?? []).filter(ev =>
-    ev.theme_ids?.includes(theme.id) && (ev.theme_ids?.length ?? 0) <= 5
-  )
+  const allEventIds = new Set((events ?? []).map(ev => ev.id))
+  const themeEvents = (events ?? []).filter(ev => {
+    const numericParentId = String(ev.id).length === 8
+      ? Math.floor(ev.id / 100)
+      : null
+    const isNestedEvent =
+      ev.variant_of != null ||
+      (numericParentId != null && allEventIds.has(numericParentId))
+
+    return (
+      !isNestedEvent &&
+      ev.theme_ids?.includes(theme.id) &&
+      (ev.theme_ids?.length ?? 0) <= 5
+    )
+  })
 
   const displayName = getLocalizedName(
     { name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp },
