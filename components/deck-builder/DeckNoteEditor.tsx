@@ -306,6 +306,7 @@ interface Props {
   }[]
   formationOrder: string[]
   formationGiftKeywordCounts: Record<string, number>
+  allGiftKeywordCounts: Record<string, number>
   locale: SupportedLang
   description: string
   setDescription: (v: string) => void
@@ -444,7 +445,7 @@ function HeadingDropdown({
 export default function DeckNoteEditor({
   sinners, identities, deckSlots, egoSlots,
   skillsByIdentityId, passivesByIdentityId,
-  egoGifts, formationOrder, formationGiftKeywordCounts, locale,
+  egoGifts, formationOrder, formationGiftKeywordCounts, allGiftKeywordCounts, locale,
   description, setDescription,
   descPreview, setDescPreview,
 }: Props) {
@@ -572,12 +573,17 @@ export default function DeckNoteEditor({
 
   const egoGiftConditionLookup = useMemo(() => {
     const formationAffiliationCounts: Record<string, number> = {}
+    const allAffiliationCounts: Record<string, number> = {}
     const activeFormationIds = new Set(formationOrder.slice(0, 7))
+    const assignedIds = new Set(formationOrder)
 
     for (const [sinnerId, identity] of Object.entries(deckSlots)) {
       if (!identity) continue
       if (activeFormationIds.has(sinnerId) && identity.affiliation) {
         formationAffiliationCounts[identity.affiliation] = (formationAffiliationCounts[identity.affiliation] ?? 0) + 1
+      }
+      if (assignedIds.has(sinnerId) && identity.affiliation) {
+        allAffiliationCounts[identity.affiliation] = (allAffiliationCounts[identity.affiliation] ?? 0) + 1
       }
     }
 
@@ -586,13 +592,13 @@ export default function DeckNoteEditor({
       map[gift.name] = getGiftActivationConditionStatus({
         gift,
         formationKeywordCounts: formationGiftKeywordCounts,
-        allKeywordCounts: formationGiftKeywordCounts,
+        allKeywordCounts: allGiftKeywordCounts,
         formationAffiliationCounts,
-        allAffiliationCounts: formationAffiliationCounts,
+        allAffiliationCounts,
       })
     }
     return map
-  }, [deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
+  }, [allGiftKeywordCounts, deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
 
   const noteAcPool = useMemo((): AutocompleteSuggestion[] => {
     const pool: AutocompleteSuggestion[] = []

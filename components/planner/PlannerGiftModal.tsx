@@ -75,8 +75,8 @@ export function getGiftActivationConditionStatus({
   }
 
   if (formationHave >= cond.count) return null
-  if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formationHave}/${cond.count}` }
-  return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+  if (allHave >= cond.count) return { level: 'warn', text: `${label} 편성 ${formationHave}/${cond.count}, 대기 포함 ${allHave}/${cond.count}` }
+  return { level: 'unmet', text: `${label} 대기 포함 ${allHave}/${cond.count}` }
 }
 
 export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeClick, enhance, conditionStatus, recipe }: Props) {

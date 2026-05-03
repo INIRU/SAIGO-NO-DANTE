@@ -11,6 +11,7 @@ export type IdentityBrowserItem = {
   name_kr: string
   rarity: number
   keywords: string[]
+  skill_keyword_list?: string[]
   folder_name: string | null
   game_id: string | null
   // 스탯

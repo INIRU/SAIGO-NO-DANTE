@@ -33,20 +33,17 @@ interface ThemePackCardProps {
   showGiftCount?: boolean
 }
 
-const TITLE_MIN_FONT_REM = 0.9375
-const TITLE_SIDE_PADDING_PERCENT = 15
+const TITLE_MIN_FONT_REM = 0.5
+const TITLE_SIDE_PADDING_PERCENT = 6
 const THEME_CARD_ASPECT_RATIO = '416/684'
 
-function getPreferredKoreanTitleLines(title: string, shouldWrap: boolean): string[] | null {
-  if (!shouldWrap) return null
+const EXPLICIT_KOREAN_TITLE_LINES = new Map<string, string[]>([
+  ['어느 도서관의 어떤 책 속으로', ['어느 도서관의 어떤 책', '속으로']],
+])
 
-  const words = title.trim().split(/\s+/).filter(Boolean)
-  if (words.length < 3 || words[words.length - 1] !== '것') return null
-
-  return [
-    words.slice(0, -2).join(' '),
-    words.slice(-2).join(' '),
-  ].filter(Boolean)
+function getExplicitKoreanTitleLines(title: string, lang: SupportedLang): string[] | null {
+  if (lang !== 'ko') return null
+  return EXPLICIT_KOREAN_TITLE_LINES.get(title.replace(/\s+/g, ' ').trim()) ?? null
 }
 
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
@@ -60,24 +57,25 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
   const nameColor = getThemePackNameColor(numId)
   const titleTrackRef = useRef<HTMLDivElement>(null)
-  const titleTextRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
-  const [minTitleOverflows, setMinTitleOverflows] = useState(false)
-  const [titleSingleLineOverflows, setTitleSingleLineOverflows] = useState(false)
   const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang).replace(/\s+/g, ' ').trim()
   const displayNameSegments = getThemePackNameSegments(numId, lang)
+  const explicitTitleLines = displayNameSegments ? null : getExplicitKoreanTitleLines(displayName, lang)
+  const titleMeasureText = explicitTitleLines
+    ? explicitTitleLines.reduce((longest, line) => (line.length > longest.length ? line : longest), '')
+    : displayName
   const visualConfig = getThemePackVisualConfig(numId)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
   const titleFontFamily = lang === 'en'
-    ? 'var(--font-mikodacs), var(--font-kotra-bold), sans-serif'
+    ? 'var(--font-pretendard), system-ui, sans-serif'
     : lang === 'ja'
       ? 'var(--font-noto-jp), var(--font-kotra-bold), sans-serif'
       : 'var(--font-kotra-bold), var(--font-scdream), sans-serif'
-  const fontSize = useAutoFontSize(displayName, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily)
-  const shouldWrapTitle = titleSingleLineOverflows || minTitleOverflows || fontSize <= TITLE_MIN_FONT_REM + 0.001
-  const preferredTitleLines = lang === 'ko' && !displayNameSegments
-    ? getPreferredKoreanTitleLines(displayName, shouldWrapTitle)
-    : null
+  const titleFontWeight = lang === 'en' ? 650 : 700
+  const titleTextShadow = lang === 'en'
+    ? '0.04rem 0.04rem 0 rgba(0,0,0,0.95), 0.08rem 0.08rem 0.08rem rgba(0,0,0,0.65)'
+    : '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)'
+  const fontSize = useAutoFontSize(titleMeasureText, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -107,66 +105,6 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
 
     return () => observer.disconnect()
   }, [imageSrc])
-
-  useEffect(() => {
-    if (!displayName || titleMeasureWidth <= 0) {
-      setMinTitleOverflows(false)
-      return
-    }
-
-    let cancelled = false
-
-    const measureMinimumTitle = () => {
-      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-      const rootStyle = getComputedStyle(document.documentElement)
-      const resolvedFamily = titleFontFamily.replace(/var\(([^)]+)\)/g, (_, variableName) => {
-        return rootStyle.getPropertyValue(variableName).trim() || ''
-      })
-      const canvas = document.createElement('canvas')
-      const context = canvas.getContext('2d')
-
-      if (!context) return
-
-      context.font = `700 ${TITLE_MIN_FONT_REM * rootFontSize}px ${resolvedFamily}`
-      const measuredWidth = context.measureText(displayName).width
-
-      if (!cancelled) {
-        setMinTitleOverflows(measuredWidth > titleMeasureWidth)
-      }
-    }
-
-    measureMinimumTitle()
-    document.fonts?.ready.then(measureMinimumTitle)
-
-    return () => {
-      cancelled = true
-    }
-  }, [displayName, titleFontFamily, titleMeasureWidth])
-
-  useEffect(() => {
-    setTitleSingleLineOverflows(false)
-  }, [displayName, titleMeasureWidth])
-
-  useEffect(() => {
-    const element = titleTextRef.current
-    if (!element || titleSingleLineOverflows || shouldWrapTitle) return
-
-    let cancelled = false
-
-    const measureRenderedTitle = () => {
-      if (!cancelled) {
-        setTitleSingleLineOverflows(element.scrollWidth > element.clientWidth + 1)
-      }
-    }
-
-    const frameId = window.requestAnimationFrame(measureRenderedTitle)
-    document.fonts?.ready.then(measureRenderedTitle)
-
-    return () => {
-      cancelled = true
-      window.cancelAnimationFrame(frameId)
-    }
-  }, [displayName, fontSize, shouldWrapTitle, titleSingleLineOverflows])
 
   return (
     <button
@@ -219,32 +157,29 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
             }}
           >
             <div
-              ref={titleTextRef}
               className="text-center [--theme-title-cap:0.9375rem] sm:[--theme-title-cap:1.5rem]"
               style={{
                 '--theme-title-auto-size': `${fontSize}rem`,
                 color: nameColor,
                 fontFamily: titleFontFamily,
-                fontSize: shouldWrapTitle ? `${TITLE_MIN_FONT_REM}rem` : 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
-                fontWeight: 700,
-                lineHeight: 1.2,
-                textShadow: '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)',
+                fontSize: 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
+                fontWeight: titleFontWeight,
+                lineHeight: explicitTitleLines ? 1.08 : 1.2,
+                textShadow: titleTextShadow,
                 WebkitTextStroke: 0,
                 width: '100%',
                 maxWidth: '100%',
                 minWidth: 0,
                 paddingBlock: '0.125rem',
-                whiteSpace: shouldWrapTitle ? 'normal' : 'nowrap',
-                overflow: shouldWrapTitle ? 'hidden' : 'visible',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
                 overflowWrap: 'normal',
                 wordBreak: lang === 'ko' || lang === 'ja' ? 'keep-all' : 'normal',
-                display: preferredTitleLines ? 'block' : shouldWrapTitle ? '-webkit-box' : 'block',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: preferredTitleLines ? undefined : shouldWrapTitle ? 2 : 1,
+                display: 'block',
               } as CSSProperties}
             >
-              {preferredTitleLines
-                ? preferredTitleLines.map(line => (
+              {explicitTitleLines
+                ? explicitTitleLines.map(line => (
                     <span key={line} style={{ display: 'block', whiteSpace: 'nowrap' }}>
                       {line}
                     </span>

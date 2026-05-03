@@ -20,7 +20,6 @@ export interface EgoGift {
     count: number
   } | null
   is_synthesis: boolean
-  first_appearance: string | null
   related: string | null
   image_url: string | null
   acquisition: string | null
