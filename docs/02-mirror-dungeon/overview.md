@@ -102,6 +102,20 @@
 | 기프트 이미지 | `ego-gifts/ego-gift-{hash}.webp` |
 | 키워드 아이콘 | `icons/keywords/{slug}.webp` |
 
+### 테마팩 카드 표시 규칙
+
+테마팩 목록 카드의 기준 구현은 `components/ui/ThemePackCard.tsx`다. 신규 테마팩을 추가하거나 테마팩 이미지/이름 표시가 흔들릴 때는 이 컴포넌트와 `lib/data/theme-pack-visuals.ts`, `lib/data/theme-pack-colors.ts`를 함께 확인한다.
+
+- 카드 비율은 게임 테마팩 선택 이미지 기준 `416/684`를 유지한다.
+- 영어 테마팩명은 Dante Planner와 동일하게 `Mikodacs` 계열, `font-weight: 400`을 사용한다.
+- 한국어 테마팩명은 `KOTRA_BOLD`, `font-weight: 700`을 사용한다.
+- 일본어 테마팩명은 `Noto JP`를 우선하고 `KOTRA_BOLD`를 fallback으로 둔다.
+- 이름 줄바꿈 기준은 `어느 도서관의 어떤 책` 한 줄 폭이다. 이 기준보다 긴 이름은 2줄로 나누고, 짧은 이름은 한 줄을 유지한다.
+- 한국어 예외 줄바꿈은 `어느 도서관의 어떤 책 속으로` -> `어느 도서관의 어떤 책` / `속으로`처럼 명시 매핑한다.
+- 영어 긴 이름은 단어 단위로 양쪽 줄 길이가 비슷하도록 나눈다. 예: `Nest, Workshop, and Technology` -> `Nest, Workshop,` / `and Technology`.
+- `증오와 절망`, `타래 엮기`처럼 이름 안에 색이 분리되는 테마팩은 `lib/data/theme-pack-colors.ts`의 `THEME_PACK_SPECIAL_NAME_SEGMENTS`에 기록한다.
+- 새 테마팩 추가 후에는 `/ko/mirror-dungeon?tab=themes`와 `/en/mirror-dungeon?tab=themes`에서 카드 밖으로 제목이 나가지 않는지 브라우저로 확인한다. 최소 확인값은 제목 overflow 0건이다.
+
 ## 레시피 (조합)
 
 고정 조합: 재료 기프트 3개를 합성하여 결과 기프트 1개를 획득.
