@@ -50,7 +50,7 @@ import SkillFrame from '@/components/identity/SkillFrame'
 import GiftCard from '@/components/ui/GiftCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
-import { getGiftActivationConditionStatus } from '@/components/planner/PlannerGiftModal'
+import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'
 import type { SupportedLang } from '@/lib/i18n/types'
 
