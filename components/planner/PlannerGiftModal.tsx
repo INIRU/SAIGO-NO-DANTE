@@ -10,6 +10,7 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { OCTAGON_CLIP, GRADE_ROMAN, getGiftKeywordColor } from '@/lib/constants/gift'
 import BaseModal from '@/components/ui/BaseModal'
 import { normalizeForStats, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { countGiftConditionAffiliations, normalizeGiftAffiliationLabel } from '@/lib/decks/keyword-rules'
 
 const S = STORAGE_BASE
 
@@ -67,9 +68,9 @@ export function getGiftActivationConditionStatus({
     label = cond.keywords.join('+')
   } else if (cond.type === 'affiliation') {
     const affiliations = cond.affiliations ?? (cond.affiliation ? [cond.affiliation] : [])
-    formationHave = affiliations.reduce((sum, affiliation) => sum + (formationAffiliationCounts[affiliation] ?? 0), 0)
-    allHave = affiliations.reduce((sum, affiliation) => sum + (allAffiliationCounts[affiliation] ?? 0), 0)
-    label = affiliations.join('/')
+    formationHave = countGiftConditionAffiliations(formationAffiliationCounts, affiliations)
+    allHave = countGiftConditionAffiliations(allAffiliationCounts, affiliations)
+    label = affiliations.map(normalizeGiftAffiliationLabel).join('/')
   } else {
     return null
   }

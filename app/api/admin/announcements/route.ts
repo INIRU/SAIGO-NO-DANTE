@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAuditLog } from '@/lib/audit'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { validateBody, createAnnouncementSchema } from '@/lib/schemas/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { isMissingAnnouncementLangColumn } from '@/lib/db/announcements'
 
 
 export async function GET() {
@@ -44,12 +46,24 @@ export async function POST(request: Request) {
     const body = parsed.data
 
     const supabase = createAdminClient()
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .schema('limbus')
       .from('announcements')
       .insert(body)
       .select()
       .single()
+
+    if (error && isMissingAnnouncementLangColumn(error)) {
+      const { lang: _lang, ...legacyBody } = body
+      const legacyResult = await supabase
+        .schema('limbus')
+        .from('announcements')
+        .insert(legacyBody)
+        .select()
+        .single()
+      data = legacyResult.data
+      error = legacyResult.error
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -58,6 +72,7 @@ export async function POST(request: Request) {
     writeAuditLog({ actorId: userId, action: 'announcement_create', targetType: 'announcement', targetId: data.id, details: { title: body.title } })
 
     revalidatePath('/')
+    revalidateTag(CACHE_TAGS.announcements, 'max')
     return NextResponse.json(data, { status: 201 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

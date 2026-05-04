@@ -67,11 +67,11 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const visualConfig = getThemePackVisualConfig(numId)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
   const titleFontFamily = lang === 'en'
-    ? 'var(--font-pretendard), system-ui, sans-serif'
+    ? 'var(--font-mikodacs), var(--font-scdream), system-ui, sans-serif'
     : lang === 'ja'
       ? 'var(--font-noto-jp), var(--font-kotra-bold), sans-serif'
       : 'var(--font-kotra-bold), var(--font-scdream), sans-serif'
-  const titleFontWeight = lang === 'en' ? 650 : 700
+  const titleFontWeight = 700
   const titleTextShadow = lang === 'en'
     ? '0.04rem 0.04rem 0 rgba(0,0,0,0.95), 0.08rem 0.08rem 0.08rem rgba(0,0,0,0.65)'
     : '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)'

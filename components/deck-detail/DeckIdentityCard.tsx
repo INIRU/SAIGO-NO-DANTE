@@ -61,6 +61,9 @@ export type IdentityDetail = {
   folder_name: string | null
   game_id: string | null
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
   name?: string | null
   name_kr: string
   name_en?: string | null

@@ -6,6 +6,7 @@ import { Search, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import type { ActivationCondition } from '@/lib/data/sinners'
+import { normalizeGiftAffiliationLabel } from '@/lib/decks/keyword-rules'
 
 interface GiftStatus {
   name: string
@@ -203,9 +204,12 @@ export default function EgoGiftModal({ open, onClose, activatableGifts, getIconU
             <div className="flex flex-col gap-1">
               {filtered.map(g => {
                 const c = g.condition
+                const affiliationLabel = c.type === 'affiliation'
+                  ? (c.affiliations ?? (c.affiliation ? [c.affiliation] : [])).map(normalizeGiftAffiliationLabel).join('/')
+                  : ''
                 const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
                   : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
-                  : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
+                  : c.type === 'affiliation' ? `${affiliationLabel} ${c.count}인`
                   : `${c.count}인`
                 const pct = Math.min(g.current / c.count, 1)
                 const kwIcon = getIconUrl(g.keyword) ?? (ATK_TYPE_ICON_MAP as Record<string, string>)[g.keyword] ?? null

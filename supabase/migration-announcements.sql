@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS limbus.announcements (
   title       TEXT NOT NULL,
   content     TEXT NOT NULL DEFAULT '',
   pinned      BOOLEAN DEFAULT FALSE,
+  lang        VARCHAR(5) NOT NULL DEFAULT 'ko' CHECK (lang IN ('ko', 'en', 'ja')),
   created_at  TIMESTAMPTZ DEFAULT now(),
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
