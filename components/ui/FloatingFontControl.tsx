@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { usePathname } from '@/lib/i18n/navigation'
-import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus } from 'lucide-react'
-import { springTransition } from '@/lib/animations'
 
 const FONT_SIZES = ['small', 'default', 'large'] as const
 type FontSize = (typeof FONT_SIZES)[number]
@@ -20,19 +18,18 @@ function isAllowedPage(path: string): boolean {
   )
 }
 
-// Layout spring — snappy morph between collapsed/expanded
-const layoutSpring = { type: 'spring', stiffness: 500, damping: 35 } as const
-
 export default function FloatingFontControl() {
   const pathname = usePathname()
   const allowed = isAllowedPage(pathname ?? '')
   const [fontSize, setFontSize] = useState<FontSize>('default')
   // Controls whether the panel is visible at all (entrance delay)
   const [mounted, setMounted] = useState(false)
+  // CSS entrance state; separated from mount so the browser can interpolate.
+  const [entered, setEntered] = useState(false)
   // Controls whether the expanded controls are shown
   const [expanded, setExpanded] = useState(false)
   // Tracks font size change for label pulse animation
-  const [labelKey, setLabelKey] = useState(0)
+  const [labelPulse, setLabelPulse] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   // localStorage 복원
@@ -59,21 +56,29 @@ export default function FloatingFontControl() {
   useEffect(() => {
     if (!allowed) {
       setMounted(false)
+      setEntered(false)
       setExpanded(false)
       return
     }
     setMounted(false)
+    setEntered(false)
     setExpanded(false)
     // Delay entrance by 0.8s (matches original GSAP delay)
+    let expandTimer: ReturnType<typeof setTimeout> | undefined
+    let frame = 0
     const entranceTimer = setTimeout(() => {
       setMounted(true)
+      frame = requestAnimationFrame(() => setEntered(true))
       // Auto-expand on desktop after entrance animation completes (0.5s + 0.3s gap)
       if (window.innerWidth >= 1024) {
-        const expandTimer = setTimeout(() => setExpanded(true), 800)
-        return () => clearTimeout(expandTimer)
+        expandTimer = setTimeout(() => setExpanded(true), 800)
       }
     }, 800)
-    return () => clearTimeout(entranceTimer)
+    return () => {
+      clearTimeout(entranceTimer)
+      if (expandTimer) clearTimeout(expandTimer)
+      if (frame) cancelAnimationFrame(frame)
+    }
   }, [allowed])
 
   // 외부 클릭/터치 닫기
@@ -99,200 +104,165 @@ export default function FloatingFontControl() {
       localStorage.setItem('font-size', next)
       if (next === 'default') delete document.documentElement.dataset.fontSize
       else document.documentElement.dataset.fontSize = next
-      setLabelKey(k => k + 1)
+      setLabelPulse(true)
       return next
     })
   }, [])
 
-  if (!allowed) return null
+  useEffect(() => {
+    if (!labelPulse) return
+    const timer = setTimeout(() => setLabelPulse(false), 220)
+    return () => clearTimeout(timer)
+  }, [labelPulse])
+
+  if (!allowed || !mounted) return null
 
   const isMinSize = fontSize === 'small'
   const isMaxSize = fontSize === 'large'
 
   return (
-    <AnimatePresence>
-      {mounted && (
-        <motion.div
-          ref={wrapRef}
-          // layout: container auto-morphs between collapsed/expanded sizes
-          layout
-          // Entrance: slide up + spring bounce + slight tilt
-          initial={{ y: '4rem', opacity: 0, scale: 0.88, rotate: -4 }}
-          animate={{ y: 0, opacity: 1, scale: 1, rotate: 0 }}
-          exit={{ scale: 0.82, opacity: 0, y: '1.5rem' }}
-          transition={{
-            layout: layoutSpring,
-            y: { type: 'spring', stiffness: 200, damping: 22 },
-            opacity: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] },
-            scale: { type: 'spring', stiffness: 280, damping: 22 },
-            rotate: { type: 'spring', stiffness: 180, damping: 20 },
-          }}
-          onClick={() => { if (!expanded) setExpanded(true) }}
-          className="fixed bottom-5 left-4 z-[45] flex items-center rounded-full"
+    <div
+      ref={wrapRef}
+      onClick={() => { if (!expanded) setExpanded(true) }}
+      onKeyDown={(e) => {
+        if (!expanded && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          setExpanded(true)
+        } else if (expanded && e.key === 'Escape') {
+          setExpanded(false)
+        }
+      }}
+      className="fixed bottom-5 left-4 z-[45] flex items-center rounded-full transition-[opacity,transform,padding,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.04] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+      style={{
+        padding: expanded ? '0.375rem 0.625rem' : '0.375rem',
+        height: '2.5rem',
+        gap: '0.5rem',
+        background: 'rgba(20, 16, 12, 0.92)',
+        border: '1px solid rgba(200, 144, 10, 0.25)',
+        backdropFilter: 'blur(1rem)',
+        WebkitBackdropFilter: 'blur(1rem)',
+        boxShadow: expanded
+          ? '0 0.25rem 1.5rem rgba(0,0,0,0.55), 0 0 1rem rgba(200,144,10,0.18)'
+          : '0 0.25rem 1.5rem rgba(0,0,0,0.5), 0 0 0.5rem rgba(200,144,10,0.08)',
+        cursor: expanded ? 'default' : 'pointer',
+        opacity: entered ? 1 : 0,
+        transform: entered ? 'translateY(0) scale(1) rotate(0)' : 'translateY(4rem) scale(0.88) rotate(-4deg)',
+        transformOrigin: 'left bottom',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+      role={expanded ? undefined : 'button'}
+      tabIndex={expanded ? -1 : 0}
+      aria-label={expanded ? undefined : '글자 크기 조절 열기'}
+    >
+      {!expanded ? (
+        <span
+          className="flex items-center justify-center select-none transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none"
           style={{
-            padding: expanded ? '0.375rem 0.625rem' : '0.375rem',
-            height: '2.5rem',
-            gap: '0.5rem',
-            background: 'rgba(20, 16, 12, 0.92)',
-            border: '1px solid rgba(200, 144, 10, 0.25)',
-            backdropFilter: 'blur(1rem)',
-            WebkitBackdropFilter: 'blur(1rem)',
-            boxShadow: expanded
-              ? '0 0.25rem 1.5rem rgba(0,0,0,0.55), 0 0 1rem rgba(200,144,10,0.18)'
-              : '0 0.25rem 1.5rem rgba(0,0,0,0.5), 0 0 0.5rem rgba(200,144,10,0.08)',
-            cursor: expanded ? 'default' : 'pointer',
-            WebkitTapHighlightColor: 'transparent',
-            // Isolate stacking context for hover z-index
-            position: 'fixed',
+            width: '1.75rem',
+            height: '1.75rem',
+            pointerEvents: 'none',
           }}
-          whileHover={expanded ? {} : {
-            scale: 1.08,
-            boxShadow: '0 0.25rem 1.5rem rgba(0,0,0,0.6), 0 0 0.875rem rgba(200,144,10,0.28)',
-          }}
-          whileTap={expanded ? {} : { scale: 0.95 }}
-          aria-label={expanded ? undefined : '글자 크기 조절 열기'}
         >
-          {/* ── Collapsed state: "Aa" pill ── */}
-          <AnimatePresence mode="wait" initial={false}>
-            {!expanded ? (
-              <motion.span
-                key="collapsed"
-                layout="position"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="flex items-center justify-center select-none"
-                style={{
-                  width: '1.75rem',
-                  height: '1.75rem',
-                  pointerEvents: 'none',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    color: 'var(--gold-light)',
-                    fontSize: '0.875rem',
-                    lineHeight: 1,
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  Aa
-                </span>
-              </motion.span>
-            ) : (
-              /* ── Expanded state: [−] [label] [+] ── */
-              <motion.div
-                key="expanded"
-                layout="position"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="flex items-center"
-                style={{ gap: '0.5rem' }}
-              >
-                {/* Minus button */}
-                <motion.button
-                  whileHover={isMinSize ? {} : {
-                    scale: 1.15,
-                    boxShadow: '0 0 0.5rem rgba(200,144,10,0.4)',
-                  }}
-                  whileTap={isMinSize ? {} : { scale: 0.88 }}
-                  onClick={(e) => { e.stopPropagation(); changeFontSize(-1) }}
-                  disabled={isMinSize}
-                  className="flex items-center justify-center rounded-full shrink-0"
-                  style={{
-                    width: '1.625rem',
-                    height: '1.625rem',
-                    background: isMinSize ? 'transparent' : 'rgba(200,144,10,0.1)',
-                    border: '1px solid',
-                    borderColor: isMinSize ? 'rgba(58,42,21,0.4)' : 'var(--gold-dim)',
-                    color: isMinSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
-                    cursor: isMinSize ? 'default' : 'pointer',
-                    transition: 'border-color 0.2s, color 0.2s, background 0.2s',
-                  }}
-                  aria-label="글자 크기 줄이기"
-                >
-                  <Minus style={{ width: '0.6875rem', height: '0.6875rem' }} />
-                </motion.button>
+          <span
+            style={{
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--gold-light)',
+              fontSize: '0.875rem',
+              lineHeight: 1,
+              letterSpacing: '0.02em',
+            }}
+          >
+            Aa
+          </span>
+        </span>
+      ) : (
+        /* ── Expanded state: [−] [label] [+] ── */
+        <div
+          className="flex items-center transition-[opacity] duration-150 ease-out motion-reduce:transition-none"
+          style={{ gap: '0.5rem' }}
+        >
+          {/* Minus button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); changeFontSize(-1) }}
+            disabled={isMinSize}
+            className="flex items-center justify-center rounded-full shrink-0 transition-[border-color,color,background,box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] enabled:hover:scale-110 enabled:hover:shadow-[0_0_0.5rem_rgba(200,144,10,0.4)] enabled:active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] motion-reduce:transition-none motion-reduce:enabled:hover:scale-100 motion-reduce:enabled:active:scale-100"
+            style={{
+              width: '1.625rem',
+              height: '1.625rem',
+              background: isMinSize ? 'transparent' : 'rgba(200,144,10,0.1)',
+              border: '1px solid',
+              borderColor: isMinSize ? 'rgba(58,42,21,0.4)' : 'var(--gold-dim)',
+              color: isMinSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
+              cursor: isMinSize ? 'default' : 'pointer',
+            }}
+            aria-label="글자 크기 줄이기"
+          >
+            <Minus aria-hidden="true" style={{ width: '0.6875rem', height: '0.6875rem' }} />
+          </button>
 
-                {/* Gold divider */}
-                <span
-                  style={{
-                    width: '1px',
-                    height: '1rem',
-                    background: 'rgba(200,144,10,0.2)',
-                    flexShrink: 0,
-                  }}
-                />
+          {/* Gold divider */}
+          <span
+            style={{
+              width: '1px',
+              height: '1rem',
+              background: 'rgba(200,144,10,0.2)',
+              flexShrink: 0,
+            }}
+          />
 
-                {/* Font size label — AnimatePresence for swap pulse on change */}
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.span
-                    key={labelKey}
-                    initial={{ opacity: 0, scale: 0.72, y: '0.25rem' }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.72, y: '-0.25rem' }}
-                    transition={{ ...springTransition, stiffness: 320, damping: 22 }}
-                    onClick={(e) => { e.stopPropagation(); setExpanded(false) }}
-                    className="text-center select-none cursor-pointer shrink-0"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      color: 'var(--gold-light)',
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.04em',
-                      WebkitTapHighlightColor: 'transparent',
-                      minWidth: '1.875rem',
-                      display: 'inline-block',
-                      whiteSpace: 'nowrap',
-                    }}
-                    aria-label="접기"
-                  >
-                    {LABELS[fontSize]}
-                  </motion.span>
-                </AnimatePresence>
+          {/* Font size label — click to collapse */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpanded(false)
+            }}
+            className="text-center select-none cursor-pointer shrink-0 transition-[color,opacity,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:text-[var(--gold)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] motion-reduce:transition-none motion-reduce:active:scale-100"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--gold-light)',
+              fontSize: '0.75rem',
+              letterSpacing: '0.04em',
+              WebkitTapHighlightColor: 'transparent',
+              minWidth: '1.875rem',
+              display: 'inline-block',
+              whiteSpace: 'nowrap',
+              transform: labelPulse ? 'scale(1.08) translateY(-0.0625rem)' : 'scale(1) translateY(0)',
+            }}
+            aria-label="접기"
+          >
+            {LABELS[fontSize]}
+          </button>
 
-                {/* Gold divider */}
-                <span
-                  style={{
-                    width: '1px',
-                    height: '1rem',
-                    background: 'rgba(200,144,10,0.2)',
-                    flexShrink: 0,
-                  }}
-                />
+          {/* Gold divider */}
+          <span
+            style={{
+              width: '1px',
+              height: '1rem',
+              background: 'rgba(200,144,10,0.2)',
+              flexShrink: 0,
+            }}
+          />
 
-                {/* Plus button */}
-                <motion.button
-                  whileHover={isMaxSize ? {} : {
-                    scale: 1.15,
-                    boxShadow: '0 0 0.5rem rgba(200,144,10,0.4)',
-                  }}
-                  whileTap={isMaxSize ? {} : { scale: 0.88 }}
-                  onClick={(e) => { e.stopPropagation(); changeFontSize(1) }}
-                  disabled={isMaxSize}
-                  className="flex items-center justify-center rounded-full shrink-0"
-                  style={{
-                    width: '1.625rem',
-                    height: '1.625rem',
-                    background: isMaxSize ? 'transparent' : 'rgba(200,144,10,0.1)',
-                    border: '1px solid',
-                    borderColor: isMaxSize ? 'rgba(58,42,21,0.4)' : 'var(--gold-dim)',
-                    color: isMaxSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
-                    cursor: isMaxSize ? 'default' : 'pointer',
-                    transition: 'border-color 0.2s, color 0.2s, background 0.2s',
-                  }}
-                  aria-label="글자 크기 키우기"
-                >
-                  <Plus style={{ width: '0.6875rem', height: '0.6875rem' }} />
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          {/* Plus button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); changeFontSize(1) }}
+            disabled={isMaxSize}
+            className="flex items-center justify-center rounded-full shrink-0 transition-[border-color,color,background,box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] enabled:hover:scale-110 enabled:hover:shadow-[0_0_0.5rem_rgba(200,144,10,0.4)] enabled:active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] motion-reduce:transition-none motion-reduce:enabled:hover:scale-100 motion-reduce:enabled:active:scale-100"
+            style={{
+              width: '1.625rem',
+              height: '1.625rem',
+              background: isMaxSize ? 'transparent' : 'rgba(200,144,10,0.1)',
+              border: '1px solid',
+              borderColor: isMaxSize ? 'rgba(58,42,21,0.4)' : 'var(--gold-dim)',
+              color: isMaxSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
+              cursor: isMaxSize ? 'default' : 'pointer',
+            }}
+            aria-label="글자 크기 키우기"
+          >
+            <Plus aria-hidden="true" style={{ width: '0.6875rem', height: '0.6875rem' }} />
+          </button>
+        </div>
       )}
-    </AnimatePresence>
+    </div>
   )
 }

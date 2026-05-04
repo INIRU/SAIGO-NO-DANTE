@@ -3,13 +3,13 @@
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import EgoDetailModal from '@/components/ui/EgoDetailModal'
-
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+
+const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
+const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 
 const S = STORAGE_BASE
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']

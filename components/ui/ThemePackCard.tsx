@@ -36,14 +36,65 @@ interface ThemePackCardProps {
 const TITLE_MIN_FONT_REM = 0.5
 const TITLE_SIDE_PADDING_PERCENT = 6
 const THEME_CARD_ASPECT_RATIO = '416/684'
+const TITLE_LINE_BREAK_REFERENCE = '어느 도서관의 어떤 책'
 
 const EXPLICIT_KOREAN_TITLE_LINES = new Map<string, string[]>([
   ['어느 도서관의 어떤 책 속으로', ['어느 도서관의 어떤 책', '속으로']],
 ])
 
-function getExplicitKoreanTitleLines(title: string, lang: SupportedLang): string[] | null {
-  if (lang !== 'ko') return null
-  return EXPLICIT_KOREAN_TITLE_LINES.get(title.replace(/\s+/g, ' ').trim()) ?? null
+function normalizeTitle(title: string): string {
+  return title.replace(/\s+/g, ' ').trim()
+}
+
+function getTitleVisualLength(title: string): number {
+  return Array.from(title).reduce((total, char) => {
+    if (/\s/.test(char)) return total + 0.3
+    if (/[\u3000-\u9fff\uac00-\ud7af]/.test(char)) return total + 1
+    if (/[A-Za-z0-9]/.test(char)) return total + 0.55
+    return total + 0.25
+  }, 0)
+}
+
+const TITLE_LINE_BREAK_LIMIT = getTitleVisualLength(TITLE_LINE_BREAK_REFERENCE)
+
+function splitTitleAtBestPoint(title: string): string[] {
+  const words = title.split(' ').filter(Boolean)
+
+  if (words.length <= 1) {
+    const chars = Array.from(title)
+    const midpoint = Math.ceil(chars.length / 2)
+    return [chars.slice(0, midpoint).join(''), chars.slice(midpoint).join('')]
+  }
+
+  let bestSplit = 1
+  let bestScore = Number.POSITIVE_INFINITY
+
+  for (let index = 1; index < words.length; index += 1) {
+    const first = words.slice(0, index).join(' ')
+    const second = words.slice(index).join(' ')
+    const firstLength = getTitleVisualLength(first)
+    const secondLength = getTitleVisualLength(second)
+    const score = Math.max(firstLength, secondLength) + Math.abs(firstLength - secondLength) * 0.4
+
+    if (score < bestScore) {
+      bestScore = score
+      bestSplit = index
+    }
+  }
+
+  return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')]
+}
+
+function getThemePackTitleLines(title: string, lang: SupportedLang): string[] {
+  const normalizedTitle = normalizeTitle(title)
+  const explicitTitleLines = lang === 'ko'
+    ? EXPLICIT_KOREAN_TITLE_LINES.get(normalizedTitle)
+    : null
+
+  if (explicitTitleLines) return explicitTitleLines
+  if (getTitleVisualLength(normalizedTitle) <= TITLE_LINE_BREAK_LIMIT) return [normalizedTitle]
+
+  return splitTitleAtBestPoint(normalizedTitle)
 }
 
 export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
@@ -58,11 +109,12 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
   const nameColor = getThemePackNameColor(numId)
   const titleTrackRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
-  const displayName = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang).replace(/\s+/g, ' ').trim()
+  const displayName = normalizeTitle(getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang))
   const displayNameSegments = getThemePackNameSegments(numId, lang)
-  const explicitTitleLines = displayNameSegments ? null : getExplicitKoreanTitleLines(displayName, lang)
-  const titleMeasureText = explicitTitleLines
-    ? explicitTitleLines.reduce((longest, line) => (line.length > longest.length ? line : longest), '')
+  const titleLines = displayNameSegments ? [displayName] : getThemePackTitleLines(displayName, lang)
+  const isMultilineTitle = !displayNameSegments && titleLines.length > 1
+  const titleMeasureText = titleLines.length > 1
+    ? titleLines.reduce((longest, line) => (getTitleVisualLength(line) > getTitleVisualLength(longest) ? line : longest), '')
     : displayName
   const visualConfig = getThemePackVisualConfig(numId)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
@@ -71,11 +123,12 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
     : lang === 'ja'
       ? 'var(--font-noto-jp), var(--font-kotra-bold), sans-serif'
       : 'var(--font-kotra-bold), var(--font-scdream), sans-serif'
-  const titleFontWeight = 700
+  const titleFontWeight = lang === 'en' ? 400 : 700
   const titleTextShadow = lang === 'en'
     ? '0.04rem 0.04rem 0 rgba(0,0,0,0.95), 0.08rem 0.08rem 0.08rem rgba(0,0,0,0.65)'
     : '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)'
-  const fontSize = useAutoFontSize(titleMeasureText, 1.5, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
+  const titleMaxFontRem = isMultilineTitle ? 1.05 : 1.5
+  const fontSize = useAutoFontSize(titleMeasureText, titleMaxFontRem, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -151,8 +204,8 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
             ref={titleTrackRef}
             className="absolute left-0 right-0 flex items-center justify-center"
             style={{
-              top: '74.6%',
-              height: '8.55%',
+              top: isMultilineTitle ? '72.6%' : '74.6%',
+              height: isMultilineTitle ? '11.5%' : '8.55%',
               paddingInline: `${TITLE_SIDE_PADDING_PERCENT}%`,
             }}
           >
@@ -164,7 +217,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
                 fontFamily: titleFontFamily,
                 fontSize: 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
                 fontWeight: titleFontWeight,
-                lineHeight: explicitTitleLines ? 1.08 : 1.2,
+                lineHeight: isMultilineTitle ? 1.02 : 1.2,
                 textShadow: titleTextShadow,
                 WebkitTextStroke: 0,
                 width: '100%',
@@ -178,8 +231,8 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
                 display: 'block',
               } as CSSProperties}
             >
-              {explicitTitleLines
-                ? explicitTitleLines.map(line => (
+              {isMultilineTitle
+                ? titleLines.map(line => (
                     <span key={line} style={{ display: 'block', whiteSpace: 'nowrap' }}>
                       {line}
                     </span>

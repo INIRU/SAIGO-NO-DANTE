@@ -99,7 +99,7 @@ const pretendard = localFont({
   weight: '400',
   variable: '--font-pretendard',
   display: 'swap',
-  preload: true,
+  preload: false,
   fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
