@@ -21,6 +21,7 @@ export default function GiftModal({
   gift,
   recipe,
   giftImageMap,
+  giftNameMap,
   onClose,
   getGiftKeywordIcon,
   themes = [],
@@ -29,6 +30,7 @@ export default function GiftModal({
   gift: EgoGift
   recipe: Recipe | null
   giftImageMap: Map<string, string>
+  giftNameMap: Map<string, string>
   onClose: () => void
   getGiftKeywordIcon: (keyword: string) => string | null
   themes?: EgoGiftTheme[]
@@ -53,6 +55,7 @@ export default function GiftModal({
       conditionOrMore: '인 이상',
       conditionPersonality: ' 인격',
       conditionAffiliation: ' 소속',
+      acquisitionPending: '',
     },
     en: {
       title: 'Gift Details',
@@ -65,6 +68,7 @@ export default function GiftModal({
       conditionOrMore: '+',
       conditionPersonality: ' Identity',
       conditionAffiliation: ' Affiliation',
+      acquisitionPending: 'Localized acquisition details are being prepared.',
     },
     ja: {
       title: 'ギフト詳細',
@@ -77,6 +81,7 @@ export default function GiftModal({
       conditionOrMore: '人以上',
       conditionPersonality: ' 人格',
       conditionAffiliation: ' 所属',
+      acquisitionPending: '入手方法のローカライズは準備中です。',
     },
   } as const)[lang] ?? ({
     title: '기프트 상세',
@@ -89,6 +94,7 @@ export default function GiftModal({
     conditionOrMore: '인 이상',
     conditionPersonality: ' 인격',
     conditionAffiliation: ' 소속',
+    acquisitionPending: '',
   } as const)
 
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
@@ -121,6 +127,18 @@ export default function GiftModal({
     : lang === 'ja'
     ? (KEYWORD_JP[gift.keyword] ?? gift.keyword)
     : gift.keyword
+  const localizeGiftName = (name: string): string => giftNameMap.get(name) ?? name
+  const localizeConditionKeyword = (keyword: string): string => {
+    if (lang === 'en') return KEYWORD_EN[keyword] ?? keyword
+    if (lang === 'ja') return KEYWORD_JP[keyword] ?? keyword
+    return keyword
+  }
+  const hasHangul = (text: string): boolean => /[\uac00-\ud7a3]/.test(text)
+  const acquisitionText = gift.acquisition
+    ? lang === 'ko' || !hasHangul(gift.acquisition)
+      ? gift.acquisition
+      : copy.acquisitionPending
+    : null
 
   const localizeRelated = (text: string): string => {
     if (lang === 'ko') return text
@@ -316,9 +334,9 @@ export default function GiftModal({
               let label: string = copy.condition
               let value: string = `${c.count}${unitSuffix}`
               if (c.type === 'keyword') {
-                label = `${c.keyword}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
+                label = `${localizeConditionKeyword(c.keyword ?? '')}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'multi_keyword') {
-                label = `${c.keywords!.join('+')}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
+                label = `${c.keywords!.map(localizeConditionKeyword).join('+')}${personalitySuffix}`; value = `${c.count}${orMoreSuffix}`
               } else if (c.type === 'affiliation') {
                 const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
                 label = `${affiliations.map(affiliation => getLocalizedAffiliation(affiliation, lang)).join('/')}${affiliationSuffix}`; value = `${c.count}${orMoreSuffix}`
@@ -333,7 +351,7 @@ export default function GiftModal({
           </div>
 
           {/* 획득 방법 */}
-          {gift.acquisition && (
+          {acquisitionText && (
             <div
               className="pt-2"
               style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
@@ -345,7 +363,7 @@ export default function GiftModal({
                 {copy.acquisition}
               </p>
               <p style={{ color: '#a09880', fontSize: '0.75rem', lineHeight: 1.6 }}>
-                {gift.acquisition}
+                {acquisitionText}
               </p>
             </div>
           )}
@@ -489,7 +507,7 @@ export default function GiftModal({
                         {giftImageMap.get(ing) && (
                           <Image src={giftImageMap.get(ing)!} alt="" width={16} height={16} className="flex-shrink-0" />
                         )}
-                        {ing}
+                        {localizeGiftName(ing)}
                       </span>
                     )}
                     {i < recipe.ingredients.length - 1 && (
@@ -508,13 +526,13 @@ export default function GiftModal({
                   {giftImageMap.get(recipe.result_name) && (
                     <Image src={giftImageMap.get(recipe.result_name)!} alt="" width={16} height={16} className="flex-shrink-0" />
                   )}
-                  {recipe.result_name}
+                  {localizeGiftName(recipe.result_name)}
                 </span>
               </div>
               {recipe.final_result && (
                 <p className="mt-2 text-[0.6875rem]" style={{ color: '#888' }}>
                   <span style={{ color: '#666' }}>{copy.finalSynthesis}:</span>{' '}
-                  <span style={{ color: '#e8b030' }}>{recipe.final_result}</span>
+                  <span style={{ color: '#e8b030' }}>{localizeGiftName(recipe.final_result)}</span>
                 </p>
               )}
             </div>

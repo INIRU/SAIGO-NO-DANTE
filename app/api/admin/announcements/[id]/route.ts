@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAuditLog } from '@/lib/audit'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { validateBody, updateAnnouncementSchema } from '@/lib/schemas/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { isMissingAnnouncementLangColumn } from '@/lib/db/announcements'
 
 
 export async function PATCH(
@@ -23,13 +26,27 @@ export async function PATCH(
     if (!parsed.success) return parsed.response
 
     const supabase = createAdminClient()
-    const { data, error } = await supabase
+    const updatePayload = { ...parsed.data, updated_at: new Date().toISOString() }
+    let { data, error } = await supabase
       .schema('limbus')
       .from('announcements')
-      .update({ ...parsed.data, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()
+
+    if (error && isMissingAnnouncementLangColumn(error)) {
+      const { lang: _lang, ...legacyUpdatePayload } = updatePayload
+      const legacyResult = await supabase
+        .schema('limbus')
+        .from('announcements')
+        .update(legacyUpdatePayload)
+        .eq('id', id)
+        .select()
+        .single()
+      data = legacyResult.data
+      error = legacyResult.error
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -37,6 +54,7 @@ export async function PATCH(
     const userId = await findOrCreateSupabaseUser(adminClient, session.user!.email!, session.user!.name, session.user!.image)
     writeAuditLog({ actorId: userId, action: 'announcement_update', targetType: 'announcement', targetId: id, details: { title: parsed.data.title } })
 
+    revalidateTag(CACHE_TAGS.announcements, 'max')
     return NextResponse.json(data)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
@@ -68,6 +86,7 @@ export async function DELETE(
     const delUserId = await findOrCreateSupabaseUser(adminClient2, session.user!.email!, session.user!.name, session.user!.image)
     writeAuditLog({ actorId: delUserId, action: 'announcement_delete', targetType: 'announcement', targetId: id })
 
+    revalidateTag(CACHE_TAGS.announcements, 'max')
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

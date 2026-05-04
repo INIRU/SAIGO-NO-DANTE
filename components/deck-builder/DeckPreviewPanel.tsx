@@ -8,6 +8,7 @@ import {
   type ActivationCondition,
 } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { normalizeGiftAffiliationLabel } from '@/lib/decks/keyword-rules'
 
 interface GiftStatus {
   name: string
@@ -191,9 +192,12 @@ function DeckPreviewPanel({
                     <div className="flex flex-col gap-1">
                       {filtered.map(g => {
                         const c = g.condition
+                        const affiliationLabel = c.type === 'affiliation'
+                          ? (c.affiliations ?? (c.affiliation ? [c.affiliation] : [])).map(normalizeGiftAffiliationLabel).join('/')
+                          : ''
                         const condLabel = c.type === 'keyword' ? `${c.keyword} ${c.count}인`
                           : c.type === 'multi_keyword' ? `${c.keywords!.join('+')} ${c.count}인`
-                          : c.type === 'affiliation' ? `${c.affiliation ?? c.affiliations!.join('/')} ${c.count}인`
+                          : c.type === 'affiliation' ? `${affiliationLabel} ${c.count}인`
                           : `${c.count}인`
                         const pct = Math.min(g.current / c.count, 1)
                         const kwIcon = getIconUrl(g.keyword) ?? ATK_TYPE_ICON_MAP[g.keyword] ?? null

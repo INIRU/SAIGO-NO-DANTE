@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2, Pin, ChevronDown } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useLocale } from 'next-intl'
 
 interface Announcement {
   id: string
@@ -13,6 +14,7 @@ interface Announcement {
 }
 
 export default function AnnouncementsClient() {
+  const locale = useLocale()
   const [items, setItems] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -21,19 +23,40 @@ export default function AnnouncementsClient() {
   function load() {
     setError(false)
     setLoading(true)
-    fetch('/api/announcements')
+    fetch(`/api/announcements?lang=${encodeURIComponent(locale)}`)
       .then(r => r.json())
       .then(res => setItems(res.data ?? []))
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [locale])
+
+  const copy = locale === 'en'
+    ? {
+        loading: 'Loading...',
+        loadError: 'Failed to load announcements.',
+        retry: 'Retry',
+        empty: 'No announcements yet.',
+      }
+    : locale === 'ja'
+      ? {
+          loading: '読み込み中...',
+          loadError: 'お知らせの読み込みに失敗しました。',
+          retry: '再試行',
+          empty: '登録されたお知らせはありません。',
+        }
+      : {
+          loading: '로딩 중...',
+          loadError: '공지사항을 불러오는 데 실패했습니다.',
+          retry: '다시 시도',
+          empty: '등록된 공지가 없습니다.',
+        }
 
   if (loading) {
     return (
       <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
-        <Loader2 size={14} className="animate-spin" /> 로딩 중...
+        <Loader2 size={14} className="animate-spin" /> {copy.loading}
       </div>
     )
   }
@@ -42,7 +65,7 @@ export default function AnnouncementsClient() {
     return (
       <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
         <p style={{ color: '#aa6644', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
-          공지사항을 불러오는 데 실패했습니다.
+          {copy.loadError}
         </p>
         <button
           onClick={load}
@@ -56,7 +79,7 @@ export default function AnnouncementsClient() {
             cursor: 'pointer',
           }}
         >
-          다시 시도
+          {copy.retry}
         </button>
       </div>
     )
@@ -68,7 +91,7 @@ export default function AnnouncementsClient() {
         className="card"
         style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}
       >
-        등록된 공지가 없습니다.
+        {copy.empty}
       </div>
     )
   }

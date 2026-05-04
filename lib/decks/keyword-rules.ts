@@ -17,6 +17,8 @@ export type DeckKeywordSkill = {
 export type DeckKeywordIdentity = {
   keywords?: string[] | null
   skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
   skills?: DeckKeywordSkill[] | null
 }
 
@@ -130,4 +132,78 @@ export function computeFormationGiftKeywordCounts(slots: readonly DeckKeywordSlo
 
 export function computeAllGiftKeywordCounts(slots: readonly DeckKeywordSlot[]): Record<string, number> {
   return computeKeywordCounts(slots, isAssignedKeywordSlot).counts
+}
+
+export function normalizeGiftAffiliationLabel(value: string): string {
+  return value
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—•·:：]+/, '')
+    .trim()
+}
+
+export function getDeckIdentityAffiliations(identity: DeckKeywordIdentity | null | undefined): string[] {
+  if (!identity) return []
+  const affiliations = new Set<string>()
+  const add = (value: string | null | undefined) => {
+    if (!value) return
+    const normalized = normalizeGiftAffiliationLabel(value)
+    if (normalized) affiliations.add(normalized)
+  }
+  add(identity.affiliation)
+  for (const affiliation of identity.association_list ?? []) add(affiliation)
+  return Array.from(affiliations)
+}
+
+function computeAffiliationCounts(
+  slots: readonly DeckKeywordSlot[],
+  includeSlot: (slotOrder: number | null | undefined) => boolean,
+): Record<string, number> {
+  const counts: Record<string, number> = {}
+
+  for (const slot of slots) {
+    if (!includeSlot(slot.slot_order)) continue
+    for (const affiliation of getDeckIdentityAffiliations(getSlotIdentity(slot))) {
+      counts[affiliation] = (counts[affiliation] ?? 0) + 1
+    }
+  }
+
+  return counts
+}
+
+export function computeFormationGiftAffiliationCounts(slots: readonly DeckKeywordSlot[]): Record<string, number> {
+  return computeAffiliationCounts(slots, isFormationKeywordSlot)
+}
+
+export function computeAllGiftAffiliationCounts(slots: readonly DeckKeywordSlot[]): Record<string, number> {
+  return computeAffiliationCounts(slots, isAssignedKeywordSlot)
+}
+
+export function countGiftConditionAffiliations(
+  counts: Record<string, number>,
+  rawAffiliations: readonly string[],
+): number {
+  const usedKeys = new Set<string>()
+  let total = 0
+
+  for (const rawAffiliation of rawAffiliations) {
+    const affiliation = normalizeGiftAffiliationLabel(rawAffiliation)
+    const exact = counts[affiliation]
+    if (exact !== undefined) {
+      if (!usedKeys.has(affiliation)) {
+        usedKeys.add(affiliation)
+        total += exact
+      }
+      continue
+    }
+
+    for (const [key, count] of Object.entries(counts)) {
+      if (usedKeys.has(key)) continue
+      if (affiliation.endsWith(key) || affiliation.includes(` ${key}`)) {
+        usedKeys.add(key)
+        total += count
+      }
+    }
+  }
+
+  return total
 }

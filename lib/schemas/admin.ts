@@ -50,6 +50,7 @@ export const createAnnouncementSchema = z.object({
   title: z.string().min(1, '제목 필수').trim(),
   content: z.string().optional().default(''),
   pinned: z.boolean().optional().default(false),
+  lang: z.enum(['ko', 'en', 'ja']).optional().default('ko'),
 })
 
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>

@@ -51,6 +51,7 @@ import GiftCard from '@/components/ui/GiftCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { getGiftActivationConditionStatus } from '@/components/planner/PlannerGiftModal'
+import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 // 한국어 죄악명 → SinType
@@ -579,11 +580,16 @@ export default function DeckNoteEditor({
 
     for (const [sinnerId, identity] of Object.entries(deckSlots)) {
       if (!identity) continue
-      if (activeFormationIds.has(sinnerId) && identity.affiliation) {
-        formationAffiliationCounts[identity.affiliation] = (formationAffiliationCounts[identity.affiliation] ?? 0) + 1
+      const affiliations = getDeckIdentityAffiliations(identity)
+      if (activeFormationIds.has(sinnerId)) {
+        for (const affiliation of affiliations) {
+          formationAffiliationCounts[affiliation] = (formationAffiliationCounts[affiliation] ?? 0) + 1
+        }
       }
-      if (assignedIds.has(sinnerId) && identity.affiliation) {
-        allAffiliationCounts[identity.affiliation] = (allAffiliationCounts[identity.affiliation] ?? 0) + 1
+      if (assignedIds.has(sinnerId)) {
+        for (const affiliation of affiliations) {
+          allAffiliationCounts[affiliation] = (allAffiliationCounts[affiliation] ?? 0) + 1
+        }
       }
     }
 

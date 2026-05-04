@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getLatestIdentities } from '@/lib/db/queries'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
 import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
@@ -57,27 +57,9 @@ export type Announcement = {
   created_at: string
 }
 
-async function getPinnedAnnouncement(): Promise<Announcement | null> {
+async function getPinnedAnnouncement(lang: SupportedLang): Promise<Announcement | null> {
   try {
-    const supabase = createAdminClient()
-    // 핀 고정된 공지 우선
-    const { data: pinned } = await supabase
-      .schema('limbus')
-      .from('announcements')
-      .select('id, title, content, pinned, created_at')
-      .eq('pinned', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-    if (pinned?.[0]) return pinned[0]
-
-    // 핀 고정 없으면 최신 공지
-    const { data: latest } = await supabase
-      .schema('limbus')
-      .from('announcements')
-      .select('id, title, content, pinned, created_at')
-      .order('created_at', { ascending: false })
-      .limit(1)
-    return latest?.[0] ?? null
+    return getPinnedAnnouncementForLang(lang)
   } catch {
     return null
   }
@@ -150,13 +132,13 @@ function BelowFoldSkeleton() {
   )
 }
 
-async function getCachedHomeData() {
+async function getCachedHomeData(lang: SupportedLang) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities, CACHE_TAGS.sinners, CACHE_TAGS.announcements)
   const [latestIdentities, pinnedAnnouncement] = await Promise.all([
     getLatestIdentities(6),
-    getPinnedAnnouncement(),
+    getPinnedAnnouncement(lang),
   ])
   return { latestIdentities, pinnedAnnouncement }
 }
@@ -164,8 +146,9 @@ async function getCachedHomeData() {
 export default async function HomePage() {
   // cookies() is dynamic — call outside 'use cache'
   const locale = await getLocale()
-  setRequestLocale(locale)
-  const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData()
+  const lang = (locale === 'en' || locale === 'ja' ? locale : 'ko') as SupportedLang
+  setRequestLocale(lang)
+  const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData(lang)
 
   return (
     <>

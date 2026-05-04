@@ -27,7 +27,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-
 
 | 테이블 | 컬럼 수 | 설명 |
 |--------|---------|------|
-| `ego_gifts` | 29 | EGO 기프트 |
+| `ego_gifts` | 28 | EGO 기프트 |
 | `ego_gift_themes` | 16 | 테마팩 |
 | `ego_gift_recipes` | 6 | 기프트 조합 레시피 |
 | `md_events` | 15 | 거울 던전 이벤트 (신 설계) |
@@ -431,7 +431,6 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 | `effect_plus` | TEXT | | + 효과 (KR) |
 | `effect_plusplus` | TEXT | | ++ 효과 (KR) |
 | `is_synthesis` | BOOLEAN | DEFAULT false | 합성 기프트 여부 |
-| `first_appearance` | TEXT | | 최초 등장 |
 | `related` | TEXT | | 관련 정보 |
 | `image_url` | TEXT | | 이미지 URL |
 | `created_at` | TIMESTAMPTZ | DEFAULT now() | |
@@ -1051,6 +1050,7 @@ AI 자동화가 웹 커뮤니티 의견을 개별 표본으로 저장하는 테�
 | `title` | TEXT | NOT NULL | 공지 제목 |
 | `content` | TEXT | NOT NULL, DEFAULT '' | 공지 내용 |
 | `pinned` | BOOLEAN | DEFAULT false | 상단 고정 여부 |
+| `lang` | VARCHAR(5) | NOT NULL, DEFAULT `'ko'`, CHECK (`ko`/`en`/`ja`) | 공지 로케일 |
 | `created_at` | TIMESTAMPTZ | DEFAULT now() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT now() | |
 

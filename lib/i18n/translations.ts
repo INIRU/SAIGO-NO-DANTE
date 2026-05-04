@@ -592,7 +592,6 @@ export const translations = {
   'mirrorDungeon.gift.synthesis': { ko: '합성', en: 'Synthesis', ja: '合成' },
   'mirrorDungeon.gift.themes': { ko: '소속 테마팩', en: 'Theme Packs', ja: '所属テーマパック' },
   'mirrorDungeon.gift.acquisition': { ko: '획득 방법', en: 'Acquisition', ja: '獲得方法' },
-  'mirrorDungeon.gift.firstAppearance': { ko: '첫 등장', en: 'First Appearance', ja: '初登場' },
   'mirrorDungeon.gift.related': { ko: '관련', en: 'Related', ja: '関連' },
   'mirrorDungeon.gift.purchase': { ko: '구매', en: 'Purchase', ja: '購入' },
   'mirrorDungeon.gift.unavailable': { ko: '불가', en: 'Unavailable', ja: '不可' },

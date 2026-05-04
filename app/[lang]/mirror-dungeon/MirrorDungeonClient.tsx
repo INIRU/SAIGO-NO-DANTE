@@ -248,6 +248,14 @@ export default function MirrorDungeonClient({
     return map
   }, [gifts])
 
+  const giftNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    gifts.forEach(g => {
+      map.set(g.name, getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang))
+    })
+    return map
+  }, [gifts, lang])
+
   // 편성 전용 효과 슬롯 번호 파싱 (gift.id → Set<number>)
   const giftSlotMap = useMemo(() => {
     const map = new Map<string, Set<number>>()
@@ -521,6 +529,7 @@ export default function MirrorDungeonClient({
             gift={resolvedGift}
             recipe={recipeMap.get(selected.name) ?? null}
             giftImageMap={giftImageMap}
+            giftNameMap={giftNameMap}
             onClose={() => setSelected(null)}
             getGiftKeywordIcon={getGiftKeywordIcon}
             themes={themes}

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Pin, Pencil, X, Loader2 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
-  AdminCard, AdminInput, AdminTextarea, AdminCheckbox,
+  AdminCard, AdminInput, AdminTextarea, AdminCheckbox, AdminSelect,
   AdminButton, AdminIconButton,
 } from '@/components/admin'
 import { showSuccess, showError } from '@/lib/toast'
@@ -17,6 +17,7 @@ interface Announcement {
   title: string
   content: string
   pinned: boolean
+  lang: 'ko' | 'en' | 'ja'
   created_at: string
   updated_at: string
 }
@@ -32,6 +33,7 @@ export default function AdminAnnouncementsPage() {
     title: string
     content: string
     pinned: boolean
+    lang: 'ko' | 'en' | 'ja'
   }
 
   const {
@@ -42,7 +44,7 @@ export default function AdminAnnouncementsPage() {
   } = useForm<AnnouncementFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createAnnouncementSchema) as any,
-    defaultValues: { title: '', content: '', pinned: false },
+    defaultValues: { title: '', content: '', pinned: false, lang: 'ko' },
   })
 
   const fetchItems = async () => {
@@ -68,7 +70,7 @@ export default function AdminAnnouncementsPage() {
         return
       }
       setCreating(false)
-      reset({ title: '', content: '', pinned: false })
+      reset({ title: '', content: '', pinned: false, lang: 'ko' })
       showSuccess('공지가 작성되었습니다.')
       fetchItems()
     } else if (editing) {
@@ -83,7 +85,7 @@ export default function AdminAnnouncementsPage() {
         return
       }
       setEditing(null)
-      reset({ title: '', content: '', pinned: false })
+      reset({ title: '', content: '', pinned: false, lang: 'ko' })
       showSuccess('공지가 수정되었습니다.')
       fetchItems()
     }
@@ -101,19 +103,19 @@ export default function AdminAnnouncementsPage() {
   const startEdit = (a: Announcement) => {
     setEditing(a)
     setCreating(false)
-    reset({ title: a.title, content: a.content, pinned: a.pinned })
+    reset({ title: a.title, content: a.content, pinned: a.pinned, lang: a.lang ?? 'ko' })
   }
 
   const startCreate = () => {
     setCreating(true)
     setEditing(null)
-    reset({ title: '', content: '', pinned: false })
+    reset({ title: '', content: '', pinned: false, lang: 'ko' })
   }
 
   const cancelForm = () => {
     setCreating(false)
     setEditing(null)
-    reset({ title: '', content: '', pinned: false })
+    reset({ title: '', content: '', pinned: false, lang: 'ko' })
   }
 
   const showForm = creating || editing
@@ -144,6 +146,25 @@ export default function AdminAnnouncementsPage() {
           >
             <form onSubmit={onSubmit}>
               <div className="space-y-3">
+                <div>
+                  <Controller
+                    name="lang"
+                    control={control}
+                    render={({ field }) => (
+                      <AdminSelect
+                        label="언어"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: 'ko', label: '한국어' },
+                          { value: 'en', label: 'English' },
+                          { value: 'ja', label: '日本語' },
+                        ]}
+                        required
+                      />
+                    )}
+                  />
+                </div>
                 <div>
                   <Controller
                     name="title"
@@ -219,6 +240,7 @@ export default function AdminAnnouncementsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {a.pinned && <Pin size={12} style={{ color: 'var(--gold)' }} />}
+                  <span style={{ color: '#8a7040', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{(a.lang ?? 'ko').toUpperCase()}</span>
                   <p style={{ color: '#c8a450', fontSize: '0.875rem', fontWeight: 600 }}>{a.title}</p>
                 </div>
                 {a.content && (

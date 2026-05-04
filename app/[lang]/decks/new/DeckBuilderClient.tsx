@@ -43,6 +43,9 @@ import {
   computeAllGiftKeywordCounts,
   computeDeckKeywordCounts,
   computeDeckMainKeywordsFromSlots,
+  computeAllGiftAffiliationCounts,
+  computeFormationGiftAffiliationCounts,
+  countGiftConditionAffiliations,
   computeFormationGiftKeywordCounts,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
@@ -285,6 +288,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           slot_order: formationIndex >= 0 ? formationIndex : 99,
           identities: {
             skill_keyword_list: identity.skill_keyword_list ?? [],
+            affiliation: identity.affiliation ?? null,
+            association_list: identity.association_list ?? [],
             skills: (skillsByIdentityId[identity.id] ?? []).map(skill => ({
               skill_type: skill.skill_type,
               atk_type: (skill as Skill & { atk_type?: string | null }).atk_type ?? skill.skill_type,
@@ -301,6 +306,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const effectiveMainKeywords = mainKeywordsManual ? selectedMainKeywords : autoMainKeywords
   const formationGiftKeywordCounts = useMemo(() => computeFormationGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
   const allGiftKeywordCounts = useMemo(() => computeAllGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
+  const formationGiftAffiliationCounts = useMemo(() => computeFormationGiftAffiliationCounts(deckKeywordSlots), [deckKeywordSlots])
+  const allGiftAffiliationCounts = useMemo(() => computeAllGiftAffiliationCounts(deckKeywordSlots), [deckKeywordSlots])
 
   useEffect(() => {
     if (!mainKeywordsManual) return
@@ -323,26 +330,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   // 활성 가능한 EGO 기프트 계산
   const activatableGifts = useMemo(() => {
-    const formationIdentities = formationOrder
-      .slice(0, 7)
-      .map(sid => deckSlots[sid])
-      .filter(Boolean) as Identity[]
-    const assignedIdentities = formationOrder
-      .map(sid => deckSlots[sid])
-      .filter(Boolean) as Identity[]
-    if (assignedIdentities.length === 0) return []
-
-    const countAffiliations = (list: Identity[]) => {
-      const counts: Record<string, number> = {}
-      for (const id of list) {
-        if (id.affiliation) {
-          counts[id.affiliation] = (counts[id.affiliation] ?? 0) + 1
-        }
-      }
-      return counts
-    }
-    const formationAffiliationCounts = countAffiliations(formationIdentities)
-    const allAffiliationCounts = countAffiliations(assignedIdentities)
+    if (!deckKeywordSlots.some(slot => (
+      typeof slot.slot_order === 'number' && slot.slot_order >= 0 && slot.slot_order < 99
+    ))) return []
 
     type GiftStatus = {
       name: string; keyword: string; grade: string; image_url: string | null
@@ -365,7 +355,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       }
       if (c.type === 'affiliation') {
         const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
-        return affiliations.reduce((sum, aff) => sum + (affiliationCounts[aff] ?? 0), 0)
+        return countGiftConditionAffiliations(affiliationCounts, affiliations)
       }
       return 0
     }
@@ -374,8 +364,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       const c = g.activation_condition
       if (!c) continue
       if (c.type === 'skill') continue
-      const formationCurrent = countCondition(c, formationGiftKeywordCounts, formationAffiliationCounts)
-      const allCurrent = countCondition(c, allGiftKeywordCounts, allAffiliationCounts)
+      const formationCurrent = countCondition(c, formationGiftKeywordCounts, formationGiftAffiliationCounts)
+      const allCurrent = countCondition(c, allGiftKeywordCounts, allGiftAffiliationCounts)
       const level = formationCurrent >= c.count ? 'met' : allCurrent >= c.count ? 'warn' : 'unmet'
       const current = level === 'met' ? formationCurrent : allCurrent
 
@@ -395,7 +385,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       return (b.current / b.condition.count) - (a.current / a.condition.count)
     })
     return results
-  }, [allGiftKeywordCounts, deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
+  }, [allGiftAffiliationCounts, allGiftKeywordCounts, deckKeywordSlots, egoGifts, formationGiftAffiliationCounts, formationGiftKeywordCounts])
 
   const identityCount = Object.values(deckSlots).filter(Boolean).length
   const egoCount = Object.values(egoSlots).reduce((s, g) => s + Object.keys(g).length, 0)
