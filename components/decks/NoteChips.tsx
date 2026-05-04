@@ -6,7 +6,7 @@ import Image from 'next/image'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PlannerPassiveNoteRow } from '@/components/planner/PlannerPassivePanel'
 import GiftCard from '@/components/ui/GiftCard'
-import type { GiftConditionStatus } from '@/components/planner/PlannerGiftModal'
+import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/sinners/KeywordTooltip'
 import {
   SIN_COLORS,

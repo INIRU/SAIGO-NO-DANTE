@@ -2,9 +2,6 @@
 
 import { useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import EgoDetailModal from '@/components/ui/EgoDetailModal'
-
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 import Image from 'next/image'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
@@ -25,6 +22,9 @@ import GiftCard from '@/components/ui/GiftCard'
 import type { PassiveData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+
+const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
+const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 
 const S = STORAGE_BASE
