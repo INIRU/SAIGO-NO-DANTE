@@ -30,7 +30,7 @@
 | `/admin/data/ego/[id]` | E.G.O 편집 | 개별 E.G.O 상세 수정 |
 | `/admin/data/ego/new` | E.G.O 추가 | 새 E.G.O 등록 |
 | `/admin/keywords` | 키워드 관리 | 키워드 메타데이터 CRUD |
-| `/admin/tier-list` | 티어 리스트 관리 | 인격 티어 배치, 투표 리셋 |
+| `/admin/tier-list` | 티어 리스트 관리 | 리세 인격 수동 티어 배치 |
 | `/admin/decks` | 덱 관리 | 덱 모더레이션 (신고된 덱 삭제 등) |
 | `/admin/users` | 사용자 관리 | 사용자 목록, 역할 변경, 계정 삭제 |
 | `/admin/announcements` | 공지사항 관리 | 공지 작성/수정/삭제 |
