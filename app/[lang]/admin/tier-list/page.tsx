@@ -1,358 +1,714 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import Image from 'next/image'
-import { AlertTriangle, MessageSquareText, RefreshCw, Search, Star, Users } from 'lucide-react'
+import { ArrowDown, ArrowUp, GripVertical, RotateCcw, Save, Search, X } from 'lucide-react'
 import { AdminButton } from '@/components/admin'
-import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
-import { showError } from '@/lib/toast'
-import { getIdentityInfoUrl } from '@/lib/utils/images'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
+import { showError, showSuccess } from '@/lib/toast'
 import type { Identity } from '@/lib/types'
+import { getIdentityInfoUrl } from '@/lib/utils/images'
 
-const TIERS = ['S+', 'S', 'A', 'B', 'C', 'N/A'] as const
-type Tier = typeof TIERS[number]
-const CATEGORIES = [
-  { key: 'reroll', label: '리세' },
-  { key: 'overall', label: '종합' },
-  { key: 'mirror_dungeon', label: '거던' },
-  { key: 'goodstuff', label: '굿스터프' },
-] as const
-type TierCategory = typeof CATEGORIES[number]['key']
-type Period = '7d' | '30d' | '1y' | 'all'
-const PERIOD_OPTIONS: DropdownOption<Period>[] = [
-  { value: '7d', label: '최근 7일' },
-  { value: '30d', label: '최근 30일' },
-  { value: '1y', label: '최근 1년' },
-  { value: 'all', label: '전체 기간' },
-]
+const ADMIN_REROLL_TIERS = ['S+', 'S', 'A', 'B', 'C'] as const
+type AdminRerollTier = typeof ADMIN_REROLL_TIERS[number]
+type DropTarget = AdminRerollTier | 'unassigned'
 
-type TierIdentity = Pick<Identity, 'id' | 'name_kr' | 'rarity' | 'sinner_id' | 'game_id' | 'folder_name'>
-
-type RatingComment = {
-  id: string
-  score: number
-  comment: string
-  created_at: string
-  username?: string | null
-  category?: string
+const TIER_COLORS: Record<AdminRerollTier, string> = {
+  'S+': '#ff5050',
+  S: '#ff7a2f',
+  A: '#f3c13a',
+  B: '#60c860',
+  C: '#60a0ff',
 }
 
-type RatingAggregate = {
-  averageScore: number | null
-  ratingCount: number
-  derivedTier: string
-  distribution: Record<number, number>
+const TIER_LABELS: Record<AdminRerollTier, string> = {
+  'S+': '개사기',
+  S: '매우 좋음',
+  A: '좋음',
+  B: '적당함',
+  C: '유효',
 }
 
-type RatingSummary = {
-  aggregate: RatingAggregate
-  comments: RatingComment[]
+type TierIdentity = Pick<
+  Identity,
+  'id' | 'name_kr' | 'rarity' | 'sinner_id' | 'game_id' | 'folder_name' | 'acquisition_info' | 'release_date'
+>
+
+type AssignedRow = {
+  tier: string
+  identity: TierIdentity | TierIdentity[] | null
 }
 
-type AdminTierRow = {
-  tier: Tier
-  identity: TierIdentity
+type AdminTierResponse = {
+  assigned?: AssignedRow[]
+  unassigned?: TierIdentity[]
+  error?: string
 }
 
-type AdminTierPayload = {
-  assigned?: { tier: string; identity: TierIdentity | TierIdentity[] | null }[]
+type AdminTierState = Record<AdminRerollTier, TierIdentity[]>
+
+function createEmptyTierState(): AdminTierState {
+  return {
+    'S+': [],
+    S: [],
+    A: [],
+    B: [],
+    C: [],
+  }
 }
 
-const EMPTY_AGGREGATE: RatingAggregate = {
-  averageScore: null,
-  ratingCount: 0,
-  derivedTier: 'N/A',
-  distribution: {},
+function isAdminRerollTier(value: string): value is AdminRerollTier {
+  return ADMIN_REROLL_TIERS.includes(value as AdminRerollTier)
 }
 
-function normalizeTier(value: string): Tier | null {
-  if (value === 'F') return 'N/A'
-  return TIERS.includes(value as Tier) ? value as Tier : null
+function getIdentityName(identity: TierIdentity) {
+  return identity.name_kr || identity.id
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '-'
-  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(date)
+function matchesIdentitySearch(identity: TierIdentity, query: string) {
+  if (!query) return true
+  return getIdentityName(identity).toLowerCase().includes(query)
 }
 
-function formatAverage(value: number | null) {
-  return value === null ? '-' : new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 }).format(value)
+export default function AdminTierListPage() {
+  const [tiers, setTiers] = useState<AdminTierState>(() => createEmptyTierState())
+  const [unassigned, setUnassigned] = useState<TierIdentity[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dragOverTarget, setDragOverTarget] = useState<DropTarget | null>(null)
+  const dragItem = useRef<{ id: string; source: DropTarget } | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/tier-list', { cache: 'no-store' })
+      const data = await res.json() as AdminTierResponse
+      if (!res.ok) throw new Error(data.error ?? '티어표를 불러오지 못했습니다.')
+
+      const nextTiers = createEmptyTierState()
+      for (const row of data.assigned ?? []) {
+        if (!isAdminRerollTier(row.tier)) continue
+        const identity = Array.isArray(row.identity) ? row.identity[0] : row.identity
+        if (identity) nextTiers[row.tier].push(identity)
+      }
+
+      setTiers(nextTiers)
+      setUnassigned(data.unassigned ?? [])
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '티어표를 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
+
+  const totalAssigned = useMemo(
+    () => ADMIN_REROLL_TIERS.reduce((sum, tier) => sum + tiers[tier].length, 0),
+    [tiers],
+  )
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+
+  const filteredTiers = useMemo(() => {
+    const next = createEmptyTierState()
+    for (const tier of ADMIN_REROLL_TIERS) {
+      next[tier] = tiers[tier].filter(identity => matchesIdentitySearch(identity, normalizedSearchQuery))
+    }
+    return next
+  }, [normalizedSearchQuery, tiers])
+
+  const filteredUnassigned = useMemo(() => {
+    if (!normalizedSearchQuery) return unassigned
+    return unassigned.filter(identity => matchesIdentitySearch(identity, normalizedSearchQuery))
+  }, [normalizedSearchQuery, unassigned])
+
+  const moveIdentity = useCallback((id: string, source: DropTarget, target: DropTarget) => {
+    if (source === target) return
+
+    let moving: TierIdentity | undefined
+    if (source === 'unassigned') {
+      moving = unassigned.find(identity => identity.id === id)
+    } else {
+      moving = tiers[source].find(identity => identity.id === id)
+    }
+    if (!moving) return
+
+    if (source === 'unassigned') {
+      setUnassigned(prev => prev.filter(identity => identity.id !== id))
+    } else {
+      setTiers(prev => ({ ...prev, [source]: prev[source].filter(identity => identity.id !== id) }))
+    }
+
+    if (target === 'unassigned') {
+      setUnassigned(prev => [...prev, moving])
+    } else {
+      setTiers(prev => ({ ...prev, [target]: [...prev[target], moving] }))
+    }
+  }, [tiers, unassigned])
+
+  const reorderIdentity = useCallback((tier: AdminRerollTier, id: string, direction: -1 | 1) => {
+    setTiers(prev => {
+      const current = prev[tier]
+      const currentIndex = current.findIndex(identity => identity.id === id)
+      const nextIndex = currentIndex + direction
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= current.length) return prev
+
+      const reordered = [...current]
+      const [moving] = reordered.splice(currentIndex, 1)
+      reordered.splice(nextIndex, 0, moving)
+      return { ...prev, [tier]: reordered }
+    })
+  }, [])
+
+  const onDragStart = (event: DragEvent<HTMLElement>, id: string, source: DropTarget) => {
+    dragItem.current = { id, source }
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', id)
+  }
+
+  const onDragOver = (event: DragEvent<HTMLElement>, target: DropTarget) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    setDragOverTarget(target)
+  }
+
+  const onDrop = (event: DragEvent<HTMLElement>, target: DropTarget) => {
+    event.preventDefault()
+    const drag = dragItem.current
+    setDragOverTarget(null)
+    dragItem.current = null
+    if (!drag) return
+    moveIdentity(drag.id, drag.source, target)
+  }
+
+  const handleSave = async () => {
+    setConfirmOpen(false)
+    setSaving(true)
+    try {
+      const tiersPayload: Record<AdminRerollTier, string[]> = {
+        'S+': [],
+        S: [],
+        A: [],
+        B: [],
+        C: [],
+      }
+      for (const tier of ADMIN_REROLL_TIERS) {
+        tiersPayload[tier] = tiers[tier].map(identity => identity.id)
+      }
+
+      const res = await fetch('/api/admin/tier-list', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tiers: tiersPayload }),
+      })
+      const data = await res.json().catch(() => ({})) as { error?: string }
+      if (!res.ok) throw new Error(data.error ?? '저장 실패')
+      showSuccess('리세 티어표가 저장되었습니다.')
+      await fetchData()
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '저장 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[25rem] items-center justify-center">
+        <p style={{ color: '#8a7855', fontSize: '1rem' }}>리세 티어표를 불러오는 중…</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p style={{ color: 'var(--gold-dim)', fontSize: '0.875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+            REROLL TIER EDITOR
+          </p>
+          <h1 className="font-serif" style={{ color: 'var(--gold)', fontSize: '1.5rem', fontWeight: 700, lineHeight: 1.25, marginTop: '0.25rem' }}>
+            리세마라 티어표
+          </h1>
+          <p style={{ color: '#9d8b66', fontSize: '1rem', lineHeight: 1.55, marginTop: '0.375rem' }}>
+            드래그, 직접 티어 지정, 같은 티어 내 순서 이동으로 저장 순서를 조정하세요. 현재 {totalAssigned}개 인격이 배정되어 있습니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <AdminButton
+            onClick={() => void fetchData()}
+            variant="ghost"
+            size="md"
+            disabled={saving}
+            style={{ minHeight: '2.75rem', fontSize: '0.9375rem' }}
+          >
+            <RotateCcw size={15} aria-hidden="true" />
+            다시 불러오기
+          </AdminButton>
+          <AdminButton
+            onClick={() => setConfirmOpen(true)}
+            variant="gold"
+            size="md"
+            loading={saving}
+            disabled={saving}
+            style={{ minHeight: '2.75rem', fontSize: '0.9375rem' }}
+          >
+            <Save size={15} aria-hidden="true" />
+            {saving ? '저장 중…' : '저장'}
+          </AdminButton>
+        </div>
+      </header>
+
+      <section
+        aria-label="티어표 검색과 배정 현황"
+        className="flex flex-wrap items-center justify-between gap-3"
+        style={{
+          padding: '0.75rem',
+          border: '1px solid rgba(58,42,21,0.72)',
+          borderRadius: '0.5rem',
+          background: '#14100c',
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="font-mono tabular-nums" style={{ color: '#c8a450', fontSize: '0.9375rem', fontWeight: 800 }}>
+            배정 {totalAssigned}
+          </span>
+          <span className="font-mono tabular-nums" style={{ color: '#8a7855', fontSize: '0.9375rem', fontWeight: 700 }}>
+            미배정 {unassigned.length}
+          </span>
+        </div>
+        <label className="relative block" style={{ width: 'min(100%, 22rem)' }}>
+          <span className="sr-only">전체 인격 검색</span>
+          <Search size={15} aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8a7855' }} />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={event => setSearchQuery(event.target.value)}
+            placeholder="배정/미배정 전체 검색"
+            style={{
+              width: '100%',
+              minHeight: '2.75rem',
+              padding: '0 2.5rem 0 2.25rem',
+              border: '1px solid rgba(200,144,10,0.24)',
+              borderRadius: '0.375rem',
+              background: '#1a1510',
+              color: '#d8c99b',
+              fontSize: '0.9375rem',
+              outline: 'none',
+            }}
+            className="focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="검색어 지우기"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+              style={{
+                position: 'absolute',
+                right: '0.25rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '2.25rem',
+                height: '2.25rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 0,
+                background: 'transparent',
+                color: '#8a7855',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={15} aria-hidden="true" />
+            </button>
+          )}
+        </label>
+      </section>
+
+      <section aria-label="티어 배치 영역" style={{ display: 'grid', gap: '0.375rem' }}>
+        {ADMIN_REROLL_TIERS.map(tier => (
+          <TierDropZone
+            key={tier}
+            tier={tier}
+            identities={tiers[tier]}
+            visibleIdentities={filteredTiers[tier]}
+            dragOver={dragOverTarget === tier}
+            searchActive={normalizedSearchQuery.length > 0}
+            onDragOver={event => onDragOver(event, tier)}
+            onDragLeave={() => setDragOverTarget(null)}
+            onDrop={event => onDrop(event, tier)}
+            onDragStart={(event, id) => onDragStart(event, id, tier)}
+            onMoveTo={(id, target) => moveIdentity(id, tier, target)}
+            onReorder={(id, direction) => reorderIdentity(tier, id, direction)}
+          />
+        ))}
+      </section>
+
+      <section
+        aria-labelledby="unassigned-tier-title"
+        onDragOver={event => onDragOver(event, 'unassigned')}
+        onDragLeave={() => setDragOverTarget(null)}
+        onDrop={event => onDrop(event, 'unassigned')}
+        style={{
+          display: 'grid',
+          gap: '0.75rem',
+          padding: '1rem',
+          border: dragOverTarget === 'unassigned' ? '1px dashed rgba(200,144,10,0.52)' : '1px solid rgba(58,42,21,0.72)',
+          borderRadius: '0.5rem',
+          background: dragOverTarget === 'unassigned' ? 'rgba(200,144,10,0.08)' : '#14100c',
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="unassigned-tier-title" className="font-serif" style={{ color: '#c8a450', fontSize: '1.125rem', fontWeight: 650 }}>
+            미배정 인격 ({unassigned.length})
+          </h2>
+          {normalizedSearchQuery && (
+            <span className="font-mono tabular-nums" style={{ color: '#6f5b3a', fontSize: '0.875rem' }}>
+              검색 표시 {filteredUnassigned.length}/{unassigned.length}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2" style={{ minHeight: '5rem', alignItems: 'flex-start' }}>
+          {filteredUnassigned.map(identity => (
+            <MiniIdentityCard
+              key={identity.id}
+              identity={identity}
+              source="unassigned"
+              onDragStart={event => onDragStart(event, identity.id, 'unassigned')}
+              onMoveTo={target => moveIdentity(identity.id, 'unassigned', target)}
+            />
+          ))}
+          {filteredUnassigned.length === 0 && (
+            <p style={{ margin: 'auto', color: '#75685a', fontSize: '0.9375rem' }}>
+              {searchQuery ? '검색 결과가 없습니다.' : '모든 인격이 배정되었습니다.'}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="리세 티어표 저장"
+        message={`${totalAssigned}개 인격의 S+/S/A/B/C 배치를 저장합니다.`}
+        confirmLabel="저장"
+        cancelLabel="취소"
+        variant="warning"
+        onConfirm={handleSave}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </div>
+  )
 }
 
-function tierTone(tier: Tier) {
-  if (tier === 'S+' || tier === 'S') return '#d49b4a'
-  if (tier === 'A') return '#c8a450'
-  if (tier === 'B') return '#9aac7d'
-  if (tier === 'C') return '#8798b8'
-  return '#8a7855'
+function TierDropZone({
+  tier,
+  identities,
+  visibleIdentities,
+  dragOver,
+  searchActive,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragStart,
+  onMoveTo,
+  onReorder,
+}: {
+  tier: AdminRerollTier
+  identities: TierIdentity[]
+  visibleIdentities: TierIdentity[]
+  dragOver: boolean
+  searchActive: boolean
+  onDragOver: (event: DragEvent<HTMLElement>) => void
+  onDragLeave: () => void
+  onDrop: (event: DragEvent<HTMLElement>) => void
+  onDragStart: (event: DragEvent<HTMLElement>, id: string) => void
+  onMoveTo: (id: string, target: DropTarget) => void
+  onReorder: (id: string, direction: -1 | 1) => void
+}) {
+  const tierTextColor = tier === 'A' ? '#241900' : '#fff'
+  const firstOrder = identities.length > 0 ? 1 : 0
+  const lastOrder = identities.length
+
+  return (
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(4.75rem, 5.5rem) minmax(0, 1fr)',
+        minHeight: '5.25rem',
+        border: dragOver ? '1px dashed rgba(200,144,10,0.52)' : '1px solid rgba(58,42,21,0.56)',
+        borderRadius: '0.5rem',
+        background: dragOver ? 'rgba(200,144,10,0.08)' : '#14100c',
+        overflow: 'hidden',
+        transition: 'background 160ms ease, border-color 160ms ease',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.125rem',
+          padding: '0.5rem',
+          background: TIER_COLORS[tier],
+          color: tierTextColor,
+          textShadow: tier === 'A' ? 'none' : '0 1px 3px rgba(0,0,0,0.45)',
+        }}
+      >
+        <strong className="font-serif" style={{ fontSize: '1.25rem', lineHeight: 1 }}>
+          {tier}
+        </strong>
+        <span style={{ fontSize: '0.875rem', fontWeight: 800, lineHeight: 1.2 }}>
+          {TIER_LABELS[tier]}
+        </span>
+        <span className="font-mono tabular-nums" style={{ fontSize: '0.875rem', fontWeight: 800, lineHeight: 1.2 }}>
+          {identities.length}개
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: '0.5rem', padding: '0.625rem' }}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-mono tabular-nums" style={{ color: '#8a7855', fontSize: '0.875rem', fontWeight: 700 }}>
+            저장 순서 {firstOrder > 0 ? `#${firstOrder}-#${lastOrder}` : '없음'}
+          </span>
+          {searchActive && (
+            <span className="font-mono tabular-nums" style={{ color: '#6f5b3a', fontSize: '0.875rem' }}>
+              검색 표시 {visibleIdentities.length}/{identities.length}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2" style={{ alignItems: 'center' }}>
+          {visibleIdentities.map(identity => {
+            const orderIndex = identities.findIndex(item => item.id === identity.id)
+            return (
+              <MiniIdentityCard
+                key={identity.id}
+                identity={identity}
+                source={tier}
+                orderNumber={orderIndex + 1}
+                isFirst={orderIndex === 0}
+                isLast={orderIndex === identities.length - 1}
+                onDragStart={event => onDragStart(event, identity.id)}
+                onMoveTo={target => onMoveTo(identity.id, target)}
+                onReorder={direction => onReorder(identity.id, direction)}
+              />
+            )
+          })}
+          {identities.length === 0 && (
+            <p style={{ color: '#75685a', fontSize: '0.9375rem', fontStyle: 'italic' }}>
+              여기에 인격을 드래그하세요.
+            </p>
+          )}
+          {identities.length > 0 && visibleIdentities.length === 0 && (
+            <p style={{ color: '#75685a', fontSize: '0.9375rem', fontStyle: 'italic' }}>
+              검색 조건에 맞는 인격이 없습니다.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function MiniIdentityImage({ identity }: { identity: TierIdentity }) {
   const [failed, setFailed] = useState(false)
-  const imgUrl = getIdentityInfoUrl(identity as Identity)
+  const imageUrl = getIdentityInfoUrl(identity as Identity)
+  const name = getIdentityName(identity)
 
-  if (!imgUrl || failed) {
+  if (!imageUrl || failed) {
     return (
-      <div className="flex items-center justify-center rounded-sm border" style={{ width: '2.5rem', height: '2.5rem', borderColor: 'rgba(200,144,10,0.12)', background: 'rgba(13,11,8,0.36)' }}>
-        <span className="font-serif" style={{ fontSize: '0.875rem', color: '#7a6845' }}>{identity.name_kr[0]}</span>
+      <div
+        aria-hidden="true"
+        style={{
+          width: '2.25rem',
+          height: '2.25rem',
+          borderRadius: '0.25rem',
+          background: 'linear-gradient(160deg, #1e1810, #0d0a06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: '0 0 auto',
+        }}
+      >
+        <span className="font-serif" style={{ fontSize: '0.9375rem', color: 'rgba(200,144,10,0.42)' }}>
+          {name[0]}
+        </span>
       </div>
     )
   }
 
   return (
     <Image
-      src={imgUrl}
-      alt={identity.name_kr}
-      width={40}
-      height={40}
+      src={imageUrl}
+      alt={name}
+      width={36}
+      height={36}
       unoptimized
-      style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.125rem', objectFit: 'cover' }}
       onError={() => setFailed(true)}
+      style={{ width: '2.25rem', height: '2.25rem', borderRadius: '0.25rem', objectFit: 'cover', flex: '0 0 auto' }}
     />
   )
 }
 
-function RatingBar({ distribution }: { distribution: Record<number, number> }) {
-  const max = Math.max(1, ...Object.values(distribution).map(Number))
-
-  return (
-    <div className="grid grid-cols-10 gap-1" aria-label="점수 분포">
-      {Array.from({ length: 10 }, (_, index) => {
-        const score = index + 1
-        const count = Number(distribution[score] ?? 0)
-        return (
-          <div key={score} className="flex flex-col items-center gap-1">
-            <div className="flex h-8 w-full items-end rounded-sm" style={{ background: 'rgba(13,11,8,0.4)' }}>
-              <span style={{ width: '100%', height: `${Math.max(0.125, (count / max) * 2)}rem`, background: count > 0 ? 'rgba(200,144,10,0.55)' : 'rgba(122,104,69,0.18)', borderRadius: '0.125rem' }} />
-            </div>
-            <span className="font-mono" style={{ color: '#665a42', fontSize: '0.5625rem' }}>{score}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function IdentityReviewRow({
-  row,
-  summary,
+function MiniIdentityCard({
+  identity,
+  source,
+  orderNumber,
+  isFirst = true,
+  isLast = true,
+  onDragStart,
+  onMoveTo,
+  onReorder,
 }: {
-  row: AdminTierRow
-  summary?: RatingSummary
+  identity: TierIdentity
+  source: DropTarget
+  orderNumber?: number
+  isFirst?: boolean
+  isLast?: boolean
+  onDragStart: (event: DragEvent<HTMLElement>) => void
+  onMoveTo: (target: DropTarget) => void
+  onReorder?: (direction: -1 | 1) => void
 }) {
-  const rarityIcon = RARITY_ICON_MAP[row.identity.rarity]
-  const aggregate = summary?.aggregate ?? EMPTY_AGGREGATE
-  const recentComments = summary?.comments.slice(0, 2) ?? []
+  const name = getIdentityName(identity)
+  const rarityIcon = RARITY_ICON_MAP[identity.rarity]
+  const tierButtonBase = {
+    minWidth: '2.25rem',
+    minHeight: '2.25rem',
+    padding: '0 0.375rem',
+    border: '1px solid rgba(58,42,21,0.82)',
+    borderRadius: '0.375rem',
+    background: '#14100c',
+    color: '#a99768',
+    fontSize: '0.9375rem',
+    fontWeight: 800,
+    cursor: 'pointer',
+  } satisfies CSSProperties
+  const iconButtonBase = {
+    width: '2.25rem',
+    height: '2.25rem',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid rgba(58,42,21,0.82)',
+    borderRadius: '0.375rem',
+    background: '#14100c',
+    color: '#a99768',
+    cursor: 'pointer',
+  } satisfies CSSProperties
 
   return (
-    <article className="grid gap-3 border-t py-3 lg:grid-cols-[minmax(16rem,1fr)_14rem_minmax(18rem,1.2fr)]" style={{ borderColor: 'rgba(200,144,10,0.1)' }}>
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="flex shrink-0 items-center justify-center rounded-sm border font-mono" style={{ width: '2.625rem', height: '2.625rem', borderColor: `${tierTone(row.tier)}66`, color: tierTone(row.tier), fontSize: '0.875rem', fontWeight: 700 }}>
-          {row.tier}
+    <article
+      draggable
+      onDragStart={onDragStart}
+      title={name}
+      style={{
+        display: 'grid',
+        gap: '0.5rem',
+        width: 'min(100%, 24rem)',
+        minHeight: '2.75rem',
+        padding: '0.375rem',
+        border: '1px solid rgba(58,42,21,0.82)',
+        borderRadius: '0.375rem',
+        background: '#1a1510',
+        color: '#d8c99b',
+        cursor: 'grab',
+        userSelect: 'none',
+      }}
+      className="transition-colors hover:border-[var(--gold-dim)]"
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <GripVertical size={14} aria-hidden="true" style={{ color: '#6f5b3a', flex: '0 0 auto' }} />
+        <MiniIdentityImage identity={identity} />
+        {orderNumber !== undefined && (
+          <span className="font-mono tabular-nums" style={{ flex: '0 0 auto', color: '#8a7855', fontSize: '0.875rem', fontWeight: 800 }}>
+            #{orderNumber}
+          </span>
+        )}
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9375rem', fontWeight: 700 }}>
+          {name}
         </span>
-        <MiniIdentityImage identity={row.identity} />
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <h2 className="truncate" style={{ color: '#d6be7a', fontSize: '0.875rem', fontWeight: 700 }}>{row.identity.name_kr}</h2>
-            {rarityIcon && (
-              <Image src={rarityIcon} alt={`${row.identity.rarity}성`} width={14} height={14} unoptimized style={{ width: '0.875rem', height: '0.875rem', flexShrink: 0 }} />
-            )}
-          </div>
-          <p className="font-mono" style={{ color: '#665a42', fontSize: '0.6875rem', marginTop: '0.1875rem' }}>manual tier reference / user ratings review</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-[0.85fr_0.85fr_1.15fr] gap-2">
-        <div>
-          <p className="font-mono" style={{ color: '#665a42', fontSize: '0.625rem' }}>AVG</p>
-          <p className="font-mono tabular-nums" style={{ color: '#c8a450', fontSize: '1rem' }}>{formatAverage(aggregate.averageScore)}</p>
-        </div>
-        <div>
-          <p className="font-mono" style={{ color: '#665a42', fontSize: '0.625rem' }}>COUNT</p>
-          <p className="font-mono tabular-nums" style={{ color: '#c8a450', fontSize: '1rem' }}>{aggregate.ratingCount}</p>
-        </div>
-        <div>
-          <p className="font-mono" style={{ color: '#665a42', fontSize: '0.625rem' }}>MODEL</p>
-          <p className="font-mono tabular-nums" style={{ color: tierTone(normalizeTier(aggregate.derivedTier) ?? 'N/A'), fontSize: '1rem' }}>{aggregate.derivedTier}</p>
-        </div>
-      </div>
-
-      <div className="min-w-0">
-        <RatingBar distribution={aggregate.distribution} />
-        <div className="mt-2 space-y-1">
-          {recentComments.length > 0 ? recentComments.map(comment => (
-            <p key={comment.id} className="truncate" style={{ color: '#9a8a6a', fontSize: '0.6875rem' }}>
-              <span className="font-mono" style={{ color: '#c8a450' }}>{comment.score}/10</span>
-              {' '}
-              {comment.comment}
-              <span className="font-mono" style={{ color: '#665a42' }}> · {formatDateTime(comment.created_at)}</span>
-            </p>
-          )) : (
-            <p style={{ color: '#665a42', fontSize: '0.6875rem' }}>최근 코멘트 없음</p>
-          )}
-        </div>
-      </div>
-    </article>
-  )
-}
-
-export default function AdminTierListPage() {
-  const [rows, setRows] = useState<AdminTierRow[]>([])
-  const [summaries, setSummaries] = useState<Record<string, RatingSummary>>({})
-  const [category, setCategory] = useState<TierCategory>('reroll')
-  const [period, setPeriod] = useState<Period>('30d')
-  const [query, setQuery] = useState('')
-  const [loading, setLoading] = useState(true)
-  const loadErrorShownRef = useRef(false)
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/admin/tier-list?category=${category}`, { cache: 'no-store' })
-      if (!res.ok) throw new Error('tier-list')
-      const data = await res.json() as AdminTierPayload
-      const nextRows: AdminTierRow[] = []
-
-      for (const row of data.assigned ?? []) {
-        const tier = normalizeTier(row.tier)
-        const identity = Array.isArray(row.identity) ? row.identity[0] : row.identity
-        if (tier && identity) nextRows.push({ tier, identity })
-      }
-
-      setRows(nextRows)
-      const limitedRows = nextRows.slice(0, 36)
-      const ratingPairs = await Promise.all(limitedRows.map(async row => {
-        const ratingRes = await fetch(`/api/tier-list/ratings?identityId=${row.identity.id}&category=${category}&period=${period}`, { cache: 'no-store' })
-        if (!ratingRes.ok) return [row.identity.id, { aggregate: EMPTY_AGGREGATE, comments: [] }] as const
-        const rating = await ratingRes.json() as RatingSummary
-        return [row.identity.id, {
-          aggregate: rating.aggregate ?? EMPTY_AGGREGATE,
-          comments: rating.comments ?? [],
-        }] as const
-      }))
-      setSummaries(Object.fromEntries(ratingPairs))
-      loadErrorShownRef.current = false
-    } catch {
-      if (!loadErrorShownRef.current) {
-        loadErrorShownRef.current = true
-        showError('티어 평가 데이터를 불러오지 못했습니다.')
-      }
-      setRows([])
-      setSummaries({})
-    } finally {
-      setLoading(false)
-    }
-  }, [category, period])
-
-  useEffect(() => { fetchData() }, [fetchData])
-
-  const filteredRows = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    if (!normalized) return rows
-    return rows.filter(row => row.identity.name_kr.toLowerCase().includes(normalized) || row.tier.toLowerCase().includes(normalized))
-  }, [query, rows])
-
-  const stats = useMemo(() => {
-    const summariesList = Object.values(summaries)
-    return {
-      identities: rows.length,
-      rated: summariesList.filter(summary => summary.aggregate.ratingCount > 0).length,
-      comments: summariesList.reduce((sum, summary) => sum + summary.comments.length, 0),
-      reviews: summariesList.reduce((sum, summary) => sum + summary.aggregate.ratingCount, 0),
-    }
-  }, [rows.length, summaries])
-
-  return (
-    <div className="mx-auto w-full max-w-[78rem]">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b" style={{ borderColor: 'rgba(200,144,10,0.14)', paddingBottom: '1rem' }}>
-        <div>
-          <p className="font-mono" style={{ color: '#8a7a5a', fontSize: '0.6875rem' }}>PARTICIPATORY TIER REVIEW</p>
-          <h1 className="mt-1 font-serif text-2xl font-bold" style={{ color: 'var(--gold)' }}>티어 평가 검토</h1>
-          <p className="mt-2 max-w-[48rem]" style={{ color: '#8a7a5a', fontSize: '0.75rem', lineHeight: 1.6 }}>
-            이 화면은 수동 티어 편집기가 아니라 유저 평가 집계, 댓글, 등급 산출 결과를 검토하는 관리자용 화면입니다.
-          </p>
-        </div>
-        <AdminButton variant="ghost" onClick={fetchData} loading={loading}>
-          <RefreshCw size="0.875rem" aria-hidden="true" />
-          새로고침
-        </AdminButton>
-      </header>
-
-      <section className="mb-4 grid gap-3 md:grid-cols-4">
-        {[
-          { label: '대상 인격', value: stats.identities, icon: Users },
-          { label: '평가 있음', value: stats.rated, icon: Star },
-          { label: '평가 수', value: stats.reviews, icon: MessageSquareText },
-          { label: '댓글 수', value: stats.comments, icon: AlertTriangle },
-        ].map(item => {
-          const Icon = item.icon
-          return (
-            <div key={item.label} className="border-l" style={{ borderColor: 'rgba(200,144,10,0.22)', padding: '0.375rem 0.75rem' }}>
-              <p className="mb-1 flex items-center gap-1" style={{ color: '#7a6845', fontSize: '0.6875rem' }}><Icon size="0.75rem" aria-hidden="true" />{item.label}</p>
-              <p className="font-mono text-lg tabular-nums" style={{ color: 'var(--gold)' }}>{item.value.toLocaleString('ko-KR')}</p>
-            </div>
-          )
-        })}
-      </section>
-
-      <section className="mb-4 grid gap-2 lg:grid-cols-[minmax(18rem,1fr)_18rem_12rem]">
-        <div className="relative">
-          <Search size="0.875rem" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#7a6845' }} aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder="인격명 또는 티어 검색"
-            className="w-full rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-            style={{ padding: '0.5rem 0.75rem 0.5rem 2.25rem', background: 'rgba(0,0,0,0.3)', border: '0.0625rem solid var(--border)', color: '#c8a450', fontSize: '0.8125rem' }}
+        {rarityIcon && (
+          <Image
+            src={rarityIcon}
+            alt={`${identity.rarity}성`}
+            width={18}
+            height={18}
+            unoptimized
+            style={{ flex: '0 0 auto', width: '1.125rem', height: 'auto' }}
           />
-        </div>
-        <div className="flex rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.18)', padding: '0.25rem', background: '#14100c' }}>
-          {CATEGORIES.map(item => {
-            const selected = category === item.key
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5" style={{ cursor: 'default' }}>
+        {source !== 'unassigned' && onReorder && (
+          <div className="flex items-center gap-1" aria-label={`${name} 순서 변경`}>
+            <button
+              type="button"
+              onClick={() => onReorder(-1)}
+              disabled={isFirst}
+              aria-label={`${name} 위로 이동`}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-40"
+              style={iconButtonBase}
+            >
+              <ArrowUp size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onReorder(1)}
+              disabled={isLast}
+              aria-label={`${name} 아래로 이동`}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-40"
+              style={iconButtonBase}
+            >
+              <ArrowDown size={15} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex min-w-0 flex-wrap items-center gap-1" aria-label={`${name} 티어 직접 지정`}>
+          {ADMIN_REROLL_TIERS.map(tier => {
+            const selected = source === tier
             return (
-              <button key={item.key} type="button" onClick={() => setCategory(item.key)} className="flex-1 rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]" style={{ minHeight: '2rem', background: selected ? 'rgba(200,144,10,0.14)' : 'transparent', border: '0.0625rem solid transparent', color: selected ? 'var(--gold)' : '#8a7855', fontSize: '0.75rem', fontWeight: selected ? 700 : 500 }}>
-                {item.label}
+              <button
+                key={tier}
+                type="button"
+                onClick={() => onMoveTo(tier)}
+                disabled={selected}
+                aria-label={`${name} ${tier} 티어로 이동`}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed"
+                style={{
+                  ...tierButtonBase,
+                  background: selected ? 'rgba(200,144,10,0.2)' : '#14100c',
+                  borderColor: selected ? 'rgba(200,144,10,0.5)' : 'rgba(58,42,21,0.82)',
+                  color: selected ? '#e8b030' : '#a99768',
+                  cursor: selected ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {tier}
               </button>
             )
           })}
+          <button
+            type="button"
+            onClick={() => onMoveTo('unassigned')}
+            disabled={source === 'unassigned'}
+            aria-label={`${name} 미배정으로 이동`}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-40"
+            style={iconButtonBase}
+          >
+            <X size={15} aria-hidden="true" />
+          </button>
         </div>
-        <Dropdown<Period>
-          value={period}
-          options={PERIOD_OPTIONS}
-          onChange={setPeriod}
-          className="w-full"
-          buttonStyle={{
-            width: '100%',
-            minHeight: '2.375rem',
-            justifyContent: 'space-between',
-            padding: '0.5rem 0.75rem',
-            background: 'rgba(0,0,0,0.3)',
-            borderColor: 'var(--border)',
-            borderRadius: '0.125rem',
-            color: '#c8a450',
-            fontSize: '0.8125rem',
-          }}
-        />
-      </section>
-
-      <section className="rounded-md border" style={{ borderColor: 'rgba(200,144,10,0.14)', background: 'rgba(26,21,16,0.5)', padding: '0 0.875rem' }}>
-        {loading ? (
-          <div className="space-y-2 py-3">
-            {Array.from({ length: 8 }, (_, index) => (
-              <div key={`tier-review-skeleton-${index}`} className="rounded-sm border" style={{ height: '4.75rem', borderColor: 'rgba(200,144,10,0.08)', background: 'rgba(13,11,8,0.28)' }} />
-            ))}
-          </div>
-        ) : filteredRows.length === 0 ? (
-          <div style={{ padding: '1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}>검토할 평가 데이터가 없습니다.</div>
-        ) : (
-          filteredRows.map(row => (
-            <IdentityReviewRow key={`${row.tier}-${row.identity.id}`} row={row} summary={summaries[row.identity.id]} />
-          ))
-        )}
-      </section>
-    </div>
+      </div>
+    </article>
   )
 }
