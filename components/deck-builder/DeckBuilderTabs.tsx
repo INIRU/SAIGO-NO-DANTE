@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import {
@@ -20,9 +20,18 @@ import IdentityCard from '@/components/sinners/IdentityCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import BaseModal from '@/components/ui/BaseModal'
 import { localizeEgoName } from '@/components/deck-detail/DeckIdentityCard'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
+import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
+
+const COMPACT_KOTRA_STYLE: CSSProperties = {
+  fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
+  fontWeight: 400,
+  WebkitTextStroke: '0 transparent',
+}
 
 /* ── 수감자 빈 카드 (공통) ────────────────────────────── */
 function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: React.ReactNode }) {
@@ -46,14 +55,13 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
       </div>
       {children}
       <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.25rem' }}>
-        <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
+        <p style={{ ...COMPACT_KOTRA_STYLE, color: '#3a2a10', fontSize: '0.625rem' }}>{sinner.name_kr}</p>
       </div>
     </div>
   )
 }
 
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-const SKILL_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
 const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
@@ -77,7 +85,8 @@ export function IdentityTab({
   onIdentityDeselect: (sinnerId: string) => void
 }) {
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
-  const { getIconUrl } = useKeywordData()
+  const locale = useLocale() as SupportedLang
+  const { getIconUrl, keywords: keywordInfo } = useKeywordData()
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) : null
   const modalIdentities = modalSinnerId ? identities.filter(i => i.sinner_id === modalSinnerId).sort((a, b) => b.rarity - a.rarity) : []
 
@@ -119,7 +128,7 @@ export function IdentityTab({
                   />
                   {/* 이름 오버레이 */}
                   <div className="absolute bottom-0 left-0 right-0 z-10 text-center" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.5rem', paddingBottom: '0.375rem' }}>
-                    <p className="font-serif text-[0.75rem] sm:text-[0.8125rem]" style={{ color: '#e8dcc8', lineHeight: 1.2 }}>{identity.name_kr}</p>
+                    <p className="text-[0.75rem] sm:text-[0.8125rem]" style={{ ...COMPACT_KOTRA_STYLE, color: '#e8dcc8', lineHeight: 1.2 }}>{identity.name_kr}</p>
                   </div>
                 </>
               ) : (
@@ -131,7 +140,7 @@ export function IdentityTab({
                     <Image src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 text-center z-10" style={{ background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)', paddingTop: '1.25rem', paddingBottom: '0.375rem' }}>
-                    <p className="deck-builder-empty-slot-name font-serif font-light text-[0.75rem]" style={{ color: '#3a2a10' }}>{sinner.name_kr}</p>
+                    <p className="deck-builder-empty-slot-name text-[0.75rem]" style={{ ...COMPACT_KOTRA_STYLE, color: '#3a2a10' }}>{sinner.name_kr}</p>
                   </div>
                 </>
               )}
@@ -353,7 +362,7 @@ export function IdentityTab({
           style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: 'var(--radius-lg)', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}
         >
           {/* 모달 헤더 */}
-          <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-between sticky top-0 z-30" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center gap-2">
               <Image src={getSinnerLogoUrl(modalSinner.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7 }} />
               <span className="font-serif" style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{modalSinner.name_kr} — 인격 선택</span>
@@ -390,7 +399,7 @@ export function IdentityTab({
                     boxShadow: isSelected ? '0 0 0.75rem rgba(200,144,10,0.3)' : 'none',
                   }}
                 >
-                  <div className="relative w-full" style={{ aspectRatio: '2/3', overflow: 'hidden' }}>
+                  <div className="relative isolate w-full" style={{ aspectRatio: '2/3', overflow: 'hidden' }}>
                     {ident.game_id && ident.folder_name && (
                       <Image
                         src={`${STORAGE_BASE}/sinners/${ident.sinner_id}/identities/${ident.folder_name}/${ident.game_id}_normal_info.webp`}
@@ -401,17 +410,45 @@ export function IdentityTab({
                       />
                     )}
                     {isSelected && (
-                      <div className="absolute inset-0 z-10" style={{ background: 'rgba(200,144,10,0.1)', border: '0.125rem solid var(--gold)', borderRadius: 'var(--radius-sm)' }} />
+                      <div className="absolute inset-0 z-[2]" style={{ background: 'rgba(200,144,10,0.1)', border: '0.125rem solid var(--gold)', borderRadius: 'var(--radius-sm)' }} />
                     )}
                   </div>
                   <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
-                    <p className="font-serif truncate" style={{ color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1.3 }}>
+                    <p className="truncate" style={{ ...COMPACT_KOTRA_STYLE, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1.3 }}>
                       {ident.name_kr}
                     </p>
-                    {ident.keywords && ident.keywords.length > 0 && (
-                      <p className="truncate" style={{ fontSize: '0.5625rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
-                        {ident.keywords.join(' / ')}
-                      </p>
+                    {(ident.skill_keyword_list ?? []).length > 0 && (
+                      <div className="mt-1 flex min-w-0 items-center gap-1 overflow-hidden" aria-label="skill keywords" style={{ minHeight: '1.625rem' }}>
+                        {(ident.skill_keyword_list ?? []).slice(0, 3).map(keyword => {
+                          const iconUrl = getIconUrl(keyword)
+                          return (
+                            <span
+                              key={keyword}
+                              className="deck-builder-skill-keyword-chip inline-flex min-w-0 flex-shrink items-center gap-1 rounded-sm"
+                              style={{
+                                maxWidth: '100%',
+                                padding: '0.1875rem 0.3125rem',
+                                background: 'rgba(120,76,28,0.14)',
+                                border: '1px solid rgba(200,144,10,0.18)',
+                                color: 'var(--text-muted)',
+                                fontSize: '0.875rem',
+                                lineHeight: 1,
+                              }}
+                            >
+                              {iconUrl && (
+                                <Image
+                                  src={iconUrl}
+                                  alt=""
+                                  width={14}
+                                  height={14}
+                                  style={{ width: '0.875rem', height: '0.875rem', flex: '0 0 auto', opacity: 0.78 }}
+                                />
+                              )}
+                              <span className="truncate">{localizeDeckKeyword(keyword, keywordInfo[keyword], locale)}</span>
+                            </span>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
                 </button>
@@ -461,7 +498,7 @@ export function EgoTab({
             {/* 수감자 헤더 */}
             <div className="flex items-center gap-1.5 px-2 py-1.5" style={{ borderBottom: '1px solid #1a1208' }}>
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} unoptimized />
-              <span className="font-serif font-light truncate" style={{ color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
+              <span className="truncate" style={{ ...COMPACT_KOTRA_STYLE, color: '#4a3520', fontSize: '0.5625rem' }}>{sinner.name_kr}</span>
             </div>
             {/* 등급 세로 목록 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', padding: '0.125rem' }}>
@@ -497,7 +534,7 @@ export function EgoTab({
                       <span style={{ color: ego ? sc : gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
                     )}
                     {ego
-                      ? <span style={{ color: sc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'keep-all', flex: 1, textAlign: 'left' }}>{ego.name_kr || ego.name}</span>
+                      ? <span style={{ ...COMPACT_KOTRA_STYLE, color: sc, fontSize: '0.5rem', lineHeight: 1.2, wordBreak: 'keep-all', flex: 1, textAlign: 'left' }}>{ego.name_kr || ego.name}</span>
                       : <span style={{ color: '#2a1e10', fontSize: '0.75rem', lineHeight: 1 }}>+</span>
                     }
                   </div>
@@ -701,7 +738,6 @@ export function SkillsetTab({
 
         const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
         const total = dist[0] + dist[1] + dist[2]
-        const isDefault = dist[0] === 3 && dist[1] === 2 && dist[2] === 1
         const skills = (skillsByIdentityId[identity.id] ?? [])
           .filter(s => s.skill_order >= 1 && s.skill_order <= 3)
           .sort((a, b) => a.skill_order - b.skill_order)
@@ -718,108 +754,28 @@ export function SkillsetTab({
         return (
           <div key={sinner.id}>
             <IdentityCard identity={identity} compact />
-            <div style={{
-              marginTop: '6px',
-              background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-              border: `1px solid ${isDefault ? '#221a0f' : 'rgba(200,144,10,0.4)'}`,
-              borderRadius: '4px',
-              padding: '6px',
-            }}>
-              {[0, 1, 2].map(idx => {
-                const skill = skills[idx]
-                const sinColor = skill ? (SIN_COLORS[skill.sin_affinity] ?? '#888') : '#555'
-                return (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
-                    {skill && identity.game_id ? (
-                      <ImageWithFallback
-                        src={getSkillIconUrl(identity, skill.skill_order)}
-                        alt={skill.name}
-                        width={16}
-                        height={16}
-                        fallbackType="skill"
-                        style={{ borderRadius: '2px', flexShrink: 0 }}
-                      />
-                    ) : (
-                      <div style={{ width: '16px', height: '16px', borderRadius: '2px', background: '#1a1510', flexShrink: 0 }} />
-                    )}
-                    <span style={{ fontSize: '0.5625rem', color: sinColor, fontFamily: 'var(--font-mono)', fontWeight: 700, width: '18px', flexShrink: 0 }}>
-                      S{idx + 1}
-                    </span>
-                    <div style={{ flex: 1 }} />
-                    <button
-                      onClick={() => handleChange(idx, -1)}
-                      disabled={dist[idx] <= 0}
-                      style={{
-                        width: '18px', height: '18px', borderRadius: '2px',
-                        background: dist[idx] <= 0 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                        border: `1px solid ${dist[idx] <= 0 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                        color: dist[idx] <= 0 ? '#2a2015' : '#c8900a',
-                        fontSize: '0.75rem', cursor: dist[idx] <= 0 ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        lineHeight: 1, padding: 0,
-                      }}
-                    >
-                      −
-                    </button>
-                    <span style={{
-                      width: '16px', textAlign: 'center', fontSize: '0.8125rem',
-                      fontFamily: 'var(--font-mono)', fontWeight: 700,
-                      color: dist[idx] === 0 ? '#3a2a10' : sinColor,
-                    }}>
-                      {dist[idx]}
-                    </span>
-                    <button
-                      onClick={() => handleChange(idx, 1)}
-                      disabled={total >= 6}
-                      style={{
-                        width: '18px', height: '18px', borderRadius: '2px',
-                        background: total >= 6 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                        border: `1px solid ${total >= 6 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                        color: total >= 6 ? '#2a2015' : '#c8900a',
-                        fontSize: '0.75rem', cursor: total >= 6 ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        lineHeight: 1, padding: 0,
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-                )
-              })}
-              {/* 합계 + 프리셋 */}
-              <div style={{
-                borderTop: '1px solid #1a1208', marginTop: '4px', paddingTop: '4px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{
-                  fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                  color: total === 6 ? '#5a8a40' : '#c83020',
-                }}>
-                  {total}/6
-                </span>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {SKILL_PRESETS.map(preset => {
-                    const active = dist[0] === preset[0] && dist[1] === preset[1] && dist[2] === preset[2]
-                    return (
-                      <button
-                        key={preset.join(',')}
-                        onClick={() => onDistributionChange(sinner.id, preset)}
-                        style={{
-                          fontSize: '0.5rem', fontFamily: 'var(--font-mono)',
-                          padding: '1px 4px', borderRadius: '2px',
-                          background: active ? 'rgba(200,144,10,0.2)' : 'transparent',
-                          border: `1px solid ${active ? 'rgba(200,144,10,0.5)' : '#18120a'}`,
-                          color: active ? '#c8900a' : '#444',
-                          cursor: 'pointer', lineHeight: 1.4,
-                        }}
-                      >
-                        {preset.join('/')}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
+            <SkillExchangePanel
+              distribution={dist}
+              skills={[
+                skills[0] ? {
+                  name: skills[0].name,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[0].skill_order) : null,
+                  sinColor: SIN_COLORS[skills[0].sin_affinity] ?? '#888',
+                } : null,
+                skills[1] ? {
+                  name: skills[1].name,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[1].skill_order) : null,
+                  sinColor: SIN_COLORS[skills[1].sin_affinity] ?? '#888',
+                } : null,
+                skills[2] ? {
+                  name: skills[2].name,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[2].skill_order) : null,
+                  sinColor: SIN_COLORS[skills[2].sin_affinity] ?? '#888',
+                } : null,
+              ]}
+              onAdjust={handleChange}
+              onPresetSelect={preset => onDistributionChange(sinner.id, preset)}
+            />
           </div>
         )
       })}

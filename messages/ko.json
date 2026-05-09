@@ -292,7 +292,211 @@
     "difficulty": "난이도",
     "normal": "일반",
     "hard": "하드",
-    "tags": "태그"
+    "tags": "태그",
+    "tempSaves": {
+      "button": "임시 저장",
+      "menuLabel": "플래너 임시 저장",
+      "closeMenu": "닫기",
+      "saveCurrent": "현재 플랜 저장",
+      "empty": "저장된 임시 플랜이 없습니다.",
+      "slotLabel": "슬롯 {slot}",
+      "emptySlot": "비어 있음",
+      "saveToSlot": "저장",
+      "overwriteSlot": "덮어쓰기",
+      "loadSlot": "불러오기",
+      "saved": "임시 저장되었습니다.",
+      "savedToSlot": "슬롯 {slot}에 임시 저장했습니다.",
+      "overwritten": "슬롯 {slot}을 덮어썼습니다.",
+      "loaded": "임시 저장본을 불러왔습니다.",
+      "loadedFromSlot": "슬롯 {slot}을 불러왔습니다.",
+      "deleted": "임시 저장본을 삭제했습니다.",
+      "deletedFromSlot": "슬롯 {slot}을 비웠습니다.",
+      "untitled": "제목 없는 플랜",
+      "deleteSlotLabel": "슬롯 {slot} 비우기",
+      "deleteLabel": "{label} 임시 저장본 삭제"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "커뮤니티 플랜 | 거울 던전 플래너",
+        "description": "림버스 컴퍼니 거울 던전 플래너 — 다른 유저들의 플랜을 둘러보고 추천하세요."
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "커뮤니티 플랜",
+        "subtitle": "관리자들의 거울 던전 전략 공유 공간",
+        "newPlan": "새 플랜 만들기"
+      },
+      "search": {
+        "label": "플랜 검색",
+        "section": "검색",
+        "placeholder": "인격, 키워드, 제목...",
+        "clear": "검색어 지우기",
+        "hint": "+ OR, * AND 검색",
+        "suggestionHeading": "인격 / 키워드",
+        "suggestionHint": "Tab으로 선택",
+        "suggestionIdentity": "인격",
+        "suggestionKeyword": "키워드"
+      },
+      "sort": {
+        "label": "정렬",
+        "latest": "최신순",
+        "popular": "추천순"
+      },
+      "difficulty": {
+        "normal": "노말",
+        "hard": "하드",
+        "overlap": "평행중첩",
+        "extreme": "익스트림"
+      },
+      "filters": {
+        "button": "필터",
+        "panel": "거던 플랜 필터 패널",
+        "aside": "거던 플랜 필터",
+        "closePanel": "필터 패널 닫기",
+        "close": "필터 닫기",
+        "difficulty": "난이도",
+        "all": "전체",
+        "keywords": "상시 키워드",
+        "keywordModeToggle": "키워드 OR/AND 조건 전환",
+        "identity": "인격 필터",
+        "identityModeToggle": "인격 OR/AND 조건 전환",
+        "identitySelected": "선택됨",
+        "collection": "보유 필터",
+        "ownedIdentityPlan": "보유 인격 플랜",
+        "ownedEgoPlan": "보유 E.G.O 플랜",
+        "collectionCodePlaceholder": "보유 현황 URL 또는 코드",
+        "collectionCodeLabel": "보유 현황 URL 또는 코드",
+        "collectionLoading": "컬렉션 로딩 중...",
+        "apply": "적용",
+        "invalidCode": "잘못된 코드",
+        "clear": "초기화",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "언어",
+        "current": "현재 언어",
+        "all": "전체",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "인격 선택"
+      },
+      "result": {
+        "total": "총 {count}개 플랜",
+        "filtered": "{filtered}/{total}개 플랜",
+        "filterApplied": "(필터 적용됨)"
+      },
+      "grid": {
+        "empty": "아직 등록된 플랜이 없습니다.",
+        "noSearchResults": "\"{query}\" 검색 결과가 없습니다.",
+        "createFirst": "첫 플랜 만들기 →",
+        "loadMore": "더 보기",
+        "loadingMore": "불러오는 중...",
+        "scrollForMore": "스크롤하면 더 불러옵니다"
+      },
+      "card": {
+        "anonymous": "익명"
+      },
+      "relativeTime": {
+        "now": "방금 전",
+        "minutes": "{count}분 전",
+        "hours": "{count}시간 전",
+        "days": "{count}일 전",
+        "months": "{count}달 전",
+        "years": "{count}년 전"
+      }
+    },
+    "tabs": {
+      "deck": "덱 편성",
+      "blessing": "가호",
+      "gift": "기프트",
+      "floor": "층별 계획",
+      "summary": "미리보기"
+    },
+    "difficultyValues": {
+      "normal": "노말",
+      "hard": "하드",
+      "overlap": "평행중첩",
+      "extreme": "익스트림"
+    },
+    "floorCount": "{count}층",
+    "actions": {
+      "triggerMode": "트리거 모드",
+      "copyUrl": "URL 복사",
+      "copied": "복사 완료",
+      "upload": "업로드",
+      "update": "수정",
+      "uploading": "업로드 중...",
+      "updating": "수정 중...",
+      "uploadComplete": "업로드 완료",
+      "updateComplete": "수정 완료",
+      "uploadTitle": "커뮤니티에 플랜 업로드",
+      "loginRequired": "로그인 후 이용 가능",
+      "titleRequired": "플랜 제목을 입력하세요",
+      "uploaded": "커뮤니티에 업로드되었습니다.",
+      "updated": "플랜이 수정되었습니다.",
+      "uploadFailed": "업로드 실패",
+      "updateFailed": "수정 실패",
+      "uploadError": "업로드 중 오류가 발생했습니다"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "덱 편성 세부 탭",
+        "identity": "인격",
+        "ego": "E.G.O",
+        "skillset": "스킬 교환"
+      },
+      "identity": {
+        "formed": "편성",
+        "bench": "대기",
+        "change": "변경",
+        "removeFormation": "편성 해제",
+        "addFormation": "편성하기",
+        "form": "편성",
+        "toNormalArt": "각성 일러스트 -- 클릭하여 일반으로",
+        "toAwakenedArt": "일반 일러스트 -- 클릭하여 각성으로",
+        "modalTitle": "인격 선택",
+        "modalHeading": "{sinner} - 인격 선택",
+        "clear": "선택 해제"
+      },
+      "ego": {
+        "modalTitle": "E.G.O 선택",
+        "modalHeading": "{sinner} - E.G.O 선택",
+        "remove": "해제",
+        "emptyGrade": "해당 등급 E.G.O 없음",
+        "noIdentity": "인격 미선택"
+      },
+      "skillset": {
+        "selectIdentityFirst": "인격을 먼저 선택하세요."
+      },
+      "stats": {
+        "keywordDistribution": "키워드 분포",
+        "keywordEmpty": "인격을 선택하면 키워드 분포가 표시됩니다.",
+        "passives": "패시브",
+        "battle": "배틀",
+        "support": "서포트",
+        "passiveSelectIdentity": "인격을 선택하면 패시브가 표시됩니다.",
+        "passiveEmpty": "해당 패시브가 없습니다.",
+        "resonance": "공명",
+        "stock": "보유",
+        "passiveWarning": "스킬 배분 변경으로 인해 조건이 미충족됩니다"
+      }
+    },
+    "blessingTab": {
+      "title": "별의 가호",
+      "usedStarlight": "사용 별빛",
+      "clear": "초기화",
+      "selectAll": "가호 전체 선택",
+      "allClear": "전체 해제",
+      "allPlus": "전체 강화 +",
+      "plusClear": "+ 해제",
+      "allPlusPlus": "전체 강화 ++",
+      "plusplusClear": "++ 해제",
+      "base": "기본"
+    }
   },
   "guide": {
     "title": "운영법",

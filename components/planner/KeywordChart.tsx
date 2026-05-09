@@ -20,9 +20,10 @@ const KEYWORD_COLOR: Record<string, string> = {
 
 interface Props {
   distribution: { keyword: string; count: number }[]
+  getKeywordLabel?: (keyword: string) => string
 }
 
-export default function KeywordChart({ distribution }: Props) {
+export default function KeywordChart({ distribution, getKeywordLabel }: Props) {
   const maxCount = Math.max(...distribution.map(d => d.count), 1)
 
   return (
@@ -42,7 +43,7 @@ export default function KeywordChart({ distribution }: Props) {
               />
             )}
             <span style={{ width: '4rem', flexShrink: 0, fontSize: '0.75rem', color: '#b0a898' }}>
-              {d.keyword}
+              {getKeywordLabel ? getKeywordLabel(d.keyword) : d.keyword}
             </span>
             <div className="flex-1 rounded-full overflow-hidden" style={{ height: '0.5rem', background: '#222' }}>
               <div

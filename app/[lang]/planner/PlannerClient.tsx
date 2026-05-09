@@ -4,10 +4,12 @@ import { useMemo, useEffect, useState } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play } from 'lucide-react'
-import { DIFFICULTY_CONFIG, type PlannerState, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData, type Difficulty } from '@/lib/planner/types'
+import { useLocale, useTranslations } from 'next-intl'
+import { useQueryState, parseAsString } from 'nuqs'
+import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play, Save, ChevronDown, Trash2, FolderOpen, X } from 'lucide-react'
+import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { encodePlan, savePlanForRun } from '@/lib/planner/encoder'
+import { encodePlan, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
 import { usePlannerStore } from '@/lib/stores/planner'
 import { showSuccess, showError } from '@/lib/toast'
 import DeckTab from '@/components/planner/DeckTab'
@@ -27,17 +29,28 @@ interface Props {
   egos: EgoData[]
 }
 
-const TABS = [
-  { key: 'deck' as const, label: '덱 편성', icon: Users },
-  { key: 'blessing' as const, label: '가호', icon: Star },
-  { key: 'gift' as const, label: '기프트', icon: Gift },
-  { key: 'floor' as const, label: '층별 계획', icon: Layers },
-  { key: 'summary' as const, label: '미리보기', icon: FileText },
+const PLANNER_TAB_KEYS = ['deck', 'blessing', 'gift', 'floor', 'summary'] as const
+
+const TABS: { key: PlannerTab; labelKey: string; icon: typeof Users }[] = [
+  { key: 'deck', labelKey: 'tabs.deck', icon: Users },
+  { key: 'blessing', labelKey: 'tabs.blessing', icon: Star },
+  { key: 'gift', labelKey: 'tabs.gift', icon: Gift },
+  { key: 'floor', labelKey: 'tabs.floor', icon: Layers },
+  { key: 'summary', labelKey: 'tabs.summary', icon: FileText },
 ]
 
+function isPlannerTab(value: string): value is PlannerTab {
+  return (PLANNER_TAB_KEYS as readonly string[]).includes(value)
+}
+
 export default function PlannerClient({ themes, gifts, recipes, identities, sinners, passives, skills, egos }: Props) {
+  const tPlanner = useTranslations('planner')
+  const tTempSaves = useTranslations('planner.tempSaves')
+  const locale = useLocale()
   const state = usePlannerStore()
   const dispatch = usePlannerStore(s => s.dispatch)
+  const [tabParam, setTabParam] = useQueryState('tab', parseAsString.withDefault('deck'))
+  const activeTab = isPlannerTab(tabParam) ? tabParam : 'deck'
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
 
@@ -45,8 +58,10 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const handleCopyUrl = async () => {
     try {
       const encoded = await encodePlan(state)
-      const url = `${window.location.origin}/planner?p=${encoded}`
-      navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
+      const url = new URL(window.location.href)
+      url.search = ''
+      url.searchParams.set('plan', encoded)
+      navigator.clipboard.writeText(url.toString()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
     } catch { /* */ }
   }
 
@@ -55,6 +70,14 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [tempSavesOpen, setTempSavesOpen] = useState(false)
+  const [tempSlots, setTempSlots] = useState<PlannerTempSlot[]>([])
+
+  useEffect(() => {
+    if (state.activeTab !== activeTab) {
+      dispatch({ type: 'SET_TAB', tab: activeTab })
+    }
+  }, [activeTab, dispatch, state.activeTab])
 
   // edit 모드 감지
   useEffect(() => {
@@ -65,7 +88,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   const handleUpload = async () => {
     if (uploading) return
-    if (!state.title.trim()) { showError('플랜 제목을 입력하세요'); return }
+    if (!state.title.trim()) { showError(tPlanner('actions.titleRequired')); return }
     setUploading(true)
     try {
       const planBody = {
@@ -87,23 +110,57 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       if (res.ok) {
         const result = await res.json()
         setUploaded(true)
-        showSuccess(editId ? '플랜이 수정되었습니다!' : '커뮤니티에 업로드되었습니다!')
+        showSuccess(editId ? tPlanner('actions.updated') : tPlanner('actions.uploaded'))
         const targetId = editId ?? result.id
         if (targetId) {
           setTimeout(() => router.push(`/planner/community/${targetId}`), 800)
         }
       } else {
         const data = await res.json()
-        showError(data.error ?? (editId ? '수정 실패' : '업로드 실패'))
+        showError(data.error ?? (editId ? tPlanner('actions.updateFailed') : tPlanner('actions.uploadFailed')))
       }
-    } catch { showError('업로드 중 오류가 발생했습니다') }
+    } catch { showError(tPlanner('actions.uploadError')) }
     finally { setUploading(false) }
   }
 
-  // URL 파라미터 복원 (Zustand persist가 localStorage 자동 복원)
+  useEffect(() => {
+    setTempSlots(loadPlannerTempSlots())
+  }, [])
+
+  const handleSaveTempSlot = (slot: PlannerTempSlot) => {
+    const slots = savePlannerTempSlot(slot.slotNumber, state, tTempSaves('untitled'))
+    setTempSlots(slots)
+    showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
+  }
+
+  const handleLoadTempSlot = (slot: PlannerTempSlot) => {
+    const draft = slot.draft
+    if (!draft) return
+    dispatch({ type: 'LOAD_PLAN', state: draft.state })
+    setTempSavesOpen(false)
+    showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
+  }
+
+  const handleDeleteTempSlot = (slot: PlannerTempSlot) => {
+    setTempSlots(deletePlannerTempSlot(slot.slotNumber))
+    showSuccess(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
+  }
+
+  const formatTempSavedAt = (savedAt: string) => {
+    const date = new Date(savedAt)
+    if (Number.isNaN(date.getTime())) return ''
+    return new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+  }
+
+  // URL 파라미터 또는 1회성 handoff 복원. 자동 localStorage persist는 사용하지 않는다.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const planCode = params.get('plan')
+    const planCode = params.get('plan') ?? params.get('p')
     if (planCode) {
       import('@/lib/planner/encoder').then(async ({ decodePlan }) => {
         try {
@@ -124,30 +181,54 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             }
           }).filter(Boolean)
 
+          const egoSlots = decoded.egoIds.map(id => {
+            const ego = egos.find(entry => entry.id === id)
+            if (!ego) return null
+            return {
+              ego_id: id,
+              sinner_id: ego.sinner_id,
+              name_kr: ego.name,
+              grade: ego.grade,
+              sin_affinity: ego.sin_affinity,
+            }
+          }).filter(Boolean)
+
           dispatch({
             type: 'LOAD_PLAN',
             state: {
               difficulty: decoded.difficulty,
               identitySlots: slots as PlannerState['identitySlots'],
+              egoSlots: egoSlots as PlannerState['egoSlots'],
               floorPlan: decoded.floorThemeIds.map((tid, i) => ({ floor: i + 1, theme_id: tid, gift_ids: [], memo: '' })),
               giftInventory: decoded.giftIds,
               title: decoded.title,
               description: decoded.description,
+              activeTab: 'deck',
             },
           })
         } catch { /* invalid plan code */ }
       })
+      return
     }
-  }, [identities])
+
+    const handoff = loadDraftFromLocal()
+    if (handoff) {
+      dispatch({ type: 'LOAD_PLAN', state: handoff })
+      clearDraftFromLocal()
+      return
+    }
+
+    dispatch({ type: 'LOAD_PLAN', state: createInitialState('hard') })
+  }, [dispatch, egos, identities])
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
       <div className="max-w-6xl mx-auto px-3 sm:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.75rem' }}>
-              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 커뮤니티
+            <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.875rem' }}>
+              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
             </Link>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -156,23 +237,116 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
                 background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
-                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                fontSize: '0.9375rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
               }}
             >
               <Play size={12} />
-              트리거 모드
+              {tPlanner('actions.triggerMode')}
             </button>
             <button onClick={handleCopyUrl} style={{
               display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
               background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(200,144,10,0.1)',
               border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(200,144,10,0.3)'}`,
               borderRadius: '0.375rem', color: copied ? '#4ade80' : '#e8b030',
-              fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
             }}>
               {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? '복사 완료' : 'URL 복사'}
+              {copied ? tPlanner('actions.copied') : tPlanner('actions.copyUrl')}
             </button>
-            {/* 임시 저장은 Zustand persist로 자동 처리 */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setTempSavesOpen(open => !open)}
+                aria-expanded={tempSavesOpen}
+                aria-haspopup="menu"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
+                  background: 'rgba(200,144,10,0.1)',
+                  border: '1px solid rgba(200,144,10,0.3)',
+                  borderRadius: '0.375rem', color: '#e8b030',
+                  fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                }}
+              >
+                <Save size={12} />
+                {tTempSaves('button')}
+                <ChevronDown size={12} style={{ transform: tempSavesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+              </button>
+              {tempSavesOpen && (
+                <div
+                  role="menu"
+                  aria-label={tTempSaves('menuLabel')}
+                  className="fixed left-3 right-3 top-40 z-40 mt-2 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-lg sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[26rem]"
+                  style={{ background: '#1a1510', border: '1px solid rgba(200,144,10,0.25)' }}
+                >
+                  <div className="flex items-center justify-between border-b border-[#241c14] px-3 py-2 sm:hidden">
+                    <span style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontWeight: 700 }}>
+                      {tTempSaves('menuLabel')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTempSavesOpen(false)}
+                      aria-label={tTempSaves('closeMenu')}
+                      className="flex items-center justify-center rounded"
+                      style={{ width: '2.75rem', minHeight: '2.75rem', color: '#e8b030' }}
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div style={{ padding: '0.375rem' }}>
+                    {tempSlots.map(slot => (
+                      <div key={slot.slotNumber} style={{ padding: '0.625rem 0.5rem', borderTop: slot.slotNumber === 1 ? 'none' : '1px solid #241c14' }}>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="flex items-center justify-center rounded" style={{ width: '1.625rem', height: '1.625rem', flexShrink: 0, background: 'rgba(200,144,10,0.12)', color: '#e8b030', fontSize: '0.875rem', fontWeight: 700 }}>
+                            {slot.slotNumber}
+                          </span>
+                          <span className="min-w-0 flex-1" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'baseline', gap: '0.75rem' }}>
+                            <span className="block truncate" style={{ color: slot.draft ? '#e8dcc8' : '#8a8175', fontSize: '0.9375rem', fontWeight: 600 }}>
+                              {slot.draft?.label ?? tTempSaves('emptySlot')}
+                            </span>
+                            <span className="block" style={{ color: '#8a8175', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                              {slot.draft ? formatTempSavedAt(slot.draft.savedAt) : tTempSaves('slotLabel', { slot: slot.slotNumber })}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 2.25rem' }}>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => handleSaveTempSlot(slot)}
+                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded transition-colors"
+                            style={{ minHeight: '2.25rem', padding: '0.375rem 0.5rem', color: '#e8b030', background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.25)', fontSize: '0.875rem', fontWeight: 700 }}
+                          >
+                            <Save size={14} />
+                            <span className="truncate">{tTempSaves(slot.draft ? 'overwriteSlot' : 'saveToSlot')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => handleLoadTempSlot(slot)}
+                            disabled={!slot.draft}
+                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded transition-colors"
+                            style={{ minHeight: '2.25rem', padding: '0.375rem 0.5rem', color: slot.draft ? '#e8dcc8' : '#5a5045', background: slot.draft ? 'rgba(232,220,200,0.06)' : 'rgba(90,80,69,0.05)', border: '1px solid #2a2118', fontSize: '0.875rem', fontWeight: 600, cursor: slot.draft ? 'pointer' : 'not-allowed' }}
+                          >
+                            <FolderOpen size={14} />
+                            <span className="truncate">{tTempSaves('loadSlot')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTempSlot(slot)}
+                            disabled={!slot.draft}
+                            aria-label={tTempSaves('deleteSlotLabel', { slot: slot.slotNumber })}
+                            className="flex items-center justify-center rounded transition-colors"
+                            style={{ width: '2.25rem', minHeight: '2.25rem', color: slot.draft ? '#a16855' : '#5a5045', border: '1px solid #2a2118', cursor: slot.draft ? 'pointer' : 'not-allowed', opacity: slot.draft ? 1 : 0.55 }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               onClick={session.status === 'authenticated' ? handleUpload : undefined}
               disabled={session.status !== 'authenticated' || uploading}
@@ -182,75 +356,64 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 border: `1px solid ${uploaded ? 'rgba(34,197,94,0.35)' : session.status === 'authenticated' ? 'rgba(200,144,10,0.3)' : '#222'}`,
                 borderRadius: '0.375rem',
                 color: uploaded ? '#4ade80' : session.status === 'authenticated' ? '#e8b030' : '#4b5563',
-                fontSize: '0.75rem', cursor: session.status === 'authenticated' ? 'pointer' : 'not-allowed',
+                fontSize: '0.9375rem', cursor: session.status === 'authenticated' ? 'pointer' : 'not-allowed',
                 opacity: session.status === 'authenticated' ? 1 : 0.5,
                 transition: 'all 0.2s',
               }}
-              title={session.status !== 'authenticated' ? '로그인 후 이용 가능' : '커뮤니티에 플랜 업로드'}
+              title={session.status !== 'authenticated' ? tPlanner('actions.loginRequired') : tPlanner('actions.uploadTitle')}
             >
               {uploaded ? <Check size={12} /> : <Upload size={12} />}
-              {uploading ? (editId ? '수정 중...' : '업로드 중...') : uploaded ? (editId ? '수정 완료' : '업로드 완료') : (editId ? '수정' : '업로드')}
+              {uploading
+                ? (editId ? tPlanner('actions.updating') : tPlanner('actions.uploading'))
+                : uploaded
+                  ? (editId ? tPlanner('actions.updateComplete') : tPlanner('actions.uploadComplete'))
+                  : (editId ? tPlanner('actions.update') : tPlanner('actions.upload'))}
             </button>
           </div>
-        </div>
-
-        {/* 난이도 선택 */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(Object.entries(DIFFICULTY_CONFIG) as [Difficulty, typeof DIFFICULTY_CONFIG[Difficulty]][]).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => dispatch({ type: 'SET_DIFFICULTY', difficulty: key })}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0"
-              style={{
-                background: state.difficulty === key ? '#c8900a20' : '#1a1510',
-                color: state.difficulty === key ? '#e8b030' : '#666',
-                border: `1px solid ${state.difficulty === key ? '#c8900a50' : '#222'}`,
-              }}
-            >
-              {config.label} ({config.floors}층)
-            </button>
-          ))}
         </div>
 
         {/* 탭 바 */}
         <div className="flex mb-6 overflow-x-auto" style={{ borderBottom: '1px solid #222', WebkitOverflowScrolling: 'touch' }}>
           {TABS.map(tab => {
-            const active = state.activeTab === tab.key
+            const active = activeTab === tab.key
             const Icon = tab.icon
             return (
               <button
                 key={tab.key}
-                onClick={() => dispatch({ type: 'SET_TAB', tab: tab.key })}
+                onClick={() => {
+                  dispatch({ type: 'SET_TAB', tab: tab.key })
+                  void setTabParam(tab.key, { history: 'push' })
+                }}
                 className="flex items-center gap-1.5 px-3 sm:px-5 py-2.5 font-semibold transition-all whitespace-nowrap"
                 style={{
                   color: active ? '#e8dcc8' : '#555',
-                  fontSize: '0.8125rem',
+                  fontSize: '0.9375rem',
                   background: active ? '#c8900a12' : 'transparent',
                   borderBottom: active ? '2px solid #c8900a' : '2px solid transparent',
                   marginBottom: '-1px',
                 }}
               >
                 <Icon style={{ width: '0.875rem', height: '0.875rem' }} />
-                {tab.label}
+                {tPlanner(tab.labelKey)}
               </button>
             )
           })}
         </div>
 
         {/* 탭 콘텐츠 */}
-        {state.activeTab === 'deck' && (
+        {activeTab === 'deck' && (
           <DeckTab state={state} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} egos={egos} />
         )}
-        {state.activeTab === 'blessing' && (
+        {activeTab === 'blessing' && (
           <BlessingTab state={state} dispatch={dispatch} />
         )}
-        {state.activeTab === 'gift' && (
+        {activeTab === 'gift' && (
           <GiftPlanTab state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} />
         )}
-        {state.activeTab === 'floor' && (
+        {activeTab === 'floor' && (
           <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} />
         )}
-        {state.activeTab === 'summary' && (
+        {activeTab === 'summary' && (
           <SummaryTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
         )}
       </div>
