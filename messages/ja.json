@@ -292,7 +292,211 @@
     "difficulty": "難易度",
     "normal": "通常",
     "hard": "ハード",
-    "tags": "タグ"
+    "tags": "タグ",
+    "tempSaves": {
+      "button": "一時保存",
+      "menuLabel": "プランナーの一時保存",
+      "closeMenu": "閉じる",
+      "saveCurrent": "現在のプランを保存",
+      "empty": "一時保存されたプランはありません。",
+      "slotLabel": "スロット {slot}",
+      "emptySlot": "空き",
+      "saveToSlot": "保存",
+      "overwriteSlot": "上書き",
+      "loadSlot": "読込",
+      "saved": "一時保存しました。",
+      "savedToSlot": "スロット {slot}に保存しました。",
+      "overwritten": "スロット {slot}を上書きしました。",
+      "loaded": "一時保存を読み込みました。",
+      "loadedFromSlot": "スロット {slot}を読み込みました。",
+      "deleted": "一時保存を削除しました。",
+      "deletedFromSlot": "スロット {slot}を空にしました。",
+      "untitled": "無題のプラン",
+      "deleteSlotLabel": "スロット {slot}を空にする",
+      "deleteLabel": "{label} の一時保存を削除"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "コミュニティプラン | ミラーダンジョンプランナー",
+        "description": "リンバスカンパニーのミラーダンジョン計画を閲覧し、投票できます。"
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "コミュニティプラン",
+        "subtitle": "ミラーダンジョンのルートと攻略プランを共有する場所です。",
+        "newPlan": "プラン作成"
+      },
+      "search": {
+        "label": "プラン検索",
+        "section": "検索",
+        "placeholder": "人格、キーワード、タイトル...",
+        "clear": "検索語をクリア",
+        "hint": "+ は OR、* は AND 検索",
+        "suggestionHeading": "人格 / キーワード",
+        "suggestionHint": "Tabで選択",
+        "suggestionIdentity": "人格",
+        "suggestionKeyword": "キーワード"
+      },
+      "sort": {
+        "label": "並び替え",
+        "latest": "新しい順",
+        "popular": "投票順"
+      },
+      "difficulty": {
+        "normal": "ノーマル",
+        "hard": "ハード",
+        "overlap": "平行重畳",
+        "extreme": "エクストリーム"
+      },
+      "filters": {
+        "button": "フィルター",
+        "panel": "ミラーダンジョンプランのフィルターパネル",
+        "aside": "ミラーダンジョンプランフィルター",
+        "closePanel": "フィルターパネルを閉じる",
+        "close": "フィルターを閉じる",
+        "difficulty": "難易度",
+        "all": "全て",
+        "keywords": "固定キーワード",
+        "keywordModeToggle": "キーワードの OR/AND 条件を切り替え",
+        "identity": "人格フィルター",
+        "identityModeToggle": "人格の OR/AND 条件を切り替え",
+        "identitySelected": "選択中",
+        "collection": "所持フィルター",
+        "ownedIdentityPlan": "所持人格プラン",
+        "ownedEgoPlan": "所持E.G.Oプラン",
+        "collectionCodePlaceholder": "所持状況URLまたはコード",
+        "collectionCodeLabel": "所持状況URLまたはコード",
+        "collectionLoading": "コレクションを読み込み中...",
+        "apply": "適用",
+        "invalidCode": "無効なコード",
+        "clear": "クリア",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "言語",
+        "current": "現在の言語",
+        "all": "全て",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "人格を選択"
+      },
+      "result": {
+        "total": "{count}件のプラン",
+        "filtered": "{filtered}/{total}件のプラン",
+        "filterApplied": "（フィルター適用中）"
+      },
+      "grid": {
+        "empty": "まだ登録されたプランがありません。",
+        "noSearchResults": "\"{query}\" の検索結果がありません。",
+        "createFirst": "最初のプランを作成 →",
+        "loadMore": "もっと見る",
+        "loadingMore": "読み込み中...",
+        "scrollForMore": "スクロールするとさらに読み込みます"
+      },
+      "card": {
+        "anonymous": "匿名"
+      },
+      "relativeTime": {
+        "now": "たった今",
+        "minutes": "{count}分前",
+        "hours": "{count}時間前",
+        "days": "{count}日前",
+        "months": "{count}か月前",
+        "years": "{count}年前"
+      }
+    },
+    "tabs": {
+      "deck": "編成",
+      "blessing": "加護",
+      "gift": "ギフト",
+      "floor": "階層計画",
+      "summary": "プレビュー"
+    },
+    "difficultyValues": {
+      "normal": "ノーマル",
+      "hard": "ハード",
+      "overlap": "平行重畳",
+      "extreme": "エクストリーム"
+    },
+    "floorCount": "{count}階",
+    "actions": {
+      "triggerMode": "トリガーモード",
+      "copyUrl": "URLコピー",
+      "copied": "コピー済み",
+      "upload": "投稿",
+      "update": "更新",
+      "uploading": "投稿中...",
+      "updating": "更新中...",
+      "uploadComplete": "投稿完了",
+      "updateComplete": "更新完了",
+      "uploadTitle": "コミュニティにプランを投稿",
+      "loginRequired": "ログイン後に利用できます",
+      "titleRequired": "プラン名を入力してください",
+      "uploaded": "コミュニティに投稿しました。",
+      "updated": "プランを更新しました。",
+      "uploadFailed": "投稿に失敗しました",
+      "updateFailed": "更新に失敗しました",
+      "uploadError": "投稿中にエラーが発生しました"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "デッキ編成サブタブ",
+        "identity": "人格",
+        "ego": "E.G.O",
+        "skillset": "スキル交換"
+      },
+      "identity": {
+        "formed": "編成",
+        "bench": "控え",
+        "change": "変更",
+        "removeFormation": "編成解除",
+        "addFormation": "編成する",
+        "form": "編成",
+        "toNormalArt": "覚醒イラスト -- クリックで通常へ",
+        "toAwakenedArt": "通常イラスト -- クリックで覚醒へ",
+        "modalTitle": "人格選択",
+        "modalHeading": "{sinner} - 人格選択",
+        "clear": "選択解除"
+      },
+      "ego": {
+        "modalTitle": "E.G.O選択",
+        "modalHeading": "{sinner} - E.G.O選択",
+        "remove": "解除",
+        "emptyGrade": "この等級のE.G.Oはありません",
+        "noIdentity": "人格未選択"
+      },
+      "skillset": {
+        "selectIdentityFirst": "先に人格を選択してください。"
+      },
+      "stats": {
+        "keywordDistribution": "キーワード分布",
+        "keywordEmpty": "人格を選択するとキーワード分布が表示されます。",
+        "passives": "パッシブ",
+        "battle": "バトル",
+        "support": "サポート",
+        "passiveSelectIdentity": "人格を選択するとパッシブが表示されます。",
+        "passiveEmpty": "該当するパッシブはありません。",
+        "resonance": "共鳴",
+        "stock": "保有",
+        "passiveWarning": "スキル配分の変更により条件を満たしていません"
+      }
+    },
+    "blessingTab": {
+      "title": "星の加護",
+      "usedStarlight": "使用星光",
+      "clear": "クリア",
+      "selectAll": "加護を全選択",
+      "allClear": "全解除",
+      "allPlus": "全体 +",
+      "plusClear": "+ 解除",
+      "allPlusPlus": "全体 ++",
+      "plusplusClear": "++ 解除",
+      "base": "基本"
+    }
   },
   "guide": {
     "title": "ガイド",

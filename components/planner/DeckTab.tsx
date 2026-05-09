@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
@@ -11,17 +11,29 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import KeywordChart from './KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
 import BaseModal from '@/components/ui/BaseModal'
+import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
+import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useLocale, useTranslations } from 'next-intl'
+import type { SupportedLang } from '@/lib/i18n/types'
+import SkillExchangePanel from './SkillExchangePanel'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 
-const SUB_TABS: { key: DeckSubTab; label: string; icon: typeof Users }[] = [
-  { key: 'identity', label: '인격', icon: Users },
-  { key: 'ego', label: 'EGO', icon: Sparkles },
-  { key: 'skillset', label: '스킬셋', icon: SlidersHorizontal },
+const SUB_TABS: { key: DeckSubTab; labelKey: string; icon: typeof Users }[] = [
+  { key: 'identity', labelKey: 'subTabs.identity', icon: Users },
+  { key: 'ego', labelKey: 'subTabs.ego', icon: Sparkles },
+  { key: 'skillset', labelKey: 'subTabs.skillset', icon: SlidersHorizontal },
 ]
 
-const SKILL_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
+const DEFAULT_SKILL_DISTRIBUTION: [number, number, number] = [3, 2, 1]
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
+const COMPACT_KOTRA_STYLE: CSSProperties = {
+  fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
+  fontWeight: 400,
+  WebkitTextStroke: '0 transparent',
+}
 
 const DEFAULT_EGO_NAMES: Record<string, string> = {
   '이상': '오감도',
@@ -33,6 +45,46 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
   '이스마엘': '작살박이',
   '오티스': '토 파토스 마토스',
   '그레고르': '어느날 갑자기',
+}
+
+const normalizeSkillDistribution = (dist: [number, number, number] = DEFAULT_SKILL_DISTRIBUTION): [number, number, number] => {
+  const next: [number, number, number] = dist.map(value => {
+    if (!Number.isFinite(value)) return 0
+    return Math.min(6, Math.max(0, Math.trunc(value)))
+  }) as [number, number, number]
+
+  let total = next[0] + next[1] + next[2]
+  while (total < 6) {
+    const receiver = next.reduce((best, value, idx) => (value < next[best] ? idx : best), 0)
+    next[receiver] += 1
+    total += 1
+  }
+  while (total > 6) {
+    const donor = next.reduce((best, value, idx) => (value > next[best] ? idx : best), 0)
+    if (next[donor] === 0) break
+    next[donor] -= 1
+    total -= 1
+  }
+
+  return next
+}
+
+const getHighestDonorIndex = (dist: [number, number, number], targetIdx: number) => {
+  let donorIdx: number | null = null
+  for (let idx = 0; idx < dist.length; idx++) {
+    if (idx === targetIdx || dist[idx] <= 0) continue
+    if (donorIdx === null || dist[idx] > dist[donorIdx]) donorIdx = idx
+  }
+  return donorIdx
+}
+
+const getLowestReceiverIndex = (dist: [number, number, number], targetIdx: number) => {
+  let receiverIdx: number | null = null
+  for (let idx = 0; idx < dist.length; idx++) {
+    if (idx === targetIdx) continue
+    if (receiverIdx === null || dist[idx] < dist[receiverIdx]) receiverIdx = idx
+  }
+  return receiverIdx
 }
 
 interface Props {
@@ -62,7 +114,62 @@ function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'm
   )
 }
 
+function SkillKeywordChips({
+  keywords,
+  getIconUrl,
+  getKeywordLabel,
+}: {
+  keywords: string[] | null | undefined
+  getIconUrl: (keyword: string) => string | null
+  getKeywordLabel: (keyword: string) => string
+}) {
+  const skillKeywords = (keywords ?? []).filter(Boolean)
+  if (skillKeywords.length === 0) return null
+
+  return (
+    <div
+      className="mt-1 flex min-w-0 items-center gap-1 overflow-hidden"
+      aria-label="skill keywords"
+      style={{ minHeight: '1.625rem' }}
+    >
+      {skillKeywords.slice(0, 3).map(keyword => {
+        const iconUrl = getIconUrl(keyword)
+        return (
+          <span
+            key={keyword}
+            className="planner-skill-keyword-chip inline-flex min-w-0 flex-shrink items-center gap-1 rounded-sm"
+            style={{
+              maxWidth: '100%',
+              padding: '0.1875rem 0.3125rem',
+              background: 'rgba(120,76,28,0.14)',
+              border: '1px solid rgba(200,144,10,0.18)',
+              color: '#8d7f69',
+              fontSize: '0.875rem',
+              lineHeight: 1,
+            }}
+          >
+            {iconUrl && (
+              <Image
+                src={iconUrl}
+                alt=""
+                width={14}
+                height={14}
+                style={{ width: '0.875rem', height: '0.875rem', flex: '0 0 auto', opacity: 0.78 }}
+              />
+            )}
+            <span className="truncate">{getKeywordLabel(keyword)}</span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function DeckTab({ state, dispatch, identities, sinners, passives, skills, egos }: Props) {
+  const tDeck = useTranslations('planner.deckTab')
+  const tSinner = useTranslations('sinner')
+  const locale = useLocale() as SupportedLang
+  const { getIconUrl, keywords: keywordInfo } = useKeywordData()
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>({})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>({})
@@ -85,12 +192,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     return map
   }, [identities])
 
-  // 선택된 인격들의 키워드 분포
-  const keywordDist = useMemo(() => {
-    const allKeywords = state.identitySlots.map(s => s.keywords)
-    return computeKeywordDistribution(allKeywords)
-  }, [state.identitySlots])
-
   // 현재 수감자에 선택된 인격 찾기
   const getSelectedIdentity = useCallback(
     (sinnerId: string) => state.identitySlots.find(s => s.sinner_id === sinnerId),
@@ -103,6 +204,47 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     for (const ident of identities) map.set(ident.id, ident)
     return map
   }, [identities])
+
+  // 선택된 인격들의 스킬 키워드 분포
+  const keywordDist = useMemo(() => {
+    const allKeywords = state.identitySlots.map(slot => {
+      const sourceIdentity = identityById.get(slot.identity_id)
+      return slot.skill_keyword_list ?? sourceIdentity?.skill_keyword_list ?? slot.keywords ?? []
+    })
+    return computeKeywordDistribution(allKeywords)
+  }, [identityById, state.identitySlots])
+
+  const egoById = useMemo(() => {
+    const map = new Map<string, EgoData>()
+    for (const ego of egos) map.set(ego.id, ego)
+    return map
+  }, [egos])
+
+  const getLocalizedSinnerName = useCallback(
+    (sinner: SinnerData | null | undefined) => sinner ? tSinner(sinner.id as Parameters<typeof tSinner>[0]) : '',
+    [tSinner],
+  )
+
+  const getIdentitySlotName = useCallback(
+    (slot: PlannerState['identitySlots'][number]) => {
+      const identity = identityById.get(slot.identity_id)
+      return identity ? localizeIdentityName(identity, locale) : slot.name_kr
+    },
+    [identityById, locale],
+  )
+
+  const getEgoSlotName = useCallback(
+    (slot: PlannerState['egoSlots'][number]) => {
+      const ego = egoById.get(slot.ego_id)
+      return ego ? localizeEgoName(ego, locale) : slot.name_kr
+    },
+    [egoById, locale],
+  )
+
+  const getLocalizedKeywordLabel = useCallback(
+    (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
+    [keywordInfo, locale],
+  )
 
   // EGO grouped by sinner (grade order within each group)
   const sinnerEgosMap = useMemo(() => {
@@ -117,11 +259,34 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     return map
   }, [egos])
 
+  const getDefaultEgoForSinner = useCallback((sinnerId: string) => {
+    const sinnerName = sinners.find(s => s.id === sinnerId)?.name_kr
+    const defaultName = sinnerName ? DEFAULT_EGO_NAMES[sinnerName] : undefined
+    return defaultName
+      ? egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN' && (e.name_kr === defaultName || e.name === defaultName))
+        ?? egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN')
+      : egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN')
+  }, [egos, sinners])
+
+  const defaultEgoSlots = useMemo(() => sinners.flatMap(sinner => {
+    const ego = getDefaultEgoForSinner(sinner.id)
+    return ego ? [{ ego_id: ego.id, sinner_id: sinner.id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
+  }), [getDefaultEgoForSinner, sinners])
+
+  useEffect(() => {
+    if (defaultEgoSlots.length === 0) return
+    const missingDefaults = defaultEgoSlots.filter(defaultSlot =>
+      !state.egoSlots.some(slot => slot.sinner_id === defaultSlot.sinner_id && slot.grade === 'ZAYIN')
+    )
+    if (missingDefaults.length === 0) return
+    dispatch({ type: 'LOAD_PLAN', state: { egoSlots: [...state.egoSlots, ...missingDefaults] } })
+  }, [defaultEgoSlots, dispatch, state.egoSlots])
+
   // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용, 스킬 배분 가중치 적용)
   const deckSinCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const slot of state.identitySlots) {
-      const dist = skillDistribution[slot.sinner_id] ?? [3, 2, 1]
+      const dist = normalizeSkillDistribution(skillDistribution[slot.sinner_id] ?? DEFAULT_SKILL_DISTRIBUTION)
       // 각 슬롯(S1,S2,S3)에 대해 최고 업타이 스킬 선택 후 배분 수만큼 가중치 적용
       for (let order = 1; order <= 3; order++) {
         const weight = dist[order - 1]
@@ -140,7 +305,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   const deckSinCountsDefault = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const slot of state.identitySlots) {
-      const defaultDist: [number, number, number] = [3, 2, 1]
+      const defaultDist: [number, number, number] = DEFAULT_SKILL_DISTRIBUTION
       for (let order = 1; order <= 3; order++) {
         const weight = defaultDist[order - 1]
         const best = skills
@@ -165,13 +330,26 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   }
 
   const handleSkillChange = (sinnerId: string, idx: number, delta: number) => {
-    const dist = skillDistribution[sinnerId] ?? [3, 2, 1]
-    const next: [number, number, number] = [dist[0], dist[1], dist[2]]
-    const total = next[0] + next[1] + next[2]
-    const newVal = next[idx] + delta
-    if (newVal < 0 || total + delta > 6) return
-    next[idx] = newVal
-    setSkillDistribution(prev => ({ ...prev, [sinnerId]: next }))
+    setSkillDistribution(prev => {
+      const dist = normalizeSkillDistribution(prev[sinnerId] ?? DEFAULT_SKILL_DISTRIBUTION)
+      const next: [number, number, number] = [dist[0], dist[1], dist[2]]
+
+      if (delta > 0) {
+        const donorIdx = getHighestDonorIndex(dist, idx)
+        if (dist[idx] >= 6 || donorIdx === null) return prev
+        next[idx] += 1
+        next[donorIdx] -= 1
+      } else if (delta < 0) {
+        const receiverIdx = getLowestReceiverIndex(dist, idx)
+        if (dist[idx] <= 0 || receiverIdx === null) return prev
+        next[idx] -= 1
+        next[receiverIdx] += 1
+      } else {
+        return prev
+      }
+
+      return { ...prev, [sinnerId]: next }
+    })
   }
 
   const handleSelectIdentity = (ident: IdentityData) => {
@@ -183,26 +361,19 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         name_kr: ident.name_kr,
         rarity: ident.rarity,
         keywords: ident.keywords ?? [],
+        skill_keyword_list: ident.skill_keyword_list ?? [],
         game_id: ident.game_id,
         folder_name: ident.folder_name,
         slot_order: 99, // 기본 벤치, 하단 클릭으로 편성
       },
     })
-    // 기본 ZAYIN EGO 자동 선택 (이미 있으면 스킵)
     const hasZayin = state.egoSlots.some(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
-    if (!hasZayin) {
-      const sinnerName = sinners.find(s => s.id === ident.sinner_id)?.name_kr
-      const defaultName = sinnerName ? DEFAULT_EGO_NAMES[sinnerName] : undefined
-      const defaultEgo = defaultName
-        ? egos.find(e => e.sinner_id === ident.sinner_id && (e.name_kr === defaultName || e.name === defaultName))
-          ?? egos.find(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
-        : egos.find(e => e.sinner_id === ident.sinner_id && e.grade === 'ZAYIN')
-      if (defaultEgo) {
-        dispatch({
-          type: 'ADD_EGO',
-          slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade, sin_affinity: defaultEgo.sin_affinity },
-        })
-      }
+    const defaultEgo = getDefaultEgoForSinner(ident.sinner_id)
+    if (!hasZayin && defaultEgo) {
+      dispatch({
+        type: 'ADD_EGO',
+        slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade, sin_affinity: defaultEgo.sin_affinity },
+      })
     }
     setIdentityModalSinner(null)
   }
@@ -220,19 +391,27 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   return (
     <div>
       {/* 서브 탭 헤더 */}
-      <div className="flex gap-1 mb-6" style={{ borderBottom: '1px solid #1a1510' }}>
+      <div
+        className="mb-6 flex items-center gap-1 overflow-x-auto"
+        role="tablist"
+        aria-label={tDeck('subTabs.label')}
+        style={{ borderBottom: '1px solid #1a1510', WebkitOverflowScrolling: 'touch' }}
+      >
         {SUB_TABS.map(tab => {
           const active = subTab === tab.key
           const Icon = tab.icon
           return (
             <button
               key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
               onClick={() => setSubTab(tab.key)}
-              className="flex items-center gap-1.5 transition-all"
+              className="flex flex-shrink-0 items-center gap-1.5 transition-all"
               style={{
+                ...COMPACT_KOTRA_STYLE,
                 padding: '0.5rem 1rem',
                 fontSize: '0.8125rem',
-                fontWeight: active ? 700 : 400,
                 color: active ? '#e8dcc8' : '#555',
                 borderBottom: active ? '2px solid #c8900a' : '2px solid transparent',
                 background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
@@ -240,11 +419,11 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               }}
             >
               <Icon style={{ width: '0.875rem', height: '0.875rem' }} />
-              {tab.label}
+              {tDeck(tab.labelKey)}
             </button>
           )
         })}
-        <div className="ml-auto flex items-center" style={{ fontSize: '0.75rem', color: '#666', paddingRight: '0.5rem' }}>
+        <div className="ml-auto flex flex-shrink-0 items-center" style={{ fontSize: '0.75rem', color: '#666', paddingRight: '0.5rem' }}>
           {state.identitySlots.length} / 12
         </div>
       </div>
@@ -255,6 +434,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           {sinners.map(sinner => {
             const slot = getSelectedIdentity(sinner.id)
             const identData = slot ? identityById.get(slot.identity_id) : undefined
+            const slotName = slot ? getIdentitySlotName(slot) : ''
+            const sinnerName = getLocalizedSinnerName(sinner)
             const isGacksung = gacksungSlots[sinner.id] ?? false
             const rarityColor = slot ? (RARITY_COLORS[slot.rarity] ?? RARITY_COLORS[1]) : null
 
@@ -276,7 +457,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     <>
                       <Image
                         src={getIdentityInfoImageUrl(identData, isGacksung)}
-                        alt={slot.name_kr}
+                        alt={slotName}
                         fill
                         className="object-cover object-top"
                         sizes="180px"
@@ -294,8 +475,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           paddingBottom: '0.375rem',
                         }}
                       >
-                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.8125rem', lineHeight: 1.2 }}>
-                          {slot.name_kr}
+                        <p style={{ ...COMPACT_KOTRA_STYLE, color: '#e8dcc8', fontSize: '0.8125rem', lineHeight: 1.2 }}>
+                          {slotName}
                         </p>
                       </div>
                     </>
@@ -327,8 +508,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           paddingBottom: '0.375rem',
                         }}
                       >
-                        <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.75rem' }}>
-                          {sinner.name_kr}
+                        <p style={{ ...COMPACT_KOTRA_STYLE, color: '#3a2a10', fontSize: '0.875rem' }}>
+                          {sinnerName}
                         </p>
                       </div>
                     </>
@@ -344,7 +525,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                         style={{ background: 'rgba(13,11,8,0.5)' }}
                       >
                         <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.75rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                          {isFormation ? '편성' : '대기'}
+                          {isFormation ? tDeck('identity.formed') : tDeck('identity.bench')}
                         </span>
                         <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                           {n}
@@ -365,7 +546,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.15)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.6)' }}
                         >
-                          <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>변경</span>
+                          <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>{tDeck('identity.change')}</span>
                         </div>
                         <div
                           onClick={() => {
@@ -390,7 +571,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                         >
                           <span style={{ color: slot.slot_order < 99 ? '#5ab0d0' : '#e8b030', fontSize: '0.75rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
-                            {slot.slot_order < 99 ? '편성 해제' : '편성하기'}
+                            {slot.slot_order < 99 ? tDeck('identity.removeFormation') : tDeck('identity.addFormation')}
                           </span>
                         </div>
                       </>
@@ -403,7 +584,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.12)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,11,8,0.5)' }}
                       >
-                        <span style={{ color: '#e8b030', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>편성</span>
+                        <span style={{ color: '#e8b030', fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-body)', textShadow: '0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>{tDeck('identity.form')}</span>
                       </div>
                     )}
                   </div>
@@ -413,7 +594,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 {slot && (
                   <button
                     onClick={e => { e.stopPropagation(); handleGacksungToggle(sinner.id) }}
-                    title={isGacksung ? '각성 일러스트 -- 클릭하여 일반으로' : '일반 일러스트 -- 클릭하여 각성으로'}
+                    title={isGacksung ? tDeck('identity.toNormalArt') : tDeck('identity.toAwakenedArt')}
                     style={{
                       position: 'absolute',
                       top: '-0.4375rem',
@@ -446,7 +627,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
 
       {/* ── 인격 선택 모달 ── */}
       {modalSinner && (
-        <BaseModal open={!!identityModalSinner} onClose={() => setIdentityModalSinner(null)} maxWidth="48rem" title="인격 선택">
+        <BaseModal open={!!identityModalSinner} onClose={() => setIdentityModalSinner(null)} maxWidth="48rem" title={tDeck('identity.modalTitle')}>
           <div
             style={{
               background: '#1a1510',
@@ -458,7 +639,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             }}
           >
             {/* 모달 헤더 */}
-            <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
+            <div className="flex items-center justify-between sticky top-0 z-30" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2">
                 <Image
                   src={getSinnerLogoUrl(modalSinner.id)}
@@ -468,7 +649,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                   style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7 }}
                 />
                 <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>
-                  {modalSinner.name_kr} - 인격 선택
+                  {tDeck('identity.modalHeading', { sinner: getLocalizedSinnerName(modalSinner) })}
                 </span>
               </div>
               <button
@@ -479,7 +660,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               </button>
             </div>
 
-            {/* 선택 해제 버튼 */}
+            {/* {tDeck('identity.clear')} 버튼 */}
             {modalSlot && (
               <div style={{ padding: '0.75rem 1.25rem 0' }}>
                 <button
@@ -499,7 +680,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                   }}
                 >
                   <X style={{ width: '0.875rem', height: '0.875rem' }} />
-                  선택 해제
+                  {tDeck('identity.clear')}
                 </button>
               </div>
             )}
@@ -509,6 +690,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               {modalIdentities.map(ident => {
                 const isSelected = modalSlot?.identity_id === ident.id
                 const rc = RARITY_COLORS[ident.rarity] ?? RARITY_COLORS[1]
+                const identityName = localizeIdentityName(ident, locale)
                 return (
                   <button
                     key={ident.id}
@@ -526,34 +708,42 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     }}
                   >
                     {/* 인격 프로필 이미지 */}
-                    <div className="relative w-full" style={{ aspectRatio: '2/3', overflow: 'hidden' }}>
+                    <div className="relative isolate w-full" style={{ aspectRatio: '2/3', overflow: 'hidden' }}>
                       {ident.game_id && ident.folder_name && (
                         <Image
                           src={getIdentityInfoImageUrl(ident, false)}
-                          alt={ident.name_kr}
+                          alt={identityName}
                           fill
                           className="object-cover object-top"
                           sizes="200px"
                         />
                       )}
                       {/* 등급 별 이미지 오버레이 */}
-                      <div className="absolute top-0 left-0 z-10 flex items-center" style={{ padding: '0.25rem' }}>
+                      <div className="absolute top-0 left-0 z-[1] flex items-center" style={{ padding: '0.25rem' }}>
                         <RarityStars rarity={ident.rarity} />
                       </div>
                       {isSelected && (
-                        <div className="absolute inset-0 z-10" style={{ background: 'rgba(200,144,10,0.1)', border: '0.125rem solid #c8900a', borderRadius: '0.25rem' }} />
+                        <div className="absolute inset-0 z-[2]" style={{ background: 'rgba(200,144,10,0.1)', border: '0.125rem solid #c8900a', borderRadius: '0.25rem' }} />
                       )}
                     </div>
                     {/* 이름 + 키워드 */}
                     <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
-                      <p className="font-serif truncate" style={{ color: isSelected ? '#e8dcc8' : '#b0a898', fontSize: '0.6875rem', lineHeight: 1.3 }}>
-                        {ident.name_kr}
+                      <p
+                        className="truncate"
+                        style={{
+                          ...COMPACT_KOTRA_STYLE,
+                          color: isSelected ? '#e8dcc8' : '#b0a898',
+                          fontSize: '0.6875rem',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {identityName}
                       </p>
-                      {ident.keywords && ident.keywords.length > 0 && (
-                        <p className="truncate" style={{ fontSize: '0.5625rem', color: '#555', marginTop: '0.125rem' }}>
-                          {ident.keywords.join(' / ')}
-                        </p>
-                      )}
+                      <SkillKeywordChips
+                        keywords={ident.skill_keyword_list}
+                        getIconUrl={getIconUrl}
+                        getKeywordLabel={getLocalizedKeywordLabel}
+                      />
                     </div>
                   </button>
                 )
@@ -568,6 +758,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
           {sinners.map(sinner => {
             const slot = getSelectedIdentity(sinner.id)
+            const sinnerName = getLocalizedSinnerName(sinner)
             const selectedEgos = state.egoSlots.filter(e => e.sinner_id === sinner.id)
             const egoByGrade: Record<string, typeof state.egoSlots[0]> = {}
             for (const e of selectedEgos) egoByGrade[e.grade] = e
@@ -594,8 +785,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     height={14}
                     style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }}
                   />
-                  <span className="font-serif font-light truncate" style={{ color: slot ? '#8a7a60' : '#3a2a10', fontSize: '0.5625rem' }}>
-                    {sinner.name_kr}
+                  <span className="truncate" style={{ ...COMPACT_KOTRA_STYLE, color: slot ? '#8a7a60' : '#3a2a10', fontSize: '0.5625rem' }}>
+                    {sinnerName}
                   </span>
                 </div>
                 {/* 등급별 EGO 슬롯 */}
@@ -641,8 +832,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           </span>
                         )}
                         {ego ? (
-                          <span style={{ color: gc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, flex: 1, textAlign: 'left' }}>
-                            {ego.name_kr}
+                          <span style={{ ...COMPACT_KOTRA_STYLE, color: gc, fontSize: '0.5rem', lineHeight: 1.2, flex: 1, textAlign: 'left' }}>
+                            {getEgoSlotName(ego)}
                           </span>
                         ) : (
                           <span style={{ color: '#2a1e10', fontSize: '0.5rem', lineHeight: 1 }}>
@@ -655,7 +846,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 </div>
                 {!slot && (
                   <div style={{ padding: '0.25rem 0.5rem 0.375rem', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.5rem', color: '#333' }}>인격 미선택</span>
+                    <span style={{ fontSize: '0.875rem', color: '#333' }}>{tDeck('ego.noIdentity')}</span>
                   </div>
                 )}
               </div>
@@ -673,7 +864,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         for (const e of selectedEgos) egoByGrade[e.grade] = e
 
         return (
-          <BaseModal open={!!egoModalSinner} onClose={() => setEgoModalSinner(null)} maxWidth="42rem" title="E.G.O 선택">
+          <BaseModal open={!!egoModalSinner} onClose={() => setEgoModalSinner(null)} maxWidth="42rem" title={tDeck('ego.modalTitle')}>
             <div
               style={{
                 background: '#1a1510',
@@ -697,7 +888,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     />
                   )}
                   <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>
-                    {modalSinnerEgo?.name_kr} - EGO 선택
+                    {tDeck('ego.modalHeading', { sinner: getLocalizedSinnerName(modalSinnerEgo) })}
                   </span>
                 </div>
                 <button onClick={() => setEgoModalSinner(null)} style={{ color: '#666', cursor: 'pointer', padding: '0.25rem' }}>
@@ -729,28 +920,27 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           <span style={{ color: gc, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ALEPH</span>
                         )}
                         <div style={{ flex: 1, height: '1px', background: gc + '30' }} />
-                        {selectedForGrade && (
+                        {selectedForGrade && grade !== 'ZAYIN' && (
                           <button
                             onClick={() => dispatch({ type: 'REMOVE_EGO', egoId: selectedForGrade.ego_id })}
-                            style={{ color: '#c83040', fontSize: '0.625rem', cursor: 'pointer', padding: '0.125rem 0.375rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}
+                            style={{ color: '#c83040', fontSize: '0.875rem', cursor: 'pointer', padding: '0.1875rem 0.5rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}
                           >
-                            해제
+                            {tDeck('ego.remove')}
                           </button>
                         )}
                       </div>
 
                       {gradeEgos.length === 0 ? (
                         <div style={{ padding: '0.625rem', background: 'rgba(10,8,5,0.5)', borderRadius: '0.25rem', border: `1px solid ${gc}15`, textAlign: 'center' }}>
-                          <span style={{ color: '#333', fontSize: '0.6875rem' }}>해당 등급 EGO 없음</span>
+                          <span style={{ color: '#333', fontSize: '0.6875rem' }}>{tDeck('ego.emptyGrade')}</span>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: '0.5rem' }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {gradeEgos.map(ego => {
                             const isSelected = selectedForGrade?.ego_id === ego.id
-                            const egoSinEn = ego.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
-                            const egoSc = egoSinEn ? (SIN_COLORS[egoSinEn as keyof typeof SIN_COLORS] ?? gc) : gc
+                            const egoName = localizeEgoName(ego, locale)
                             return (
-                              <button
+                              <EgoDisplayCard
                                 key={ego.id}
                                 onClick={() => {
                                   dispatch({
@@ -764,51 +954,13 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                                     },
                                   })
                                 }}
-                                className="text-left transition-all"
-                                style={{
-                                  background: isSelected
-                                    ? `linear-gradient(160deg, ${egoSc}22 0%, ${egoSc}0d 100%)`
-                                    : 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
-                                  border: `1px solid ${isSelected ? egoSc + 'aa' : egoSc + '20'}`,
-                                  borderRadius: '0.375rem',
-                                  overflow: 'hidden',
-                                  cursor: 'pointer',
-                                  boxShadow: isSelected ? `0 0 0.625rem ${egoSc}44` : 'none',
-                                }}
-                              >
-                                {/* EGO 이미지 */}
-                                {ego.image_url?.startsWith('http') && (
-                                  <div className="relative w-full" style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#0d0b08' }}>
-                                    <Image
-                                      src={ego.image_url}
-                                      alt={ego.name_kr ?? ego.name}
-                                      fill
-                                      className="object-contain"
-                                      sizes="160px"
-                                    />
-                                  </div>
-                                )}
-                                {/* EGO 정보 */}
-                                <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
-                                  <p className="font-serif truncate" style={{ color: isSelected ? '#e8dcc8' : '#b0a898', fontSize: '0.625rem', lineHeight: 1.3 }}>
-                                    {ego.name_kr ?? ego.name}
-                                  </p>
-                                  <div className="flex items-center gap-1" style={{ marginTop: '0.25rem' }}>
-                                    {ego.sin_affinity && (
-                                      <Image
-                                        src={`${STORAGE_BASE}/icons/Sins/transparent/${ego.sin_affinity.charAt(0).toUpperCase() + ego.sin_affinity.slice(1)}.webp`}
-                                        alt={ego.sin_affinity}
-                                        width={14}
-                                        height={14}
-                                        style={{ width: '0.875rem', height: '0.875rem' }}
-                                      />
-                                    )}
-                                    <span style={{ color: gc, fontSize: '0.5rem', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                      {grade}
-                                    </span>
-                                  </div>
-                                </div>
-                              </button>
+                                ego={ego}
+                                name={egoName}
+                                sinnerId={ego.sinner_id}
+                                lang={locale}
+                                selected={isSelected}
+                                className="transition-[filter] duration-200 ease-out brightness-95 hover:brightness-105 hover:saturate-110"
+                              />
                             )
                           })}
                         </div>
@@ -822,12 +974,12 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         )
       })()}
 
-      {/* ── 스킬셋 탭 ── */}
+      {/* ── 스킬 교환 탭 ── */}
       {subTab === 'skillset' && (
         <div>
           {state.identitySlots.length === 0 ? (
             <div className="text-center" style={{ padding: '3rem 1rem', color: '#444', fontSize: '0.8125rem' }}>
-              인격을 먼저 선택하세요.
+              {tDeck('skillset.selectIdentityFirst')}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
@@ -836,8 +988,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 if (!slot) return null
 
                 const identData = identityById.get(slot.identity_id)
-                const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
-                const total = dist[0] + dist[1] + dist[2]
+                const dist = normalizeSkillDistribution(skillDistribution[sinner.id] ?? DEFAULT_SKILL_DISTRIBUTION)
                 const isDefault = dist[0] === 3 && dist[1] === 2 && dist[2] === 1
                 const isGacksung = gacksungSlots[sinner.id] ?? false
 
@@ -851,248 +1002,56 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
                 )
 
-                // 현재 배분 기준 죄악별 기여 점 (색상 배열)
-                const sinDotsCurrentMap: Record<string, number> = {}
-                const sinDotsDefaultMap: Record<string, number> = {}
-                const defaultDist: [number, number, number] = [3, 2, 1]
-                for (let i = 0; i < 3; i++) {
-                  const sk = slotBestSkills[i]
-                  if (!sk) continue
-                  sinDotsCurrentMap[sk.sin_affinity] = (sinDotsCurrentMap[sk.sin_affinity] ?? 0) + dist[i]
-                  sinDotsDefaultMap[sk.sin_affinity] = (sinDotsDefaultMap[sk.sin_affinity] ?? 0) + defaultDist[i]
-                }
-                // 점 배열로 펼치기 (색상 순서 유지)
-                const sinDotsCurrent: string[] = []
-                const sinDotsDefault: string[] = []
-                for (let i = 0; i < 3; i++) {
-                  const sk = slotBestSkills[i]
-                  if (!sk) continue
-                  const color = SIN_COLORS[sk.sin_affinity as keyof typeof SIN_COLORS] ?? '#555'
-                  for (let j = 0; j < dist[i]; j++) sinDotsCurrent.push(color)
-                  for (let j = 0; j < defaultDist[i]; j++) sinDotsDefault.push(color)
-                }
-
                 return (
                   <div key={sinner.id}>
-                    {/* 미니 인격 카드 */}
                     <div
                       className="relative w-full"
                       style={{
-                        aspectRatio: '2/3',
-                        background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
+                        background: '#120e09',
                         border: `0.09375rem solid ${(RARITY_COLORS[slot.rarity] ?? RARITY_COLORS[1]).border}`,
                         borderRadius: '0.25rem',
                         overflow: 'hidden',
                       }}
                     >
-                      {identData && (
-                        <Image
-                          src={getIdentityInfoImageUrl(identData, isGacksung)}
-                          alt={slot.name_kr}
-                          fill
-                          className="object-cover object-top"
-                          sizes="180px"
-                        />
-                      )}
-                      <div
-                        className="absolute bottom-0 left-0 right-0 z-10 text-center"
-                        style={{
-                          background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                          paddingTop: '1.25rem',
-                          paddingBottom: '0.25rem',
-                        }}
-                      >
-                        <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.75rem' }}>{slot.name_kr}</p>
-                      </div>
-                    </div>
-
-                    {/* 스킬 배분 컨트롤 */}
-                    <div style={{
-                      marginTop: '0.375rem',
-                      background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                      border: `1px solid ${isDefault ? '#221a0f' : 'rgba(200,144,10,0.4)'}`,
-                      borderRadius: '0.25rem',
-                      padding: '0.375rem',
-                    }}>
-                      {[0, 1, 2].map(idx => {
-                        const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
-                        return (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
-                          {/* 스킬 아이콘 */}
-                          {identForIcon && identForIcon.game_id ? (
-                            <Image
-                              src={getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], idx + 1)}
-                              alt={`S${idx + 1}`}
-                              width={24}
-                              height={24}
-                              style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.125rem', flexShrink: 0 }}
-                            />
-                          ) : (
-                            <span style={{
-                              fontSize: '0.5625rem',
-                              color: '#c8900a',
-                              fontFamily: 'var(--font-mono)',
-                              fontWeight: 700,
-                              width: '1.5rem',
-                              flexShrink: 0,
-                              textAlign: 'center',
-                            }}>
-                              S{idx + 1}
-                            </span>
-                          )}
-                          {skillName && (
-                            <span style={{
-                              fontSize: '0.5rem', color: '#8a7a60', flex: 1, minWidth: 0,
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            }}>
-                              {skillName}
-                            </span>
-                          )}
-                          {!skillName && <div style={{ flex: 1 }} />}
-                          <button
-                            onClick={() => handleSkillChange(sinner.id, idx, -1)}
-                            disabled={dist[idx] <= 0}
-                            style={{
-                              width: '1.125rem',
-                              height: '1.125rem',
-                              borderRadius: '0.125rem',
-                              background: dist[idx] <= 0 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                              border: `1px solid ${dist[idx] <= 0 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                              color: dist[idx] <= 0 ? '#2a2015' : '#c8900a',
-                              fontSize: '0.75rem',
-                              cursor: dist[idx] <= 0 ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              lineHeight: 1,
-                              padding: 0,
-                            }}
-                          >
-                            &#x2212;
-                          </button>
-                          <span style={{
-                            width: '1rem',
-                            textAlign: 'center',
-                            fontSize: '0.8125rem',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 700,
-                            color: dist[idx] === 0 ? '#3a2a10' : '#c8900a',
-                          }}>
-                            {dist[idx]}
-                          </span>
-                          <button
-                            onClick={() => handleSkillChange(sinner.id, idx, 1)}
-                            disabled={total >= 6}
-                            style={{
-                              width: '1.125rem',
-                              height: '1.125rem',
-                              borderRadius: '0.125rem',
-                              background: total >= 6 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                              border: `1px solid ${total >= 6 ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                              color: total >= 6 ? '#2a2015' : '#c8900a',
-                              fontSize: '0.75rem',
-                              cursor: total >= 6 ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              lineHeight: 1,
-                              padding: 0,
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
-                        )
-                      })}
-                      {/* 합계 + 프리셋 */}
-                      <div style={{
-                        borderTop: '1px solid #1a1208',
-                        marginTop: '0.25rem',
-                        paddingTop: '0.25rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}>
-                        <span style={{
-                          fontSize: '0.5625rem',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 700,
-                          color: total === 6 ? '#5a8a40' : '#c83020',
-                        }}>
-                          {total}/6
-                        </span>
-                        <div style={{ display: 'flex', gap: '0.125rem' }}>
-                          {SKILL_PRESETS.map(preset => {
-                            const active = dist[0] === preset[0] && dist[1] === preset[1] && dist[2] === preset[2]
-                            return (
-                              <button
-                                key={preset.join(',')}
-                                onClick={() => setSkillDistribution(prev => ({ ...prev, [sinner.id]: preset }))}
-                                style={{
-                                  fontSize: '0.5rem',
-                                  fontFamily: 'var(--font-mono)',
-                                  padding: '0.0625rem 0.25rem',
-                                  borderRadius: '0.125rem',
-                                  background: active ? 'rgba(200,144,10,0.2)' : 'transparent',
-                                  border: `1px solid ${active ? 'rgba(200,144,10,0.5)' : '#18120a'}`,
-                                  color: active ? '#c8900a' : '#444',
-                                  cursor: 'pointer',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {preset.join('/')}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      {/* 죄악 기여 점 시각화 */}
-                      <div style={{
-                        borderTop: '1px solid #1a1208',
-                        marginTop: '0.25rem',
-                        paddingTop: '0.25rem',
-                      }}>
-                        {/* 현재 배분 기준 죄악 점 */}
-                        <div style={{ display: 'flex', gap: '0.125rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                          {sinDotsCurrent.map((color, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                display: 'inline-block',
-                                width: '0.375rem',
-                                height: '0.375rem',
-                                borderRadius: '0.0625rem',
-                                background: color,
-                                flexShrink: 0,
-                              }}
-                            />
-                          ))}
-                          {sinDotsCurrent.length === 0 && (
-                            <span style={{ fontSize: '0.5rem', color: '#333' }}>—</span>
-                          )}
-                        </div>
-                        {/* 기본(3-2-1) 대비 표시 (배분이 변경된 경우에만) */}
-                        {!isDefault && (
-                          <div style={{ display: 'flex', gap: '0.125rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.1875rem', opacity: 0.3 }}>
-                            {sinDotsDefault.map((color, i) => (
-                              <span
-                                key={i}
-                                style={{
-                                  display: 'inline-block',
-                                  width: '0.375rem',
-                                  height: '0.375rem',
-                                  borderRadius: '0.0625rem',
-                                  background: color,
-                                  flexShrink: 0,
-                                }}
-                              />
-                            ))}
-                          </div>
+                      <div className="relative w-full" style={{ aspectRatio: '2/2.35', overflow: 'hidden', background: '#0d0b08' }}>
+                        {identData && (
+                          <Image
+                            src={getIdentityInfoImageUrl(identData, isGacksung)}
+                            alt={getIdentitySlotName(slot)}
+                            fill
+                            className="object-cover object-top"
+                            sizes="180px"
+                          />
                         )}
                       </div>
-
                     </div>
+
+                    <SkillExchangePanel
+                      distribution={dist}
+                      skills={[
+                        slotBestSkills[0] ? {
+                          name: slotBestSkills[0].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 1) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[0].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                        slotBestSkills[1] ? {
+                          name: slotBestSkills[1].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 2) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[1].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                        slotBestSkills[2] ? {
+                          name: slotBestSkills[2].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 3) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[2].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                      ]}
+                      isDefault={isDefault}
+                      showTotal={false}
+                      canDecrease={idx => dist[idx] > 0}
+                      canIncrease={idx => dist[idx] < 6 && getHighestDonorIndex(dist, idx) !== null}
+                      onAdjust={(idx, delta) => handleSkillChange(sinner.id, idx, delta)}
+                      onPresetSelect={preset => setSkillDistribution(prev => ({ ...prev, [sinner.id]: normalizeSkillDistribution(preset) }))}
+                    />
                   </div>
                 )
               })}
@@ -1104,16 +1063,16 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       {/* ── 하단: 키워드 차트 + 패시브 ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8" style={{ borderTop: '1px solid #1a1510', paddingTop: '1.5rem' }}>
         <div>
-          <h3 className="font-serif mb-3" style={{ color: '#e8dcc8', fontSize: '1rem' }}>키워드 분포</h3>
+          <h3 className="mb-3" style={{ ...COMPACT_KOTRA_STYLE, color: '#e8dcc8', fontSize: '1rem' }}>{tDeck('stats.keywordDistribution')}</h3>
           {keywordDist.length > 0 ? (
-            <KeywordChart distribution={keywordDist} />
+            <KeywordChart distribution={keywordDist} getKeywordLabel={getLocalizedKeywordLabel} />
           ) : (
-            <p style={{ color: '#444', fontSize: '0.8125rem' }}>인격을 선택하면 키워드 분포가 표시됩니다.</p>
+            <p style={{ color: '#444', fontSize: '0.8125rem' }}>{tDeck('stats.keywordEmpty')}</p>
           )}
         </div>
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-serif" style={{ color: '#e8dcc8', fontSize: '1rem' }}>패시브</h3>
+            <h3 style={{ ...COMPACT_KOTRA_STYLE, color: '#e8dcc8', fontSize: '1rem' }}>{tDeck('stats.passives')}</h3>
             <div className="flex gap-1">
               {(['battle', 'support'] as const).map(tab => (
                 <button
@@ -1121,7 +1080,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                   onClick={() => setPassiveSubTab(tab)}
                   style={{
                     padding: '0.1875rem 0.625rem',
-                    fontSize: '0.75rem',
+                    fontSize: '0.9375rem',
                     borderRadius: '0.25rem',
                     cursor: 'pointer',
                     fontWeight: passiveSubTab === tab ? 700 : 400,
@@ -1131,7 +1090,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     transition: 'all 0.15s',
                   }}
                 >
-                  {tab === 'battle' ? '배틀' : '서포트'}
+                  {tab === 'battle' ? tDeck('stats.battle') : tDeck('stats.support')}
                 </button>
               ))}
             </div>
@@ -1144,8 +1103,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               )
               if (filtered.length === 0) {
                 return (
-                  <p style={{ color: '#444', fontSize: '0.75rem' }}>
-                    {state.identitySlots.length === 0 ? '인격을 선택하면 패시브가 표시됩니다.' : '해당 패시브가 없습니다.'}
+                  <p style={{ color: '#444', fontSize: '0.875rem' }}>
+                    {state.identitySlots.length === 0 ? tDeck('stats.passiveSelectIdentity') : tDeck('stats.passiveEmpty')}
                   </p>
                 )
               }
@@ -1153,6 +1112,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                   {filtered.map(p => {
                     const slot = state.identitySlots.find(s => s.identity_id === p.identity_id)
+                    const slotName = slot ? getIdentitySlotName(slot) : ''
                     const sinTypes = p.sin_affinity ? p.sin_affinity.split(',').map(s => s.trim()) : []
                     const current = sinTypes.reduce((sum, st) => sum + (deckSinCounts[st] ?? 0), 0)
                     const required = p.sin_count ?? 1
@@ -1165,6 +1125,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     const primarySin = sinTypes[0] ?? null
                     const sinCap = primarySin ? primarySin.charAt(0).toUpperCase() + primarySin.slice(1) : null
                     const pc = primarySin ? (SIN_COLORS[primarySin as keyof typeof SIN_COLORS] ?? '#888') : '#888'
+                    const passiveName = localizePassiveName(p, locale)
+                    const passiveDescription = localizePassiveDescription(p, locale)
 
                     // S1~S3 스킬 죄악 속성 (해당 인격)
                     const identSkills = skills
@@ -1189,7 +1151,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                         {/* 수감자명 + S1/S2/S3 죄악 속성 점 */}
                         <div className="flex items-center gap-1" style={{ marginBottom: '0.125rem' }}>
                           <span style={{ color: '#888', fontSize: '0.6875rem' }}>
-                            {slot?.name_kr ?? ''}
+                            {slotName}
                           </span>
                           {skillDots.map((sk, i) => {
                             const dotColor = SIN_COLORS[sk!.sin_affinity as keyof typeof SIN_COLORS] ?? '#555'
@@ -1210,7 +1172,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                         {/* 패시브명 + 조건 배지 + 죄악 아이콘 + current/required */}
                         <div className="flex items-center gap-1.5 flex-wrap" style={{ marginBottom: '0.25rem' }}>
                           <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 700 }}>
-                            {p.name}
+                            {passiveName}
                           </span>
                           {p.active_cond && (
                             <span style={{
@@ -1223,12 +1185,12 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                               color: isResonance ? '#c8900a' : '#5ab0d0',
                               flexShrink: 0,
                             }}>
-                              {isResonance ? '공명' : '보유'}
+                              {isResonance ? tDeck('stats.resonance') : tDeck('stats.stock')}
                             </span>
                           )}
                           {distributionWarning && (
                             <span
-                              title="스킬 배분 변경으로 인해 조건이 미충족됩니다"
+                              title={tDeck('stats.passiveWarning')}
                               style={{
                                 fontSize: '0.625rem',
                                 color: '#e8a020',
@@ -1236,7 +1198,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                                 lineHeight: 1,
                               }}
                             >
-                              ⚠
+                              !
                             </span>
                           )}
                           {sinCap && (
@@ -1266,8 +1228,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           )}
                         </div>
                         {/* 설명 (키워드 툴팁 포함) */}
-                        {p.description && (
-                          <SkillDescription description={p.description} accentColor={pc} variant="detail" showCoinBadges={false} />
+                        {passiveDescription && (
+                          <SkillDescription description={passiveDescription} accentColor={pc} variant="detail" showCoinBadges={false} />
                         )}
                       </div>
                     )

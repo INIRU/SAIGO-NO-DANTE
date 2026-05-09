@@ -23,6 +23,7 @@ export interface IdentitySlot {
   name_kr: string
   rarity: number
   keywords: string[]
+  skill_keyword_list?: string[] | null
   game_id: string | null
   folder_name: string | null
   slot_order: number
@@ -202,8 +203,11 @@ export interface IdentityData {
   id: string
   sinner_id: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity: number
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
   game_id: string | null
   folder_name: string | null
 }
@@ -219,6 +223,8 @@ export interface EgoData {
   sinner_id: string
   name: string
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: string | null
   image_url: string | null
@@ -237,11 +243,15 @@ export interface SkillSummary {
 export interface PassiveData {
   id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   identity_id: string
   passive_type: string  // 'battle' | 'support'
   sin_affinity: string | null
   sin_count: number | null
   active_cond: string | null  // 'resonance' | 'stock' | null
   description: string | null
+  description_en?: string | null
+  description_jp?: string | null
   uptie_level: number | null
 }

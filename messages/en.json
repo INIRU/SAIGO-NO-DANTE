@@ -292,7 +292,211 @@
     "difficulty": "Difficulty",
     "normal": "Normal",
     "hard": "Hard",
-    "tags": "Tags"
+    "tags": "Tags",
+    "tempSaves": {
+      "button": "Temp saves",
+      "menuLabel": "Planner temporary saves",
+      "closeMenu": "Close",
+      "saveCurrent": "Save current plan",
+      "empty": "No temporary plans saved.",
+      "slotLabel": "Slot {slot}",
+      "emptySlot": "Empty",
+      "saveToSlot": "Save",
+      "overwriteSlot": "Overwrite",
+      "loadSlot": "Load",
+      "saved": "Temporary plan saved.",
+      "savedToSlot": "Saved to slot {slot}.",
+      "overwritten": "Slot {slot} overwritten.",
+      "loaded": "Temporary plan loaded.",
+      "loadedFromSlot": "Loaded slot {slot}.",
+      "deleted": "Temporary plan deleted.",
+      "deletedFromSlot": "Cleared slot {slot}.",
+      "untitled": "Untitled plan",
+      "deleteSlotLabel": "Clear slot {slot}",
+      "deleteLabel": "Delete temporary save {label}"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "Community Plans | Mirror Dungeon Planner",
+        "description": "Browse and vote on community Mirror Dungeon plans for Limbus Company."
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "Community Plans",
+        "subtitle": "Shared Mirror Dungeon routes and strategy plans.",
+        "newPlan": "Create Plan"
+      },
+      "search": {
+        "label": "Search plans",
+        "section": "Search",
+        "placeholder": "Identity, keyword, title...",
+        "clear": "Clear search",
+        "hint": "+ for OR, * for AND",
+        "suggestionHeading": "Identity / Keyword",
+        "suggestionHint": "Press Tab to pick",
+        "suggestionIdentity": "Identity",
+        "suggestionKeyword": "Keyword"
+      },
+      "sort": {
+        "label": "Sort",
+        "latest": "Latest",
+        "popular": "Votes"
+      },
+      "difficulty": {
+        "normal": "Normal",
+        "hard": "Hard",
+        "overlap": "Overlap",
+        "extreme": "Extreme"
+      },
+      "filters": {
+        "button": "Filters",
+        "panel": "Mirror Dungeon plan filter panel",
+        "aside": "Mirror Dungeon plan filters",
+        "closePanel": "Close filter panel",
+        "close": "Close filters",
+        "difficulty": "Difficulty",
+        "all": "All",
+        "keywords": "Pinned Keywords",
+        "keywordModeToggle": "Toggle keyword OR/AND condition",
+        "identity": "Identity Filter",
+        "identityModeToggle": "Toggle identity OR/AND condition",
+        "identitySelected": "selected",
+        "collection": "Collection Filter",
+        "ownedIdentityPlan": "Owned Identity Plans",
+        "ownedEgoPlan": "Owned E.G.O Plans",
+        "collectionCodePlaceholder": "Collection URL or code",
+        "collectionCodeLabel": "Collection URL or code",
+        "collectionLoading": "Loading collection...",
+        "apply": "Apply",
+        "invalidCode": "Invalid code",
+        "clear": "Clear",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "Language",
+        "current": "Current language",
+        "all": "All",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "Select identity"
+      },
+      "result": {
+        "total": "{count} plans",
+        "filtered": "{filtered}/{total} plans",
+        "filterApplied": "(filters applied)"
+      },
+      "grid": {
+        "empty": "No plans have been posted yet.",
+        "noSearchResults": "No results for \"{query}\".",
+        "createFirst": "Create the first plan →",
+        "loadMore": "Load more",
+        "loadingMore": "Loading...",
+        "scrollForMore": "Scroll to load more"
+      },
+      "card": {
+        "anonymous": "Anonymous"
+      },
+      "relativeTime": {
+        "now": "just now",
+        "minutes": "{count}m ago",
+        "hours": "{count}h ago",
+        "days": "{count}d ago",
+        "months": "{count}mo ago",
+        "years": "{count}y ago"
+      }
+    },
+    "tabs": {
+      "deck": "Deck",
+      "blessing": "Blessings",
+      "gift": "Gifts",
+      "floor": "Floor Plan",
+      "summary": "Preview"
+    },
+    "difficultyValues": {
+      "normal": "Normal",
+      "hard": "Hard",
+      "overlap": "Overlap",
+      "extreme": "Extreme"
+    },
+    "floorCount": "{count}F",
+    "actions": {
+      "triggerMode": "Trigger Mode",
+      "copyUrl": "Copy URL",
+      "copied": "Copied",
+      "upload": "Upload",
+      "update": "Update",
+      "uploading": "Uploading...",
+      "updating": "Updating...",
+      "uploadComplete": "Uploaded",
+      "updateComplete": "Updated",
+      "uploadTitle": "Upload this plan to the community",
+      "loginRequired": "Sign in to use this",
+      "titleRequired": "Enter a plan title",
+      "uploaded": "Uploaded to the community.",
+      "updated": "Plan updated.",
+      "uploadFailed": "Upload failed",
+      "updateFailed": "Update failed",
+      "uploadError": "An error occurred while uploading"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "Deck formation subtabs",
+        "identity": "Identity",
+        "ego": "E.G.O",
+        "skillset": "Skill Exchange"
+      },
+      "identity": {
+        "formed": "Front",
+        "bench": "Bench",
+        "change": "Change",
+        "removeFormation": "Remove",
+        "addFormation": "Add",
+        "form": "Form",
+        "toNormalArt": "Awakened art -- click for normal",
+        "toAwakenedArt": "Normal art -- click for awakened",
+        "modalTitle": "Select Identity",
+        "modalHeading": "{sinner} - Select Identity",
+        "clear": "Clear selection"
+      },
+      "ego": {
+        "modalTitle": "Select E.G.O",
+        "modalHeading": "{sinner} - Select E.G.O",
+        "remove": "Remove",
+        "emptyGrade": "No E.G.O in this grade",
+        "noIdentity": "No identity"
+      },
+      "skillset": {
+        "selectIdentityFirst": "Select an identity first."
+      },
+      "stats": {
+        "keywordDistribution": "Keyword distribution",
+        "keywordEmpty": "Select identities to show keyword distribution.",
+        "passives": "Passives",
+        "battle": "Battle",
+        "support": "Support",
+        "passiveSelectIdentity": "Select identities to show passives.",
+        "passiveEmpty": "No matching passives.",
+        "resonance": "Res.",
+        "stock": "Stock",
+        "passiveWarning": "Skill distribution no longer meets this condition"
+      }
+    },
+    "blessingTab": {
+      "title": "Grace of Stars",
+      "usedStarlight": "Starlight used",
+      "clear": "Clear",
+      "selectAll": "Select all blessings",
+      "allClear": "Clear all",
+      "allPlus": "All +",
+      "plusClear": "Clear +",
+      "allPlusPlus": "All ++",
+      "plusplusClear": "Clear ++",
+      "base": "Base"
+    }
   },
   "guide": {
     "title": "Guides",
