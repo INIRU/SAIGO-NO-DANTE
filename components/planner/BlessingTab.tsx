@@ -12,6 +12,7 @@ const BLESSING_UI_ASSET_BASE = '/assets/planner/blessing-ui'
 const BLESSING_CARD_BASE = `${BLESSING_UI_ASSET_BASE}/blessing-card-dante-base.webp`
 const BLESSING_CARD_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-card-dante-selected-overlay.webp`
 const BLESSING_BUTTON_DANTE_RED = `${BLESSING_UI_ASSET_BASE}/blessing-button-dante-red.webp`
+const BLESSING_BUTTON_DANTE_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-button-dante-selected-overlay.webp`
 const BLESSING_PLUS_DANTE_NORMAL = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante.webp`
 const BLESSING_PLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante-normal.webp`
 const BLESSING_PLUSPLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plusplus-dante-normal.webp`
@@ -35,64 +36,24 @@ const NUMERIC_DIFF_PATTERN = /([+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등�
 const NUMERIC_TOKEN_PATTERN = /[+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등급)?/g
 
 // 가호 데이터 (게임 추출 기반)
-interface Blessing {
+export interface Blessing {
   baseId: number
   name: string
   costs: [number, number, number]  // [기본, +, ++]
   effectsByLevel: [string[], string[], string[]]  // [기본, +, ++]
 }
 
-const BLESSINGS: Blessing[] = [
-  { baseId: 100, name: '시작의 별', costs: [10, 20, 30], effectsByLevel: [
-    ['시작 코스트 +150', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'],
-    ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'],
-    ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 2회 무료'],
-  ]},
-  { baseId: 101, name: '쌓여가는 별무리', costs: [10, 20, 30], effectsByLevel: [
-    ['층 이동 시, 보유 코스트 10% 증가 (최대 100)', '기프트 판매 비용 50% 증가 (상점별 1회)'],
-    ['층 이동 시, 보유 코스트 20% 증가 (최대 125)', '기프트 판매 비용 75% 증가 (상점별 1회)'],
-    ['층 이동 시, 보유 코스트 30% 증가 (최대 150)', '기프트 판매 비용 100% 증가 (상점별 1회)'],
-  ]},
-  { baseId: 102, name: '성간여행', costs: [20, 40, 60], effectsByLevel: [
-    ['테마팩 목록 +1', '테마팩 새로고침 횟수 +2', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)'],
-    ['테마팩 목록 +1', '테마팩 새로고침 횟수 +3', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)', '테마팩 해금 수에 따라 라운드 시작 시 버프'],
-    ['테마팩 목록 +1', '테마팩 새로고침 횟수 +4', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)', '테마팩 해금 수에 따라 라운드 시작 시 버프'],
-  ]},
-  { baseId: 103, name: '쏟아지는 유성우', costs: [20, 40, 60], effectsByLevel: [
-    ['시작 코스트 +400', '시작 기프트 수 +1'],
-    ['시작 코스트 +500', '시작 기프트 수 +1', '별빛 전투 보상 선택 시 코스트 +75'],
-    ['시작 코스트 +700', '시작 기프트 수 +1', '별빛 전투 보상 선택 시 코스트 +150'],
-  ]},
-  { baseId: 104, name: '쌍성계 상점', costs: [30, 60, 90], effectsByLevel: [
-    ['상점 기프트 목록 +1', '전투 보급 코스트 +20', '상점에서 높은 등급 기프트 등장 확률 상승'],
-    ['상점 기프트 목록 +1', '전투 보급 코스트 +30', '상점에서 높은 등급 기프트 등장 확률 상승', '상점 입장 시 기프트 등급 합 기반 코스트 획득'],
-    ['상점 기프트 목록 +1', '전투 보급 코스트 +40', '상점에서 높은 등급 기프트 등장 확률 상승', '상점 입장 시 기프트 등급 합 기반 코스트 획득'],
-  ]},
-  { baseId: 105, name: '위성계 상점', costs: [30, 60, 90], effectsByLevel: [
-    ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 무작위 1등급 기프트 1개 획득'],
-    ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 무작위 1등급 기프트 2개 획득', '강화 상점 출현 확률 증가'],
-    ['상점 키워드 새로고침 2회 무료', '1층 입장 시, 무작위 1등급 기프트 3개 획득', '강화 상점 출현 확률 증가'],
-  ]},
-  { baseId: 106, name: '성운의 총애', costs: [40, 80, 120], effectsByLevel: [
-    ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 5)'],
-    ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'],
-    ['1층 입장 시, 인격 레벨 +3', '6층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'],
-  ]},
-  { baseId: 107, name: '별빛의 인도', costs: [40, 80, 120], effectsByLevel: [
-    ['속도 최댓값 +2', '합 위력 증가 1', '피해량 증가 1', '보호 1'],
-    ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'],
-    ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'],
-  ]},
-  { baseId: 108, name: '우연한 혜성', costs: [50, 100, 150], effectsByLevel: [
-    ['상점 입장 시 합성 판매용 기프트 1개 획득', '3층 입장 시, 무작위 3등급 기프트 1개 획득', '합성 시, 2단계 낮은 무작위 기프트 획득 (상점별 1회)'],
-    ['상점 입장 시 합성 판매용 기프트 2개 획득', '3/5층 입장 시, 무작위 3등급 기프트 1개 획득', '합성 시, 2단계 낮은 무작위 기프트 획득 (상점별 1회)'],
-    ['상점 입장 시 합성 판매용 기프트 3개 획득', '3/5/7층 입장 시, 무작위 4등급 기프트 1개 획득', '합성 시, 1단계 낮은 무작위 기프트 획득 (상점별 1회)'],
-  ]},
-  { baseId: 109, name: '완전한 가능성', costs: [60, 120, 180], effectsByLevel: [
-    ['테마팩 목록 +1', '시작 기프트 수 +1', '입장 시, 키워드 3등급 기프트 1개 선택 획득', '입장 시, 어두운 잔영 1개 획득'],
-    ['테마팩 목록 +1', '시작 기프트 수 +1', '입장 시, 키워드 3등급 기프트 2개 선택 획득', '입장 시, 1~2등급 합성 재료 기프트 획득'],
-    ['테마팩 목록 +1', '시작 기프트 수 +1', '입장 시, 키워드 3등급 기프트 3개 선택 획득', '입장 시, 1~3등급 합성 재료 기프트 획득'],
-  ]},
+export const BLESSING_CONFIGS: Array<Pick<Blessing, 'baseId' | 'costs'>> = [
+  { baseId: 100, costs: [10, 20, 30] },
+  { baseId: 101, costs: [10, 20, 30] },
+  { baseId: 102, costs: [20, 40, 60] },
+  { baseId: 103, costs: [20, 40, 60] },
+  { baseId: 104, costs: [30, 60, 90] },
+  { baseId: 105, costs: [30, 60, 90] },
+  { baseId: 106, costs: [40, 80, 120] },
+  { baseId: 107, costs: [40, 80, 120] },
+  { baseId: 108, costs: [50, 100, 150] },
+  { baseId: 109, costs: [60, 120, 180] },
 ]
 
 type EffectSegment = {
@@ -107,10 +68,52 @@ type StyledEffectSegment = {
   tone: EffectTone
 }
 
-const LEVEL_LABELS = ['', '+', '++'] as const
+export const LEVEL_LABELS = ['', '+', '++'] as const
 const CJK_PATTERN = /[가-힣ぁ-んァ-ヶ一-龯]/
 
-function getBlessingDisplayName(blessing: Blessing, selectedLevel: number) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string')
+}
+
+function normalizeEffectsByLevel(value: unknown): [string[], string[], string[]] | null {
+  if (!Array.isArray(value) || value.length !== 3) return null
+  if (!value.every(isStringArray)) return null
+  return [value[0], value[1], value[2]]
+}
+
+export function normalizeBlessingMessages(raw: unknown, fallbackName: (baseId: number) => string): Blessing[] {
+  if (!isRecord(raw)) {
+    return BLESSING_CONFIGS.map(config => ({
+      ...config,
+      name: fallbackName(config.baseId),
+      effectsByLevel: [[], [], []],
+    }))
+  }
+
+  return BLESSING_CONFIGS.map(config => {
+    const entry = raw[String(config.baseId)]
+    if (!isRecord(entry)) {
+      return {
+        ...config,
+        name: fallbackName(config.baseId),
+        effectsByLevel: [[], [], []],
+      }
+    }
+
+    const effectsByLevel = normalizeEffectsByLevel(entry.effectsByLevel)
+    return {
+      ...config,
+      name: typeof entry.name === 'string' ? entry.name : fallbackName(config.baseId),
+      effectsByLevel: effectsByLevel ?? [[], [], []],
+    }
+  })
+}
+
+export function getBlessingDisplayName(blessing: Blessing, selectedLevel: number) {
   return selectedLevel > 1 ? `${blessing.name}${LEVEL_LABELS[selectedLevel - 1]}` : blessing.name
 }
 
@@ -170,6 +173,29 @@ function getUpgradeGlyph(level: number, active: boolean): UpgradeGlyph {
 function getUpgradeGlyphStyle(active: boolean): CSSProperties {
   return {
     gap: active ? 0 : '0.0625rem',
+  }
+}
+
+function getUpgradePressedOverlayStyle(active: boolean): CSSProperties {
+  return {
+    position: 'absolute',
+    inset: '-9px -12px',
+    zIndex: 20,
+    pointerEvents: 'none',
+    opacity: active ? 1 : 0,
+    overflow: 'visible',
+    transform: 'translate(-0.5px, -0.5px)',
+    borderStyle: 'solid',
+    borderWidth: '8px',
+    borderColor: 'transparent',
+    borderImageSource: `url("${BLESSING_BUTTON_DANTE_SELECTED_OVERLAY}")`,
+    borderImageSlice: '16 fill',
+    borderImageOutset: 0,
+    borderImageRepeat: 'stretch',
+    background: 'transparent',
+    boxShadow: 'none',
+    mixBlendMode: 'normal',
+    transition: 'opacity 160ms ease',
   }
 }
 
@@ -342,6 +368,10 @@ export default function BlessingTab({ state, dispatch }: Props) {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [cardScale, setCardScale] = useState(1)
   const [cardColumnCount, setCardColumnCount] = useState(5)
+  const blessings = useMemo(
+    () => normalizeBlessingMessages(t.raw('blessings'), baseId => t('fallbackName', { baseId })),
+    [t],
+  )
 
   // 가호 선택 상태: giftInventory에 'blessing_{baseId}_{level}' 형태로 저장
   const selectedBlessings = useMemo(() => {
@@ -360,11 +390,11 @@ export default function BlessingTab({ state, dispatch }: Props) {
   const totalCost = useMemo(() => {
     let cost = 0
     for (const [baseId, level] of selectedBlessings) {
-      const blessing = BLESSINGS.find(b => b.baseId === baseId)
+      const blessing = blessings.find(b => b.baseId === baseId)
       if (blessing && level > 0) cost += blessing.costs[level - 1]
     }
     return cost
-  }, [selectedBlessings])
+  }, [blessings, selectedBlessings])
 
   const hasSelectedBlessings = selectedBlessings.size > 0
 
@@ -383,7 +413,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
   }
 
   const allSelectedAtLevel = (level: number) =>
-    BLESSINGS.every(b => selectedBlessings.get(b.baseId) === level)
+    blessings.every(b => selectedBlessings.get(b.baseId) === level)
 
   useEffect(() => {
     const grid = gridRef.current
@@ -422,7 +452,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
       if (id.startsWith('blessing_')) dispatch({ type: 'REMOVE_GIFT', giftId: id })
     }
     if (!shouldClear) {
-      for (const b of BLESSINGS) {
+      for (const b of blessings) {
         dispatch({ type: 'ADD_GIFT', giftId: `blessing_${b.baseId}_${level}` })
       }
     }
@@ -532,7 +562,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
           padding: '1rem 0 0',
         }}
       >
-        {BLESSINGS.map(blessing => {
+        {blessings.map(blessing => {
           const level = selectedBlessings.get(blessing.baseId) ?? 0
           const isSelected = level > 0
           const currentCost = level > 0 ? blessing.costs[level - 1] : blessing.costs[0]
@@ -603,29 +633,6 @@ export default function BlessingTab({ state, dispatch }: Props) {
                     priority={blessing.baseId < 105}
                   />
                 </div>
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                  style={{
-                    left: '-0.125rem',
-                    top: '-0.0625rem',
-                    width: CARD_SELECTED_WIDTH,
-                    height: CARD_SELECTED_HEIGHT,
-                    opacity: isSelected ? 1 : undefined,
-                    zIndex: 2,
-                    mixBlendMode: 'normal',
-                    filter: 'none',
-                  }}
-                >
-                  <Image
-                    src={BLESSING_CARD_SELECTED_OVERLAY}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 16.875rem, (min-width: 640px) 44vw, 90vw"
-                    style={{ objectFit: 'fill' }}
-                  />
-                </div>
-
               {/* 헤더: 아이콘 + 이름 + 코스트 */}
                 <div className="pointer-events-none absolute min-w-0" style={{ left: '1.625rem', top: '2.8125rem', width: '4.25rem', aspectRatio: '1 / 1', zIndex: 4 }}>
                 <Image
@@ -655,7 +662,20 @@ export default function BlessingTab({ state, dispatch }: Props) {
                 </div>
 
               {/* 효과 목록 */}
-                <div className="pointer-events-none absolute overflow-hidden" style={{ left: '1.5rem', top: '7.1875rem', width: '13.875rem', height: '7.25rem', zIndex: 4 }}>
+                <div
+                  className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
+                  style={{
+                    left: '1.5rem',
+                    top: '7.1875rem',
+                    width: '13.875rem',
+                    height: '7.25rem',
+                    zIndex: 4,
+                    pointerEvents: 'auto',
+                    overscrollBehavior: 'contain',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(232, 176, 48, 0.44) rgba(25, 13, 9, 0.34)',
+                  }}
+                >
                 <div className="space-y-0.5">
                   {currentEffects.map((eff: string, i: number) => {
                     const segments = getStyledEffectSegments(getEffectDiffSegments(blessing, selectedLevel, eff, i))
@@ -716,6 +736,11 @@ export default function BlessingTab({ state, dispatch }: Props) {
                     >
                       <span
                         aria-hidden="true"
+                        className="planner-blessing-upgrade-pressed-overlay"
+                        style={getUpgradePressedOverlayStyle(isActive)}
+                      />
+                      <span
+                        aria-hidden="true"
                         className="pointer-events-none relative z-10 flex min-w-0 items-center justify-center"
                         style={{
                           opacity: isActive ? 1 : 0.9,
@@ -740,6 +765,28 @@ export default function BlessingTab({ state, dispatch }: Props) {
                     </button>
                   )
                 })}
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  style={{
+                    left: '-0.125rem',
+                    top: '-0.0625rem',
+                    width: CARD_SELECTED_WIDTH,
+                    height: CARD_SELECTED_HEIGHT,
+                    opacity: isSelected ? 1 : undefined,
+                    zIndex: 30,
+                    mixBlendMode: 'normal',
+                    filter: 'none',
+                  }}
+                >
+                  <Image
+                    src={BLESSING_CARD_SELECTED_OVERLAY}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 16.875rem, (min-width: 640px) 44vw, 90vw"
+                    style={{ objectFit: 'fill' }}
+                  />
                 </div>
               </div>
             </div>

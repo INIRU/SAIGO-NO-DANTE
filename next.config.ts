@@ -69,6 +69,8 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    // DNS64/NAT64 can make public Supabase Storage resolve to local-looking IPv6 addresses.
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: 'https',
