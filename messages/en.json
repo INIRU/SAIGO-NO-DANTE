@@ -495,7 +495,219 @@
       "plusClear": "Clear +",
       "allPlusPlus": "All ++",
       "plusplusClear": "Clear ++",
-      "base": "Base"
+      "base": "Base",
+      "none": "Not selected",
+      "empty": "No blessings selected",
+      "starlightAlt": "Starlight",
+      "fallbackName": "Blessing {baseId}",
+      "blessings": {
+        "100": {
+          "name": "Star of the Beginning",
+          "effectsByLevel": [
+            [
+              "Starting Cost +150",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "1 Free normal Refresh(es) for Shops"
+            ],
+            [
+              "Starting Cost +250",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "1 Free normal Refresh(es) for Shops"
+            ],
+            [
+              "Starting Cost +250",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "2 Free normal Refresh(es) for Shops"
+            ]
+          ]
+        },
+        "101": {
+          "name": "Cumulating Starcloud",
+          "effectsByLevel": [
+            [
+              "When moving to the next floor, increase current Cost balance by 10% (max 100)",
+              "Increase E.G.O Gift sale price by 50% (once per Shop)"
+            ],
+            [
+              "When moving to the next floor, increase current Cost balance by 20% (max 125)",
+              "Increase E.G.O Gift sale price by 75% (once per Shop)"
+            ],
+            [
+              "When moving to the next floor, increase current Cost balance by 30% (max 150)",
+              "Increase E.G.O Gift sale price by 100% (once per Shop)"
+            ]
+          ]
+        },
+        "102": {
+          "name": "Interstellar Travel",
+          "effectsByLevel": [
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +2",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +3",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)",
+              "If 45+ Theme Packs are unlocked in the Theme Pack Compendium, gain 1 Clash Power Up"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +4",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)",
+              "If 45+ Theme Packs are unlocked in the Theme Pack Compendium, gain 2 Clash Power Up"
+            ]
+          ]
+        },
+        "103": {
+          "name": "Star-shower",
+          "effectsByLevel": [
+            [
+              "Starting Cost +400",
+              "Starting E.G.O Gift Choice +1"
+            ],
+            [
+              "Starting Cost +500",
+              "Starting E.G.O Gift Choice +1",
+              "When Choosing Starlight from Encounter Reward Cards, Cost +75"
+            ],
+            [
+              "Starting Cost +700",
+              "Starting E.G.O Gift Choice +1",
+              "When Choosing Starlight from Encounter Reward Cards, Cost +150"
+            ]
+          ]
+        },
+        "104": {
+          "name": "Binary Star-shop",
+          "effectsByLevel": [
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +20%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops"
+            ],
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +30%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops",
+              "Upon entering a Shop, add up all the Tier numbers of currently owned E.G.O Gifts and gain it as Cost (max 75)"
+            ],
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +40%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops",
+              "Upon entering a Shop, add up all the Tier numbers of currently owned E.G.O Gifts and gain it as Cost (max 150)"
+            ]
+          ]
+        },
+        "105": {
+          "name": "Moon Star-shop",
+          "effectsByLevel": [
+            [
+              "1 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 1 random Tier 1 E.G.O Gift(s)"
+            ],
+            [
+              "1 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 2 random Tier 1 E.G.O Gift(s)",
+              "+10% chance for Super Shop to appear"
+            ],
+            [
+              "2 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 3 random Tier 1 E.G.O Gift(s)",
+              "+25% chance for Super Shop to appear"
+            ]
+          ]
+        },
+        "106": {
+          "name": "Favor of the Nebulae",
+          "effectsByLevel": [
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 5)"
+            ],
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 9)"
+            ],
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon entering Floor 6, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 9)"
+            ]
+          ]
+        },
+        "107": {
+          "name": "Starlight Guidance",
+          "effectsByLevel": [
+            [
+              "Max Speed +2",
+              "Gain 1 Clash Power Up",
+              "Gain 1 Damage Up",
+              "Gain 1 Protection"
+            ],
+            [
+              "Max Speed +3",
+              "Gain 2 Clash Power Up",
+              "Gain 1 Damage Up",
+              "Gain 1 Protection"
+            ],
+            [
+              "Max Speed +3",
+              "Gain 2 Clash Power Up",
+              "Gain 2 Damage Up",
+              "Gain 2 Protection"
+            ]
+          ]
+        },
+        "108": {
+          "name": "Chance Comet",
+          "effectsByLevel": [
+            [
+              "Upon entering a Shop, gain 1 random Tier 3 or less For Fuse or Sale only E.G.O Gift(s)",
+              "Upon entering Floor 3, gain 1 random Tier 3 E.G.O Gift(s)",
+              "When Fusing, gain a random additional E.G.O Gift 2 Tiers below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ],
+            [
+              "Upon entering a Shop, gain 1 'For Fuse or Sale only E.G.O Gift'\n· Floor 5 or lower : Tier 1~3\n· Floor 6 or higher : Tier 2~3",
+              "Upon entering Floor 3/Floor 5, gain 1 Tier 3 E.G.O Gift from the selected Keyword category",
+              "When Fusing, gain a random additional E.G.O Gift 2 Tiers below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ],
+            [
+              "Upon entering a Shop, gain 1 'For Fuse or Sale only E.G.O Gift'\n· Floor 5 or lower : Tier 2~3\n· Floor 6 or higher : Tier 3~4",
+              "Upon entering Floor 3/Floor 5/Floor 7, gain 1 random Tier 4 E.G.O Gift(s) from the selected Keyword category",
+              "When Fusing, gain a random additional E.G.O Gift 1 Tier below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ]
+          ]
+        },
+        "109": {
+          "name": "Perfected Possibility",
+          "effectsByLevel": [
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 1 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 2 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige and 1 Faint Vestige each"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 3 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige,1 Faint Vestige, and 1 Twinkling Vestige each"
+            ]
+          ]
+        }
+      }
     }
   },
   "guide": {

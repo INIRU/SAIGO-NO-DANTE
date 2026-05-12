@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -22,6 +23,7 @@ import GiftCard from '@/components/ui/GiftCard'
 import type { PassiveData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getBlessingDisplayName, normalizeBlessingMessages } from './BlessingTab'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -70,27 +72,10 @@ function AcTextarea({
   )
 }
 
-const BLESSING_NAMES: Record<number, string> = {
-  100: '시작의 별', 101: '쌓여가는 별무리', 102: '성간여행', 103: '쏟아지는 유성우',
-  104: '쌍성계 상점', 105: '위성계 상점', 106: '성운의 총애', 107: '별빛의 인도',
-  108: '우연한 혜성', 109: '완전한 가능성',
-}
 const BLESSING_COSTS: Record<number, [number, number, number]> = {
   100: [10, 20, 30], 101: [10, 20, 30], 102: [20, 40, 60], 103: [20, 40, 60],
   104: [30, 60, 90], 105: [30, 60, 90], 106: [40, 80, 120], 107: [40, 80, 120],
   108: [50, 100, 150], 109: [60, 120, 180],
-}
-const BLESSING_EFFECTS: Record<number, [string[], string[], string[]]> = {
-  100: [['시작 코스트 +150', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 2회 무료']],
-  101: [['층 이동 시, 보유 코스트 10% 증가 (최대 100)', '기프트 판매 비용 50% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 20% 증가 (최대 125)', '기프트 판매 비용 75% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 30% 증가 (최대 150)', '기프트 판매 비용 100% 증가 (상점별 1회)']],
-  102: [['테마팩 목록 +1', '테마팩 새로고침 횟수 +2', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +3', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +4', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프']],
-  103: [['시작 코스트 +400', '시작 기프트 수 +1'], ['시작 코스트 +500', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +75'], ['시작 코스트 +700', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +150']],
-  104: [['상점 기프트 목록 +1', '전투 보급 코스트 +20', '높은 등급 기프트 확률 상승'], ['상점 기프트 목록 +1', '전투 보급 코스트 +30', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트'], ['상점 기프트 목록 +1', '전투 보급 코스트 +40', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트']],
-  105: [['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 1개'], ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 2개', '강화 상점 확률 증가'], ['상점 키워드 새로고침 2회 무료', '1층 입장 시, 1등급 기프트 3개', '강화 상점 확률 증가']],
-  106: [['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 5)'], ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'], ['1층 입장 시, 인격 레벨 +3', '6층 입장 시, +3', '층 클리어 시, +1 (최대 9)']],
-  107: [['속도 최댓값 +2', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1']],
-  108: [['합성 판매용 기프트 1개', '3층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 2개', '3/5층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 3개', '3/5/7층 입장 시, 4등급 기프트 1개', '합성 시 1단계 낮은 기프트']],
-  109: [['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 1개 선택', '어두운 잔영 1개'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 2개 선택', '1~2등급 합성 재료'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 3개 선택', '1~3등급 합성 재료']],
 }
 
 
@@ -109,6 +94,7 @@ interface SummaryTabProps {
 }
 
 export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, egos, skills, passives }: SummaryTabProps) {
+  const tBlessing = useTranslations('planner.blessingTab')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
@@ -119,6 +105,11 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
   const kwContext = useKeywordData()
   const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
+  const localizedBlessings = useMemo(
+    () => normalizeBlessingMessages(tBlessing.raw('blessings'), baseId => tBlessing('fallbackName', { baseId })),
+    [tBlessing],
+  )
+  const blessingMap = useMemo(() => new Map(localizedBlessings.map(blessing => [blessing.baseId, blessing])), [localizedBlessings])
 
   // 이름 → GiftData 맵 (레시피용)
   const giftByName = useMemo(() => {
@@ -165,15 +156,22 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
 
   // 가호
   const blessings = useMemo(() => {
-    const list: { baseId: number; name: string; level: number; cost: number }[] = []
+    const list: { baseId: number; name: string; level: number; cost: number; effects: string[] }[] = []
     for (const id of state.giftInventory) {
       if (!id.startsWith('blessing_')) continue
       const [, bStr, lStr] = id.split('_')
       const baseId = parseInt(bStr), level = parseInt(lStr)
-      list.push({ baseId, name: BLESSING_NAMES[baseId] ?? `가호 ${baseId}`, level, cost: BLESSING_COSTS[baseId]?.[level - 1] ?? 0 })
+      const blessing = blessingMap.get(baseId)
+      list.push({
+        baseId,
+        name: blessing ? getBlessingDisplayName(blessing, level) : tBlessing('fallbackName', { baseId }),
+        level,
+        cost: blessing?.costs[level - 1] ?? BLESSING_COSTS[baseId]?.[level - 1] ?? 0,
+        effects: blessing?.effectsByLevel[level - 1] ?? [],
+      })
     }
     return list
-  }, [state.giftInventory])
+  }, [blessingMap, state.giftInventory, tBlessing])
 
   const totalBlessingCost = blessings.reduce((s, b) => s + b.cost, 0)
 
@@ -596,20 +594,19 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
 
       {/* ── 가호 (BlessingTab 스타일) ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '0.375rem' }}>
-        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>가호</span>
+        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>{tBlessing('title')}</span>
         {blessings.length > 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="별빛" width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
+            <Image src={`${S}/icons/start-buffs/starlight.webp`} alt={tBlessing('starlightAlt')} width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
             <span style={{ fontSize: '0.8125rem', color: '#c8900a', fontWeight: 700 }}>{totalBlessingCost}</span>
           </div>
         ) : (
-          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>미선택</span>
+          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{tBlessing('none')}</span>
         )}
       </div>
       {blessings.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {blessings.map(b => {
-            const effects = BLESSING_EFFECTS[b.baseId]?.[b.level - 1] ?? []
             return (
               <div key={b.baseId} className="rounded-lg overflow-hidden flex flex-col" style={{
                 background: '#1a1510', border: '1px solid #c8900a50',
@@ -628,7 +625,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                 </div>
                 {/* 효과 목록 */}
                 <div className="px-3 pb-2 flex-1">
-                  {effects.map((eff, i) => (
+                  {b.effects.map((eff, i) => (
                     <div key={i} style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>• {eff}</div>
                   ))}
                 </div>
@@ -637,14 +634,14 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   fontSize: '0.6875rem', fontWeight: 700, textAlign: 'center',
                   color: b.level === 3 ? '#c83030' : b.level === 2 ? '#4898b0' : '#e8b030',
                 }}>
-                  {b.level === 1 ? '기본' : b.level === 2 ? '+' : '++'}
+                  {b.level === 1 ? tBlessing('base') : b.level === 2 ? '+' : '++'}
                 </div>
               </div>
             )
           })}
         </div>
       ) : (
-        <EmptyState text="가호가 선택되지 않았습니다" />
+        <EmptyState text={tBlessing('empty')} />
       )}
 
       {/* ── 시작 기프트 (GiftPlanTab 스타일) ── */}
