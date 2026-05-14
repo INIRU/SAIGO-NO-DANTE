@@ -14,8 +14,8 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
-import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary } from '@/lib/planner/types'
-import { DIFFICULTY_CONFIG } from '@/lib/planner/types'
+import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary, FloorDifficulty } from '@/lib/planner/types'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
@@ -78,6 +78,8 @@ const BLESSING_COSTS: Record<number, [number, number, number]> = {
   108: [50, 100, 150], 109: [60, 120, 180],
 }
 
+const FLOOR_DIFFICULTY_ORDER: FloorDifficulty[] = ['normal', 'hard', 'overlap', 'extreme']
+
 
 interface SummaryTabProps {
   state: PlannerState
@@ -95,6 +97,7 @@ interface SummaryTabProps {
 
 export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, egos, skills, passives }: SummaryTabProps) {
   const tBlessing = useTranslations('planner.blessingTab')
+  const tFloor = useTranslations('planner.floorTab')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
@@ -248,6 +251,26 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
   }
 
+  const floorDifficultySummary = useMemo(() => {
+    const counts: Record<FloorDifficulty, number> = {
+      normal: 0,
+      hard: 0,
+      overlap: 0,
+      extreme: 0,
+    }
+
+    for (const floor of state.floorPlan) {
+      const difficulty = isFloorDifficulty(floor.difficulty) && isAllowedFloorDifficulty(floor.difficulty, floor.floor)
+        ? floor.difficulty
+        : getLegacyPlanFloorDifficulty(state.difficulty, floor.floor)
+      counts[difficulty] += 1
+    }
+
+    return FLOOR_DIFFICULTY_ORDER
+      .map(difficulty => ({ difficulty, count: counts[difficulty] }))
+      .filter(item => item.count > 0)
+  }, [state.difficulty, state.floorPlan])
+
   return (<>
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
@@ -278,15 +301,21 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.625rem', flexWrap: 'wrap' }}>
-          {(Object.entries(DIFFICULTY_CONFIG) as [string, { label: string; floors: number }][]).map(([key, c]) => (
-            <span key={key} style={{
-              padding: '0.25rem 0.625rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600,
-              background: state.difficulty === key ? '#c8900a20' : '#0d0b08',
-              color: state.difficulty === key ? '#e8b030' : '#4b5563',
-              border: `1px solid ${state.difficulty === key ? '#c8900a50' : '#222'}`,
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.625rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600 }}>
+            {tFloor('difficultySummary')}
+          </span>
+          {floorDifficultySummary.map(({ difficulty, count }) => (
+            <span key={difficulty} style={{
+              padding: '0.25rem 0.625rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              background: 'rgba(200,144,10,0.08)',
+              color: '#b9a47f',
+              border: '1px solid rgba(200,144,10,0.2)',
             }}>
-              {c.label} ({c.floors}층)
+              {tFloor(`difficulty.${difficulty}`)} · {tFloor('difficultySummaryCount', { count })}
             </span>
           ))}
         </div>
@@ -667,6 +696,9 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           const theme = f.theme_id ? themeMap.get(f.theme_id) : null
           const floorGifts = f.gift_ids.map(id => giftMap.get(parseInt(id))).filter(Boolean) as GiftData[]
           const isExpanded = expandedFloor === f.floor
+          const floorDifficulty = isFloorDifficulty(f.difficulty) && isAllowedFloorDifficulty(f.difficulty, f.floor)
+            ? f.difficulty
+            : getLegacyPlanFloorDifficulty(state.difficulty, f.floor)
           return (
             <div key={f.floor} style={{
               background: '#1a1510',
@@ -689,6 +721,21 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
                 }}>{f.floor}</span>
+
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '1.5rem',
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(200,144,10,0.2)',
+                  color: '#b9a47f',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}>
+                  {tFloor(`difficulty.${floorDifficulty}`)}
+                </span>
 
                 {theme ? (
                   <>

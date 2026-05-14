@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { KEYWORD_FILTERS, getKeywordIconUrl } from './constants'
 
 // ── Keyword filter sidebar (vertical) ────────────────────────────────────────
@@ -13,8 +14,11 @@ export default function KeywordSidebar({
   onSelect: (slug: string | null) => void
   giftCounts: Map<string | null, number>
 }) {
+  const t = useTranslations('planner.giftTab')
+  const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
+
   return (
-    <div style={{
+    <div className="planner-keyword-sidebar" style={{
       display: 'flex',
       flexDirection: 'column',
       gap: '0.125rem',
@@ -26,11 +30,13 @@ export default function KeywordSidebar({
         const isActive = activeSlug === tab.slug
         const count = giftCounts.get(tab.slug) ?? 0
         const iconUrl = tab.slug ? getKeywordIconUrl(tab.slug) : null
+        const label = keywordLabel(tab.slug)
 
         return (
           <button
             key={tab.slug ?? 'all'}
             onClick={() => onSelect(tab.slug)}
+            className={`planner-keyword-filter${isActive ? ' is-active' : ''}`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -51,16 +57,16 @@ export default function KeywordSidebar({
             {iconUrl && (
               <Image
                 src={iconUrl}
-                alt={tab.label}
+                alt={label}
                 width={20}
                 height={20}
                 style={{ width: '1.25rem', height: '1.25rem', objectFit: 'contain', flexShrink: 0 }}
               />
             )}
             {!iconUrl && tab.slug === null && (
-              <span style={{ width: '1.25rem', textAlign: 'center', fontSize: '0.875rem', flexShrink: 0 }}>⬡</span>
+              <span className="planner-keyword-filter-mark" style={{ width: '1.25rem', textAlign: 'center', fontSize: '0.875rem', flexShrink: 0 }}>⬡</span>
             )}
-            <span style={{ flex: 1 }}>{tab.label}</span>
+            <span style={{ flex: 1 }}>{label}</span>
             <span style={{
               fontSize: '0.5625rem',
               color: isActive ? '#c8900a' : '#444',

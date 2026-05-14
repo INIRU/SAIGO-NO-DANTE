@@ -5,6 +5,7 @@ import { Star } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, IdentityData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { getAvailableThemes } from '@/lib/planner/fusion'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import GiftCard from '@/components/ui/GiftCard'
@@ -21,7 +22,10 @@ interface Props {
 
 export default function ThemeSection({ state, dispatch, themes, giftMap }: Props) {
   const currentLog = state.floorLogs[state.currentFloor - 1]
-  const diffKey = DIFFICULTY_FLOOR_KEY[state.difficulty]
+  const currentDifficulty = isFloorDifficulty(currentLog?.difficulty) && isAllowedFloorDifficulty(currentLog.difficulty, state.currentFloor)
+    ? currentLog.difficulty
+    : getLegacyPlanFloorDifficulty(state.difficulty, state.currentFloor)
+  const diffKey = DIFFICULTY_FLOOR_KEY[currentDifficulty]
   const [showGifts, setShowGifts] = useState(true)
 
   const available = useMemo(

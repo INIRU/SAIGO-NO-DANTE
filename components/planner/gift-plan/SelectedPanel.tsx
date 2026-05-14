@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import type { GiftData } from '@/lib/planner/types'
 import { OCTAGON_CLIP, GRADE_ROMAN, GRADE_COLORS, STORAGE_BASE } from './constants'
@@ -19,8 +20,11 @@ export default function SelectedPanel({
   badge?: React.ReactNode
   footer?: React.ReactNode
 }) {
+  const locale = useLocale()
+  const t = useTranslations('planner.giftTab')
+
   return (
-    <div style={{
+    <div className="planner-selected-panel" style={{
       background: 'rgba(17,17,17,0.6)',
       border: '1px solid #1f1a14',
       borderRadius: '0.5rem',
@@ -40,7 +44,7 @@ export default function SelectedPanel({
         paddingBottom: '0.375rem',
         borderBottom: '1px solid #1f1a14',
       }}>
-        <span style={{
+        <span className="planner-selected-panel-title" style={{
           fontSize: '0.75rem',
           color: '#c8900a',
           fontWeight: 600,
@@ -53,7 +57,7 @@ export default function SelectedPanel({
 
       {/* Gift list */}
       {selectedGifts.length === 0 ? (
-        <div style={{
+        <div className="planner-selected-panel-empty" style={{
           padding: '1.5rem 0',
           textAlign: 'center',
           color: '#2f2a20',
@@ -61,15 +65,21 @@ export default function SelectedPanel({
           border: '1px dashed #1f1a14',
           borderRadius: '0.375rem',
         }}>
-          선택 없음
+          {t('selectedPanel.empty')}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <div className="planner-selected-panel-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {selectedGifts.map(gift => {
             const gradeColor = GRADE_COLORS[gift.grade ?? '1'] ?? '#888'
+            const displayName = locale === 'en'
+              ? gift.name_en || gift.name
+              : locale === 'ja'
+                ? gift.name_jp || gift.name
+                : gift.name
             return (
               <div
                 key={gift.id}
+                className="planner-selected-gift-row"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -104,7 +114,7 @@ export default function SelectedPanel({
                   {gift.image_url?.startsWith('http') && (
                     <Image
                       src={gift.image_url}
-                      alt={gift.name}
+                      alt={displayName}
                       fill
                       sizes="36px"
                       style={{ objectFit: 'contain', padding: '15%' }}
@@ -122,7 +132,7 @@ export default function SelectedPanel({
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}>
-                    {gift.name}
+                    {displayName}
                   </span>
                   <span style={{
                     fontSize: '0.5rem',
@@ -133,6 +143,7 @@ export default function SelectedPanel({
                   </span>
                 </div>
                 <button
+                  className="planner-selected-remove"
                   onClick={() => onRemove(gift)}
                   style={{
                     background: 'rgba(220,38,38,0.6)',
@@ -148,7 +159,7 @@ export default function SelectedPanel({
                     flexShrink: 0,
                     transition: 'background 0.15s',
                   }}
-                  title="제거"
+                  title={t('selectedPanel.remove')}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.9)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.6)')}
                 >

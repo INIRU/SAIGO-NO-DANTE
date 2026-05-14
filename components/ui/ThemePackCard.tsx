@@ -177,7 +177,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
       {isSelected && !imageSrc && (
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
           <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-          <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
+          <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
         </div>
       )}
       {imageSrc ? (
@@ -250,7 +250,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           {/* Gift count */}
           {showGiftCount && giftCount > 0 && (
             <div className="absolute left-0 right-0 flex justify-center" style={{ bottom: '7%' }}>
-              <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                 {giftCountLabel}
               </span>
             </div>
@@ -260,7 +260,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           {isSelected && (
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
               <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-              <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
+              <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
             </div>
           )}
         </div>
@@ -270,7 +270,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
             {displayName}
           </div>
           {showGiftCount && giftCount > 0 && (
-            <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
+            <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
               {giftCountLabel}
             </span>
           )}

@@ -419,10 +419,56 @@
     "difficultyValues": {
       "normal": "Normal",
       "hard": "Hard",
-      "overlap": "Overlap",
+      "overlap": "Infinity Loop",
       "extreme": "Extreme"
     },
     "floorCount": "{count}F",
+    "floorTab": {
+      "difficulty": {
+        "normal": "Normal",
+        "hard": "Hard",
+        "overlap": "Infinity Loop",
+        "extreme": "Extreme"
+      },
+      "themeSection": "Theme pack",
+      "difficultySelectorLabel": "Floor {floor} difficulty",
+      "fixedDifficulty": "Fixed difficulty",
+      "themeModalTitle": "Floor {floor} theme pack · {difficulty}",
+      "difficultySummary": "Floor difficulties",
+      "difficultySummaryCount": "{count}F",
+      "noThemeWithCount": "No theme selected ({count} available)",
+      "noFloorThemes": "No themes for this floor",
+      "selectThemeWithCount": "Choose theme pack ({count})",
+      "emptyThemes": "No theme packs are available for this floor.",
+      "changeTheme": "Change",
+      "clearTheme": "Clear theme",
+      "themeGiftCount": "{count} gifts",
+      "acquiredGifts": "Acquired gifts",
+      "acquiredGiftCount": "{count} acquired gifts",
+      "addGift": "Add",
+      "noThemeGifts": "This theme has no gifts in the final gift list.",
+      "addToFinal": "+Add to final",
+      "memo": "Plan memo",
+      "floorBoard": "Floor board",
+      "floorBoardHint": "Pick a floor, then tune its theme pack, acquired gifts, and memo in the editor.",
+      "segment": {
+        "early": "{start}-{end} · Normal/Hard",
+        "loop": "{start}-{end} · Infinity Loop",
+        "extreme": "{start}-{end} · Extreme"
+      },
+      "activeFloor": "Floor {floor} editor",
+      "chooseFloorAria": "Select floor {floor}",
+      "empty": "Unset",
+      "shortGiftCount": "{count} gifts",
+      "selectTheme": "Choose theme pack",
+      "selectThemeFirst": "Choose a theme pack first.",
+      "availableThemeCount": "{count} available",
+      "close": "Close",
+      "memoPlaceholder": "Strategy memo for this floor… (keyword and gift autocomplete supported)",
+      "memoPreview": "Preview",
+      "keywordDistribution": "Accumulated gift keyword distribution",
+      "totalGifts": "{count} gifts total"
+    },
     "actions": {
       "triggerMode": "Trigger Mode",
       "copyUrl": "Copy URL",
@@ -483,6 +529,68 @@
         "resonance": "Res.",
         "stock": "Stock",
         "passiveWarning": "Skill distribution no longer meets this condition"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "Observed Gifts",
+        "start": "Starter Gifts",
+        "final": "Final Gifts"
+      },
+      "observe": {
+        "cost": "Observe cost:",
+        "selected": "Selected {count}/3",
+        "gradeRange": "Grades {from}-{to} · no Remnants",
+        "selectedTitle": "Selected E.G.O Gifts",
+        "starlightAlt": "Starlight",
+        "starlightCost": "{count} Starlight"
+      },
+      "start": {
+        "selected": "Selected {count}/{max}",
+        "selectedTitle": "Starter Gifts"
+      },
+      "final": {
+        "all": "All",
+        "buildTitle": "Final Gift Build",
+        "selectedCount": "{count} selected",
+        "clearAll": "Clear all",
+        "help": "Drag or click gifts below to add · click upgradable gifts for +/++",
+        "conditionUnmet": "Unmet — not enough with all identities",
+        "conditionWarn": "Warning — needs bench identities",
+        "emptyDrop": "Drag or click gifts below to add",
+        "addFromObserve": "Add from observed gifts",
+        "addFromStart": "Add from starter gifts",
+        "listTitle": "All Gifts",
+        "searchPlaceholder": "Search gift name...",
+        "noResults": "No results"
+      },
+      "grid": {
+        "grade": "Grade {grade}",
+        "emptyKeyword": "No gifts for this keyword"
+      },
+      "selectedPanel": {
+        "empty": "None selected",
+        "remove": "Remove"
+      },
+      "conditionStatus": {
+        "unmetLabel": "Unmet",
+        "warnLabel": "Warning",
+        "unmetTitle": "Condition unmet: {text} - not enough even with all identities",
+        "warnTitle": "Condition warning: {text} - needs bench identities"
+      },
+      "keywords": {
+        "all": "All",
+        "burn": "Burn",
+        "bleed": "Bleed",
+        "tremor": "Tremor",
+        "rupture": "Rupture",
+        "sinking": "Sinking",
+        "breath": "Breath",
+        "charge": "Charge",
+        "slash": "Slash",
+        "pierce": "Pierce",
+        "blunt": "Blunt",
+        "general": "General"
       }
     },
     "blessingTab": {
