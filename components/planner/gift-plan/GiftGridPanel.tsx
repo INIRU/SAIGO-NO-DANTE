@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import type { GiftData } from '@/lib/planner/types'
 import { GRADE_COLORS, GRADE_ROMAN, getKeywordSlug } from './constants'
 import GiftCard from './GiftCard'
@@ -20,6 +21,7 @@ export default function GiftGridPanel({
   maxSelect?: number
   gradeOrder: string[]
 }) {
+  const t = useTranslations('planner.giftTab')
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
 
   const filteredGifts = useMemo(() => {
@@ -54,7 +56,7 @@ export default function GiftGridPanel({
   const atLimit = maxSelect !== undefined && selectedIds.size >= maxSelect
 
   return (
-    <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+    <div className="planner-gift-grid-panel" style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: 0 }}>
       {/* Keyword sidebar */}
       <KeywordSidebar
         activeSlug={activeSlug}
@@ -63,7 +65,7 @@ export default function GiftGridPanel({
       />
 
       {/* Grid area */}
-      <div style={{
+      <div className="planner-gift-grid-scroll" style={{
         flex: 1,
         minWidth: 0,
         maxHeight: '28rem',
@@ -96,7 +98,7 @@ export default function GiftGridPanel({
                   color: gradeColor,
                   letterSpacing: '0.03em',
                 }}>
-                  {GRADE_ROMAN[grade] ?? grade}등급
+                  {t('grid.grade', { grade: GRADE_ROMAN[grade] ?? grade })}
                 </span>
                 <span style={{
                   fontSize: '0.625rem',
@@ -108,7 +110,7 @@ export default function GiftGridPanel({
               </div>
 
               {/* Gift cards */}
-              <div style={{
+              <div className="planner-gift-card-grid" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                 gap: '0.5rem',
@@ -139,7 +141,7 @@ export default function GiftGridPanel({
         })}
 
         {filteredGifts.length === 0 && (
-          <div style={{
+          <div className="planner-gift-empty" style={{
             padding: '2.5rem',
             textAlign: 'center',
             color: '#4b5563',
@@ -147,7 +149,7 @@ export default function GiftGridPanel({
             border: '1px dashed #222',
             borderRadius: '0.5rem',
           }}>
-            해당 키워드의 기프트가 없습니다
+            {t('grid.emptyKeyword')}
           </div>
         )}
       </div>

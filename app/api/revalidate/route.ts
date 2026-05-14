@@ -17,9 +17,16 @@ import { revalidateBodySchema, type RevalidateScope } from '@/lib/schemas/revali
 //   - admin 공지 수정 훅 (scope: 'announcements')
 //   - 수동 운영 (paths / tags 직접 지정)
 
+const ALL_GAME_DATA_PATHS = ['/', '/ko', '/en', '/ja'] as const
+
 function resolveScopeTags(scope: RevalidateScope): readonly string[] {
   if (scope === 'all-game-data') return ALL_GAME_DATA_TAGS
   if (scope === 'announcements') return [CACHE_TAGS.announcements]
+  return []
+}
+
+function resolveScopePaths(scope: RevalidateScope): readonly string[] {
+  if (scope === 'all-game-data') return ALL_GAME_DATA_PATHS
   return []
 }
 
@@ -81,7 +88,8 @@ export async function POST(request: Request) {
       revalidateTag(tag, 'max')
     }
 
-    const revalidatedPaths = paths ?? []
+    const scopePaths = scope ? resolveScopePaths(scope) : []
+    const revalidatedPaths = Array.from(new Set<string>([...(paths ?? []), ...scopePaths]))
     for (const path of revalidatedPaths) {
       revalidatePath(path)
     }

@@ -8,8 +8,9 @@ import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Eye, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { DIFFICULTY_CONFIG, type Difficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
+import { DIFFICULTY_CONFIG, type Difficulty, type FloorDifficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty, normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { showError } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
@@ -58,6 +59,13 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#e05050', border: 'rgba(200,48,48,0.35)' },
 }
 
+const FLOOR_DIFFICULTY_LABELS: Record<FloorDifficulty, string> = {
+  normal: '노말',
+  hard: '하드',
+  overlap: '인피니티 루프',
+  extreme: '익스트림',
+}
+
 const BLESSING_NAMES: Record<number, string> = {
   100: '시작의 별', 101: '쌓여가는 별무리', 102: '성간여행', 103: '쏟아지는 유성우',
   104: '쌍성계 상점', 105: '위성계 상점', 106: '성운의 총애', 107: '별빛의 인도',
@@ -103,6 +111,7 @@ type EgoSlot = {
 
 type FloorEntry = {
   floor: number
+  difficulty?: FloorDifficulty
   theme_id: string | null
   gift_ids: string[]
   memo: string
@@ -125,6 +134,8 @@ type GiftData = {
 type ThemeData = {
   id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   dungeon_id: string | null
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
@@ -346,7 +357,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const deck: IdentitySlot[] = Array.isArray(plan.deck) ? plan.deck : []
   const egoSlots: EgoSlot[] = Array.isArray(plan.egos) ? plan.egos : []
-  const floorPlan: FloorEntry[] = Array.isArray(plan.floor_plan) ? plan.floor_plan : []
+  const floorPlan: FloorEntry[] = normalizeFloorPlanDifficulty(plan.floor_plan, plan.difficulty).floorPlan as FloorEntry[]
   const giftInventory: string[] = Array.isArray(plan.gift_inventory) ? plan.gift_inventory : []
 
   const username = plan.profiles?.username ?? '익명'
@@ -710,6 +721,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 const theme = f.theme_id ? themeMap.get(f.theme_id) : null
                 const floorGifts = f.gift_ids.map(id => giftMap.get(parseInt(id))).filter(Boolean) as GiftData[]
                 const isExpanded = expandedFloor === f.floor
+                const floorDifficulty = isFloorDifficulty(f.difficulty) && isAllowedFloorDifficulty(f.difficulty, f.floor)
+                  ? f.difficulty
+                  : getLegacyPlanFloorDifficulty(plan.difficulty, f.floor)
                 return (
                   <div key={f.floor} style={{
                     background: '#1a1510',
@@ -731,6 +745,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
                       }}>{f.floor}</span>
+
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        minHeight: '1.5rem',
+                        padding: '0.125rem 0.5rem',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(200,144,10,0.2)',
+                        color: '#b9a47f',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}>
+                        {FLOOR_DIFFICULTY_LABELS[floorDifficulty]}
+                      </span>
 
                       {theme ? (
                         <>

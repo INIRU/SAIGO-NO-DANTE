@@ -419,10 +419,56 @@
     "difficultyValues": {
       "normal": "노말",
       "hard": "하드",
-      "overlap": "평행중첩",
+      "overlap": "인피니티 루프",
       "extreme": "익스트림"
     },
     "floorCount": "{count}층",
+    "floorTab": {
+      "difficulty": {
+        "normal": "노말",
+        "hard": "하드",
+        "overlap": "인피니티 루프",
+        "extreme": "익스트림"
+      },
+      "themeSection": "테마팩 선택",
+      "difficultySelectorLabel": "{floor}층 난이도 선택",
+      "fixedDifficulty": "고정 난이도",
+      "themeModalTitle": "{floor}층 테마팩 선택 · {difficulty}",
+      "difficultySummary": "층별 난이도",
+      "difficultySummaryCount": "{count}층",
+      "noThemeWithCount": "테마팩 미선택 ({count}개 가능)",
+      "noFloorThemes": "해당 층 없음",
+      "selectThemeWithCount": "테마팩 선택 ({count}개)",
+      "emptyThemes": "이 층에 사용 가능한 테마팩이 없습니다",
+      "changeTheme": "변경",
+      "clearTheme": "선택 해제",
+      "themeGiftCount": "기프트 {count}종",
+      "acquiredGifts": "획득 기프트",
+      "acquiredGiftCount": "획득 기프트 {count}개",
+      "addGift": "추가",
+      "noThemeGifts": "최종 기프트 목록에 이 테마의 기프트가 없습니다",
+      "addToFinal": "+최종 추가",
+      "memo": "플랜 메모",
+      "floorBoard": "층 보드",
+      "floorBoardHint": "층을 선택해 오른쪽 편집 패널에서 테마팩, 획득 기프트, 메모를 조정하세요",
+      "segment": {
+        "early": "{start}-{end} · 노말/하드",
+        "loop": "{start}-{end} · 인피니티 루프",
+        "extreme": "{start}-{end} · 익스트림"
+      },
+      "activeFloor": "{floor}층 편집",
+      "chooseFloorAria": "{floor}층 선택",
+      "empty": "미설정",
+      "shortGiftCount": "기프트 {count}",
+      "selectTheme": "테마팩 선택",
+      "selectThemeFirst": "테마팩을 먼저 선택하세요",
+      "availableThemeCount": "사용 가능 {count}개",
+      "close": "닫기",
+      "memoPlaceholder": "이번 층 전략 메모… (키워드·기프트 자동완성 지원)",
+      "memoPreview": "미리보기",
+      "keywordDistribution": "누적 기프트 키워드 분포",
+      "totalGifts": "총 {count}개 기프트"
+    },
     "actions": {
       "triggerMode": "트리거 모드",
       "copyUrl": "URL 복사",
@@ -483,6 +529,68 @@
         "resonance": "공명",
         "stock": "보유",
         "passiveWarning": "스킬 배분 변경으로 인해 조건이 미충족됩니다"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "관측 기프트",
+        "start": "시작 기프트",
+        "final": "최종 기프트"
+      },
+      "observe": {
+        "cost": "관측 비용:",
+        "selected": "선택 {count}/3",
+        "gradeRange": "{from}~{to} 등급 · 잔영 제외",
+        "selectedTitle": "선택한 E.G.O 기프트",
+        "starlightAlt": "별빛",
+        "starlightCost": "{count} 별빛"
+      },
+      "start": {
+        "selected": "선택 {count}/{max}",
+        "selectedTitle": "시작 기프트"
+      },
+      "final": {
+        "all": "전체",
+        "buildTitle": "최종 기프트 빌드",
+        "selectedCount": "{count}개",
+        "clearAll": "전체 삭제",
+        "help": "아래 목록에서 드래그하거나 클릭하여 추가 · 강화 가능한 기프트는 클릭하여 +/++ 강화",
+        "conditionUnmet": "조건 미달 — 전체 인격으로도 부족",
+        "conditionWarn": "조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족",
+        "emptyDrop": "기프트를 아래에서 드래그하거나 클릭하여 추가하세요",
+        "addFromObserve": "관측 기프트에서 추가",
+        "addFromStart": "시작 기프트에서 추가",
+        "listTitle": "전체 기프트 목록",
+        "searchPlaceholder": "기프트 이름 검색...",
+        "noResults": "검색 결과가 없습니다"
+      },
+      "grid": {
+        "grade": "{grade}등급",
+        "emptyKeyword": "해당 키워드의 기프트가 없습니다"
+      },
+      "selectedPanel": {
+        "empty": "선택 없음",
+        "remove": "제거"
+      },
+      "conditionStatus": {
+        "unmetLabel": "조건 미달",
+        "warnLabel": "조건 주의",
+        "unmetTitle": "조건 미달: {text} - 편성+대기 포함해도 부족",
+        "warnTitle": "조건 주의: {text} - 편성(1-7)만으로는 부족, 대기 포함 시 충족"
+      },
+      "keywords": {
+        "all": "전체",
+        "burn": "화상",
+        "bleed": "출혈",
+        "tremor": "진동",
+        "rupture": "파열",
+        "sinking": "침잠",
+        "breath": "호흡",
+        "charge": "충전",
+        "slash": "참격",
+        "pierce": "관통",
+        "blunt": "타격",
+        "general": "공통"
       }
     },
     "blessingTab": {

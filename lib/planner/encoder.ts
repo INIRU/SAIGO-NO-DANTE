@@ -1,10 +1,13 @@
 import type { PlannerState, Difficulty } from './types'
+import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
 
 interface PlanData {
+  v?: number              // payload version
   d: string               // difficulty first char
   i: string[]             // identity_ids
   e: string[]             // ego_ids
   f: (string | null)[]    // floor theme_ids
+  fd?: string[]           // per-floor difficulty short codes
   g: string[]             // gift inventory game_ids
   t?: string              // title
   desc?: string           // description
@@ -16,10 +19,12 @@ const SHORT_DIFF: Record<string, Difficulty> = { n: 'normal', h: 'hard', o: 'ove
 export async function encodePlan(state: PlannerState): Promise<string> {
   const pako = (await import('pako')).default
   const data: PlanData = {
+    v: 2,
     d: DIFF_SHORT[state.difficulty],
     i: state.identitySlots.map(s => s.identity_id),
     e: state.egoSlots.map(s => s.ego_id),
     f: state.floorPlan.map(f => f.theme_id),
+    fd: state.floorPlan.map(f => DIFF_SHORT[f.difficulty] ?? DIFF_SHORT[getLegacyPlanFloorDifficulty(state.difficulty, f.floor)]),
     g: state.giftInventory,
   }
   if (state.title) data.t = state.title
@@ -38,6 +43,7 @@ export async function decodePlan(encoded: string): Promise<{
   identityIds: string[]
   egoIds: string[]
   floorThemeIds: (string | null)[]
+  floorDifficulties: Difficulty[]
   giftIds: string[]
   title: string
   description: string
@@ -53,12 +59,21 @@ export async function decodePlan(encoded: string): Promise<{
 
   const json = new TextDecoder().decode(pako.inflate(bytes))
   const data: PlanData = JSON.parse(json)
+  const difficulty = SHORT_DIFF[data.d] ?? 'hard'
+  const floorThemeIds = data.f ?? []
+  const floorDifficulties = floorThemeIds.map((_, index) => {
+    const decodedDifficulty = data.fd?.[index] ? SHORT_DIFF[data.fd[index]] : null
+    return isFloorDifficulty(decodedDifficulty)
+      ? decodedDifficulty
+      : getLegacyPlanFloorDifficulty(difficulty, index + 1)
+  })
 
   return {
-    difficulty: SHORT_DIFF[data.d] ?? 'hard',
+    difficulty,
     identityIds: data.i ?? [],
     egoIds: data.e ?? [],
-    floorThemeIds: data.f ?? [],
+    floorThemeIds,
+    floorDifficulties,
     giftIds: data.g ?? [],
     title: data.t ?? '',
     description: data.desc ?? '',

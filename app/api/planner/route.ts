@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
@@ -360,6 +361,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
+    const planDifficulty = normalizePlanDifficulty(difficulty)
+    const normalizedFloorPlan = normalizeFloorPlanDifficulty(floor_plan ?? [], planDifficulty).floorPlan
     const lang = parsePlannerMutationLang(body?.lang, body?.locale)
 
     if (!title?.trim()) return NextResponse.json({ error: '제목을 입력하세요' }, { status: 400 })
@@ -371,10 +374,10 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         title: title.trim(),
         description: description?.trim() ?? '',
-        difficulty: difficulty ?? 'hard',
+        difficulty: planDifficulty,
         deck: deck ?? [],
         egos: egos ?? [],
-        floor_plan: floor_plan ?? [],
+        floor_plan: normalizedFloorPlan,
         gift_inventory: gift_inventory ?? [],
         tags: tags ?? [],
         lang,
@@ -390,7 +393,7 @@ export async function POST(req: NextRequest) {
       targetType: 'planner',
       targetId: data.id,
       details: {
-        difficulty: difficulty ?? 'hard',
+        difficulty: planDifficulty,
         lang,
         tagCount: Array.isArray(tags) ? tags.length : 0,
         deckCount: Array.isArray(deck) ? deck.length : 0,

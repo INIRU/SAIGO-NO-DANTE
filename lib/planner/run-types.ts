@@ -3,6 +3,7 @@
 
 import type { Difficulty, IdentitySlot, EgoSlot, PlannerState } from './types'
 import { DIFFICULTY_CONFIG } from './types'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
 
 export type RunPhase = 'setup' | 'playing' | 'completed'
 export type FloorSubTab = 'deck' | 'theme' | 'event' | 'gift'
@@ -15,6 +16,7 @@ export interface DeckChange {
 
 export interface FloorLog {
   floor: number
+  difficulty: Difficulty
   themeId: string | null
   acquiredGifts: string[]
   removedGifts: string[]
@@ -74,9 +76,10 @@ export type RunAction =
 
 // ── 초기 상태 생성 ──────────────────────────────────────────────────────────
 
-function createFloorLog(floor: number): FloorLog {
+function createFloorLog(floor: number, difficulty: Difficulty = getLegacyPlanFloorDifficulty('hard', floor)): FloorLog {
   return {
     floor,
+    difficulty,
     themeId: null,
     acquiredGifts: [],
     removedGifts: [],
@@ -99,7 +102,7 @@ export function createInitialRunState(difficulty: Difficulty = 'hard'): RunState
     identitySlots: [],
     egoSlots: [],
     skillArrangements: {},
-    floorLogs: Array.from({ length: maxFloors }, (_, i) => createFloorLog(i + 1)),
+    floorLogs: Array.from({ length: maxFloors }, (_, i) => createFloorLog(i + 1, getLegacyPlanFloorDifficulty(difficulty, i + 1))),
     giftInventory: [],
     sourcePlanEncoded: null,
     targetGifts: [],
@@ -109,7 +112,7 @@ export function createInitialRunState(difficulty: Difficulty = 'hard'): RunState
 // ── 현재 FloorLog 헬퍼 ──────────────────────────────────────────────────────
 
 function getCurrentLog(state: RunState): FloorLog {
-  return state.floorLogs[state.currentFloor - 1] ?? createFloorLog(state.currentFloor)
+  return state.floorLogs[state.currentFloor - 1] ?? createFloorLog(state.currentFloor, getLegacyPlanFloorDifficulty(state.difficulty, state.currentFloor))
 }
 
 function updateCurrentLog(state: RunState, updater: (log: FloorLog) => FloorLog): FloorLog[] {
@@ -145,13 +148,15 @@ export function runReducer(state: RunState, action: RunAction): RunState {
     case 'LOAD_FROM_PLAN': {
       const ps = action.planState
       const difficulty = ps.difficulty ?? state.difficulty
-      const maxFloors = DIFFICULTY_CONFIG[difficulty].floors
+      const maxFloors = Math.max(DIFFICULTY_CONFIG[difficulty].floors, ps.floorPlan?.length ?? 0)
       const startFloor = Math.min(action.startFloor ?? 1, maxFloors)
       const floorLogs = Array.from({ length: maxFloors }, (_, i) => {
-        const log = createFloorLog(i + 1)
-        if (ps.floorPlan?.[i]?.theme_id) {
-          log.themeId = ps.floorPlan[i].theme_id
-        }
+        const planEntry = ps.floorPlan?.[i]
+        const floorDifficulty = isFloorDifficulty(planEntry?.difficulty) && isAllowedFloorDifficulty(planEntry.difficulty, i + 1)
+          ? planEntry.difficulty
+          : getLegacyPlanFloorDifficulty(difficulty, i + 1)
+        const log = createFloorLog(i + 1, floorDifficulty)
+        if (planEntry?.theme_id) log.themeId = planEntry.theme_id
         return log
       })
       // 플래너 giftInventory에서 final_ prefix 파싱 → targetGifts
@@ -411,7 +416,15 @@ export function runReducer(state: RunState, action: RunAction): RunState {
       }
 
     case 'LOAD_RUN':
-      return { ...action.state }
+      return {
+        ...action.state,
+        floorLogs: action.state.floorLogs.map(log => ({
+          ...log,
+          difficulty: isFloorDifficulty(log.difficulty) && isAllowedFloorDifficulty(log.difficulty, log.floor)
+            ? log.difficulty
+            : getLegacyPlanFloorDifficulty(action.state.difficulty, log.floor),
+        })),
+      }
 
     case 'RESET':
       return createInitialRunState(state.difficulty)

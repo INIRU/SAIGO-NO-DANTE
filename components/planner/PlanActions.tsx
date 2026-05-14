@@ -7,7 +7,8 @@ import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { showSuccess, showError } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import type { Difficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
+import type { Difficulty, FloorDifficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Sinner as CanonicalSinner, Identity as CanonicalIdentity, EGO as CanonicalEGO } from '@/lib/types'
 
 type IdentitySlot = {
@@ -30,6 +31,7 @@ type EgoSlot = {
 
 type FloorEntry = {
   floor: number
+  difficulty?: FloorDifficulty
   theme_id: string | null
   gift_ids: string[]
   memo: string
@@ -167,10 +169,11 @@ export default function PlanActions({
       description: planDescription ?? '',
       identitySlots: deck as PlannerIdentitySlot[],
       egoSlots: egoSlots as PlannerEgoSlot[],
-      floorPlan: floorPlan.map((e: PlannerFloorEntry, i: number) => ({
+      floorPlan: floorPlan.map((e, i: number) => ({
         floor: i + 1,
+        difficulty: isFloorDifficulty(e?.difficulty) && isAllowedFloorDifficulty(e.difficulty, i + 1) ? e.difficulty : getLegacyPlanFloorDifficulty(difficulty, i + 1),
         theme_id: e?.theme_id ?? null,
-        gift_ids: [] as string[],
+        gift_ids: e?.gift_ids ?? [],
         memo: e?.memo ?? '',
       })),
       giftInventory,

@@ -419,10 +419,56 @@
     "difficultyValues": {
       "normal": "ノーマル",
       "hard": "ハード",
-      "overlap": "平行重畳",
+      "overlap": "インフィニティループ",
       "extreme": "エクストリーム"
     },
     "floorCount": "{count}階",
+    "floorTab": {
+      "difficulty": {
+        "normal": "ノーマル",
+        "hard": "ハード",
+        "overlap": "インフィニティループ",
+        "extreme": "エクストリーム"
+      },
+      "themeSection": "テーマパック選択",
+      "difficultySelectorLabel": "{floor}階の難易度選択",
+      "fixedDifficulty": "固定難易度",
+      "themeModalTitle": "{floor}階テーマパック選択 · {difficulty}",
+      "difficultySummary": "階層別難易度",
+      "difficultySummaryCount": "{count}階",
+      "noThemeWithCount": "テーマ未選択（{count}件利用可能）",
+      "noFloorThemes": "この階層はありません",
+      "selectThemeWithCount": "テーマパック選択（{count}件）",
+      "emptyThemes": "この階層で利用できるテーマパックがありません",
+      "changeTheme": "変更",
+      "clearTheme": "選択解除",
+      "themeGiftCount": "ギフト {count}種",
+      "acquiredGifts": "獲得ギフト",
+      "acquiredGiftCount": "獲得ギフト {count}個",
+      "addGift": "追加",
+      "noThemeGifts": "このテーマのギフトは最終ギフト一覧にありません",
+      "addToFinal": "+最終に追加",
+      "memo": "プランメモ",
+      "floorBoard": "階層ボード",
+      "floorBoardHint": "階層を選択し、編集パネルでテーマパック、獲得ギフト、メモを調整します",
+      "segment": {
+        "early": "{start}-{end} · ノーマル/ハード",
+        "loop": "{start}-{end} · インフィニティループ",
+        "extreme": "{start}-{end} · エクストリーム"
+      },
+      "activeFloor": "{floor}階編集",
+      "chooseFloorAria": "{floor}階を選択",
+      "empty": "未設定",
+      "shortGiftCount": "ギフト {count}",
+      "selectTheme": "テーマパック選択",
+      "selectThemeFirst": "先にテーマパックを選択してください",
+      "availableThemeCount": "利用可能 {count}件",
+      "close": "閉じる",
+      "memoPlaceholder": "この階層の戦略メモ…（キーワード・ギフトの自動補完対応）",
+      "memoPreview": "プレビュー",
+      "keywordDistribution": "累積ギフトキーワード分布",
+      "totalGifts": "合計 {count}個のギフト"
+    },
     "actions": {
       "triggerMode": "トリガーモード",
       "copyUrl": "URLコピー",
@@ -483,6 +529,68 @@
         "resonance": "共鳴",
         "stock": "保有",
         "passiveWarning": "スキル配分の変更により条件を満たしていません"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "観測ギフト",
+        "start": "開始ギフト",
+        "final": "最終ギフト"
+      },
+      "observe": {
+        "cost": "観測費用:",
+        "selected": "選択 {count}/3",
+        "gradeRange": "{from}~{to}等級・残響除外",
+        "selectedTitle": "選択中のE.G.Oギフト",
+        "starlightAlt": "星光",
+        "starlightCost": "{count} 星光"
+      },
+      "start": {
+        "selected": "選択 {count}/{max}",
+        "selectedTitle": "開始ギフト"
+      },
+      "final": {
+        "all": "全て",
+        "buildTitle": "最終ギフトビルド",
+        "selectedCount": "{count}個",
+        "clearAll": "全削除",
+        "help": "下の一覧からドラッグまたはクリックで追加・強化可能なギフトはクリックで+/++",
+        "conditionUnmet": "条件未達 — 全人格でも不足",
+        "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成",
+        "emptyDrop": "下のギフトをドラッグまたはクリックして追加",
+        "addFromObserve": "観測ギフトから追加",
+        "addFromStart": "開始ギフトから追加",
+        "listTitle": "全ギフト一覧",
+        "searchPlaceholder": "ギフト名を検索...",
+        "noResults": "検索結果がありません"
+      },
+      "grid": {
+        "grade": "{grade}等級",
+        "emptyKeyword": "このキーワードのギフトはありません"
+      },
+      "selectedPanel": {
+        "empty": "選択なし",
+        "remove": "解除"
+      },
+      "conditionStatus": {
+        "unmetLabel": "条件未達",
+        "warnLabel": "条件注意",
+        "unmetTitle": "条件未達: {text} - 全人格でも不足",
+        "warnTitle": "条件注意: {text} - 編成(1-7)のみでは不足、控え込みで達成"
+      },
+      "keywords": {
+        "all": "全て",
+        "burn": "火傷",
+        "bleed": "出血",
+        "tremor": "振動",
+        "rupture": "破裂",
+        "sinking": "沈潜",
+        "breath": "呼吸",
+        "charge": "充電",
+        "slash": "斬撃",
+        "pierce": "貫通",
+        "blunt": "打撃",
+        "general": "汎用"
       }
     },
     "blessingTab": {
