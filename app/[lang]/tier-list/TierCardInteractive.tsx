@@ -1,11 +1,10 @@
 'use client'
 
-import { KeyboardEvent, memo, useCallback, useState } from 'react'
+import { KeyboardEvent, memo, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import IdentityCard from '@/components/sinners/IdentityCard'
 import type { Tier } from '@/lib/tier-list/tierModel'
 import type { Identity } from '@/lib/types'
-import { TierRatingModal, type RatingPeriod, type TierCategory, type TierRatingViewer } from './TierRatingModal'
 
 type SupportedLocale = 'ko' | 'en' | 'ja'
 
@@ -13,6 +12,12 @@ const DIAGNOSIS_SELECTED_LABELS: Record<SupportedLocale, string> = {
   ko: '보유',
   en: 'Owned',
   ja: '所持',
+}
+
+const DIAGNOSIS_ACTION_LABELS: Record<SupportedLocale, { select: string; deselect: string }> = {
+  ko: { select: '자가진단 선택', deselect: '자가진단 선택 해제' },
+  en: { select: 'Select for diagnosis', deselect: 'Deselect from diagnosis' },
+  ja: { select: '診断に選択', deselect: '診断から解除' },
 }
 
 function normalizeLocale(locale: string): SupportedLocale {
@@ -39,59 +44,48 @@ export type TierIdentity = Identity & {
 
 function TierCardInteractive({
   identity,
-  category,
-  period,
-  viewer,
   diagnosisMode = false,
   diagnosisSelected = false,
   onToggleDiagnosis,
 }: {
   identity: TierIdentity
-  category: TierCategory
-  period: RatingPeriod
-  viewer: TierRatingViewer
   diagnosisMode?: boolean
   diagnosisSelected?: boolean
   onToggleDiagnosis?: (identityId: string) => void
 }) {
   const locale = normalizeLocale(useLocale())
-  const [modalOpen, setModalOpen] = useState(false)
   const selectedLabel = DIAGNOSIS_SELECTED_LABELS[locale]
+  const interactive = diagnosisMode && Boolean(onToggleDiagnosis)
 
-  const closeModal = useCallback(() => {
-    setModalOpen(false)
-  }, [])
   const toggleDiagnosis = useCallback(() => {
     onToggleDiagnosis?.(identity.id)
   }, [identity.id, onToggleDiagnosis])
   const activateCard = useCallback(() => {
-    if (diagnosisMode && onToggleDiagnosis) {
+    if (interactive) {
       toggleDiagnosis()
-      return
     }
-    setModalOpen(true)
-  }, [diagnosisMode, onToggleDiagnosis, toggleDiagnosis])
+  }, [interactive, toggleDiagnosis])
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
+    if (!interactive) return
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       activateCard()
     }
-  }, [activateCard])
+  }, [activateCard, interactive])
 
   return (
-    <>
     <div
-      role="button"
-      tabIndex={0}
-      onClick={activateCard}
-      onKeyDown={handleKeyDown}
-      aria-pressed={diagnosisMode ? diagnosisSelected : undefined}
-      aria-label={diagnosisMode ? `${identity.name_kr} 자가진단 ${diagnosisSelected ? '선택 해제' : '선택'}` : `${identity.name_kr} 평가 열기`}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? activateCard : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
+      aria-pressed={interactive ? diagnosisSelected : undefined}
+      aria-label={interactive ? `${identity.name_kr} ${diagnosisSelected ? DIAGNOSIS_ACTION_LABELS[locale].deselect : DIAGNOSIS_ACTION_LABELS[locale].select}` : undefined}
       data-identity-id={identity.id}
-      data-diagnosis-mode={diagnosisMode ? 'true' : undefined}
+      data-diagnosis-mode={interactive ? 'true' : undefined}
       style={{
         position: 'relative',
-        cursor: 'pointer',
+        cursor: interactive ? 'pointer' : 'default',
         overflow: 'visible',
         padding: '0.25rem',
         outline: 'none',
@@ -114,17 +108,6 @@ function TierCardInteractive({
         )}
       </div>
     </div>
-    {modalOpen && (
-      <TierRatingModal
-        identity={identity}
-        category={category}
-        period={period}
-        initialViewer={viewer}
-        open={modalOpen}
-        onClose={closeModal}
-      />
-    )}
-    </>
   )
 }
 
