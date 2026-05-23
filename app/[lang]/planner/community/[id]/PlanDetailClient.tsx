@@ -1,48 +1,41 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Heart, Eye, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Heart, Eye, MessageCircle } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { DIFFICULTY_CONFIG, type Difficulty, type FloorDifficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
+import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty, normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
+import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { showError } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 import PlanActions from '@/components/planner/PlanActions'
 import PlanComments from '@/components/planner/PlanComments'
 import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
+import FloorPlanPreviewBoard from '@/components/planner/FloorPlanPreviewBoard'
+import GiftCard from '@/components/ui/GiftCard'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-import { OCTAGON_CLIP, GRADE_ROMAN } from '@/lib/constants/gift'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
+import {
+  getSelectedBlessingCost,
+  getSelectedBlessingLevels,
+  normalizeBlessingMessages,
+  ReadOnlyBlessingGrid,
+} from '@/components/planner/BlessingTab'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
 const S = STORAGE_BASE
-const SLUG_TO_KEYWORD: Record<string, string> = {
-  burn: '화상', bleed: '출혈', tremor: '진동', rupture: '파열',
-  sinking: '침잠', breath: '호흡', charge: '충전', slash: '참격',
-  pierce: '관통', blunt: '타격',
-}
-const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
-
-function getKeywordSlug(kw: string | null): string | null {
-  if (!kw) return null
-  for (const [slug, k] of Object.entries(SLUG_TO_KEYWORD)) {
-    if (kw.includes(k) || k.includes(kw)) return slug
-  }
-  return null
-}
-function getKwIconUrl(slug: string): string {
-  if (STATS_SLUGS.has(slug)) return `${S}/icons/stats/${slug}.webp`
-  return `${S}/icons/keywords/${slug}.webp`
-}
 
 // 편성 N번 전용 효과 슬롯 파싱
 function parseFormationSlots(text: string | null): number[] {
@@ -57,36 +50,6 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   hard:    { bg: 'rgba(200,144,10,0.15)',  color: '#e8b030', border: 'rgba(200,144,10,0.35)' },
   overlap: { bg: 'rgba(72,152,176,0.15)',  color: '#48b0c0', border: 'rgba(72,152,176,0.35)' },
   extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#e05050', border: 'rgba(200,48,48,0.35)' },
-}
-
-const FLOOR_DIFFICULTY_LABELS: Record<FloorDifficulty, string> = {
-  normal: '노말',
-  hard: '하드',
-  overlap: '인피니티 루프',
-  extreme: '익스트림',
-}
-
-const BLESSING_NAMES: Record<number, string> = {
-  100: '시작의 별', 101: '쌓여가는 별무리', 102: '성간여행', 103: '쏟아지는 유성우',
-  104: '쌍성계 상점', 105: '위성계 상점', 106: '성운의 총애', 107: '별빛의 인도',
-  108: '우연한 혜성', 109: '완전한 가능성',
-}
-const BLESSING_COSTS: Record<number, [number, number, number]> = {
-  100: [10, 20, 30], 101: [10, 20, 30], 102: [20, 40, 60], 103: [20, 40, 60],
-  104: [30, 60, 90], 105: [30, 60, 90], 106: [40, 80, 120], 107: [40, 80, 120],
-  108: [50, 100, 150], 109: [60, 120, 180],
-}
-const BLESSING_EFFECTS: Record<number, [string[], string[], string[]]> = {
-  100: [['시작 코스트 +150', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 1회 무료'], ['시작 코스트 +250', '테마팩 목록 +1', '상점 기프트 목록 +1', '상점 일반 새로고침 2회 무료']],
-  101: [['층 이동 시, 보유 코스트 10% 증가 (최대 100)', '기프트 판매 비용 50% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 20% 증가 (최대 125)', '기프트 판매 비용 75% 증가 (상점별 1회)'], ['층 이동 시, 보유 코스트 30% 증가 (최대 150)', '기프트 판매 비용 100% 증가 (상점별 1회)']],
-  102: [['테마팩 목록 +1', '테마팩 새로고침 횟수 +2', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +3', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프'], ['테마팩 목록 +1', '테마팩 새로고침 횟수 +4', '기록 없는 테마팩 선택 시, 모든 인격 레벨 +3', '테마팩 해금 수에 따라 버프']],
-  103: [['시작 코스트 +400', '시작 기프트 수 +1'], ['시작 코스트 +500', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +75'], ['시작 코스트 +700', '시작 기프트 수 +1', '별빛 전투 보상 시 코스트 +150']],
-  104: [['상점 기프트 목록 +1', '전투 보급 코스트 +20', '높은 등급 기프트 확률 상승'], ['상점 기프트 목록 +1', '전투 보급 코스트 +30', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트'], ['상점 기프트 목록 +1', '전투 보급 코스트 +40', '높은 등급 기프트 확률 상승', '기프트 등급 합 기반 코스트']],
-  105: [['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 1개'], ['상점 키워드 새로고침 1회 무료', '1층 입장 시, 1등급 기프트 2개', '강화 상점 확률 증가'], ['상점 키워드 새로고침 2회 무료', '1층 입장 시, 1등급 기프트 3개', '강화 상점 확률 증가']],
-  106: [['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 5)'], ['1층 입장 시, 인격 레벨 +3', '층 클리어 시, 인격 레벨 +1 (최대 9)'], ['1층 입장 시, 인격 레벨 +3', '6층 입장 시, +3', '층 클리어 시, +1 (최대 9)']],
-  107: [['속도 최댓값 +2', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1'], ['속도 최댓값 +3', '합 위력 증가 1', '피해량 증가 1', '보호 1']],
-  108: [['합성 판매용 기프트 1개', '3층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 2개', '3/5층 입장 시, 3등급 기프트 1개', '합성 시 2단계 낮은 기프트'], ['합성 판매용 기프트 3개', '3/5/7층 입장 시, 4등급 기프트 1개', '합성 시 1단계 낮은 기프트']],
-  109: [['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 1개 선택', '어두운 잔영 1개'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 2개 선택', '1~2등급 합성 재료'], ['테마팩 목록 +1', '시작 기프트 수 +1', '키워드 3등급 기프트 3개 선택', '1~3등급 합성 재료']],
 }
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
@@ -121,6 +84,8 @@ type GiftData = {
   id: string
   game_id: number
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   keyword: string | null
   grade: string | null
   image_url: string | null
@@ -148,8 +113,11 @@ type IdentityData = {
   id: string
   sinner_id: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity: number
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
   game_id: string | null
   folder_name: string | null
 }
@@ -165,6 +133,8 @@ type EgoData = {
   sinner_id: string
   name: string
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: string | null
   image_url: string | null
@@ -183,11 +153,15 @@ type SkillSummary = {
 type PassiveSummary = {
   identity_id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
   active_cond: string | null
   description: string | null
+  description_en?: string | null
+  description_jp?: string | null
   uptie_level: number | null
 }
 
@@ -198,6 +172,7 @@ type Plan = {
   difficulty: Difficulty
   deck: IdentitySlot[] | null
   egos: EgoSlot[] | null
+  tags?: string[] | null
   floor_plan: FloorEntry[] | null
   gift_inventory: string[] | null
   vote_count: number
@@ -210,116 +185,64 @@ type Plan = {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SectionTitle({ title, count }: { title: string; count: string }) {
+function SectionTitle({ title, count, caption }: { title: string; count: string; caption?: string }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      borderBottom: '1px solid #222', paddingBottom: '0.375rem',
-    }}>
-      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>{title}</span>
-      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{count}</span>
+    <div className="flex min-w-0 items-end justify-between gap-3 border-b border-[#241c14] pb-2">
+      <div className="min-w-0">
+        <h2 className="text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">{title}</h2>
+        {caption && <p className="mt-1 text-[0.875rem] leading-snug text-[#7f7364]">{caption}</p>}
+      </div>
+      <span className="shrink-0 font-mono text-[0.875rem] font-semibold tabular-nums text-[#9d8d72]">{count}</span>
     </div>
   )
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div style={{
-      background: '#1a1510', border: '1px solid #1a1510', borderRadius: '0.5rem',
-      padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: '#333',
-    }}>{text}</div>
+    <div className="rounded-md border border-[#241c14] bg-[#120e09] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
+      {text}
+    </div>
   )
 }
 
-function GiftGrid({ gifts, getCondition, onGiftClick }: {
+function DetailSection({
+  children,
+  className = '',
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section className={`min-w-0 rounded-md border border-[#241c14] bg-[#120e09]/92 p-3 sm:p-4 ${className}`}>
+      {children}
+    </section>
+  )
+}
+
+function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
   gifts: { gift: GiftData; enhance: number }[]
   getCondition?: (gift: GiftData) => { level: 'warn' | 'unmet'; text: string } | null
   onGiftClick?: (gift: GiftData, enhance: number) => void
+  locale: SupportedLang
 }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))', gap: '0.5rem', justifyItems: 'center' }}>
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] justify-items-center gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(5rem,1fr))]">
       {gifts.map(({ gift, enhance }) => {
         const cond = getCondition?.(gift)
-        const kwSlug = getKeywordSlug(gift.keyword ?? null)
-        const kwIconUrl = kwSlug ? getKwIconUrl(kwSlug) : null
+        const giftName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
         return (
-          <div
+          <GiftCard
             key={`${gift.game_id}_${enhance}`}
+            gift={gift}
             onClick={() => onGiftClick?.(gift, enhance)}
-            style={{ width: '100%', maxWidth: '4.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onGiftClick ? 'pointer' : 'default' }}
-          >
-            <div style={{
-              position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden',
-              backgroundImage: `url(${S}/icons/ego-gift-bg.webp)`, backgroundSize: 'cover', backgroundPosition: 'center',
-              clipPath: OCTAGON_CLIP,
-            }}>
-              <span style={{
-                position: 'absolute', top: '4%', left: '3%', zIndex: 10, pointerEvents: 'none',
-                fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                fontWeight: 700, fontSize: '1.25rem', lineHeight: 1,
-                color: (gift.grade === 'EX') ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-                textShadow: (gift.grade === 'EX')
-                  ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
-                  : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-              }}>
-                {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
-              </span>
-              {kwIconUrl && (
-                <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 10, pointerEvents: 'none', width: '30%', height: '30%' }}>
-                  <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
-                </div>
-              )}
-              <div style={{ position: 'absolute', inset: '15%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {gift.image_url?.startsWith('http') ? (
-                  <Image src={gift.image_url} alt={gift.name} fill style={{ objectFit: 'contain' }} sizes="80px" />
-                ) : (
-                  <div style={{ width: '1.75rem', height: '1.75rem', background: '#333', borderRadius: '50%' }} />
-                )}
-              </div>
-              {enhance > 0 && (
-                <span style={{
-                  position: 'absolute', top: '1%', right: '6%', zIndex: 15,
-                  fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                  fontWeight: 800, fontSize: '1.25rem', lineHeight: 1,
-                  color: enhance === 2 ? '#ff8c00' : '#e8b030',
-                  textShadow: enhance === 2
-                    ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
-                    : '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)',
-                }}>
-                  {enhance === 2 ? '++' : '+'}
-                </span>
-              )}
-              {cond && (
-                <div style={{
-                  position: 'absolute', inset: 0, zIndex: 18,
-                  background: cond.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{
-                    fontSize: '0.5rem', fontWeight: 700,
-                    color: cond.level === 'unmet' ? '#ef4444' : '#e8b030',
-                    textShadow: '0 0 0.25rem rgba(0,0,0,0.9)',
-                    textAlign: 'center', lineHeight: 1.3,
-                  }}>
-                    {cond.level === 'unmet' ? '조건 미달' : '조건 주의'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <span style={{
-              fontSize: '0.625rem',
-              color: cond?.level === 'unmet' ? '#ef4444' : cond?.level === 'warn' ? '#e8b030' : '#9ca3af',
-              textAlign: 'center', marginTop: '0.1875rem', lineHeight: 1.2, width: '100%',
-              overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}>
-              {gift.name}
-            </span>
-            {cond && (
-              <span style={{ fontSize: '0.5rem', color: cond.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2 }}>
-                {cond.text}
-              </span>
-            )}
-          </div>
+            disabled={!onGiftClick}
+            enhance={enhance}
+            conditionStatus={cond}
+            title={giftName}
+            ariaLabel={giftName}
+            size="100%"
+            className="max-w-[5.25rem] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+          />
         )
       })}
     </div>
@@ -343,16 +266,20 @@ interface Props {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos }: Props) {
+  const locale = useLocale() as SupportedLang
+  const tPlanner = useTranslations('planner')
+  const tFloor = useTranslations('planner.floorTab')
+  const tDetail = useTranslations('planner.detail')
+  const tCommunity = useTranslations('planner.communityBoard')
+  const tBlessing = useTranslations('planner.blessingTab')
   const { data: session } = useSession()
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
-  const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
 
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
 
-  const diffConfig = DIFFICULTY_CONFIG[plan.difficulty]
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
 
   const deck: IdentitySlot[] = Array.isArray(plan.deck) ? plan.deck : []
@@ -360,7 +287,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const floorPlan: FloorEntry[] = normalizeFloorPlanDifficulty(plan.floor_plan, plan.difficulty).floorPlan as FloorEntry[]
   const giftInventory: string[] = Array.isArray(plan.gift_inventory) ? plan.gift_inventory : []
 
-  const username = plan.profiles?.username ?? '익명'
+  const username = plan.profiles?.username ?? tDetail('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
   // Maps
@@ -397,20 +324,19 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const kwContext = useKeywordData()
   const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
+  const localizedBlessings = useMemo(
+    () => normalizeBlessingMessages(tBlessing.raw('blessings'), baseId => tBlessing('fallbackName', { baseId })),
+    [tBlessing],
+  )
+  const selectedBlessings = useMemo(
+    () => getSelectedBlessingLevels(giftInventory),
+    [giftInventory],
+  )
 
-  // Blessings
-  const blessings = useMemo(() => {
-    const list: { baseId: number; name: string; level: number; cost: number }[] = []
-    for (const id of giftInventory) {
-      if (!id.startsWith('blessing_')) continue
-      const [, bStr, lStr] = id.split('_')
-      const baseId = parseInt(bStr), level = parseInt(lStr)
-      list.push({ baseId, name: BLESSING_NAMES[baseId] ?? `가호 ${baseId}`, level, cost: BLESSING_COSTS[baseId]?.[level - 1] ?? 0 })
-    }
-    return list
-  }, [giftInventory])
-
-  const totalBlessingCost = blessings.reduce((s, b) => s + b.cost, 0)
+  const totalBlessingCost = useMemo(
+    () => getSelectedBlessingCost(localizedBlessings, selectedBlessings),
+    [localizedBlessings, selectedBlessings],
+  )
 
   // Gift categorization
   const observeGifts = useMemo(() =>
@@ -500,7 +426,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }, [plan.id, session])
 
   const handleVote = async () => {
-    if (!session) { showError('로그인이 필요합니다.'); return }
+    if (!session) { showError(tDetail('loginRequired')); return }
     setVoteLoading(true)
     try {
       const res = await fetch(`/api/planner/${plan.id}/vote`, { method: 'POST' })
@@ -514,358 +440,206 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
   }
 
-  return (
-    <div className="min-h-screen pt-24 pb-16" style={{ background: '#0d0b08' }}>
-      <div className="max-w-4xl mx-auto px-3 sm:px-6">
+  const difficultyLabel = tCommunity(`difficulty.${plan.difficulty}`)
+  const deckCountLabel = tDetail('deckCount', { count: deck.length })
 
-        {/* 뒤로가기 */}
+  return (
+    <div className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <Link
           href="/planner/community"
-          className="inline-flex items-center gap-1 mb-4 transition-colors hover:opacity-80"
-          style={{ color: '#666', fontSize: '0.75rem' }}
+          className="mb-4 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#7f7364] transition-colors hover:text-[#c8900a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
         >
-          <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
-          커뮤니티 플랜
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {tDetail('backToCommunity')}
         </Link>
 
-        {/* ── 플랜 헤더 ── */}
-        <header style={{ marginBottom: '2rem' }}>
-          {/* 난이도 + 메타 */}
-          <div className="flex items-center gap-2 mb-3">
-            <span style={{
-              display: 'inline-flex', alignItems: 'center',
-              padding: '0.1875rem 0.625rem',
-              background: diffStyle.bg, color: diffStyle.color, border: `1px solid ${diffStyle.border}`,
-              borderRadius: '2rem', fontFamily: 'var(--font-heading)',
-              fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.05em',
-            }}>
-              {diffConfig.label} ({diffConfig.floors}층)
-            </span>
-            <span style={{ color: '#333', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-              {deck.length}인 편성
-            </span>
-          </div>
-
-          {/* 제목 */}
-          <h1 className="leading-tight text-xl sm:text-2xl md:text-[2rem]" style={{
-            color: '#e8dcc8', marginBottom: '0.75rem',
-            fontFamily: 'var(--font-heading)',
-          }}>
-            {plan.title}
-          </h1>
-
-          {/* 작성자 + 날짜 + 통계 + 추천 */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative overflow-hidden rounded-full" style={{
-              width: '2rem', height: '2rem', flexShrink: 0,
-              border: '1.5px solid rgba(200,144,10,0.3)',
-            }}>
-              <Image src={avatarUrl} alt={username} width={32} height={32}
-                style={{ width: '2rem', height: '2rem', objectFit: 'cover' }} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.875rem', color: '#e8dcc8', fontWeight: 600 }}>{username}</span>
-              <div className="flex items-center gap-3 mt-0.5">
-                <RelativeTime date={plan.created_at} style={{ fontSize: '0.6875rem', color: '#4b5563' }} />
-                <span className="flex items-center gap-1" style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
-                  <Eye style={{ width: '0.6875rem', height: '0.6875rem' }} /> {plan.view_count}
+        <header className="mb-5 border-y border-[#2a2118] bg-[#100c08]/76">
+          <div className="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,21rem)]">
+            <div className="min-w-0 px-3 py-3.5 sm:px-5 sm:py-4">
+              <div className="mb-2.5 flex min-w-0 flex-wrap items-center gap-2">
+                <span
+                  className="inline-flex min-h-9 items-center rounded-sm border px-2.5 text-[0.9375rem] font-semibold"
+                  style={{ background: diffStyle.bg, color: diffStyle.color, borderColor: diffStyle.border }}
+                >
+                  {difficultyLabel}
                 </span>
-                <span className="flex items-center gap-1" style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
-                  <MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} /> {plan.comment_count}
+                <span className="inline-flex min-h-9 items-center rounded-sm border border-[#2a2118] bg-[#1a1510] px-2.5 font-mono text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
+                  {deckCountLabel}
+                </span>
+                <span className="inline-flex min-h-9 items-center rounded-sm border border-[#2a2118] bg-[#1a1510] px-2.5 font-mono text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
+                  {tDetail('egoCount', { count: egoSlots.length })}
                 </span>
               </div>
+
+              <h1 className="max-w-[34ch] break-words font-serif text-[1.25rem] font-bold leading-[1.18] text-[#e8dcc8] text-pretty sm:max-w-[38ch] sm:text-[1.625rem] lg:text-[1.75rem]">
+                {plan.title}
+              </h1>
+
+              <div className="mt-3 flex min-w-0 flex-col gap-3 border-l border-[#3a2a10] pl-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-[#3a2a10] bg-[#1a1510]">
+                    <Image src={avatarUrl} alt={username} width={40} height={40} className="h-10 w-10 object-cover" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[1rem] font-semibold text-[#e8dcc8]">{username}</p>
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] text-[#7f7364]">
+                      <RelativeTime date={plan.created_at} />
+                      <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+                        <Eye className="h-3.5 w-3.5" aria-hidden="true" /> {plan.view_count}
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+                        <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> {plan.comment_count}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleVote}
+                  disabled={voteLoading}
+                  className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-sm border px-4 text-[0.9375rem] font-semibold transition-colors hover:border-[#c8900a] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                  style={{
+                    background: voted ? 'rgba(200,144,10,0.16)' : '#1a1510',
+                    borderColor: voted ? 'rgba(200,144,10,0.48)' : '#2a2118',
+                    color: voted ? '#e8b030' : '#b9a47f',
+                  }}
+                >
+                  <Heart className="h-4 w-4" fill={voted ? 'currentColor' : 'none'} aria-hidden="true" />
+                  {tDetail('voteWithCount', { count: voteCount })}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleVote}
-              disabled={voteLoading}
-              className="flex items-center gap-1.5 transition-all hover:brightness-110 disabled:opacity-50 ml-auto"
-              style={{
-                padding: '0.375rem 0.75rem',
-                background: voted ? 'rgba(200,144,10,0.2)' : 'transparent',
-                border: `1px solid ${voted ? 'rgba(200,144,10,0.5)' : '#333'}`,
-                borderRadius: '2rem',
-                color: voted ? '#e8b030' : '#6b7280',
-                fontSize: '0.8125rem', fontWeight: 600, cursor: voteLoading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <Heart style={{ width: '0.875rem', height: '0.875rem' }} fill={voted ? 'currentColor' : 'none'} />
-              추천 {voteCount}
-            </button>
+
+            <div className="min-w-0 border-t border-[#241c14] bg-[#0d0b08]/24 px-3 py-3 sm:px-5 lg:border-l lg:border-t-0 lg:px-4">
+              <PlanActions
+                planId={plan.id}
+                planTitle={plan.title}
+                planDescription={plan.description}
+                difficulty={plan.difficulty}
+                deck={deck}
+                egoSlots={egoSlots}
+                floorPlan={floorPlan}
+                giftInventory={giftInventory}
+                mainKeywords={plan.tags ?? []}
+                identities={identities}
+                sinners={sinners}
+                egos={egos}
+                isOwner={!!(session?.user?.email && plan.profiles?.username)}
+                isAdmin={isAdmin}
+              />
+            </div>
           </div>
-
-          {/* 액션 바 */}
-          <PlanActions
-            planId={plan.id}
-            planTitle={plan.title}
-            planDescription={plan.description}
-            difficulty={plan.difficulty}
-            deck={deck}
-            egoSlots={egoSlots}
-            floorPlan={floorPlan}
-            giftInventory={giftInventory}
-            identities={identities}
-            sinners={sinners}
-            egos={egos}
-            isOwner={!!(session?.user?.email && plan.profiles?.username)}
-            isAdmin={isAdmin}
-          />
-
-          {/* 구분선 */}
-          <div style={{ height: '1px', background: 'linear-gradient(to right, rgba(200,144,10,0.3), transparent)', marginBottom: '1rem' }} />
-
-          {/* 설명 */}
-          {plan.description && (
-            <div style={{ marginBottom: '1rem' }}>
-              <NoteRenderer text={plan.description} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
-            </div>
-          )}
         </header>
 
-        {/* ── 덱 편성 탭 ── */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <PlanDeckTabs
-            deck={deck}
-            egoSlots={egoSlots}
-            identities={identities}
-            sinners={sinners}
-            egos={egos}
-            skills={skills}
-            passives={passives}
-            slotGiftMap={slotGiftMap}
-          />
-        </div>
-
-        {/* ── 가호 ── */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '0.375rem' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>가호</span>
-            {blessings.length > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="별빛" width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
-                <span style={{ fontSize: '0.8125rem', color: '#c8900a', fontWeight: 700 }}>{totalBlessingCost}</span>
-              </div>
-            ) : (
-              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>미선택</span>
+        <main className="min-w-0 space-y-5 overflow-x-hidden">
+            {plan.description && (
+              <article className="border-y border-[#241c14] bg-[#0f0b07] px-4 py-5 sm:px-5 sm:py-6">
+                <div className="min-w-0 w-full">
+                  <h2 className="mb-4 border-b border-[#241c14] pb-2 text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">
+                    {tDetail('descriptionTitle')}
+                  </h2>
+                  <div
+                    className="planner-detail-note min-w-0 text-[1rem] leading-8 text-[#cfc2ad] [&>div]:!max-w-none"
+                    style={{
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    <NoteRenderer
+                      text={plan.description}
+                      allowedKeywords={allowedKeywords}
+                      egoGiftLookup={egoGiftLookup}
+                      textScale="comfortable"
+                    />
+                  </div>
+                </div>
+              </article>
             )}
-          </div>
-          {blessings.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-              {blessings.map(b => {
-                const effects = BLESSING_EFFECTS[b.baseId]?.[b.level - 1] ?? []
-                return (
-                  <div key={b.baseId} className="rounded-lg overflow-hidden flex flex-col" style={{
-                    background: '#1a1510', border: '1px solid #c8900a50',
-                    boxShadow: '0 0 12px #c8900a15',
-                  }}>
-                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 pb-1.5 sm:pb-2">
-                      <Image src={`${S}/icons/start-buffs/${b.baseId}.webp`} alt={b.name} width={32} height={32}
-                        style={{ width: '1.5rem', height: '1.5rem', objectFit: 'contain' }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[0.6875rem] sm:text-[0.8125rem]" style={{ color: '#e8dcc8', fontWeight: 600, lineHeight: 1.2 }}>{b.name}</div>
-                      </div>
-                      <div className="flex items-center gap-0.5 sm:gap-1">
-                        <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={14} height={14} style={{ width: '0.75rem', height: '0.75rem' }} />
-                        <span style={{ color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>{b.cost}</span>
-                      </div>
-                    </div>
-                    <div className="px-2 sm:px-3 pb-1.5 sm:pb-2 flex-1">
-                      {effects.map((eff, i) => (
-                        <div key={i} style={{ color: '#777', fontSize: '0.5625rem', lineHeight: 1.5 }}>• {eff}</div>
-                      ))}
-                    </div>
-                    <div style={{
-                      borderTop: '1px solid #222', padding: '0.1875rem 0.5rem 0.25rem',
-                      fontSize: '0.625rem', fontWeight: 700, textAlign: 'center',
-                      color: b.level === 3 ? '#c83030' : b.level === 2 ? '#4898b0' : '#e8b030',
-                    }}>
-                      {b.level === 1 ? '기본' : b.level === 2 ? '+' : '++'}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <EmptyState text="가호가 선택되지 않았습니다" />
-          )}
-        </div>
 
-        {/* ── 시작 기프트 ── */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <SectionTitle title="시작 기프트" count={`${startGifts.length}개`} />
-          {startGifts.length > 0 ? (
-            <GiftGrid gifts={startGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-          ) : (
-            <EmptyState text="시작 기프트가 선택되지 않았습니다" />
-          )}
-        </div>
+            <DetailSection>
+              <PlanDeckTabs
+                deck={deck}
+                egoSlots={egoSlots}
+                identities={identities}
+                sinners={sinners}
+                egos={egos}
+                skills={skills}
+                passives={passives}
+                slotGiftMap={slotGiftMap}
+              />
+            </DetailSection>
 
-        {/* ── 관측 기프트 ── */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <SectionTitle title="관측 기프트" count={`${observeGifts.length}/3`} />
-          {observeGifts.length > 0 ? (
-            <GiftGrid gifts={observeGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-          ) : (
-            <EmptyState text="관측 기프트가 선택되지 않았습니다" />
-          )}
-        </div>
+            <DetailSection className="space-y-3 overflow-x-hidden">
+              <SectionTitle title={tBlessing('title')} count={selectedBlessings.size > 0 ? String(totalBlessingCost) : tBlessing('none')} />
+              {selectedBlessings.size > 0 && (
+                <div className="flex items-center justify-end gap-1.5 text-[0.875rem] font-semibold text-[#c8900a]">
+                  <Image src={`${S}/icons/start-buffs/starlight.webp`} alt={tBlessing('starlightAlt')} width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
+                  <span className="font-mono tabular-nums">{totalBlessingCost}</span>
+                </div>
+              )}
+              <ReadOnlyBlessingGrid
+                blessings={localizedBlessings}
+                selectedBlessings={selectedBlessings}
+                emptyText={tBlessing('empty')}
+              />
+            </DetailSection>
 
-        {/* ── 층별 계획 ── */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <SectionTitle
-            title="층별 계획"
-            count={`${floorPlan.filter(f => f.theme_id).length}/${floorPlan.length}층`}
-          />
-          {floorPlan.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {floorPlan.map(f => {
-                const theme = f.theme_id ? themeMap.get(f.theme_id) : null
-                const floorGifts = f.gift_ids.map(id => giftMap.get(parseInt(id))).filter(Boolean) as GiftData[]
-                const isExpanded = expandedFloor === f.floor
-                const floorDifficulty = isFloorDifficulty(f.difficulty) && isAllowedFloorDifficulty(f.difficulty, f.floor)
-                  ? f.difficulty
-                  : getLegacyPlanFloorDifficulty(plan.difficulty, f.floor)
-                return (
-                  <div key={f.floor} style={{
-                    background: '#1a1510',
-                    border: `1px solid ${isExpanded ? '#c8900a' : theme ? '#2a2520' : '#1a1510'}`,
-                    borderRadius: '0.5rem', overflow: 'hidden', transition: 'border-color 0.2s',
-                  }}>
-                    <button
-                      onClick={() => setExpandedFloor(isExpanded ? null : f.floor)}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: '0.625rem',
-                        padding: '0.5rem 0.75rem', background: 'transparent', border: 'none',
-                        cursor: 'pointer', textAlign: 'left', color: '#e5e7eb',
-                      }}
-                    >
-                      <span style={{
-                        width: '1.75rem', height: '1.75rem', borderRadius: '50%',
-                        background: theme ? '#c8900a' : '#222',
-                        color: theme ? '#0d0b08' : '#4b5563',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
-                      }}>{f.floor}</span>
+            <DetailSection className="space-y-3">
+              <SectionTitle title={tDetail('startGifts')} count={tDetail('itemCount', { count: startGifts.length })} />
+              {startGifts.length > 0 ? (
+                <GiftGrid locale={locale} gifts={startGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
+              ) : (
+                <EmptyState text={tDetail('emptyStartGifts')} />
+              )}
+            </DetailSection>
 
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        minHeight: '1.5rem',
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '999px',
-                        border: '1px solid rgba(200,144,10,0.2)',
-                        color: '#b9a47f',
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}>
-                        {FLOOR_DIFFICULTY_LABELS[floorDifficulty]}
-                      </span>
+            <DetailSection className="space-y-3">
+              <SectionTitle title={tDetail('observeGifts')} count={tDetail('observeCount', { count: observeGifts.length })} />
+              {observeGifts.length > 0 ? (
+                <GiftGrid locale={locale} gifts={observeGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
+              ) : (
+                <EmptyState text={tDetail('emptyObserveGifts')} />
+              )}
+            </DetailSection>
 
-                      {theme ? (
-                        <>
-                          {theme.image_url && (
-                            <div style={{ position: 'relative', width: '1.75rem', height: '3.175rem', flexShrink: 0 }}>
-                              <Image src={theme.image_url} alt={theme.name} width={18} height={33}
-                                style={{ width: '1.75rem', height: '3.175rem', objectFit: 'cover', borderRadius: '0.1875rem' }} />
-                            </div>
-                          )}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e8b030', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {theme.name}
-                            </div>
-                            {!isExpanded && floorGifts.length > 0 && (
-                              <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.0625rem' }}>
-                                획득 기프트 {floorGifts.length}개
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <span style={{ flex: 1, fontSize: '0.75rem', color: '#333' }}>미선택</span>
-                      )}
-                      {isExpanded
-                        ? <ChevronUp size={14} color="#6b7280" style={{ flexShrink: 0 }} />
-                        : <ChevronDown size={14} color="#6b7280" style={{ flexShrink: 0 }} />}
-                    </button>
+            <DetailSection className="space-y-3">
+              <SectionTitle
+                title={tPlanner('tabs.floor')}
+                count={tFloor('configuredFloorCount', { configured: floorPlan.filter(f => f.theme_id).length, total: floorPlan.length })}
+                caption={tDetail('floorPlanCaption')}
+              />
+              <FloorPlanPreviewBoard
+                floorPlan={floorPlan}
+                planDifficulty={plan.difficulty}
+                themeMap={themeMap}
+                giftMap={giftMap}
+                onGiftClick={gift => setSelectedGift({ gift, enhance: 0 })}
+                renderMemo={memo => (
+                  <NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
+                )}
+              />
+            </DetailSection>
 
-                    {isExpanded && theme && (
-                      <div style={{ borderTop: '1px solid #222', padding: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-                          {theme.image_url && (
-                            <div style={{ position: 'relative', width: '2.375rem', height: '4.3125rem', flexShrink: 0 }}>
-                              <Image src={theme.image_url} alt={theme.name} width={38} height={69}
-                                style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem' }} />
-                            </div>
-                          )}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e8b030' }}>{theme.name}</div>
-                            <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.125rem' }}>
-                              기프트 {theme.ego_gift_ids?.length ?? 0}종
-                            </div>
-                          </div>
-                        </div>
+            <DetailSection className="space-y-3">
+              <SectionTitle title={tDetail('finalGifts')} count={tDetail('itemCount', { count: finalGifts.length })} />
+              {deck.length > 0 && finalGifts.length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.875rem] leading-snug">
+                  <span className="text-[#ef4444]">{tDetail('conditionUnmet')}</span>
+                  <span className="text-[#e8b030]">{tDetail('conditionWarn')}</span>
+                </div>
+              )}
+              {finalGifts.length > 0 ? (
+                <GiftGrid locale={locale} gifts={finalGifts} getCondition={getConditionStatus} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
+              ) : (
+                <EmptyState text={tDetail('emptyFinalGifts')} />
+              )}
+            </DetailSection>
 
-                        {floorGifts.length > 0 && (
-                          <div style={{ marginBottom: '0.75rem' }}>
-                            <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              획득 기프트
-                            </div>
-                            <GiftGrid gifts={floorGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-                          </div>
-                        )}
-
-                        {f.memo && (
-                          <div>
-                            <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              메모
-                            </div>
-                            <div style={{ background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem', padding: '0.5rem 0.625rem' }}>
-                              <NoteRenderer text={f.memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
-                            </div>
-                          </div>
-                        )}
-
-                        {!floorGifts.length && !f.memo && (
-                          <div style={{ fontSize: '0.75rem', color: '#333', textAlign: 'center' }}>상세 정보 없음</div>
-                        )}
-                      </div>
-                    )}
-
-                    {isExpanded && !theme && f.memo && (
-                      <div style={{ borderTop: '1px solid #222', padding: '0.75rem' }}>
-                        <div style={{ background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem', padding: '0.5rem 0.625rem' }}>
-                          <NoteRenderer text={f.memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <EmptyState text="층별 계획이 없습니다" />
-          )}
-        </div>
-
-        {/* ── 최종 기프트 ── */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <SectionTitle title="최종 기프트" count={`${finalGifts.length}개`} />
-          {deck.length > 0 && finalGifts.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem', fontSize: '0.5625rem', marginBottom: '0.25rem' }}>
-              <span style={{ color: '#ef4444' }}>● 조건 미달 — 전체 인격으로도 부족</span>
-              <span style={{ color: '#e8b030' }}>● 조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족</span>
-            </div>
-          )}
-          {finalGifts.length > 0 ? (
-            <GiftGrid gifts={finalGifts} getCondition={getConditionStatus} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-          ) : (
-            <EmptyState text="최종 기프트가 선택되지 않았습니다" />
-          )}
-        </div>
-
-        {/* ── 댓글 ── */}
-        <PlanComments planId={plan.id} />
-
+            <DetailSection>
+              <PlanComments planId={plan.id} />
+            </DetailSection>
+        </main>
       </div>
 
       {/* 기프트 상세 모달 */}

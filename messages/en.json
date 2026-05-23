@@ -44,8 +44,21 @@
     "skipToContent": "Skip to content",
     "viewAll": "View all",
     "close": "Close",
+    "terms": "Terms",
+    "privacy": "Privacy Policy",
+    "fanDisclaimer": "Unofficial fan-made site · Limbus Company is a work of Project Moon.",
+    "unaffiliatedDisclaimer": "This fan site is not affiliated with Project Moon.",
     "footerNav": "Footer navigation",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "fontControl": {
+      "open": "Open font size controls",
+      "decrease": "Decrease font size",
+      "increase": "Increase font size",
+      "collapse": "Collapse",
+      "small": "Small",
+      "default": "Default",
+      "large": "Large"
+    }
   },
   "lang": {
     "filter": "Language",
@@ -148,6 +161,131 @@
       "refractionRailway": "Refraction Railway",
       "reflectrial": "Reflectrial",
       "none": "None"
+    },
+    "builder": {
+      "metadata": {
+        "title": "Deck builder",
+        "description": "Arrange identities, E.G.O, formation order, and deck notes."
+      },
+      "backToDecks": "Deck board",
+      "titleNew": "Deck builder",
+      "titleEdit": "Edit deck",
+      "description": "Arrange identities, E.G.O, formation order, and play notes in one compact workspace.",
+      "progress": "Identities {count}/{total}",
+      "forkTitle": "{title} (fork)",
+      "tabs": {
+        "identity": "Identities",
+        "ego": "E.G.O",
+        "skillset": "Skills",
+        "note": "Deck notes"
+      },
+      "actions": {
+        "loadDraft": "Load draft",
+        "saveDraft": "Save draft",
+        "draftSaved": "Draft saved",
+        "copyCode": "Copy code",
+        "copied": "Copied",
+        "copyDisabled": "Assign all 12 identities before copying a deck code",
+        "contentRequired": "Choose a content type",
+        "identityRequired": "Assign all identities first ({count}/{total})",
+        "saving": "Saving...",
+        "save": "Save",
+        "upload": "Upload"
+      },
+      "fields": {
+        "title": "Deck title",
+        "titlePlaceholder": "Enter a deck title",
+        "deckCode": "Formation code",
+        "codePlaceholder": "Paste formation code",
+        "applyCode": "Apply",
+        "applying": "Applying",
+        "codeError": "Code error",
+        "contentType": "Content type",
+        "required": "Required"
+      },
+      "errors": {
+        "saveFailed": "Failed to save the deck.",
+        "updateFailed": "Failed to update the deck."
+      },
+      "gifts": {
+        "panelTitle": "E.G.O Gifts",
+        "modalTitle": "Select E.G.O Gifts",
+        "modalHeading": "E.G.O Gift index",
+        "count": "{count} gifts",
+        "close": "Close",
+        "active": "Active",
+        "inactive": "Inactive",
+        "warning": "Warn",
+        "all": "All",
+        "openAll": "View all",
+        "expand": "Expand gift panel",
+        "collapse": "Collapse gift panel",
+        "searchPlaceholder": "Search gifts...",
+        "searchNamePlaceholder": "Search gift name...",
+        "clearSearch": "Clear search",
+        "gradeFilter": "Grade",
+        "gradeAll": "All grades",
+        "selectIdentityFirst": "Assign identities first.",
+        "noResults": "No gifts match these conditions.",
+        "benchProgress": "Front {formation}/{count} · All {all}/{count}",
+        "grades": {
+          "열쇠": "Key",
+          "갈래": "Branch",
+          "징표": "Sign",
+          "화폐": "Currency",
+          "에고": "E.G.O"
+        }
+      },
+      "note": {
+        "placeholder": "Write deck notes. Type [ or {{ to insert chips and blocks.",
+        "insert": "Insert",
+        "preview": "Preview",
+        "edit": "Edit",
+        "emptyPalette": "Select a sinner to open tools for assigned identities, skills, passives, and E.G.O.",
+        "giftInsert": "Add gift",
+        "giftTokenStart": "Start gift token",
+        "groups": {
+          "history": "History",
+          "paragraph": "Paragraph",
+          "format": "Formatting",
+          "insertPreview": "Insert and preview"
+        },
+        "blocks": {
+          "paragraph": "Paragraph",
+          "heading2": "Heading"
+        },
+        "tools": {
+          "undo": "Undo",
+          "redo": "Redo",
+          "paragraphFormat": "Paragraph format",
+          "bold": "Bold",
+          "italic": "Italic",
+          "bulletList": "Bullet list",
+          "orderedList": "Numbered list",
+          "quote": "Quote",
+          "link": "Link"
+        },
+        "types": {
+          "skill": "Skill",
+          "skillFrame": "Skill frame",
+          "passive": "Passive",
+          "passiveDescription": "Passive description",
+          "identity": "Identity",
+          "giftCard": "Gift card"
+        },
+        "aria": {
+          "editor": "Deck notes",
+          "toolbar": "Deck note editor tools",
+          "sinnerTools": "Sinner insert tools",
+          "sinnerPalette": "{sinner} insert palette",
+          "identityChip": "Insert {identity} identity chip",
+          "skillBlock": "Insert {label} detail block",
+          "passiveBlock": "Insert {passive} detail description",
+          "passiveDescriptionTitle": "{passive} description",
+          "chipTitle": "{name} chip",
+          "preview": "Deck note preview"
+        }
+      }
     },
     "result": {
       "countMore": "{count}+ decks",
@@ -289,6 +427,42 @@
       "metaTitle": "Mirror Dungeon — Trigger Mode"
     },
     "community": "Community Plans",
+    "detail": {
+      "notFoundTitle": "Plan not found",
+      "metaTitle": "{title} | Community Plan",
+      "metaDescription": "Limbus Company Mirror Dungeon {difficulty} plan",
+      "metaDescriptionWithDescription": "{difficulty} difficulty — {description}",
+      "backToCommunity": "Community Plans",
+      "anonymous": "Anonymous",
+      "loginRequired": "Log in to recommend this plan.",
+      "floorCount": "{count} floors",
+      "deckCount": "{count} identities",
+      "egoCount": "E.G.O {count}",
+      "voteWithCount": "Recommend {count}",
+      "descriptionTitle": "Plan Notes",
+      "copyDeckCode": "Copy Formation Code",
+      "fork": "Fork",
+      "copied": "Copied",
+      "triggerMode": "Trigger Mode",
+      "forkedTitle": "{title} (Fork)",
+      "loadedIntoPlanner": "Loaded into the planner.",
+      "copyDeckCodeFailed": "Could not copy the formation code.",
+      "deletePlanTitle": "Delete Plan",
+      "deletePlanMessage": "Delete this plan? This cannot be undone.",
+      "deleteFailed": "Could not delete the plan.",
+      "deleteError": "An error occurred while deleting.",
+      "floorPlanCaption": "Review floor themes, acquired gifts, and route notes at a glance.",
+      "startGifts": "Starting Gifts",
+      "observeGifts": "Observed Gifts",
+      "finalGifts": "Final Gifts",
+      "itemCount": "{count} items",
+      "observeCount": "{count}/3",
+      "emptyStartGifts": "No starting gifts selected.",
+      "emptyObserveGifts": "No observed gifts selected.",
+      "emptyFinalGifts": "No final gifts selected.",
+      "conditionUnmet": "Unmet — not enough with all identities",
+      "conditionWarn": "Warning — needs bench identities"
+    },
     "difficulty": "Difficulty",
     "normal": "Normal",
     "hard": "Hard",
@@ -345,7 +519,7 @@
       "difficulty": {
         "normal": "Normal",
         "hard": "Hard",
-        "overlap": "Overlap",
+        "overlap": "Infinity Loop",
         "extreme": "Extreme"
       },
       "filters": {
@@ -398,7 +572,9 @@
         "scrollForMore": "Scroll to load more"
       },
       "card": {
-        "anonymous": "Anonymous"
+        "anonymous": "Anonymous",
+        "difficultyCount": "{count}F",
+        "toggleKeyword": "Toggle {keyword} keyword filter"
       },
       "relativeTime": {
         "now": "just now",
@@ -436,6 +612,7 @@
       "themeModalTitle": "Floor {floor} theme pack · {difficulty}",
       "difficultySummary": "Floor difficulties",
       "difficultySummaryCount": "{count}F",
+      "configuredFloorCount": "{configured}/{total}F",
       "noThemeWithCount": "No theme selected ({count} available)",
       "noFloorThemes": "No themes for this floor",
       "selectThemeWithCount": "Choose theme pack ({count})",
@@ -446,6 +623,10 @@
       "acquiredGifts": "Acquired gifts",
       "acquiredGiftCount": "{count} acquired gifts",
       "addGift": "Add",
+      "giftPickerTitle": "Add acquired gift",
+      "giftPickerHint": "Search gifts from {theme} to add them to this floor.",
+      "giftPickerSearchPlaceholder": "Search theme gifts...",
+      "giftPickerEmpty": "No gifts match your search.",
       "noThemeGifts": "This theme has no gifts in the final gift list.",
       "addToFinal": "+Add to final",
       "memo": "Plan memo",
@@ -466,8 +647,37 @@
       "close": "Close",
       "memoPlaceholder": "Strategy memo for this floor… (keyword and gift autocomplete supported)",
       "memoPreview": "Preview",
+      "memoExpand": "Read full memo",
+      "memoCollapse": "Collapse memo",
       "keywordDistribution": "Accumulated gift keyword distribution",
-      "totalGifts": "{count} gifts total"
+      "totalGifts": "{count} gifts total",
+      "finalGifts": "Final inventory gifts",
+      "finalGiftCount": "{count} final gifts",
+      "finalWorkbenchHint": "Click reflected cards on the left to remove them, or click catalog cards to add them and click again to remove.",
+      "finalSelectedPanel": "Reflected list",
+      "finalGiftSearchPlaceholder": "Search final gifts...",
+      "finalGiftEmpty": "No final gifts reflected yet.",
+      "finalGiftNoResults": "No gifts match your search.",
+      "finalKeywordFilter": "Keyword",
+      "finalGradeFilter": "Grade",
+      "filterAll": "All",
+      "allGiftAddPanel": "Add from all gifts",
+      "allGiftCatalog": "All gifts",
+      "allGiftAddHint": "Click a card to add it to final inventory. Click an already-added card again to remove it.",
+      "allGiftSearchPlaceholder": "Search all gifts...",
+      "allGiftNoResults": "No gifts match your search.",
+      "alreadyAdded": "Added",
+      "alreadyAddedRemove": "Added · click to remove",
+      "alreadyAddedGift": "{gift} already added",
+      "addFinalGift": "Add {gift} to final gifts",
+      "addFinalGiftShort": "Add",
+      "removeFinalGift": "Remove {gift} from final gifts",
+      "removeAlreadyAddedGift": "Remove {gift} from final gifts",
+      "removeFinalGiftShort": "Remove",
+      "fusionAlertTitle": "Craftable fusion",
+      "fusionAlertHint": "Your current final gifts can craft this result. Click the result gift to replace its materials in final inventory.",
+      "fusionAlertDismiss": "Dismiss fusion alert",
+      "fusionAlertApply": "Apply {gift} fusion"
     },
     "actions": {
       "triggerMode": "Trigger Mode",
@@ -506,11 +716,22 @@
         "toAwakenedArt": "Normal art -- click for awakened",
         "modalTitle": "Select Identity",
         "modalHeading": "{sinner} - Select Identity",
+        "close": "Close identity picker",
+        "searchPlaceholder": "Search identities...",
+        "clearSearch": "Clear search",
+        "rarityAll": "All",
+        "rarity": "{rarity} star",
+        "noResults": "No identities match these filters.",
+        "openDetailHint": "Click for details",
         "clear": "Clear selection"
       },
       "ego": {
         "modalTitle": "Select E.G.O",
         "modalHeading": "{sinner} - Select E.G.O",
+        "close": "Close E.G.O picker",
+        "searchPlaceholder": "Search E.G.O...",
+        "clearSearch": "Clear search",
+        "gradeAll": "All",
         "remove": "Remove",
         "emptyGrade": "No E.G.O in this grade",
         "noIdentity": "No identity"
@@ -529,6 +750,10 @@
         "resonance": "Res.",
         "stock": "Stock",
         "passiveWarning": "Skill distribution no longer meets this condition"
+      },
+      "mainKeywords": {
+        "label": "Plan main keywords",
+        "keywordCount": "{keyword} {count} identities"
       }
     },
     "giftTab": {

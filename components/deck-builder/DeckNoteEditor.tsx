@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { Bold, Check, ChevronDown, Heading2, Italic, Link2, List, ListOrdered, Pilcrow, Plus, Quote, Redo2, Undo2 } from 'lucide-react'
 import { EditorContent, useEditor, type Editor, type JSONContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -61,12 +62,12 @@ const SIN_KR_TO_TYPE: Record<string, SinType> = {
 }
 
 const MARKDOWN_TOOLS = [
-  { label: '굵게', icon: Bold, action: 'bold' },
-  { label: '기울임', icon: Italic, action: 'italic' },
-  { label: '목록', icon: List, action: 'bulletList' },
-  { label: '번호 목록', icon: ListOrdered, action: 'orderedList' },
-  { label: '인용', icon: Quote, action: 'blockquote' },
-  { label: '링크', icon: Link2, action: 'link' },
+  { labelKey: 'bold', icon: Bold, action: 'bold' },
+  { labelKey: 'italic', icon: Italic, action: 'italic' },
+  { labelKey: 'bulletList', icon: List, action: 'bulletList' },
+  { labelKey: 'orderedList', icon: ListOrdered, action: 'orderedList' },
+  { labelKey: 'quote', icon: Quote, action: 'blockquote' },
+  { labelKey: 'link', icon: Link2, action: 'link' },
 ] as const
 
 function PaletteLane({ children }: { children: ReactNode }) {
@@ -318,19 +319,25 @@ interface Props {
 function HeadingDropdown({
   editor,
   onSelect,
+  labels,
 }: {
   editor: Editor | null
   onSelect: (type: 'paragraph' | 'heading2') => void
+  labels: {
+    aria: string
+    paragraph: string
+    heading2: string
+  }
 }) {
   const [open, setOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; width: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const currentType = editor?.isActive('heading', { level: 2 }) ? 'heading2' : 'paragraph'
-  const currentLabel = currentType === 'heading2' ? '제목' : '문단'
+  const currentLabel = currentType === 'heading2' ? labels.heading2 : labels.paragraph
   const options = [
-    { value: 'paragraph' as const, label: '문단', display: 'p', icon: Pilcrow },
-    { value: 'heading2' as const, label: '제목', display: 'h2', icon: Heading2 },
+    { value: 'paragraph' as const, label: labels.paragraph, display: 'p', icon: Pilcrow },
+    { value: 'heading2' as const, label: labels.heading2, display: 'h2', icon: Heading2 },
   ]
 
   const handleSelect = (type: 'paragraph' | 'heading2') => {
@@ -384,7 +391,7 @@ function HeadingDropdown({
         ref={menuRef}
         className="deck-note-heading-menu"
         role="menu"
-        aria-label="문단 형식"
+        aria-label={labels.aria}
         style={{
           position: 'fixed',
           top: menuPosition.top,
@@ -422,10 +429,10 @@ function HeadingDropdown({
         ref={buttonRef}
         type="button"
         className="deck-note-rte__heading-button"
-        aria-label="문단 형식"
+        aria-label={labels.aria}
         aria-haspopup="menu"
         aria-expanded={open}
-        title="문단 형식"
+        title={labels.aria}
         disabled={!editor}
         onClick={toggleOpen}
         onKeyDown={event => {
@@ -450,6 +457,7 @@ export default function DeckNoteEditor({
   description, setDescription,
   descPreview, setDescPreview,
 }: Props) {
+  const t = useTranslations('decks.builder.note')
   const { keywords: kwContext } = useKeywordData()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [editorSuggestions, setEditorSuggestions] = useState<AutocompleteSuggestion[]>([])
@@ -626,7 +634,7 @@ export default function DeckNoteEditor({
         pool.push({
           label: `${orderLabel} ${sk.name}`,
           type: 'skill',
-          typeLabel: '스킬',
+          typeLabel: t('types.skill'),
           color: sc,
           iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
           token,
@@ -635,7 +643,7 @@ export default function DeckNoteEditor({
         pool.push({
           label: `${sinnerName} ${orderLabel} ${sk.name}`,
           type: 'skill',
-          typeLabel: '스킬 프레임',
+          typeLabel: t('types.skillFrame'),
           color: sc,
           iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
           token: subIdx === 0
@@ -652,7 +660,7 @@ export default function DeckNoteEditor({
         pool.push({
           label: p.name,
           type: 'passive',
-          typeLabel: '패시브',
+          typeLabel: t('types.passive'),
           color: sinEn || '#88a830',
           token: `[p:${p.name}]`,
           syntax: 'inline',
@@ -660,7 +668,7 @@ export default function DeckNoteEditor({
         pool.push({
           label: p.name,
           type: 'passive',
-          typeLabel: '패시브 설명',
+          typeLabel: t('types.passiveDescription'),
           color: sinEn || '#88a830',
           token: `{{passive:${p.name}}}`,
           syntax: 'block',
@@ -689,7 +697,7 @@ export default function DeckNoteEditor({
       pool.push({
         label: localizeIdentityName(identity, locale),
         type: 'identity',
-        typeLabel: '인격',
+        typeLabel: t('types.identity'),
         color: '#c8900a',
         imageUrl: getIdentityInfoUrl(identity) || undefined,
         token: `[i:${sinnerName}:${identity.name_kr}]`,
@@ -702,7 +710,7 @@ export default function DeckNoteEditor({
       pool.push({
         label: gift.name,
         type: 'egogift',
-        typeLabel: '기프트 카드',
+        typeLabel: t('types.giftCard'),
         color: '#d0a020',
         imageUrl: gift.image_url ?? undefined,
         token: gift.activation_condition ? `{{gift:${gift.name}:true}}` : `{{gift:${gift.name}}}`,
@@ -765,7 +773,7 @@ export default function DeckNoteEditor({
         heading: { levels: [1, 2] },
       }),
       Placeholder.configure({
-        placeholder: '덱 운용 메모를 작성하세요. [ 또는 {{ 로 칩과 블록을 삽입할 수 있습니다.',
+        placeholder: t('placeholder'),
       }),
       TiptapLink.configure({
         openOnClick: false,
@@ -780,7 +788,7 @@ export default function DeckNoteEditor({
     content: editorContent,
     editorProps: {
       attributes: {
-        'aria-label': '덱 노트',
+        'aria-label': t('aria.editor'),
         class: 'deck-note-prosemirror',
       },
       handleDOMEvents: {
@@ -806,7 +814,7 @@ export default function DeckNoteEditor({
     onSelectionUpdate: ({ editor: nextEditor }) => {
       refreshEditorAutocomplete(nextEditor)
     },
-  }, [refreshEditorAutocomplete, refreshEditorAutocompleteFromView])
+  }, [refreshEditorAutocomplete, refreshEditorAutocompleteFromView, t])
 
   useEffect(() => {
     editor?.setEditable(!descPreview)
@@ -834,7 +842,7 @@ export default function DeckNoteEditor({
       if (selectedText.trim()) {
         chain.toggleLink({ href: 'https://' }).run()
       } else {
-        chain.insertContent('[링크](https://)').run()
+        chain.insertContent(`[${t('tools.link')}](https://)`).run()
       }
     }
   }, [descPreview, editor])
@@ -925,30 +933,31 @@ export default function DeckNoteEditor({
     >
       <div className="deck-note-rte__container">
         <div className="deck-note-rte__menubar">
-          <div className="deck-note-rte__toolbar" role="toolbar" aria-label="덱 노트 편집 도구">
-            <div className="deck-note-rte__group" role="group" aria-label="히스토리">
-              <button type="button" className="deck-note-rte__button" aria-label="되돌리기" title="되돌리기" onClick={() => runHistoryTool('undo')} disabled={descPreview || !editor?.can().undo()}>
+      <div className="deck-note-rte__toolbar" role="toolbar" aria-label={t('aria.toolbar')}>
+            <div className="deck-note-rte__group" role="group" aria-label={t('groups.history')}>
+              <button type="button" className="deck-note-rte__button" aria-label={t('tools.undo')} title={t('tools.undo')} onClick={() => runHistoryTool('undo')} disabled={descPreview || !editor?.can().undo()}>
                 <Undo2 size={16} strokeWidth={1.8} aria-hidden="true" />
               </button>
-              <button type="button" className="deck-note-rte__button" aria-label="다시 실행" title="다시 실행" onClick={() => runHistoryTool('redo')} disabled={descPreview || !editor?.can().redo()}>
+              <button type="button" className="deck-note-rte__button" aria-label={t('tools.redo')} title={t('tools.redo')} onClick={() => runHistoryTool('redo')} disabled={descPreview || !editor?.can().redo()}>
                 <Redo2 size={16} strokeWidth={1.8} aria-hidden="true" />
               </button>
             </div>
 
             <div className="deck-note-rte__divider" />
 
-            <div className="deck-note-rte__group" role="group" aria-label="문단">
-              <HeadingDropdown editor={descPreview ? null : editor} onSelect={setEditorBlockType} />
+            <div className="deck-note-rte__group" role="group" aria-label={t('groups.paragraph')}>
+              <HeadingDropdown editor={descPreview ? null : editor} onSelect={setEditorBlockType} labels={{ aria: t('tools.paragraphFormat'), paragraph: t('blocks.paragraph'), heading2: t('blocks.heading2') }} />
             </div>
 
             <div className="deck-note-rte__divider" />
 
-            <div className="deck-note-rte__group" role="group" aria-label="서식">
-              {MARKDOWN_TOOLS.map(({ label, icon: Icon, action }) => {
+            <div className="deck-note-rte__group" role="group" aria-label={t('groups.format')}>
+              {MARKDOWN_TOOLS.map(({ labelKey, icon: Icon, action }) => {
                 const active = editor ? isEditorToolActive(editor, action) : false
+                const label = t(`tools.${labelKey}`)
                 return (
                   <button
-                    key={label}
+                    key={labelKey}
                     type="button"
                     aria-label={label}
                     aria-pressed={active}
@@ -966,7 +975,7 @@ export default function DeckNoteEditor({
 
             <div className="deck-note-rte__spacer" />
 
-            <div className="deck-note-rte__group" role="group" aria-label="삽입과 미리보기">
+            <div className="deck-note-rte__group" role="group" aria-label={t('groups.insertPreview')}>
               <button
                 type="button"
                 className="deck-note-rte__insert-button"
@@ -975,7 +984,7 @@ export default function DeckNoteEditor({
                 onClick={() => setInsertOpen(value => !value)}
               >
                 <Plus size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>삽입</span>
+                <span>{t('insert')}</span>
               </button>
               <button
                 type="button"
@@ -986,14 +995,14 @@ export default function DeckNoteEditor({
                 <span className="deck-note-preview-toggle__track" aria-hidden="true">
                   <span className="deck-note-preview-toggle__thumb" />
                 </span>
-                <span>{descPreview ? '미리보기' : '편집'}</span>
+                <span>{descPreview ? t('preview') : t('edit')}</span>
               </button>
             </div>
           </div>
 
           {insertOpen && (
           <div id="deck-note-insert-panel" className="deck-note-sinner-tool">
-            <div className="deck-note-sinner-tabs" role="tablist" aria-label="수감자 삽입 도구">
+            <div className="deck-note-sinner-tabs" role="tablist" aria-label={t('aria.sinnerTools')}>
               {sinners.map(sinner => {
                 const isSelected = selectedSinnerId === sinner.id
                 const isDeckMember = Boolean(deckSlots[sinner.id])
@@ -1002,7 +1011,7 @@ export default function DeckNoteEditor({
                     key={sinner.id}
                     type="button"
                     role="tab"
-                    aria-label={`${sinner.name_kr} 삽입 팔레트`}
+                    aria-label={t('aria.sinnerPalette', { sinner: sinner.name_kr })}
                     aria-selected={isSelected}
                     onClick={() => setSelectedSinnerId(current => current === sinner.id ? null : sinner.id)}
                     className="deck-note-sinner-tab"
@@ -1019,7 +1028,7 @@ export default function DeckNoteEditor({
             <div className="deck-note-palette">
               {!selectedSinner || !selectedIdentity ? (
                 <span className="deck-note-palette__hint">
-                  수감자를 선택하면 편성된 인격, 스킬, 패시브, E.G.O 삽입 도구가 열립니다
+                  {t('emptyPalette')}
                 </span>
               ) : (
                 <div className="deck-note-palette__lanes">
@@ -1027,7 +1036,7 @@ export default function DeckNoteEditor({
                     <PaletteLane>
                       <button
                         type="button"
-                        aria-label={`${selectedIdentity.name_kr} 인격 칩 삽입`}
+                        aria-label={t('aria.identityChip', { identity: selectedIdentity.name_kr })}
                         title={selectedIdentity.name_kr}
                         className="deck-note-identity-avatar"
                         disabled={descPreview}
@@ -1060,7 +1069,7 @@ export default function DeckNoteEditor({
                           <button
                             key={sk.id}
                             type="button"
-                            aria-label={`${orderLabel} ${sk.name} 상세 블록 삽입`}
+                            aria-label={t('aria.skillBlock', { label: `${orderLabel} ${sk.name}` })}
                             title={`${orderLabel} ${sk.name}`}
                             className="deck-note-skill-frame-button"
                             disabled={descPreview}
@@ -1084,8 +1093,8 @@ export default function DeckNoteEditor({
                           <button
                             key={passive.id}
                             type="button"
-                            aria-label={`${passive.name} 상세 설명 삽입`}
-                            title={`${passive.name} 설명`}
+                            aria-label={t('aria.passiveBlock', { passive: passive.name })}
+                            title={t('aria.passiveDescriptionTitle', { passive: passive.name })}
                             className={entry ? 'deck-note-chip-button' : 'deck-note-passive-icon-button'}
                             style={{ '--note-passive-color': meta.color } as CSSProperties}
                             disabled={descPreview}
@@ -1105,12 +1114,12 @@ export default function DeckNoteEditor({
                       })}
 
                       <GiftCard
-                        gift={{ name: '기프트 추가' }}
+                        gift={{ name: t('giftInsert') }}
                         onClick={() => insertEditorToken('{{gift:')}
                         className="deck-note-gift-template-button"
                         variant="insert"
-                        ariaLabel="기프트 추가"
-                        title="기프트 토큰 시작"
+                        ariaLabel={t('giftInsert')}
+                        title={t('giftTokenStart')}
                         size="2.25rem"
                         showName={false}
                         disabled={descPreview}
@@ -1135,7 +1144,7 @@ export default function DeckNoteEditor({
                             key={sk.id}
                             type="button"
                             className="deck-note-chip-button"
-                            title={`${entry.name} 칩`}
+                            title={t('aria.chipTitle', { name: entry.name })}
                             disabled={descPreview}
                             onMouseDown={event => { event.preventDefault(); insertEditorToken(`[s:${key}]`) }}
                           >
@@ -1151,7 +1160,7 @@ export default function DeckNoteEditor({
                             key={passive.id}
                             type="button"
                             className="deck-note-chip-button"
-                            title={`${entry.name} 칩`}
+                            title={t('aria.chipTitle', { name: entry.name })}
                             disabled={descPreview}
                             onMouseDown={event => { event.preventDefault(); insertEditorToken(`[p:${passive.name}]`) }}
                           >
@@ -1176,7 +1185,7 @@ export default function DeckNoteEditor({
                             type="button"
                             disabled={descPreview}
                             onMouseDown={event => { event.preventDefault(); insertEditorToken(`[e:${key}]`) }}
-                            title={`${egoName} 칩`}
+                            title={t('aria.chipTitle', { name: egoName })}
                             className="deck-note-chip-button"
                           >
                             <EgoChip entry={entry} interactive={false} />
@@ -1195,7 +1204,7 @@ export default function DeckNoteEditor({
 
         <div className="deck-note-rte__content">
           {descPreview ? (
-            <div className="deck-note-preview" aria-label="덱 노트 미리보기">
+            <div className="deck-note-preview" aria-label={t('aria.preview')}>
               <NoteRenderer
                 text={description}
                 skillLookup={skillTokenLookup}

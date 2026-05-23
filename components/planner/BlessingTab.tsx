@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, Dispatch } from 'react'
+import type { CSSProperties, Dispatch, RefObject } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { type PlannerState, type PlannerAction } from '@/lib/planner/types'
@@ -358,62 +358,16 @@ function BlessingTitle({ title }: BlessingTitleProps) {
   )
 }
 
-interface Props {
-  state: PlannerState
-  dispatch: Dispatch<PlannerAction>
+type BlessingGridMetrics = {
+  gridRef: RefObject<HTMLDivElement | null>
+  cardScale: number
+  cardColumnCount: number
 }
 
-export default function BlessingTab({ state, dispatch }: Props) {
-  const t = useTranslations('planner.blessingTab')
+function useBlessingGridMetrics(): BlessingGridMetrics {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [cardScale, setCardScale] = useState(1)
   const [cardColumnCount, setCardColumnCount] = useState(5)
-  const blessings = useMemo(
-    () => normalizeBlessingMessages(t.raw('blessings'), baseId => t('fallbackName', { baseId })),
-    [t],
-  )
-
-  // 가호 선택 상태: giftInventory에 'blessing_{baseId}_{level}' 형태로 저장
-  const selectedBlessings = useMemo(() => {
-    const map = new Map<number, number>() // baseId → level (0=미선택, 1=기본, 2=+, 3=++)
-    for (const id of state.giftInventory) {
-      if (id.startsWith('blessing_')) {
-        const parts = id.split('_')
-        const baseId = parseInt(parts[1])
-        const level = parseInt(parts[2])
-        map.set(baseId, level)
-      }
-    }
-    return map
-  }, [state.giftInventory])
-
-  const totalCost = useMemo(() => {
-    let cost = 0
-    for (const [baseId, level] of selectedBlessings) {
-      const blessing = blessings.find(b => b.baseId === baseId)
-      if (blessing && level > 0) cost += blessing.costs[level - 1]
-    }
-    return cost
-  }, [blessings, selectedBlessings])
-
-  const hasSelectedBlessings = selectedBlessings.size > 0
-
-  const toggleBlessing = (baseId: number, targetLevel: number) => {
-    // 기존 선택 제거
-    const existingKey = state.giftInventory.find(id => id.startsWith(`blessing_${baseId}_`))
-    if (existingKey) {
-      dispatch({ type: 'REMOVE_GIFT', giftId: existingKey })
-    }
-
-    const currentLevel = selectedBlessings.get(baseId) ?? 0
-    // 같은 레벨 클릭 → 해제, 다른 레벨 → 변경
-    if (currentLevel !== targetLevel) {
-      dispatch({ type: 'ADD_GIFT', giftId: `blessing_${baseId}_${targetLevel}` })
-    }
-  }
-
-  const allSelectedAtLevel = (level: number) =>
-    blessings.every(b => selectedBlessings.get(b.baseId) === level)
 
   useEffect(() => {
     const grid = gridRef.current
@@ -443,6 +397,386 @@ export default function BlessingTab({ state, dispatch }: Props) {
       window.removeEventListener('resize', updateCardScale)
     }
   }, [])
+
+  return { gridRef, cardScale, cardColumnCount }
+}
+
+interface BlessingCardProps {
+  blessing: Blessing
+  level: number
+  cardScale: number
+  baseLabel: string
+  interactive?: boolean
+  onBaseClick?: () => void
+  onUpgradeClick?: (level: number) => void
+}
+
+function BlessingCard({
+  blessing,
+  level,
+  cardScale,
+  baseLabel,
+  interactive = false,
+  onBaseClick,
+  onUpgradeClick,
+}: BlessingCardProps) {
+  const isSelected = level > 0
+  const currentCost = level > 0 ? blessing.costs[level - 1] : blessing.costs[0]
+  const selectedLevel = Math.max(1, level)
+  const currentEffects = blessing.effectsByLevel[selectedLevel - 1] ?? blessing.effectsByLevel[0]
+  const displayName = getBlessingDisplayName(blessing, level)
+
+  const cardContent = (
+    <>
+      {interactive && (
+        <button
+          type="button"
+          onClick={onBaseClick}
+          aria-label={`${blessing.name} ${baseLabel}`}
+          className="absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35]"
+          style={{
+            left: '4.5%',
+            top: '4.5%',
+            right: '4.5%',
+            bottom: '13.5%',
+            zIndex: 3,
+            border: 0,
+            padding: 0,
+            background: 'transparent',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+          }}
+        />
+      )}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute"
+        style={{
+          left: 0,
+          top: 0,
+          width: CARD_IMAGE_WIDTH,
+          height: CARD_IMAGE_HEIGHT,
+          zIndex: 1,
+        }}
+      >
+        <Image
+          src={BLESSING_CARD_BASE}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 19vw, (min-width: 640px) 45vw, 92vw"
+          className="select-none"
+          style={{ objectFit: 'fill' }}
+          priority={blessing.baseId < 105}
+        />
+      </div>
+
+      <div className="pointer-events-none absolute min-w-0" style={{ left: '1.625rem', top: '2.8125rem', width: '4.25rem', aspectRatio: '1 / 1', zIndex: 4 }}>
+        <Image
+          src={`${S}/icons/start-buffs/${blessing.baseId}.webp`}
+          alt=""
+          fill
+          sizes="4rem"
+          style={{ objectFit: 'contain', opacity: isSelected ? 1 : 0.86 }}
+        />
+      </div>
+      <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '5.5rem', top: '3.125rem', width: '10rem', zIndex: 4 }}>
+        <BlessingTitle title={displayName} />
+      </div>
+      <div
+        className="pointer-events-none absolute flex items-center justify-end gap-1"
+        style={{
+          top: '1.7%',
+          right: '1.875rem',
+          width: '4.25rem',
+          height: '2.8125rem',
+          padding: 0,
+          zIndex: 4,
+        }}
+      >
+        <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={24} height={24} style={{ width: '1.5rem', height: '1.5rem' }} />
+        <span style={{ color: '#f4c84a', fontSize: '1.625rem', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-mikodacs), var(--font-mono)', textShadow: '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)' }}>{currentCost}</span>
+      </div>
+
+      <div
+        className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
+        style={{
+          left: '1.5rem',
+          top: '7.1875rem',
+          width: '13.875rem',
+          height: '7.25rem',
+          zIndex: 4,
+          pointerEvents: 'auto',
+          overscrollBehavior: 'contain',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(232, 176, 48, 0.44) rgba(25, 13, 9, 0.34)',
+        }}
+      >
+        <div className="space-y-0.5">
+          {currentEffects.map((eff: string, i: number) => {
+            const segments = getStyledEffectSegments(getEffectDiffSegments(blessing, selectedLevel, eff, i))
+            return (
+              <div key={`${i}-${eff}`} className="flex min-w-0 items-start gap-1.5" style={{ color: '#ded5c7', fontSize: '0.9375rem', lineHeight: 1.16, fontWeight: 500, textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.95)' }}>
+                <span aria-hidden="true" style={{ color: '#d7c2aa', lineHeight: 1.25 }}>•</span>
+                <span className="min-w-0 break-words">
+                  {segments.map((segment, segmentIndex) => (
+                    <span
+                      key={segmentIndex}
+                      style={{
+                        color: segment.tone === 'diff'
+                          ? '#eac335'
+                          : segment.tone === 'term'
+                            ? '#f12d22'
+                            : '#ded5c7',
+                        fontWeight: segment.tone === 'normal' ? 500 : 700,
+                      }}
+                    >
+                      {segment.text}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div
+        className="absolute flex overflow-visible"
+        style={{
+          left: '22px',
+          right: '30px',
+          bottom: '20px',
+          gap: '10px',
+          height: '28px',
+          zIndex: 5,
+        }}
+      >
+        {CARD_UPGRADE_LEVELS.map(lvl => {
+          const isActive = level === lvl
+          const levelLabel = LEVEL_LABELS[lvl - 1]
+          const glyph = getUpgradeGlyph(lvl, isActive)
+          const buttonContent = (
+            <>
+              <span
+                aria-hidden="true"
+                className="planner-blessing-upgrade-pressed-overlay"
+                style={getUpgradePressedOverlayStyle(isActive)}
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none relative z-10 flex min-w-0 items-center justify-center"
+                style={{
+                  opacity: isActive ? 1 : 0.9,
+                  ...getUpgradeGlyphStyle(isActive),
+                }}
+              >
+                {Array.from({ length: glyph.count ?? 1 }, (_, index) => (
+                  <Image
+                    key={index}
+                    src={glyph.src}
+                    alt=""
+                    width={glyph.width}
+                    height={glyph.height}
+                    sizes={`${glyph.width}px`}
+                    style={{
+                      width: `${glyph.width}px`,
+                      height: `${glyph.height}px`,
+                    }}
+                  />
+                ))}
+              </span>
+            </>
+          )
+
+          return interactive ? (
+            <button
+              key={lvl}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onUpgradeClick?.(lvl)
+              }}
+              aria-label={`${blessing.name} ${levelLabel}`}
+              aria-pressed={isActive}
+              className="planner-blessing-upgrade-button group relative flex min-w-0 flex-1 items-center justify-center overflow-visible text-center transition-[filter,transform] hover:brightness-110 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35] focus-visible:ring-offset-2 focus-visible:ring-offset-[#130806]"
+              style={getUpgradeSlotStyle()}
+            >
+              {buttonContent}
+            </button>
+          ) : (
+            <div
+              key={lvl}
+              role="presentation"
+              className="planner-blessing-upgrade-button relative flex min-w-0 flex-1 items-center justify-center overflow-visible text-center"
+              style={{ ...getUpgradeSlotStyle(), cursor: 'default' }}
+            >
+              {buttonContent}
+            </div>
+          )
+        })}
+      </div>
+      <div
+        aria-hidden="true"
+        className="planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        style={{
+          left: '-0.125rem',
+          top: '-0.0625rem',
+          width: CARD_SELECTED_WIDTH,
+          height: CARD_SELECTED_HEIGHT,
+          opacity: isSelected ? 1 : undefined,
+          zIndex: 30,
+          mixBlendMode: 'normal',
+          filter: 'none',
+        }}
+      >
+        <Image
+          src={BLESSING_CARD_SELECTED_OVERLAY}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 16.875rem, (min-width: 640px) 44vw, 90vw"
+          style={{ objectFit: 'fill' }}
+        />
+      </div>
+    </>
+  )
+
+  return (
+    <div
+      className="relative min-w-0 overflow-visible"
+      style={{
+        width: `${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px`,
+        height: `${CARD_WRAPPER_HEIGHT_NUMBER * cardScale}px`,
+        justifySelf: 'center',
+      }}
+    >
+      <div
+        className="planner-blessing-card group relative min-w-0 overflow-visible transition-[filter] hover:brightness-105"
+        aria-label={interactive ? undefined : displayName}
+        style={{
+          width: CARD_WRAPPER_WIDTH,
+          height: CARD_WRAPPER_HEIGHT,
+          backgroundColor: 'transparent',
+          border: '0',
+          borderRadius: 0,
+          filter: isSelected ? 'brightness(1.02)' : 'none',
+          boxShadow: 'none',
+          transform: `scale(${cardScale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {cardContent}
+      </div>
+    </div>
+  )
+}
+
+export function getSelectedBlessingLevels(giftInventory: string[]) {
+  const map = new Map<number, number>()
+  for (const id of giftInventory) {
+    if (!id.startsWith('blessing_')) continue
+    const [, baseIdString, levelString] = id.split('_')
+    const baseId = Number.parseInt(baseIdString, 10)
+    const level = Number.parseInt(levelString, 10)
+    if (Number.isFinite(baseId) && level >= 1 && level <= 3) {
+      map.set(baseId, level)
+    }
+  }
+  return map
+}
+
+export function getSelectedBlessingCost(blessings: Blessing[], selectedBlessings: Map<number, number>) {
+  let cost = 0
+  for (const [baseId, level] of selectedBlessings) {
+    const blessing = blessings.find(item => item.baseId === baseId)
+    if (blessing && level > 0) cost += blessing.costs[level - 1]
+  }
+  return cost
+}
+
+interface ReadOnlyBlessingGridProps {
+  blessings: Blessing[]
+  selectedBlessings: Map<number, number>
+  emptyText: string
+}
+
+export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }: ReadOnlyBlessingGridProps) {
+  const { gridRef, cardScale, cardColumnCount } = useBlessingGridMetrics()
+  const selectedCards = blessings
+    .map(blessing => ({ blessing, level: selectedBlessings.get(blessing.baseId) ?? 0 }))
+    .filter(item => item.level > 0)
+
+  if (selectedCards.length === 0) {
+    return (
+      <div className="rounded-md border border-[#241c14] bg-[#120e09] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
+        {emptyText}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={gridRef}
+      className="planner-blessing-grid relative z-10 grid grid-cols-1 overflow-visible sm:grid-cols-2 lg:grid-cols-5"
+      style={{
+        gap: cardColumnCount >= 5 ? '8px' : '6px',
+        gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px))`,
+        justifyContent: 'center',
+        padding: '0.75rem 0 0',
+      }}
+    >
+      {selectedCards.map(({ blessing, level }) => (
+        <BlessingCard
+          key={blessing.baseId}
+          blessing={blessing}
+          level={level}
+          cardScale={cardScale}
+          baseLabel=""
+        />
+      ))}
+    </div>
+  )
+}
+
+interface Props {
+  state: PlannerState
+  dispatch: Dispatch<PlannerAction>
+}
+
+export default function BlessingTab({ state, dispatch }: Props) {
+  const t = useTranslations('planner.blessingTab')
+  const { gridRef, cardScale, cardColumnCount } = useBlessingGridMetrics()
+  const blessings = useMemo(
+    () => normalizeBlessingMessages(t.raw('blessings'), baseId => t('fallbackName', { baseId })),
+    [t],
+  )
+
+  // 가호 선택 상태: giftInventory에 'blessing_{baseId}_{level}' 형태로 저장
+  const selectedBlessings = useMemo(() => {
+    return getSelectedBlessingLevels(state.giftInventory)
+  }, [state.giftInventory])
+
+  const totalCost = useMemo(() => {
+    return getSelectedBlessingCost(blessings, selectedBlessings)
+  }, [blessings, selectedBlessings])
+
+  const hasSelectedBlessings = selectedBlessings.size > 0
+
+  const toggleBlessing = (baseId: number, targetLevel: number) => {
+    // 기존 선택 제거
+    const existingKey = state.giftInventory.find(id => id.startsWith(`blessing_${baseId}_`))
+    if (existingKey) {
+      dispatch({ type: 'REMOVE_GIFT', giftId: existingKey })
+    }
+
+    const currentLevel = selectedBlessings.get(baseId) ?? 0
+    // 같은 레벨 클릭 → 해제, 다른 레벨 → 변경
+    if (currentLevel !== targetLevel) {
+      dispatch({ type: 'ADD_GIFT', giftId: `blessing_${baseId}_${targetLevel}` })
+    }
+  }
+
+  const allSelectedAtLevel = (level: number) =>
+    blessings.every(b => selectedBlessings.get(b.baseId) === level)
 
   const selectAll = (level: number) => {
     // 이미 전부 해당 레벨이면 → 전체 해제
@@ -564,232 +898,18 @@ export default function BlessingTab({ state, dispatch }: Props) {
       >
         {blessings.map(blessing => {
           const level = selectedBlessings.get(blessing.baseId) ?? 0
-          const isSelected = level > 0
-          const currentCost = level > 0 ? blessing.costs[level - 1] : blessing.costs[0]
-          const selectedLevel = Math.max(1, level)
-          const currentEffects = blessing.effectsByLevel[selectedLevel - 1] ?? blessing.effectsByLevel[0]
-          const displayName = getBlessingDisplayName(blessing, level)
 
           return (
-            <div
+            <BlessingCard
               key={blessing.baseId}
-              className="relative min-w-0 overflow-visible"
-              style={{
-                width: `${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px`,
-                height: `${CARD_WRAPPER_HEIGHT_NUMBER * cardScale}px`,
-                justifySelf: 'center',
-              }}
-            >
-              <div
-                className="planner-blessing-card group relative min-w-0 overflow-visible transition-[filter] hover:brightness-105"
-                style={{
-                  width: CARD_WRAPPER_WIDTH,
-                  height: CARD_WRAPPER_HEIGHT,
-                  backgroundColor: 'transparent',
-                  border: '0',
-                  borderRadius: 0,
-                  filter: isSelected ? 'brightness(1.02)' : 'none',
-                  boxShadow: 'none',
-                  transform: `scale(${cardScale})`,
-                  transformOrigin: 'top left',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleBlessing(blessing.baseId, 1)}
-                  aria-label={`${blessing.name} ${t('base')}`}
-                  className="absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35]"
-                  style={{
-                    left: '4.5%',
-                    top: '4.5%',
-                    right: '4.5%',
-                    bottom: '13.5%',
-                    zIndex: 3,
-                    border: 0,
-                    padding: 0,
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    touchAction: 'manipulation',
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: CARD_IMAGE_WIDTH,
-                    height: CARD_IMAGE_HEIGHT,
-                    zIndex: 1,
-                  }}
-                >
-                  <Image
-                    src={BLESSING_CARD_BASE}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 19vw, (min-width: 640px) 45vw, 92vw"
-                    className="select-none"
-                    style={{ objectFit: 'fill' }}
-                    priority={blessing.baseId < 105}
-                  />
-                </div>
-              {/* 헤더: 아이콘 + 이름 + 코스트 */}
-                <div className="pointer-events-none absolute min-w-0" style={{ left: '1.625rem', top: '2.8125rem', width: '4.25rem', aspectRatio: '1 / 1', zIndex: 4 }}>
-                <Image
-                  src={`${S}/icons/start-buffs/${blessing.baseId}.webp`}
-                  alt=""
-                  fill
-                  sizes="4rem"
-                  style={{ objectFit: 'contain', opacity: isSelected ? 1 : 0.86 }}
-                />
-                </div>
-                <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '5.5rem', top: '3.125rem', width: '10rem', zIndex: 4 }}>
-                  <BlessingTitle title={displayName} />
-                </div>
-                <div
-                className="pointer-events-none absolute flex items-center justify-end gap-1"
-                style={{
-                  top: '1.7%',
-                  right: '1.875rem',
-                  width: '4.25rem',
-                  height: '2.8125rem',
-                  padding: 0,
-                  zIndex: 4,
-                }}
-              >
-                  <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={24} height={24} style={{ width: '1.5rem', height: '1.5rem' }} />
-                <span style={{ color: '#f4c84a', fontSize: '1.625rem', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-mikodacs), var(--font-mono)', textShadow: '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)' }}>{currentCost}</span>
-                </div>
-
-              {/* 효과 목록 */}
-                <div
-                  className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
-                  style={{
-                    left: '1.5rem',
-                    top: '7.1875rem',
-                    width: '13.875rem',
-                    height: '7.25rem',
-                    zIndex: 4,
-                    pointerEvents: 'auto',
-                    overscrollBehavior: 'contain',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(232, 176, 48, 0.44) rgba(25, 13, 9, 0.34)',
-                  }}
-                >
-                <div className="space-y-0.5">
-                  {currentEffects.map((eff: string, i: number) => {
-                    const segments = getStyledEffectSegments(getEffectDiffSegments(blessing, selectedLevel, eff, i))
-                    return (
-                      <div key={`${i}-${eff}`} className="flex min-w-0 items-start gap-1.5" style={{ color: '#ded5c7', fontSize: '0.9375rem', lineHeight: 1.16, fontWeight: 500, textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.95)' }}>
-                        <span aria-hidden="true" style={{ color: '#d7c2aa', lineHeight: 1.25 }}>•</span>
-                        <span className="min-w-0 break-words">
-                          {segments.map((segment, segmentIndex) => (
-                            <span
-                              key={segmentIndex}
-                              style={{
-                                color: segment.tone === 'diff'
-                                  ? '#eac335'
-                                  : segment.tone === 'term'
-                                    ? '#f12d22'
-                                    : '#ded5c7',
-                                fontWeight: segment.tone === 'normal' ? 500 : 700,
-                              }}
-                            >
-                              {segment.text}
-                            </span>
-                          ))}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-                </div>
-
-              {/* +/++ 버튼 */}
-                <div
-                className="absolute flex overflow-visible"
-                style={{
-                  left: '22px',
-                  right: '30px',
-                  bottom: '20px',
-                  gap: '10px',
-                  height: '28px',
-                  zIndex: 5,
-                }}
-              >
-                {CARD_UPGRADE_LEVELS.map(lvl => {
-                  const isActive = level === lvl
-                  const levelLabel = LEVEL_LABELS[lvl - 1]
-                  const glyph = getUpgradeGlyph(lvl, isActive)
-                  return (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        toggleBlessing(blessing.baseId, lvl)
-                      }}
-                      aria-label={`${blessing.name} ${levelLabel}`}
-                      aria-pressed={isActive}
-                      className="planner-blessing-upgrade-button group relative flex min-w-0 flex-1 items-center justify-center overflow-visible text-center transition-[filter,transform] hover:brightness-110 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35] focus-visible:ring-offset-2 focus-visible:ring-offset-[#130806]"
-                      style={getUpgradeSlotStyle()}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="planner-blessing-upgrade-pressed-overlay"
-                        style={getUpgradePressedOverlayStyle(isActive)}
-                      />
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none relative z-10 flex min-w-0 items-center justify-center"
-                        style={{
-                          opacity: isActive ? 1 : 0.9,
-                          ...getUpgradeGlyphStyle(isActive),
-                        }}
-                      >
-                        {Array.from({ length: glyph.count ?? 1 }, (_, index) => (
-                          <Image
-                            key={index}
-                            src={glyph.src}
-                            alt=""
-                            width={glyph.width}
-                            height={glyph.height}
-                            sizes={`${glyph.width}px`}
-                            style={{
-                              width: `${glyph.width}px`,
-                              height: `${glyph.height}px`,
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </button>
-                  )
-                })}
-                </div>
-                <div
-                  aria-hidden="true"
-                  className="planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                  style={{
-                    left: '-0.125rem',
-                    top: '-0.0625rem',
-                    width: CARD_SELECTED_WIDTH,
-                    height: CARD_SELECTED_HEIGHT,
-                    opacity: isSelected ? 1 : undefined,
-                    zIndex: 30,
-                    mixBlendMode: 'normal',
-                    filter: 'none',
-                  }}
-                >
-                  <Image
-                    src={BLESSING_CARD_SELECTED_OVERLAY}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 16.875rem, (min-width: 640px) 44vw, 90vw"
-                    style={{ objectFit: 'fill' }}
-                  />
-                </div>
-              </div>
-            </div>
+              blessing={blessing}
+              level={level}
+              cardScale={cardScale}
+              baseLabel={t('base')}
+              interactive
+              onBaseClick={() => toggleBlessing(blessing.baseId, 1)}
+              onUpgradeClick={upgradeLevel => toggleBlessing(blessing.baseId, upgradeLevel)}
+            />
           )
         })}
       </div>

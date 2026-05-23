@@ -21,15 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 const PAGE_SIZE = 20
 const SUPPORTED_LANGS = ['ko', 'en', 'ja'] as const
+const CARD_META_CACHE_VERSION = 'compact-difficulty-v3-main-keyword-fallback'
 
 function normalizePlannerLang(lang: string): typeof SUPPORTED_LANGS[number] {
   return lang === 'en' || lang === 'ja' ? lang : 'ko'
 }
 
-async function getCachedInitialPlans(lang: string) {
+async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.plansList)
+  void cardMetaVersion
   let initialPlans: PlanSummary[] = []
   let initialTotal = 0
 
@@ -39,7 +41,7 @@ async function getCachedInitialPlans(lang: string) {
       .schema('limbus')
       .from('md_plans')
       .select(
-        'id, title, description, difficulty, deck, egos, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)',
+        'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)',
         { count: 'exact' }
       )
       .eq('lang', normalizePlannerLang(lang))
@@ -75,7 +77,7 @@ function CommunityPageSkeleton() {
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.header' })
-  const { initialPlans, initialTotal } = await getCachedInitialPlans(lang)
+  const { initialPlans, initialTotal } = await getCachedInitialPlans(lang, CARD_META_CACHE_VERSION)
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>

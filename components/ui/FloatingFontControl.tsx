@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { usePathname } from '@/lib/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { Minus, Plus } from 'lucide-react'
 
 const FONT_SIZES = ['small', 'default', 'large'] as const
 type FontSize = (typeof FONT_SIZES)[number]
-const LABELS: Record<FontSize, string> = { small: '작게', default: '보통', large: '크게' }
 
 function isAllowedPage(path: string): boolean {
   return (
@@ -19,6 +19,7 @@ function isAllowedPage(path: string): boolean {
 }
 
 export default function FloatingFontControl() {
+  const t = useTranslations('common.fontControl')
   const pathname = usePathname()
   const allowed = isAllowedPage(pathname ?? '')
   const [fontSize, setFontSize] = useState<FontSize>('default')
@@ -152,7 +153,7 @@ export default function FloatingFontControl() {
       }}
       role={expanded ? undefined : 'button'}
       tabIndex={expanded ? -1 : 0}
-      aria-label={expanded ? undefined : '글자 크기 조절 열기'}
+      aria-label={expanded ? undefined : t('open')}
     >
       {!expanded ? (
         <span
@@ -195,7 +196,7 @@ export default function FloatingFontControl() {
               color: isMinSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
               cursor: isMinSize ? 'default' : 'pointer',
             }}
-            aria-label="글자 크기 줄이기"
+            aria-label={t('decrease')}
           >
             <Minus aria-hidden="true" style={{ width: '0.6875rem', height: '0.6875rem' }} />
           </button>
@@ -228,9 +229,9 @@ export default function FloatingFontControl() {
               whiteSpace: 'nowrap',
               transform: labelPulse ? 'scale(1.08) translateY(-0.0625rem)' : 'scale(1) translateY(0)',
             }}
-            aria-label="접기"
+            aria-label={t('collapse')}
           >
-            {LABELS[fontSize]}
+            {t(fontSize)}
           </button>
 
           {/* Gold divider */}
@@ -257,7 +258,7 @@ export default function FloatingFontControl() {
               color: isMaxSize ? 'rgba(58,42,21,0.4)' : 'var(--gold)',
               cursor: isMaxSize ? 'default' : 'pointer',
             }}
-            aria-label="글자 크기 키우기"
+            aria-label={t('increase')}
           >
             <Plus aria-hidden="true" style={{ width: '0.6875rem', height: '0.6875rem' }} />
           </button>

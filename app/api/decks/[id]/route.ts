@@ -8,74 +8,14 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
+import { encodeTeamCode } from '@/lib/decks/team-code'
 
-
-// ── 덱 코드 인코딩 (DeckBuilderClient와 동일 로직) ─────────────────────────
-const BIT_POS = { identity: 4, formation: 8, ZAYIN: 15, TETH: 22, HE: 29, WAW: 36 } as const
 
 type EgoAttackSkill = {
   skill_type: string | null
   category: string | null
   construe_level: number | null
   skill_order: number | null
-}
-
-function writeBits(arr: string[], start: number, len: number, val: number) {
-  const s = val.toString(2).padStart(len, '0')
-  for (let i = 0; i < len; i++) arr[start + i] = s[i]
-}
-
-async function buildDeckCode(
-  sinnerOrder: string[],
-  slotMap: Record<string, { gameId: string; formOrder: number }>,
-  sinnerGameIds: Record<string, string[]>,
-  egoMap: Record<string, Record<string, string>>,   // sinnerId → grade → ego_id
-  sinnerEgoIds: Record<string, string[]>,           // sinnerId → ego_id[] (grade,name순)
-): Promise<string> {
-  const arr = Array(560).fill('0')
-
-  for (let si = 0; si < 12; si++) {
-    const sinnerId = sinnerOrder[si]
-    if (!sinnerId) continue
-    const off = si * 46
-
-    // 인격 + 편성 순서
-    const slot = slotMap[sinnerId]
-    if (slot) {
-      const sortedIds = sinnerGameIds[sinnerId] ?? []
-      const identityIdx = sortedIds.indexOf(slot.gameId) + 1
-      if (identityIdx > 0) {
-        writeBits(arr, off + BIT_POS.identity, 4, identityIdx)
-        if (slot.formOrder > 0) writeBits(arr, off + BIT_POS.formation, 4, slot.formOrder)
-      }
-    }
-
-    // 에고 (ZAYIN/TETH/HE/WAW)
-    const allEgos = sinnerEgoIds[sinnerId] ?? []
-    const gradeEgos = egoMap[sinnerId] ?? {}
-    const gradeBits: Record<string, number> = {
-      ZAYIN: BIT_POS.ZAYIN, TETH: BIT_POS.TETH, HE: BIT_POS.HE, WAW: BIT_POS.WAW,
-    }
-    for (const [grade, bitPos] of Object.entries(gradeBits)) {
-      const egoId = gradeEgos[grade]
-      if (!egoId) continue
-      const idx = allEgos.indexOf(egoId) + 1
-      if (idx > 0) writeBits(arr, off + bitPos, 4, idx)
-    }
-  }
-
-  const bytes = new Uint8Array(70)
-  for (let i = 0; i < 70; i++) {
-    bytes[i] = parseInt(arr.slice(i * 8, i * 8 + 8).join(''), 2)
-  }
-  const b64 = btoa(String.fromCharCode(...bytes))
-
-  const cs = new CompressionStream('gzip')
-  const cw = cs.writable.getWriter()
-  cw.write(new TextEncoder().encode(b64))
-  cw.close()
-  const buf = await new Response(cs.readable).arrayBuffer()
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
 }
 
 // ── GET ────────────────────────────────────────────────────────────────────
@@ -105,7 +45,7 @@ export async function GET(
         ),
         deck_egos(
           grade,
-          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url, cost)
+          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url, cost, game_id)
         )
       `)
       .eq('id', id)
@@ -117,13 +57,12 @@ export async function GET(
     return NextResponse.json({ error: deckRes.error.message }, { status: 404 })
   }
   const deck = deckRes.data
-  const sinnerOrder = (sinnersRes.data ?? []).map(s => s.id)
+  const sinners = sinnersRes.data ?? []
 
-  type SlotIdentity = { sinner_id: string; game_id: string | null } | null
+  type SlotIdentity = { id: string; sinner_id: string; game_id: string | null } | null
 
   // ── 덱 코드 계산을 위한 데이터 수집 ─────────────────────────────────────
 
-  // 인격: 각 수감자의 전체 인격 game_id 목록 (정렬용)
   const sinnerIds = [
     ...new Set(
       deck.deck_identities
@@ -132,8 +71,7 @@ export async function GET(
     ),
   ]
 
-  // 에고: 각 수감자의 전체 에고 목록 (grade, name 정렬 → index용)
-  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; ego_skills?: EgoAttackSkill[] | null } | null }
+  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; game_id: string | null; ego_skills?: EgoAttackSkill[] | null } | null }
   const deckEgoRows = (deck.deck_egos ?? []) as unknown as DeckEgoRow[]
   const egoSinnerIds = [
     ...new Set(deckEgoRows.map(r => r.ego?.sinner_id).filter((x): x is string => Boolean(x))),
@@ -143,10 +81,7 @@ export async function GET(
     ...new Set(deckEgoRows.map(r => r.ego?.id).filter((x): x is string => Boolean(x))),
   ]
 
-  const [identityRes, egoRes, egoSkillsRes] = await Promise.all([
-    sinnerIds.length > 0
-      ? supabase.schema('limbus').from('identities').select('sinner_id, game_id').in('sinner_id', sinnerIds)
-      : Promise.resolve({ data: [] }),
+  const [egoRes, egoSkillsRes] = await Promise.all([
     allSinnerIds.length > 0
       ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
       : Promise.resolve({ data: [] }),
@@ -154,22 +89,6 @@ export async function GET(
       ? supabase.schema('limbus').from('ego_skills').select('ego_id, skill_type, category, construe_level, skill_order').in('ego_id', selectedEgoIds)
       : Promise.resolve({ data: [], error: null }),
   ])
-
-  // sinnerId → game_id[] sorted asc
-  const sinnerGameIds: Record<string, string[]> = {}
-  for (const row of identityRes.data ?? []) {
-    if (!row.game_id) continue
-    ;(sinnerGameIds[row.sinner_id] ??= []).push(row.game_id)
-  }
-  for (const sid of Object.keys(sinnerGameIds)) {
-    sinnerGameIds[sid].sort((a, b) => parseInt(a) - parseInt(b))
-  }
-
-  // sinnerId → ego_id[] (game_id 정렬 = 출시 순서)
-  const sinnerEgoIds: Record<string, string[]> = {}
-  for (const ego of egoRes.data ?? []) {
-    ;(sinnerEgoIds[ego.sinner_id] ??= []).push(ego.id)
-  }
 
   if (egoSkillsRes.error) {
     return NextResponse.json({ error: egoSkillsRes.error.message }, { status: 500 })
@@ -188,26 +107,35 @@ export async function GET(
   }
 
   // 인격 슬롯 맵
-  const slotMap: Record<string, { gameId: string; formOrder: number }> = {}
+  const deckSlots: Record<string, { id: string; sinner_id: string; game_id: string | null } | undefined> = {}
+  const formationEntries: { sinnerId: string; order: number }[] = []
   for (const di of deck.deck_identities) {
     const id_ = di.identities as unknown as SlotIdentity
-    if (!id_?.game_id) continue
-    slotMap[id_.sinner_id] = {
-      gameId: id_.game_id,
-      formOrder: di.slot_order !== 99 ? di.slot_order + 1 : 0,
+    if (!id_?.sinner_id) continue
+    deckSlots[id_.sinner_id] = id_
+    if (di.slot_order !== 99) formationEntries.push({ sinnerId: id_.sinner_id, order: di.slot_order + 1 })
+  }
+  formationEntries.sort((a, b) => a.order - b.order)
+
+  // 에고 슬롯 맵: sinnerId → grade → EGO game_id
+  const egoSlots: Record<string, Record<string, { id: string; sinner_id: string; grade: string; game_id: string | null }>> = {}
+  for (const row of deckEgoRows) {
+    const ego = row.ego
+    if (!ego?.sinner_id) continue
+    ;(egoSlots[ego.sinner_id] ??= {})[row.grade] = {
+      id: ego.id,
+      sinner_id: ego.sinner_id,
+      grade: row.grade,
+      game_id: ego.game_id,
     }
   }
 
-  // 에고 슬롯 맵: sinnerId → grade → ego_id
-  const egoMap: Record<string, Record<string, string>> = {}
-  for (const row of deckEgoRows) {
-    const sinnerId = row.ego?.sinner_id
-    const egoId = row.ego?.id
-    if (!sinnerId || !egoId) continue
-    ;(egoMap[sinnerId] ??= {})[row.grade] = egoId
-  }
-
-  const deckCode = await buildDeckCode(sinnerOrder, slotMap, sinnerGameIds, egoMap, sinnerEgoIds)
+  const deckCode = encodeTeamCode({
+    sinners,
+    deckSlots,
+    egoSlots,
+    formationOrder: formationEntries.map(entry => entry.sinnerId),
+  })
 
   // 소유권 + 관리자 확인 (로그인한 경우만)
   let isOwner = false

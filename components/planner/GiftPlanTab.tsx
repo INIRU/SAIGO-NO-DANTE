@@ -1,11 +1,17 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Search } from 'lucide-react'
-import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
+import type { PlannerState, PlannerAction, GiftData, RecipeData } from '@/lib/planner/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import {
+  deriveBlockedFinalFusionMaterialIds,
+  getFinalGiftVariantIds,
+  parseFinalGiftIds,
+} from '@/lib/planner/fusion'
 import {
   STORAGE_BASE,
   GRADE_ROMAN,
@@ -27,10 +33,11 @@ interface Props {
   dispatch: React.Dispatch<PlannerAction>
   gifts: GiftData[]
   giftMap: Map<number, GiftData>
+  recipes: RecipeData[]
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) {
+export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }: Props) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
@@ -44,52 +51,22 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
       ? gift.name_jp || gift.name
       : gift.name
 
-  // 키워드별 인격 수: 편성(1-7) vs 전체(편성+대기) — 특수 충전 등 정규화 적용
-  const { formationKwCounts, allKwCounts } = useMemo(() => {
-    const formation: Record<string, number> = {}
-    const all: Record<string, number> = {}
-    for (const slot of state.identitySlots) {
-      if (slot.slot_order >= 99) continue // 편성 순서 없는 인격(벤치) 제외
-      const isFormation = slot.slot_order < 7  // 0-6 = 편성 1-7
-      // 중복 카운트 방지: 인격당 정규화된 키워드 유니크
-      const normalized = new Set<string>(slot.keywords.map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        all[kw] = (all[kw] ?? 0) + 1
-        if (isFormation) formation[kw] = (formation[kw] ?? 0) + 1
-      }
-    }
-    return { formationKwCounts: formation, allKwCounts: all }
-  }, [state.identitySlots])
+  const conditionCounts = useMemo(
+    () => getGiftConditionCountsForSlots(state.identitySlots),
+    [state.identitySlots],
+  )
 
   // 조건 체크: null=충족, {level:'warn',text} = 대기 포함 시 충족, {level:'unmet',text} = 불충족
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    const cond = gift.activation_condition
-    if (!cond || !cond.count) return null
-
-    let formationHave = 0, allHave = 0, label = ''
-    if (cond.type === 'keyword' && cond.keyword) {
-      const normalizedKeyword = normalizeThemeKeyword(cond.keyword)
-      formationHave = formationKwCounts[normalizedKeyword] ?? 0
-      allHave = allKwCounts[normalizedKeyword] ?? 0
-      const slug = getKeywordSlug(normalizedKeyword)
-      label = slug ? keywordLabel(slug) : normalizedKeyword
-    } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      formationHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      allHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      label = cond.keywords
-        .map(kw => normalizeThemeKeyword(kw))
-        .map(kw => {
-          const slug = getKeywordSlug(kw)
-          return slug ? keywordLabel(slug) : kw
-        })
-        .join('+')
-    } else {
-      return null
-    }
-
-    if (formationHave >= cond.count) return null // 편성만으로 충족
-    if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formationHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+    return getGiftActivationConditionStatus({
+      gift,
+      ...conditionCounts,
+      formatKeywordLabel: keyword => {
+        const normalized = normalizeThemeKeyword(keyword)
+        const slug = getKeywordSlug(normalized)
+        return slug ? keywordLabel(slug) : normalized
+      },
+    })
   }
 
   // Parse selected IDs by prefix
@@ -111,14 +88,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   )
   // finalIds: game_id Set + 강화 상태 Map
   const finalIds = useMemo(() => {
-    const ids = new Set<number>()
-    for (const id of state.giftInventory) {
-      if (!id.startsWith('final_')) continue
-      const rest = id.replace('final_', '').replace('_plusplus', '').replace('_plus', '')
-      const num = parseInt(rest)
-      if (!isNaN(num)) ids.add(num)
-    }
-    return ids
+    return parseFinalGiftIds(state.giftInventory)
   }, [state.giftInventory])
 
   // 강화 상태: game_id → 0(기본) | 1(+) | 2(++)
@@ -140,6 +110,42 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
     return map
   }, [state.giftInventory])
 
+  const blockedFinalMaterialIds = useMemo(() => {
+    return deriveBlockedFinalFusionMaterialIds({
+      selectedFinalGiftIds: finalIds,
+      recipes,
+      giftMap,
+      gifts,
+    })
+  }, [finalIds, giftMap, gifts, recipes])
+
+  const finalVisibleIds = useMemo(() => {
+    return new Set(Array.from(finalIds).filter(id => !blockedFinalMaterialIds.has(id)))
+  }, [blockedFinalMaterialIds, finalIds])
+
+  const removeFinalGiftVariants = useCallback((giftGameId: number) => {
+    for (const giftId of getFinalGiftVariantIds(giftGameId)) {
+      dispatch({ type: 'REMOVE_GIFT', giftId })
+    }
+  }, [dispatch])
+
+  const addFinalGift = useCallback((gift: GiftData) => {
+    if (finalIds.has(gift.game_id)) return
+    if (blockedFinalMaterialIds.has(gift.game_id)) return
+    dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
+  }, [blockedFinalMaterialIds, dispatch, finalIds])
+
+  useEffect(() => {
+    if (blockedFinalMaterialIds.size === 0) return
+
+    for (const blockedId of blockedFinalMaterialIds) {
+      if (!finalIds.has(blockedId)) continue
+      for (const giftId of getFinalGiftVariantIds(blockedId)) {
+        dispatch({ type: 'REMOVE_GIFT', giftId })
+      }
+    }
+  }, [blockedFinalMaterialIds, dispatch, finalIds])
+
   function getGiftsByIds(ids: Set<number>): GiftData[] {
     return Array.from(ids)
       .map(id => giftMap.get(id))
@@ -149,6 +155,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   // Observe: grade 1-3, exclude 잔영
   const filteredFinalSourceGifts = useMemo(() => {
     return gifts.filter(g => {
+      if (blockedFinalMaterialIds.has(g.game_id)) return false
       if (finalFilterGrade && g.grade !== finalFilterGrade) return false
       if (finalFilterKeyword) {
         const slug = getKeywordSlug(g.keyword ?? null)
@@ -162,7 +169,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
       }
       return true
     })
-  }, [gifts, finalFilterGrade, finalFilterKeyword, finalSearch, locale])
+  }, [blockedFinalMaterialIds, gifts, finalFilterGrade, finalFilterKeyword, finalSearch, locale])
 
   const finalGradeGroups = useMemo(() => {
     const groups: Record<string, GiftData[]> = {}
@@ -185,7 +192,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   const subTabs: { key: GiftSubTab; label: string; count: number }[] = [
     { key: 'observe', label: t('tabs.observe'), count: observeIds.size },
     { key: 'start', label: t('tabs.start'), count: startIds.size },
-    { key: 'final', label: t('tabs.final'), count: finalIds.size },
+    { key: 'final', label: t('tabs.final'), count: finalVisibleIds.size },
   ]
   const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
 
@@ -524,8 +531,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 e.preventDefault()
                 setFinalDragOver(false)
                 const gameId = e.dataTransfer.getData('text/plain')
-                if (gameId && !finalIds.has(Number(gameId))) {
-                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gameId}` })
+                const gift = giftMap.get(Number(gameId))
+                if (gift) {
+                  addFinalGift(gift)
                 }
               }}
               className="planner-gift-final-build"
@@ -553,7 +561,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>
                     {t('final.buildTitle')}
                   </span>
-                  {finalIds.size > 0 && (
+                  {finalVisibleIds.size > 0 && (
                     <span style={{
                       fontSize: '0.5625rem',
                       color: '#c8900a',
@@ -563,15 +571,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                       border: '1px solid rgba(200,144,10,0.2)',
                       fontWeight: 700,
                     }}>
-                      {t('final.selectedCount', { count: finalIds.size })}
+                      {t('final.selectedCount', { count: finalVisibleIds.size })}
                     </span>
                   )}
                 </div>
-                {finalIds.size > 0 && (
+                {finalVisibleIds.size > 0 && (
                   <button
                     onClick={() => {
                       Array.from(finalIds).forEach(id => {
-                        dispatch({ type: 'REMOVE_GIFT', giftId: `final_${id}` })
+                        removeFinalGiftVariants(id)
                       })
                     }}
                     style={{
@@ -594,7 +602,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               <p className="planner-gift-final-help" style={{ fontSize: '0.625rem', color: '#44403c', marginTop: '-0.25rem' }}>
                 {t('final.help')}
               </p>
-              {state.identitySlots.length > 0 && finalIds.size > 0 && (
+              {state.identitySlots.length > 0 && finalVisibleIds.size > 0 && (
                 <div className="planner-gift-final-condition-legend" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.125rem', fontSize: '0.5625rem' }}>
                   <span style={{ color: '#ef4444' }}>● {t('final.conditionUnmet')}</span>
                   <span style={{ color: '#e8b030' }}>● {t('final.conditionWarn')}</span>
@@ -602,7 +610,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               )}
 
               {/* Drop zone content */}
-              {finalIds.size === 0 ? (
+              {finalVisibleIds.size === 0 ? (
                 <div className="planner-gift-final-drop-empty" style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -622,7 +630,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                   gap: '0.5rem',
                 }}>
-                  {getGiftsByIds(finalIds).map(gift => {
+                  {getGiftsByIds(finalVisibleIds).map(gift => {
                     const enh = finalEnhance.get(gift.game_id) ?? 0
                     const canEnh = !!(gift.effect_plus)
                     const cycleEnh = () => {
@@ -659,13 +667,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                     label={t('final.addFromObserve')}
                     gifts={getGiftsByIds(observeIds)}
                     finalIds={finalIds}
-                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                    blockedIds={blockedFinalMaterialIds}
+                    onAdd={addFinalGift}
                   />
                   <QuickAddSection
                     label={t('final.addFromStart')}
                     gifts={getGiftsByIds(startIds)}
                     finalIds={finalIds}
-                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                    blockedIds={blockedFinalMaterialIds}
+                    onAdd={addFinalGift}
                   />
                 </div>
               )}
@@ -818,7 +828,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                               isSelected={alreadyAdded}
                               onClick={() => {
                                 if (!alreadyAdded) {
-                                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
+                                  addFinalGift(gift)
                                 }
                               }}
                               disabled={alreadyAdded}

@@ -43,7 +43,7 @@ visible text, spacing, layout, component dimension은 사용자 font scale과 �
 | `BaseModal` | `components/ui/BaseModal.tsx` | 모달 래퍼 (ESC 닫기, 스크롤 잠금, 배경 블러) | `open`, `onClose`, `maxWidth`, `blur`, `padding` |
 | `GiftCard` | `components/ui/GiftCard.tsx` | 통합 팔각형 기프트 카드 (선택, 강화, 제거, 조건) | `gift`, `onClick`, `isSelected`, `enhance`, `onRemove`, `conditionStatus` |
 | `KeywordChip` | `components/ui/KeywordChip.tsx` | 키워드 뱃지 (아이콘 + 이름, 자동 색상) | `keyword`, `size`, `showIcon`, `color` |
-| `ThemePackCard` | `components/ui/ThemePackCard.tsx` | 테마 팩 카드 (이미지, 보스, 이름) | `theme`, `onClick`, `isSelected`, `showGiftCount` |
+| `ThemePackCard` | `components/ui/ThemePackCard.tsx` | 테마 팩 카드 (이미지, 보스, 이름) | `theme`, `onClick`, `isSelected`, `showGiftCount`, `imageSurface` |
 | `GlitchText` | `components/ui/GlitchText.tsx` | 글리치 텍스트 효과 | - |
 | `SinBadge` | `components/ui/SinBadge.tsx` | 죄악 속성 뱃지 (아이콘 + 라벨) | `sin`, `size`, `showLabel` |
 | `PageTransition` | `components/ui/PageTransition.tsx` | 페이지 전환 애니메이션 | - |

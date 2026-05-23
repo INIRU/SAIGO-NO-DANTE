@@ -15,6 +15,7 @@ import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
+import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   DECK_LANGUAGE_FILTERS,
@@ -59,7 +60,7 @@ type PlanFilterIndex = {
 }
 const PAGE_SIZE = 20
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
-const COMBAT_KEYWORDS = ['slash', 'pierce', 'blunt'] as const
+const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const
 const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
@@ -287,7 +288,10 @@ function getPlanThemeKeywords(plan: PlanSummary): string[] {
 }
 
 function getPlanFilterKeywords(plan: PlanSummary): string[] {
-  return plan.filter_keywords ?? getPlanThemeKeywords(plan)
+  return normalizePlannerListKeywords([
+    ...(plan.filter_keywords ?? getPlanThemeKeywords(plan)),
+    ...(plan.selected_keywords ?? []),
+  ])
 }
 
 type CommunityClientProps = {
@@ -322,7 +326,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const [keywordModeQuery, setKeywordModeQuery] = useQueryState('ktm', parseAsString.withDefault('or'))
   const [identityIdsQuery, setIdentityIdsQuery] = useQueryState('ids', parseAsString.withDefault(''))
   const [identityModeQuery, setIdentityModeQuery] = useQueryState('im', parseAsString.withDefault('or'))
-  const activeKeywordList = useMemo(() => parseCsvParam(keywordQuery), [keywordQuery])
+  const activeKeywordList = useMemo(() => normalizePlannerListKeywords(parseCsvParam(keywordQuery)), [keywordQuery])
   const activeKeywords = useMemo(() => new Set(activeKeywordList), [activeKeywordList])
   const keywordMode: 'or' | 'and' = keywordModeQuery === 'and' ? 'and' : 'or'
   const selectedIdentityIdList = useMemo(() => parseCsvParam(identityIdsQuery), [identityIdsQuery])
@@ -894,8 +898,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   const renderedPlanCards = useMemo(() => filtered.map(plan => (
-    <PlanCard key={plan.id} plan={plan} localized />
-  )), [filtered])
+    <PlanCard key={plan.id} plan={plan} localized onKeywordToggle={toggleKeyword} />
+  )), [filtered, toggleKeyword])
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const languageFilterCount = languageFilter === 'mine' ? 0 : 1

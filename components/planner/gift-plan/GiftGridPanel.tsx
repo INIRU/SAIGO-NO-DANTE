@@ -14,23 +14,48 @@ export default function GiftGridPanel({
   onToggle,
   maxSelect,
   gradeOrder,
+  searchable = false,
+  searchPlaceholder,
+  emptyLabel,
+  readOnly = false,
+  maxHeight = '28rem',
+  layout = 'default',
 }: {
   gifts: GiftData[]
   selectedIds: Set<number>
   onToggle: (gift: GiftData) => void
   maxSelect?: number
   gradeOrder: string[]
+  searchable?: boolean
+  searchPlaceholder?: string
+  emptyLabel?: string
+  readOnly?: boolean
+  maxHeight?: string
+  layout?: 'default' | 'stacked'
 }) {
   const t = useTranslations('planner.giftTab')
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
 
   const filteredGifts = useMemo(() => {
-    if (!activeSlug) return gifts
+    const normalizedQuery = query.trim().toLocaleLowerCase()
     return gifts.filter(g => {
       const slug = getKeywordSlug(g.keyword)
-      return slug === activeSlug || (activeSlug === 'general' && (!g.keyword || g.keyword.includes('범용') || g.keyword.includes('공통')))
+      const matchesKeyword = !activeSlug || slug === activeSlug || (activeSlug === 'general' && (!g.keyword || g.keyword.includes('범용') || g.keyword.includes('공통')))
+      if (!matchesKeyword) return false
+      if (!normalizedQuery) return true
+
+      const searchableText = [
+        g.name,
+        g.name_en,
+        g.name_jp,
+        g.keyword,
+        g.effect_base,
+      ].filter(Boolean).join(' ').toLocaleLowerCase()
+
+      return searchableText.includes(normalizedQuery)
     })
-  }, [gifts, activeSlug])
+  }, [gifts, activeSlug, query])
 
   const giftCounts = useMemo(() => {
     const counts = new Map<string | null, number>()
@@ -56,25 +81,49 @@ export default function GiftGridPanel({
   const atLimit = maxSelect !== undefined && selectedIds.size >= maxSelect
 
   return (
-    <div className="planner-gift-grid-panel" style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+    <div
+      className="planner-gift-grid-panel"
+      style={{
+        display: 'flex',
+        flexDirection: layout === 'stacked' ? 'column' : 'row',
+        gap: '0.75rem',
+        flex: 1,
+        minWidth: 0,
+      }}
+    >
       {/* Keyword sidebar */}
       <KeywordSidebar
         activeSlug={activeSlug}
         onSelect={setActiveSlug}
         giftCounts={giftCounts}
+        orientation={layout === 'stacked' ? 'horizontal' : 'vertical'}
       />
 
       {/* Grid area */}
       <div className="planner-gift-grid-scroll" style={{
         flex: 1,
         minWidth: 0,
-        maxHeight: '28rem',
+        maxHeight,
         overflowY: 'auto',
         paddingRight: '0.25rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1rem',
+        gap: '0.875rem',
       }}>
+        {searchable && (
+          <label style={{ display: 'block' }}>
+            <span className="sr-only">{searchPlaceholder ?? t('final.searchPlaceholder')}</span>
+            <input
+              type="search"
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder={searchPlaceholder ?? t('final.searchPlaceholder')}
+              className="w-full rounded-md border bg-[#0d0b08] px-3 py-2 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
+              style={{ borderColor: '#30271d', minHeight: '2.75rem' }}
+            />
+          </label>
+        )}
+
         {gradeOrder.map(grade => {
           const gradeGifts = grouped.get(grade) ?? []
           if (gradeGifts.length === 0) return null
@@ -129,8 +178,10 @@ export default function GiftGridPanel({
                       <GiftCard
                         gift={gift}
                         isSelected={isSelected}
-                        disabled={atLimit && !isSelected}
-                        onClick={() => onToggle(gift)}
+                        disabled={readOnly || (atLimit && !isSelected)}
+                        onClick={() => {
+                          if (!readOnly) onToggle(gift)
+                        }}
                       />
                     </div>
                   )
@@ -145,11 +196,11 @@ export default function GiftGridPanel({
             padding: '2.5rem',
             textAlign: 'center',
             color: '#4b5563',
-            fontSize: '0.8125rem',
+            fontSize: '0.9375rem',
             border: '1px dashed #222',
             borderRadius: '0.5rem',
           }}>
-            {t('grid.emptyKeyword')}
+            {emptyLabel ?? t('grid.emptyKeyword')}
           </div>
         )}
       </div>

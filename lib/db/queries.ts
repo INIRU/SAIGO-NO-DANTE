@@ -395,7 +395,7 @@ export async function getEgoGiftsForNotes(): Promise<EgoGiftNote[]> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego_gifts')
-    .select('name, keyword, grade, image_url, effect_base, activation_condition')
+    .select('name, name_en, name_jp, keyword, grade, image_url, effect_base, effect_base_en, effect_base_jp, activation_condition')
   if (error) throw error
   return data ?? []
 }

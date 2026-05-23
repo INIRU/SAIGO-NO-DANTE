@@ -1,12 +1,15 @@
-import type { PlannerState, Difficulty } from './types'
+import { getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution } from './types'
 import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
 
 interface PlanData {
   v?: number              // payload version
   d: string               // difficulty first char
+  mk?: string[]           // planner-selected main keywords
+  mkm?: boolean           // main keywords were manually adjusted
   i: string[]             // identity_ids
+  sd?: SkillDistribution[] // S1/S2/S3 counts aligned with identity_ids
   e: string[]             // ego_ids
-  f: (string | null)[]    // floor theme_ids
+  f: (string | number | null)[] // floor theme_ids
   fd?: string[]           // per-floor difficulty short codes
   g: string[]             // gift inventory game_ids
   t?: string              // title
@@ -21,7 +24,10 @@ export async function encodePlan(state: PlannerState): Promise<string> {
   const data: PlanData = {
     v: 2,
     d: DIFF_SHORT[state.difficulty],
+    mk: state.mainKeywords,
+    mkm: state.mainKeywordsManual,
     i: state.identitySlots.map(s => s.identity_id),
+    sd: state.identitySlots.map(s => getIdentitySkillDistribution(s)),
     e: state.egoSlots.map(s => s.ego_id),
     f: state.floorPlan.map(f => f.theme_id),
     fd: state.floorPlan.map(f => DIFF_SHORT[f.difficulty] ?? DIFF_SHORT[getLegacyPlanFloorDifficulty(state.difficulty, f.floor)]),
@@ -41,10 +47,13 @@ export async function encodePlan(state: PlannerState): Promise<string> {
 export async function decodePlan(encoded: string): Promise<{
   difficulty: Difficulty
   identityIds: string[]
+  skillDistributions: SkillDistribution[]
   egoIds: string[]
   floorThemeIds: (string | null)[]
   floorDifficulties: Difficulty[]
   giftIds: string[]
+  mainKeywords: string[]
+  mainKeywordsManual: boolean
   title: string
   description: string
 }> {
@@ -60,7 +69,7 @@ export async function decodePlan(encoded: string): Promise<{
   const json = new TextDecoder().decode(pako.inflate(bytes))
   const data: PlanData = JSON.parse(json)
   const difficulty = SHORT_DIFF[data.d] ?? 'hard'
-  const floorThemeIds = data.f ?? []
+  const floorThemeIds = (data.f ?? []).map(themeId => normalizePlannerThemeId(themeId))
   const floorDifficulties = floorThemeIds.map((_, index) => {
     const decodedDifficulty = data.fd?.[index] ? SHORT_DIFF[data.fd[index]] : null
     return isFloorDifficulty(decodedDifficulty)
@@ -71,10 +80,13 @@ export async function decodePlan(encoded: string): Promise<{
   return {
     difficulty,
     identityIds: data.i ?? [],
+    skillDistributions: (data.i ?? []).map((_, index) => normalizeSkillDistribution(data.sd?.[index])),
     egoIds: data.e ?? [],
     floorThemeIds,
     floorDifficulties,
     giftIds: data.g ?? [],
+    mainKeywords: Array.isArray(data.mk) ? data.mk.filter((item): item is string => typeof item === 'string') : [],
+    mainKeywordsManual: typeof data.mkm === 'boolean' ? data.mkm : Array.isArray(data.mk) && data.mk.length > 0,
     title: data.t ?? '',
     description: data.desc ?? '',
   }
@@ -109,6 +121,8 @@ function snapshotPlannerState(state: PlannerState): PlannerState {
     difficulty: state.difficulty,
     identitySlots: state.identitySlots,
     egoSlots: state.egoSlots,
+    mainKeywords: state.mainKeywords ?? [],
+    mainKeywordsManual: state.mainKeywordsManual ?? false,
     floorPlan: state.floorPlan,
     giftInventory: state.giftInventory,
     title: state.title,
@@ -126,6 +140,8 @@ function isPlannerState(value: unknown): value is PlannerState {
     typeof state.description === 'string' &&
     Array.isArray(state.identitySlots) &&
     Array.isArray(state.egoSlots) &&
+    (state.mainKeywords === undefined || Array.isArray(state.mainKeywords)) &&
+    (state.mainKeywordsManual === undefined || typeof state.mainKeywordsManual === 'boolean') &&
     Array.isArray(state.floorPlan) &&
     Array.isArray(state.giftInventory) &&
     typeof state.activeTab === 'string'
@@ -292,6 +308,8 @@ export function savePlanForRun(state: PlannerState): void {
       egoSlots: state.egoSlots,
       floorPlan: state.floorPlan,
       giftInventory: state.giftInventory,
+      mainKeywords: state.mainKeywords ?? [],
+      mainKeywordsManual: state.mainKeywordsManual ?? false,
     }))
   } catch { /* */ }
 }

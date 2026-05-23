@@ -9,10 +9,12 @@ export default function KeywordSidebar({
   activeSlug,
   onSelect,
   giftCounts,
+  orientation = 'vertical',
 }: {
   activeSlug: string | null
   onSelect: (slug: string | null) => void
   giftCounts: Map<string | null, number>
+  orientation?: 'vertical' | 'horizontal'
 }) {
   const t = useTranslations('planner.giftTab')
   const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
@@ -20,10 +22,11 @@ export default function KeywordSidebar({
   return (
     <div className="planner-keyword-sidebar" style={{
       display: 'flex',
-      flexDirection: 'column',
-      gap: '0.125rem',
-      minWidth: '7.5rem',
-      maxWidth: '8.5rem',
+      flexDirection: orientation === 'horizontal' ? 'row' : 'column',
+      gap: orientation === 'horizontal' ? '0.375rem' : '0.125rem',
+      minWidth: orientation === 'horizontal' ? 0 : '7.5rem',
+      maxWidth: orientation === 'horizontal' ? 'none' : '8.5rem',
+      overflowX: orientation === 'horizontal' ? 'auto' : undefined,
       flexShrink: 0,
     }}>
       {KEYWORD_FILTERS.map(tab => {
@@ -31,6 +34,7 @@ export default function KeywordSidebar({
         const count = giftCounts.get(tab.slug) ?? 0
         const iconUrl = tab.slug ? getKeywordIconUrl(tab.slug) : null
         const label = keywordLabel(tab.slug)
+        const horizontalBorder = `1px solid ${isActive ? 'rgba(200,144,10,0.45)' : '#2a2520'}`
 
         return (
           <button
@@ -43,15 +47,20 @@ export default function KeywordSidebar({
               gap: '0.375rem',
               padding: '0.375rem 0.5rem',
               background: isActive ? 'rgba(200,144,10,0.08)' : 'transparent',
-              border: 'none',
-              borderLeft: `2px solid ${isActive ? '#c8900a' : 'transparent'}`,
-              borderRadius: '0 0.25rem 0.25rem 0',
+              borderTop: orientation === 'horizontal' ? horizontalBorder : 'none',
+              borderRight: orientation === 'horizontal' ? horizontalBorder : 'none',
+              borderBottom: orientation === 'horizontal' ? horizontalBorder : 'none',
+              borderLeft: orientation === 'horizontal' ? horizontalBorder : `2px solid ${isActive ? '#c8900a' : 'transparent'}`,
+              borderRadius: orientation === 'horizontal' ? '0.375rem' : '0 0.25rem 0.25rem 0',
               cursor: 'pointer',
               color: isActive ? '#e8b030' : '#777',
-              fontSize: '0.75rem',
+              fontSize: orientation === 'horizontal' ? '0.9375rem' : '0.75rem',
               fontWeight: isActive ? 700 : 400,
               transition: 'all 0.15s',
               textAlign: 'left',
+              minHeight: orientation === 'horizontal' ? '2.75rem' : undefined,
+              minWidth: orientation === 'horizontal' ? '8.25rem' : undefined,
+              flex: orientation === 'horizontal' ? '0 0 auto' : undefined,
             }}
           >
             {iconUrl && (
