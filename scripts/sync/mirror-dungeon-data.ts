@@ -17,6 +17,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { homedir } from 'os'
@@ -454,6 +455,11 @@ function sameJson(a: unknown, b: unknown): boolean {
   return stableJson(a ?? null) === stableJson(b ?? null)
 }
 
+function getGiftImageUrl(name: string): string {
+  const hash = createHash('md5').update(name).digest('hex').slice(0, 8)
+  return `${STORAGE_BASE}/ego-gifts/ego-gift-${hash}.webp`
+}
+
 function extractActivationCondition(effect: string | null, keyword: string): GiftActivationCondition | undefined {
   if (!effect) return undefined
 
@@ -734,6 +740,7 @@ async function syncGifts(): Promise<void> {
       effect_plusplus_jp: ppLocalizeId ? cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp') : null,
       is_synthesis: false,
       convert_to: convertTo,
+      image_url: getGiftImageUrl(baseLoc.name),
       activation_condition: activationCondition,
     })
 

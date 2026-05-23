@@ -43,6 +43,86 @@ export interface FusionResult {
   canCraft: boolean  // 인벤토리에 재료가 있는지
 }
 
+export function parseFinalGiftId(inventoryId: string): number | null {
+  if (!inventoryId.startsWith('final_')) return null
+  const rawId = inventoryId
+    .replace('final_', '')
+    .replace('_plusplus', '')
+    .replace('_plus', '')
+  const parsed = parseInt(rawId, 10)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+export function parseFinalGiftIds(inventory: Iterable<string>): Set<number> {
+  const ids = new Set<number>()
+  for (const inventoryId of inventory) {
+    const parsed = parseFinalGiftId(inventoryId)
+    if (parsed !== null) ids.add(parsed)
+  }
+  return ids
+}
+
+export function getFinalGiftVariantIds(gameId: number): string[] {
+  return [`final_${gameId}`, `final_${gameId}_plus`, `final_${gameId}_plusplus`]
+}
+
+export function deriveBlockedFinalFusionMaterialIds({
+  selectedFinalGiftIds,
+  recipes,
+  giftMap,
+  gifts,
+}: {
+  selectedFinalGiftIds: Iterable<number>
+  recipes: RecipeData[]
+  giftMap: Map<number, GiftData>
+  gifts?: GiftData[]
+}): Set<number> {
+  const giftByName = new Map<string, GiftData>()
+  const recipeByResultName = new Map<string, RecipeData>()
+  const selectedResultNames = new Set<string>()
+  const blockedIds = new Set<number>()
+
+  for (const gift of gifts ?? giftMap.values()) {
+    if (gift.name) giftByName.set(gift.name, gift)
+  }
+
+  for (const recipe of recipes) {
+    recipeByResultName.set(recipe.result_name, recipe)
+  }
+
+  for (const giftId of selectedFinalGiftIds) {
+    const gift = giftMap.get(giftId)
+    if (gift && recipeByResultName.has(gift.name)) {
+      selectedResultNames.add(gift.name)
+    }
+  }
+
+  const visitRecipeMaterials = (resultName: string, rootResultName: string, visitedResultNames: Set<string>) => {
+    if (visitedResultNames.has(resultName)) return
+    visitedResultNames.add(resultName)
+
+    const recipe = recipeByResultName.get(resultName)
+    if (!recipe) return
+
+    for (const ingredientName of recipe.ingredients) {
+      const ingredientGift = giftByName.get(ingredientName)
+      if (ingredientGift && ingredientName !== rootResultName) {
+        blockedIds.add(ingredientGift.game_id)
+      }
+
+      if (recipeByResultName.has(ingredientName)) {
+        visitRecipeMaterials(ingredientName, rootResultName, visitedResultNames)
+      }
+    }
+  }
+
+  for (const resultName of selectedResultNames) {
+    visitRecipeMaterials(resultName, resultName, new Set())
+  }
+
+  return blockedIds
+}
+
 /**
  * 정방향: 인벤토리에서 조합 가능한 레시피 찾기
  */

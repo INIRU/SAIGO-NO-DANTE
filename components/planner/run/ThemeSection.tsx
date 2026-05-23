@@ -7,7 +7,7 @@ import type { ThemeData, GiftData, IdentityData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { getAvailableThemes } from '@/lib/planner/fusion'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
 import GiftCard from '@/components/ui/GiftCard'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 
@@ -20,7 +20,7 @@ interface Props {
   identities: IdentityData[]
 }
 
-export default function ThemeSection({ state, dispatch, themes, giftMap }: Props) {
+export default function ThemeSection({ state, dispatch, themes, giftMap, identities }: Props) {
   const currentLog = state.floorLogs[state.currentFloor - 1]
   const currentDifficulty = isFloorDifficulty(currentLog?.difficulty) && isAllowedFloorDifficulty(currentLog.difficulty, state.currentFloor)
     ? currentLog.difficulty
@@ -35,19 +35,10 @@ export default function ThemeSection({ state, dispatch, themes, giftMap }: Props
 
   const ownedSet = useMemo(() => new Set(state.giftInventory.map(Number)), [state.giftInventory])
 
-  // 키워드 카운트
-  const { formKw, allKw } = useMemo(() => {
-    const form: Record<string, number> = {}
-    const all: Record<string, number> = {}
-    for (const slot of state.identitySlots) {
-      const normalized = new Set(slot.keywords.map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        all[kw] = (all[kw] ?? 0) + 1
-        if (slot.slot_order < 7) form[kw] = (form[kw] ?? 0) + 1
-      }
-    }
-    return { formKw: form, allKw: all }
-  }, [state.identitySlots])
+  const conditionCounts = useMemo(
+    () => getGiftConditionCountsForSlots(state.identitySlots, identities),
+    [state.identitySlots, identities],
+  )
 
   const selectedTheme = currentLog?.themeId ? themes.find(t => t.id === currentLog.themeId) : null
   const themeGifts = useMemo(() => {
@@ -58,27 +49,7 @@ export default function ThemeSection({ state, dispatch, themes, giftMap }: Props
 
   // 조건 체크 (GiftPlanTab 패턴)
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    const cond = gift.activation_condition
-    if (!cond || !cond.count) return null
-    if (cond.type === 'keyword' && cond.keyword) {
-      const formHave = formKw[normalizeThemeKeyword(cond.keyword)] ?? 0
-      const allHave = allKw[normalizeThemeKeyword(cond.keyword)] ?? 0
-      if (formHave >= cond.count) return null
-      if (allHave >= cond.count) return { level: 'warn', text: `${cond.keyword} ${formHave}/${cond.count}` }
-      return { level: 'unmet', text: `${cond.keyword} ${allHave}/${cond.count}` }
-    } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      const formMet = cond.keywords.some((kw: string) => (formKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
-      if (formMet) return null
-      const allMet = cond.keywords.some((kw: string) => (allKw[normalizeThemeKeyword(kw)] ?? 0) >= cond.count!)
-      const bestKw = cond.keywords.reduce((best: string, kw: string) => {
-        const count = allKw[normalizeThemeKeyword(kw)] ?? 0
-        return count > (allKw[normalizeThemeKeyword(best)] ?? 0) ? kw : best
-      }, cond.keywords[0])
-      if (allMet) return { level: 'warn', text: `${bestKw} (대기석)` }
-      const bestCount = allKw[normalizeThemeKeyword(bestKw)] ?? 0
-      return { level: 'unmet', text: `${bestKw} ${bestCount}/${cond.count}` }
-    }
-    return null
+    return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
   // 기프트 정렬: 보유 → 하단

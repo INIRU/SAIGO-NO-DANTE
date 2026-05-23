@@ -44,8 +44,21 @@
     "skipToContent": "本文へスキップ",
     "viewAll": "すべて見る",
     "close": "閉じる",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "fanDisclaimer": "ファン制作の非公式サイト · Limbus CompanyはProject Moonの著作物です。",
+    "unaffiliatedDisclaimer": "Project Moonとは提携していないファンサイトです。",
     "footerNav": "フッターナビゲーション",
-    "mainNav": "メインナビゲーション"
+    "mainNav": "メインナビゲーション",
+    "fontControl": {
+      "open": "文字サイズ調整を開く",
+      "decrease": "文字サイズを小さく",
+      "increase": "文字サイズを大きく",
+      "collapse": "折りたたむ",
+      "small": "小",
+      "default": "標準",
+      "large": "大"
+    }
   },
   "lang": {
     "filter": "言語フィルター",
@@ -148,6 +161,131 @@
       "refractionRailway": "屈折鉄道",
       "reflectrial": "射影戦闘",
       "none": "なし"
+    },
+    "builder": {
+      "metadata": {
+        "title": "デッキ編成",
+        "description": "人格、E.G.O、編成順、デッキノートを整理します。"
+      },
+      "backToDecks": "デッキ掲示板",
+      "titleNew": "デッキ編成",
+      "titleEdit": "デッキ編集",
+      "description": "人格、E.G.O、編成順、運用ノートを一つの画面で整理します。",
+      "progress": "人格 {count}/{total}",
+      "forkTitle": "{title}（フォーク）",
+      "tabs": {
+        "identity": "人格編成",
+        "ego": "E.G.O編成",
+        "skillset": "スキル編成",
+        "note": "デッキノート"
+      },
+      "actions": {
+        "loadDraft": "下書きを読み込む",
+        "saveDraft": "下書き保存",
+        "draftSaved": "保存完了",
+        "copyCode": "コードコピー",
+        "copied": "コピー済み",
+        "copyDisabled": "12人全員の人格を編成するとコードをコピーできます",
+        "contentRequired": "コンテンツ種別を選択してください",
+        "identityRequired": "全員の人格を編成してください（{count}/{total}）",
+        "saving": "保存中...",
+        "save": "保存",
+        "upload": "投稿"
+      },
+      "fields": {
+        "title": "デッキ名",
+        "titlePlaceholder": "デッキ名を入力",
+        "deckCode": "編成コード",
+        "codePlaceholder": "編成コードを貼り付け",
+        "applyCode": "適用",
+        "applying": "適用中",
+        "codeError": "コードエラー",
+        "contentType": "コンテンツ種別",
+        "required": "必須"
+      },
+      "errors": {
+        "saveFailed": "デッキの保存に失敗しました。",
+        "updateFailed": "デッキの更新に失敗しました。"
+      },
+      "gifts": {
+        "panelTitle": "E.G.Oギフト",
+        "modalTitle": "E.G.Oギフト選択",
+        "modalHeading": "E.G.Oギフト図鑑",
+        "count": "{count}個",
+        "close": "閉じる",
+        "active": "有効",
+        "inactive": "無効",
+        "warning": "注意",
+        "all": "全て",
+        "openAll": "全て見る",
+        "expand": "ギフトパネルを開く",
+        "collapse": "ギフトパネルを閉じる",
+        "searchPlaceholder": "ギフト検索...",
+        "searchNamePlaceholder": "ギフト名を検索...",
+        "clearSearch": "検索語を消去",
+        "gradeFilter": "等級",
+        "gradeAll": "全等級",
+        "selectIdentityFirst": "先に人格を編成してください。",
+        "noResults": "条件に合うギフトがありません",
+        "benchProgress": "編成 {formation}/{count} · 全体 {all}/{count}",
+        "grades": {
+          "열쇠": "鍵",
+          "갈래": "枝",
+          "징표": "印",
+          "화폐": "貨幣",
+          "에고": "E.G.O"
+        }
+      },
+      "note": {
+        "placeholder": "デッキ運用ノートを入力してください。[ または {{ でチップとブロックを挿入できます。",
+        "insert": "挿入",
+        "preview": "プレビュー",
+        "edit": "編集",
+        "emptyPalette": "囚人を選択すると、編成済みの人格、スキル、パッシブ、E.G.Oの挿入ツールが開きます",
+        "giftInsert": "ギフト追加",
+        "giftTokenStart": "ギフトトークン開始",
+        "groups": {
+          "history": "履歴",
+          "paragraph": "段落",
+          "format": "書式",
+          "insertPreview": "挿入とプレビュー"
+        },
+        "blocks": {
+          "paragraph": "段落",
+          "heading2": "見出し"
+        },
+        "tools": {
+          "undo": "元に戻す",
+          "redo": "やり直す",
+          "paragraphFormat": "段落形式",
+          "bold": "太字",
+          "italic": "斜体",
+          "bulletList": "リスト",
+          "orderedList": "番号付きリスト",
+          "quote": "引用",
+          "link": "リンク"
+        },
+        "types": {
+          "skill": "スキル",
+          "skillFrame": "スキルフレーム",
+          "passive": "パッシブ",
+          "passiveDescription": "パッシブ説明",
+          "identity": "人格",
+          "giftCard": "ギフトカード"
+        },
+        "aria": {
+          "editor": "デッキノート",
+          "toolbar": "デッキノート編集ツール",
+          "sinnerTools": "囚人挿入ツール",
+          "sinnerPalette": "{sinner} 挿入パレット",
+          "identityChip": "{identity} 人格チップを挿入",
+          "skillBlock": "{label} 詳細ブロックを挿入",
+          "passiveBlock": "{passive} 詳細説明を挿入",
+          "passiveDescriptionTitle": "{passive}説明",
+          "chipTitle": "{name}チップ",
+          "preview": "デッキノートプレビュー"
+        }
+      }
     },
     "result": {
       "countMore": "{count}件以上のデッキ",
@@ -289,6 +427,42 @@
       "metaTitle": "ミラーダンジョン — トリガーモード"
     },
     "community": "コミュニティプラン",
+    "detail": {
+      "notFoundTitle": "プランが見つかりません",
+      "metaTitle": "{title} | コミュニティプラン",
+      "metaDescription": "リンバスカンパニー ミラーダンジョン {difficulty} プラン",
+      "metaDescriptionWithDescription": "{difficulty}難易度 — {description}",
+      "backToCommunity": "コミュニティプラン",
+      "anonymous": "匿名",
+      "loginRequired": "推薦するにはログインが必要です。",
+      "floorCount": "{count}階",
+      "deckCount": "{count}人格編成",
+      "egoCount": "E.G.O {count}",
+      "voteWithCount": "推薦 {count}",
+      "descriptionTitle": "プラン説明",
+      "copyDeckCode": "編成コードをコピー",
+      "fork": "フォーク",
+      "copied": "コピー完了",
+      "triggerMode": "トリガーモード",
+      "forkedTitle": "{title} (フォーク)",
+      "loadedIntoPlanner": "プランナーに読み込みました。",
+      "copyDeckCodeFailed": "編成コードをコピーできませんでした。",
+      "deletePlanTitle": "プラン削除",
+      "deletePlanMessage": "このプランを削除しますか？削除後は復元できません。",
+      "deleteFailed": "プランを削除できませんでした。",
+      "deleteError": "削除中にエラーが発生しました。",
+      "floorPlanCaption": "階層テーマ、獲得ギフト、メモをまとめて確認します。",
+      "startGifts": "開始ギフト",
+      "observeGifts": "観測ギフト",
+      "finalGifts": "最終ギフト",
+      "itemCount": "{count}個",
+      "observeCount": "{count}/3",
+      "emptyStartGifts": "開始ギフトは選択されていません。",
+      "emptyObserveGifts": "観測ギフトは選択されていません。",
+      "emptyFinalGifts": "最終ギフトは選択されていません。",
+      "conditionUnmet": "条件未達 — 全人格でも不足",
+      "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成"
+    },
     "difficulty": "難易度",
     "normal": "通常",
     "hard": "ハード",
@@ -345,7 +519,7 @@
       "difficulty": {
         "normal": "ノーマル",
         "hard": "ハード",
-        "overlap": "平行重畳",
+        "overlap": "インフィニティループ",
         "extreme": "エクストリーム"
       },
       "filters": {
@@ -398,7 +572,9 @@
         "scrollForMore": "スクロールするとさらに読み込みます"
       },
       "card": {
-        "anonymous": "匿名"
+        "anonymous": "匿名",
+        "difficultyCount": "{count}階",
+        "toggleKeyword": "{keyword}キーワードフィルターを切り替え"
       },
       "relativeTime": {
         "now": "たった今",
@@ -436,6 +612,7 @@
       "themeModalTitle": "{floor}階テーマパック選択 · {difficulty}",
       "difficultySummary": "階層別難易度",
       "difficultySummaryCount": "{count}階",
+      "configuredFloorCount": "{configured}/{total}階",
       "noThemeWithCount": "テーマ未選択（{count}件利用可能）",
       "noFloorThemes": "この階層はありません",
       "selectThemeWithCount": "テーマパック選択（{count}件）",
@@ -446,6 +623,10 @@
       "acquiredGifts": "獲得ギフト",
       "acquiredGiftCount": "獲得ギフト {count}個",
       "addGift": "追加",
+      "giftPickerTitle": "獲得ギフトを追加",
+      "giftPickerHint": "{theme}からこの階層で獲得するギフトを検索して追加します",
+      "giftPickerSearchPlaceholder": "テーマギフト検索...",
+      "giftPickerEmpty": "検索結果がありません",
       "noThemeGifts": "このテーマのギフトは最終ギフト一覧にありません",
       "addToFinal": "+最終に追加",
       "memo": "プランメモ",
@@ -466,8 +647,37 @@
       "close": "閉じる",
       "memoPlaceholder": "この階層の戦略メモ…（キーワード・ギフトの自動補完対応）",
       "memoPreview": "プレビュー",
+      "memoExpand": "メモ全文を表示",
+      "memoCollapse": "メモを閉じる",
       "keywordDistribution": "累積ギフトキーワード分布",
-      "totalGifts": "合計 {count}個のギフト"
+      "totalGifts": "合計 {count}個のギフト",
+      "finalGifts": "最終反映ギフト",
+      "finalGiftCount": "最終ギフト {count}個",
+      "finalWorkbenchHint": "左の反映済みカードは押すと削除し、全ギフト側はカードを押して追加、もう一度押すと削除します。",
+      "finalSelectedPanel": "反映リスト",
+      "finalGiftSearchPlaceholder": "最終ギフト検索...",
+      "finalGiftEmpty": "反映済みの最終ギフトはまだありません",
+      "finalGiftNoResults": "検索結果がありません",
+      "finalKeywordFilter": "キーワード",
+      "finalGradeFilter": "等級",
+      "filterAll": "すべて",
+      "allGiftAddPanel": "全ギフトから追加",
+      "allGiftCatalog": "全ギフト",
+      "allGiftAddHint": "カードを押すと最終一覧へ追加し、追加済みのカードはもう一度押すと削除します。",
+      "allGiftSearchPlaceholder": "全ギフト検索...",
+      "allGiftNoResults": "検索結果がありません",
+      "alreadyAdded": "追加済み",
+      "alreadyAddedRemove": "追加済み · クリックで削除",
+      "alreadyAddedGift": "{gift}は追加済み",
+      "addFinalGift": "{gift}を最終ギフトに追加",
+      "addFinalGiftShort": "追加",
+      "removeFinalGift": "{gift}を最終ギフトから削除",
+      "removeAlreadyAddedGift": "{gift}を最終ギフトから削除",
+      "removeFinalGiftShort": "削除",
+      "fusionAlertTitle": "合成可能なギフト",
+      "fusionAlertHint": "現在の最終ギフトで合成できます。結果ギフトを押すと、素材を最終一覧から外して結果を追加します。",
+      "fusionAlertDismiss": "合成通知を閉じる",
+      "fusionAlertApply": "{gift}の合成を反映"
     },
     "actions": {
       "triggerMode": "トリガーモード",
@@ -506,11 +716,22 @@
         "toAwakenedArt": "通常イラスト -- クリックで覚醒へ",
         "modalTitle": "人格選択",
         "modalHeading": "{sinner} - 人格選択",
+        "close": "人格選択を閉じる",
+        "searchPlaceholder": "人格名を検索...",
+        "clearSearch": "検索語を消去",
+        "rarityAll": "全て",
+        "rarity": "{rarity}星",
+        "noResults": "条件に合う人格がありません",
+        "openDetailHint": "クリックで詳細",
         "clear": "選択解除"
       },
       "ego": {
         "modalTitle": "E.G.O選択",
         "modalHeading": "{sinner} - E.G.O選択",
+        "close": "E.G.O選択を閉じる",
+        "searchPlaceholder": "E.G.O名を検索...",
+        "clearSearch": "検索語を消去",
+        "gradeAll": "全て",
         "remove": "解除",
         "emptyGrade": "この等級のE.G.Oはありません",
         "noIdentity": "人格未選択"
@@ -529,6 +750,10 @@
         "resonance": "共鳴",
         "stock": "保有",
         "passiveWarning": "スキル配分の変更により条件を満たしていません"
+      },
+      "mainKeywords": {
+        "label": "プラン代表キーワード",
+        "keywordCount": "{keyword} {count}人格"
       }
     },
     "giftTab": {

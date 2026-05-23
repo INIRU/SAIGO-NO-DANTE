@@ -34,7 +34,7 @@ import {
   type IdentityDetail,
   type IdentitySlot,
 } from '@/components/deck-detail/DeckIdentityCard'
-import IdentityCard from '@/components/sinners/IdentityCard'
+import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
 import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
@@ -109,10 +109,7 @@ type DeckDetail = {
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
-const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
-const BACKUP_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-backup-banner.webp`
 const BOARD_SLOT_COUNT = 12
-const FRONTLINE_SLOT_COUNT = 7
 const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
 const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 type AttackType = 'slash' | 'pierce' | 'blunt'
@@ -277,12 +274,6 @@ function buildBoardSlots(slots: IdentitySlot[]): (IdentitySlot | null)[] {
   })
 
   return board
-}
-
-function getBoardSlotKind(slot: IdentitySlot | null): 'selected' | 'backup' | 'empty' {
-  if (!slot?.identities) return 'empty'
-  if (slot.slot_order < FRONTLINE_SLOT_COUNT) return 'selected'
-  return slot.slot_order < 99 ? 'backup' : 'empty'
 }
 
 function topKeywords(slots: IdentitySlot[]): string[] {
@@ -1034,68 +1025,28 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   className="mb-5"
                   aria-label={t('boardLabel')}
                 >
-                  <style>{`
-                    .deck-detail-board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:0.35rem;row-gap:0.6rem}
-                    @media (min-width:23.75rem){.deck-detail-board-grid{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:0.35rem;row-gap:0.6rem}}
-                    @media (min-width:40rem){.deck-detail-board-grid{column-gap:0.75rem;row-gap:0.8rem}}
-                    @media (min-width:64rem){.deck-detail-board-grid{grid-template-columns:repeat(6,minmax(0,1fr));column-gap:1.75rem;row-gap:1.25rem}}
-                    .deck-detail-board-button{transform:translate3d(0,0,0);transition:transform 220ms cubic-bezier(.22,1,.36,1),filter 220ms cubic-bezier(.22,1,.36,1)}
-                    .deck-detail-board-button:not(:disabled):is(:hover,:focus-visible){transform:translate3d(0,-0.25rem,0);filter:brightness(1.08) drop-shadow(0 .65rem 1.1rem rgba(200,144,10,.18))}
-                    .deck-detail-board-button:not(:disabled):active{transform:translate3d(0,-0.0625rem,0);filter:brightness(1.02)}
-                    @media (prefers-reduced-motion:reduce){.deck-detail-board-button{transition:filter 120ms ease}.deck-detail-board-button:not(:disabled):is(:hover,:focus-visible),.deck-detail-board-button:not(:disabled):active{transform:none}}
-                  `}</style>
-                  <div className="deck-detail-board-grid">
-                    {boardSlots.map((slot, index) => {
+                  <FormationBoard
+                    slots={boardSlots.map((slot, index): FormationBoardSlot => {
                       const id_ = slot?.identities ?? null
                       const identityName = id_ ? localizeIdentityName(id_, locale) : ''
-                      const kind = getBoardSlotKind(slot)
-                      const isFrontline = kind === 'selected'
-                      const isBackup = kind === 'backup'
                       const isActive = !!id_ && activeSinner === id_.sinner_id
-                      const displayedOrder = slot && slot.slot_order < 99 ? slot.slot_order + 1 : null
-                      const bannerUrl = isFrontline ? SELECTED_BANNER_URL : isBackup ? BACKUP_BANNER_URL : null
 
-                      return (
-                        <div key={`${id_?.id ?? 'empty'}-${index}`} className="min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!id_ || !slot) return
+                      return {
+                        key: `${id_?.id ?? 'empty'}-${index}`,
+                        identity: id_ ? adaptBoardIdentity(id_, locale) : null,
+                        slotOrder: slot?.slot_order ?? null,
+                        gacksung: slot?.gacksung ?? false,
+                        selected: isActive,
+                        ariaLabel: id_ ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
+                        onClick: id_ && slot
+                          ? () => {
                               setSelectedSinner(id_.sinner_id)
                               setIdentityPreview({ slot })
-                            }}
-                            disabled={!id_}
-                            aria-pressed={isActive}
-                            aria-label={id_ ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 })}
-                            className="deck-detail-board-button relative w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0c09] disabled:cursor-default disabled:opacity-45"
-                          >
-                            {id_ ? (
-                              <IdentityCard
-                                identity={adaptBoardIdentity(id_, locale)}
-                                compact
-                                board
-                                selected={isActive}
-                                gacksung={slot?.gacksung ?? false}
-                                disableHoverEffects
-                                formationOverlay={bannerUrl && displayedOrder != null
-                                  ? {
-                                      kind: isFrontline ? 'selected' : 'backup',
-                                      order: displayedOrder,
-                                      bannerUrl,
-                                    }
-                                  : undefined}
-                              />
-                            ) : (
-                              <div
-                                className="aspect-[2/3] w-full rounded"
-                                style={{ background: '#080604', border: '1px solid rgba(44,28,12,0.45)' }}
-                              />
-                            )}
-                          </button>
-                        </div>
-                      )
+                            }
+                          : undefined,
+                      }
                     })}
-                  </div>
+                  />
                   <p
                     className="mt-3"
                     style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', lineHeight: 1.55 }}

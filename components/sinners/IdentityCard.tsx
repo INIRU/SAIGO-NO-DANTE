@@ -27,6 +27,7 @@ interface IdentityCardProps {
     order: number
     bannerUrl: string
   }
+  giftBadgeUrls?: string[]
 }
 
 type IdentityWithRepresentativeKeywords = Identity & {
@@ -431,6 +432,7 @@ export default function IdentityCard({
   board = false,
   disableHoverEffects = false,
   formationOverlay,
+  giftBadgeUrls = [],
 }: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const t = useTranslations()
@@ -673,6 +675,41 @@ export default function IdentityCard({
             <span className={styles.formationNumber}>
               {formationOverlay.order}
             </span>
+          </div>
+        )}
+
+        {formationOverlay && giftBadgeUrls.length > 0 && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '71%',
+              zIndex: 25,
+              display: 'inline-flex',
+              maxWidth: '70%',
+              transform: 'translate(-50%, -50%)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.125rem',
+              pointerEvents: 'none',
+            }}
+          >
+            {giftBadgeUrls.slice(0, 4).map((url, index) => (
+              <Image
+                key={`${url}-${index}`}
+                src={url}
+                alt=""
+                width={24}
+                height={24}
+                style={{
+                  width: 'clamp(0.8125rem, 15cqi, 1.125rem)',
+                  height: 'clamp(0.8125rem, 15cqi, 1.125rem)',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.85))',
+                }}
+              />
+            ))}
           </div>
         )}
 

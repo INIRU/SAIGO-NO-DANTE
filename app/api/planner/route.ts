@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
@@ -17,7 +17,7 @@ const ADVANCED_FILTER_CANDIDATE_LIMIT = 1000
 const SUPPORTED_PLANNER_LANGS = ['ko', 'en', 'ja'] as const
 const IDENTITY_MODE_VALUES = ['or', 'and'] as const
 const COMBAT_SKILL_TYPES = ['slash', 'pierce', 'blunt'] as const
-const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)'
+const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)'
 
 type PlannerLang = typeof SUPPORTED_PLANNER_LANGS[number]
 type PlannerLangFilter = PlannerLang | 'all'
@@ -225,10 +225,15 @@ function matchesKeywordFilters(
   keywordTags: string[],
   keywordTagMode: FilterMode,
 ) {
-  const { filter_keywords: rawFilterKeywords } = plan as { filter_keywords?: unknown }
-  const filterKeywords = Array.isArray(rawFilterKeywords)
-    ? rawFilterKeywords.filter((keyword): keyword is string => typeof keyword === 'string')
-    : []
+  const { filter_keywords: rawFilterKeywords, selected_keywords: rawSelectedKeywords } = plan as {
+    filter_keywords?: unknown
+    selected_keywords?: unknown
+  }
+  const rawKeywords = [
+    ...(Array.isArray(rawFilterKeywords) ? rawFilterKeywords : []),
+    ...(Array.isArray(rawSelectedKeywords) ? rawSelectedKeywords : []),
+  ].filter((keyword): keyword is string => typeof keyword === 'string')
+  const filterKeywords = normalizePlannerListKeywords(rawKeywords)
   return matchesMode(keywordTags, new Set(filterKeywords), keywordTagMode)
 }
 
@@ -265,7 +270,7 @@ export async function GET(req: NextRequest) {
     const { value: identityMode } = identityModeResult
     const { value: keywordTagMode } = keywordTagModeResult
     const identityIds = parseCsvParam(getParam(searchParams, 'identity_ids', 'ids'))
-    const keywordTags = parseCsvParam(getParam(searchParams, 'keyword_tags', 'kt'))
+    const keywordTags = normalizePlannerListKeywords(parseCsvParam(getParam(searchParams, 'keyword_tags', 'kt')))
     const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0
 
     // userId=me 또는 votedBy=me → 인증 필요

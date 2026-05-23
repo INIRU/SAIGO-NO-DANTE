@@ -11,11 +11,13 @@ export default function QuickAddSection({
   label,
   gifts,
   finalIds,
+  blockedIds,
   onAdd,
 }: {
   label: string
   gifts: GiftData[]
   finalIds: Set<number>
+  blockedIds?: Set<number>
   onAdd: (gift: GiftData) => void
 }) {
   const locale = useLocale()
@@ -36,6 +38,8 @@ export default function QuickAddSection({
       <div className="planner-quick-add-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
         {gifts.map(gift => {
           const already = finalIds.has(gift.game_id)
+          const blocked = blockedIds?.has(gift.game_id) ?? false
+          const disabled = already || blocked
           const displayName = locale === 'en'
             ? gift.name_en || gift.name
             : locale === 'ja'
@@ -44,8 +48,8 @@ export default function QuickAddSection({
           return (
             <button
               key={gift.id}
-              onClick={() => { if (!already) onAdd(gift) }}
-              disabled={already}
+              onClick={() => { if (!disabled) onAdd(gift) }}
+              disabled={disabled}
               title={displayName}
               aria-label={displayName}
               className="planner-quick-add-chip"
@@ -54,11 +58,11 @@ export default function QuickAddSection({
                 alignItems: 'center',
                 gap: '0.25rem',
                 padding: '0.25rem 0.5rem',
-                background: already ? 'rgba(200,144,10,0.1)' : '#1a1510',
-                border: `1px solid ${already ? '#c8900a60' : '#2a2520'}`,
+                background: disabled ? 'rgba(200,144,10,0.1)' : '#1a1510',
+                border: `1px solid ${disabled ? '#c8900a60' : '#2a2520'}`,
                 borderRadius: '0.375rem',
-                cursor: already ? 'default' : 'pointer',
-                opacity: already ? 0.6 : 1,
+                cursor: disabled ? 'default' : 'pointer',
+                opacity: disabled ? 0.6 : 1,
                 color: '#d1d5db',
                 fontSize: '0.6875rem',
                 transition: 'all 0.15s',
@@ -80,7 +84,7 @@ export default function QuickAddSection({
                 )}
               </div>
               <span style={{ wordBreak: 'keep-all' }}>{displayName}</span>
-              {!already && <Plus size={10} color="#c8900a" />}
+              {!disabled && <Plus size={10} color="#c8900a" />}
             </button>
           )
         })}

@@ -15,10 +15,11 @@ type SkillExchangePanelProps = {
   skills: [SkillExchangeSkill | null, SkillExchangeSkill | null, SkillExchangeSkill | null]
   isDefault?: boolean
   showTotal?: boolean
+  readOnly?: boolean
   canDecrease?: (idx: number) => boolean
   canIncrease?: (idx: number) => boolean
-  onAdjust: (idx: number, delta: number) => void
-  onPresetSelect: (preset: [number, number, number]) => void
+  onAdjust?: (idx: number, delta: number) => void
+  onPresetSelect?: (preset: [number, number, number]) => void
 }
 
 export default function SkillExchangePanel({
@@ -26,6 +27,7 @@ export default function SkillExchangePanel({
   skills,
   isDefault = distribution[0] === 3 && distribution[1] === 2 && distribution[2] === 1,
   showTotal = true,
+  readOnly = false,
   canDecrease,
   canIncrease,
   onAdjust,
@@ -66,24 +68,26 @@ export default function SkillExchangePanel({
               S{idx + 1}
             </span>
             <div style={{ flex: 1 }} />
-            <button
-              type="button"
-              onClick={() => onAdjust(idx, -1)}
-              disabled={!decreaseEnabled}
-              aria-label={`S${idx + 1} -`}
-              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-              style={{
-                width: '18px', height: '18px', borderRadius: '2px',
-                background: !decreaseEnabled ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                border: `1px solid ${!decreaseEnabled ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                color: !decreaseEnabled ? '#2a2015' : '#c8900a',
-                fontSize: '0.75rem', cursor: !decreaseEnabled ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                lineHeight: 1, padding: 0,
-              }}
-            >
-              &#x2212;
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => onAdjust?.(idx, -1)}
+                disabled={!decreaseEnabled}
+                aria-label={`S${idx + 1} -`}
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                style={{
+                  width: '18px', height: '18px', borderRadius: '2px',
+                  background: !decreaseEnabled ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
+                  border: `1px solid ${!decreaseEnabled ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
+                  color: !decreaseEnabled ? '#2a2015' : '#c8900a',
+                  fontSize: '0.75rem', cursor: !decreaseEnabled ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1, padding: 0,
+                }}
+              >
+                &#x2212;
+              </button>
+            )}
             <span style={{
               width: '16px', textAlign: 'center', fontSize: '0.8125rem',
               fontFamily: 'var(--font-mono)', fontWeight: 700,
@@ -91,65 +95,69 @@ export default function SkillExchangePanel({
             }}>
               {distribution[idx]}
             </span>
-            <button
-              type="button"
-              onClick={() => onAdjust(idx, 1)}
-              disabled={!increaseEnabled}
-              aria-label={`S${idx + 1} +`}
-              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-              style={{
-                width: '18px', height: '18px', borderRadius: '2px',
-                background: !increaseEnabled ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
-                border: `1px solid ${!increaseEnabled ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
-                color: !increaseEnabled ? '#2a2015' : '#c8900a',
-                fontSize: '0.75rem', cursor: !increaseEnabled ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                lineHeight: 1, padding: 0,
-              }}
-            >
-              +
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => onAdjust?.(idx, 1)}
+                disabled={!increaseEnabled}
+                aria-label={`S${idx + 1} +`}
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                style={{
+                  width: '18px', height: '18px', borderRadius: '2px',
+                  background: !increaseEnabled ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
+                  border: `1px solid ${!increaseEnabled ? '#18120a' : 'rgba(200,144,10,0.3)'}`,
+                  color: !increaseEnabled ? '#2a2015' : '#c8900a',
+                  fontSize: '0.75rem', cursor: !increaseEnabled ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1, padding: 0,
+                }}
+              >
+                +
+              </button>
+            )}
           </div>
         )
       })}
-      <div style={{
+      {!readOnly && (
+        <div style={{
         borderTop: '1px solid #1a1208', marginTop: '4px', paddingTop: '4px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        {showTotal ? (
-          <span style={{
-            fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-            color: total === 6 ? '#5a8a40' : '#c83020',
-          }}>
-            {total}/6
-          </span>
-        ) : (
-          <span aria-hidden="true" />
-        )}
-        <div style={{ display: 'flex', gap: '2px' }}>
-          {SKILL_EXCHANGE_PRESETS.map(preset => {
-            const active = distribution[0] === preset[0] && distribution[1] === preset[1] && distribution[2] === preset[2]
-            return (
-              <button
-                key={preset.join(',')}
-                type="button"
-                onClick={() => onPresetSelect(preset)}
-                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-                style={{
-                  fontSize: '0.5rem', fontFamily: 'var(--font-mono)',
-                  padding: '1px 4px', borderRadius: '2px',
-                  background: active ? 'rgba(200,144,10,0.2)' : 'transparent',
-                  border: `1px solid ${active ? 'rgba(200,144,10,0.5)' : '#18120a'}`,
-                  color: active ? '#c8900a' : '#444',
-                  cursor: 'pointer', lineHeight: 1.4,
-                }}
-              >
-                {preset.join('/')}
-              </button>
-            )
-          })}
+        }}>
+          {showTotal ? (
+            <span style={{
+              fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
+              color: total === 6 ? '#5a8a40' : '#c83020',
+            }}>
+              {total}/6
+            </span>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          <div style={{ display: 'flex', gap: '2px' }}>
+            {SKILL_EXCHANGE_PRESETS.map(preset => {
+              const active = distribution[0] === preset[0] && distribution[1] === preset[1] && distribution[2] === preset[2]
+              return (
+                <button
+                  key={preset.join(',')}
+                  type="button"
+                  onClick={() => onPresetSelect?.(preset)}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                  style={{
+                    fontSize: '0.5rem', fontFamily: 'var(--font-mono)',
+                    padding: '1px 4px', borderRadius: '2px',
+                    background: active ? 'rgba(200,144,10,0.2)' : 'transparent',
+                    border: `1px solid ${active ? 'rgba(200,144,10,0.5)' : '#18120a'}`,
+                    color: active ? '#c8900a' : '#444',
+                    cursor: 'pointer', lineHeight: 1.4,
+                  }}
+                >
+                  {preset.join('/')}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

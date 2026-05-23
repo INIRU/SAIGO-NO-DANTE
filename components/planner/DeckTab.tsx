@@ -3,7 +3,21 @@
 import { useMemo, useState, useCallback, useEffect, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
-import { type PlannerState, type PlannerAction, type IdentityData, type SinnerData, type ThemeData, type GiftData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
+import {
+  DEFAULT_SKILL_DISTRIBUTION,
+  getIdentitySkillDistribution,
+  normalizeSkillDistribution,
+  type PlannerState,
+  type PlannerAction,
+  type IdentityData,
+  type SinnerData,
+  type ThemeData,
+  type GiftData,
+  type PassiveData,
+  type SkillSummary,
+  type EgoData,
+  type SkillDistribution,
+} from '@/lib/planner/types'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -18,6 +32,13 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import SkillExchangePanel from './SkillExchangePanel'
+import {
+  DECK_MAIN_KEYWORDS,
+  MAX_DECK_MAIN_KEYWORDS,
+  computeDeckMainKeywordsFromSlots,
+  computeDeckKeywordCounts,
+  type DeckKeywordSlot,
+} from '@/lib/decks/keyword-rules'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 
@@ -27,7 +48,6 @@ const SUB_TABS: { key: DeckSubTab; labelKey: string; icon: typeof Users }[] = [
   { key: 'skillset', labelKey: 'subTabs.skillset', icon: SlidersHorizontal },
 ]
 
-const DEFAULT_SKILL_DISTRIBUTION: [number, number, number] = [3, 2, 1]
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 const COMPACT_KOTRA_STYLE: CSSProperties = {
   fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
@@ -46,30 +66,9 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
   '오티스': '토 파토스 마토스',
   '그레고르': '어느날 갑자기',
 }
+const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
-const normalizeSkillDistribution = (dist: [number, number, number] = DEFAULT_SKILL_DISTRIBUTION): [number, number, number] => {
-  const next: [number, number, number] = dist.map(value => {
-    if (!Number.isFinite(value)) return 0
-    return Math.min(6, Math.max(0, Math.trunc(value)))
-  }) as [number, number, number]
-
-  let total = next[0] + next[1] + next[2]
-  while (total < 6) {
-    const receiver = next.reduce((best, value, idx) => (value < next[best] ? idx : best), 0)
-    next[receiver] += 1
-    total += 1
-  }
-  while (total > 6) {
-    const donor = next.reduce((best, value, idx) => (value > next[best] ? idx : best), 0)
-    if (next[donor] === 0) break
-    next[donor] -= 1
-    total -= 1
-  }
-
-  return next
-}
-
-const getHighestDonorIndex = (dist: [number, number, number], targetIdx: number) => {
+const getHighestDonorIndex = (dist: SkillDistribution, targetIdx: number) => {
   let donorIdx: number | null = null
   for (let idx = 0; idx < dist.length; idx++) {
     if (idx === targetIdx || dist[idx] <= 0) continue
@@ -78,7 +77,7 @@ const getHighestDonorIndex = (dist: [number, number, number], targetIdx: number)
   return donorIdx
 }
 
-const getLowestReceiverIndex = (dist: [number, number, number], targetIdx: number) => {
+const getLowestReceiverIndex = (dist: SkillDistribution, targetIdx: number) => {
   let receiverIdx: number | null = null
   for (let idx = 0; idx < dist.length; idx++) {
     if (idx === targetIdx) continue
@@ -172,7 +171,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   const { getIconUrl, keywords: keywordInfo } = useKeywordData()
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>({})
-  const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>({})
   const [passiveSubTab, setPassiveSubTab] = useState<'battle' | 'support'>('battle')
 
   // Modal state
@@ -213,6 +211,49 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     })
     return computeKeywordDistribution(allKeywords)
   }, [identityById, state.identitySlots])
+
+  const deckKeywordSlots = useMemo<DeckKeywordSlot[]>(() => (
+    state.identitySlots.map(slot => {
+      const sourceIdentity = identityById.get(slot.identity_id)
+      return {
+        slot_order: slot.slot_order,
+        identities: {
+          skill_keyword_list: slot.skill_keyword_list ?? sourceIdentity?.skill_keyword_list ?? [],
+          keywords: slot.keywords ?? sourceIdentity?.keywords ?? [],
+          affiliation: slot.affiliation ?? sourceIdentity?.affiliation ?? null,
+          association_list: slot.association_list ?? sourceIdentity?.association_list ?? [],
+          skills: skills
+            .filter(skill => skill.identity_id === slot.identity_id)
+            .map(skill => ({ skill_type: skill.skill_type, atk_type: skill.skill_type })),
+        },
+      }
+    })
+  ), [identityById, skills, state.identitySlots])
+
+  const mainKeywordCounts = useMemo(() => computeDeckKeywordCounts(deckKeywordSlots).counts, [deckKeywordSlots])
+  const autoMainKeywords = useMemo(() => computeDeckMainKeywordsFromSlots(deckKeywordSlots), [deckKeywordSlots])
+  const selectedMainKeywords = state.mainKeywords ?? []
+  const mainKeywordsManual = state.mainKeywordsManual ?? false
+  const effectiveMainKeywords = mainKeywordsManual ? selectedMainKeywords : autoMainKeywords
+
+  useEffect(() => {
+    if (mainKeywordsManual) return
+    const same = selectedMainKeywords.length === autoMainKeywords.length &&
+      selectedMainKeywords.every((keyword, index) => keyword === autoMainKeywords[index])
+    if (!same) {
+      dispatch({ type: 'SET_MAIN_KEYWORDS', keywords: autoMainKeywords, manual: false })
+    }
+  }, [autoMainKeywords, dispatch, mainKeywordsManual, selectedMainKeywords])
+
+  useEffect(() => {
+    if (!mainKeywordsManual) return
+    const next = selectedMainKeywords.filter(keyword => (
+      MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword) || (mainKeywordCounts[keyword] ?? 0) > 0
+    ))
+    if (next.length !== selectedMainKeywords.length) {
+      dispatch({ type: 'SET_MAIN_KEYWORDS', keywords: next, manual: true })
+    }
+  }, [dispatch, mainKeywordCounts, mainKeywordsManual, selectedMainKeywords])
 
   const egoById = useMemo(() => {
     const map = new Map<string, EgoData>()
@@ -286,7 +327,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   const deckSinCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const slot of state.identitySlots) {
-      const dist = normalizeSkillDistribution(skillDistribution[slot.sinner_id] ?? DEFAULT_SKILL_DISTRIBUTION)
+      const dist = getIdentitySkillDistribution(slot)
       // 각 슬롯(S1,S2,S3)에 대해 최고 업타이 스킬 선택 후 배분 수만큼 가중치 적용
       for (let order = 1; order <= 3; order++) {
         const weight = dist[order - 1]
@@ -299,13 +340,13 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       }
     }
     return counts
-  }, [state.identitySlots, skills, skillDistribution])
+  }, [state.identitySlots, skills])
 
   // 기본 배분(3-2-1) 기준 deckSinCounts (패시브 경고 비교용)
   const deckSinCountsDefault = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const slot of state.identitySlots) {
-      const defaultDist: [number, number, number] = DEFAULT_SKILL_DISTRIBUTION
+      const defaultDist = DEFAULT_SKILL_DISTRIBUTION
       for (let order = 1; order <= 3; order++) {
         const weight = defaultDist[order - 1]
         const best = skills
@@ -330,26 +371,40 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   }
 
   const handleSkillChange = (sinnerId: string, idx: number, delta: number) => {
-    setSkillDistribution(prev => {
-      const dist = normalizeSkillDistribution(prev[sinnerId] ?? DEFAULT_SKILL_DISTRIBUTION)
-      const next: [number, number, number] = [dist[0], dist[1], dist[2]]
+    const slot = state.identitySlots.find(item => item.sinner_id === sinnerId)
+    if (!slot) return
+    const dist = getIdentitySkillDistribution(slot)
+    const next: SkillDistribution = [dist[0], dist[1], dist[2]]
 
-      if (delta > 0) {
-        const donorIdx = getHighestDonorIndex(dist, idx)
-        if (dist[idx] >= 6 || donorIdx === null) return prev
-        next[idx] += 1
-        next[donorIdx] -= 1
-      } else if (delta < 0) {
-        const receiverIdx = getLowestReceiverIndex(dist, idx)
-        if (dist[idx] <= 0 || receiverIdx === null) return prev
-        next[idx] -= 1
-        next[receiverIdx] += 1
-      } else {
-        return prev
-      }
+    if (delta > 0) {
+      const donorIdx = getHighestDonorIndex(dist, idx)
+      if (dist[idx] >= 6 || donorIdx === null) return
+      next[idx] += 1
+      next[donorIdx] -= 1
+    } else if (delta < 0) {
+      const receiverIdx = getLowestReceiverIndex(dist, idx)
+      if (dist[idx] <= 0 || receiverIdx === null) return
+      next[idx] -= 1
+      next[receiverIdx] += 1
+    } else {
+      return
+    }
 
-      return { ...prev, [sinnerId]: next }
-    })
+    dispatch({ type: 'SET_SKILL_DISTRIBUTION', sinnerId, distribution: next })
+  }
+
+  const handleMainKeywordToggle = (keyword: string) => {
+    const isManualAttackKeyword = MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword)
+    if (!isManualAttackKeyword && (mainKeywordCounts[keyword] ?? 0) <= 0) return
+
+    const baseKeywords = mainKeywordsManual ? selectedMainKeywords : effectiveMainKeywords
+    const next = baseKeywords.includes(keyword)
+      ? baseKeywords.filter(item => item !== keyword)
+      : baseKeywords.length >= MAX_DECK_MAIN_KEYWORDS
+        ? baseKeywords
+        : [...baseKeywords, keyword]
+
+    dispatch({ type: 'SET_MAIN_KEYWORDS', keywords: next, manual: true })
   }
 
   const handleSelectIdentity = (ident: IdentityData) => {
@@ -427,6 +482,111 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           {state.identitySlots.length} / 12
         </div>
       </div>
+
+      {subTab === 'identity' && (
+        <div className="planner-main-keywords" aria-label={tDeck('mainKeywords.label')}>
+          {DECK_MAIN_KEYWORDS.map(keyword => {
+            const iconUrl = getIconUrl(keyword)
+            const count = mainKeywordCounts[keyword] ?? 0
+            const selected = effectiveMainKeywords.includes(keyword)
+            const isManualAttackKeyword = MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword)
+            const disabled = (!isManualAttackKeyword && count <= 0) || (!selected && effectiveMainKeywords.length >= MAX_DECK_MAIN_KEYWORDS)
+            const keywordLabel = getLocalizedKeywordLabel(keyword)
+            const accessibleName = isManualAttackKeyword ? keywordLabel : tDeck('mainKeywords.keywordCount', { keyword: keywordLabel, count })
+            return (
+              <button
+                key={keyword}
+                type="button"
+                className="planner-main-keyword"
+                data-selected={selected}
+                disabled={disabled}
+                onClick={() => handleMainKeywordToggle(keyword)}
+                aria-pressed={selected}
+                aria-label={accessibleName}
+                title={accessibleName}
+              >
+                {iconUrl && (
+                  <Image
+                    src={iconUrl}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="planner-main-keyword__icon"
+                  />
+                )}
+                <span>{keywordLabel}</span>
+                {!isManualAttackKeyword && (
+                  <span className="planner-main-keyword__count">{count}</span>
+                )}
+              </button>
+            )
+          })}
+          <style jsx>{`
+            .planner-main-keywords {
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 0.375rem;
+              margin: -0.75rem 0 1.25rem;
+              padding-bottom: 0.25rem;
+            }
+            .planner-main-keyword {
+              display: inline-flex;
+              min-height: 2.75rem;
+              align-items: center;
+              justify-content: center;
+              gap: 0.375rem;
+              border: 1px solid rgba(200, 144, 10, 0.16);
+              border-radius: 0.375rem;
+              background: rgba(18, 14, 9, 0.74);
+              color: rgba(232, 220, 200, 0.84);
+              padding: 0.375rem 0.625rem;
+              font-size: 0.9375rem;
+              line-height: 1;
+              transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+            }
+            .planner-main-keyword:hover:not(:disabled),
+            .planner-main-keyword:focus-visible {
+              border-color: rgba(232, 176, 48, 0.42);
+              background: rgba(200, 144, 10, 0.12);
+              color: #f0d48a;
+            }
+            .planner-main-keyword:focus-visible {
+              outline: 1px solid rgba(232, 176, 48, 0.6);
+              outline-offset: 2px;
+            }
+            .planner-main-keyword[data-selected="true"] {
+              border-color: rgba(232, 176, 48, 0.58);
+              background: rgba(200, 144, 10, 0.18);
+              color: #f0d48a;
+              box-shadow: inset 0 0 0 1px rgba(232, 176, 48, 0.12);
+            }
+            .planner-main-keyword:disabled {
+              cursor: not-allowed;
+              opacity: 0.42;
+            }
+            .planner-main-keyword__icon {
+              height: 1rem;
+              width: 1rem;
+              object-fit: contain;
+            }
+            .planner-main-keyword__count {
+              display: inline-flex;
+              min-width: 1.25rem;
+              height: 1.25rem;
+              align-items: center;
+              justify-content: center;
+              border: 1px solid rgba(200, 144, 10, 0.18);
+              border-radius: 999px;
+              background: rgba(13, 11, 8, 0.52);
+              color: inherit;
+              font-family: var(--font-mono);
+              font-size: 0.875rem;
+              line-height: 1;
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* ── 인격 탭 ── */}
       {subTab === 'identity' && (
@@ -988,7 +1148,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 if (!slot) return null
 
                 const identData = identityById.get(slot.identity_id)
-                const dist = normalizeSkillDistribution(skillDistribution[sinner.id] ?? DEFAULT_SKILL_DISTRIBUTION)
+                const dist = getIdentitySkillDistribution(slot)
                 const isDefault = dist[0] === 3 && dist[1] === 2 && dist[2] === 1
                 const isGacksung = gacksungSlots[sinner.id] ?? false
 
@@ -1050,7 +1210,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                       canDecrease={idx => dist[idx] > 0}
                       canIncrease={idx => dist[idx] < 6 && getHighestDonorIndex(dist, idx) !== null}
                       onAdjust={(idx, delta) => handleSkillChange(sinner.id, idx, delta)}
-                      onPresetSelect={preset => setSkillDistribution(prev => ({ ...prev, [sinner.id]: normalizeSkillDistribution(preset) }))}
+                      onPresetSelect={preset => dispatch({ type: 'SET_SKILL_DISTRIBUTION', sinnerId: sinner.id, distribution: normalizeSkillDistribution(preset) })}
                     />
                   </div>
                 )

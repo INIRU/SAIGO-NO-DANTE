@@ -32,6 +32,11 @@ export interface IdentitySlot {
   rarity: number
   keywords: string[]
   skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
+  s1_count?: number | null
+  s2_count?: number | null
+  s3_count?: number | null
   game_id: string | null
   folder_name: string | null
   slot_order: number
@@ -57,6 +62,8 @@ export interface PlannerState {
   difficulty: Difficulty
   title: string
   description: string
+  mainKeywords?: string[]
+  mainKeywordsManual?: boolean
   identitySlots: IdentitySlot[]
   egoSlots: EgoSlot[]
   floorPlan: FloorEntry[]
@@ -68,9 +75,11 @@ export type PlannerAction =
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'SET_TITLE'; title: string }
   | { type: 'SET_DESCRIPTION'; description: string }
+  | { type: 'SET_MAIN_KEYWORDS'; keywords: string[]; manual?: boolean }
   | { type: 'SET_TAB'; tab: PlannerTab }
   | { type: 'ADD_IDENTITY'; slot: IdentitySlot }
   | { type: 'REMOVE_IDENTITY'; sinnerId: string }
+  | { type: 'SET_SKILL_DISTRIBUTION'; sinnerId: string; distribution: SkillDistribution }
   | { type: 'SET_FLOOR_DIFFICULTY'; floor: number; difficulty: FloorDifficulty; clearSelection?: boolean }
   | { type: 'SET_FLOOR_THEME'; floor: number; themeId: string | null }
   | { type: 'SET_FLOOR_GIFTS'; floor: number; giftIds: string[] }
@@ -83,6 +92,46 @@ export type PlannerAction =
   | { type: 'LOAD_PLAN'; state: Partial<PlannerState> }
   | { type: 'RESET' }
 
+export type SkillDistribution = [number, number, number]
+export const DEFAULT_SKILL_DISTRIBUTION: SkillDistribution = [3, 2, 1]
+
+export function normalizeSkillDistribution(
+  dist: readonly (number | null | undefined)[] = DEFAULT_SKILL_DISTRIBUTION,
+): SkillDistribution {
+  const next = [0, 0, 0] as SkillDistribution
+  for (let index = 0; index < next.length; index++) {
+    const value = dist[index]
+    next[index] = Number.isFinite(value) ? Math.min(6, Math.max(0, Math.trunc(value as number))) : 0
+  }
+
+  let total = next[0] + next[1] + next[2]
+  while (total < 6) {
+    const receiver = next.reduce((best, value, idx) => (value < next[best] ? idx : best), 0)
+    next[receiver] += 1
+    total += 1
+  }
+  while (total > 6) {
+    const donor = next.reduce((best, value, idx) => (value > next[best] ? idx : best), 0)
+    if (next[donor] === 0) break
+    next[donor] -= 1
+    total -= 1
+  }
+
+  return next
+}
+
+export function getIdentitySkillDistribution(slot: Pick<IdentitySlot, 's1_count' | 's2_count' | 's3_count'>): SkillDistribution {
+  if (![slot.s1_count, slot.s2_count, slot.s3_count].some(value => Number.isFinite(value))) {
+    return DEFAULT_SKILL_DISTRIBUTION
+  }
+  return normalizeSkillDistribution([slot.s1_count, slot.s2_count, slot.s3_count])
+}
+
+function normalizeIdentitySlotSkillCounts<T extends IdentitySlot>(slot: T): T {
+  const [s1_count, s2_count, s3_count] = getIdentitySkillDistribution(slot)
+  return { ...slot, s1_count, s2_count, s3_count }
+}
+
 export function createInitialState(difficulty: Difficulty = 'hard'): PlannerState {
   const floors = Math.max(DIFFICULTY_CONFIG[difficulty].floors, 15)
   const normalizedDifficulty = normalizePlanDifficulty(difficulty)
@@ -90,6 +139,8 @@ export function createInitialState(difficulty: Difficulty = 'hard'): PlannerStat
     difficulty,
     title: '',
     description: '',
+    mainKeywords: [],
+    mainKeywordsManual: false,
     identitySlots: [],
     egoSlots: [],
     floorPlan: Array.from({ length: floors }, (_, i) => ({
@@ -104,7 +155,28 @@ export function createInitialState(difficulty: Difficulty = 'hard'): PlannerStat
   }
 }
 
-function normalizeFloorEntry(entry: Partial<FloorEntry> | undefined, index: number, planDifficulty: Difficulty): FloorEntry {
+export function normalizePlannerThemeId(themeId: unknown): string | null {
+  if (typeof themeId === 'string') return themeId
+  if (typeof themeId === 'number' && Number.isFinite(themeId)) return String(themeId)
+  return null
+}
+
+function normalizeFloorGiftIds(giftIds: unknown): string[] {
+  if (!Array.isArray(giftIds)) return []
+  return giftIds
+    .filter((giftId): giftId is string | number =>
+      (typeof giftId === 'string' && giftId.length > 0) ||
+      (typeof giftId === 'number' && Number.isFinite(giftId))
+    )
+    .map(giftId => String(giftId))
+}
+
+type LoadableFloorEntry = Partial<Omit<FloorEntry, 'theme_id' | 'gift_ids'>> & {
+  theme_id?: unknown
+  gift_ids?: unknown
+}
+
+function normalizeFloorEntry(entry: LoadableFloorEntry | undefined, index: number, planDifficulty: Difficulty): FloorEntry {
   const floor = typeof entry?.floor === 'number' && Number.isFinite(entry.floor) ? Math.floor(entry.floor) : index + 1
   const difficulty = isFloorDifficulty(entry?.difficulty) && isAllowedFloorDifficulty(entry.difficulty, floor)
     ? entry.difficulty
@@ -113,14 +185,14 @@ function normalizeFloorEntry(entry: Partial<FloorEntry> | undefined, index: numb
   return {
     floor,
     difficulty,
-    theme_id: typeof entry?.theme_id === 'string' ? entry.theme_id : null,
-    gift_ids: Array.isArray(entry?.gift_ids) ? entry.gift_ids : [],
+    theme_id: normalizePlannerThemeId(entry?.theme_id),
+    gift_ids: normalizeFloorGiftIds(entry?.gift_ids),
     memo: typeof entry?.memo === 'string' ? entry.memo : '',
   }
 }
 
 function normalizeFloorPlanEntries(
-  floorPlan: Partial<FloorEntry>[] | undefined,
+  floorPlan: LoadableFloorEntry[] | undefined,
   planDifficulty: Difficulty,
   minFloors = Math.max(DIFFICULTY_CONFIG[planDifficulty].floors, 15),
 ): FloorEntry[] {
@@ -150,14 +222,31 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       return { ...state, title: action.title }
     case 'SET_DESCRIPTION':
       return { ...state, description: action.description }
+    case 'SET_MAIN_KEYWORDS':
+      return {
+        ...state,
+        mainKeywords: action.keywords,
+        mainKeywordsManual: action.manual ?? state.mainKeywordsManual ?? false,
+      }
     case 'SET_TAB':
       return { ...state, activeTab: action.tab }
     case 'ADD_IDENTITY': {
       const filtered = state.identitySlots.filter(s => s.sinner_id !== action.slot.sinner_id)
-      return { ...state, identitySlots: [...filtered, action.slot] }
+      return { ...state, identitySlots: [...filtered, normalizeIdentitySlotSkillCounts(action.slot)] }
     }
     case 'REMOVE_IDENTITY':
       return { ...state, identitySlots: state.identitySlots.filter(s => s.sinner_id !== action.sinnerId) }
+    case 'SET_SKILL_DISTRIBUTION': {
+      const [s1_count, s2_count, s3_count] = normalizeSkillDistribution(action.distribution)
+      return {
+        ...state,
+        identitySlots: state.identitySlots.map(slot =>
+          slot.sinner_id === action.sinnerId
+            ? { ...slot, s1_count, s2_count, s3_count }
+            : slot
+        ),
+      }
+    }
     case 'SET_FLOOR_DIFFICULTY':
       return {
         ...state,
@@ -209,6 +298,9 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       return {
         ...state,
         ...action.state,
+        identitySlots: Array.isArray(action.state.identitySlots)
+          ? action.state.identitySlots.map(slot => normalizeIdentitySlotSkillCounts(slot))
+          : state.identitySlots,
         floorPlan: normalizeFloorPlanEntries(
           action.state.floorPlan,
           action.state.difficulty ?? state.difficulty,
@@ -283,6 +375,8 @@ export interface IdentityData {
   rarity: number
   keywords: string[] | null
   skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
   game_id: string | null
   folder_name: string | null
 }

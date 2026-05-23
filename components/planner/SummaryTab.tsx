@@ -3,8 +3,7 @@
 import { useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import { useTranslations } from 'next-intl'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
@@ -14,7 +13,7 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
-import type { PlannerState, PlannerAction, ThemeData, GiftData, RecipeData, IdentityData, SinnerData, EgoData, SkillSummary, FloorDifficulty } from '@/lib/planner/types'
+import { getIdentitySkillDistribution, type PlannerState, type PlannerAction, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type EgoData, type SkillSummary, type FloorDifficulty } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -22,8 +21,18 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import GiftCard from '@/components/ui/GiftCard'
 import type { PassiveData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
-import { getBlessingDisplayName, normalizeBlessingMessages } from './BlessingTab'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import {
+  getSelectedBlessingCost,
+  getSelectedBlessingLevels,
+  normalizeBlessingMessages,
+  ReadOnlyBlessingGrid,
+} from './BlessingTab'
+import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
+import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
+import type { Identity } from '@/lib/types'
+import SkillExchangePanel from './SkillExchangePanel'
+import FloorPlanPreviewBoard from './FloorPlanPreviewBoard'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -31,14 +40,33 @@ const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftM
 
 const S = STORAGE_BASE
 
-// 편성 N번 전용 효과 슬롯 파싱
-function parseFormationSlots(text: string | null): number[] {
-  if (!text) return []
-  const m = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
-  if (!m) return []
-  return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
-}
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
+
+function adaptPlannerBoardIdentity(slot: PlannerState['identitySlots'][number], identity: IdentityData | undefined, locale: string): Identity {
+  const source = identity ?? slot
+  const name = localizeIdentityName(source, locale)
+
+  return {
+    id: slot.identity_id,
+    sinner_id: slot.sinner_id,
+    name,
+    name_kr: source.name_kr,
+    name_en: identity?.name_en,
+    name_jp: identity?.name_jp,
+    tier: 0,
+    hp: 0,
+    speed_min: 0,
+    speed_max: 0,
+    def_level: 0,
+    keywords: source.keywords ?? [],
+    skill_keyword_list: source.skill_keyword_list ?? undefined,
+    rarity: source.rarity,
+    affiliation: source.affiliation ?? undefined,
+    association_list: source.association_list ?? undefined,
+    game_id: source.game_id,
+    folder_name: source.folder_name,
+  }
+}
 
 // ── 자동완성 지원 textarea ────────────────────────────────────────────────
 function AcTextarea({
@@ -72,14 +100,36 @@ function AcTextarea({
   )
 }
 
-const BLESSING_COSTS: Record<number, [number, number, number]> = {
-  100: [10, 20, 30], 101: [10, 20, 30], 102: [20, 40, 60], 103: [20, 40, 60],
-  104: [30, 60, 90], 105: [30, 60, 90], 106: [40, 80, 120], 107: [40, 80, 120],
-  108: [50, 100, 150], 109: [60, 120, 180],
+const FLOOR_DIFFICULTY_ORDER: FloorDifficulty[] = ['normal', 'hard', 'overlap', 'extreme']
+const FLOOR_PLAN_SEGMENTS = [
+  { start: 1, end: 5 },
+  { start: 6, end: 10 },
+  { start: 11, end: 15 },
+] as const
+
+function isFloorEntryConfigured(entry: PlannerState['floorPlan'][number]) {
+  return Boolean(entry.theme_id || entry.gift_ids.length > 0 || entry.memo.trim())
 }
 
-const FLOOR_DIFFICULTY_ORDER: FloorDifficulty[] = ['normal', 'hard', 'overlap', 'extreme']
+function getVisibleFloorPlanEntries(floorPlan: PlannerState['floorPlan']) {
+  return FLOOR_PLAN_SEGMENTS.flatMap(segment => {
+    let highestConfiguredFloor = 0
+    for (const entry of floorPlan) {
+      if (entry.floor >= segment.start && entry.floor <= segment.end && isFloorEntryConfigured(entry)) {
+        highestConfiguredFloor = Math.max(highestConfiguredFloor, entry.floor)
+      }
+    }
+    if (highestConfiguredFloor < segment.start) return []
+    return floorPlan.filter(entry => entry.floor >= segment.start && entry.floor <= highestConfiguredFloor)
+  })
+}
 
+function parseFormationSlots(text: string | null): number[] {
+  if (!text) return []
+  const match = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  if (!match) return []
+  return [...match[0].matchAll(/(\d+)/g)].map(result => parseInt(result[1], 10))
+}
 
 interface SummaryTabProps {
   state: PlannerState
@@ -96,23 +146,72 @@ interface SummaryTabProps {
 }
 
 export default function SummaryTab({ state, dispatch, themes, gifts, recipes, giftMap, identities, sinners, egos, skills, passives }: SummaryTabProps) {
+  const locale = useLocale()
+  const tPlanner = useTranslations('planner')
+  const tDeck = useTranslations('planner.deckTab')
   const tBlessing = useTranslations('planner.blessingTab')
   const tFloor = useTranslations('planner.floorTab')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
-  const [expandedFloor, setExpandedFloor] = useState<number | null>(null)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
-  const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
+  const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
+  const slotGiftMap = useMemo(() => {
+    const map = new Map<number, string[]>()
+    for (const id of state.giftInventory) {
+      if (!id.startsWith('final_')) continue
+      let enhance = 0
+      let gameId: number
+      if (id.endsWith('_plusplus')) {
+        gameId = parseInt(id.replace('final_', '').replace('_plusplus', ''), 10)
+        enhance = 2
+      } else if (id.endsWith('_plus')) {
+        gameId = parseInt(id.replace('final_', '').replace('_plus', ''), 10)
+        enhance = 1
+      } else {
+        gameId = parseInt(id.replace('final_', ''), 10)
+      }
+      const gift = giftMap.get(gameId)
+      if (!gift?.image_url) continue
+      const text = enhance === 2 ? gift.effect_plusplus : enhance === 1 ? gift.effect_plus : gift.effect_base
+      for (const slotOrder of parseFormationSlots(text)) {
+        const urls = map.get(slotOrder) ?? []
+        urls.push(gift.image_url)
+        map.set(slotOrder, urls)
+      }
+    }
+    return map
+  }, [giftMap, state.giftInventory])
+  const boardSlots = useMemo(() => {
+    return sinners.map((sinner, index): FormationBoardSlot => {
+      const slot = state.identitySlots.find(s => s.sinner_id === sinner.id)
+      const identity = slot ? identityMap.get(slot.identity_id) : undefined
+      const identityName = slot ? localizeIdentityName(identity ?? slot, locale) : null
+
+      return {
+        key: `${slot?.identity_id ?? 'empty'}-${sinner.id}-${index}`,
+        identity: slot ? adaptPlannerBoardIdentity(slot, identity, locale) : null,
+        slotOrder: slot?.slot_order ?? null,
+        giftBadgeUrls: slot?.slot_order != null && slot.slot_order < 99
+          ? (slotGiftMap.get(slot.slot_order + 1) ?? [])
+          : [],
+        ariaLabel: identityName ? `${index + 1}. ${identityName}` : `${index + 1}. ${sinner.name_kr}`,
+        onClick: slot ? () => setIdentityModalId(slot.identity_id) : undefined,
+      }
+    })
+  }, [identityMap, locale, sinners, slotGiftMap, state.identitySlots])
   const kwContext = useKeywordData()
   const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
   const localizedBlessings = useMemo(
     () => normalizeBlessingMessages(tBlessing.raw('blessings'), baseId => tBlessing('fallbackName', { baseId })),
     [tBlessing],
   )
-  const blessingMap = useMemo(() => new Map(localizedBlessings.map(blessing => [blessing.baseId, blessing])), [localizedBlessings])
+  const selectedBlessings = useMemo(
+    () => getSelectedBlessingLevels(state.giftInventory),
+    [state.giftInventory],
+  )
 
   // 이름 → GiftData 맵 (레시피용)
   const giftByName = useMemo(() => {
@@ -157,26 +256,10 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     return [...kwPool, ...giftPool]
   }, [kwContext.keywords, giftMap])
 
-  // 가호
-  const blessings = useMemo(() => {
-    const list: { baseId: number; name: string; level: number; cost: number; effects: string[] }[] = []
-    for (const id of state.giftInventory) {
-      if (!id.startsWith('blessing_')) continue
-      const [, bStr, lStr] = id.split('_')
-      const baseId = parseInt(bStr), level = parseInt(lStr)
-      const blessing = blessingMap.get(baseId)
-      list.push({
-        baseId,
-        name: blessing ? getBlessingDisplayName(blessing, level) : tBlessing('fallbackName', { baseId }),
-        level,
-        cost: blessing?.costs[level - 1] ?? BLESSING_COSTS[baseId]?.[level - 1] ?? 0,
-        effects: blessing?.effectsByLevel[level - 1] ?? [],
-      })
-    }
-    return list
-  }, [blessingMap, state.giftInventory, tBlessing])
-
-  const totalBlessingCost = blessings.reduce((s, b) => s + b.cost, 0)
+  const totalBlessingCost = useMemo(
+    () => getSelectedBlessingCost(localizedBlessings, selectedBlessings),
+    [localizedBlessings, selectedBlessings],
+  )
 
   // 기프트 분류
   const observeGifts = useMemo(() =>
@@ -201,54 +284,13 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
     return list
   }, [state.giftInventory, giftMap])
 
-  // 편성 슬롯 → 최종 기프트 이미지 매핑
-  const slotGiftMap = useMemo(() => {
-    const map = new Map<number, string[]>()
-    for (const { gift, enhance } of finalGifts) {
-      const txt = enhance === 2 ? gift.effect_plusplus : enhance === 1 ? gift.effect_plus : gift.effect_base
-      const slots = parseFormationSlots(txt)
-      if (!gift.image_url || !slots.length) continue
-      for (const s of slots) {
-        if (!map.has(s)) map.set(s, [])
-        map.get(s)!.push(gift.image_url)
-      }
-    }
-    return map
-  }, [finalGifts])
-
-  // 조건 체크 (편성 vs 전체)
-  const { formationKwCounts, allKwCounts } = useMemo(() => {
-    const formation: Record<string, number> = {}
-    const all: Record<string, number> = {}
-    for (const slot of state.identitySlots) {
-      if (slot.slot_order >= 99) continue // 벤치 제외
-      const isFormation = slot.slot_order < 7
-      const normalized = new Set<string>(slot.keywords.map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        all[kw] = (all[kw] ?? 0) + 1
-        if (isFormation) formation[kw] = (formation[kw] ?? 0) + 1
-      }
-    }
-    return { formationKwCounts: formation, allKwCounts: all }
-  }, [state.identitySlots])
+  const conditionCounts = useMemo(
+    () => getGiftConditionCountsForSlots(state.identitySlots),
+    [state.identitySlots],
+  )
 
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    const cond = gift.activation_condition
-    if (!cond || !cond.count) return null
-    let fHave = 0, aHave = 0, label = ''
-    if (cond.type === 'keyword' && cond.keyword) {
-      const normalizedKeyword = normalizeThemeKeyword(cond.keyword)
-      fHave = formationKwCounts[normalizedKeyword] ?? 0
-      aHave = allKwCounts[normalizedKeyword] ?? 0
-      label = cond.keyword
-    } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      label = cond.keywords.join('+')
-    } else { return null }
-    if (fHave >= cond.count) return null
-    if (aHave >= cond.count) return { level: 'warn', text: `${label} ${fHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
+    return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
   const floorDifficultySummary = useMemo(() => {
@@ -259,7 +301,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
       extreme: 0,
     }
 
-    for (const floor of state.floorPlan) {
+    for (const floor of getVisibleFloorPlanEntries(state.floorPlan)) {
       const difficulty = isFloorDifficulty(floor.difficulty) && isAllowedFloorDifficulty(floor.difficulty, floor.floor)
         ? floor.difficulty
         : getLegacyPlanFloorDifficulty(state.difficulty, floor.floor)
@@ -325,9 +367,9 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
       <div>
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem' }}>
           {([
-            { key: 'identity' as const, label: `인격 (${state.identitySlots.length}/12)` },
-            { key: 'ego' as const, label: `EGO (${state.egoSlots.length})` },
-            { key: 'skillset' as const, label: '스킬셋' },
+            { key: 'identity' as const, label: `${tDeck('subTabs.identity')} (${state.identitySlots.length}/12)` },
+            { key: 'ego' as const, label: `${tDeck('subTabs.ego')} (${state.egoSlots.length})` },
+            { key: 'skillset' as const, label: tDeck('subTabs.skillset') },
           ]).map(tab => {
             const active = deckSubTab === tab.key
             return (
@@ -348,103 +390,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
 
         {/* 인격 그리드 (수감자 순서, 미편성도 표시) */}
         {deckSubTab === 'identity' && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-x-3 gap-y-4">
-            {sinners.map(sinner => {
-              const slot = state.identitySlots.find(s => s.sinner_id === sinner.id)
-              const identData = slot ? identityMap.get(slot.identity_id) : undefined
-              const rc = slot ? (RARITY_COLORS[slot.rarity] ?? RARITY_COLORS[1]) : null
-              const n = slot && slot.slot_order < 99 ? slot.slot_order + 1 : null
-              return (
-                <div key={sinner.id}>
-                  <div
-                    onClick={() => slot && setIdentityModalId(slot.identity_id)}
-                    style={{
-                    position: 'relative', width: '100%', aspectRatio: '2/3',
-                    background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                    border: `0.09375rem ${slot ? 'solid' : 'dashed'} ${slot ? (rc?.border ?? '#2a2015') : '#2a2015'}`,
-                    borderRadius: '0.25rem', overflow: 'hidden',
-                    boxShadow: slot ? `0 0 0.5rem ${rc?.glow ?? 'transparent'}` : 'none',
-                    cursor: slot ? 'pointer' : 'default',
-                  }}>
-                    {slot && identData ? (
-                      <>
-                        <Image
-                          src={getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`)}
-                          alt={slot.name_kr} fill className="object-cover object-top" sizes="120px"
-                        />
-                        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 10, padding: '0.1875rem' }}>
-                          <Image src={`${S}/icons/Rarity/${slot.rarity}star.webp`} alt={`${slot.rarity}성`}
-                            width={slot.rarity * 14} height={14}
-                            style={{ height: '0.875rem', width: 'auto', objectFit: 'contain' }}
-                          />
-                        </div>
-                        <div style={{
-                          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, textAlign: 'center',
-                          background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                          paddingTop: '1.25rem', paddingBottom: '0.25rem',
-                        }}>
-                          <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
-                        </div>
-                        {n != null && (
-                          <div style={{
-                            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontSize: '1rem', fontWeight: 700, color: n <= 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                                {n <= 7 ? '편성' : '대기'}
-                              </span>
-                              <span style={{ fontSize: '1.5rem', fontWeight: 800, color: n <= 7 ? '#e8b030' : '#5ab0d0', marginLeft: '0.1875rem', textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                                {n}
-                              </span>
-                            </div>
-                            {(slotGiftMap.get(n)?.length ?? 0) > 0 && (() => {
-                              const urls = slotGiftMap.get(n)!
-                              const MAX = 3
-                              const shown = urls.slice(0, MAX)
-                              const rest = urls.length - MAX
-                              return (
-                                <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.1875rem', alignItems: 'center', justifyContent: 'center' }}>
-                                  {shown.map((url, gi) => (
-                                    <Image key={gi} src={url} alt="" width={28} height={28}
-                                      className="w-[0.875rem] h-[0.875rem] sm:w-[1.25rem] sm:h-[1.25rem]"
-                                      style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.8))' }}
-                                    />
-                                  ))}
-                                  {rest > 0 && (
-                                    <span style={{ fontSize: '0.5rem', color: '#9ca3af', fontWeight: 600, marginLeft: '0.0625rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,1)' }}>
-                                      ...+{rest}
-                                    </span>
-                                  )}
-                                </div>
-                              )
-                            })()}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                          <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32}
-                            style={{ width: '2rem', height: '2rem', opacity: 0.35 }} />
-                        </div>
-                        <div style={{ position: 'absolute', top: 0, right: 0, width: '36%', opacity: 0.15, pointerEvents: 'none' }}>
-                          <Image src={`${S}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
-                        </div>
-                        <div style={{
-                          position: 'absolute', bottom: 0, left: 0, right: 0, textAlign: 'center', zIndex: 10,
-                          background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                          paddingTop: '1.25rem', paddingBottom: '0.375rem',
-                        }}>
-                          <p className="font-serif font-light" style={{ color: '#3a2a10', fontSize: '0.75rem' }}>{sinner.name_kr}</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <FormationBoard slots={boardSlots} className="mt-4" />
         )}
 
         {/* 공격 유형 분포 + 죄악 자원 + 패시브 */}
@@ -530,11 +476,11 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
               })}
             </div>
           ) : (
-            <EmptyState text="인격을 먼저 편성해주세요" />
+            <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
           )
         )}
 
-        {/* 스킬셋 (DeckTab 스킬 배분 스타일, 읽기 전용 기본 3/2/1) */}
+        {/* 스킬 교환 (DeckTab 스킬 배분 스타일, 읽기 전용) */}
         {deckSubTab === 'skillset' && (
           state.identitySlots.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
@@ -542,8 +488,13 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                 const slot = state.identitySlots.find(s => s.sinner_id === sinner.id)
                 if (!slot) return null
                 const identData = identityMap.get(slot.identity_id)
-                const dist = [3, 2, 1]
+                const dist = getIdentitySkillDistribution(slot)
                 const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } as { game_id: string | null; sinner_id: string } : null
+                const slotBestSkills = [1, 2, 3].map(order =>
+                  skills
+                    .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
+                    .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
+                )
 
                 return (
                   <div key={sinner.id}>
@@ -568,55 +519,34 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                         <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
                       </div>
                     </div>
-                    {/* 스킬 배분 (읽기 전용) */}
-                    <div style={{
-                      marginTop: '0.375rem',
-                      background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                      border: '1px solid #221a0f',
-                      borderRadius: '0.25rem', padding: '0.375rem',
-                    }}>
-                      {[0, 1, 2].map(idx => {
-                        const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
-                        return (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
-                            {identForIcon?.game_id ? (
-                              <Image
-                                src={getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], idx + 1)}
-                                alt={`S${idx + 1}`} width={24} height={24}
-                                style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.125rem', flexShrink: 0 }}
-                              />
-                            ) : (
-                              <span style={{ fontSize: '0.5625rem', color: '#c8900a', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', flexShrink: 0, textAlign: 'center' }}>
-                                S{idx + 1}
-                              </span>
-                            )}
-                            {skillName ? (
-                              <span style={{
-                                fontSize: '0.5rem', color: '#8a7a60', flex: 1, minWidth: 0,
-                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                              }}>
-                                {skillName}
-                              </span>
-                            ) : (
-                              <div style={{ flex: 1 }} />
-                            )}
-                            <span style={{
-                              width: '1rem', textAlign: 'center', fontSize: '0.8125rem',
-                              fontFamily: 'var(--font-mono)', fontWeight: 700,
-                              color: dist[idx] === 0 ? '#3a2a10' : '#c8900a',
-                            }}>
-                              {dist[idx]}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
+                    <SkillExchangePanel
+                      distribution={dist}
+                      skills={[
+                        slotBestSkills[0] ? {
+                          name: slotBestSkills[0].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 1) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[0].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                        slotBestSkills[1] ? {
+                          name: slotBestSkills[1].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 2) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[1].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                        slotBestSkills[2] ? {
+                          name: slotBestSkills[2].name,
+                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 3) : null,
+                          sinColor: SIN_COLORS[slotBestSkills[2].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                        } : null,
+                      ]}
+                      readOnly
+                      showTotal={false}
+                    />
                   </div>
                 )
               })}
             </div>
           ) : (
-            <EmptyState text="인격을 먼저 편성해주세요" />
+            <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
           )
         )}
       </div>
@@ -624,7 +554,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
       {/* ── 가호 (BlessingTab 스타일) ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '0.375rem' }}>
         <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>{tBlessing('title')}</span>
-        {blessings.length > 0 ? (
+        {selectedBlessings.size > 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <Image src={`${S}/icons/start-buffs/starlight.webp`} alt={tBlessing('starlightAlt')} width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
             <span style={{ fontSize: '0.8125rem', color: '#c8900a', fontWeight: 700 }}>{totalBlessingCost}</span>
@@ -633,45 +563,11 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{tBlessing('none')}</span>
         )}
       </div>
-      {blessings.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {blessings.map(b => {
-            return (
-              <div key={b.baseId} className="rounded-lg overflow-hidden flex flex-col" style={{
-                background: '#1a1510', border: '1px solid #c8900a50',
-                boxShadow: '0 0 12px #c8900a15',
-              }}>
-                <div className="flex items-center gap-2 p-3 pb-2">
-                  <Image src={`${S}/icons/start-buffs/${b.baseId}.webp`} alt={b.name} width={32} height={32}
-                    style={{ width: '2rem', height: '2rem', objectFit: 'contain' }} />
-                  <div className="flex-1 min-w-0">
-                    <div style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.2 }}>{b.name}</div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />
-                    <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700 }}>{b.cost}</span>
-                  </div>
-                </div>
-                {/* 효과 목록 */}
-                <div className="px-3 pb-2 flex-1">
-                  {b.effects.map((eff, i) => (
-                    <div key={i} style={{ color: '#777', fontSize: '0.625rem', lineHeight: 1.5 }}>• {eff}</div>
-                  ))}
-                </div>
-                <div style={{
-                  borderTop: '1px solid #222', padding: '0.25rem 0.75rem 0.375rem',
-                  fontSize: '0.6875rem', fontWeight: 700, textAlign: 'center',
-                  color: b.level === 3 ? '#c83030' : b.level === 2 ? '#4898b0' : '#e8b030',
-                }}>
-                  {b.level === 1 ? tBlessing('base') : b.level === 2 ? '+' : '++'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <EmptyState text={tBlessing('empty')} />
-      )}
+      <ReadOnlyBlessingGrid
+        blessings={localizedBlessings}
+        selectedBlessings={selectedBlessings}
+        emptyText={tBlessing('empty')}
+      />
 
       {/* ── 시작 기프트 (GiftPlanTab 스타일) ── */}
       <SectionTitle title="시작 기프트" count={`${startGifts.length}개`} />
@@ -689,134 +585,21 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         <EmptyState text="관측 기프트가 선택되지 않았습니다" />
       )}
 
-      {/* ── 층별 계획 (FloorTab 스타일) ── */}
-      <SectionTitle title="층별 계획" count={`${state.floorPlan.filter(f => f.theme_id).length}/${state.floorPlan.length}층`} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {state.floorPlan.map(f => {
-          const theme = f.theme_id ? themeMap.get(f.theme_id) : null
-          const floorGifts = f.gift_ids.map(id => giftMap.get(parseInt(id))).filter(Boolean) as GiftData[]
-          const isExpanded = expandedFloor === f.floor
-          const floorDifficulty = isFloorDifficulty(f.difficulty) && isAllowedFloorDifficulty(f.difficulty, f.floor)
-            ? f.difficulty
-            : getLegacyPlanFloorDifficulty(state.difficulty, f.floor)
-          return (
-            <div key={f.floor} style={{
-              background: '#1a1510',
-              border: `1px solid ${isExpanded ? '#c8900a' : theme ? '#2a2520' : '#1a1510'}`,
-              borderRadius: '0.5rem', overflow: 'hidden', transition: 'border-color 0.2s',
-            }}>
-              {/* 헤더 (클릭으로 펼치기) */}
-              <button
-                onClick={() => setExpandedFloor(isExpanded ? null : f.floor)}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.625rem',
-                  padding: '0.5rem 0.75rem', background: 'transparent', border: 'none',
-                  cursor: 'pointer', textAlign: 'left', color: '#e5e7eb',
-                }}
-              >
-                <span style={{
-                  width: '1.75rem', height: '1.75rem', borderRadius: '50%',
-                  background: theme ? '#c8900a' : '#222',
-                  color: theme ? '#0d0b08' : '#4b5563',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
-                }}>{f.floor}</span>
-
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  minHeight: '1.5rem',
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '999px',
-                  border: '1px solid rgba(200,144,10,0.2)',
-                  color: '#b9a47f',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}>
-                  {tFloor(`difficulty.${floorDifficulty}`)}
-                </span>
-
-                {theme ? (
-                  <>
-                    {theme.image_url && (
-                      <div style={{ position: 'relative', width: '1.75rem', height: '3.175rem', flexShrink: 0 }}>
-                        <Image src={theme.image_url} alt={theme.name} width={18} height={33}
-                          style={{ width: '1.75rem', height: '3.175rem', objectFit: 'cover', borderRadius: '0.1875rem' }} />
-                      </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#e8b030', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {theme.name}
-                      </div>
-                      {!isExpanded && floorGifts.length > 0 && (
-                        <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.0625rem' }}>
-                          획득 기프트 {floorGifts.length}개
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <span style={{ flex: 1, fontSize: '0.75rem', color: '#333' }}>미선택</span>
-                )}
-                {isExpanded
-                  ? <ChevronUp size={14} color="#6b7280" style={{ flexShrink: 0 }} />
-                  : <ChevronDown size={14} color="#6b7280" style={{ flexShrink: 0 }} />}
-              </button>
-
-              {/* 펼쳐진 상세 */}
-              {isExpanded && theme && (
-                <div style={{ borderTop: '1px solid #222', padding: '0.75rem' }}>
-                  {/* 테마 정보 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-                    {theme.image_url && (
-                      <div style={{ position: 'relative', width: '2.375rem', height: '4.3125rem', flexShrink: 0 }}>
-                        <Image src={theme.image_url} alt={theme.name} width={38} height={69}
-                          style={{ width: '2.375rem', height: '4.3125rem', objectFit: 'cover', borderRadius: '0.25rem' }} />
-                      </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e8b030' }}>{theme.name}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.125rem' }}>
-                        기프트 {theme.ego_gift_ids?.length ?? 0}종
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 획득 기프트 (옥타곤 카드) */}
-                  {floorGifts.length > 0 && (
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        획득 기프트
-                      </div>
-                      <GiftGrid gifts={floorGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-                    </div>
-                  )}
-
-                  {/* 메모 */}
-                  {f.memo && (
-                    <div>
-                      <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        메모
-                      </div>
-                      <div style={{
-                        background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem',
-                        padding: '0.5rem 0.625rem',
-                      }}>
-                        <NoteRenderer text={f.memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
-                      </div>
-                    </div>
-                  )}
-
-                  {!floorGifts.length && !f.memo && (
-                    <div style={{ fontSize: '0.75rem', color: '#333', textAlign: 'center' }}>상세 정보 없음</div>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+      {/* ── 층별 계획 ── */}
+      <SectionTitle
+        title={tPlanner('tabs.floor')}
+        count={tFloor('configuredFloorCount', { configured: state.floorPlan.filter(f => f.theme_id).length, total: state.floorPlan.length })}
+      />
+      <FloorPlanPreviewBoard
+        floorPlan={state.floorPlan}
+        planDifficulty={state.difficulty}
+        themeMap={themeMap}
+        giftMap={giftMap}
+        onGiftClick={gift => setSelectedGift({ gift, enhance: 0 })}
+        renderMemo={memo => (
+          <NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
+        )}
+      />
 
       {/* ── 최종 기프트 (GiftPlanTab 스타일 + 강화) ── */}
       <SectionTitle title="최종 기프트" count={`${finalGifts.length}개`} />

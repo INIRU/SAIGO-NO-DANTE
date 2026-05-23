@@ -3,10 +3,16 @@
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
+import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
+import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
+import type { Identity } from '@/lib/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { getIdentitySkillDistribution } from '@/lib/planner/types'
+import SkillExchangePanel from './SkillExchangePanel'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -18,8 +24,14 @@ type IdentitySlot = {
   identity_id?: string
   sinner_id?: string
   name_kr?: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity?: number
   keywords?: string[]
+  skill_keyword_list?: string[] | null
+  s1_count?: number | null
+  s2_count?: number | null
+  s3_count?: number | null
   game_id?: string | null
   folder_name?: string | null
   slot_order?: number
@@ -36,8 +48,11 @@ type IdentityData = {
   id: string
   sinner_id: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity: number
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
   game_id: string | null
   folder_name: string | null
 }
@@ -100,6 +115,30 @@ function EmptyState({ text }: { text: string }) {
   )
 }
 
+function adaptPlanBoardIdentity(slot: IdentitySlot, identity: IdentityData | undefined, locale: string): Identity {
+  const source = identity ?? slot
+  const name = localizeIdentityName(source, locale)
+
+  return {
+    id: slot.identity_id ?? '',
+    sinner_id: slot.sinner_id ?? identity?.sinner_id ?? '',
+    name,
+    name_kr: source.name_kr ?? name,
+    name_en: identity?.name_en ?? slot.name_en,
+    name_jp: identity?.name_jp ?? slot.name_jp,
+    tier: 0,
+    hp: 0,
+    speed_min: 0,
+    speed_max: 0,
+    def_level: 0,
+    keywords: source.keywords ?? [],
+    skill_keyword_list: source.skill_keyword_list ?? undefined,
+    rarity: source.rarity ?? 1,
+    game_id: source.game_id ?? null,
+    folder_name: source.folder_name ?? null,
+  }
+}
+
 export default function PlanDeckTabs({
   deck,
   egoSlots,
@@ -110,6 +149,8 @@ export default function PlanDeckTabs({
   passives,
   slotGiftMap,
 }: Props) {
+  const locale = useLocale()
+  const tDeck = useTranslations('planner.deckTab')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
@@ -124,6 +165,25 @@ export default function PlanDeckTabs({
     return map
   }, [deck])
 
+  const boardSlots = useMemo(() => {
+    return sinners.map((sinner, index): FormationBoardSlot => {
+      const slot = slotBySinner[sinner.id]
+      const identity = slot?.identity_id ? identityMap.get(slot.identity_id) : undefined
+      const identityName = slot ? localizeIdentityName(identity ?? slot, locale) : null
+
+      return {
+        key: `${slot?.identity_id ?? 'empty'}-${sinner.id}-${index}`,
+        identity: slot ? adaptPlanBoardIdentity(slot, identity, locale) : null,
+        slotOrder: slot?.slot_order ?? null,
+        giftBadgeUrls: slot?.slot_order != null && slot.slot_order < 99
+          ? (slotGiftMap.get(slot.slot_order + 1) ?? [])
+          : [],
+        ariaLabel: identityName ? `${index + 1}. ${identityName}` : `${index + 1}. ${sinner.name_kr}`,
+        onClick: slot?.identity_id ? () => setIdentityModalId(slot.identity_id!) : undefined,
+      }
+    })
+  }, [identityMap, locale, sinners, slotBySinner, slotGiftMap])
+
   const egoByGradeMap = useMemo(() => {
     const map: Record<string, Record<string, EgoSlot>> = {}
     for (const e of egoSlots) {
@@ -135,9 +195,9 @@ export default function PlanDeckTabs({
   }, [egoSlots])
 
   const tabs = [
-    { key: 'identity' as const, label: `인격 (${deck.length}/12)`, hint: '클릭하여 상세 보기' },
-    { key: 'ego' as const, label: `EGO (${egoSlots.length})` },
-    { key: 'skillset' as const, label: '스킬셋' },
+    { key: 'identity' as const, label: `${tDeck('subTabs.identity')} (${deck.length}/12)`, hint: tDeck('identity.openDetailHint') },
+    { key: 'ego' as const, label: `${tDeck('subTabs.ego')} (${egoSlots.length})` },
+    { key: 'skillset' as const, label: tDeck('subTabs.skillset') },
   ]
 
   return (
@@ -177,126 +237,8 @@ export default function PlanDeckTabs({
 
       {/* 인격 그리드 */}
       {deckSubTab === 'identity' && (
-        <div className="grid grid-cols-6 gap-x-1.5 sm:gap-x-3 gap-y-3 sm:gap-y-4">
-          {sinners.map(sinner => {
-            const slot = slotBySinner[sinner.id]
-            const identData = slot?.identity_id ? identityMap.get(slot.identity_id) : undefined
-            const rc = slot ? (RARITY_COLORS[slot.rarity ?? 1] ?? RARITY_COLORS[1]) : null
-            const n = slot && (slot.slot_order ?? 99) < 99 ? (slot.slot_order ?? 0) + 1 : null
-            return (
-              <div
-                key={sinner.id}
-                onClick={() => slot?.identity_id && setIdentityModalId(slot.identity_id)}
-                style={{ cursor: slot?.identity_id ? 'pointer' : 'default' }}
-              >
-                <div style={{
-                  position: 'relative', width: '100%', aspectRatio: '2/3',
-                  background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                  border: `0.09375rem ${slot ? 'solid' : 'dashed'} ${slot ? (rc?.border ?? '#2a2015') : '#2a2015'}`,
-                  borderRadius: '0.25rem', overflow: 'hidden',
-                  boxShadow: slot ? `0 0 0.5rem ${rc?.glow ?? 'transparent'}` : 'none',
-                }}>
-                  {slot && identData ? (
-                    <>
-                      <Image
-                        src={getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`)}
-                        alt={slot.name_kr ?? ''} fill className="object-cover object-top" sizes="120px"
-                      />
-                      <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 10, padding: '0.1875rem' }}>
-                        <Image
-                          src={`${S}/icons/Rarity/${slot.rarity ?? 1}star.webp`}
-                          alt={`${slot.rarity ?? 1}성`}
-                          width={(slot.rarity ?? 1) * 14} height={14}
-                          style={{ height: '0.875rem', width: 'auto', objectFit: 'contain' }}
-                        />
-                      </div>
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, textAlign: 'center',
-                        background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                        paddingTop: '1.25rem', paddingBottom: '0.25rem',
-                      }}>
-                        <p
-                          className="font-serif text-[0.5rem] sm:text-[0.6875rem]"
-                          style={{ color: '#e8dcc8', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}
-                        >
-                          {slot.name_kr}
-                        </p>
-                      </div>
-                      {n != null && (
-                        <div style={{
-                          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center',
-                          zIndex: 15, background: 'rgba(13,11,8,0.45)', pointerEvents: 'none',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span
-                              className="text-[0.625rem] sm:text-base"
-                              style={{
-                                fontWeight: 700,
-                                color: n <= 7 ? '#e8b030' : '#5ab0d0',
-                                textShadow: `0 0 0.5rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`,
-                              }}
-                            >
-                              {n <= 7 ? '편성' : '대기'}
-                            </span>
-                            <span
-                              className="text-sm sm:text-2xl"
-                              style={{
-                                fontWeight: 800,
-                                color: n <= 7 ? '#e8b030' : '#5ab0d0',
-                                marginLeft: '0.1875rem',
-                                textShadow: `0 0 1rem ${n <= 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`,
-                              }}
-                            >
-                              {n}
-                            </span>
-                          </div>
-                          {(slotGiftMap.get(n)?.length ?? 0) > 0 && (() => {
-                            const urls = slotGiftMap.get(n)!
-                            const MAX = 3
-                            const shown = urls.slice(0, MAX)
-                            const rest = urls.length - MAX
-                            return (
-                              <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.1875rem', alignItems: 'center', justifyContent: 'center' }}>
-                                {shown.map((url, gi) => (
-                                  <Image key={gi} src={url} alt="" width={28} height={28}
-                                    className="w-[0.875rem] h-[0.875rem] sm:w-[1.25rem] sm:h-[1.25rem]"
-                                    style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 0.125rem rgba(0,0,0,0.8))' }}
-                                  />
-                                ))}
-                                {rest > 0 && (
-                                  <span style={{ fontSize: '0.5rem', color: '#9ca3af', fontWeight: 600, marginLeft: '0.0625rem', textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,1)' }}>
-                                    ...+{rest}
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          })()}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                        <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={32} height={32}
-                          style={{ width: '2rem', height: '2rem', opacity: 0.35 }} />
-                      </div>
-                      <div style={{ position: 'absolute', top: 0, right: 0, width: '36%', opacity: 0.15, pointerEvents: 'none' }}>
-                        <Image src={`${S}/sinners/${sinner.id}/number.webp`} alt="" width={389} height={1023} className="w-full h-auto" />
-                      </div>
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0, textAlign: 'center', zIndex: 10,
-                        background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                        paddingTop: '1.25rem', paddingBottom: '0.375rem',
-                      }}>
-                        <p className="font-serif font-light text-[0.5rem] sm:text-[0.75rem]" style={{ color: '#3a2a10' }}>{sinner.name_kr}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+        <div className="relative">
+          <FormationBoard slots={boardSlots} className="mt-5" />
         </div>
       )}
 
@@ -386,11 +328,11 @@ export default function PlanDeckTabs({
             })}
           </div>
         ) : (
-          <EmptyState text="인격이 편성되지 않았습니다" />
+          <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
         )
       )}
 
-      {/* 스킬셋 */}
+      {/* 스킬 교환 */}
       {deckSubTab === 'skillset' && (
         deck.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
@@ -398,8 +340,13 @@ export default function PlanDeckTabs({
               const slot = slotBySinner[sinner.id]
               if (!slot) return null
               const identData = slot.identity_id ? identityMap.get(slot.identity_id) : undefined
-              const dist = [3, 2, 1]
+              const dist = getIdentitySkillDistribution(slot)
               const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } : null
+              const slotBestSkills = [1, 2, 3].map(order =>
+                skills
+                  .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
+                  .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
+              )
 
               return (
                 <div
@@ -427,50 +374,34 @@ export default function PlanDeckTabs({
                       <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
                     </div>
                   </div>
-                  <div style={{
-                    marginTop: '0.375rem',
-                    background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                    border: '1px solid #221a0f', borderRadius: '0.25rem', padding: '0.375rem',
-                  }}>
-                    {[0, 1, 2].map(idx => {
-                      const skillName = skills.find(sk => sk.identity_id === slot.identity_id && sk.skill_order === idx + 1)?.name
-                      return (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
-                          {identForIcon?.game_id ? (
-                            <Image
-                              src={getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], idx + 1)}
-                              alt={`S${idx + 1}`} width={24} height={24}
-                              style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.125rem', flexShrink: 0 }}
-                            />
-                          ) : (
-                            <span style={{ fontSize: '0.5625rem', color: '#c8900a', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', flexShrink: 0, textAlign: 'center' }}>
-                              S{idx + 1}
-                            </span>
-                          )}
-                          {skillName ? (
-                            <span style={{ fontSize: '0.5rem', color: '#8a7a60', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {skillName}
-                            </span>
-                          ) : (
-                            <div style={{ flex: 1 }} />
-                          )}
-                          <span style={{
-                            width: '1rem', textAlign: 'center', fontSize: '0.8125rem',
-                            fontFamily: 'var(--font-mono)', fontWeight: 700,
-                            color: dist[idx] === 0 ? '#3a2a10' : '#c8900a',
-                          }}>
-                            {dist[idx]}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <SkillExchangePanel
+                    distribution={dist}
+                    skills={[
+                      slotBestSkills[0] ? {
+                        name: slotBestSkills[0].name,
+                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 1) : null,
+                        sinColor: SIN_COLORS[slotBestSkills[0].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                      } : null,
+                      slotBestSkills[1] ? {
+                        name: slotBestSkills[1].name,
+                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 2) : null,
+                        sinColor: SIN_COLORS[slotBestSkills[1].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                      } : null,
+                      slotBestSkills[2] ? {
+                        name: slotBestSkills[2].name,
+                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 3) : null,
+                        sinColor: SIN_COLORS[slotBestSkills[2].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
+                      } : null,
+                    ]}
+                    readOnly
+                    showTotal={false}
+                  />
                 </div>
               )
             })}
           </div>
         ) : (
-          <EmptyState text="인격이 편성되지 않았습니다" />
+          <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
         )
       )}
 

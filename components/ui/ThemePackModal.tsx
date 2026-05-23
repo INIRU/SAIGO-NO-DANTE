@@ -61,7 +61,7 @@ export function ThemePackModalShell({
             <X size={18} aria-hidden="true" />
           </button>
 
-          <div className="relative overflow-hidden" style={{ minHeight: imageUrl ? '10rem' : '6rem' }}>
+          <div className="relative overflow-hidden" style={{ minHeight: imageUrl ? '11rem' : '7.5rem' }}>
             {imageUrl ? (
               <>
                 <ImageWithFallback
@@ -87,11 +87,16 @@ export function ThemePackModalShell({
               />
             )}
 
-            <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pr-16">
+            <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-end px-5 pb-4 pr-16 pt-12 sm:pr-20">
               {eyebrow && <div className="mb-1.5">{eyebrow}</div>}
               <h3
-                className="font-serif text-xl font-bold leading-tight text-pretty md:text-2xl"
-                style={{ color: '#e8d8c0', textShadow: '0 0.125rem 0.5rem rgba(0,0,0,0.6)' }}
+                className="font-serif text-xl font-bold text-pretty md:text-2xl"
+                style={{
+                  color: '#e8d8c0',
+                  lineHeight: 1.32,
+                  WebkitTextStroke: 0,
+                  textShadow: '0 0.125rem 0.5rem rgba(0,0,0,0.6)',
+                }}
               >
                 {title}
               </h3>
@@ -288,6 +293,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                 onClick={() => onSelectTheme(theme)}
                 isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
                 showGiftCount
+                imageSurface="bare"
                 lang={lang}
               />
             ))}

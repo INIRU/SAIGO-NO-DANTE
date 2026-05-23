@@ -10,6 +10,7 @@ import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Pl
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { encodePlan, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
+import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { usePlannerStore } from '@/lib/stores/planner'
 import { showSuccess, showError } from '@/lib/toast'
 import DeckTab from '@/components/planner/DeckTab'
@@ -53,6 +54,10 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const activeTab = isPlannerTab(tabParam) ? tabParam : 'deck'
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  const giftConditionState = useMemo<PlannerState>(() => ({
+    ...state,
+    identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),
+  }), [state, identities])
 
   const [copied, setCopied] = useState(false)
   const handleCopyUrl = async () => {
@@ -99,6 +104,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         egos: state.egoSlots,
         floor_plan: state.floorPlan,
         gift_inventory: state.giftInventory,
+        tags: state.mainKeywords ?? [],
       }
       const url = editId ? `/api/planner/${editId}` : '/api/planner'
       const method = editId ? 'PATCH' : 'POST'
@@ -175,6 +181,12 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               name_kr: identity.name_kr,
               rarity: identity.rarity,
               keywords: identity.keywords ?? [],
+              skill_keyword_list: identity.skill_keyword_list,
+              affiliation: identity.affiliation,
+              association_list: identity.association_list,
+              s1_count: decoded.skillDistributions[i]?.[0],
+              s2_count: decoded.skillDistributions[i]?.[1],
+              s3_count: decoded.skillDistributions[i]?.[2],
               game_id: identity.game_id,
               folder_name: identity.folder_name,
               slot_order: i,
@@ -207,6 +219,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 memo: '',
               })),
               giftInventory: decoded.giftIds,
+              mainKeywords: decoded.mainKeywords,
+              mainKeywordsManual: decoded.mainKeywordsManual,
               title: decoded.title,
               description: decoded.description,
               activeTab: 'deck',
@@ -239,7 +253,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => { savePlanForRun(state as any); window.location.href = '/planner/run?from-plan=1' }}
+              onClick={() => { savePlanForRun(giftConditionState); window.location.href = '/planner/run?from-plan=1' }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
                 background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
@@ -414,13 +428,13 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           <BlessingTab state={state} dispatch={dispatch} />
         )}
         {activeTab === 'gift' && (
-          <GiftPlanTab state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} />
+          <GiftPlanTab state={giftConditionState} dispatch={dispatch} gifts={gifts} recipes={recipes} giftMap={giftMap} />
         )}
         {activeTab === 'floor' && (
-          <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} />
+          <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />
         )}
         {activeTab === 'summary' && (
-          <SummaryTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
+          <SummaryTab state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
         )}
       </div>
 
