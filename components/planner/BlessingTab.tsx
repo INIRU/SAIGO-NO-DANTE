@@ -716,11 +716,10 @@ interface ReadOnlyBlessingGridProps {
 
 export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }: ReadOnlyBlessingGridProps) {
   const { gridRef, cardScale, cardColumnCount } = useBlessingGridMetrics()
-  const selectedCards = blessings
+  const displayCards = blessings
     .map(blessing => ({ blessing, level: selectedBlessings.get(blessing.baseId) ?? 0 }))
-    .filter(item => item.level > 0)
 
-  if (selectedCards.length === 0) {
+  if (selectedBlessings.size === 0) {
     return (
       <div className="rounded-md border border-[#241c14] bg-[#120e09] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
         {emptyText}
@@ -739,7 +738,7 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
         padding: '0.75rem 0 0',
       }}
     >
-      {selectedCards.map(({ blessing, level }) => (
+      {displayCards.map(({ blessing, level }) => (
         <BlessingCard
           key={blessing.baseId}
           blessing={blessing}
