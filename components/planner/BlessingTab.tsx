@@ -425,6 +425,10 @@ function BlessingCard({
   const selectedLevel = Math.max(1, level)
   const currentEffects = blessing.effectsByLevel[selectedLevel - 1] ?? blessing.effectsByLevel[0]
   const displayName = getBlessingDisplayName(blessing, level)
+  const costTextColor = isSelected ? '#f4c84a' : 'rgba(248, 250, 252, 0.72)'
+  const costTextShadow = isSelected
+    ? '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)'
+    : '0 0.0625rem 0.125rem rgba(7, 4, 2, 0.8)'
 
   const cardContent = (
     <>
@@ -493,8 +497,19 @@ function BlessingCard({
           zIndex: 4,
         }}
       >
-        <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={24} height={24} style={{ width: '1.5rem', height: '1.5rem' }} />
-        <span style={{ color: '#f4c84a', fontSize: '1.625rem', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-mikodacs), var(--font-mono)', textShadow: '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)' }}>{currentCost}</span>
+        <Image
+          src={`${S}/icons/start-buffs/starlight.webp`}
+          alt=""
+          width={24}
+          height={24}
+          style={{
+            width: '1.5rem',
+            height: '1.5rem',
+            filter: isSelected ? 'none' : 'grayscale(1) brightness(2.05) contrast(1.08) saturate(0)',
+            opacity: isSelected ? 1 : 0.88,
+          }}
+        />
+        <span style={{ color: costTextColor, fontSize: '1.625rem', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-mikodacs), var(--font-mono)', textShadow: costTextShadow }}>{currentCost}</span>
       </div>
 
       <div
@@ -617,7 +632,7 @@ function BlessingCard({
       </div>
       <div
         aria-hidden="true"
-        className="planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        className={`planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200${interactive ? ' group-hover:opacity-100' : ''}`}
         style={{
           left: '-0.125rem',
           top: '-0.0625rem',
