@@ -203,10 +203,14 @@ export type ActivationCondition = {
 
 export type EgoGiftNote = {
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   keyword: string
   grade: string
   image_url: string | null
   effect_base: string | null
+  effect_base_en?: string | null
+  effect_base_jp?: string | null
   activation_condition: ActivationCondition | null
 }
 

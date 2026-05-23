@@ -44,8 +44,21 @@
     "skipToContent": "본문으로 건너뛰기",
     "viewAll": "전체보기",
     "close": "닫기",
+    "terms": "이용약관",
+    "privacy": "개인정보 처리방침",
+    "fanDisclaimer": "팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.",
+    "unaffiliatedDisclaimer": "Project Moon과 제휴하지 않은 팬 사이트입니다.",
     "footerNav": "하단 내비게이션",
-    "mainNav": "메인 내비게이션"
+    "mainNav": "메인 내비게이션",
+    "fontControl": {
+      "open": "글자 크기 조절 열기",
+      "decrease": "글자 크기 줄이기",
+      "increase": "글자 크기 키우기",
+      "collapse": "접기",
+      "small": "작게",
+      "default": "보통",
+      "large": "크게"
+    }
   },
   "lang": {
     "filter": "언어 필터",
@@ -148,6 +161,131 @@
       "refractionRailway": "거굴철",
       "reflectrial": "사영 전투",
       "none": "없음"
+    },
+    "builder": {
+      "metadata": {
+        "title": "덱 편성",
+        "description": "인격, E.G.O, 편성 순서와 덱 노트를 정리합니다."
+      },
+      "backToDecks": "덱 게시판",
+      "titleNew": "덱 편성",
+      "titleEdit": "덱 수정",
+      "description": "인격, E.G.O, 편성 순서와 운영 노트를 한 화면에서 정리합니다.",
+      "progress": "인격 {count}/{total}",
+      "forkTitle": "{title} (포크)",
+      "tabs": {
+        "identity": "인격 편성",
+        "ego": "E.G.O 편성",
+        "skillset": "스킬 편성",
+        "note": "덱 노트"
+      },
+      "actions": {
+        "loadDraft": "초안 불러오기",
+        "saveDraft": "임시 저장",
+        "draftSaved": "저장 완료",
+        "copyCode": "코드 복사",
+        "copied": "복사됨",
+        "copyDisabled": "12명 전원 인격을 편성해야 코드를 복사할 수 있습니다",
+        "contentRequired": "콘텐츠 유형을 선택해주세요",
+        "identityRequired": "12명 전원 인격을 편성해야 합니다 ({count}/{total})",
+        "saving": "저장 중...",
+        "save": "저장",
+        "upload": "업로드"
+      },
+      "fields": {
+        "title": "덱 제목",
+        "titlePlaceholder": "덱 제목을 입력하세요",
+        "deckCode": "편성 코드",
+        "codePlaceholder": "편성 코드 붙여넣기",
+        "applyCode": "적용",
+        "applying": "적용 중",
+        "codeError": "코드 오류",
+        "contentType": "콘텐츠 유형",
+        "required": "필수"
+      },
+      "errors": {
+        "saveFailed": "덱 저장에 실패했습니다.",
+        "updateFailed": "덱 수정에 실패했습니다."
+      },
+      "gifts": {
+        "panelTitle": "E.G.O 기프트",
+        "modalTitle": "E.G.O 기프트 선택",
+        "modalHeading": "E.G.O 기프트 도감",
+        "count": "{count}개",
+        "close": "닫기",
+        "active": "활성",
+        "inactive": "미활성",
+        "warning": "주의",
+        "all": "전체",
+        "openAll": "전체 보기",
+        "expand": "기프트 패널 펼치기",
+        "collapse": "기프트 패널 접기",
+        "searchPlaceholder": "기프트 검색...",
+        "searchNamePlaceholder": "기프트 이름 검색...",
+        "clearSearch": "검색어 지우기",
+        "gradeFilter": "등급",
+        "gradeAll": "등급 전체",
+        "selectIdentityFirst": "인격을 먼저 편성해주세요",
+        "noResults": "조건에 맞는 기프트가 없습니다",
+        "benchProgress": "편성 {formation}/{count} · 전체 {all}/{count}",
+        "grades": {
+          "열쇠": "열쇠",
+          "갈래": "갈래",
+          "징표": "징표",
+          "화폐": "화폐",
+          "에고": "에고"
+        }
+      },
+      "note": {
+        "placeholder": "덱 운용 메모를 작성하세요. [ 또는 {{ 로 칩과 블록을 삽입할 수 있습니다.",
+        "insert": "삽입",
+        "preview": "미리보기",
+        "edit": "편집",
+        "emptyPalette": "수감자를 선택하면 편성된 인격, 스킬, 패시브, E.G.O 삽입 도구가 열립니다",
+        "giftInsert": "기프트 추가",
+        "giftTokenStart": "기프트 토큰 시작",
+        "groups": {
+          "history": "히스토리",
+          "paragraph": "문단",
+          "format": "서식",
+          "insertPreview": "삽입과 미리보기"
+        },
+        "blocks": {
+          "paragraph": "문단",
+          "heading2": "제목"
+        },
+        "tools": {
+          "undo": "되돌리기",
+          "redo": "다시 실행",
+          "paragraphFormat": "문단 형식",
+          "bold": "굵게",
+          "italic": "기울임",
+          "bulletList": "목록",
+          "orderedList": "번호 목록",
+          "quote": "인용",
+          "link": "링크"
+        },
+        "types": {
+          "skill": "스킬",
+          "skillFrame": "스킬 프레임",
+          "passive": "패시브",
+          "passiveDescription": "패시브 설명",
+          "identity": "인격",
+          "giftCard": "기프트 카드"
+        },
+        "aria": {
+          "editor": "덱 노트",
+          "toolbar": "덱 노트 편집 도구",
+          "sinnerTools": "수감자 삽입 도구",
+          "sinnerPalette": "{sinner} 삽입 팔레트",
+          "identityChip": "{identity} 인격 칩 삽입",
+          "skillBlock": "{label} 상세 블록 삽입",
+          "passiveBlock": "{passive} 상세 설명 삽입",
+          "passiveDescriptionTitle": "{passive} 설명",
+          "chipTitle": "{name} 칩",
+          "preview": "덱 노트 미리보기"
+        }
+      }
     },
     "result": {
       "countMore": "{count}개 이상의 덱",
@@ -289,10 +427,621 @@
       "metaTitle": "거울 던전 트리거 모드"
     },
     "community": "커뮤니티 플랜",
+    "detail": {
+      "notFoundTitle": "플랜을 찾을 수 없습니다",
+      "metaTitle": "{title} | 커뮤니티 플랜",
+      "metaDescription": "림버스 컴퍼니 거울 던전 {difficulty} 플랜",
+      "metaDescriptionWithDescription": "{difficulty} 난이도 — {description}",
+      "backToCommunity": "커뮤니티 플랜",
+      "anonymous": "익명",
+      "loginRequired": "로그인이 필요합니다.",
+      "floorCount": "{count}층",
+      "deckCount": "{count}인 편성",
+      "egoCount": "E.G.O {count}",
+      "voteWithCount": "추천 {count}",
+      "descriptionTitle": "플랜 설명",
+      "copyDeckCode": "편성 코드 복사",
+      "fork": "포크",
+      "copied": "복사 완료",
+      "triggerMode": "트리거 모드",
+      "forkedTitle": "{title} (포크)",
+      "loadedIntoPlanner": "플래너에 불러왔습니다.",
+      "copyDeckCodeFailed": "편성 코드를 복사하지 못했습니다.",
+      "deletePlanTitle": "플랜 삭제",
+      "deletePlanMessage": "이 플랜을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.",
+      "deleteFailed": "플랜을 삭제하지 못했습니다.",
+      "deleteError": "삭제 중 오류가 발생했습니다.",
+      "floorPlanCaption": "층별 테마팩, 획득 기프트, 메모를 한 번에 확인합니다.",
+      "startGifts": "시작 기프트",
+      "observeGifts": "관측 기프트",
+      "finalGifts": "최종 기프트",
+      "itemCount": "{count}개",
+      "observeCount": "{count}/3",
+      "emptyStartGifts": "시작 기프트가 선택되지 않았습니다.",
+      "emptyObserveGifts": "관측 기프트가 선택되지 않았습니다.",
+      "emptyFinalGifts": "최종 기프트가 선택되지 않았습니다.",
+      "conditionUnmet": "조건 미달 — 전체 인격으로도 부족",
+      "conditionWarn": "조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족"
+    },
     "difficulty": "난이도",
     "normal": "일반",
     "hard": "하드",
-    "tags": "태그"
+    "tags": "태그",
+    "tempSaves": {
+      "button": "임시 저장",
+      "menuLabel": "플래너 임시 저장",
+      "closeMenu": "닫기",
+      "saveCurrent": "현재 플랜 저장",
+      "empty": "저장된 임시 플랜이 없습니다.",
+      "slotLabel": "슬롯 {slot}",
+      "emptySlot": "비어 있음",
+      "saveToSlot": "저장",
+      "overwriteSlot": "덮어쓰기",
+      "loadSlot": "불러오기",
+      "saved": "임시 저장되었습니다.",
+      "savedToSlot": "슬롯 {slot}에 임시 저장했습니다.",
+      "overwritten": "슬롯 {slot}을 덮어썼습니다.",
+      "loaded": "임시 저장본을 불러왔습니다.",
+      "loadedFromSlot": "슬롯 {slot}을 불러왔습니다.",
+      "deleted": "임시 저장본을 삭제했습니다.",
+      "deletedFromSlot": "슬롯 {slot}을 비웠습니다.",
+      "untitled": "제목 없는 플랜",
+      "deleteSlotLabel": "슬롯 {slot} 비우기",
+      "deleteLabel": "{label} 임시 저장본 삭제"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "커뮤니티 플랜 | 거울 던전 플래너",
+        "description": "림버스 컴퍼니 거울 던전 플래너 — 다른 유저들의 플랜을 둘러보고 추천하세요."
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "커뮤니티 플랜",
+        "subtitle": "관리자들의 거울 던전 전략 공유 공간",
+        "newPlan": "새 플랜 만들기"
+      },
+      "search": {
+        "label": "플랜 검색",
+        "section": "검색",
+        "placeholder": "인격, 키워드, 제목...",
+        "clear": "검색어 지우기",
+        "hint": "+ OR, * AND 검색",
+        "suggestionHeading": "인격 / 키워드",
+        "suggestionHint": "Tab으로 선택",
+        "suggestionIdentity": "인격",
+        "suggestionKeyword": "키워드"
+      },
+      "sort": {
+        "label": "정렬",
+        "latest": "최신순",
+        "popular": "추천순"
+      },
+      "difficulty": {
+        "normal": "노말",
+        "hard": "하드",
+        "overlap": "평행 중첩",
+        "extreme": "익스트림"
+      },
+      "filters": {
+        "button": "필터",
+        "panel": "거던 플랜 필터 패널",
+        "aside": "거던 플랜 필터",
+        "closePanel": "필터 패널 닫기",
+        "close": "필터 닫기",
+        "difficulty": "난이도",
+        "all": "전체",
+        "keywords": "상시 키워드",
+        "keywordModeToggle": "키워드 OR/AND 조건 전환",
+        "identity": "인격 필터",
+        "identityModeToggle": "인격 OR/AND 조건 전환",
+        "identitySelected": "선택됨",
+        "collection": "보유 필터",
+        "ownedIdentityPlan": "보유 인격 플랜",
+        "ownedEgoPlan": "보유 E.G.O 플랜",
+        "collectionCodePlaceholder": "보유 현황 URL 또는 코드",
+        "collectionCodeLabel": "보유 현황 URL 또는 코드",
+        "collectionLoading": "컬렉션 로딩 중...",
+        "apply": "적용",
+        "invalidCode": "잘못된 코드",
+        "clear": "초기화",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "언어",
+        "current": "현재 언어",
+        "all": "전체",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "인격 선택"
+      },
+      "result": {
+        "total": "총 {count}개 플랜",
+        "filtered": "{filtered}/{total}개 플랜",
+        "filterApplied": "(필터 적용됨)"
+      },
+      "grid": {
+        "empty": "아직 등록된 플랜이 없습니다.",
+        "noSearchResults": "\"{query}\" 검색 결과가 없습니다.",
+        "createFirst": "첫 플랜 만들기 →",
+        "loadMore": "더 보기",
+        "loadingMore": "불러오는 중...",
+        "scrollForMore": "스크롤하면 더 불러옵니다"
+      },
+      "card": {
+        "anonymous": "익명",
+        "difficultyCount": "{count}층",
+        "toggleKeyword": "{keyword} 키워드 필터 전환"
+      },
+      "relativeTime": {
+        "now": "방금 전",
+        "minutes": "{count}분 전",
+        "hours": "{count}시간 전",
+        "days": "{count}일 전",
+        "months": "{count}달 전",
+        "years": "{count}년 전"
+      }
+    },
+    "tabs": {
+      "deck": "덱 편성",
+      "blessing": "가호",
+      "gift": "기프트",
+      "floor": "층별 계획",
+      "summary": "미리보기"
+    },
+    "difficultyValues": {
+      "normal": "노말",
+      "hard": "하드",
+      "overlap": "평행 중첩",
+      "extreme": "익스트림"
+    },
+    "floorCount": "{count}층",
+    "floorTab": {
+      "difficulty": {
+        "normal": "노말",
+        "hard": "하드",
+        "overlap": "평행 중첩",
+        "extreme": "익스트림"
+      },
+      "themeSection": "테마팩 선택",
+      "difficultySelectorLabel": "{floor}층 난이도 선택",
+      "fixedDifficulty": "고정 난이도",
+      "themeModalTitle": "{floor}층 테마팩 선택 · {difficulty}",
+      "difficultySummary": "층별 난이도",
+      "difficultySummaryCount": "{count}층",
+      "configuredFloorCount": "{configured}/{total}층",
+      "noThemeWithCount": "테마팩 미선택 ({count}개 가능)",
+      "noFloorThemes": "해당 층 없음",
+      "selectThemeWithCount": "테마팩 선택 ({count}개)",
+      "emptyThemes": "이 층에 사용 가능한 테마팩이 없습니다",
+      "changeTheme": "변경",
+      "clearTheme": "선택 해제",
+      "themeGiftCount": "기프트 {count}종",
+      "acquiredGifts": "획득 기프트",
+      "acquiredGiftCount": "획득 기프트 {count}개",
+      "addGift": "추가",
+      "giftPickerTitle": "획득 기프트 추가",
+      "giftPickerHint": "{theme}에서 이번 층에 획득할 기프트를 검색해 추가합니다",
+      "giftPickerSearchPlaceholder": "테마 기프트 검색...",
+      "giftPickerEmpty": "검색 결과가 없습니다",
+      "noThemeGifts": "최종 기프트 목록에 이 테마의 기프트가 없습니다",
+      "addToFinal": "+최종 추가",
+      "memo": "플랜 메모",
+      "floorBoard": "층 보드",
+      "floorBoardHint": "층을 선택해 오른쪽 편집 패널에서 테마팩, 획득 기프트, 메모를 조정하세요",
+      "segment": {
+        "early": "{start}-{end} · 노말/하드",
+        "loop": "{start}-{end} · 평행 중첩",
+        "extreme": "{start}-{end} · 익스트림"
+      },
+      "activeFloor": "{floor}층 편집",
+      "chooseFloorAria": "{floor}층 선택",
+      "empty": "미설정",
+      "shortGiftCount": "기프트 {count}",
+      "selectTheme": "테마팩 선택",
+      "selectThemeFirst": "테마팩을 먼저 선택하세요",
+      "availableThemeCount": "사용 가능 {count}개",
+      "close": "닫기",
+      "memoPlaceholder": "이번 층 전략 메모… (키워드·기프트 자동완성 지원)",
+      "memoPreview": "미리보기",
+      "memoExpand": "메모 전체 보기",
+      "memoCollapse": "메모 접기",
+      "keywordDistribution": "누적 기프트 키워드 분포",
+      "totalGifts": "총 {count}개 기프트",
+      "finalGifts": "최종 반영 기프트",
+      "finalGiftCount": "최종 기프트 {count}개",
+      "finalWorkbenchHint": "반영된 기프트는 왼쪽 카드 클릭으로 제거하고, 전체 기프트는 카드 클릭으로 추가하거나 다시 눌러 제거합니다.",
+      "finalSelectedPanel": "반영 목록",
+      "finalGiftSearchPlaceholder": "최종 기프트 검색...",
+      "finalGiftEmpty": "아직 반영된 최종 기프트가 없습니다",
+      "finalGiftNoResults": "검색 결과가 없습니다",
+      "finalKeywordFilter": "키워드",
+      "finalGradeFilter": "등급",
+      "filterAll": "전체",
+      "allGiftAddPanel": "전체 기프트 추가",
+      "allGiftCatalog": "전체 기프트",
+      "allGiftAddHint": "카드를 누르면 최종 목록에 추가되고, 이미 추가된 카드는 다시 눌러 제거합니다.",
+      "allGiftSearchPlaceholder": "전체 기프트 검색...",
+      "allGiftNoResults": "검색 결과가 없습니다",
+      "alreadyAdded": "추가됨",
+      "alreadyAddedRemove": "추가됨 · 클릭 시 제거",
+      "alreadyAddedGift": "{gift} 이미 추가됨",
+      "addFinalGift": "{gift} 최종 기프트에 추가",
+      "addFinalGiftShort": "추가",
+      "removeFinalGift": "{gift} 최종 기프트에서 제거",
+      "removeAlreadyAddedGift": "{gift} 최종 기프트에서 제거",
+      "removeFinalGiftShort": "제거",
+      "fusionAlertTitle": "제작 가능한 합성",
+      "fusionAlertHint": "현재 최종 기프트로 합성할 수 있습니다. 결과 기프트를 누르면 재료가 최종 목록에서 빠지고 결과가 추가됩니다.",
+      "fusionAlertDismiss": "합성 알림 닫기",
+      "fusionAlertApply": "{gift} 합성 반영"
+    },
+    "actions": {
+      "triggerMode": "트리거 모드",
+      "copyUrl": "URL 복사",
+      "copied": "복사 완료",
+      "upload": "업로드",
+      "update": "수정",
+      "uploading": "업로드 중...",
+      "updating": "수정 중...",
+      "uploadComplete": "업로드 완료",
+      "updateComplete": "수정 완료",
+      "uploadTitle": "커뮤니티에 플랜 업로드",
+      "loginRequired": "로그인 후 이용 가능",
+      "titleRequired": "플랜 제목을 입력하세요",
+      "uploaded": "커뮤니티에 업로드되었습니다.",
+      "updated": "플랜이 수정되었습니다.",
+      "uploadFailed": "업로드 실패",
+      "updateFailed": "수정 실패",
+      "uploadError": "업로드 중 오류가 발생했습니다"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "덱 편성 세부 탭",
+        "identity": "인격",
+        "ego": "E.G.O",
+        "skillset": "스킬 교환"
+      },
+      "identity": {
+        "formed": "편성",
+        "bench": "대기",
+        "change": "변경",
+        "removeFormation": "편성 해제",
+        "addFormation": "편성하기",
+        "form": "편성",
+        "toNormalArt": "각성 일러스트 -- 클릭하여 일반으로",
+        "toAwakenedArt": "일반 일러스트 -- 클릭하여 각성으로",
+        "modalTitle": "인격 선택",
+        "modalHeading": "{sinner} - 인격 선택",
+        "close": "인격 선택 닫기",
+        "searchPlaceholder": "인격 이름 검색...",
+        "clearSearch": "검색어 지우기",
+        "rarityAll": "전체",
+        "rarity": "{rarity}성",
+        "noResults": "조건에 맞는 인격이 없습니다",
+        "openDetailHint": "클릭하여 상세 보기",
+        "clear": "선택 해제"
+      },
+      "ego": {
+        "modalTitle": "E.G.O 선택",
+        "modalHeading": "{sinner} - E.G.O 선택",
+        "close": "E.G.O 선택 닫기",
+        "searchPlaceholder": "E.G.O 이름 검색...",
+        "clearSearch": "검색어 지우기",
+        "gradeAll": "전체",
+        "remove": "해제",
+        "emptyGrade": "해당 등급 E.G.O 없음",
+        "noIdentity": "인격 미선택"
+      },
+      "skillset": {
+        "selectIdentityFirst": "인격을 먼저 선택하세요."
+      },
+      "stats": {
+        "keywordDistribution": "키워드 분포",
+        "keywordEmpty": "인격을 선택하면 키워드 분포가 표시됩니다.",
+        "passives": "패시브",
+        "battle": "배틀",
+        "support": "서포트",
+        "passiveSelectIdentity": "인격을 선택하면 패시브가 표시됩니다.",
+        "passiveEmpty": "해당 패시브가 없습니다.",
+        "resonance": "공명",
+        "stock": "보유",
+        "passiveWarning": "스킬 배분 변경으로 인해 조건이 미충족됩니다"
+      },
+      "mainKeywords": {
+        "label": "플랜 대표 키워드",
+        "keywordCount": "{keyword} {count}명"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "관측 기프트",
+        "start": "시작 기프트",
+        "final": "최종 기프트"
+      },
+      "observe": {
+        "cost": "관측 비용:",
+        "selected": "선택 {count}/3",
+        "gradeRange": "{from}~{to} 등급 · 잔영 제외",
+        "selectedTitle": "선택한 E.G.O 기프트",
+        "starlightAlt": "별빛",
+        "starlightCost": "{count} 별빛"
+      },
+      "start": {
+        "selected": "선택 {count}/{max}",
+        "selectedTitle": "시작 기프트"
+      },
+      "final": {
+        "all": "전체",
+        "buildTitle": "최종 기프트 빌드",
+        "selectedCount": "{count}개",
+        "clearAll": "전체 삭제",
+        "help": "아래 목록에서 드래그하거나 클릭하여 추가 · 강화 가능한 기프트는 클릭하여 +/++ 강화",
+        "conditionUnmet": "조건 미달 — 전체 인격으로도 부족",
+        "conditionWarn": "조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족",
+        "emptyDrop": "기프트를 아래에서 드래그하거나 클릭하여 추가하세요",
+        "addFromObserve": "관측 기프트에서 추가",
+        "addFromStart": "시작 기프트에서 추가",
+        "listTitle": "전체 기프트 목록",
+        "searchPlaceholder": "기프트 이름 검색...",
+        "noResults": "검색 결과가 없습니다"
+      },
+      "grid": {
+        "grade": "{grade}등급",
+        "emptyKeyword": "해당 키워드의 기프트가 없습니다"
+      },
+      "selectedPanel": {
+        "empty": "선택 없음",
+        "remove": "제거"
+      },
+      "conditionStatus": {
+        "unmetLabel": "조건 미달",
+        "warnLabel": "조건 주의",
+        "unmetTitle": "조건 미달: {text} - 편성+대기 포함해도 부족",
+        "warnTitle": "조건 주의: {text} - 편성(1-7)만으로는 부족, 대기 포함 시 충족"
+      },
+      "keywords": {
+        "all": "전체",
+        "burn": "화상",
+        "bleed": "출혈",
+        "tremor": "진동",
+        "rupture": "파열",
+        "sinking": "침잠",
+        "breath": "호흡",
+        "charge": "충전",
+        "slash": "참격",
+        "pierce": "관통",
+        "blunt": "타격",
+        "general": "공통"
+      }
+    },
+    "blessingTab": {
+      "title": "별의 가호",
+      "usedStarlight": "사용 별빛",
+      "clear": "초기화",
+      "selectAll": "가호 전체 선택",
+      "allClear": "전체 해제",
+      "allPlus": "전체 강화 +",
+      "plusClear": "+ 해제",
+      "allPlusPlus": "전체 강화 ++",
+      "plusplusClear": "++ 해제",
+      "base": "기본",
+      "none": "미선택",
+      "empty": "가호가 선택되지 않았습니다",
+      "starlightAlt": "별빛",
+      "fallbackName": "가호 {baseId}",
+      "blessings": {
+        "100": {
+          "name": "시작의 별",
+          "effectsByLevel": [
+            [
+              "시작 코스트 +150",
+              "테마팩 목록 +1",
+              "상점 기프트 목록 +1",
+              "상점 일반 새로고침 1회 무료"
+            ],
+            [
+              "시작 코스트 +250",
+              "테마팩 목록 +1",
+              "상점 기프트 목록 +1",
+              "상점 일반 새로고침 1회 무료"
+            ],
+            [
+              "시작 코스트 +250",
+              "테마팩 목록 +1",
+              "상점 기프트 목록 +1",
+              "상점 일반 새로고침 2회 무료"
+            ]
+          ]
+        },
+        "101": {
+          "name": "쌓여가는 별무리",
+          "effectsByLevel": [
+            [
+              "층 이동 시, 보유 코스트 10% 증가 (최대 100)",
+              "기프트 판매 비용 50% 증가 (상점별 1회)"
+            ],
+            [
+              "층 이동 시, 보유 코스트 20% 증가 (최대 125)",
+              "기프트 판매 비용 75% 증가 (상점별 1회)"
+            ],
+            [
+              "층 이동 시, 보유 코스트 30% 증가 (최대 150)",
+              "기프트 판매 비용 100% 증가 (상점별 1회)"
+            ]
+          ]
+        },
+        "102": {
+          "name": "성간여행",
+          "effectsByLevel": [
+            [
+              "테마팩 목록 +1",
+              "테마팩 새로고침 횟수 +2",
+              "기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)"
+            ],
+            [
+              "테마팩 목록 +1",
+              "테마팩 새로고침 횟수 +3",
+              "기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)",
+              "테마팩 도감의 테마팩이 45개 이상 해금되어 있으면, 합 위력 증가 1 얻음"
+            ],
+            [
+              "테마팩 목록 +1",
+              "테마팩 새로고침 횟수 +4",
+              "기록 없는 테마팩 선택 시, 모든 인격 레벨 +3 (최대 9)",
+              "테마팩 도감의 테마팩이 45개 이상 해금되어 있으면, 합 위력 증가 2 얻음"
+            ]
+          ]
+        },
+        "103": {
+          "name": "쏟아지는 유성우",
+          "effectsByLevel": [
+            [
+              "시작 코스트 +400",
+              "시작 기프트 수 +1"
+            ],
+            [
+              "시작 코스트 +500",
+              "시작 기프트 수 +1",
+              "전투 보상 카드에서 별빛 선택 시, 코스트 +75"
+            ],
+            [
+              "시작 코스트 +700",
+              "시작 기프트 수 +1",
+              "전투 보상 카드에서 별빛 선택 시, 코스트 +150"
+            ]
+          ]
+        },
+        "104": {
+          "name": "쌍성계 상점",
+          "effectsByLevel": [
+            [
+              "상점 기프트 목록 +1",
+              "전투 보상 코스트 +20%",
+              "상점에서 높은 등급 기프트 등장 확률 상승"
+            ],
+            [
+              "상점 기프트 목록 +1",
+              "전투 보상 코스트 +30%",
+              "상점에서 높은 등급 기프트 등장 확률 상승",
+              "상점 입장 시, 보유한 기프트 등급 합계만큼 코스트 획득 (최대 75)"
+            ],
+            [
+              "상점 기프트 목록 +1",
+              "전투 보상 코스트 +40%",
+              "상점에서 높은 등급 기프트 등장 확률 상승",
+              "상점 입장 시, 보유한 기프트 등급 합계만큼 코스트 획득 (최대 150)"
+            ]
+          ]
+        },
+        "105": {
+          "name": "위성계 상점",
+          "effectsByLevel": [
+            [
+              "상점 키워드 새로고침 1회 무료",
+              "1층 입장 시, 무작위 1등급 기프트 1개 획득"
+            ],
+            [
+              "상점 키워드 새로고침 1회 무료",
+              "1층 입장 시, 무작위 1등급 기프트 2개 획득",
+              "강화 상점 등장 확률 +10%"
+            ],
+            [
+              "상점 키워드 새로고침 2회 무료",
+              "1층 입장 시, 무작위 1등급 기프트 3개 획득",
+              "강화 상점 등장 확률 +25%"
+            ]
+          ]
+        },
+        "106": {
+          "name": "성운의 총애",
+          "effectsByLevel": [
+            [
+              "1층 입장 시, 인격 레벨 +3",
+              "층 클리어 시, 인격 레벨 +1 (최대 5)"
+            ],
+            [
+              "1층 입장 시, 인격 레벨 +3",
+              "층 클리어 시, 인격 레벨 +1 (최대 9)"
+            ],
+            [
+              "1층 입장 시, 인격 레벨 +3",
+              "6층 입장 시, 인격 레벨 +3",
+              "층 클리어 시, 인격 레벨 +1 (최대 9)"
+            ]
+          ]
+        },
+        "107": {
+          "name": "별빛의 인도",
+          "effectsByLevel": [
+            [
+              "속도 최댓값 +2",
+              "합 위력 증가 1 얻음",
+              "피해량 증가 1 얻음",
+              "보호 1 얻음"
+            ],
+            [
+              "속도 최댓값 +3",
+              "합 위력 증가 2 얻음",
+              "피해량 증가 1 얻음",
+              "보호 1 얻음"
+            ],
+            [
+              "속도 최댓값 +3",
+              "합 위력 증가 2 얻음",
+              "피해량 증가 2 얻음",
+              "보호 2 얻음"
+            ]
+          ]
+        },
+        "108": {
+          "name": "우연한 혜성",
+          "effectsByLevel": [
+            [
+              "상점 입장 시, 3등급 이하 무작위 합성·판매용 기프트 1개 획득",
+              "3층 입장 시, 무작위 3등급 기프트 1개 획득",
+              "합성 시, 합성 결과(3등급 이상)보다 두 단계 낮은 무작위 기프트 획득 (상점별 1회)"
+            ],
+            [
+              "상점 입장 시, 합성 · 판매용 기프트 1개 획득\n· 5층 이하 : 1~3등급\n· 6층 이상 : 2~3등급",
+              "3/5층 입장 시, 선택한 키워드의 무작위 3등급 기프트 1개 획득",
+              "합성 시, 합성 결과(3등급 이상)보다 두 단계 낮은 무작위 기프트 획득 (상점별 1회)"
+            ],
+            [
+              "상점 입장 시, 합성 · 판매용 기프트 1개 획득\n· 5층 이하 : 2~3등급\n· 6층 이상 : 3~4등급",
+              "3/5/7층 입장 시, 선택한 키워드의 무작위 4등급 기프트 1개 획득",
+              "합성 시, 합성 결과(3등급 이상)보다 한 단계 낮은 무작위 기프트 획득 (상점별 1회)"
+            ]
+          ]
+        },
+        "109": {
+          "name": "완전한 가능성",
+          "effectsByLevel": [
+            [
+              "테마팩 목록 +1",
+              "시작 기프트 수 +1",
+              "입장 시, 선택한 키워드의 무작위 3등급 기프트 중 1개 선택하여 획득 (해당 등급 없을 시, 낮은 등급 출현)",
+              "입장 시, 어두운 잔영 1개 획득"
+            ],
+            [
+              "테마팩 목록 +1",
+              "시작 기프트 수 +1",
+              "입장 시, 선택한 키워드의 무작위 3등급 기프트 중 2개 선택하여 획득 (해당 등급 없을 시, 낮은 등급 출현)",
+              "입장 시, 어두운 잔영, 아스라한 잔영 각각 1개 획득"
+            ],
+            [
+              "테마팩 목록 +1",
+              "시작 기프트 수 +1",
+              "입장 시, 선택한 키워드의 무작위 3등급 기프트 중 3개 선택하여 획득 (해당 등급 없을 시, 낮은 등급 출현)",
+              "입장 시, 어두운 잔영, 아스라한 잔영, 빛나는 잔영 각각 1개 획득"
+            ]
+          ]
+        }
+      }
+    }
   },
   "guide": {
     "title": "운영법",

@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { showSuccess, showError } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import type { Difficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
+import type { Difficulty, FloorDifficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
+import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Sinner as CanonicalSinner, Identity as CanonicalIdentity, EGO as CanonicalEGO } from '@/lib/types'
 
 type IdentitySlot = {
@@ -30,6 +32,7 @@ type EgoSlot = {
 
 type FloorEntry = {
   floor: number
+  difficulty?: FloorDifficulty
   theme_id: string | null
   gift_ids: string[]
   memo: string
@@ -72,6 +75,7 @@ interface Props {
   egoSlots: EgoSlot[]
   floorPlan: FloorEntry[]
   giftInventory: string[]
+  mainKeywords?: string[]
   identities: IdentityData[]
   sinners: SinnerData[]
   egos: EgoData[]
@@ -88,6 +92,7 @@ export default function PlanActions({
   egoSlots,
   floorPlan,
   giftInventory,
+  mainKeywords = [],
   identities,
   sinners,
   egos,
@@ -95,6 +100,8 @@ export default function PlanActions({
   isAdmin,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('planner.detail')
+  const tCommon = useTranslations('common')
   const [codeCopied, setCodeCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -108,10 +115,12 @@ export default function PlanActions({
         .filter(s => (s.slot_order ?? 99) < 99)
         .sort((a, b) => (a.slot_order ?? 99) - (b.slot_order ?? 99))
       for (const slot of formed) {
-        if (!slot.sinner_id || !slot.identity_id) continue
+        if (!slot.sinner_id) continue
+        formationOrder.push(slot.sinner_id)
+
+        if (!slot.identity_id) continue
         const ident = identities.find(i => i.id === slot.identity_id)
         if (ident) deckSlots[slot.sinner_id] = ident
-        if ((slot.slot_order ?? 99) < 7) formationOrder.push(slot.sinner_id)
       }
 
       for (const slot of egoSlots) {
@@ -135,19 +144,20 @@ export default function PlanActions({
       setCodeCopied(true)
       setTimeout(() => setCodeCopied(false), 2000)
     } catch {
-      showError('편성코드 복사 실패')
+      showError(t('copyDeckCodeFailed'))
     }
   }
 
   const handleFork = () => {
     const planState = {
       difficulty,
-      title: `${planTitle} (Fork)`,
+      title: t('forkedTitle', { title: planTitle }),
       description: planDescription ?? '',
       identitySlots: deck,
       egoSlots,
       floorPlan,
       giftInventory,
+      mainKeywords,
       activeTab: 'deck' as const,
     }
     saveDraftToLocal({
@@ -157,7 +167,7 @@ export default function PlanActions({
       floorPlan: planState.floorPlan as PlannerFloorEntry[],
     })
     router.push('/planner')
-    showSuccess('플래너에 불러왔습니다')
+    showSuccess(t('loadedIntoPlanner'))
   }
 
   const handleRunMode = () => {
@@ -167,16 +177,18 @@ export default function PlanActions({
       description: planDescription ?? '',
       identitySlots: deck as PlannerIdentitySlot[],
       egoSlots: egoSlots as PlannerEgoSlot[],
-      floorPlan: floorPlan.map((e: PlannerFloorEntry, i: number) => ({
+      floorPlan: floorPlan.map((e, i: number) => ({
         floor: i + 1,
+        difficulty: isFloorDifficulty(e?.difficulty) && isAllowedFloorDifficulty(e.difficulty, i + 1) ? e.difficulty : getLegacyPlanFloorDifficulty(difficulty, i + 1),
         theme_id: e?.theme_id ?? null,
-        gift_ids: [] as string[],
+        gift_ids: e?.gift_ids ?? [],
         memo: e?.memo ?? '',
       })),
       giftInventory,
+      mainKeywords,
       activeTab: 'deck' as const,
     })
-    window.location.href = '/planner/run?from-plan=1'
+    router.push('/planner/run?from-plan=1')
   }
 
   const handleEdit = () => {
@@ -188,6 +200,7 @@ export default function PlanActions({
       egoSlots: egoSlots as PlannerEgoSlot[],
       floorPlan: floorPlan as PlannerFloorEntry[],
       giftInventory,
+      mainKeywords,
       activeTab: 'deck',
     })
     router.push(`/planner?edit=${planId}`)
@@ -200,74 +213,60 @@ export default function PlanActions({
         router.push('/planner/community')
       } else {
         const data = await res.json()
-        showError(data.error ?? '삭제 실패')
+        showError(data.error ?? t('deleteFailed'))
       }
     } catch {
-      showError('삭제 중 오류 발생')
+      showError(t('deleteError'))
     }
     setShowDeleteModal(false)
   }
 
+  const actionBase = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-sm border px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 hover:border-[#8a6010] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] focus-visible:outline-offset-2'
+  const quietAction = `${actionBase} border-[#2a2118] bg-[#15100b] text-[#b9a47f]`
+  const primaryAction = `${actionBase} border-[#c8900a] bg-[#c8900a] text-[#0d0b08] hover:bg-[#e8b030] hover:text-[#0d0b08]`
+
   return (
     <>
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
         <button
           onClick={handleCopyCode}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-            background: codeCopied ? 'rgba(34,197,94,0.12)' : 'transparent',
-            border: `1px solid ${codeCopied ? 'rgba(34,197,94,0.4)' : '#333'}`,
-            borderRadius: '0.375rem', color: codeCopied ? '#4ade80' : '#9ca3af',
-            fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-          }}
+          className={codeCopied ? `${actionBase} border-emerald-500/40 bg-emerald-500/10 text-emerald-300` : quietAction}
         >
-          {codeCopied ? <Check size={12} /> : <Copy size={12} />}
-          {codeCopied ? '복사 완료' : '편성코드 복사'}
+          {codeCopied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+          {codeCopied ? t('copied') : t('copyDeckCode')}
         </button>
 
         <button
           onClick={handleFork}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-            background: 'transparent', border: '1px solid #333', borderRadius: '0.375rem',
-            color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-          }}
+          className={quietAction}
         >
-          <GitFork size={12} /> Fork
+          <GitFork className="h-4 w-4" aria-hidden="true" />
+          {t('fork')}
         </button>
 
         <button
           onClick={handleRunMode}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-            background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
-            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-          }}
+          className={`${primaryAction} min-[420px]:col-span-2`}
         >
-          <Play size={12} /> 트리거 모드
+          <Play className="h-4 w-4" aria-hidden="true" />
+          {t('triggerMode')}
         </button>
 
         {(isOwner || isAdmin) && (
           <>
             <button
               onClick={handleEdit}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-                background: 'transparent', border: '1px solid rgba(200,144,10,0.3)', borderRadius: '0.375rem',
-                color: '#c8900a', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-              }}
+              className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[#c8900a]`}
             >
-              <Pencil size={12} /> 수정
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              {tCommon('edit')}
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem',
-                background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.375rem',
-                color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-              }}
+              className={`${actionBase} border-red-500/35 bg-[#15100b] text-red-300 hover:border-red-400 hover:text-red-200`}
             >
-              <Trash2 size={12} /> 삭제
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              {tCommon('delete')}
             </button>
           </>
         )}
@@ -275,10 +274,10 @@ export default function PlanActions({
 
       <ConfirmModal
         open={showDeleteModal}
-        title="플랜 삭제"
-        message="이 플랜을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
-        confirmLabel="삭제"
-        cancelLabel="취소"
+        title={t('deletePlanTitle')}
+        message={t('deletePlanMessage')}
+        confirmLabel={tCommon('delete')}
+        cancelLabel={tCommon('cancel')}
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteModal(false)}

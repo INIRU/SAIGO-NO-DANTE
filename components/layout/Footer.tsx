@@ -11,6 +11,7 @@ const NAV_LINKS = [
 export default async function Footer() {
   const tCommon = await getTranslations('common')
   const tNav = await getTranslations('nav')
+  const tSite = await getTranslations('site')
   return (
     <footer className="mt-24">
       {/* 장식선 */}
@@ -27,7 +28,7 @@ export default async function Footer() {
           <Image src="/images/logo.webp" alt="" width={22} height={32} unoptimized
             style={{ width: '1.375rem', height: 'auto', opacity: 0.85, filter: 'drop-shadow(0 0 6px rgba(200,144,10,0.4))' }} />
           <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>
-            최애의 관리자
+            {tSite('name')}
           </p>
         </div>
 
@@ -60,23 +61,23 @@ export default async function Footer() {
           <Link href="/terms"
             className="transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
-            이용약관
+            {tCommon('terms')}
           </Link>
           <span style={{ color: 'var(--text-muted)' }}>·</span>
           <Link href="/privacy"
             className="transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
-            개인정보 처리방침
+            {tCommon('privacy')}
           </Link>
         </div>
 
         {/* 디스클레이머 */}
         <div className="text-center space-y-1">
           <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)', letterSpacing: '0.05em' }}>
-            팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.
+            {tCommon('fanDisclaimer')}
           </p>
           <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
-            This is a fan site and is not affiliated with Project Moon.
+            {tCommon('unaffiliatedDisclaimer')}
           </p>
         </div>
 

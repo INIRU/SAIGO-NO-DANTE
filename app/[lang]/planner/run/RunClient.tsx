@@ -7,6 +7,7 @@ import { ArrowLeft, RotateCcw, ChevronRight, ChevronsRight, ChevronsLeft } from 
 import { type RunState } from '@/lib/planner/run-types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { saveRunToHistory, decodePlan, loadPlanForRun } from '@/lib/planner/encoder'
+import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
 import { type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData } from '@/lib/planner/types'
 import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
@@ -33,6 +34,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const state = useRunStore()
   const dispatch = useRunStore(s => s.dispatch)
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  const giftConditionState = useMemo<RunState>(() => ({
+    ...state,
+    identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),
+  }), [state, identities])
 
   // 트리거 모드: Navbar, Footer 숨김
   useEffect(() => {
@@ -62,7 +67,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           if (!ident) return null
           return {
             identity_id: id, sinner_id: ident.sinner_id, name_kr: ident.name_kr,
-            rarity: ident.rarity, keywords: ident.keywords ?? [],
+            rarity: ident.rarity, keywords: ident.keywords ?? [], skill_keyword_list: ident.skill_keyword_list,
+            affiliation: ident.affiliation, association_list: ident.association_list,
             game_id: ident.game_id, folder_name: ident.folder_name, slot_order: i,
           }
         }).filter(Boolean) as any[]
@@ -79,7 +85,13 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             difficulty: decoded.difficulty,
             identitySlots: slots,
             egoSlots,
-            floorPlan: decoded.floorThemeIds.map((tid, i) => ({ floor: i + 1, theme_id: tid, gift_ids: [] as string[], memo: '' })),
+            floorPlan: decoded.floorThemeIds.map((tid, i) => ({
+              floor: i + 1,
+              difficulty: decoded.floorDifficulties[i],
+              theme_id: tid,
+              gift_ids: [] as string[],
+              memo: '',
+            })),
             giftInventory: decoded.giftIds,
           },
         })
@@ -184,7 +196,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         {/* 중앙: 메인 패널 */}
         <main className="flex-1 min-w-0">
           <FloorPanel
-            state={state} dispatch={dispatch}
+            state={giftConditionState} dispatch={dispatch}
             themes={themes} gifts={gifts} giftMap={giftMap}
             identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos}
             events={events}
@@ -214,7 +226,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           </button>
           {/* 모바일: 항상 InventoryPanel 렌더 (자체 토글 사용), 데스크톱: sidebarOpen 따라 표시 */}
           <div className="lg:hidden">
-            <InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
+            <InventoryPanel state={giftConditionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
           </div>
           <AnimatePresence>
             {sidebarOpen && (
@@ -226,7 +238,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
                 exit={{ x: 50, opacity: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
               >
-                <InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
+                <InventoryPanel state={giftConditionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
               </motion.div>
             )}
           </AnimatePresence>

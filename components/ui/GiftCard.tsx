@@ -2,6 +2,7 @@
 
 import { useState, memo } from 'react'
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { X, FlaskConical } from 'lucide-react'
 import { OCTAGON_CLIP, GRADE_ROMAN, GIFT_BG_URL, getGiftKeywordSlug, getGiftKeywordIconUrl } from '@/lib/constants/gift'
@@ -13,6 +14,8 @@ interface GiftCardGift {
   keyword?: string | null
   image_url?: string | null
   name: string
+  name_en?: string | null
+  name_jp?: string | null
 }
 
 interface GiftCardProps {
@@ -56,18 +59,25 @@ const GiftCard = memo(function GiftCard({
   onRemove,
   conditionStatus,
 }: GiftCardProps) {
+  const locale = useLocale()
+  const t = useTranslations('planner.giftTab.conditionStatus')
   const [hovered, setHovered] = useState(false)
   const isInsert = variant === 'insert'
   const isEX = gift.grade === 'EX'
   const gradeLabel = GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade
   const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
   const kwIconUrl = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
+  const displayName = locale === 'en'
+    ? gift.name_en || gift.name
+    : locale === 'ja'
+      ? gift.name_jp || gift.name
+      : gift.name
 
   return (
     <button
       className={className ? `gift-card ${className}` : 'gift-card'}
-      aria-label={ariaLabel}
-      title={title}
+      aria-label={ariaLabel ?? displayName}
+      title={title ?? displayName}
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setHovered(true)}
@@ -157,7 +167,7 @@ const GiftCard = memo(function GiftCard({
             </span>
           ) : gift.image_url ? (
             <div className="relative w-full h-full">
-              <ImageWithFallback src={gift.image_url} alt={gift.name} fill fallbackType="gift" className="object-contain" sizes="120px" />
+              <ImageWithFallback src={gift.image_url} alt={displayName} fill fallbackType="gift" className="object-contain" sizes="120px" />
             </div>
           ) : (
             <FlaskConical size="1.5rem" style={{ color: '#444' }} />
@@ -239,8 +249,8 @@ const GiftCard = memo(function GiftCard({
         {!isInsert && conditionStatus && (
           <div
             title={conditionStatus.level === 'unmet'
-              ? `조건 미달: ${conditionStatus.text} — 편성+대기 포함해도 부족`
-              : `조건 주의: ${conditionStatus.text} — 편성(1-7)만으로는 부족, 대기 포함 시 충족`}
+              ? t('unmetTitle', { text: conditionStatus.text })
+              : t('warnTitle', { text: conditionStatus.text })}
             style={{
               position: 'absolute', inset: 0, zIndex: 18,
               background: conditionStatus.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
@@ -254,7 +264,7 @@ const GiftCard = memo(function GiftCard({
               textShadow: '0 0 0.25rem rgba(0,0,0,0.9)',
               textAlign: 'center', lineHeight: 1.3, padding: '0 0.125rem',
             }}>
-              {conditionStatus.level === 'unmet' ? '조건 미달' : '조건 주의'}
+              {conditionStatus.level === 'unmet' ? t('unmetLabel') : t('warnLabel')}
             </span>
           </div>
         )}
@@ -287,7 +297,7 @@ const GiftCard = memo(function GiftCard({
           transition: 'color 0.15s',
           fontFamily: 'var(--font-heading)',
         }}>
-          {gift.name}
+          {displayName}
         </p>
       )}
       {!isInsert && conditionStatus && (

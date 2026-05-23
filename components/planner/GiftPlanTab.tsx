@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
 import { Search } from 'lucide-react'
-import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
+import type { PlannerState, PlannerAction, GiftData, RecipeData } from '@/lib/planner/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import {
+  deriveBlockedFinalFusionMaterialIds,
+  getFinalGiftVariantIds,
+  parseFinalGiftIds,
+} from '@/lib/planner/fusion'
 import {
   STORAGE_BASE,
   GRADE_ROMAN,
@@ -26,55 +33,40 @@ interface Props {
   dispatch: React.Dispatch<PlannerAction>
   gifts: GiftData[]
   giftMap: Map<number, GiftData>
+  recipes: RecipeData[]
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) {
+export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }: Props) {
+  const locale = useLocale()
+  const t = useTranslations('planner.giftTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
   const [finalDragOver, setFinalDragOver] = useState(false)
   const [finalSearch, setFinalSearch] = useState('')
   const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
   const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
+  const getGiftDisplayName = (gift: GiftData) => locale === 'en'
+    ? gift.name_en || gift.name
+    : locale === 'ja'
+      ? gift.name_jp || gift.name
+      : gift.name
 
-  // 키워드별 인격 수: 편성(1-7) vs 전체(편성+대기) — 특수 충전 등 정규화 적용
-  const { formationKwCounts, allKwCounts } = useMemo(() => {
-    const formation: Record<string, number> = {}
-    const all: Record<string, number> = {}
-    for (const slot of state.identitySlots) {
-      if (slot.slot_order >= 99) continue // 편성 순서 없는 인격(벤치) 제외
-      const isFormation = slot.slot_order < 7  // 0-6 = 편성 1-7
-      // 중복 카운트 방지: 인격당 정규화된 키워드 유니크
-      const normalized = new Set<string>(slot.keywords.map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        all[kw] = (all[kw] ?? 0) + 1
-        if (isFormation) formation[kw] = (formation[kw] ?? 0) + 1
-      }
-    }
-    return { formationKwCounts: formation, allKwCounts: all }
-  }, [state.identitySlots])
+  const conditionCounts = useMemo(
+    () => getGiftConditionCountsForSlots(state.identitySlots),
+    [state.identitySlots],
+  )
 
   // 조건 체크: null=충족, {level:'warn',text} = 대기 포함 시 충족, {level:'unmet',text} = 불충족
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    const cond = gift.activation_condition
-    if (!cond || !cond.count) return null
-
-    let formationHave = 0, allHave = 0, label = ''
-    if (cond.type === 'keyword' && cond.keyword) {
-      const normalizedKeyword = normalizeThemeKeyword(cond.keyword)
-      formationHave = formationKwCounts[normalizedKeyword] ?? 0
-      allHave = allKwCounts[normalizedKeyword] ?? 0
-      label = cond.keyword
-    } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      formationHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      allHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      label = cond.keywords.join('+')
-    } else {
-      return null
-    }
-
-    if (formationHave >= cond.count) return null // 편성만으로 충족
-    if (allHave >= cond.count) return { level: 'warn', text: `${label} ${formationHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${allHave}/${cond.count}` }
+    return getGiftActivationConditionStatus({
+      gift,
+      ...conditionCounts,
+      formatKeywordLabel: keyword => {
+        const normalized = normalizeThemeKeyword(keyword)
+        const slug = getKeywordSlug(normalized)
+        return slug ? keywordLabel(slug) : normalized
+      },
+    })
   }
 
   // Parse selected IDs by prefix
@@ -96,14 +88,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   )
   // finalIds: game_id Set + 강화 상태 Map
   const finalIds = useMemo(() => {
-    const ids = new Set<number>()
-    for (const id of state.giftInventory) {
-      if (!id.startsWith('final_')) continue
-      const rest = id.replace('final_', '').replace('_plusplus', '').replace('_plus', '')
-      const num = parseInt(rest)
-      if (!isNaN(num)) ids.add(num)
-    }
-    return ids
+    return parseFinalGiftIds(state.giftInventory)
   }, [state.giftInventory])
 
   // 강화 상태: game_id → 0(기본) | 1(+) | 2(++)
@@ -125,6 +110,42 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
     return map
   }, [state.giftInventory])
 
+  const blockedFinalMaterialIds = useMemo(() => {
+    return deriveBlockedFinalFusionMaterialIds({
+      selectedFinalGiftIds: finalIds,
+      recipes,
+      giftMap,
+      gifts,
+    })
+  }, [finalIds, giftMap, gifts, recipes])
+
+  const finalVisibleIds = useMemo(() => {
+    return new Set(Array.from(finalIds).filter(id => !blockedFinalMaterialIds.has(id)))
+  }, [blockedFinalMaterialIds, finalIds])
+
+  const removeFinalGiftVariants = useCallback((giftGameId: number) => {
+    for (const giftId of getFinalGiftVariantIds(giftGameId)) {
+      dispatch({ type: 'REMOVE_GIFT', giftId })
+    }
+  }, [dispatch])
+
+  const addFinalGift = useCallback((gift: GiftData) => {
+    if (finalIds.has(gift.game_id)) return
+    if (blockedFinalMaterialIds.has(gift.game_id)) return
+    dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
+  }, [blockedFinalMaterialIds, dispatch, finalIds])
+
+  useEffect(() => {
+    if (blockedFinalMaterialIds.size === 0) return
+
+    for (const blockedId of blockedFinalMaterialIds) {
+      if (!finalIds.has(blockedId)) continue
+      for (const giftId of getFinalGiftVariantIds(blockedId)) {
+        dispatch({ type: 'REMOVE_GIFT', giftId })
+      }
+    }
+  }, [blockedFinalMaterialIds, dispatch, finalIds])
+
   function getGiftsByIds(ids: Set<number>): GiftData[] {
     return Array.from(ids)
       .map(id => giftMap.get(id))
@@ -134,17 +155,21 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   // Observe: grade 1-3, exclude 잔영
   const filteredFinalSourceGifts = useMemo(() => {
     return gifts.filter(g => {
+      if (blockedFinalMaterialIds.has(g.game_id)) return false
       if (finalFilterGrade && g.grade !== finalFilterGrade) return false
       if (finalFilterKeyword) {
         const slug = getKeywordSlug(g.keyword ?? null)
         if (slug !== finalFilterKeyword) return false
       }
       if (finalSearch.trim()) {
-        if (!g.name.includes(finalSearch.trim())) return false
+        const query = finalSearch.trim().toLocaleLowerCase()
+        const displayName = getGiftDisplayName(g).toLocaleLowerCase()
+        const koreanName = g.name.toLocaleLowerCase()
+        if (!displayName.includes(query) && !koreanName.includes(query)) return false
       }
       return true
     })
-  }, [gifts, finalFilterGrade, finalFilterKeyword, finalSearch])
+  }, [blockedFinalMaterialIds, gifts, finalFilterGrade, finalFilterKeyword, finalSearch, locale])
 
   const finalGradeGroups = useMemo(() => {
     const groups: Record<string, GiftData[]> = {}
@@ -165,15 +190,16 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
   )
 
   const subTabs: { key: GiftSubTab; label: string; count: number }[] = [
-    { key: 'observe', label: '관측 기프트', count: observeIds.size },
-    { key: 'start', label: '시작 기프트', count: startIds.size },
-    { key: 'final', label: '최종 기프트', count: finalIds.size },
+    { key: 'observe', label: t('tabs.observe'), count: observeIds.size },
+    { key: 'start', label: t('tabs.start'), count: startIds.size },
+    { key: 'final', label: t('tabs.final'), count: finalVisibleIds.size },
   ]
+  const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="planner-gift-tab" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* ── Sub-tab bar ─────────────────────────────────────────────────── */}
-      <div style={{
+      <div className="planner-gift-subtabs" style={{
         display: 'flex',
         gap: '0',
         borderBottom: '1px solid #1f1a14',
@@ -184,6 +210,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
             <button
               key={tab.key}
               onClick={() => setSubTab(tab.key)}
+              className="planner-gift-subtab"
               style={{
                 padding: '0.5rem 1.25rem',
                 background: 'transparent',
@@ -222,9 +249,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
       {/* ── Observe tab ─────────────────────────────────────────────────── */}
       {subTab === 'observe' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        <div className="planner-gift-observe" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           {/* Info bar */}
-          <div style={{
+          <div className="planner-gift-info-bar" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
@@ -235,10 +262,10 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
             border: '1px solid #1f1a14',
           }}>
             <span style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              관측 비용:
+              {t('observe.cost')}
               <Image
                 src={`${STORAGE_BASE}/icons/start-buffs/starlight.webp`}
-                alt="별빛"
+                alt={t('observe.starlightAlt')}
                 width={16}
                 height={16}
                 style={{ width: '1rem', height: '1rem', verticalAlign: 'middle' }}
@@ -254,15 +281,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               border: `1px solid ${observeIds.size >= 3 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
               fontWeight: 600,
             }}>
-              선택 {observeIds.size}/3
+              {t('observe.selected', { count: observeIds.size })}
             </span>
             <span style={{ fontSize: '0.625rem', color: '#444' }}>
-              {GRADE_ROMAN['1']}~{GRADE_ROMAN['3']} 등급 · 잔영 제외
+              {t('observe.gradeRange', { from: GRADE_ROMAN['1'], to: GRADE_ROMAN['3'] })}
             </span>
           </div>
 
           {/* 3-column layout: sidebar + grid + selected */}
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+          <div className="planner-gift-observe-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
             <GiftGridPanel
               gifts={observeGifts}
               selectedIds={observeIds}
@@ -278,7 +305,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               }}
             />
             <SelectedPanel
-              title="선택한 E.G.O 기프트"
+              title={t('observe.selectedTitle')}
               selectedGifts={getGiftsByIds(observeIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
               badge={
@@ -307,12 +334,12 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   }}>
                     <Image
                       src={`${STORAGE_BASE}/icons/start-buffs/starlight.webp`}
-                      alt="별빛"
+                      alt={t('observe.starlightAlt')}
                       width={14}
                       height={14}
                       style={{ width: '0.875rem', height: '0.875rem' }}
                     />
-                    {observeIds.size * 70} 별빛
+                    {t('observe.starlightCost', { count: observeIds.size * 70 })}
                   </div>
                 ) : undefined
               }
@@ -359,17 +386,17 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
         }
 
         return (
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="planner-gift-start-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+            <div className="planner-gift-start-main" style={{ flex: 1, minWidth: 0 }}>
               {/* 키워드별 카드 그리드 (게임 UI 스타일) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: '0.75rem' }}>
+              <div className="planner-gift-start-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: '0.75rem' }}>
                 {KEYWORD_ORDER.map(kw => {
                   const kwGifts = grouped.get(kw) ?? []
                   if (kwGifts.length === 0) return null
                   const slug = getKeywordSlug(kw)
                   const iconUrl = slug ? getKeywordIconUrl(slug) : null
                   return (
-                    <div key={kw} style={{
+                    <div key={kw} className="planner-gift-start-group" style={{
                       background: '#1a1510',
                       border: '1px solid #2a2520',
                       borderRadius: '0.5rem',
@@ -385,15 +412,17 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                         {iconUrl && (
                           <Image src={iconUrl} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />
                         )}
-                        <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600 }}>{kw}</span>
+                        <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600 }}>{keywordLabel(slug)}</span>
                       </div>
                       {/* 기프트 3개 */}
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}>
+                      <div className="planner-gift-start-card-row" style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}>
                         {kwGifts.map(gift => {
                           const isSelected = startIds.has(gift.game_id)
                           return (
                             <button
                               key={gift.id}
+                              title={getGiftDisplayName(gift)}
+                              aria-label={getGiftDisplayName(gift)}
                               onClick={() => {
                                 const key = `start_${gift.game_id}`
                                 if (isSelected) {
@@ -431,7 +460,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                                 </span>
                                 <div style={{ position: 'absolute', inset: '15%' }}>
                                   {gift.image_url?.startsWith('http') && (
-                                    <Image src={gift.image_url} alt={gift.name} fill sizes="56px" style={{ objectFit: 'contain' }} />
+                                    <Image src={gift.image_url} alt={getGiftDisplayName(gift)} fill sizes="56px" style={{ objectFit: 'contain' }} />
                                   )}
                                 </div>
                                 {isSelected && (
@@ -441,7 +470,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                                 )}
                               </div>
                               <span style={{ fontSize: '0.5625rem', color: '#aaa', textAlign: 'center', lineHeight: 1.2, maxWidth: '3.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {gift.name}
+                                {getGiftDisplayName(gift)}
                               </span>
                             </button>
                           )
@@ -453,7 +482,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               </div>
             </div>
             <SelectedPanel
-              title="시작 기프트"
+              title={t('start.selectedTitle')}
               selectedGifts={getGiftsByIds(startIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
               badge={
@@ -466,7 +495,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   border: `1px solid ${startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
                   fontWeight: 600,
                 }}>
-                  선택 {startIds.size}/{maxStartGifts}
+                  {t('start.selected', { count: startIds.size, max: maxStartGifts })}
                 </span>
               }
             />
@@ -480,7 +509,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
         const gradeGroups = finalGradeGroups
 
         const GRADE_OPTIONS = [
-          { value: null, label: '전체' },
+          { value: null, label: t('final.all') },
           { value: 'EX', label: 'EX' },
           { value: '5', label: 'Ⅴ' },
           { value: '4', label: 'Ⅳ' },
@@ -492,7 +521,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
         const gradeGroupOrder = ['EX', '5', '4', '3', '2', '1']
 
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="planner-gift-final" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
             {/* ── Top section: drop zone ──────────────────────────────── */}
             <div
@@ -502,10 +531,12 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 e.preventDefault()
                 setFinalDragOver(false)
                 const gameId = e.dataTransfer.getData('text/plain')
-                if (gameId && !finalIds.has(Number(gameId))) {
-                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gameId}` })
+                const gift = giftMap.get(Number(gameId))
+                if (gift) {
+                  addFinalGift(gift)
                 }
               }}
+              className="planner-gift-final-build"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -520,7 +551,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               }}
             >
               {/* Drop zone header */}
-              <div style={{
+              <div className="planner-gift-final-build-header" style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -528,9 +559,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>
-                    최종 기프트 빌드
+                    {t('final.buildTitle')}
                   </span>
-                  {finalIds.size > 0 && (
+                  {finalVisibleIds.size > 0 && (
                     <span style={{
                       fontSize: '0.5625rem',
                       color: '#c8900a',
@@ -540,15 +571,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                       border: '1px solid rgba(200,144,10,0.2)',
                       fontWeight: 700,
                     }}>
-                      {finalIds.size}개
+                      {t('final.selectedCount', { count: finalVisibleIds.size })}
                     </span>
                   )}
                 </div>
-                {finalIds.size > 0 && (
+                {finalVisibleIds.size > 0 && (
                   <button
                     onClick={() => {
                       Array.from(finalIds).forEach(id => {
-                        dispatch({ type: 'REMOVE_GIFT', giftId: `final_${id}` })
+                        removeFinalGiftVariants(id)
                       })
                     }}
                     style={{
@@ -564,23 +595,23 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.16)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)' }}
                   >
-                    전체 삭제
+                    {t('final.clearAll')}
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: '0.625rem', color: '#44403c', marginTop: '-0.25rem' }}>
-                아래 목록에서 드래그하거나 클릭하여 추가 · 강화 가능한 기프트는 클릭하여 +/++ 강화
+              <p className="planner-gift-final-help" style={{ fontSize: '0.625rem', color: '#44403c', marginTop: '-0.25rem' }}>
+                {t('final.help')}
               </p>
-              {state.identitySlots.length > 0 && finalIds.size > 0 && (
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.125rem', fontSize: '0.5625rem' }}>
-                  <span style={{ color: '#ef4444' }}>● 조건 미달 — 전체 인격으로도 부족</span>
-                  <span style={{ color: '#e8b030' }}>● 조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족</span>
+              {state.identitySlots.length > 0 && finalVisibleIds.size > 0 && (
+                <div className="planner-gift-final-condition-legend" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.125rem', fontSize: '0.5625rem' }}>
+                  <span style={{ color: '#ef4444' }}>● {t('final.conditionUnmet')}</span>
+                  <span style={{ color: '#e8b030' }}>● {t('final.conditionWarn')}</span>
                 </div>
               )}
 
               {/* Drop zone content */}
-              {finalIds.size === 0 ? (
-                <div style={{
+              {finalVisibleIds.size === 0 ? (
+                <div className="planner-gift-final-drop-empty" style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -591,15 +622,15 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   fontSize: '0.75rem',
                   transition: 'color 0.15s',
                 }}>
-                  기프트를 아래에서 드래그하거나 클릭하여 추가하세요
+                  {t('final.emptyDrop')}
                 </div>
               ) : (
-                <div style={{
+                <div className="planner-gift-card-grid planner-gift-final-selected-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                   gap: '0.5rem',
                 }}>
-                  {getGiftsByIds(finalIds).map(gift => {
+                  {getGiftsByIds(finalVisibleIds).map(gift => {
                     const enh = finalEnhance.get(gift.game_id) ?? 0
                     const canEnh = !!(gift.effect_plus)
                     const cycleEnh = () => {
@@ -631,29 +662,31 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
               {/* Quick add pills from observe/start */}
               {(observeIds.size > 0 || startIds.size > 0) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
+                <div className="planner-gift-quick-adds" style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
                   <QuickAddSection
-                    label="관측 기프트에서 추가"
+                    label={t('final.addFromObserve')}
                     gifts={getGiftsByIds(observeIds)}
                     finalIds={finalIds}
-                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                    blockedIds={blockedFinalMaterialIds}
+                    onAdd={addFinalGift}
                   />
                   <QuickAddSection
-                    label="시작 기프트에서 추가"
+                    label={t('final.addFromStart')}
                     gifts={getGiftsByIds(startIds)}
                     finalIds={finalIds}
-                    onAdd={gift => dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })}
+                    blockedIds={blockedFinalMaterialIds}
+                    onAdd={addFinalGift}
                   />
                 </div>
               )}
             </div>
 
             {/* ── Bottom section: full gift list ──────────────────────── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: 600 }}>전체 기프트 목록</span>
+            <div className="planner-gift-final-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: 600 }}>{t('final.listTitle')}</span>
 
               {/* Search input */}
-              <div style={{ position: 'relative' }}>
+              <div className="planner-gift-final-search" style={{ position: 'relative' }}>
                 <Search
                   size={14}
                   color="#555"
@@ -661,7 +694,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 />
                 <input
                   type="text"
-                  placeholder="기프트 이름 검색..."
+                  placeholder={t('final.searchPlaceholder')}
                   value={finalSearch}
                   onChange={e => setFinalSearch(e.target.value)}
                   style={{
@@ -682,9 +715,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               </div>
 
               {/* Keyword filter tabs + grade dropdown */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="planner-gift-final-filters" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 {/* Scrollable keyword tabs */}
-                <div style={{
+                <div className="planner-gift-final-keywords" style={{
                   display: 'flex',
                   gap: '0.25rem',
                   overflowX: 'auto',
@@ -718,7 +751,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                         {iconUrl && (
                           <Image src={iconUrl} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', objectFit: 'contain' }} />
                         )}
-                        {tab.label}
+                        {keywordLabel(tab.slug)}
                       </button>
                     )
                   })}
@@ -728,6 +761,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 <select
                   value={finalFilterGrade ?? ''}
                   onChange={e => setFinalFilterGrade(e.target.value || null)}
+                  className="planner-gift-grade-select"
                   style={{
                     background: '#1a1510',
                     border: '1px solid #2a2520',
@@ -749,7 +783,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               </div>
 
               {/* Gift grid (grouped by grade) */}
-              <div style={{ maxHeight: '35rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div className="planner-gift-final-grid-scroll" style={{ maxHeight: '35rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {gradeGroupOrder.filter(g => gradeGroups[g]?.length > 0).map(grade => (
                   <div key={grade}>
                     {/* Grade divider */}
@@ -772,7 +806,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                     </div>
 
                     {/* Cards row */}
-                    <div style={{
+                    <div className="planner-gift-card-grid planner-gift-final-source-grid" style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                       gap: '0.5rem',
@@ -794,7 +828,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                               isSelected={alreadyAdded}
                               onClick={() => {
                                 if (!alreadyAdded) {
-                                  dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
+                                  addFinalGift(gift)
                                 }
                               }}
                               disabled={alreadyAdded}
@@ -808,7 +842,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 ))}
                 {filteredFinalSourceGifts.length === 0 && (
                   <div style={{ textAlign: 'center', color: '#3f3520', fontSize: '0.75rem', padding: '2rem 0' }}>
-                    검색 결과가 없습니다
+                    {t('final.noResults')}
                   </div>
                 )}
               </div>
@@ -816,6 +850,290 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
           </div>
         )
       })()}
+      <style jsx global>{`
+        @media (max-width: 767px) {
+          .planner-gift-tab {
+            gap: 0.875rem !important;
+          }
+
+          .planner-gift-subtabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+          }
+
+          .planner-gift-subtabs::-webkit-scrollbar,
+          .planner-keyword-sidebar::-webkit-scrollbar,
+          .planner-gift-final-keywords::-webkit-scrollbar {
+            display: none;
+          }
+
+          .planner-gift-subtab {
+            min-height: 2.75rem !important;
+            padding: 0.625rem 0.875rem !important;
+            font-size: 0.9375rem !important;
+            white-space: nowrap;
+            flex: 0 0 auto;
+          }
+
+          .planner-gift-subtab span {
+            font-size: 0.75rem !important;
+            min-width: 1.5rem;
+            text-align: center;
+          }
+
+          .planner-gift-info-bar {
+            padding: 0.625rem 0.75rem !important;
+            gap: 0.5rem !important;
+          }
+
+          .planner-gift-info-bar > span {
+            font-size: 0.875rem !important;
+          }
+
+          .planner-gift-observe-layout,
+          .planner-gift-start-layout {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.875rem !important;
+          }
+
+          .planner-gift-observe-layout > .planner-selected-panel,
+          .planner-gift-start-layout > .planner-selected-panel {
+            order: -1 !important;
+          }
+
+          .planner-gift-grid-panel {
+            flex-direction: column !important;
+            width: 100%;
+            gap: 0.75rem !important;
+          }
+
+          .planner-keyword-sidebar {
+            width: 100%;
+            max-width: none !important;
+            min-width: 0 !important;
+            flex-direction: row !important;
+            overflow-x: auto;
+            gap: 0.375rem !important;
+            padding: 0.125rem 0 0.25rem;
+            scroll-snap-type: x proximity;
+          }
+
+          .planner-keyword-filter {
+            min-height: 2.75rem !important;
+            min-width: 8.25rem;
+            flex: 0 0 auto;
+            border: 1px solid #2a2520 !important;
+            border-left: 1px solid #2a2520 !important;
+            border-bottom: 2px solid transparent !important;
+            border-radius: 0.375rem !important;
+            padding: 0.5rem 0.625rem !important;
+            font-size: 0.9375rem !important;
+            scroll-snap-align: start;
+          }
+
+          .planner-keyword-filter.is-active {
+            border-bottom-color: #c8900a !important;
+          }
+
+          .planner-keyword-filter > span:last-child {
+            font-size: 0.75rem !important;
+            line-height: 1.8 !important;
+          }
+
+          .planner-gift-grid-scroll {
+            width: 100%;
+            max-height: none !important;
+            overflow-y: visible !important;
+            padding-right: 0 !important;
+            gap: 0.875rem !important;
+          }
+
+          .planner-gift-card-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 0.375rem !important;
+          }
+
+          .planner-gift-empty {
+            padding: 2rem 1rem !important;
+            font-size: 0.9375rem !important;
+          }
+
+          .planner-selected-panel {
+            width: 100%;
+            min-width: 0 !important;
+            max-width: none !important;
+            padding: 0.75rem !important;
+          }
+
+          .planner-selected-panel-title {
+            font-size: 0.9375rem !important;
+          }
+
+          .planner-selected-panel-empty {
+            font-size: 0.875rem !important;
+          }
+
+          .planner-selected-panel-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.375rem !important;
+          }
+
+          .planner-selected-gift-row {
+            min-width: 0;
+            padding: 0.375rem !important;
+          }
+
+          .planner-selected-remove {
+            width: 1.75rem !important;
+            height: 1.75rem !important;
+            min-width: 1.75rem;
+          }
+
+          .planner-gift-start-main {
+            width: 100%;
+          }
+
+          .planner-gift-start-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.625rem !important;
+          }
+
+          .planner-gift-start-card-row {
+            justify-content: space-between !important;
+            gap: 0.375rem !important;
+            padding: 0.75rem 0.625rem !important;
+          }
+
+          .planner-gift-start-card-row button {
+            min-width: 0;
+            min-height: 5.75rem;
+            flex: 1 1 0;
+          }
+
+          .planner-gift-start-card-row button > span {
+            font-size: 0.75rem !important;
+            max-width: 5.75rem !important;
+            white-space: normal !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+          }
+
+          .planner-gift-final-build {
+            padding: 0.75rem !important;
+          }
+
+          .planner-gift-final-build-header,
+          .planner-gift-final-filters,
+          .planner-gift-final-condition-legend {
+            align-items: stretch !important;
+            flex-wrap: wrap !important;
+          }
+
+          .planner-gift-final-build-header > div {
+            flex-wrap: wrap;
+          }
+
+          .planner-gift-final-build-header button,
+          .planner-gift-grade-select {
+            min-height: 2.75rem !important;
+            font-size: 0.9375rem !important;
+          }
+
+          .planner-gift-final-help,
+          .planner-gift-final-drop-empty,
+          .planner-gift-final-list > span {
+            font-size: 0.875rem !important;
+          }
+
+          .planner-gift-final-drop-empty {
+            min-height: 5rem !important;
+            padding: 0.5rem;
+            text-align: center;
+          }
+
+          .planner-gift-final-condition-legend {
+            gap: 0.375rem !important;
+            font-size: 0.75rem !important;
+          }
+
+          .planner-gift-final-search input {
+            min-height: 2.75rem !important;
+            font-size: 1rem !important;
+          }
+
+          .planner-gift-final-keywords {
+            order: 2;
+            flex: 1 0 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            overflow-x: visible !important;
+            gap: 0.375rem !important;
+            padding-bottom: 0 !important;
+          }
+
+          .planner-gift-final-keywords button {
+            min-height: 2.75rem !important;
+            justify-content: center;
+            font-size: 0.875rem !important;
+            white-space: normal !important;
+          }
+
+          .planner-gift-grade-select {
+            width: 100%;
+            padding: 0.5rem 0.625rem !important;
+          }
+
+          .planner-gift-final-selected-grid,
+          .planner-gift-final-source-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 0.375rem !important;
+          }
+
+          .planner-gift-final-grid-scroll {
+            max-height: none !important;
+            overflow-y: visible !important;
+          }
+
+          .planner-gift-quick-adds {
+            gap: 0.5rem !important;
+          }
+
+          .planner-quick-add-label {
+            font-size: 0.875rem !important;
+          }
+
+          .planner-quick-add-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.375rem !important;
+          }
+
+          .planner-quick-add-chip {
+            min-width: 0;
+            min-height: 2.75rem !important;
+            justify-content: flex-start;
+            font-size: 0.875rem !important;
+          }
+
+          .planner-quick-add-chip > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+
+        @media (max-width: 359px) {
+          .planner-gift-card-grid,
+          .planner-gift-final-selected-grid,
+          .planner-gift-final-source-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

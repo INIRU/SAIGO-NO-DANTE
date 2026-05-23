@@ -1,10 +1,16 @@
-import type { PlannerState, Difficulty } from './types'
+import { getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution } from './types'
+import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
 
 interface PlanData {
+  v?: number              // payload version
   d: string               // difficulty first char
+  mk?: string[]           // planner-selected main keywords
+  mkm?: boolean           // main keywords were manually adjusted
   i: string[]             // identity_ids
+  sd?: SkillDistribution[] // S1/S2/S3 counts aligned with identity_ids
   e: string[]             // ego_ids
-  f: (string | null)[]    // floor theme_ids
+  f: (string | number | null)[] // floor theme_ids
+  fd?: string[]           // per-floor difficulty short codes
   g: string[]             // gift inventory game_ids
   t?: string              // title
   desc?: string           // description
@@ -16,10 +22,15 @@ const SHORT_DIFF: Record<string, Difficulty> = { n: 'normal', h: 'hard', o: 'ove
 export async function encodePlan(state: PlannerState): Promise<string> {
   const pako = (await import('pako')).default
   const data: PlanData = {
+    v: 2,
     d: DIFF_SHORT[state.difficulty],
+    mk: state.mainKeywords,
+    mkm: state.mainKeywordsManual,
     i: state.identitySlots.map(s => s.identity_id),
+    sd: state.identitySlots.map(s => getIdentitySkillDistribution(s)),
     e: state.egoSlots.map(s => s.ego_id),
     f: state.floorPlan.map(f => f.theme_id),
+    fd: state.floorPlan.map(f => DIFF_SHORT[f.difficulty] ?? DIFF_SHORT[getLegacyPlanFloorDifficulty(state.difficulty, f.floor)]),
     g: state.giftInventory,
   }
   if (state.title) data.t = state.title
@@ -36,9 +47,13 @@ export async function encodePlan(state: PlannerState): Promise<string> {
 export async function decodePlan(encoded: string): Promise<{
   difficulty: Difficulty
   identityIds: string[]
+  skillDistributions: SkillDistribution[]
   egoIds: string[]
   floorThemeIds: (string | null)[]
+  floorDifficulties: Difficulty[]
   giftIds: string[]
+  mainKeywords: string[]
+  mainKeywordsManual: boolean
   title: string
   description: string
 }> {
@@ -53,52 +68,232 @@ export async function decodePlan(encoded: string): Promise<{
 
   const json = new TextDecoder().decode(pako.inflate(bytes))
   const data: PlanData = JSON.parse(json)
+  const difficulty = SHORT_DIFF[data.d] ?? 'hard'
+  const floorThemeIds = (data.f ?? []).map(themeId => normalizePlannerThemeId(themeId))
+  const floorDifficulties = floorThemeIds.map((_, index) => {
+    const decodedDifficulty = data.fd?.[index] ? SHORT_DIFF[data.fd[index]] : null
+    return isFloorDifficulty(decodedDifficulty)
+      ? decodedDifficulty
+      : getLegacyPlanFloorDifficulty(difficulty, index + 1)
+  })
 
   return {
-    difficulty: SHORT_DIFF[data.d] ?? 'hard',
+    difficulty,
     identityIds: data.i ?? [],
+    skillDistributions: (data.i ?? []).map((_, index) => normalizeSkillDistribution(data.sd?.[index])),
     egoIds: data.e ?? [],
-    floorThemeIds: data.f ?? [],
+    floorThemeIds,
+    floorDifficulties,
     giftIds: data.g ?? [],
+    mainKeywords: Array.isArray(data.mk) ? data.mk.filter((item): item is string => typeof item === 'string') : [],
+    mainKeywordsManual: typeof data.mkm === 'boolean' ? data.mkm : Array.isArray(data.mk) && data.mk.length > 0,
     title: data.t ?? '',
     description: data.desc ?? '',
   }
 }
 
 // localStorage 키
-const LS_KEY = 'md-planner-draft'
+const PLANNER_HANDOFF_KEY = 'md-planner-handoff'
+const PLANNER_TEMP_DRAFTS_KEY = 'md-planner-temp-drafts'
+const PLANNER_TEMP_SLOTS_VERSION = 1
+
+export interface PlannerTempDraft {
+  id: string
+  label: string
+  savedAt: string
+  state: PlannerState
+}
+
+export type PlannerTempSlotNumber = 1 | 2 | 3
+
+export interface PlannerTempSlot {
+  slotNumber: PlannerTempSlotNumber
+  draft: PlannerTempDraft | null
+}
+
+interface PlannerTempSlotStorage {
+  version: number
+  slots: (PlannerTempDraft | null)[]
+}
+
+function snapshotPlannerState(state: PlannerState): PlannerState {
+  return {
+    difficulty: state.difficulty,
+    identitySlots: state.identitySlots,
+    egoSlots: state.egoSlots,
+    mainKeywords: state.mainKeywords ?? [],
+    mainKeywordsManual: state.mainKeywordsManual ?? false,
+    floorPlan: state.floorPlan,
+    giftInventory: state.giftInventory,
+    title: state.title,
+    description: state.description,
+    activeTab: state.activeTab ?? 'deck',
+  }
+}
+
+function isPlannerState(value: unknown): value is PlannerState {
+  if (!value || typeof value !== 'object') return false
+  const state = value as Partial<PlannerState>
+  return (
+    typeof state.difficulty === 'string' &&
+    typeof state.title === 'string' &&
+    typeof state.description === 'string' &&
+    Array.isArray(state.identitySlots) &&
+    Array.isArray(state.egoSlots) &&
+    (state.mainKeywords === undefined || Array.isArray(state.mainKeywords)) &&
+    (state.mainKeywordsManual === undefined || typeof state.mainKeywordsManual === 'boolean') &&
+    Array.isArray(state.floorPlan) &&
+    Array.isArray(state.giftInventory) &&
+    typeof state.activeTab === 'string'
+  )
+}
+
+function makeDraftId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function makePlannerTempLabel(state: PlannerState, fallbackLabel?: string): string {
+  const title = state.title.trim()
+  if (title) return title
+  return fallbackLabel?.trim() || 'Untitled'
+}
+
+function isPlannerTempDraft(value: unknown): value is PlannerTempDraft {
+  if (!value || typeof value !== 'object') return false
+  const draft = value as Partial<PlannerTempDraft>
+  return (
+    typeof draft.id === 'string' &&
+    typeof draft.label === 'string' &&
+    typeof draft.savedAt === 'string' &&
+    isPlannerState(draft.state)
+  )
+}
+
+function emptyPlannerTempSlots(): PlannerTempSlot[] {
+  return [1, 2, 3].map(slotNumber => ({ slotNumber: slotNumber as PlannerTempSlotNumber, draft: null }))
+}
+
+function normalizeSlotNumber(slotNumber: number): PlannerTempSlotNumber | null {
+  return slotNumber === 1 || slotNumber === 2 || slotNumber === 3 ? slotNumber : null
+}
+
+function parsePlannerTempSlots(raw: string | null): PlannerTempSlot[] {
+  const emptySlots = emptyPlannerTempSlots()
+  if (!raw) return emptySlots
+
+  try {
+    const parsed = JSON.parse(raw)
+    const parsedSlots = (parsed as Partial<PlannerTempSlotStorage>)?.slots
+    const sourceSlots = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsedSlots)
+        ? parsedSlots
+        : []
+
+    return emptySlots.map((slot, index) => {
+      const draft = sourceSlots[index]
+      return { ...slot, draft: isPlannerTempDraft(draft) ? draft : null }
+    })
+  } catch {
+    return emptySlots
+  }
+}
+
+function persistPlannerTempSlots(slots: PlannerTempSlot[]): void {
+  const storage: PlannerTempSlotStorage = {
+    version: PLANNER_TEMP_SLOTS_VERSION,
+    slots: slots.map(slot => slot.draft),
+  }
+  localStorage.setItem(PLANNER_TEMP_DRAFTS_KEY, JSON.stringify(storage))
+}
 
 export function saveDraftToLocal(state: PlannerState): void {
   try {
-    // Zustand persist 형식으로 저장 ({ state: {...}, version: 0 })
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      state: {
-        difficulty: state.difficulty,
-        identitySlots: state.identitySlots,
-        egoSlots: state.egoSlots,
-        floorPlan: state.floorPlan,
-        giftInventory: state.giftInventory,
-        title: state.title,
-        description: state.description,
-        activeTab: state.activeTab ?? 'deck',
-      },
-      version: 0,
-    }))
+    localStorage.setItem(PLANNER_HANDOFF_KEY, JSON.stringify(snapshotPlannerState(state)))
   } catch { /* quota exceeded 등 무시 */ }
 }
 
 export function loadDraftFromLocal(): Partial<PlannerState> | null {
   try {
-    const raw = localStorage.getItem(LS_KEY)
+    const raw = localStorage.getItem(PLANNER_HANDOFF_KEY)
     if (!raw) return null
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    return isPlannerState(parsed) ? parsed : null
   } catch {
     return null
   }
 }
 
 export function clearDraftFromLocal(): void {
-  try { localStorage.removeItem(LS_KEY) } catch { /* */ }
+  try { localStorage.removeItem(PLANNER_HANDOFF_KEY) } catch { /* */ }
+}
+
+export function loadPlannerTempDrafts(): PlannerTempDraft[] {
+  return loadPlannerTempSlots()
+    .map(slot => slot.draft)
+    .filter((draft): draft is PlannerTempDraft => Boolean(draft))
+}
+
+export function savePlannerTempDraft(state: PlannerState, fallbackLabel?: string): PlannerTempDraft[] {
+  savePlannerTempSlot(1, state, fallbackLabel)
+  return loadPlannerTempDrafts()
+}
+
+export function deletePlannerTempDraft(id: string): PlannerTempDraft[] {
+  const slots = loadPlannerTempSlots()
+  const matchingSlot = slots.find(slot => slot.draft?.id === id)
+  if (matchingSlot) deletePlannerTempSlot(matchingSlot.slotNumber)
+  return loadPlannerTempDrafts()
+}
+
+export function loadPlannerTempSlots(): PlannerTempSlot[] {
+  try {
+    return parsePlannerTempSlots(localStorage.getItem(PLANNER_TEMP_DRAFTS_KEY))
+  } catch {
+    return emptyPlannerTempSlots()
+  }
+}
+
+export function savePlannerTempSlot(slotNumber: PlannerTempSlotNumber, state: PlannerState, fallbackLabel?: string): PlannerTempSlot[] {
+  try {
+    const normalizedSlot = normalizeSlotNumber(slotNumber)
+    if (!normalizedSlot) return loadPlannerTempSlots()
+    const savedAt = new Date().toISOString()
+    const slots = loadPlannerTempSlots().map(slot => (
+      slot.slotNumber === normalizedSlot
+        ? {
+          ...slot,
+          draft: {
+            id: makeDraftId(),
+            label: makePlannerTempLabel(state, fallbackLabel),
+            savedAt,
+            state: snapshotPlannerState(state),
+          },
+        }
+        : slot
+    ))
+    persistPlannerTempSlots(slots)
+    return slots
+  } catch {
+    return loadPlannerTempSlots()
+  }
+}
+
+export function deletePlannerTempSlot(slotNumber: PlannerTempSlotNumber): PlannerTempSlot[] {
+  try {
+    const normalizedSlot = normalizeSlotNumber(slotNumber)
+    if (!normalizedSlot) return loadPlannerTempSlots()
+    const slots = loadPlannerTempSlots().map(slot => (
+      slot.slotNumber === normalizedSlot ? { ...slot, draft: null } : slot
+    ))
+    persistPlannerTempSlots(slots)
+    return slots
+  } catch {
+    return loadPlannerTempSlots()
+  }
 }
 
 // ── Plan → Trigger Mode 전환용 (slot_order 보존) ──────────────────────────
@@ -113,6 +308,8 @@ export function savePlanForRun(state: PlannerState): void {
       egoSlots: state.egoSlots,
       floorPlan: state.floorPlan,
       giftInventory: state.giftInventory,
+      mainKeywords: state.mainKeywords ?? [],
+      mainKeywordsManual: state.mainKeywordsManual ?? false,
     }))
   } catch { /* */ }
 }

@@ -1,13 +1,16 @@
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
-import RelativeTime from '@/components/ui/RelativeTime'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { STORAGE_BASE, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
+import { useLocale, useTranslations } from 'next-intl'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import type { SupportedLang } from '@/lib/i18n'
+import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
 
 export type PlanSummary = {
   id: string
@@ -21,9 +24,21 @@ export type PlanSummary = {
   view_count: number
   comment_count: number
   created_at: string
+  lang?: 'ko' | 'en' | 'ja' | null
   profiles: { username: string | null; avatar_url: string | null } | null
   /** Pre-computed server-side: theme keywords extracted from deck */
   theme_keywords?: string[]
+  /** Pre-computed server-side: theme + combat keywords used by board filters */
+  filter_keywords?: string[]
+  /** Planner-selected main keywords stored through tags for schema compatibility */
+  selected_keywords?: string[]
+  /** Compact server-side floor difficulty summary for list cards */
+  difficulty_summary?: {
+    key: '1-5' | '6-10' | '11-15'
+    start: number
+    end: number
+    counts: Partial<Record<Difficulty, number>>
+  }[]
   /** Pre-computed server-side: identity name_kr values for search */
   identity_names?: string[]
 }
@@ -33,6 +48,77 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   hard:    { bg: 'rgba(200,144,10,0.12)',  color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
   overlap: { bg: 'rgba(72,152,176,0.12)',  color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
+}
+
+type CardDifficultyBadge = {
+  key: Difficulty | 'normal-hard'
+  styleKey: Difficulty
+  labelKeys: Difficulty[]
+}
+
+function getCardDifficultyBadge(plan: PlanSummary): CardDifficultyBadge {
+  const summary = plan.difficulty_summary?.filter(segment => Object.values(segment.counts).some(count => (count ?? 0) > 0)) ?? []
+  if (summary.length === 0) return { key: plan.difficulty, styleKey: plan.difficulty, labelKeys: [plan.difficulty] }
+
+  if (summary.some(segment => segment.key === '11-15' && (segment.counts.extreme ?? 0) > 0)) {
+    return { key: 'extreme', styleKey: 'extreme', labelKeys: ['extreme'] }
+  }
+
+  if (summary.some(segment => segment.key === '6-10' && (segment.counts.overlap ?? 0) > 0)) {
+    return { key: 'overlap', styleKey: 'overlap', labelKeys: ['overlap'] }
+  }
+
+  let hasNormal = false
+  let hasHard = false
+
+  for (const segment of summary) {
+    if (segment.key === '1-5') {
+      hasNormal ||= (segment.counts.normal ?? 0) > 0
+      hasHard ||= (segment.counts.hard ?? 0) > 0
+    }
+  }
+
+  if (hasNormal && hasHard) return { key: 'normal-hard', styleKey: 'hard', labelKeys: ['normal', 'hard'] }
+  if (hasNormal) return { key: 'normal', styleKey: 'normal', labelKeys: ['normal'] }
+  if (hasHard) return { key: 'hard', styleKey: 'hard', labelKeys: ['hard'] }
+
+  return { key: plan.difficulty, styleKey: plan.difficulty, labelKeys: [plan.difficulty] }
+}
+
+function PlannerRelativeTime({
+  date,
+  localized = false,
+  style,
+}: {
+  date: string
+  localized?: boolean
+  style?: React.CSSProperties
+}) {
+  const t = useTranslations('planner.communityBoard.relativeTime')
+  const [text, setText] = useState<string | null>(null)
+
+  useEffect(() => {
+    const format = () => {
+      const diff = Date.now() - new Date(date).getTime()
+      const mins = Math.floor(diff / 60000)
+      if (mins < 1) return localized ? t('now') : '방금 전'
+      if (mins < 60) return localized ? t('minutes', { count: mins }) : `${mins}분 전`
+      const hours = Math.floor(mins / 60)
+      if (hours < 24) return localized ? t('hours', { count: hours }) : `${hours}시간 전`
+      const days = Math.floor(hours / 24)
+      if (days < 30) return localized ? t('days', { count: days }) : `${days}일 전`
+      const months = Math.floor(days / 30)
+      if (months < 12) return localized ? t('months', { count: months }) : `${months}달 전`
+      const years = Math.floor(months / 12)
+      return localized ? t('years', { count: years }) : `${years}년 전`
+    }
+
+    setText(format())
+    const id = setInterval(() => setText(format()), 60_000)
+    return () => clearInterval(id)
+  }, [date, localized, t])
+
+  return <span style={style}>{text}</span>
 }
 
 
@@ -50,11 +136,22 @@ function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] 
   )
 }
 
-function PlanCard({ plan }: { plan: PlanSummary }) {
+function PlanCard({
+  plan,
+  localized = false,
+  onKeywordToggle,
+}: {
+  plan: PlanSummary
+  localized?: boolean
+  onKeywordToggle?: (keyword: string) => void
+}) {
   const { getIconUrl } = useKeywordData()
-  const diffConfig = DIFFICULTY_CONFIG[plan.difficulty]
+  const keywords = useKeywords()
+  const locale = useLocale() as SupportedLang
+  const t = useTranslations('planner.communityBoard.card')
+  const difficultyT = useTranslations('planner.communityBoard.difficulty')
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
-  const username = plan.profiles?.username ?? '익명'
+  const username = plan.profiles?.username ?? (localized ? t('anonymous') : '익명')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
   const slots = useMemo(() => {
@@ -69,7 +166,12 @@ function PlanCard({ plan }: { plan: PlanSummary }) {
   }, [plan.deck])
 
   // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
-  const topKeywords = plan.theme_keywords ?? []
+  const topKeywords = normalizePlannerListKeywords((plan.selected_keywords && plan.selected_keywords.length > 0)
+    ? plan.selected_keywords
+    : (plan.theme_keywords ?? []))
+  const difficultyBadge = getCardDifficultyBadge(plan)
+  const visibleKeywords = topKeywords.slice(0, 3)
+  const hiddenKeywordCount = Math.max(0, topKeywords.length - visibleKeywords.length)
 
   return (
     <div
@@ -104,32 +206,6 @@ function PlanCard({ plan }: { plan: PlanSummary }) {
             </p>
           ) : <div className="flex-1" />}
 
-          {/* 난이도 + 자동 키워드 태그 */}
-          <div className="flex flex-wrap gap-1 mb-2.5">
-            <span style={{
-              display: 'inline-flex', alignItems: 'center',
-              padding: '0.125rem 0.5rem',
-              background: diffStyle.bg, color: diffStyle.color, border: `1px solid ${diffStyle.border}`,
-              borderRadius: '2rem', fontFamily: 'var(--font-heading)',
-              fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.05em',
-            }}>
-              {diffConfig.label}
-            </span>
-            {topKeywords.map(kw => {
-              const iconUrl = getIconUrl(kw)
-              return (
-                <span key={kw} className="flex items-center gap-0.5" style={{
-                  padding: '0.125rem 0.375rem',
-                  background: 'rgba(200,144,10,0.08)', border: '1px solid rgba(200,144,10,0.18)',
-                  borderRadius: '2rem', fontSize: '0.5625rem', color: '#c8900a',
-                }}>
-                  {iconUrl && <Image src={iconUrl} alt="" width={10} height={10} style={{ width: '0.625rem', height: '0.625rem' }} />}
-                  {kw}
-                </span>
-              )
-            })}
-          </div>
-
           {/* 하단: 작성자 + 통계 */}
           <div className="flex items-center justify-between pt-2 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
             <div className="flex items-center gap-1.5">
@@ -137,7 +213,7 @@ function PlanCard({ plan }: { plan: PlanSummary }) {
                 <Image src={avatarUrl} alt={username} width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
               </div>
               <span style={{ fontSize: '0.6875rem', color: '#8a7a60' }}>{username}</span>
-              <RelativeTime date={plan.created_at} style={{ fontSize: '0.5625rem', color: '#333' }} />
+              <PlannerRelativeTime localized={localized} date={plan.created_at} style={{ fontSize: '0.5625rem', color: '#333' }} />
             </div>
             <div className="flex items-center gap-2.5">
               <span className="flex items-center gap-0.5" style={{ fontSize: '0.625rem', color: plan.vote_count > 0 ? '#c8900a' : '#333' }}>
@@ -155,6 +231,66 @@ function PlanCard({ plan }: { plan: PlanSummary }) {
           </div>
         </div>
       </Link>
+      <div
+        data-planner-card-meta="true"
+        className="flex items-center gap-1.5 px-4 pb-3"
+        style={{ minHeight: '2.75rem' }}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+          <span key={difficultyBadge.key} style={{
+              display: 'inline-flex', alignItems: 'center', flexShrink: 0,
+              padding: '0.125rem 0.4375rem',
+              background: DIFFICULTY_STYLE[difficultyBadge.styleKey].bg, color: DIFFICULTY_STYLE[difficultyBadge.styleKey].color, border: `1px solid ${DIFFICULTY_STYLE[difficultyBadge.styleKey].border}`,
+              borderRadius: '0.25rem', fontFamily: 'var(--font-heading)',
+              fontSize: '0.8125rem', fontWeight: 700,
+            }}>
+              {difficultyBadge.labelKeys.map(difficulty => localized ? difficultyT(difficulty) : DIFFICULTY_CONFIG[difficulty].label).join('/')}
+          </span>
+        </div>
+        {visibleKeywords.length > 0 && (
+          <div className="flex min-w-0 max-w-[58%] items-center justify-end gap-1 overflow-hidden">
+            {visibleKeywords.map(kw => {
+              const iconUrl = getIconUrl(kw)
+              const label = localized ? localizeDeckKeyword(kw, keywords[kw], locale) : kw
+              const commonStyle = {
+                padding: '0.125rem 0.25rem',
+                background: 'transparent',
+                border: '1px solid transparent',
+                borderRadius: '0.25rem',
+                fontSize: '0.875rem',
+                color: '#9f8b68',
+              } satisfies React.CSSProperties
+              const content = (
+                <>
+                  {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', flexShrink: 0 }} />}
+                  <span className="truncate">{label}</span>
+                </>
+              )
+              return onKeywordToggle ? (
+                <button
+                  key={kw}
+                  type="button"
+                  onClick={() => onKeywordToggle(kw)}
+                  className="flex min-h-8 min-w-0 items-center gap-1 transition-colors hover:border-[#8a6010] hover:text-[#c8900a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                  style={commonStyle}
+                  aria-label={t('toggleKeyword', { keyword: label })}
+                >
+                  {content}
+                </button>
+              ) : (
+                <span key={kw} className="flex min-h-8 min-w-0 items-center gap-1" style={commonStyle}>
+                  {content}
+                </span>
+              )
+            })}
+            {hiddenKeywordCount > 0 && (
+              <span style={{ flexShrink: 0, fontSize: '0.875rem', color: '#5d4d38' }}>
+                +{hiddenKeywordCount}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

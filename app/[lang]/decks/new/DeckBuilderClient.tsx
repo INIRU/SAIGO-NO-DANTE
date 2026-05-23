@@ -23,20 +23,20 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import CompactButton from '@/components/ui/CompactButton'
-import Image from 'next/image'
-import { CONTENT_TYPES, CONTENT_TYPE_COLORS, type ContentType } from '@/lib/constants/deck-tokens'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import EgoGiftModal from '@/components/deck-builder/EgoGiftModal'
+import { contentTypeMessageKey } from '@/components/decks/decks-types'
 import {
   localizeIdentityName,
   localizePassiveDescription,
   localizePassiveName,
 } from '@/components/deck-detail/DeckIdentityCard'
 import type { SupportedLang } from '@/lib/i18n/types'
+import type { EgoGiftNote } from '@/lib/types'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
@@ -77,7 +77,7 @@ interface Props {
   egos: EGO[]
   skills: Skill[]
   passives: Passive[]
-  egoGifts?: { name: string; keyword: string; grade: string; image_url: string | null; effect_base: string | null; activation_condition: ActivationCondition | null }[]
+  egoGifts?: EgoGiftNote[]
   editMode?: EditMode
   forkMode?: ForkMode
 }
@@ -104,6 +104,18 @@ const DeckNoteEditor = dynamic(() => import('@/components/deck-builder/DeckNoteE
   loading: () => null,
 })
 
+function localizeGiftName(gift: EgoGiftNote, locale: string): string {
+  if (locale === 'en') return gift.name_en?.trim() || gift.name_jp?.trim() || gift.name
+  if (locale === 'ja') return gift.name_jp?.trim() || gift.name_en?.trim() || gift.name
+  return gift.name
+}
+
+function localizeGiftEffect(gift: EgoGiftNote, locale: string): string | null {
+  if (locale === 'en') return gift.effect_base_en?.trim() || gift.effect_base_jp?.trim() || gift.effect_base
+  if (locale === 'ja') return gift.effect_base_jp?.trim() || gift.effect_base_en?.trim() || gift.effect_base
+  return gift.effect_base
+}
+
 function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[] {
   if (!value) return []
   const allowed = new Set<string>(DECK_MAIN_KEYWORDS)
@@ -120,6 +132,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const locale = useLocale()
   const sinnerT = useTranslations('sinner')
   const deckT = useTranslations('decks')
+  const builderT = useTranslations('decks.builder')
   const router = useRouter()
   const initData = editMode ?? forkMode
   const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
@@ -159,7 +172,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return initial
   })
   const [formationOrder, setFormationOrder] = useState<string[]>(initData?.formationOrder ?? [])
-  const [title, setTitle] = useState(forkMode ? `${forkMode.title} (포크)` : editMode?.title ?? '')
+  const [title, setTitle] = useState(forkMode ? builderT('forkTitle', { title: forkMode.title }) : editMode?.title ?? '')
   const [contentType, setContentType] = useState<string>(initData?.content_type && initData.content_type !== '없음' ? initData.content_type : '')
   const [description, setDescription] = useState(initData?.description ?? '')
   const [selectedMainKeywords, setSelectedMainKeywords] = useState<string[]>(() => sanitizeDeckMainKeywords(initData?.mainKeywords))
@@ -371,8 +384,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
       if (current > 0) {
         results.push({
-          name: g.name, keyword: g.keyword, grade: g.grade,
-          image_url: g.image_url, effect_base: g.effect_base,
+          name: localizeGiftName(g, locale), keyword: g.keyword, grade: g.grade,
+          image_url: g.image_url, effect_base: localizeGiftEffect(g, locale),
           condition: c, current, formationCurrent, allCurrent,
           met: level === 'met', level,
         })
@@ -439,7 +452,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
     } else {
       const data = await res.json().catch(() => null)
-      showError(data?.error ?? (editMode ? '덱 수정에 실패했습니다.' : '덱 저장에 실패했습니다.'))
+      showError(data?.error ?? (editMode ? builderT('errors.updateFailed') : builderT('errors.saveFailed')))
     }
   }
 
@@ -531,134 +544,158 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
 
   const tabItems: TabItem[] = [
-    { key: 'identity', label: '인격 편성', badge: identityCount || undefined, icon: Users },
-    { key: 'ego',      label: '에고 편성', badge: egoCount || undefined, icon: Sparkles },
-    ...(isGeodun(contentType) ? [{ key: 'skillset', label: '스킬 편성', badge: skillsetCustomCount || undefined, icon: SlidersHorizontal }] : []),
+    { key: 'identity', label: builderT('tabs.identity'), badge: identityCount || undefined, icon: Users },
+    { key: 'ego',      label: builderT('tabs.ego'), badge: egoCount || undefined, icon: Sparkles },
+    ...(isGeodun(contentType) ? [{ key: 'skillset', label: builderT('tabs.skillset'), badge: skillsetCustomCount || undefined, icon: SlidersHorizontal }] : []),
     // 편성 순서는 인격 탭의 40%/60% 호버로 통합
-    { key: 'note',     label: '덱 노트', icon: FileText },
+    { key: 'note',     label: builderT('tabs.note'), icon: FileText },
   ]
 
   return (
-    <div className="min-h-[100dvh] pt-24 pb-16" style={{ background: 'var(--bg-deep)' }}>
-      {/* 헤더 — 플래너식 2단 구조 */}
-      <div className="max-w-5xl mx-auto px-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <Link href="/decks" locale={locale as SupportedLang} className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 덱 게시판
-            </Link>
-            <h1 className="font-serif text-lg sm:text-2xl" style={{ color: 'var(--text-primary)' }}>{editMode ? '덱 수정' : '덱 편성'}</h1>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {hasDraft && (
-              <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
-                초안 불러오기
-              </CompactButton>
-            )}
-            <CompactButton
-              icon={draftSaved ? Check : Save}
-              onClick={handleSaveDraft}
-              disabled={!title.trim()}
-              variant={draftSaved ? 'success' : 'gold'}
-            >
-              {draftSaved ? '저장 완료' : '임시 저장'}
-            </CompactButton>
-            <CompactButton
-              icon={codeCopied ? Check : Copy}
-              onClick={handleCopyCode}
-              disabled={identityCount < 12}
-              variant={codeCopied ? 'success' : 'muted'}
-              title={identityCount < 12 ? '12명 전원 인격을 편성해야 코드를 복사할 수 있습니다' : ''}
-            >
-              {codeCopied ? '복사됨' : '코드 복사'}
-            </CompactButton>
-            {authStatus === 'authenticated' && (
-              <CompactButton
-                icon={Upload}
-                onClick={handleSave}
-                disabled={!title.trim() || identityCount < 12 || !contentType || saving}
-                variant="primary"
-                title={!contentType ? '콘텐츠 유형을 선택해주세요' : identityCount < 12 ? `12명 전원 인격을 편성해야 합니다 (${identityCount}/12)` : ''}
-              >
-                {saving ? '저장 중...' : editMode ? '저장' : '업로드'}
-              </CompactButton>
-            )}
-          </div>
-        </div>
-
-        {/* 제목 입력 */}
-        <input
-          type="text"
-          placeholder="덱 제목을 입력하세요 *"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          className="w-full px-4 py-2.5 rounded outline-none mb-4"
+    <div className="min-h-[100dvh] pt-16 pb-16 sm:pt-20" style={{ background: 'var(--bg-deep)' }}>
+      <div className="mx-auto max-w-6xl px-3 sm:px-6">
+        <header
+          className="mb-3 rounded-lg"
           style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            fontSize: 'var(--text-sm)',
-            transition: 'border-color 0.2s',
+            border: '1px solid rgba(200, 144, 10, 0.16)',
+            background: 'rgba(18,14,9,0.74)',
           }}
-          onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
-          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-        />
-
-        {/* 코드바 + 콘텐츠 유형 — 한 줄 통합 */}
-        <div className="flex flex-wrap items-center gap-2 mb-6" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-          {/* 편성 코드 */}
-          <input
-            type="text"
-            value={codeInput}
-            onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-            placeholder="편성 코드..."
-            className="px-3 py-2 rounded outline-none"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', minWidth: '8rem', maxWidth: '16rem', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', flex: '0 1 16rem' }}
-            onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
-          />
-          <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
-            {codeApplying ? '...' : '적용'}
-          </CompactButton>
-          {codeError && <span style={{ color: 'var(--error)', fontSize: 'var(--text-xs)' }}>오류</span>}
-
-          {/* 구분선 */}
-          <div style={{ width: '1px', height: '1.25rem', background: 'var(--border)', margin: '0 0.25rem' }} className="hidden sm:block" />
-
-          {/* 콘텐츠 유형 */}
-          <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', flexShrink: 0 }} className="hidden sm:inline">콘텐츠</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {CONTENT_TYPES.map(ct => {
-              const active = contentType === ct
-              const colors = CONTENT_TYPE_COLORS[ct]
-              return (
-                <button
-                  key={ct}
-                  type="button"
-                  onClick={() => setContentType(active ? '' : ct)}
-                  className="px-2.5 py-1 rounded transition-all duration-150"
-                  style={{
-                    background: active ? colors.bg : 'transparent',
-                    color: active ? colors.color : 'var(--text-muted)',
-                    border: `1px solid ${active ? colors.border : 'var(--border)'}`,
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: active ? 700 : 500,
-                  }}
+        >
+          <div className="flex flex-col gap-2 p-2.5 sm:p-3">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <Link href="/decks" locale={locale as SupportedLang} className="mb-0.5 inline-flex min-h-10 items-center gap-1.5 rounded px-1 transition-colors sm:min-h-11" style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
+                <ArrowLeft style={{ width: '1rem', height: '1rem' }} /> {builderT('backToDecks')}
+                </Link>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h1 className="font-serif text-[1.5rem] leading-tight sm:text-[1.875rem]" style={{ color: 'var(--text-primary)' }}>{editMode ? builderT('titleEdit') : builderT('titleNew')}</h1>
+                  <span className="font-mono" style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                  {builderT('progress', { count: identityCount, total: sinners.length })}
+                  </span>
+                </div>
+                <p className="sr-only">
+                  {builderT('description')}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                {hasDraft && (
+                  <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
+                    {builderT('actions.loadDraft')}
+                  </CompactButton>
+                )}
+                <CompactButton
+                  icon={draftSaved ? Check : Save}
+                  onClick={handleSaveDraft}
+                  disabled={!title.trim()}
+                  variant={draftSaved ? 'success' : 'gold'}
                 >
-                  {ct}
-                </button>
-              )
-            })}
+                  {draftSaved ? builderT('actions.draftSaved') : builderT('actions.saveDraft')}
+                </CompactButton>
+                <CompactButton
+                  icon={codeCopied ? Check : Copy}
+                  onClick={handleCopyCode}
+                  disabled={identityCount < 12}
+                  variant={codeCopied ? 'success' : 'muted'}
+                  title={identityCount < 12 ? builderT('actions.copyDisabled') : ''}
+                >
+                  {codeCopied ? builderT('actions.copied') : builderT('actions.copyCode')}
+                </CompactButton>
+                {authStatus === 'authenticated' && (
+                  <CompactButton
+                    icon={Upload}
+                    onClick={handleSave}
+                    disabled={!title.trim() || identityCount < 12 || !contentType || saving}
+                    variant="primary"
+                    title={!contentType ? builderT('actions.contentRequired') : identityCount < 12 ? builderT('actions.identityRequired', { count: identityCount, total: sinners.length }) : ''}
+                  >
+                    {saving ? builderT('actions.saving') : editMode ? builderT('actions.save') : builderT('actions.upload')}
+                  </CompactButton>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-[minmax(12rem,0.85fr)_minmax(13rem,0.75fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,0.75fr)_minmax(0,1.25fr)] lg:items-end">
+              <label className="flex min-w-0 flex-col gap-1.5">
+                <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.title')}</span>
+                <input
+                  type="text"
+                  placeholder={builderT('fields.titlePlaceholder')}
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="min-h-10 w-full rounded px-3 outline-none sm:min-h-11"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-primary)',
+                    fontSize: '1rem',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+                />
+              </label>
+
+              <div className="min-w-0">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.deckCode')}</span>
+                  {codeError && <span style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{builderT('fields.codeError')}</span>}
+                </div>
+                <div className="flex min-w-0 gap-2">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+                    placeholder={builderT('fields.codePlaceholder')}
+                    className="min-h-10 min-w-0 flex-1 rounded px-3 outline-none sm:min-h-11"
+                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
+                  />
+                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
+                    {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
+                  </CompactButton>
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.contentType')}</span>
+                  {!contentType && <span style={{ color: 'var(--warning)', fontSize: '0.875rem', opacity: 0.85 }}>{builderT('fields.required')}</span>}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 md:flex-wrap md:overflow-visible md:pb-0">
+                  {CONTENT_TYPES.map(ct => {
+                    const active = contentType === ct
+                    const colors = CONTENT_TYPE_COLORS[ct]
+                    return (
+                      <button
+                        key={ct}
+                        type="button"
+                        onClick={() => setContentType(active ? '' : ct)}
+                        className="min-h-10 flex-none rounded px-3 transition-colors duration-150 sm:min-h-11"
+                        style={{
+                          background: active ? colors.bg : 'rgba(13,11,8,0.26)',
+                          color: active ? colors.color : 'var(--text-muted)',
+                          border: `1px solid ${active ? colors.border : 'rgba(200,144,10,0.16)'}`,
+                          fontFamily: 'var(--font-heading)',
+                          fontSize: '0.9375rem',
+                          fontWeight: active ? 700 : 500,
+                        }}
+                      >
+                        {deckT(`contentTypes.${contentTypeMessageKey(ct)}`)}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-          {!contentType && <span style={{ color: 'var(--warning)', fontSize: '0.5625rem', opacity: 0.7 }}>* 필수</span>}
-        </div>
+        </header>
 
         {/* 탭 바 — 밑줄 인디케이터 (플래너 패턴) */}
         <UnderlineTabBar
           tabs={tabItems}
           activeKey={tab}
           onTabChange={key => setTab(key as Tab)}
-          className="mb-6"
+          className="mb-4"
         />
 
         {/* 탭 콘텐츠 */}
