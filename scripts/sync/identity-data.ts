@@ -1697,7 +1697,7 @@ function translateKeywords(keywordList: string[] | undefined): string[] {
   const result: string[] = []
   for (const kw of keywordList ?? []) {
     const kr = TAG_MAP[kw]
-    if (kr && !CONDITION_TAG_MAP[kw]) result.push(kr)
+    if (kr && !CONDITION_TAG_MAP[kw] && !KEYWORD_PLACEHOLDERS.has(kr)) result.push(kr)
   }
   return result
 }
@@ -2047,7 +2047,7 @@ function buildPassiveRows(
 
 function addMappedKeyword(keywords: Set<string>, tag: string): void {
   const keyword = TAG_MAP[tag] ?? UNIT_KEYWORD_MAP[tag]
-  if (keyword) keywords.add(keyword)
+  if (keyword && !KEYWORD_PLACEHOLDERS.has(keyword)) keywords.add(keyword)
 }
 
 function collectBuffKeywords(value: unknown, keywords: Set<string>): void {
@@ -2099,17 +2099,60 @@ function collectKrDescriptions(target: string[], krText: KrSkill | KrPassive | n
   }
 }
 
+function populateIdentityKeywordContext(
+  ctx: KeywordContext,
+  gamePerson: Personality,
+  skillMap: Map<number, PersonalitySkill>,
+  krSkillMap: Map<number, KrSkill>,
+  passiveMappings: PassiveMapping[],
+  passiveDetailMap: Map<number, PassiveDetail>,
+  krPassiveMap: Map<number, KrPassive>,
+): void {
+  const skillIds = [
+    ...(gamePerson.attributeList ?? []).map(a => a.skillId),
+    ...(gamePerson.defenseSkillIDList ?? []),
+  ]
+
+  ctx.gamePerson = gamePerson
+  ctx.skillMap = new Map(
+    skillIds
+      .map(sid => [sid, skillMap.get(sid)] as const)
+      .filter((entry): entry is [number, PersonalitySkill] => entry[1] !== undefined),
+  )
+  ctx.rawKrTexts = []
+  ctx.passiveDetails = []
+
+  for (const sid of skillIds) {
+    collectKrDescriptions(ctx.rawKrTexts, krSkillMap.get(sid))
+  }
+
+  const passiveMapping = passiveMappings.find(pm => String(pm.personalityID) === String(gamePerson.id))
+  const passiveIds = [
+    ...(passiveMapping?.battlePassiveList ?? []).flatMap(level => level.passiveIDList),
+    ...(passiveMapping?.supporterPassiveList ?? []).flatMap(level => level.passiveIDList),
+  ]
+  for (const pid of passiveIds) {
+    collectKrDescriptions(ctx.rawKrTexts, krPassiveMap.get(pid))
+    const detail = passiveDetailMap.get(pid)
+    if (detail) ctx.passiveDetails.push(detail)
+  }
+}
+
+function addSkillKeywords(keywords: Set<string>, keywordList: string[] | undefined): void {
+  for (const keyword of keywordList ?? []) {
+    const mapped = TAG_MAP[keyword]
+    if (mapped && !CONDITION_TAG_MAP[keyword] && !KEYWORD_PLACEHOLDERS.has(mapped)) {
+      keywords.add(mapped)
+    }
+  }
+}
+
 function extractKeywords(ctx: KeywordContext): string[] {
   if (!ctx.gamePerson) return []
   const keywords = new Set<string>()
 
-  // Source 1: skillKeywordList + unitKeywordList
-  for (const keyword of [
-    ...(ctx.gamePerson.skillKeywordList ?? []),
-    ...(ctx.gamePerson.unitKeywordList ?? []),
-  ]) {
-    addMappedKeyword(keywords, keyword)
-  }
+  // Source 1: official representative/main skill keywords only.
+  addSkillKeywords(keywords, ctx.gamePerson.skillKeywordList)
 
   // Source 2: buffKeyword from skill coinList abilityScriptList
   const skillIds = [
@@ -2782,6 +2825,11 @@ async function main(): Promise<void> {
       }
 
       const dbRow = dbIdentityMap.get(gameId)
+      if (!dbRow || !NEW_ONLY) {
+        const ctx = getKeywordCtx(gameId)
+        populateIdentityKeywordContext(ctx, p, gameSkillMap, krSkillMap, passiveMappings, passiveDetailMap, krPassiveMap)
+        computed.keywords = extractKeywords(ctx)
+      }
 
       // ── New identity ──────────────────────────────────────────────────────
       if (!dbRow) {
@@ -2854,18 +2902,6 @@ async function main(): Promise<void> {
             }
           }
 
-          // Keyword context for new identity
-          const ctx = getKeywordCtx(gameId)
-          ctx.gamePerson = p
-          ctx.skillMap = new Map(
-            [...(p.attributeList ?? []).map(a => a.skillId), ...(p.defenseSkillIDList ?? [])]
-              .map(sid => [sid, gameSkillMap.get(sid)] as const)
-              .filter((entry): entry is [number, PersonalitySkill] => entry[1] !== undefined),
-          )
-          for (const sid of [...(p.attributeList ?? []).map(a => a.skillId), ...(p.defenseSkillIDList ?? [])]) {
-            collectKrDescriptions(ctx.rawKrTexts, krSkillMap.get(sid))
-          }
-
           dbIdentityMap.set(gameId, { ...identityRow, id: newIdentityId })
           await sleep(150)
         } else {
@@ -2885,18 +2921,6 @@ async function main(): Promise<void> {
 
       // ── Existing identity: stat diff ──────────────────────────────────────
       if (NEW_ONLY) continue
-
-      // Build keyword context for existing identities (used later)
-      const ctx = getKeywordCtx(gameId)
-      ctx.gamePerson = p
-      ctx.skillMap = new Map(
-        [...(p.attributeList ?? []).map(a => a.skillId), ...(p.defenseSkillIDList ?? [])]
-          .map(sid => [sid, gameSkillMap.get(sid)] as const)
-          .filter((entry): entry is [number, PersonalitySkill] => entry[1] !== undefined),
-      )
-      for (const sid of [...(p.attributeList ?? []).map(a => a.skillId), ...(p.defenseSkillIDList ?? [])]) {
-        collectKrDescriptions(ctx.rawKrTexts, krSkillMap.get(sid))
-      }
 
       const changes = diffIdentity(computed, dbRow)
       const changeCount = Object.keys(changes).length
@@ -2999,18 +3023,6 @@ async function main(): Promise<void> {
 
       const newPassives = buildPassiveRows(pm, identity.id as string, krPassiveMap, passiveDetailMap, enLocale, jpLocale, enTagMap, jpTagMap)
       if (newPassives.length === 0) continue
-
-      // Collect passive KR texts for keyword extraction
-      const ctx = getKeywordCtx(gameId)
-      const allPassiveIds = [
-        ...(pm.battlePassiveList ?? []).flatMap(l => l.passiveIDList),
-        ...(pm.supporterPassiveList ?? []).flatMap(l => l.passiveIDList),
-      ]
-      for (const pid of allPassiveIds) {
-        collectKrDescriptions(ctx.rawKrTexts, krPassiveMap.get(pid))
-        const detail = passiveDetailMap.get(pid)
-        if (detail) ctx.passiveDetails.push(detail)
-      }
 
       const { data: dbPassives } = await supabase
         .from('passives')

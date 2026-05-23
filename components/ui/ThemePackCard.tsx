@@ -31,6 +31,8 @@ interface ThemePackCardProps {
   lang?: SupportedLang
   /** Show gift count below name (default: false) */
   showGiftCount?: boolean
+  /** Use a bare image surface when the surrounding layout already provides the frame. */
+  imageSurface?: 'default' | 'bare'
 }
 
 const TITLE_MIN_FONT_REM = 0.5
@@ -97,7 +99,14 @@ function getThemePackTitleLines(title: string, lang: SupportedLang): string[] {
   return splitTitleAtBestPoint(normalizedTitle)
 }
 
-export default function ThemePackCard({ theme, onClick, isSelected, lang: langProp, showGiftCount }: ThemePackCardProps) {
+export default function ThemePackCard({
+  theme,
+  onClick,
+  isSelected,
+  lang: langProp,
+  showGiftCount,
+  imageSurface = 'default',
+}: ThemePackCardProps) {
   const locale = useLocale()
   const lang = langProp ?? (locale as SupportedLang)
   const t = (key: string) => {
@@ -118,6 +127,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
     : displayName
   const visualConfig = getThemePackVisualConfig(numId)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
+  const isBareImageSurface = imageSurface === 'bare'
   const titleFontFamily = lang === 'en'
     ? 'var(--font-mikodacs), var(--font-scdream), system-ui, sans-serif'
     : lang === 'ja'
@@ -161,9 +171,10 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
 
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-label={displayName}
-      className="relative group text-left overflow-hidden transition-all duration-200"
+      className="relative group text-left overflow-hidden transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#131110]"
       style={{
         background: 'transparent',
         border: isSelected ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
@@ -177,7 +188,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
       {isSelected && !imageSrc && (
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
           <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-          <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
+          <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
         </div>
       )}
       {imageSrc ? (
@@ -186,7 +197,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           style={{
             aspectRatio: THEME_CARD_ASPECT_RATIO,
             borderRadius: 'var(--radius-md)',
-            background: '#0d0b08',
+            background: isBareImageSurface ? 'transparent' : '#0d0b08',
           }}
         >
           <ImageWithFallback
@@ -197,7 +208,9 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
             className="object-contain"
           />
-          <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
+          {!isBareImageSurface && (
+            <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
+          )}
 
           {/* Theme name */}
           <div
@@ -250,7 +263,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           {/* Gift count */}
           {showGiftCount && giftCount > 0 && (
             <div className="absolute left-0 right-0 flex justify-center" style={{ bottom: '7%' }}>
-              <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
                 {giftCountLabel}
               </span>
             </div>
@@ -260,7 +273,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
           {isSelected && (
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
               <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-              <span style={{ color: '#c8900a', fontSize: '0.625rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
+              <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
             </div>
           )}
         </div>
@@ -270,7 +283,7 @@ export default function ThemePackCard({ theme, onClick, isSelected, lang: langPr
             {displayName}
           </div>
           {showGiftCount && giftCount > 0 && (
-            <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
+            <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
               {giftCountLabel}
             </span>
           )}

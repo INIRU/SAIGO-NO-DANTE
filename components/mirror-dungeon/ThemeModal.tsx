@@ -1,10 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import { X } from 'lucide-react'
-import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
+import {
+  ThemePackModalGrid,
+  ThemePackModalPill,
+  ThemePackModalSection,
+  ThemePackModalShell,
+} from '@/components/ui/ThemePackModal'
 import type { EgoGift, EgoGiftTheme, MdEvent } from '@/components/mirror-dungeon/types'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -33,14 +37,6 @@ const KEYWORD_TRANSLATION_KEYS: Record<string, string> = {
   '관통': 'mirrorDungeon.filter.pierce',
   '타격': 'mirrorDungeon.filter.blunt',
   '공통': 'mirrorDungeon.filter.common',
-}
-
-const GIFT_GRID_STYLE = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(3.75rem, 1fr))',
-  gap: '0.5rem',
-  position: 'relative' as const,
-  zIndex: 0,
 }
 
 export default function ThemeModal({
@@ -146,122 +142,36 @@ export default function ThemeModal({
     return String(floors)
   }
 
+  const headerMeta = (
+    <>
+      {!isHidden && (() => {
+        const diff = theme.difficulty || 'normal'
+        const tone = diff === 'extreme' ? 'red' : diff === 'hard' ? 'gold' : 'neutral'
+        return <ThemePackModalPill tone={tone}>{getDiffLabel(diff)}</ThemePackModalPill>
+      })()}
+      {isHidden && hiddenRate !== null && (
+        <ThemePackModalPill tone="purple">
+          {t('mirrorDungeon.theme.appearanceRate')}: {hiddenRate.toFixed(2)}%
+        </ThemePackModalPill>
+      )}
+      <ThemePackModalPill>{themeGifts.length}{t('mirrorDungeon.theme.giftCountSuffix')}</ThemePackModalPill>
+      {exclusiveGifts.length > 0 && (
+        <ThemePackModalPill tone="gold">★{exclusiveGifts.length} {t('mirrorDungeon.theme.exclusiveBadge')}</ThemePackModalPill>
+      )}
+    </>
+  )
+
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="48rem" padding="1rem" title={t('mirrorDungeon.theme.modalTitle')}>
-      <div
-        className="relative w-full overflow-hidden"
-        style={{
-          maxHeight: '85vh',
-          borderRadius: '0.75rem',
-          background: '#131110',
-          border: '1px solid rgba(200,144,10,0.12)',
-          boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)',
-        }}
-      >
-        <div style={{ maxHeight: '85vh', overflowY: 'auto' }}>
-          {/* 닫기 버튼 */}
-          <button
-            onClick={onClose}
-            aria-label={t('mirrorDungeon.theme.close')}
-            className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
-            style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
-          >
-            <X size={18} />
-          </button>
-
-          {/* 배너 헤더 */}
-          <div className="relative overflow-hidden" style={{ height: theme.image_url ? '10rem' : '5rem' }}>
-            {theme.image_url && (
-              <>
-                <ImageWithFallback
-                  src={theme.image_url}
-                  alt={displayName}
-                  fill
-                  fallbackType="theme"
-                  sizes="(max-width: 768px) 100vw, 48rem"
-                  className="object-cover object-center"
-                  style={{ opacity: 0.4 }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: 'linear-gradient(to top, #131110 0%, rgba(19,17,16,0.6) 50%, rgba(19,17,16,0.3) 100%)' }}
-                />
-              </>
-            )}
-            {!theme.image_url && (
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(135deg, rgba(200,144,10,0.05) 0%, transparent 100%)' }}
-              />
-            )}
-            <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-              {isHidden && (
-                <div className="mb-1.5">
-                  <span
-                    className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold"
-                    style={{
-                      background: 'rgba(144,112,176,0.2)',
-                      border: '1px solid rgba(144,112,176,0.4)',
-                      color: '#b090d0',
-                      fontFamily: 'var(--font-mono)',
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {t('mirrorDungeon.theme.hiddenBadge')}
-                  </span>
-                </div>
-              )}
-              <h3
-                className="font-serif text-xl md:text-2xl font-bold"
-                style={{ color: '#e8d8c0', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
-              >
-                {displayName}
-              </h3>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                {!isHidden && (() => {
-                  const diff = theme.difficulty || 'normal'
-                  const label = getDiffLabel(diff)
-                  const color = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : '#999'
-                  const bg =
-                    diff === 'extreme'
-                      ? 'rgba(224,64,64,0.2)'
-                      : diff === 'hard'
-                      ? 'rgba(232,144,48,0.2)'
-                      : 'rgba(255,255,255,0.08)'
-                  return (
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[0.6875rem] font-bold"
-                      style={{ background: bg, color, fontFamily: 'var(--font-mono)' }}
-                    >
-                      {label}
-                    </span>
-                  )
-                })()}
-                {isHidden && hiddenRate !== null && (
-                  <span
-                    className="px-2 py-0.5 rounded text-[0.6875rem]"
-                    style={{
-                      background: 'rgba(144,112,176,0.12)',
-                      color: '#b090d0',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    {t('mirrorDungeon.theme.appearanceRate')}: {hiddenRate.toFixed(2)}%
-                  </span>
-                )}
-                <span style={{ color: '#888', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                  {themeGifts.length}{t('mirrorDungeon.theme.giftCountSuffix')}
-                </span>
-                {exclusiveGifts.length > 0 && (
-                  <span style={{ color: 'var(--gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                    ★{exclusiveGifts.length} {t('mirrorDungeon.theme.exclusiveBadge')}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="px-5 pb-5">
+    <ThemePackModalShell
+      title={displayName}
+      onClose={onClose}
+      imageUrl={theme.image_url}
+      imageAlt={displayName}
+      closeLabel={t('mirrorDungeon.theme.close')}
+      maxWidth="48rem"
+      eyebrow={isHidden ? <ThemePackModalPill tone="purple">{t('mirrorDungeon.theme.hiddenBadge')}</ThemePackModalPill> : null}
+      meta={headerMeta}
+    >
             {/* 출현 정보 + 키워드 분포 */}
             <div className="flex flex-wrap gap-4 mt-4 mb-5">
               {theme.floor_info && Object.keys(theme.floor_info).length > 0 && (
@@ -348,31 +258,18 @@ export default function ThemeModal({
               }}
             />
 
-            {/* 고정 보상 (히든 테마팩 전용) */}
             {isHidden && fixedRewardGifts.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <span style={{ color: '#b090d0', fontSize: '0.875rem' }}>◆</span>
-                  <span
-                    className="font-serif font-medium"
-                    style={{ color: '#b090d0', fontSize: '0.875rem' }}
-                  >
-                    {t('mirrorDungeon.theme.fixedReward')}
-                  </span>
-                  <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                    ({fixedRewardGifts.length})
-                  </span>
-                </div>
-                <div className="gift-grid" style={GIFT_GRID_STYLE}>
+              <ThemePackModalSection title={t('mirrorDungeon.theme.fixedReward')} count={fixedRewardGifts.length} icon="◆" tone="purple">
+                <ThemePackModalGrid>
                   {fixedRewardGifts.map(g => (
                     <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                   ))}
-                </div>
+                </ThemePackModalGrid>
                 <div
                   className="mt-4"
                   style={{ height: '1px', background: 'linear-gradient(90deg, rgba(144,112,176,0.3), transparent)' }}
                 />
-              </div>
+              </ThemePackModalSection>
             )}
 
             {/* 등장 이벤트 */}
@@ -438,26 +335,17 @@ export default function ThemeModal({
 
             {/* 전용 기프트 */}
             {exclusiveGifts.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <span style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>★</span>
-                  <span className="font-serif font-medium" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-                    {t('mirrorDungeon.theme.exclusiveGifts')}
-                  </span>
-                  <span style={{ color: '#666', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                    ({exclusiveGifts.length})
-                  </span>
-                </div>
-                <div className="gift-grid" style={GIFT_GRID_STYLE}>
+              <ThemePackModalSection title={t('mirrorDungeon.theme.exclusiveGifts')} count={exclusiveGifts.length} icon="★">
+                <ThemePackModalGrid>
                   {exclusiveGifts.map(g => (
                     <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                   ))}
-                </div>
+                </ThemePackModalGrid>
                 <div
                   className="mt-4"
                   style={{ height: '1px', background: 'linear-gradient(90deg, var(--gold-dim), transparent)' }}
                 />
-              </div>
+              </ThemePackModalSection>
             )}
 
             {/* 키워드별 그룹 */}
@@ -484,17 +372,14 @@ export default function ThemeModal({
                     </span>
                     <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>({kwGifts.length})</span>
                   </div>
-                  <div className="gift-grid" style={GIFT_GRID_STYLE}>
+                  <ThemePackModalGrid>
                     {kwGifts.map(g => (
                       <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />
                     ))}
-                  </div>
+                  </ThemePackModalGrid>
                 </div>
               )
             })}
-          </div>
-        </div>
-      </div>
-    </BaseModal>
+    </ThemePackModalShell>
   )
 }

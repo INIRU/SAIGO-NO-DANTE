@@ -23,7 +23,7 @@
 |----------|------|------|
 | `GiftCard` | `components/ui/GiftCard.tsx` | 통합 팔각형 기프트 카드. Props: `gift`, `onClick`, `isSelected`, `enhance`, `onRemove`, `conditionStatus` |
 | `GiftModal` | (거울 던전 내부) | 기프트 상세 모달 (효과, 조합, 획득처) |
-| `ThemePackCard` | `components/ui/ThemePackCard.tsx` | 테마 팩 카드 (이미지, 보스, 이름). Props: `theme`, `onClick`, `isSelected`, `showGiftCount` |
+| `ThemePackCard` | `components/ui/ThemePackCard.tsx` | 테마 팩 카드 (이미지, 보스, 이름). Props: `theme`, `onClick`, `isSelected`, `showGiftCount`, `imageSurface` |
 | `ThemeModal` | (거울 던전 내부) | 테마 팩 상세 모달 |
 | `BaseModal` | `components/ui/BaseModal.tsx` | 모달 래퍼 (ESC, 스크롤 잠금, 배경 블러) |
 | `KeywordChip` | `components/ui/KeywordChip.tsx` | 키워드 뱃지 |

@@ -1,15 +1,12 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import PlanDetailClient from './PlanDetailClient'
 
 interface Props {
-  params: Promise<{ id: string }>
-}
-
-const DIFF_LABELS: Record<string, string> = {
-  normal: '노말', hard: '하드', overlap: '평행중첩', extreme: '익스트림',
+  params: Promise<{ lang: string; id: string }>
 }
 
 /**
@@ -23,24 +20,26 @@ async function fetchFullPlan(id: string) {
   const { data } = await supabase
     .schema('limbus')
     .from('md_plans')
-    .select('id, title, description, difficulty, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)')
+    .select('id, title, description, difficulty, tags, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)')
     .eq('id', id)
     .maybeSingle()
   return data
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params
+  const { lang, id } = await params
+  const tDetail = await getTranslations({ locale: lang, namespace: 'planner.detail' })
+  const tDifficulty = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.difficulty' })
   const plan = await fetchFullPlan(id)
-  if (!plan) return { title: '플랜을 찾을 수 없습니다' }
+  if (!plan) return { title: tDetail('notFoundTitle') }
 
-  const diff = DIFF_LABELS[plan.difficulty] ?? plan.difficulty
+  const diff = tDifficulty(plan.difficulty)
 
   return {
-    title: `${plan.title} | 커뮤니티 플랜`,
+    title: tDetail('metaTitle', { title: plan.title }),
     description: plan.description
-      ? `${diff} 난이도 — ${plan.description}`
-      : `림버스 컴퍼니 거울 던전 ${diff} 플랜`,
+      ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: plan.description })
+      : tDetail('metaDescription', { difficulty: diff }),
   }
 }
 
@@ -53,7 +52,7 @@ export default async function PlanDetailPage({ params }: Props) {
   const [plan, { data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }] = await Promise.all([
     fetchFullPlan(id),
     supabase.schema('limbus').from('ego_gift_themes')
-      .select('id, name, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info'),
+      .select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info'),
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
   ])
@@ -65,14 +64,14 @@ export default async function PlanDetailPage({ params }: Props) {
   // 그룹 2: 인격/수감자/스킬/패시브
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: skills, error: skillsError }, { data: passives, error: passivesError }] = await Promise.all([
     supabase.schema('limbus').from('identities')
-      .select('id, sinner_id, name_kr, rarity, keywords, game_id, folder_name')
+      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, game_id, folder_name')
       .order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     supabase.schema('limbus').from('skills')
       .select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level')
       .eq('uptie_level', 4),
     supabase.schema('limbus').from('passives')
-      .select('identity_id, name, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level')
+      .select('identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level')
       .eq('uptie_level', 4),
   ])
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
@@ -82,7 +81,7 @@ export default async function PlanDetailPage({ params }: Props) {
 
   // 그룹 3: EGO (cost 포함 — DeckStatsPanel에서 EGO 코스트 계산용)
   const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego')
-    .select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost')
+    .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id')
   if (egosError) console.error('Failed to fetch egos:', egosError)
 
   return (

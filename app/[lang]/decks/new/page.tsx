@@ -1,8 +1,11 @@
 import { cacheLife, cacheTag } from 'next/cache'
+import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 async function fetchDeckBuilderStaticData() {
   'use cache'
@@ -12,6 +15,19 @@ async function fetchDeckBuilderStaticData() {
     getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
   ])
   return { sinners, identities, egos, skills, passives, egoGifts }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: SupportedLang }> }): Promise<Metadata> {
+  const { lang } = await params
+  const [builderT, siteT] = await Promise.all([
+    getTranslations({ locale: lang, namespace: 'decks.builder.metadata' }),
+    getTranslations({ locale: lang, namespace: 'site' }),
+  ])
+
+  return {
+    title: `${builderT('title')} | ${siteT('name')}`,
+    description: builderT('description'),
+  }
 }
 
 export default async function NewDeckPage({ searchParams }: { searchParams: Promise<{ fork?: string }> }) {

@@ -44,8 +44,21 @@
     "skipToContent": "Skip to content",
     "viewAll": "View all",
     "close": "Close",
+    "terms": "Terms",
+    "privacy": "Privacy Policy",
+    "fanDisclaimer": "Unofficial fan-made site · Limbus Company is a work of Project Moon.",
+    "unaffiliatedDisclaimer": "This fan site is not affiliated with Project Moon.",
     "footerNav": "Footer navigation",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "fontControl": {
+      "open": "Open font size controls",
+      "decrease": "Decrease font size",
+      "increase": "Increase font size",
+      "collapse": "Collapse",
+      "small": "Small",
+      "default": "Default",
+      "large": "Large"
+    }
   },
   "lang": {
     "filter": "Language",
@@ -148,6 +161,131 @@
       "refractionRailway": "Refraction Railway",
       "reflectrial": "Reflectrial",
       "none": "None"
+    },
+    "builder": {
+      "metadata": {
+        "title": "Deck builder",
+        "description": "Arrange identities, E.G.O, formation order, and deck notes."
+      },
+      "backToDecks": "Deck board",
+      "titleNew": "Deck builder",
+      "titleEdit": "Edit deck",
+      "description": "Arrange identities, E.G.O, formation order, and play notes in one compact workspace.",
+      "progress": "Identities {count}/{total}",
+      "forkTitle": "{title} (fork)",
+      "tabs": {
+        "identity": "Identities",
+        "ego": "E.G.O",
+        "skillset": "Skills",
+        "note": "Deck notes"
+      },
+      "actions": {
+        "loadDraft": "Load draft",
+        "saveDraft": "Save draft",
+        "draftSaved": "Draft saved",
+        "copyCode": "Copy code",
+        "copied": "Copied",
+        "copyDisabled": "Assign all 12 identities before copying a deck code",
+        "contentRequired": "Choose a content type",
+        "identityRequired": "Assign all identities first ({count}/{total})",
+        "saving": "Saving...",
+        "save": "Save",
+        "upload": "Upload"
+      },
+      "fields": {
+        "title": "Deck title",
+        "titlePlaceholder": "Enter a deck title",
+        "deckCode": "Formation code",
+        "codePlaceholder": "Paste formation code",
+        "applyCode": "Apply",
+        "applying": "Applying",
+        "codeError": "Code error",
+        "contentType": "Content type",
+        "required": "Required"
+      },
+      "errors": {
+        "saveFailed": "Failed to save the deck.",
+        "updateFailed": "Failed to update the deck."
+      },
+      "gifts": {
+        "panelTitle": "E.G.O Gifts",
+        "modalTitle": "Select E.G.O Gifts",
+        "modalHeading": "E.G.O Gift index",
+        "count": "{count} gifts",
+        "close": "Close",
+        "active": "Active",
+        "inactive": "Inactive",
+        "warning": "Warn",
+        "all": "All",
+        "openAll": "View all",
+        "expand": "Expand gift panel",
+        "collapse": "Collapse gift panel",
+        "searchPlaceholder": "Search gifts...",
+        "searchNamePlaceholder": "Search gift name...",
+        "clearSearch": "Clear search",
+        "gradeFilter": "Grade",
+        "gradeAll": "All grades",
+        "selectIdentityFirst": "Assign identities first.",
+        "noResults": "No gifts match these conditions.",
+        "benchProgress": "Front {formation}/{count} · All {all}/{count}",
+        "grades": {
+          "열쇠": "Key",
+          "갈래": "Branch",
+          "징표": "Sign",
+          "화폐": "Currency",
+          "에고": "E.G.O"
+        }
+      },
+      "note": {
+        "placeholder": "Write deck notes. Type [ or {{ to insert chips and blocks.",
+        "insert": "Insert",
+        "preview": "Preview",
+        "edit": "Edit",
+        "emptyPalette": "Select a sinner to open tools for assigned identities, skills, passives, and E.G.O.",
+        "giftInsert": "Add gift",
+        "giftTokenStart": "Start gift token",
+        "groups": {
+          "history": "History",
+          "paragraph": "Paragraph",
+          "format": "Formatting",
+          "insertPreview": "Insert and preview"
+        },
+        "blocks": {
+          "paragraph": "Paragraph",
+          "heading2": "Heading"
+        },
+        "tools": {
+          "undo": "Undo",
+          "redo": "Redo",
+          "paragraphFormat": "Paragraph format",
+          "bold": "Bold",
+          "italic": "Italic",
+          "bulletList": "Bullet list",
+          "orderedList": "Numbered list",
+          "quote": "Quote",
+          "link": "Link"
+        },
+        "types": {
+          "skill": "Skill",
+          "skillFrame": "Skill frame",
+          "passive": "Passive",
+          "passiveDescription": "Passive description",
+          "identity": "Identity",
+          "giftCard": "Gift card"
+        },
+        "aria": {
+          "editor": "Deck notes",
+          "toolbar": "Deck note editor tools",
+          "sinnerTools": "Sinner insert tools",
+          "sinnerPalette": "{sinner} insert palette",
+          "identityChip": "Insert {identity} identity chip",
+          "skillBlock": "Insert {label} detail block",
+          "passiveBlock": "Insert {passive} detail description",
+          "passiveDescriptionTitle": "{passive} description",
+          "chipTitle": "{name} chip",
+          "preview": "Deck note preview"
+        }
+      }
     },
     "result": {
       "countMore": "{count}+ decks",
@@ -289,10 +427,621 @@
       "metaTitle": "Mirror Dungeon — Trigger Mode"
     },
     "community": "Community Plans",
+    "detail": {
+      "notFoundTitle": "Plan not found",
+      "metaTitle": "{title} | Community Plan",
+      "metaDescription": "Limbus Company Mirror Dungeon {difficulty} plan",
+      "metaDescriptionWithDescription": "{difficulty} difficulty — {description}",
+      "backToCommunity": "Community Plans",
+      "anonymous": "Anonymous",
+      "loginRequired": "Log in to recommend this plan.",
+      "floorCount": "{count} floors",
+      "deckCount": "{count} identities",
+      "egoCount": "E.G.O {count}",
+      "voteWithCount": "Recommend {count}",
+      "descriptionTitle": "Plan Notes",
+      "copyDeckCode": "Copy Formation Code",
+      "fork": "Fork",
+      "copied": "Copied",
+      "triggerMode": "Trigger Mode",
+      "forkedTitle": "{title} (Fork)",
+      "loadedIntoPlanner": "Loaded into the planner.",
+      "copyDeckCodeFailed": "Could not copy the formation code.",
+      "deletePlanTitle": "Delete Plan",
+      "deletePlanMessage": "Delete this plan? This cannot be undone.",
+      "deleteFailed": "Could not delete the plan.",
+      "deleteError": "An error occurred while deleting.",
+      "floorPlanCaption": "Review floor themes, acquired gifts, and route notes at a glance.",
+      "startGifts": "Starting Gifts",
+      "observeGifts": "Observed Gifts",
+      "finalGifts": "Final Gifts",
+      "itemCount": "{count} items",
+      "observeCount": "{count}/3",
+      "emptyStartGifts": "No starting gifts selected.",
+      "emptyObserveGifts": "No observed gifts selected.",
+      "emptyFinalGifts": "No final gifts selected.",
+      "conditionUnmet": "Unmet — not enough with all identities",
+      "conditionWarn": "Warning — needs bench identities"
+    },
     "difficulty": "Difficulty",
     "normal": "Normal",
     "hard": "Hard",
-    "tags": "Tags"
+    "tags": "Tags",
+    "tempSaves": {
+      "button": "Temp saves",
+      "menuLabel": "Planner temporary saves",
+      "closeMenu": "Close",
+      "saveCurrent": "Save current plan",
+      "empty": "No temporary plans saved.",
+      "slotLabel": "Slot {slot}",
+      "emptySlot": "Empty",
+      "saveToSlot": "Save",
+      "overwriteSlot": "Overwrite",
+      "loadSlot": "Load",
+      "saved": "Temporary plan saved.",
+      "savedToSlot": "Saved to slot {slot}.",
+      "overwritten": "Slot {slot} overwritten.",
+      "loaded": "Temporary plan loaded.",
+      "loadedFromSlot": "Loaded slot {slot}.",
+      "deleted": "Temporary plan deleted.",
+      "deletedFromSlot": "Cleared slot {slot}.",
+      "untitled": "Untitled plan",
+      "deleteSlotLabel": "Clear slot {slot}",
+      "deleteLabel": "Delete temporary save {label}"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "Community Plans | Mirror Dungeon Planner",
+        "description": "Browse and vote on community Mirror Dungeon plans for Limbus Company."
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "Community Plans",
+        "subtitle": "Shared Mirror Dungeon routes and strategy plans.",
+        "newPlan": "Create Plan"
+      },
+      "search": {
+        "label": "Search plans",
+        "section": "Search",
+        "placeholder": "Identity, keyword, title...",
+        "clear": "Clear search",
+        "hint": "+ for OR, * for AND",
+        "suggestionHeading": "Identity / Keyword",
+        "suggestionHint": "Press Tab to pick",
+        "suggestionIdentity": "Identity",
+        "suggestionKeyword": "Keyword"
+      },
+      "sort": {
+        "label": "Sort",
+        "latest": "Latest",
+        "popular": "Votes"
+      },
+      "difficulty": {
+        "normal": "Normal",
+        "hard": "Hard",
+        "overlap": "Infinity Loop",
+        "extreme": "Extreme"
+      },
+      "filters": {
+        "button": "Filters",
+        "panel": "Mirror Dungeon plan filter panel",
+        "aside": "Mirror Dungeon plan filters",
+        "closePanel": "Close filter panel",
+        "close": "Close filters",
+        "difficulty": "Difficulty",
+        "all": "All",
+        "keywords": "Pinned Keywords",
+        "keywordModeToggle": "Toggle keyword OR/AND condition",
+        "identity": "Identity Filter",
+        "identityModeToggle": "Toggle identity OR/AND condition",
+        "identitySelected": "selected",
+        "collection": "Collection Filter",
+        "ownedIdentityPlan": "Owned Identity Plans",
+        "ownedEgoPlan": "Owned E.G.O Plans",
+        "collectionCodePlaceholder": "Collection URL or code",
+        "collectionCodeLabel": "Collection URL or code",
+        "collectionLoading": "Loading collection...",
+        "apply": "Apply",
+        "invalidCode": "Invalid code",
+        "clear": "Clear",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "Language",
+        "current": "Current language",
+        "all": "All",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "Select identity"
+      },
+      "result": {
+        "total": "{count} plans",
+        "filtered": "{filtered}/{total} plans",
+        "filterApplied": "(filters applied)"
+      },
+      "grid": {
+        "empty": "No plans have been posted yet.",
+        "noSearchResults": "No results for \"{query}\".",
+        "createFirst": "Create the first plan →",
+        "loadMore": "Load more",
+        "loadingMore": "Loading...",
+        "scrollForMore": "Scroll to load more"
+      },
+      "card": {
+        "anonymous": "Anonymous",
+        "difficultyCount": "{count}F",
+        "toggleKeyword": "Toggle {keyword} keyword filter"
+      },
+      "relativeTime": {
+        "now": "just now",
+        "minutes": "{count}m ago",
+        "hours": "{count}h ago",
+        "days": "{count}d ago",
+        "months": "{count}mo ago",
+        "years": "{count}y ago"
+      }
+    },
+    "tabs": {
+      "deck": "Deck",
+      "blessing": "Blessings",
+      "gift": "Gifts",
+      "floor": "Floor Plan",
+      "summary": "Preview"
+    },
+    "difficultyValues": {
+      "normal": "Normal",
+      "hard": "Hard",
+      "overlap": "Infinity Loop",
+      "extreme": "Extreme"
+    },
+    "floorCount": "{count}F",
+    "floorTab": {
+      "difficulty": {
+        "normal": "Normal",
+        "hard": "Hard",
+        "overlap": "Infinity Loop",
+        "extreme": "Extreme"
+      },
+      "themeSection": "Theme pack",
+      "difficultySelectorLabel": "Floor {floor} difficulty",
+      "fixedDifficulty": "Fixed difficulty",
+      "themeModalTitle": "Floor {floor} theme pack · {difficulty}",
+      "difficultySummary": "Floor difficulties",
+      "difficultySummaryCount": "{count}F",
+      "configuredFloorCount": "{configured}/{total}F",
+      "noThemeWithCount": "No theme selected ({count} available)",
+      "noFloorThemes": "No themes for this floor",
+      "selectThemeWithCount": "Choose theme pack ({count})",
+      "emptyThemes": "No theme packs are available for this floor.",
+      "changeTheme": "Change",
+      "clearTheme": "Clear theme",
+      "themeGiftCount": "{count} gifts",
+      "acquiredGifts": "Acquired gifts",
+      "acquiredGiftCount": "{count} acquired gifts",
+      "addGift": "Add",
+      "giftPickerTitle": "Add acquired gift",
+      "giftPickerHint": "Search gifts from {theme} to add them to this floor.",
+      "giftPickerSearchPlaceholder": "Search theme gifts...",
+      "giftPickerEmpty": "No gifts match your search.",
+      "noThemeGifts": "This theme has no gifts in the final gift list.",
+      "addToFinal": "+Add to final",
+      "memo": "Plan memo",
+      "floorBoard": "Floor board",
+      "floorBoardHint": "Pick a floor, then tune its theme pack, acquired gifts, and memo in the editor.",
+      "segment": {
+        "early": "{start}-{end} · Normal/Hard",
+        "loop": "{start}-{end} · Infinity Loop",
+        "extreme": "{start}-{end} · Extreme"
+      },
+      "activeFloor": "Floor {floor} editor",
+      "chooseFloorAria": "Select floor {floor}",
+      "empty": "Unset",
+      "shortGiftCount": "{count} gifts",
+      "selectTheme": "Choose theme pack",
+      "selectThemeFirst": "Choose a theme pack first.",
+      "availableThemeCount": "{count} available",
+      "close": "Close",
+      "memoPlaceholder": "Strategy memo for this floor… (keyword and gift autocomplete supported)",
+      "memoPreview": "Preview",
+      "memoExpand": "Read full memo",
+      "memoCollapse": "Collapse memo",
+      "keywordDistribution": "Accumulated gift keyword distribution",
+      "totalGifts": "{count} gifts total",
+      "finalGifts": "Final inventory gifts",
+      "finalGiftCount": "{count} final gifts",
+      "finalWorkbenchHint": "Click reflected cards on the left to remove them, or click catalog cards to add them and click again to remove.",
+      "finalSelectedPanel": "Reflected list",
+      "finalGiftSearchPlaceholder": "Search final gifts...",
+      "finalGiftEmpty": "No final gifts reflected yet.",
+      "finalGiftNoResults": "No gifts match your search.",
+      "finalKeywordFilter": "Keyword",
+      "finalGradeFilter": "Grade",
+      "filterAll": "All",
+      "allGiftAddPanel": "Add from all gifts",
+      "allGiftCatalog": "All gifts",
+      "allGiftAddHint": "Click a card to add it to final inventory. Click an already-added card again to remove it.",
+      "allGiftSearchPlaceholder": "Search all gifts...",
+      "allGiftNoResults": "No gifts match your search.",
+      "alreadyAdded": "Added",
+      "alreadyAddedRemove": "Added · click to remove",
+      "alreadyAddedGift": "{gift} already added",
+      "addFinalGift": "Add {gift} to final gifts",
+      "addFinalGiftShort": "Add",
+      "removeFinalGift": "Remove {gift} from final gifts",
+      "removeAlreadyAddedGift": "Remove {gift} from final gifts",
+      "removeFinalGiftShort": "Remove",
+      "fusionAlertTitle": "Craftable fusion",
+      "fusionAlertHint": "Your current final gifts can craft this result. Click the result gift to replace its materials in final inventory.",
+      "fusionAlertDismiss": "Dismiss fusion alert",
+      "fusionAlertApply": "Apply {gift} fusion"
+    },
+    "actions": {
+      "triggerMode": "Trigger Mode",
+      "copyUrl": "Copy URL",
+      "copied": "Copied",
+      "upload": "Upload",
+      "update": "Update",
+      "uploading": "Uploading...",
+      "updating": "Updating...",
+      "uploadComplete": "Uploaded",
+      "updateComplete": "Updated",
+      "uploadTitle": "Upload this plan to the community",
+      "loginRequired": "Sign in to use this",
+      "titleRequired": "Enter a plan title",
+      "uploaded": "Uploaded to the community.",
+      "updated": "Plan updated.",
+      "uploadFailed": "Upload failed",
+      "updateFailed": "Update failed",
+      "uploadError": "An error occurred while uploading"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "Deck formation subtabs",
+        "identity": "Identity",
+        "ego": "E.G.O",
+        "skillset": "Skill Exchange"
+      },
+      "identity": {
+        "formed": "Front",
+        "bench": "Bench",
+        "change": "Change",
+        "removeFormation": "Remove",
+        "addFormation": "Add",
+        "form": "Form",
+        "toNormalArt": "Awakened art -- click for normal",
+        "toAwakenedArt": "Normal art -- click for awakened",
+        "modalTitle": "Select Identity",
+        "modalHeading": "{sinner} - Select Identity",
+        "close": "Close identity picker",
+        "searchPlaceholder": "Search identities...",
+        "clearSearch": "Clear search",
+        "rarityAll": "All",
+        "rarity": "{rarity} star",
+        "noResults": "No identities match these filters.",
+        "openDetailHint": "Click for details",
+        "clear": "Clear selection"
+      },
+      "ego": {
+        "modalTitle": "Select E.G.O",
+        "modalHeading": "{sinner} - Select E.G.O",
+        "close": "Close E.G.O picker",
+        "searchPlaceholder": "Search E.G.O...",
+        "clearSearch": "Clear search",
+        "gradeAll": "All",
+        "remove": "Remove",
+        "emptyGrade": "No E.G.O in this grade",
+        "noIdentity": "No identity"
+      },
+      "skillset": {
+        "selectIdentityFirst": "Select an identity first."
+      },
+      "stats": {
+        "keywordDistribution": "Keyword distribution",
+        "keywordEmpty": "Select identities to show keyword distribution.",
+        "passives": "Passives",
+        "battle": "Battle",
+        "support": "Support",
+        "passiveSelectIdentity": "Select identities to show passives.",
+        "passiveEmpty": "No matching passives.",
+        "resonance": "Res.",
+        "stock": "Stock",
+        "passiveWarning": "Skill distribution no longer meets this condition"
+      },
+      "mainKeywords": {
+        "label": "Plan main keywords",
+        "keywordCount": "{keyword} {count} identities"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "Observed Gifts",
+        "start": "Starter Gifts",
+        "final": "Final Gifts"
+      },
+      "observe": {
+        "cost": "Observe cost:",
+        "selected": "Selected {count}/3",
+        "gradeRange": "Grades {from}-{to} · no Remnants",
+        "selectedTitle": "Selected E.G.O Gifts",
+        "starlightAlt": "Starlight",
+        "starlightCost": "{count} Starlight"
+      },
+      "start": {
+        "selected": "Selected {count}/{max}",
+        "selectedTitle": "Starter Gifts"
+      },
+      "final": {
+        "all": "All",
+        "buildTitle": "Final Gift Build",
+        "selectedCount": "{count} selected",
+        "clearAll": "Clear all",
+        "help": "Drag or click gifts below to add · click upgradable gifts for +/++",
+        "conditionUnmet": "Unmet — not enough with all identities",
+        "conditionWarn": "Warning — needs bench identities",
+        "emptyDrop": "Drag or click gifts below to add",
+        "addFromObserve": "Add from observed gifts",
+        "addFromStart": "Add from starter gifts",
+        "listTitle": "All Gifts",
+        "searchPlaceholder": "Search gift name...",
+        "noResults": "No results"
+      },
+      "grid": {
+        "grade": "Grade {grade}",
+        "emptyKeyword": "No gifts for this keyword"
+      },
+      "selectedPanel": {
+        "empty": "None selected",
+        "remove": "Remove"
+      },
+      "conditionStatus": {
+        "unmetLabel": "Unmet",
+        "warnLabel": "Warning",
+        "unmetTitle": "Condition unmet: {text} - not enough even with all identities",
+        "warnTitle": "Condition warning: {text} - needs bench identities"
+      },
+      "keywords": {
+        "all": "All",
+        "burn": "Burn",
+        "bleed": "Bleed",
+        "tremor": "Tremor",
+        "rupture": "Rupture",
+        "sinking": "Sinking",
+        "breath": "Breath",
+        "charge": "Charge",
+        "slash": "Slash",
+        "pierce": "Pierce",
+        "blunt": "Blunt",
+        "general": "General"
+      }
+    },
+    "blessingTab": {
+      "title": "Grace of Stars",
+      "usedStarlight": "Starlight used",
+      "clear": "Clear",
+      "selectAll": "Select all blessings",
+      "allClear": "Clear all",
+      "allPlus": "All +",
+      "plusClear": "Clear +",
+      "allPlusPlus": "All ++",
+      "plusplusClear": "Clear ++",
+      "base": "Base",
+      "none": "Not selected",
+      "empty": "No blessings selected",
+      "starlightAlt": "Starlight",
+      "fallbackName": "Blessing {baseId}",
+      "blessings": {
+        "100": {
+          "name": "Star of the Beginning",
+          "effectsByLevel": [
+            [
+              "Starting Cost +150",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "1 Free normal Refresh(es) for Shops"
+            ],
+            [
+              "Starting Cost +250",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "1 Free normal Refresh(es) for Shops"
+            ],
+            [
+              "Starting Cost +250",
+              "Theme Pack Selection +1",
+              "Shop E.G.O Gift Choice +1",
+              "2 Free normal Refresh(es) for Shops"
+            ]
+          ]
+        },
+        "101": {
+          "name": "Cumulating Starcloud",
+          "effectsByLevel": [
+            [
+              "When moving to the next floor, increase current Cost balance by 10% (max 100)",
+              "Increase E.G.O Gift sale price by 50% (once per Shop)"
+            ],
+            [
+              "When moving to the next floor, increase current Cost balance by 20% (max 125)",
+              "Increase E.G.O Gift sale price by 75% (once per Shop)"
+            ],
+            [
+              "When moving to the next floor, increase current Cost balance by 30% (max 150)",
+              "Increase E.G.O Gift sale price by 100% (once per Shop)"
+            ]
+          ]
+        },
+        "102": {
+          "name": "Interstellar Travel",
+          "effectsByLevel": [
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +2",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +3",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)",
+              "If 45+ Theme Packs are unlocked in the Theme Pack Compendium, gain 1 Clash Power Up"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Theme Pack Refresh  Chance +4",
+              "When choosing a new Theme Pack for the first time, all Identities gain +3 Level(s) (max 9)",
+              "If 45+ Theme Packs are unlocked in the Theme Pack Compendium, gain 2 Clash Power Up"
+            ]
+          ]
+        },
+        "103": {
+          "name": "Star-shower",
+          "effectsByLevel": [
+            [
+              "Starting Cost +400",
+              "Starting E.G.O Gift Choice +1"
+            ],
+            [
+              "Starting Cost +500",
+              "Starting E.G.O Gift Choice +1",
+              "When Choosing Starlight from Encounter Reward Cards, Cost +75"
+            ],
+            [
+              "Starting Cost +700",
+              "Starting E.G.O Gift Choice +1",
+              "When Choosing Starlight from Encounter Reward Cards, Cost +150"
+            ]
+          ]
+        },
+        "104": {
+          "name": "Binary Star-shop",
+          "effectsByLevel": [
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +20%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops"
+            ],
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +30%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops",
+              "Upon entering a Shop, add up all the Tier numbers of currently owned E.G.O Gifts and gain it as Cost (max 75)"
+            ],
+            [
+              "Shop E.G.O Gift Choice +1",
+              "Encounter Reward Cost +40%",
+              "Greater chance for high Tier E.G.O Gifts to appear in Shops",
+              "Upon entering a Shop, add up all the Tier numbers of currently owned E.G.O Gifts and gain it as Cost (max 150)"
+            ]
+          ]
+        },
+        "105": {
+          "name": "Moon Star-shop",
+          "effectsByLevel": [
+            [
+              "1 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 1 random Tier 1 E.G.O Gift(s)"
+            ],
+            [
+              "1 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 2 random Tier 1 E.G.O Gift(s)",
+              "+10% chance for Super Shop to appear"
+            ],
+            [
+              "2 Free Keyword Refresh(es) for Shops",
+              "Upon entering Floor 1, gain 3 random Tier 1 E.G.O Gift(s)",
+              "+25% chance for Super Shop to appear"
+            ]
+          ]
+        },
+        "106": {
+          "name": "Favor of the Nebulae",
+          "effectsByLevel": [
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 5)"
+            ],
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 9)"
+            ],
+            [
+              "Upon entering Floor 1, all Identities gain 3 Level(s)",
+              "Upon entering Floor 6, all Identities gain 3 Level(s)",
+              "Upon Floor clear, all Identities gain 1 Level(s) (max 9)"
+            ]
+          ]
+        },
+        "107": {
+          "name": "Starlight Guidance",
+          "effectsByLevel": [
+            [
+              "Max Speed +2",
+              "Gain 1 Clash Power Up",
+              "Gain 1 Damage Up",
+              "Gain 1 Protection"
+            ],
+            [
+              "Max Speed +3",
+              "Gain 2 Clash Power Up",
+              "Gain 1 Damage Up",
+              "Gain 1 Protection"
+            ],
+            [
+              "Max Speed +3",
+              "Gain 2 Clash Power Up",
+              "Gain 2 Damage Up",
+              "Gain 2 Protection"
+            ]
+          ]
+        },
+        "108": {
+          "name": "Chance Comet",
+          "effectsByLevel": [
+            [
+              "Upon entering a Shop, gain 1 random Tier 3 or less For Fuse or Sale only E.G.O Gift(s)",
+              "Upon entering Floor 3, gain 1 random Tier 3 E.G.O Gift(s)",
+              "When Fusing, gain a random additional E.G.O Gift 2 Tiers below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ],
+            [
+              "Upon entering a Shop, gain 1 'For Fuse or Sale only E.G.O Gift'\n· Floor 5 or lower : Tier 1~3\n· Floor 6 or higher : Tier 2~3",
+              "Upon entering Floor 3/Floor 5, gain 1 Tier 3 E.G.O Gift from the selected Keyword category",
+              "When Fusing, gain a random additional E.G.O Gift 2 Tiers below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ],
+            [
+              "Upon entering a Shop, gain 1 'For Fuse or Sale only E.G.O Gift'\n· Floor 5 or lower : Tier 2~3\n· Floor 6 or higher : Tier 3~4",
+              "Upon entering Floor 3/Floor 5/Floor 7, gain 1 random Tier 4 E.G.O Gift(s) from the selected Keyword category",
+              "When Fusing, gain a random additional E.G.O Gift 1 Tier below the Fusion result(must be Tier 3 or higher) (once per Shop)"
+            ]
+          ]
+        },
+        "109": {
+          "name": "Perfected Possibility",
+          "effectsByLevel": [
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 1 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 2 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige and 1 Faint Vestige each"
+            ],
+            [
+              "Theme Pack Selection +1",
+              "Starting E.G.O Gift Choice +1",
+              "Upon entry, gain 3 Tier 3 E.G.O Gift(s) of your choice for the selected Keyword (if no remaining Gifts meet the conditions, a lower Tier one will appear instead)",
+              "Upon entry, gain 1 Dark Vestige,1 Faint Vestige, and 1 Twinkling Vestige each"
+            ]
+          ]
+        }
+      }
+    }
   },
   "guide": {
     "title": "Guides",

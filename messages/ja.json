@@ -44,8 +44,21 @@
     "skipToContent": "本文へスキップ",
     "viewAll": "すべて見る",
     "close": "閉じる",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "fanDisclaimer": "ファン制作の非公式サイト · Limbus CompanyはProject Moonの著作物です。",
+    "unaffiliatedDisclaimer": "Project Moonとは提携していないファンサイトです。",
     "footerNav": "フッターナビゲーション",
-    "mainNav": "メインナビゲーション"
+    "mainNav": "メインナビゲーション",
+    "fontControl": {
+      "open": "文字サイズ調整を開く",
+      "decrease": "文字サイズを小さく",
+      "increase": "文字サイズを大きく",
+      "collapse": "折りたたむ",
+      "small": "小",
+      "default": "標準",
+      "large": "大"
+    }
   },
   "lang": {
     "filter": "言語フィルター",
@@ -148,6 +161,131 @@
       "refractionRailway": "屈折鉄道",
       "reflectrial": "射影戦闘",
       "none": "なし"
+    },
+    "builder": {
+      "metadata": {
+        "title": "デッキ編成",
+        "description": "人格、E.G.O、編成順、デッキノートを整理します。"
+      },
+      "backToDecks": "デッキ掲示板",
+      "titleNew": "デッキ編成",
+      "titleEdit": "デッキ編集",
+      "description": "人格、E.G.O、編成順、運用ノートを一つの画面で整理します。",
+      "progress": "人格 {count}/{total}",
+      "forkTitle": "{title}（フォーク）",
+      "tabs": {
+        "identity": "人格編成",
+        "ego": "E.G.O編成",
+        "skillset": "スキル編成",
+        "note": "デッキノート"
+      },
+      "actions": {
+        "loadDraft": "下書きを読み込む",
+        "saveDraft": "下書き保存",
+        "draftSaved": "保存完了",
+        "copyCode": "コードコピー",
+        "copied": "コピー済み",
+        "copyDisabled": "12人全員の人格を編成するとコードをコピーできます",
+        "contentRequired": "コンテンツ種別を選択してください",
+        "identityRequired": "全員の人格を編成してください（{count}/{total}）",
+        "saving": "保存中...",
+        "save": "保存",
+        "upload": "投稿"
+      },
+      "fields": {
+        "title": "デッキ名",
+        "titlePlaceholder": "デッキ名を入力",
+        "deckCode": "編成コード",
+        "codePlaceholder": "編成コードを貼り付け",
+        "applyCode": "適用",
+        "applying": "適用中",
+        "codeError": "コードエラー",
+        "contentType": "コンテンツ種別",
+        "required": "必須"
+      },
+      "errors": {
+        "saveFailed": "デッキの保存に失敗しました。",
+        "updateFailed": "デッキの更新に失敗しました。"
+      },
+      "gifts": {
+        "panelTitle": "E.G.Oギフト",
+        "modalTitle": "E.G.Oギフト選択",
+        "modalHeading": "E.G.Oギフト図鑑",
+        "count": "{count}個",
+        "close": "閉じる",
+        "active": "有効",
+        "inactive": "無効",
+        "warning": "注意",
+        "all": "全て",
+        "openAll": "全て見る",
+        "expand": "ギフトパネルを開く",
+        "collapse": "ギフトパネルを閉じる",
+        "searchPlaceholder": "ギフト検索...",
+        "searchNamePlaceholder": "ギフト名を検索...",
+        "clearSearch": "検索語を消去",
+        "gradeFilter": "等級",
+        "gradeAll": "全等級",
+        "selectIdentityFirst": "先に人格を編成してください。",
+        "noResults": "条件に合うギフトがありません",
+        "benchProgress": "編成 {formation}/{count} · 全体 {all}/{count}",
+        "grades": {
+          "열쇠": "鍵",
+          "갈래": "枝",
+          "징표": "印",
+          "화폐": "貨幣",
+          "에고": "E.G.O"
+        }
+      },
+      "note": {
+        "placeholder": "デッキ運用ノートを入力してください。[ または {{ でチップとブロックを挿入できます。",
+        "insert": "挿入",
+        "preview": "プレビュー",
+        "edit": "編集",
+        "emptyPalette": "囚人を選択すると、編成済みの人格、スキル、パッシブ、E.G.Oの挿入ツールが開きます",
+        "giftInsert": "ギフト追加",
+        "giftTokenStart": "ギフトトークン開始",
+        "groups": {
+          "history": "履歴",
+          "paragraph": "段落",
+          "format": "書式",
+          "insertPreview": "挿入とプレビュー"
+        },
+        "blocks": {
+          "paragraph": "段落",
+          "heading2": "見出し"
+        },
+        "tools": {
+          "undo": "元に戻す",
+          "redo": "やり直す",
+          "paragraphFormat": "段落形式",
+          "bold": "太字",
+          "italic": "斜体",
+          "bulletList": "リスト",
+          "orderedList": "番号付きリスト",
+          "quote": "引用",
+          "link": "リンク"
+        },
+        "types": {
+          "skill": "スキル",
+          "skillFrame": "スキルフレーム",
+          "passive": "パッシブ",
+          "passiveDescription": "パッシブ説明",
+          "identity": "人格",
+          "giftCard": "ギフトカード"
+        },
+        "aria": {
+          "editor": "デッキノート",
+          "toolbar": "デッキノート編集ツール",
+          "sinnerTools": "囚人挿入ツール",
+          "sinnerPalette": "{sinner} 挿入パレット",
+          "identityChip": "{identity} 人格チップを挿入",
+          "skillBlock": "{label} 詳細ブロックを挿入",
+          "passiveBlock": "{passive} 詳細説明を挿入",
+          "passiveDescriptionTitle": "{passive}説明",
+          "chipTitle": "{name}チップ",
+          "preview": "デッキノートプレビュー"
+        }
+      }
     },
     "result": {
       "countMore": "{count}件以上のデッキ",
@@ -289,10 +427,621 @@
       "metaTitle": "ミラーダンジョン — トリガーモード"
     },
     "community": "コミュニティプラン",
+    "detail": {
+      "notFoundTitle": "プランが見つかりません",
+      "metaTitle": "{title} | コミュニティプラン",
+      "metaDescription": "リンバスカンパニー ミラーダンジョン {difficulty} プラン",
+      "metaDescriptionWithDescription": "{difficulty}難易度 — {description}",
+      "backToCommunity": "コミュニティプラン",
+      "anonymous": "匿名",
+      "loginRequired": "推薦するにはログインが必要です。",
+      "floorCount": "{count}階",
+      "deckCount": "{count}人格編成",
+      "egoCount": "E.G.O {count}",
+      "voteWithCount": "推薦 {count}",
+      "descriptionTitle": "プラン説明",
+      "copyDeckCode": "編成コードをコピー",
+      "fork": "フォーク",
+      "copied": "コピー完了",
+      "triggerMode": "トリガーモード",
+      "forkedTitle": "{title} (フォーク)",
+      "loadedIntoPlanner": "プランナーに読み込みました。",
+      "copyDeckCodeFailed": "編成コードをコピーできませんでした。",
+      "deletePlanTitle": "プラン削除",
+      "deletePlanMessage": "このプランを削除しますか？削除後は復元できません。",
+      "deleteFailed": "プランを削除できませんでした。",
+      "deleteError": "削除中にエラーが発生しました。",
+      "floorPlanCaption": "階層テーマ、獲得ギフト、メモをまとめて確認します。",
+      "startGifts": "開始ギフト",
+      "observeGifts": "観測ギフト",
+      "finalGifts": "最終ギフト",
+      "itemCount": "{count}個",
+      "observeCount": "{count}/3",
+      "emptyStartGifts": "開始ギフトは選択されていません。",
+      "emptyObserveGifts": "観測ギフトは選択されていません。",
+      "emptyFinalGifts": "最終ギフトは選択されていません。",
+      "conditionUnmet": "条件未達 — 全人格でも不足",
+      "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成"
+    },
     "difficulty": "難易度",
     "normal": "通常",
     "hard": "ハード",
-    "tags": "タグ"
+    "tags": "タグ",
+    "tempSaves": {
+      "button": "一時保存",
+      "menuLabel": "プランナーの一時保存",
+      "closeMenu": "閉じる",
+      "saveCurrent": "現在のプランを保存",
+      "empty": "一時保存されたプランはありません。",
+      "slotLabel": "スロット {slot}",
+      "emptySlot": "空き",
+      "saveToSlot": "保存",
+      "overwriteSlot": "上書き",
+      "loadSlot": "読込",
+      "saved": "一時保存しました。",
+      "savedToSlot": "スロット {slot}に保存しました。",
+      "overwritten": "スロット {slot}を上書きしました。",
+      "loaded": "一時保存を読み込みました。",
+      "loadedFromSlot": "スロット {slot}を読み込みました。",
+      "deleted": "一時保存を削除しました。",
+      "deletedFromSlot": "スロット {slot}を空にしました。",
+      "untitled": "無題のプラン",
+      "deleteSlotLabel": "スロット {slot}を空にする",
+      "deleteLabel": "{label} の一時保存を削除"
+    },
+    "communityBoard": {
+      "meta": {
+        "title": "コミュニティプラン | ミラーダンジョンプランナー",
+        "description": "リンバスカンパニーのミラーダンジョン計画を閲覧し、投票できます。"
+      },
+      "header": {
+        "eyebrow": "MIRROR DUNGEON PLANS",
+        "title": "コミュニティプラン",
+        "subtitle": "ミラーダンジョンのルートと攻略プランを共有する場所です。",
+        "newPlan": "プラン作成"
+      },
+      "search": {
+        "label": "プラン検索",
+        "section": "検索",
+        "placeholder": "人格、キーワード、タイトル...",
+        "clear": "検索語をクリア",
+        "hint": "+ は OR、* は AND 検索",
+        "suggestionHeading": "人格 / キーワード",
+        "suggestionHint": "Tabで選択",
+        "suggestionIdentity": "人格",
+        "suggestionKeyword": "キーワード"
+      },
+      "sort": {
+        "label": "並び替え",
+        "latest": "新しい順",
+        "popular": "投票順"
+      },
+      "difficulty": {
+        "normal": "ノーマル",
+        "hard": "ハード",
+        "overlap": "インフィニティループ",
+        "extreme": "エクストリーム"
+      },
+      "filters": {
+        "button": "フィルター",
+        "panel": "ミラーダンジョンプランのフィルターパネル",
+        "aside": "ミラーダンジョンプランフィルター",
+        "closePanel": "フィルターパネルを閉じる",
+        "close": "フィルターを閉じる",
+        "difficulty": "難易度",
+        "all": "全て",
+        "keywords": "固定キーワード",
+        "keywordModeToggle": "キーワードの OR/AND 条件を切り替え",
+        "identity": "人格フィルター",
+        "identityModeToggle": "人格の OR/AND 条件を切り替え",
+        "identitySelected": "選択中",
+        "collection": "所持フィルター",
+        "ownedIdentityPlan": "所持人格プラン",
+        "ownedEgoPlan": "所持E.G.Oプラン",
+        "collectionCodePlaceholder": "所持状況URLまたはコード",
+        "collectionCodeLabel": "所持状況URLまたはコード",
+        "collectionLoading": "コレクションを読み込み中...",
+        "apply": "適用",
+        "invalidCode": "無効なコード",
+        "clear": "クリア",
+        "or": "OR",
+        "and": "AND"
+      },
+      "languageFilter": {
+        "label": "言語",
+        "current": "現在の言語",
+        "all": "全て",
+        "ko": "한국어",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "identityFilter": {
+        "fallbackTitle": "人格を選択"
+      },
+      "result": {
+        "total": "{count}件のプラン",
+        "filtered": "{filtered}/{total}件のプラン",
+        "filterApplied": "（フィルター適用中）"
+      },
+      "grid": {
+        "empty": "まだ登録されたプランがありません。",
+        "noSearchResults": "\"{query}\" の検索結果がありません。",
+        "createFirst": "最初のプランを作成 →",
+        "loadMore": "もっと見る",
+        "loadingMore": "読み込み中...",
+        "scrollForMore": "スクロールするとさらに読み込みます"
+      },
+      "card": {
+        "anonymous": "匿名",
+        "difficultyCount": "{count}階",
+        "toggleKeyword": "{keyword}キーワードフィルターを切り替え"
+      },
+      "relativeTime": {
+        "now": "たった今",
+        "minutes": "{count}分前",
+        "hours": "{count}時間前",
+        "days": "{count}日前",
+        "months": "{count}か月前",
+        "years": "{count}年前"
+      }
+    },
+    "tabs": {
+      "deck": "編成",
+      "blessing": "加護",
+      "gift": "ギフト",
+      "floor": "階層計画",
+      "summary": "プレビュー"
+    },
+    "difficultyValues": {
+      "normal": "ノーマル",
+      "hard": "ハード",
+      "overlap": "インフィニティループ",
+      "extreme": "エクストリーム"
+    },
+    "floorCount": "{count}階",
+    "floorTab": {
+      "difficulty": {
+        "normal": "ノーマル",
+        "hard": "ハード",
+        "overlap": "インフィニティループ",
+        "extreme": "エクストリーム"
+      },
+      "themeSection": "テーマパック選択",
+      "difficultySelectorLabel": "{floor}階の難易度選択",
+      "fixedDifficulty": "固定難易度",
+      "themeModalTitle": "{floor}階テーマパック選択 · {difficulty}",
+      "difficultySummary": "階層別難易度",
+      "difficultySummaryCount": "{count}階",
+      "configuredFloorCount": "{configured}/{total}階",
+      "noThemeWithCount": "テーマ未選択（{count}件利用可能）",
+      "noFloorThemes": "この階層はありません",
+      "selectThemeWithCount": "テーマパック選択（{count}件）",
+      "emptyThemes": "この階層で利用できるテーマパックがありません",
+      "changeTheme": "変更",
+      "clearTheme": "選択解除",
+      "themeGiftCount": "ギフト {count}種",
+      "acquiredGifts": "獲得ギフト",
+      "acquiredGiftCount": "獲得ギフト {count}個",
+      "addGift": "追加",
+      "giftPickerTitle": "獲得ギフトを追加",
+      "giftPickerHint": "{theme}からこの階層で獲得するギフトを検索して追加します",
+      "giftPickerSearchPlaceholder": "テーマギフト検索...",
+      "giftPickerEmpty": "検索結果がありません",
+      "noThemeGifts": "このテーマのギフトは最終ギフト一覧にありません",
+      "addToFinal": "+最終に追加",
+      "memo": "プランメモ",
+      "floorBoard": "階層ボード",
+      "floorBoardHint": "階層を選択し、編集パネルでテーマパック、獲得ギフト、メモを調整します",
+      "segment": {
+        "early": "{start}-{end} · ノーマル/ハード",
+        "loop": "{start}-{end} · インフィニティループ",
+        "extreme": "{start}-{end} · エクストリーム"
+      },
+      "activeFloor": "{floor}階編集",
+      "chooseFloorAria": "{floor}階を選択",
+      "empty": "未設定",
+      "shortGiftCount": "ギフト {count}",
+      "selectTheme": "テーマパック選択",
+      "selectThemeFirst": "先にテーマパックを選択してください",
+      "availableThemeCount": "利用可能 {count}件",
+      "close": "閉じる",
+      "memoPlaceholder": "この階層の戦略メモ…（キーワード・ギフトの自動補完対応）",
+      "memoPreview": "プレビュー",
+      "memoExpand": "メモ全文を表示",
+      "memoCollapse": "メモを閉じる",
+      "keywordDistribution": "累積ギフトキーワード分布",
+      "totalGifts": "合計 {count}個のギフト",
+      "finalGifts": "最終反映ギフト",
+      "finalGiftCount": "最終ギフト {count}個",
+      "finalWorkbenchHint": "左の反映済みカードは押すと削除し、全ギフト側はカードを押して追加、もう一度押すと削除します。",
+      "finalSelectedPanel": "反映リスト",
+      "finalGiftSearchPlaceholder": "最終ギフト検索...",
+      "finalGiftEmpty": "反映済みの最終ギフトはまだありません",
+      "finalGiftNoResults": "検索結果がありません",
+      "finalKeywordFilter": "キーワード",
+      "finalGradeFilter": "等級",
+      "filterAll": "すべて",
+      "allGiftAddPanel": "全ギフトから追加",
+      "allGiftCatalog": "全ギフト",
+      "allGiftAddHint": "カードを押すと最終一覧へ追加し、追加済みのカードはもう一度押すと削除します。",
+      "allGiftSearchPlaceholder": "全ギフト検索...",
+      "allGiftNoResults": "検索結果がありません",
+      "alreadyAdded": "追加済み",
+      "alreadyAddedRemove": "追加済み · クリックで削除",
+      "alreadyAddedGift": "{gift}は追加済み",
+      "addFinalGift": "{gift}を最終ギフトに追加",
+      "addFinalGiftShort": "追加",
+      "removeFinalGift": "{gift}を最終ギフトから削除",
+      "removeAlreadyAddedGift": "{gift}を最終ギフトから削除",
+      "removeFinalGiftShort": "削除",
+      "fusionAlertTitle": "合成可能なギフト",
+      "fusionAlertHint": "現在の最終ギフトで合成できます。結果ギフトを押すと、素材を最終一覧から外して結果を追加します。",
+      "fusionAlertDismiss": "合成通知を閉じる",
+      "fusionAlertApply": "{gift}の合成を反映"
+    },
+    "actions": {
+      "triggerMode": "トリガーモード",
+      "copyUrl": "URLコピー",
+      "copied": "コピー済み",
+      "upload": "投稿",
+      "update": "更新",
+      "uploading": "投稿中...",
+      "updating": "更新中...",
+      "uploadComplete": "投稿完了",
+      "updateComplete": "更新完了",
+      "uploadTitle": "コミュニティにプランを投稿",
+      "loginRequired": "ログイン後に利用できます",
+      "titleRequired": "プラン名を入力してください",
+      "uploaded": "コミュニティに投稿しました。",
+      "updated": "プランを更新しました。",
+      "uploadFailed": "投稿に失敗しました",
+      "updateFailed": "更新に失敗しました",
+      "uploadError": "投稿中にエラーが発生しました"
+    },
+    "deckTab": {
+      "subTabs": {
+        "label": "デッキ編成サブタブ",
+        "identity": "人格",
+        "ego": "E.G.O",
+        "skillset": "スキル交換"
+      },
+      "identity": {
+        "formed": "編成",
+        "bench": "控え",
+        "change": "変更",
+        "removeFormation": "編成解除",
+        "addFormation": "編成する",
+        "form": "編成",
+        "toNormalArt": "覚醒イラスト -- クリックで通常へ",
+        "toAwakenedArt": "通常イラスト -- クリックで覚醒へ",
+        "modalTitle": "人格選択",
+        "modalHeading": "{sinner} - 人格選択",
+        "close": "人格選択を閉じる",
+        "searchPlaceholder": "人格名を検索...",
+        "clearSearch": "検索語を消去",
+        "rarityAll": "全て",
+        "rarity": "{rarity}星",
+        "noResults": "条件に合う人格がありません",
+        "openDetailHint": "クリックで詳細",
+        "clear": "選択解除"
+      },
+      "ego": {
+        "modalTitle": "E.G.O選択",
+        "modalHeading": "{sinner} - E.G.O選択",
+        "close": "E.G.O選択を閉じる",
+        "searchPlaceholder": "E.G.O名を検索...",
+        "clearSearch": "検索語を消去",
+        "gradeAll": "全て",
+        "remove": "解除",
+        "emptyGrade": "この等級のE.G.Oはありません",
+        "noIdentity": "人格未選択"
+      },
+      "skillset": {
+        "selectIdentityFirst": "先に人格を選択してください。"
+      },
+      "stats": {
+        "keywordDistribution": "キーワード分布",
+        "keywordEmpty": "人格を選択するとキーワード分布が表示されます。",
+        "passives": "パッシブ",
+        "battle": "バトル",
+        "support": "サポート",
+        "passiveSelectIdentity": "人格を選択するとパッシブが表示されます。",
+        "passiveEmpty": "該当するパッシブはありません。",
+        "resonance": "共鳴",
+        "stock": "保有",
+        "passiveWarning": "スキル配分の変更により条件を満たしていません"
+      },
+      "mainKeywords": {
+        "label": "プラン代表キーワード",
+        "keywordCount": "{keyword} {count}人格"
+      }
+    },
+    "giftTab": {
+      "tabs": {
+        "observe": "観測ギフト",
+        "start": "開始ギフト",
+        "final": "最終ギフト"
+      },
+      "observe": {
+        "cost": "観測費用:",
+        "selected": "選択 {count}/3",
+        "gradeRange": "{from}~{to}等級・残響除外",
+        "selectedTitle": "選択中のE.G.Oギフト",
+        "starlightAlt": "星光",
+        "starlightCost": "{count} 星光"
+      },
+      "start": {
+        "selected": "選択 {count}/{max}",
+        "selectedTitle": "開始ギフト"
+      },
+      "final": {
+        "all": "全て",
+        "buildTitle": "最終ギフトビルド",
+        "selectedCount": "{count}個",
+        "clearAll": "全削除",
+        "help": "下の一覧からドラッグまたはクリックで追加・強化可能なギフトはクリックで+/++",
+        "conditionUnmet": "条件未達 — 全人格でも不足",
+        "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成",
+        "emptyDrop": "下のギフトをドラッグまたはクリックして追加",
+        "addFromObserve": "観測ギフトから追加",
+        "addFromStart": "開始ギフトから追加",
+        "listTitle": "全ギフト一覧",
+        "searchPlaceholder": "ギフト名を検索...",
+        "noResults": "検索結果がありません"
+      },
+      "grid": {
+        "grade": "{grade}等級",
+        "emptyKeyword": "このキーワードのギフトはありません"
+      },
+      "selectedPanel": {
+        "empty": "選択なし",
+        "remove": "解除"
+      },
+      "conditionStatus": {
+        "unmetLabel": "条件未達",
+        "warnLabel": "条件注意",
+        "unmetTitle": "条件未達: {text} - 全人格でも不足",
+        "warnTitle": "条件注意: {text} - 編成(1-7)のみでは不足、控え込みで達成"
+      },
+      "keywords": {
+        "all": "全て",
+        "burn": "火傷",
+        "bleed": "出血",
+        "tremor": "振動",
+        "rupture": "破裂",
+        "sinking": "沈潜",
+        "breath": "呼吸",
+        "charge": "充電",
+        "slash": "斬撃",
+        "pierce": "貫通",
+        "blunt": "打撃",
+        "general": "汎用"
+      }
+    },
+    "blessingTab": {
+      "title": "星の加護",
+      "usedStarlight": "使用星光",
+      "clear": "クリア",
+      "selectAll": "加護を全選択",
+      "allClear": "全解除",
+      "allPlus": "全体 +",
+      "plusClear": "+ 解除",
+      "allPlusPlus": "全体 ++",
+      "plusplusClear": "++ 解除",
+      "base": "基本",
+      "none": "未選択",
+      "empty": "加護が選択されていません",
+      "starlightAlt": "星光",
+      "fallbackName": "加護 {baseId}",
+      "blessings": {
+        "100": {
+          "name": "始まりの星",
+          "effectsByLevel": [
+            [
+              "開始コスト +150",
+              "テーマパック表示数 +1",
+              "ショップギフト展示数 +1",
+              "ショップの一般更新が1回無料"
+            ],
+            [
+              "開始コスト +250",
+              "テーマパック表示数 +1",
+              "ショップギフト展示数 +1",
+              "ショップの一般更新が1回無料"
+            ],
+            [
+              "開始コスト +250",
+              "テーマパック表示数 +1",
+              "ショップギフト展示数 +1",
+              "ショップの一般更新が2回無料"
+            ]
+          ]
+        },
+        "101": {
+          "name": "積もりゆく星群",
+          "effectsByLevel": [
+            [
+              "階層移動時、保有コストが10%増加(最大100)",
+              "ギフト売却費用が50%増加(ショップ別に1回)"
+            ],
+            [
+              "階層移動時、保有コストが20%増加(最大125)",
+              "ギフト売却費用が75%増加(ショップ別に1回)"
+            ],
+            [
+              "階層移動時、保有コストが30%増加(最大150)",
+              "ギフト売却費用が100%増加(ショップ別に1回)"
+            ]
+          ]
+        },
+        "102": {
+          "name": "星間旅行",
+          "effectsByLevel": [
+            [
+              "テーマパック表示数 +1",
+              "テーマパック更新回数 +2",
+              "記録のないテーマパック選択時、全人格レベル +3(最大9)"
+            ],
+            [
+              "テーマパック表示数 +1",
+              "テーマパック更新回数 +3",
+              "記録のないテーマパック選択時、全人格レベル +3(最大9)",
+              "テーマパック図鑑のテーマパックが45個以上解禁されているなら、マッチ威力増加1を得る"
+            ],
+            [
+              "テーマパック表示数 +1",
+              "テーマパック更新回数 +4",
+              "記録のないテーマパック選択時、全人格レベル +3(最大9)",
+              "テーマパック図鑑のテーマパックが45個以上解禁されているなら、マッチ威力増加2を得る"
+            ]
+          ]
+        },
+        "103": {
+          "name": "降り注ぐ流星雨",
+          "effectsByLevel": [
+            [
+              "開始コスト +400",
+              "開始ギフト数 +1"
+            ],
+            [
+              "開始コスト +500",
+              "開始ギフト数 +1",
+              "戦闘報酬カードから星明かりを選択時、コスト +75"
+            ],
+            [
+              "開始コスト +700",
+              "開始ギフト数 +1",
+              "戦闘報酬カードから星明かりを選択時、コスト +150"
+            ]
+          ]
+        },
+        "104": {
+          "name": "連星系ショップ",
+          "effectsByLevel": [
+            [
+              "ショップギフト展示数 +1",
+              "戦闘報酬コスト +20%",
+              "ショップにて高いランクのギフト出現確率上昇"
+            ],
+            [
+              "ショップギフト展示数 +1",
+              "戦闘報酬コスト +30%",
+              "ショップにて高いランクのギフト出現確率上昇",
+              "ショップ入場時、保有したギフトランクの合計だけコストを獲得 (最大75)"
+            ],
+            [
+              "ショップギフト展示数 +1",
+              "戦闘報酬コスト +40%",
+              "ショップにて高いランクのギフト出現確率上昇",
+              "ショップ入場時、保有したギフトランクの合計だけコストを獲得 (最大150)"
+            ]
+          ]
+        },
+        "105": {
+          "name": "衛星系ショップ",
+          "effectsByLevel": [
+            [
+              "ショップのキーワード更新が1回無料",
+              "1階層入場時、ランダムなランク1ギフトを1個獲得"
+            ],
+            [
+              "ショップのキーワード更新が1回無料",
+              "1階層入場時、ランダムなランク1ギフトを2個獲得",
+              "強化ショップ出現確率 +10%"
+            ],
+            [
+              "ショップのキーワード更新が2回無料",
+              "1階層入場時、ランダムなランク1ギフトを3個獲得",
+              "強化ショップ出現確率 +25%"
+            ]
+          ]
+        },
+        "106": {
+          "name": "星雲の寵愛",
+          "effectsByLevel": [
+            [
+              "1階層入場時、人格レベル +3",
+              "階層クリア時、人格レベル +1 (最大5)"
+            ],
+            [
+              "1階層入場時、人格レベル +3",
+              "階層クリア時、人格レベル +1 (最大9)"
+            ],
+            [
+              "1階層入場時、人格レベル +3",
+              "6階層入場時、人格レベル +3",
+              "階層クリア時、人格レベル +1 (最大9)"
+            ]
+          ]
+        },
+        "107": {
+          "name": "星明かりの導き",
+          "effectsByLevel": [
+            [
+              "速度の最大値 +2",
+              "マッチ威力増加1を得る",
+              "ダメージ量増加1を得る",
+              "保護1を得る"
+            ],
+            [
+              "速度の最大値 +3",
+              "マッチ威力増加2を得る",
+              "ダメージ量増加1を得る",
+              "保護1を得る"
+            ],
+            [
+              "速度の最大値 +3",
+              "マッチ威力増加2を得る",
+              "ダメージ量増加2を得る",
+              "保護2を得る"
+            ]
+          ]
+        },
+        "108": {
+          "name": "偶然の彗星",
+          "effectsByLevel": [
+            [
+              "ショップ入場時、ランク3以下のランダムな合成・売却用ギフトを1個獲得",
+              "3階層入場時、ランダムなランク3ギフトを1個獲得",
+              "合成時、合成結果(ランク3以上)より2ランク低いランダムなギフトを獲得(ショップ別に1回)"
+            ],
+            [
+              "ショップ入場時、合成・売却用ギフトを1個獲得\n・5階層以下 : ランク1～3\n・6階層以上 : ランク2～3",
+              "3/5階層入場時、選んだキーワードのランダムなランク3ギフトを1個獲得",
+              "合成時、合成結果(ランク3以上)より2ランク低いランダムなギフトを獲得(ショップ別に1回)"
+            ],
+            [
+              "ショップ入場時、合成・売却用ギフトを1個獲得\n・5階層以下 : ランク2～3\n・6階層以上 : ランク3～4",
+              "3/5/7階層入場時、選んだキーワードのランダムなランク4ギフトを1個獲得",
+              "合成時、合成結果(ランク3以上)より1ランク低いランダムなギフトを獲得(ショップ別に1回)"
+            ]
+          ]
+        },
+        "109": {
+          "name": "完全なる可能性",
+          "effectsByLevel": [
+            [
+              "テーマパック表示数 +1",
+              "開始ギフト数 +1",
+              "入場時、選んだキーワードのランダムなランク3ギフトのうち1個を選択して獲得 (該当ランクがない場合、低いランクが出現)",
+              "入場時、暗い残影を1個獲得"
+            ],
+            [
+              "テーマパック表示数 +1",
+              "開始ギフト数 +1",
+              "入場時、選んだキーワードのランダムなランク3ギフトのうち2個を選択して獲得 (該当ランクがない場合、低いランクが出現)",
+              "入場時、暗い残影・微かな残影をそれぞれ1個獲得"
+            ],
+            [
+              "テーマパック表示数 +1",
+              "開始ギフト数 +1",
+              "入場時、選んだキーワードのランダムなランク3ギフトのうち3個を選択して獲得 (該当ランクがない場合、低いランクが出現)",
+              "入場時、暗い残影・微かな残影・輝く残影をそれぞれ1個獲得"
+            ]
+          ]
+        }
+      }
+    }
   },
   "guide": {
     "title": "ガイド",
