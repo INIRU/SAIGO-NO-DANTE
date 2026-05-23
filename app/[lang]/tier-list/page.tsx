@@ -1,54 +1,48 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { TIERS, createEmptyTiers, deriveTier, MIN_RATINGS_FOR_TIER, type Tier } from '@/lib/tier-list/tierModel'
+import type { Tier } from '@/lib/tier-list/tierModel'
 import TierListInteractive from './TierListInteractive'
 import type { TierIdentity } from './TierCardInteractive'
-import type { RatingPeriod, TierRatingViewer } from './TierRatingModal'
+import { REROLL_TIERS, type RerollTier, isRerollTier } from './rerollTier'
 
 export const metadata: Metadata = {
-  title: '인격 티어표 | SAIGO NO DANTE',
-  description: '림버스 컴퍼니 인격 티어표에서 종합, 리세, 굿스터프, 거울 던전 기준의 커뮤니티 평가와 S+/S/A/B/C/N/A 등급을 확인하세요.',
+  title: '리세 인격 티어표 | SAIGO NO DANTE',
+  description: '림버스 컴퍼니 리세 인격 티어표에서 관리자 수동 배치 기준의 S+/S/A/B/C 등급과 이륙 자가진단 점수를 확인하세요.',
   alternates: { canonical: 'https://saigo-no-dante.com/tier-list' },
   openGraph: {
-    title: '인격 티어표 | 최애의 관리자',
-    description: '림버스 컴퍼니 인격 티어표에서 종합, 리세, 굿스터프, 거울 던전 기준의 커뮤니티 평가와 등급을 확인하세요.',
+    title: '리세 인격 티어표 | 최애의 관리자',
+    description: '림버스 컴퍼니 리세 인격 티어표에서 수동 티어 배치와 이륙 자가진단 점수를 확인하세요.',
   },
 }
-const CATEGORIES = ['overall', 'reroll', 'goodstuff', 'mirror_dungeon'] as const
-type TierCategory = typeof CATEGORIES[number]
-const RATING_PERIODS = ['7d', '30d', '1y', 'all'] as const
-const TIER_DATA_MODEL_VERSION = 'identity-rating-v12-ai-tier-ratings'
-const OVERALL_SOURCE_CATEGORIES = ['reroll', 'goodstuff', 'mirror_dungeon'] as const
-const MIN_ACCOUNT_AGE_DAYS = 14
+
 type SupportedLocale = 'ko' | 'en' | 'ja'
-type TierIdentitySummaryTier = NonNullable<TierIdentity['tier_rating_summary']>['derivedTier']
+type RerollTierData = Record<RerollTier, TierIdentity[]>
+
+const TIER_DATA_MODEL_VERSION = 'manual-reroll-tier-v1'
 
 const HEADER_COPY: Record<SupportedLocale, {
   title: string
   subtitle: string
+  meta: string
 }> = {
   ko: {
-    title: '인격 티어표',
-    subtitle: '종합, 리세, 굿스터프, 거울 던전 기준으로 커뮤니티 평가 흐름을 확인하세요.',
+    title: '리세 인격 티어표',
+    subtitle: '관리자가 정리한 리세 전용 수동 티어표와 같은 수감자 중복을 제외하는 이륙 자가진단입니다.',
+    meta: 'S+부터 C까지, 출처 기준 점수로 계산',
   },
   en: {
-    title: 'Identity Tier List',
-    subtitle: 'Compare community ratings across Overall, Reroll, Goodstuff, and Mirror Dungeon.',
+    title: 'Reroll identity tier list',
+    subtitle: 'A manual reroll-only board maintained by admins, with a launch check that ignores lower duplicate sinners.',
+    meta: 'S+ through C, scored from the source guide',
   },
   ja: {
-    title: '人格ティア表',
-    subtitle: '総合、リセマラ、グッドスタッフ、鏡ダンジョン別にコミュニティ評価を確認できます。',
+    title: 'リセマラ人格ティア表',
+    subtitle: '管理者が整理したリセマラ専用の手動ティア表と、同一囚人の重複を除外する開始診断です。',
+    meta: 'S+からCまで、出典基準の点数で計算',
   },
-}
-
-function normalizeLocale(value: string | undefined): SupportedLocale {
-  return value === 'en' || value === 'ja' ? value : 'ko'
 }
 
 const IDENTITY_SELECT = `
@@ -90,192 +84,32 @@ const IDENTITY_SELECT = `
   )
 `
 
-function normalizeCategory(value: string | string[] | undefined): TierCategory {
-  const candidate = Array.isArray(value) ? value[0] : value
-  return CATEGORIES.includes(candidate as TierCategory) ? candidate as TierCategory : 'overall'
-}
-
-function normalizePeriod(value: string | string[] | undefined): RatingPeriod {
-  const candidate = Array.isArray(value) ? value[0] : value
-  return RATING_PERIODS.includes(candidate as RatingPeriod) ? candidate as RatingPeriod : 'all'
-}
-
-function getPeriodStart(period: RatingPeriod): string | null {
-  const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '1y' ? 365 : null
-  if (!days) return null
-  return new Date(Date.now() - days * 86_400_000).toISOString()
-}
-
-function getPeriodCacheKey(period: RatingPeriod): string {
-  if (period === 'all') return 'all'
-  return `${period}:${new Date().toISOString().slice(0, 13)}`
-}
-
-async function getTierData(category: TierCategory, period: RatingPeriod, locale: SupportedLocale): Promise<Record<Tier, TierIdentity[]>> {
-  const supabase = createAdminClient()
-
-  const { data: identities, error: identitiesError } = await supabase
-    .schema('limbus')
-    .from('identities')
-    .select(IDENTITY_SELECT)
-    .order('name_kr')
-
-  if (identitiesError) {
-    console.error('[TierListPage] identities fetch error:', identitiesError)
-    return createEmptyTiers<TierIdentity>()
-  }
-  if (!identities) return createEmptyTiers<TierIdentity>()
-
-  let ratingsQuery = supabase
-    .schema('limbus')
-    .from('tier_ratings')
-    .select(`
-      identity_id,
-      category,
-      score,
-      created_at
-    `)
-    .in('category', category === 'overall' ? [...OVERALL_SOURCE_CATEGORIES] : [category])
-  const periodStart = getPeriodStart(period)
-  if (periodStart) {
-    ratingsQuery = ratingsQuery.gte('created_at', periodStart)
-  }
-  const { data: ratingRows, error: ratingsError } = await ratingsQuery
-
-  if (ratingsError) {
-    console.error('[TierListPage] ratings fetch error:', ratingsError)
-  }
-
-  let aiRatingsQuery = supabase
-    .schema('limbus')
-    .from('ai_tier_ratings')
-    .select(`
-      identity_id,
-      category,
-      score,
-      weight,
-      created_at
-    `)
-    .in('category', category === 'overall' ? [...OVERALL_SOURCE_CATEGORIES] : [category])
-  if (periodStart) {
-    aiRatingsQuery = aiRatingsQuery.gte('created_at', periodStart)
-  }
-  const { data: aiRatingRows, error: aiRatingsError } = await aiRatingsQuery
-
-  if (aiRatingsError && aiRatingsError.code !== '42P01' && aiRatingsError.code !== 'PGRST205') {
-    console.error('[TierListPage] ai ratings fetch error:', aiRatingsError)
-  }
-
-  const rows = ratingsError || !ratingRows ? [] : ratingRows as TierRatingRow[]
-  const aiRows = aiRatingsError || !aiRatingRows ? [] : aiRatingRows as TierRatingRow[]
-  const combinedRows = [...rows, ...aiRows]
-  const normalizedIdentities = normalizeIdentities(identities as unknown as RawTierIdentity[])
-  return category === 'overall'
-    ? groupIdentitiesByOverall(normalizedIdentities, combinedRows, locale)
-    : groupIdentitiesByRatings(normalizedIdentities, combinedRows, category, locale)
-}
-
-async function getCachedTierData(
-  category: TierCategory,
-  period: RatingPeriod,
-  locale: SupportedLocale,
-  periodWindowKey: string,
-  dataVersion: string,
-): Promise<Record<Tier, TierIdentity[]>> {
-  'use cache'
-  void periodWindowKey
-  void dataVersion
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.tierList, CACHE_TAGS.gameData)
-  return getTierData(category, period, locale)
-}
-
-function getAccountAgeDays(createdAt: string | null | undefined): number | null {
-  if (!createdAt) return null
-  const createdTime = new Date(createdAt).getTime()
-  if (!Number.isFinite(createdTime)) return null
-  return Math.floor((Date.now() - createdTime) / 86_400_000)
-}
-
-async function getInitialTierViewer(): Promise<TierRatingViewer> {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return {
-      authenticated: false,
-      canRate: false,
-      reason: 'login_required',
-      accountAgeDays: null,
-    }
-  }
-
-  if (session.user.isSuspended) {
-    return {
-      authenticated: true,
-      canRate: false,
-      reason: 'suspended',
-      accountAgeDays: null,
-    }
-  }
-
-  const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
-  if (!userId) {
-    return {
-      authenticated: true,
-      canRate: false,
-      reason: 'login_required',
-      accountAgeDays: null,
-    }
-  }
-
-  const { data: profile, error } = await admin
-    .schema('limbus')
-    .from('profiles')
-    .select('created_at, suspended')
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (error) {
-    console.error('[TierListPage] viewer profile fetch error:', error)
-    return {
-      authenticated: true,
-      canRate: false,
-      reason: 'login_required',
-      accountAgeDays: null,
-    }
-  }
-
-  const accountAgeDays = getAccountAgeDays(profile?.created_at)
-  const canRate = profile?.suspended !== true
-    && accountAgeDays !== null
-    && accountAgeDays >= MIN_ACCOUNT_AGE_DAYS
-
-  return {
-    authenticated: true,
-    canRate,
-    reason: profile?.suspended === true
-      ? 'suspended'
-      : canRate
-        ? 'eligible'
-        : 'account_too_new',
-    accountAgeDays,
-  }
-}
-
-type TierRatingRow = {
-  identity_id: string
-  category: TierCategory
-  score: number
-  weight?: number
-  created_at?: string
-}
-
 type RawTierIdentity = Omit<TierIdentity, 'sinner'> & {
   sinner?: TierIdentity['sinner'] | NonNullable<TierIdentity['sinner']>[] | null
 }
 
-function normalizeIdentities(identities: RawTierIdentity[]): TierIdentity[] {
-  return identities.map(identity => ({
+type TierListRow = {
+  tier: string
+  sort_order: number | null
+  identity: RawTierIdentity | RawTierIdentity[] | null
+}
+
+function normalizeLocale(value: string | undefined): SupportedLocale {
+  return value === 'en' || value === 'ja' ? value : 'ko'
+}
+
+function createEmptyRerollTiers(): RerollTierData {
+  return {
+    'S+': [],
+    S: [],
+    A: [],
+    B: [],
+    C: [],
+  }
+}
+
+function normalizeIdentity(identity: RawTierIdentity): TierIdentity {
+  return {
     ...identity,
     name: identity.name ?? identity.name_kr ?? identity.name_en ?? identity.name_jp ?? identity.id,
     name_kr: identity.name_kr ?? identity.name ?? identity.name_en ?? identity.name_jp ?? identity.id,
@@ -290,151 +124,63 @@ function normalizeIdentities(identities: RawTierIdentity[]): TierIdentity[] {
     keywords: Array.isArray(identity.keywords) ? identity.keywords.filter((keyword): keyword is string => typeof keyword === 'string') : [],
     break_section: Array.isArray(identity.break_section) ? identity.break_section : [],
     sinner: Array.isArray(identity.sinner) ? identity.sinner[0] ?? null : identity.sinner ?? null,
-  }))
-}
-
-function getLocalizedIdentityName(identity: TierIdentity, locale: SupportedLocale): string {
-  if (locale === 'en') return identity.name_en ?? identity.name ?? identity.name_kr ?? identity.id
-  if (locale === 'ja') return identity.name_jp ?? identity.name_kr ?? identity.name ?? identity.id
-  return identity.name_kr ?? identity.name ?? identity.name_en ?? identity.name_jp ?? identity.id
-}
-
-function sortTierIdentities(tiers: Record<Tier, TierIdentity[]>, locale: SupportedLocale): void {
-  for (const tier of TIERS) {
-    tiers[tier].sort((a, b) => {
-      if (tier !== 'N/A') {
-        const scoreDelta = (b.tier_rating_summary?.averageScore ?? -1) - (a.tier_rating_summary?.averageScore ?? -1)
-        if (scoreDelta !== 0) return scoreDelta
-
-        const countDelta = (b.tier_rating_summary?.ratingCount ?? 0) - (a.tier_rating_summary?.ratingCount ?? 0)
-        if (countDelta !== 0) return countDelta
-      }
-
-      return getLocalizedIdentityName(a, locale).localeCompare(getLocalizedIdentityName(b, locale), locale)
-    })
   }
 }
 
-function groupIdentitiesByRatings(
-  identities: TierIdentity[],
-  ratingRows: TierRatingRow[],
-  category: TierCategory,
-  locale: SupportedLocale,
-): Record<Tier, TierIdentity[]> {
-  const ratingMap = new Map<string, { weightedTotal: number; weightTotal: number; count: number; distribution: Record<number, number> }>()
+async function getRerollTierData(): Promise<RerollTierData> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .schema('limbus')
+    .from('tier_list')
+    .select(`
+      tier,
+      sort_order,
+      identity:identities(${IDENTITY_SELECT})
+    `)
+    .eq('category', 'reroll')
+    .in('tier', [...REROLL_TIERS])
+    .order('sort_order')
 
-  for (const row of ratingRows.filter(item => item.category === category)) {
-    const parsedWeight = Number(row.weight)
-    const weight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 1
-    const current = ratingMap.get(row.identity_id)
-    if (current) {
-      current.weightedTotal += row.score * weight
-      current.weightTotal += weight
-      current.count += 1
-      current.distribution[row.score] = (current.distribution[row.score] ?? 0) + 1
-    } else {
-      ratingMap.set(row.identity_id, {
-        weightedTotal: row.score * weight,
-        weightTotal: weight,
-        count: 1,
-        distribution: { [row.score]: 1 },
-      })
-    }
+  if (error) {
+    console.error('[TierListPage] manual reroll tier fetch error:', error)
+    return createEmptyRerollTiers()
   }
 
-  const tiers = createEmptyTiers<TierIdentity>()
+  const tiers = createEmptyRerollTiers()
   const seen = new Set<string>()
-
-  for (const identity of identities) {
-    if (seen.has(identity.id)) continue
+  for (const row of (data ?? []) as unknown as TierListRow[]) {
+    if (!isRerollTier(row.tier)) continue
+    const identity = Array.isArray(row.identity) ? row.identity[0] : row.identity
+    if (!identity || seen.has(identity.id)) continue
     seen.add(identity.id)
-
-    const rating = ratingMap.get(identity.id)
-    const averageScore = rating && rating.weightTotal > 0 ? rating.weightedTotal / rating.weightTotal : null
-    const tier = rating && averageScore !== null ? deriveTier(averageScore, rating.count) : 'N/A'
-    tiers[tier].push({
-      ...identity,
+    tiers[row.tier].push({
+      ...normalizeIdentity(identity),
       tier_rating_summary: {
-        averageScore,
-        ratingCount: rating?.count ?? 0,
-        derivedTier: tier as TierIdentitySummaryTier,
-        distribution: rating?.distribution ?? {},
-      },
-    })
-  }
-
-  sortTierIdentities(tiers, locale)
-
-  return tiers
-}
-
-function groupIdentitiesByOverall(
-  identities: TierIdentity[],
-  ratingRows: TierRatingRow[],
-  locale: SupportedLocale,
-): Record<Tier, TierIdentity[]> {
-  const ratingMap = new Map<string, Map<typeof OVERALL_SOURCE_CATEGORIES[number], { weightedTotal: number; weightTotal: number; count: number }>>()
-
-  for (const row of ratingRows) {
-    if (!OVERALL_SOURCE_CATEGORIES.includes(row.category as typeof OVERALL_SOURCE_CATEGORIES[number])) continue
-    const category = row.category as typeof OVERALL_SOURCE_CATEGORIES[number]
-    const parsedWeight = Number(row.weight)
-    const weight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 1
-    const identityRatings = ratingMap.get(row.identity_id) ?? new Map<typeof OVERALL_SOURCE_CATEGORIES[number], { weightedTotal: number; weightTotal: number; count: number }>()
-    const current = identityRatings.get(category)
-    if (current) {
-      current.weightedTotal += row.score * weight
-      current.weightTotal += weight
-      current.count += 1
-    } else {
-      identityRatings.set(category, { weightedTotal: row.score * weight, weightTotal: weight, count: 1 })
-    }
-    ratingMap.set(row.identity_id, identityRatings)
-  }
-
-  const tiers = createEmptyTiers<TierIdentity>()
-  const seen = new Set<string>()
-
-  for (const identity of identities) {
-    if (seen.has(identity.id)) continue
-    seen.add(identity.id)
-
-    const categoryRatings = ratingMap.get(identity.id)
-    const usable = OVERALL_SOURCE_CATEGORIES.flatMap(sourceCategory => {
-      const rating = categoryRatings?.get(sourceCategory)
-      return rating && rating.count >= MIN_RATINGS_FOR_TIER
-        ? [{ category: sourceCategory, average: rating.weightedTotal / rating.weightTotal, count: rating.count }]
-        : []
-    })
-    const averageScore = usable.length > 0
-      ? usable.reduce((sum, item) => sum + item.average, 0) / usable.length
-      : null
-    const ratingCount = usable.reduce((sum, item) => sum + item.count, 0)
-    const tier = averageScore === null ? 'N/A' : deriveTier(averageScore, ratingCount)
-
-    tiers[tier].push({
-      ...identity,
-      tier_rating_summary: {
-        averageScore,
-        ratingCount,
-        derivedTier: tier as TierIdentitySummaryTier,
+        averageScore: null,
+        ratingCount: 0,
+        derivedTier: row.tier as Tier,
         distribution: {},
-        sourceCategories: usable.map(item => item.category),
       },
     })
   }
 
-  sortTierIdentities(tiers, locale)
-
   return tiers
+}
+
+async function getCachedRerollTierData(dataVersion: string): Promise<RerollTierData> {
+  'use cache'
+  void dataVersion
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.tierList, CACHE_TAGS.gameData)
+  return getRerollTierData()
 }
 
 function TierListSkeleton() {
   return (
-    <div className="animate-pulse" style={{ minHeight: '50vh', padding: '0.5rem 0' }}>
-      {TIERS.slice(0, 4).map((tier) => (
+    <div className="animate-pulse" style={{ minHeight: '48vh', padding: '0.5rem 0' }}>
+      {REROLL_TIERS.map((tier) => (
         <div key={tier} style={{ display: 'grid', gridTemplateColumns: '4rem 1fr', gap: '0.875rem', marginBottom: '0.875rem', alignItems: 'start' }}>
-          <div style={{ background: '#1a1510', borderRadius: '0.375rem', width: '4rem', height: '4.75rem' }} />
+          <div style={{ background: '#1a1510', borderRadius: '0.375rem', width: '4rem', height: '4.5rem' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(8rem, 1fr))', gap: '1rem' }}>
             {Array.from({ length: 5 }).map((_, index) => (
               <div key={index} style={{ background: '#1a1510', borderRadius: '0.375rem', height: '12rem' }} />
@@ -448,35 +194,22 @@ function TierListSkeleton() {
 
 export default async function TierListPage({
   params,
-  searchParams,
 }: {
   params?: Promise<{ lang?: string }>
-  searchParams?: Promise<{ category?: string | string[]; period?: string | string[] }>
 }) {
   const routeParams = await params
-  const resolvedSearchParams = await searchParams
-  const category = normalizeCategory(resolvedSearchParams?.category)
-  const period = normalizePeriod(resolvedSearchParams?.period)
   const locale = normalizeLocale(routeParams?.lang)
-  const [tiers, viewer] = await Promise.all([
-    getCachedTierData(category, period, locale, getPeriodCacheKey(period), TIER_DATA_MODEL_VERSION),
-    getInitialTierViewer(),
-  ])
-  return <TierListContent category={category} locale={locale} period={period} tiers={tiers as Record<TierIdentitySummaryTier, TierIdentity[]>} viewer={viewer} />
+  const tiers = await getCachedRerollTierData(TIER_DATA_MODEL_VERSION)
+
+  return <TierListContent locale={locale} tiers={tiers} />
 }
 
 function TierListContent({
-  category,
   locale,
-  period,
   tiers,
-  viewer,
 }: {
-  category: TierCategory
   locale: SupportedLocale
-  period: RatingPeriod
-  tiers: Record<TierIdentitySummaryTier, TierIdentity[]>
-  viewer: TierRatingViewer
+  tiers: RerollTierData
 }) {
   const copy = HEADER_COPY[locale]
 
@@ -485,7 +218,7 @@ function TierListContent({
       <style>{`
         @media (max-width: 47.999rem) {
           .tier-page-header {
-            padding: 6.75rem 1rem 1.75rem !important;
+            padding: 6.75rem 1rem 1.5rem !important;
           }
           .tier-page-title {
             font-size: 1.875rem !important;
@@ -493,26 +226,25 @@ function TierListContent({
           }
           .tier-page-subtitle {
             max-width: 100% !important;
-            font-size: 0.8125rem !important;
+            font-size: 1rem !important;
             line-height: 1.5 !important;
           }
-          .tier-page-header-line {
-            width: 7rem !important;
+          .tier-page-meta {
+            width: 100% !important;
           }
         }
       `}</style>
-      <div className="tier-page-header max-w-6xl mx-auto" style={{ padding: '7rem 1.5rem 2rem' }}>
+      <header className="tier-page-header mx-auto max-w-6xl" style={{ padding: '7rem 1.5rem 1.75rem' }}>
         <p
-          className="tier-page-header-tag"
           style={{
             color: 'var(--gold-dim)',
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
-            letterSpacing: '0.3em',
+            fontSize: '0.75rem',
+            letterSpacing: '0.22em',
             marginBottom: '0.5rem',
           }}
         >
-          TIER LIST
+          REROLL TIER
         </p>
         <h1 className="tier-page-title font-serif text-3xl font-bold" style={{ color: 'var(--gold)' }}>
           {copy.title}
@@ -520,32 +252,40 @@ function TierListContent({
         <p
           className="tier-page-subtitle"
           style={{
-            color: '#888888',
-            fontSize: '0.8125rem',
+            color: '#b8a77e',
+            fontSize: '1rem',
             lineHeight: 1.55,
-            marginTop: '0.25rem',
-            maxWidth: '36rem',
+            marginTop: '0.375rem',
+            maxWidth: '44rem',
           }}
         >
           {copy.subtitle}
         </p>
         <div
-          className="tier-page-header-line"
+          className="tier-page-meta"
           style={{
-            width: '8rem',
-            height: '0.0625rem',
-            background: 'linear-gradient(90deg, var(--gold), transparent)',
-            marginTop: '1rem',
-            transformOrigin: 'left',
+            display: 'inline-flex',
+            alignItems: 'center',
+            minHeight: '2.75rem',
+            marginTop: '0.875rem',
+            padding: '0 0.875rem',
+            border: '1px solid rgba(200,144,10,0.2)',
+            borderRadius: '0.5rem',
+            background: 'rgba(20,16,12,0.72)',
+            color: '#d8c99b',
+            fontSize: '0.9375rem',
+            fontWeight: 700,
           }}
-        />
-      </div>
+        >
+          {copy.meta}
+        </div>
+      </header>
       <Suspense fallback={
-        <div className="max-w-6xl mx-auto" style={{ padding: '0 1rem 4rem' }}>
+        <div className="mx-auto max-w-6xl" style={{ padding: '0 1rem 4rem' }}>
           <TierListSkeleton />
         </div>
       }>
-        <TierListInteractive tiers={tiers} category={category} period={period} viewer={viewer} />
+        <TierListInteractive tiers={tiers} />
       </Suspense>
     </div>
   )
