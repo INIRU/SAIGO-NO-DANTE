@@ -4,6 +4,7 @@ import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import { X } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -30,9 +31,11 @@ export function ThemePackModalShell({
   maxWidth = '52rem',
   closeLabel,
 }: ThemePackModalShellProps) {
+  const reduceMotion = useReducedMotion()
+
   return (
     <BaseModal open={true} onClose={onClose} maxWidth={maxWidth} padding="1rem" title={title}>
-      <div
+      <motion.div
         className="relative w-full overflow-hidden"
         style={{
           maxHeight: '85vh',
@@ -41,6 +44,9 @@ export function ThemePackModalShell({
           border: '1px solid rgba(200,144,10,0.12)',
           boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
+        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: reduceMotion ? 0.01 : 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
         <div style={{ maxHeight: '85vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
           <button
@@ -106,7 +112,7 @@ export function ThemePackModalShell({
 
           <div className="px-5 pb-5">{children}</div>
         </div>
-      </div>
+      </motion.div>
     </BaseModal>
   )
 }
@@ -270,6 +276,8 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   lang,
   meta,
 }: ThemePackPickerModalProps<TTheme>) {
+  const reduceMotion = useReducedMotion()
+
   return (
     <ThemePackModalShell
       title={title}
@@ -283,19 +291,28 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
           <ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty>
         ) : (
           <div
-            className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-            style={{ alignItems: 'start' }}
+            className="grid gap-2"
+            style={{
+              alignItems: 'start',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr))',
+            }}
           >
-            {themes.map(theme => (
-              <ThemePackCard
+            {themes.map((theme, index) => (
+              <motion.div
                 key={String(theme.id)}
-                theme={theme}
-                onClick={() => onSelectTheme(theme)}
-                isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-                showGiftCount
-                imageSurface="bare"
-                lang={lang}
-              />
+                initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.985 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.18, delay: Math.min(index, 12) * 0.015, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ThemePackCard
+                  theme={theme}
+                  onClick={() => onSelectTheme(theme)}
+                  isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
+                  showGiftCount
+                  imageSurface="bare"
+                  lang={lang}
+                />
+              </motion.div>
             ))}
           </div>
         )}

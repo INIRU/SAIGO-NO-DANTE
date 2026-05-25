@@ -75,7 +75,7 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
             className="w-full h-full flex items-center justify-center"
             style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}
           >
-            <span className="font-serif font-light" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
+            <span className="font-compact-serif" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
               {identity.name_kr?.[0] ?? '?'}
             </span>
           </div>
@@ -111,19 +111,19 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
 
         <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 z-20">
           <div
-            className="font-serif font-light leading-tight group-hover:text-yellow-300 transition-colors"
-            style={{ color: 'var(--gold-light)', fontSize: '0.8125rem' }}
+            className="font-compact-serif-label leading-tight group-hover:text-yellow-300 transition-colors"
+            style={{ color: 'var(--gold-light)', fontSize: '0.875rem' }}
           >
             {getName(identity.name_kr, identity.name_en, identity.name_jp)}
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: '0.125rem' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', fontFamily: 'var(--font-title)' }}>
+            <span className="font-compact-serif-label" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               {getName(identity.sinner?.name_kr, identity.sinner?.name_en, identity.sinner?.name_jp) || identity.sinner_id}
             </span>
             {identity.release_date && (
               <>
-                <span style={{ color: '#5a4a35', fontSize: '0.375rem' }}>·</span>
-                <span className="font-mono" style={{ color: '#5a4a35', fontSize: '0.5rem' }}>
+                <span className="font-sans" style={{ color: '#5a4a35', fontSize: '0.75rem' }}>/</span>
+                <span className="font-mono" style={{ color: '#5a4a35', fontSize: '0.75rem' }}>
                   {formatDate(identity.release_date)}
                 </span>
               </>

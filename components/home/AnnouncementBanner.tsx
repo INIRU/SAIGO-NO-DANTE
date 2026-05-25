@@ -57,10 +57,10 @@ export default function AnnouncementBanner({ announcement }: AnnouncementBannerP
         >
           <Pin size={13} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
           <span
-            className="font-serif font-light"
+            className="font-compact-serif-label"
             style={{
               color: 'var(--gold-light)',
-              fontSize: '0.875rem',
+              fontSize: '0.9375rem',
               flex: 1,
               minWidth: 0,
               overflow: 'hidden',
@@ -70,14 +70,14 @@ export default function AnnouncementBanner({ announcement }: AnnouncementBannerP
           >
             {announcement.title}
           </span>
-          <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.625rem', flexShrink: 0 }}>
+          <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem', flexShrink: 0 }}>
             {formatDate(announcement.created_at)}
           </span>
           <Link
             href="/announcements"
             onClick={e => e.stopPropagation()}
             className="font-mono transition-colors hover:opacity-70"
-            style={{ color: '#8a6010', fontSize: '0.625rem', flexShrink: 0, letterSpacing: '0.05em' }}
+            style={{ color: '#8a6010', fontSize: '0.875rem', flexShrink: 0, letterSpacing: '0.03em' }}
           >
             {t('viewAll')}
           </Link>
