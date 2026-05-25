@@ -50,6 +50,7 @@ const KEYWORD_ICON_SLUG_OVERRIDES: Record<string, string> = {
   '참격': 'stat:slash',
   '관통': 'stat:pierce',
   '타격': 'stat:blunt',
+  '중지의 복수 대상': 'middle-finger-grudge',
   '지령 탐닉': 'directive-indulgence',
   '아이언 메이든': 'iron-maiden',
   '원호 공격': 'assist-attack',
@@ -437,6 +438,10 @@ interface KeywordContext {
   skillMap: Map<number, PersonalitySkill>
   rawKrTexts: string[]
   passiveDetails: PassiveDetail[]
+}
+
+interface SourceKeywordHit {
+  gameIds: Set<string>
 }
 
 type AcquisitionType = 'default' | 'standard' | 'event' | 'limited' | 'walpurgis' | 'attendance'
@@ -2174,6 +2179,75 @@ function extractKeywords(ctx: KeywordContext): string[] {
   return [...keywords].sort()
 }
 
+function extractSourceIdentityKeywords(): Map<string, SourceKeywordHit> {
+  const gamePersonMap = loadPersonalities()
+  const gameSkillMap = loadPersonalitySkills()
+  const krSkillMap = loadKrSkills()
+  const passiveMappings = loadPassiveMappings()
+  const passiveDetailMap = loadPassiveDetails()
+  const krPassiveMap = loadKrPassives()
+  const targetSinnerIds: Set<number> | null = SINNER_FILTER
+    ? new Set<number>(SINNERS.filter(s => s.slug === SINNER_FILTER).map(s => s.id))
+    : null
+
+  if (SINNER_FILTER && (!targetSinnerIds || targetSinnerIds.size === 0)) {
+    throw new Error(`알 수 없는 sinner slug: ${SINNER_FILTER}`)
+  }
+
+  const keywords = new Map<string, SourceKeywordHit>()
+  for (const gamePerson of gamePersonMap.values()) {
+    if (targetSinnerIds && !targetSinnerIds.has(gamePerson.characterId)) continue
+
+    const ctx: KeywordContext = {
+      gamePerson: null,
+      skillMap: new Map(),
+      rawKrTexts: [],
+      passiveDetails: [],
+    }
+    populateIdentityKeywordContext(ctx, gamePerson, gameSkillMap, krSkillMap, passiveMappings, passiveDetailMap, krPassiveMap)
+
+    for (const keyword of extractKeywords(ctx)) {
+      if (KEYWORD_PLACEHOLDERS.has(keyword)) continue
+      const hit = keywords.get(keyword) ?? { gameIds: new Set<string>() }
+      hit.gameIds.add(String(gamePerson.id))
+      keywords.set(keyword, hit)
+    }
+  }
+
+  return keywords
+}
+
+function slugifyKeywordIconPart(value: string | null | undefined): string | null {
+  const slug = value
+    ?.normalize('NFKD')
+    .replace(/['’]/g, '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-')
+    .toLowerCase()
+
+  return slug || null
+}
+
+function deriveKeywordIconSlug(options: {
+  name: string
+  existingIconSlug?: string | null
+  nameEn?: string | null
+  tag?: string
+}): string | null {
+  const override = KEYWORD_ICON_SLUG_OVERRIDES[options.name]
+  if (override) return override
+
+  const existingIconSlug = options.existingIconSlug?.trim()
+  if (existingIconSlug) return existingIconSlug
+
+  const nameSlug = slugifyKeywordIconPart(options.nameEn)
+  if (nameSlug) return nameSlug
+
+  return slugifyKeywordIconPart(options.tag?.replace(/ID$/, ''))
+}
+
 // ── Diff helpers ──────────────────────────────────────────────────────────────
 
 function valuesEqual(a: unknown, b: unknown): boolean {
@@ -2543,7 +2617,7 @@ async function rebuildKeywordMeta(): Promise<void> {
 
   // Fetch actually used keywords from DB (identities, ego, ego_gifts)
   console.log('  DB에서 실제 사용 키워드 수집 중...')
-  const usedKeywords = new Set<string>()
+  const dbUsedKeywords = new Set<string>()
 
   // Identity keywords (paginated)
   let from = 0
@@ -2551,7 +2625,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     const { data, error } = await supabase.from('identities').select('keywords').range(from, from + 999)
     if (error) throw new Error(`identities keywords 로드 실패: ${error.message}`)
     if (!data?.length) break
-    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
+    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => dbUsedKeywords.add(k.normalize('NFC'))) }
     if (data.length < 1000) break
     from += 1000
   }
@@ -2562,7 +2636,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     const { data, error } = await supabase.from('ego').select('keywords').range(from, from + 999)
     if (error) throw new Error(`ego keywords 로드 실패: ${error.message}`)
     if (!data?.length) break
-    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => usedKeywords.add(k.normalize('NFC'))) }
+    for (const r of data) { if (r.keywords) (r.keywords as string[]).forEach(k => dbUsedKeywords.add(k.normalize('NFC'))) }
     if (data.length < 1000) break
     from += 1000
   }
@@ -2573,17 +2647,24 @@ async function rebuildKeywordMeta(): Promise<void> {
     const { data, error } = await supabase.from('ego_gifts').select('keyword').range(from, from + 999)
     if (error) throw new Error(`ego_gifts keyword 로드 실패: ${error.message}`)
     if (!data?.length) break
-    for (const r of data) { if (r.keyword) usedKeywords.add((r.keyword as string).normalize('NFC')) }
+    for (const r of data) { if (r.keyword) dbUsedKeywords.add((r.keyword as string).normalize('NFC')) }
     if (data.length < 1000) break
     from += 1000
   }
 
+  console.log('  source 인격 키워드 재추출 중...')
+  const sourceIdentityKeywords = extractSourceIdentityKeywords()
+  const usedKeywords = new Set([...dbUsedKeywords, ...sourceIdentityKeywords.keys()])
+
   // Filter out placeholder values that aren't real keywords
   for (const placeholder of KEYWORD_PLACEHOLDERS) {
+    dbUsedKeywords.delete(placeholder)
+    sourceIdentityKeywords.delete(placeholder)
     usedKeywords.delete(placeholder)
   }
 
-  console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (인격+EGO+기프트)`)
+  const sourceOnlyCount = [...sourceIdentityKeywords.keys()].filter(k => !dbUsedKeywords.has(k)).length
+  console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (DB ${dbUsedKeywords.size}개 + source 인격 ${sourceIdentityKeywords.size}개, source-only ${sourceOnlyCount}개)`)
 
   // Build reverse map: KR name → tag ID (from TAG_MAP which is tag → KR)
   const krNameToTag: Record<string, string> = {}
@@ -2630,6 +2711,9 @@ async function rebuildKeywordMeta(): Promise<void> {
     description_en: string | null
     description_jp: string | null
     icon_slug: string | null
+    tag: string | null
+    in_db: boolean
+    in_source: boolean
   }> = []
   for (const name of usedKeywords) {
     const krData = krKeywords.get(name)
@@ -2639,7 +2723,12 @@ async function rebuildKeywordMeta(): Promise<void> {
     const jpData = tag ? jpKeywordData.get(tag) : undefined
     const name_en = tag ? (enData?.name ?? enTagMap[tag] ?? existing?.name_en ?? null) : existing?.name_en ?? null
     const name_jp = tag ? (jpData?.name ?? jpTagMap[tag] ?? existing?.name_jp ?? null) : existing?.name_jp ?? null
-    const icon_slug = KEYWORD_ICON_SLUG_OVERRIDES[name] ?? existing?.icon_slug ?? null
+    const icon_slug = deriveKeywordIconSlug({
+      name,
+      existingIconSlug: existing?.icon_slug,
+      nameEn: name_en,
+      tag,
+    })
     rows.push({
       name,
       description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? krData?.description ?? existing?.description ?? null,
@@ -2648,6 +2737,9 @@ async function rebuildKeywordMeta(): Promise<void> {
       description_en: enData?.description ?? existing?.description_en ?? null,
       description_jp: jpData?.description ?? existing?.description_jp ?? null,
       icon_slug,
+      tag: tag ?? null,
+      in_db: dbUsedKeywords.has(name),
+      in_source: sourceIdentityKeywords.has(name),
     })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
@@ -2661,6 +2753,39 @@ async function rebuildKeywordMeta(): Promise<void> {
       console.log(`  ${GREEN('+')} ${row.name}${desc}`)
     }
     if (rows.length > 20) console.log(GRAY(`  ... 외 ${rows.length - 20}개`))
+    const traceTags = [
+      'VengeanceBookHeathcliff',
+      'VengeanceBookSinclair',
+      'MiddleFingerBook',
+      'VendettaMark',
+      'MiddleFingerTattooID',
+      'RetaliationBook',
+      'RetaliationBookFamily',
+    ]
+    const rowsByTag = new Map(rows.filter(row => row.tag).map(row => [row.tag, row]))
+    const rowsByName = new Map(rows.map(row => [row.name, row]))
+    console.log(CYAN('\n  대상 태그 icon_slug 확인:'))
+    for (const tag of traceTags) {
+      const mappedName = TAG_MAP[tag] ?? null
+      const row = rowsByTag.get(tag) ?? (mappedName ? rowsByName.get(mappedName) : undefined)
+      const name = row?.name ?? mappedName
+      const existing = name ? existingMetaMap.get(name) : undefined
+      const enData = enKeywordData.get(tag)
+      const nameEn = row?.name_en ?? enData?.name ?? enTagMap[tag] ?? existing?.name_en ?? null
+      const iconSlug = row?.icon_slug ?? (name
+        ? deriveKeywordIconSlug({
+          name,
+          existingIconSlug: existing?.icon_slug,
+          nameEn,
+          tag,
+        })
+        : slugifyKeywordIconPart(tag.replace(/ID$/, '')))
+      const origins = [
+        row?.in_db || (name ? dbUsedKeywords.has(name) : false) ? 'DB' : null,
+        row?.in_source || (name ? sourceIdentityKeywords.has(name) : false) ? 'source' : null,
+      ].filter(Boolean).join('+') || 'none'
+      console.log(`    ${tag}: ${name ?? '-'} / ${nameEn ?? '-'} / icon_slug=${iconSlug ?? '-'} / meta=${row ? 'included' : 'not-in-used-keywords'} / 포함=${origins}`)
+    }
     console.log(CYAN('\n  (DRY RUN — DB 미변경. 반영하려면 --fix 옵션 사용)'))
     return
   }
@@ -2668,7 +2793,15 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Insert in batches of 100
   let inserted = 0
   for (let i = 0; i < rows.length; i += 100) {
-    const batch = rows.slice(i, i + 100)
+    const batch = rows.slice(i, i + 100).map(row => ({
+      name: row.name,
+      description: row.description,
+      name_en: row.name_en,
+      name_jp: row.name_jp,
+      description_en: row.description_en,
+      description_jp: row.description_jp,
+      icon_slug: row.icon_slug,
+    }))
     const { error } = await supabase
       .from('keyword_meta')
       .upsert(batch, { onConflict: 'name' })

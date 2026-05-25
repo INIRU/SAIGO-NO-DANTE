@@ -227,7 +227,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                   ARCHIVE-01 / BROADCAST
                 </span>
                 <span className="hidden h-px w-10 bg-[rgba(200,144,10,0.32)] md:block" aria-hidden="true" />
-                <span className="hidden truncate font-serif text-sm text-[rgba(232,176,48,0.78)] md:block">
+                <span className="hidden truncate font-compact-serif-label text-[0.9375rem] text-[rgba(232,176,48,0.78)] md:block">
                   {t('home.latestVideo')}
                 </span>
               </div>
@@ -235,7 +235,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 href="https://www.youtube.com/@ProjectMoonOfficial/videos"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex min-h-[2.25rem] items-center justify-between gap-3 border border-[rgba(200,48,48,0.3)] bg-[rgba(200,48,48,0.07)] px-3 py-2 font-serif text-sm text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(200,48,48,0.62)] hover:bg-[rgba(200,48,48,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(200,48,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0 md:min-w-[11rem]"
+                className="group flex min-h-[2.75rem] items-center justify-between gap-3 border border-[rgba(200,48,48,0.3)] bg-[rgba(200,48,48,0.07)] px-3 py-2 font-compact-serif-label text-[0.9375rem] text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(200,48,48,0.62)] hover:bg-[rgba(200,48,48,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(200,48,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0 md:min-w-[11rem]"
               >
                 <span>{t('home.viewChannel')}</span>
                 <ChevronRight size="0.875rem" className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -265,7 +265,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                     href={`https://www.youtube.com/watch?v=${latestVideo.videoId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 block min-w-0 font-serif text-[1rem] leading-snug text-[rgba(232,176,48,0.82)] transition-colors duration-300 hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]"
+                    className="mt-4 block min-w-0 font-compact-serif-label text-[1rem] leading-snug text-[rgba(232,176,48,0.82)] transition-colors duration-300 hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]"
                   >
                     {latestVideo.title}
                   </a>
@@ -274,12 +274,12 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 <div className="grid border-t border-[rgba(200,144,10,0.14)] sm:grid-cols-2 md:grid-cols-1">
                   <div className="px-4 py-3 md:px-5">
                     <div className="font-mono text-[0.625rem] text-[var(--text-muted)]">CHANNEL</div>
-                    <div className="mt-1 font-serif text-sm text-[var(--text-secondary)]">Project Moon</div>
+                    <div className="mt-1 font-compact-serif-label text-[0.9375rem] text-[var(--text-secondary)]">Project Moon</div>
                   </div>
                   {latestVideo.publishedAt && (
                     <div className="border-t border-[rgba(200,144,10,0.14)] px-4 py-3 sm:border-l sm:border-t-0 md:border-l-0 md:border-t md:px-5">
                       <div className="font-mono text-[0.625rem] text-[var(--text-muted)]">PUBLISHED</div>
-                      <div className="mt-1 flex items-center gap-1.5 font-mono text-[0.6875rem] text-[rgba(232,176,48,0.72)]">
+                      <div className="mt-1 flex items-center gap-1.5 font-mono text-[0.875rem] text-[rgba(232,176,48,0.72)]">
                         <Calendar size="0.6875rem" />
                         {formatDate(latestVideo.publishedAt.slice(0, 10))}
                       </div>
@@ -316,7 +316,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 {latestDate && (
                   <div className="flex items-center justify-between gap-4 border border-[rgba(200,144,10,0.18)] bg-[rgba(26,21,16,0.48)] px-3 py-2.5">
                     <span className="font-mono text-[0.625rem] text-[var(--text-muted)]">ISSUED</span>
-                    <span className="flex items-center gap-1.5 font-mono text-[0.6875rem] text-[rgba(232,176,48,0.76)]">
+                    <span className="flex items-center gap-1.5 font-mono text-[0.875rem] text-[rgba(232,176,48,0.76)]">
                       <Calendar size="0.6875rem" />
                       {formatDate(latestDate)}
                     </span>
@@ -324,7 +324,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 )}
                 <Link
                   href="/sinners"
-                  className="group flex min-h-[2.75rem] items-center justify-between border border-[rgba(200,144,10,0.34)] bg-[rgba(200,144,10,0.08)] px-3 py-2.5 font-serif text-sm text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(232,176,48,0.58)] hover:bg-[rgba(200,144,10,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0"
+                  className="group flex min-h-[2.75rem] items-center justify-between border border-[rgba(200,144,10,0.34)] bg-[rgba(200,144,10,0.08)] px-3 py-2.5 font-compact-serif-label text-[0.9375rem] text-[rgba(232,176,48,0.82)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(232,176,48,0.58)] hover:bg-[rgba(200,144,10,0.14)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0"
                 >
                   {t('home.viewAllSinners')}
                   <ChevronRight size="0.875rem" className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -356,7 +356,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
       <section className="features-section home-archive-module mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24">
         <div className="mb-6 grid gap-3 md:grid-cols-[0.42fr_1fr] md:items-end">
           <div>
-              <span aria-hidden="true" className="font-mono text-[0.625rem] text-[#5a4a35]">
+              <span aria-hidden="true" className="font-mono text-[0.75rem] text-[#5a4a35]">
               ARCHIVE-03 / ROUTE MAP
             </span>
             <h2 className="mt-2 font-serif text-[1.875rem] font-medium leading-tight text-[var(--gold-light)] md:text-[2.25rem]">
@@ -387,10 +387,10 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                   <div className="flex h-full flex-col justify-between gap-8">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="mb-2 font-mono text-[0.625rem]" style={{ color: accent, opacity: 0.72 }}>
+                        <div className="mb-2 font-mono text-[0.75rem]" style={{ color: accent, opacity: 0.72 }}>
                           {feature.tag}
                         </div>
-                        <div className="font-serif text-2xl font-light leading-tight text-[var(--gold-light)]">
+                        <div className="font-compact-serif-label text-2xl leading-tight text-[var(--gold-light)]">
                           {feature.title}
                         </div>
                       </div>
@@ -446,13 +446,13 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                     <CommandGlyph kind={feature.glyph} size="1rem" style={{ color: accent, opacity: 0.78 }} />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-mono text-[0.5625rem]" style={{ color: accent, opacity: 0.58 }}>
+                    <div className="font-mono text-[0.75rem]" style={{ color: accent, opacity: 0.58 }}>
                       {feature.tag}
                     </div>
-                    <div className="mt-1 truncate font-serif text-base font-light text-[var(--gold)]">
+                    <div className="mt-1 truncate font-compact-serif-label text-base text-[var(--gold)]">
                       {feature.title}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-[0.75rem] leading-relaxed text-[var(--text-tertiary)]">
+                    <div className="mt-1 line-clamp-2 text-[0.875rem] leading-relaxed text-[var(--text-tertiary)]">
                       {feature.desc}
                     </div>
                   </div>
@@ -480,7 +480,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                 SAIGO NO DANTE
               </h2>
             </div>
-            <span aria-hidden="true" className="font-mono text-[0.5625rem] text-[var(--text-muted)] opacity-50">
+            <span aria-hidden="true" className="font-mono text-[0.75rem] text-[var(--text-muted)] opacity-50">
               {t('home.fanArchiveFooter')}
             </span>
           </div>
@@ -509,8 +509,8 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
                     <Icon size="1rem" style={{ color: signalColor }} />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-serif text-sm font-light text-[var(--gold-light)]">{label}</div>
-                    <div className="mt-1 truncate font-mono text-[0.625rem] text-[var(--text-muted)]">{sub}</div>
+                    <div className="font-compact-serif-label text-[0.9375rem] text-[var(--gold-light)]">{label}</div>
+                    <div className="mt-1 truncate font-mono text-[0.875rem] text-[var(--text-muted)]">{sub}</div>
                   </div>
                   <ExternalLink
                     aria-hidden="true"

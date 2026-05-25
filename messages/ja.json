@@ -60,6 +60,32 @@
       "large": "大"
     }
   },
+  "globalSearch": {
+    "ariaLabel": "グローバル検索",
+    "placeholder": "人格、E.G.O、囚人、キーワード、ギフトを検索...",
+    "clear": "検索語を消去",
+    "loading": "検索中",
+    "emptyPromptTitle": "検索語を入力",
+    "emptyPromptDescription": "囚人、人格、E.G.O、キーワード、E.G.Oギフトをまとめて検索できます。",
+    "noResultsTitle": "検索結果がありません",
+    "noResultsDescription": "名前の一部、頭文字、囚人名で再検索してください。",
+    "suggestionsTitle": "もしかしてこちらですか？",
+    "resultCount": "{count}件の結果",
+    "suggestionCount": "{count}件の候補",
+    "footerHint": "検索語を入力して結果を選択してください",
+    "keyboard": {
+      "move": "移動",
+      "select": "選択",
+      "close": "閉じる"
+    },
+    "types": {
+      "sinner": "囚人",
+      "identity": "人格",
+      "ego": "E.G.O",
+      "keyword": "キーワード",
+      "egoGift": "ギフト"
+    }
+  },
   "lang": {
     "filter": "言語フィルター",
     "all": "すべての言語",
@@ -237,7 +263,7 @@
         }
       },
       "note": {
-        "placeholder": "デッキ運用ノートを入力してください。[ または {{ でチップとブロックを挿入できます。",
+        "placeholder": "デッキ運用ノートを入力してください。角括弧または二重波括弧でチップとブロックを挿入できます。",
         "insert": "挿入",
         "preview": "プレビュー",
         "edit": "編集",

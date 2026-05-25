@@ -225,32 +225,52 @@ function DeckStatsPanel({
   const hasEgoCosts = Object.values(egoCostTotal).some(v => v > 0)
 
   return (
-    <div className="deck-stats-panel flex flex-col md:flex-row gap-4 mt-4">
+    <div className="deck-stats-panel flex flex-col gap-3 md:flex-row md:gap-4 mt-4">
+      <style>{`
+        .deck-stats-summary-card{flex:0 0 auto;width:14rem;background:#120e09;border:1px solid #221a0f;border-radius:0.375rem;padding:0.75rem}
+        .deck-stats-section-title{color:#c8900a;font-size:0.875rem;font-family:var(--font-kotra-bold),var(--font-heading),serif;font-weight:400;-webkit-text-stroke:0 transparent}
+        .deck-stats-attack-label{font-size:0.875rem}
+        .deck-stats-attack-count{font-size:0.875rem}
+        .deck-stats-defense-label{font-size:0.875rem}
+        .deck-stats-sin-value{font-size:0.875rem}
+        @media (max-width:47.9375rem){
+          .deck-stats-panel{margin-top:0.75rem}
+          .deck-stats-summary-card{width:100%;border-color:rgba(200,144,10,0.12);background:rgba(18,14,9,0.52);padding:0.625rem}
+          .deck-stats-summary-card__attacks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.375rem}
+          .deck-stats-attack-row{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:0.375rem}
+          .deck-stats-attack-label{width:auto!important;min-width:1.8rem;font-size:0.875rem}
+          .deck-stats-attack-count{width:auto!important;font-size:0.875rem}
+          .deck-stats-defense-row{margin-top:0.5rem;padding-top:0.5rem}
+        }
+        @media (max-width:29rem){
+          .deck-stats-summary-card__attacks{grid-template-columns:1fr}
+        }
+      `}</style>
       {/* 공격 유형 + 죄악 자원 */}
-      <div style={{ flex: '0 0 auto', width: '14rem', background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', padding: '0.75rem' }}>
-        <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginBottom: '0.5rem' }}>공격 유형 분포</p>
-        <div className="flex flex-col gap-1.5">
+      <div className="deck-stats-summary-card">
+        <p className="deck-stats-section-title" style={{ marginBottom: '0.5rem' }}>공격 유형 분포</p>
+        <div className="deck-stats-summary-card__attacks flex flex-col gap-1.5">
           {Object.entries(atkCount).map(([type, count]) => (
-            <div key={type} className="flex items-center gap-2">
+            <div key={type} className="deck-stats-attack-row flex items-center gap-2">
               <Image src={`${S}/icons/stats/${type}.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.8 }} />
-              <span style={{ color: ATK_CLR[type], fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
+              <span className="deck-stats-attack-label" style={{ color: ATK_CLR[type], fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
               <div style={{ flex: 1, height: '0.375rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.1875rem', overflow: 'hidden' }}>
                 <div style={{ width: `${(count / atkTotal) * 100}%`, height: '100%', background: ATK_CLR[type], borderRadius: '0.1875rem' }} />
               </div>
-              <span style={{ color: ATK_CLR[type], fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', textAlign: 'right' }}>{count}</span>
+              <span className="deck-stats-attack-count" style={{ color: ATK_CLR[type], fontFamily: 'var(--font-mono)', fontWeight: 700, width: '1.5rem', textAlign: 'right' }}>{count}</span>
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="deck-stats-defense-row flex items-center gap-3 mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           {Object.entries(defCount).filter(([, c]) => c > 0).map(([type, count]) => (
-            <span key={type} style={{ color: '#888', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+            <span key={type} className="deck-stats-defense-label" style={{ color: '#888', fontFamily: 'var(--font-mono)' }}>
               {DEF_LABELS[type]} <strong style={{ color: '#aaa' }}>{count}</strong>
             </span>
           ))}
         </div>
 
         {/* 죄악 자원 */}
-        <p style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-serif)', marginTop: '0.75rem', marginBottom: '0.375rem' }}>
+        <p className="deck-stats-section-title" style={{ marginTop: '0.75rem', marginBottom: '0.375rem' }}>
           죄악 자원{hasEgoCosts ? ' (생성 / EGO 코스트)' : ''}
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -264,11 +284,11 @@ function DeckStatsPanel({
               <span key={sin} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${sc}15`, border: `1px solid ${sc}30` }}>
                 <Image src={getSinIconUrl(sin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />
                 {hasEgoCosts && need > 0 ? (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: sufficient ? '#40a060' : '#cc4444' }}>
+                  <span className="deck-stats-sin-value" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: sufficient ? '#40a060' : '#cc4444' }}>
                     {have}<span style={{ color: '#555', fontWeight: 400 }}>/</span>{need}
                   </span>
                 ) : (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: sc }}>{have}</span>
+                  <span className="deck-stats-sin-value" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: sc }}>{have}</span>
                 )}
               </span>
             )

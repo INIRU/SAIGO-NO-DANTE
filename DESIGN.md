@@ -57,6 +57,26 @@ Repeated card names, empty slot labels, modal card names, and compact tabs must
 not use the global `.font-serif` stroke unchanged. The target is readable game
 flavor, not crushed title weight.
 
+Font weight ceilings by rendered text size:
+
+| Rendered size | Common use | Max weight |
+| --- | --- | --- |
+| 12px / `0.75rem` | non-critical captions only | 600 |
+| 13-14px / `0.8125rem-0.875rem` | metadata, card sublabels, counters | 600 |
+| 15-16px / `0.9375rem-1rem` | nav labels, tabs, buttons, compact controls | 700 only for active/primary state; otherwise 500-600 |
+| 17-20px / `1.0625rem-1.25rem` | emphasized row labels, small panel titles | 700 |
+| 21-32px / `1.3125rem-2rem` | section titles, modal titles | 700; 800 only when the font renders cleanly |
+| 34px+ / `2.125rem+` | page/display titles | display face allowed, but do not add extra stroke to compact UI |
+
+KotraBold and other title faces should be treated as visually heavier than
+their numeric CSS weight. Below 20px they should normally render at `400` with
+`-webkit-text-stroke: 0 transparent`; use `.font-compact-serif` or an equivalent
+local style instead of global `.font-serif`. Small Korean nav/card labels that
+become muddy at 700+ must step down one weight before increasing font size.
+Home route labels, Command Map metadata, deck/planner passive rows, and compact
+selection controls follow the same ceiling: raise unreadable 10-12px labels to
+the allowed caption/metadata scale before using heavier weights.
+
 Use tabular numbers for counters, slots, and resource totals. Long English and
 Japanese labels must wrap, clamp, or fade intentionally. Text clipping inside a
 button, tab, card, modal header, or chip is a bug.
