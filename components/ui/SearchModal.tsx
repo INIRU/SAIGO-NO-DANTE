@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { useDebounce } from '@/hooks/useDebounce'
 import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
+import { useTranslations } from 'next-intl'
 
 // Korean consonant (초성) list for fuzzy search
 const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
@@ -58,7 +60,7 @@ interface SearchResult {
 }
 
 type FlatItem = {
-  type: 'sinner' | 'identity' | 'ego' | 'keyword'
+  type: 'sinner' | 'identity' | 'ego' | 'keyword' | 'egoGift'
   label: string
   sublabel: string
   href: string
@@ -67,7 +69,7 @@ type FlatItem = {
   grade?: string
 }
 
-function flatten(data: SearchResult): FlatItem[] {
+function flatten(data: SearchResult, labels: { egoGift: string }): FlatItem[] {
   const items: FlatItem[] = []
 
   for (const s of data.sinners) {
@@ -116,9 +118,9 @@ function flatten(data: SearchResult): FlatItem[] {
 
   for (const g of (data.egoGifts ?? [])) {
     items.push({
-      type: 'keyword',
+      type: 'egoGift',
       label: g.name,
-      sublabel: g.keyword ? `EGO 기프트 - ${g.keyword}` : 'EGO 기프트',
+      sublabel: g.keyword ? `${labels.egoGift} - ${g.keyword}` : labels.egoGift,
       href: `/mirror-dungeon?q=${encodeURIComponent(g.name)}`,
       icon: g.image_url ?? undefined,
     })
@@ -135,20 +137,12 @@ const TYPE_ICON = {
   egoGift: Gift,
 } as const
 
-const TYPE_LABEL = {
-  sinner: '수감자',
-  identity: '인격',
-  ego: 'E.G.O',
-  keyword: '키워드',
-  egoGift: '기프트',
-} as const
-
 const TYPE_COLOR = {
   sinner: '#c8a450',
-  identity: '#4ade80',
-  ego: '#a78bfa',
-  keyword: '#60a5fa',
-  egoGift: '#f59e0b',
+  identity: '#7fa36a',
+  ego: '#b86a3a',
+  keyword: '#5f9aa8',
+  egoGift: '#c8900a',
 } as const
 
 interface Props {
@@ -158,6 +152,8 @@ interface Props {
 
 export default function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
+  const t = useTranslations('globalSearch')
+  const reduceMotion = useReducedMotion()
   const inputRef = useRef<HTMLInputElement>(null)
   const [rawQuery, setRawQuery] = useState('')
   const query = useDebounce(rawQuery, 300)
@@ -190,7 +186,7 @@ export default function SearchModal({ open, onClose }: Props) {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
       if (res.ok) {
         const data: SearchResult & { suggestions?: IdentityResult[] } = await res.json()
-        const flat = flatten(data)
+        const flat = flatten(data, { egoGift: t('types.egoGift') })
         // Client-side fuzzy filter on top of server results
         const filtered = flat.filter(item =>
           fuzzyMatch(item.label, q) || fuzzyMatch(item.sublabel, q)
@@ -217,7 +213,7 @@ export default function SearchModal({ open, onClose }: Props) {
       }
     } catch { /* ignore */ }
     setLoading(false)
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const trimmed = query.trim()
@@ -230,12 +226,19 @@ export default function SearchModal({ open, onClose }: Props) {
   }, [query, search])
 
   const displayItems = results.length > 0 ? results : suggestions
+  const typeLabel: Record<FlatItem['type'], string> = {
+    sinner: t('types.sinner'),
+    identity: t('types.identity'),
+    ego: t('types.ego'),
+    keyword: t('types.keyword'),
+    egoGift: t('types.egoGift'),
+  }
 
   // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIndex(i => Math.min(i + 1, displayItems.length - 1))
+      setActiveIndex(i => displayItems.length > 0 ? Math.min(i + 1, displayItems.length - 1) : 0)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIndex(i => Math.max(i - 1, 0))
@@ -251,7 +254,7 @@ export default function SearchModal({ open, onClose }: Props) {
   useEffect(() => {
     const list = listRef.current
     if (!list) return
-    const active = list.children[activeIndex] as HTMLElement | undefined
+    const active = list.querySelector<HTMLElement>(`[data-search-index="${activeIndex}"]`)
     active?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
 
@@ -270,36 +273,44 @@ export default function SearchModal({ open, onClose }: Props) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  if (!open) return null
-
   return (
-    <div
+    <AnimatePresence>
+      {open && (
+    <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label="전역 검색"
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      aria-label={t('ariaLabel')}
+      className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-[4.75rem] sm:pt-[12vh]"
+      style={{ background: 'rgba(5,4,3,0.76)', backdropFilter: 'blur(4px)' }}
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.08 : 0.16, ease: [0.22, 1, 0.36, 1] }}
       onClick={onClose}
     >
-      <div
-        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden"
+      <motion.div
+        className="flex max-h-[calc(100dvh-6rem)] w-full max-w-2xl origin-top flex-col overflow-hidden rounded-lg"
         style={{
           background: '#1a1510',
-          border: '1px solid rgba(200,144,10,0.2)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 1px rgba(200,144,10,0.3)',
+          border: '1px solid rgba(200,144,10,0.24)',
+          boxShadow: '0 1.25rem 3rem rgba(0,0,0,0.52)',
         }}
+        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.99 }}
+        transition={{ duration: reduceMotion ? 0.08 : 0.18, ease: [0.22, 1, 0.36, 1] }}
         onClick={e => e.stopPropagation()}
       >
         {/* Input */}
-        <div className="flex items-center gap-3 px-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <Search size={16} style={{ color: '#999', flexShrink: 0 }} />
+        <div className="flex min-h-[3.5rem] items-center gap-3 px-3 sm:px-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <Search size={18} style={{ color: 'var(--gold)', flexShrink: 0, opacity: 0.76 }} />
           <input
             ref={inputRef}
             value={rawQuery}
             onChange={e => setRawQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="인격, EGO, 수감자, 키워드, 기프트 검색..."
-            className="flex-1 py-3.5 text-sm outline-none"
+            placeholder={t('placeholder')}
+            className="min-w-0 flex-1 py-3.5 text-[1rem] outline-none placeholder:text-[var(--text-muted)]"
             style={{
               background: 'transparent',
               color: '#e8dcc8',
@@ -308,8 +319,11 @@ export default function SearchModal({ open, onClose }: Props) {
           />
           {rawQuery && (
             <button
-              onClick={() => { setRawQuery(''); inputRef.current?.focus() }}
-              style={{ color: '#555', cursor: 'pointer', padding: 4 }}
+              type="button"
+              aria-label={t('clear')}
+              onClick={() => { setRawQuery(''); setResults([]); setSuggestions([]); inputRef.current?.focus() }}
+              className="grid min-h-[2.75rem] min-w-[2.75rem] place-items-center rounded-md transition-colors hover:bg-[rgba(200,144,10,0.08)]"
+              style={{ color: 'var(--text-tertiary)', cursor: 'pointer' }}
             >
               <X size={14} />
             </button>
@@ -317,10 +331,10 @@ export default function SearchModal({ open, onClose }: Props) {
           <kbd
             className="hidden sm:inline-block"
             style={{
-              padding: '2px 6px',
+              padding: '0.125rem 0.375rem',
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 4,
+              borderRadius: '0.25rem',
               color: '#555',
               fontSize: '0.75rem',
               fontFamily: 'var(--font-mono)',
@@ -333,24 +347,48 @@ export default function SearchModal({ open, onClose }: Props) {
         {/* Results */}
         <div
           ref={listRef}
-          style={{ maxHeight: '50vh', overflowY: 'auto' }}
+          className="min-h-[12rem] flex-1"
+          style={{ overflowY: 'auto' }}
         >
           {loading && results.length === 0 && (
-            <div className="flex items-center justify-center py-8" style={{ color: '#555' }}>
-              <div className="animate-spin w-4 h-4 border-2 rounded-full" style={{ borderColor: '#555 transparent transparent transparent' }} />
+            <div className="space-y-2 p-4" aria-live="polite" aria-label={t('loading')}>
+              {[0, 1, 2].map(index => (
+                <div key={index} className="flex items-center gap-3 border border-[rgba(200,144,10,0.08)] bg-[rgba(13,11,8,0.26)] p-3">
+                  <div className="h-11 w-11 animate-pulse rounded-md bg-[rgba(200,144,10,0.08)]" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3 w-2/3 animate-pulse rounded-sm bg-[rgba(232,176,48,0.12)]" />
+                    <div className="h-3 w-1/2 animate-pulse rounded-sm bg-[rgba(255,255,255,0.06)]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && !rawQuery.trim() && (
+            <div className="px-5 py-8 text-center">
+              <div className="mx-auto grid h-11 w-11 place-items-center border border-[rgba(200,144,10,0.2)] bg-[rgba(200,144,10,0.06)] text-[var(--gold)]">
+                <Search size={18} aria-hidden="true" />
+              </div>
+              <p className="mt-4 text-[1rem] text-[var(--text-secondary)]">{t('emptyPromptTitle')}</p>
+              <p className="mx-auto mt-2 max-w-[28rem] text-[0.875rem] leading-relaxed text-[var(--text-tertiary)]">
+                {t('emptyPromptDescription')}
+              </p>
             </div>
           )}
 
           {!loading && rawQuery.trim() && results.length === 0 && suggestions.length === 0 && (
-            <div className="py-8 text-center" style={{ color: '#555', fontSize: '0.8125rem' }}>
-              검색 결과가 없습니다
+            <div className="px-5 py-8 text-center" aria-live="polite">
+              <p className="text-[1rem] text-[var(--text-secondary)]">{t('noResultsTitle')}</p>
+              <p className="mx-auto mt-2 max-w-[28rem] text-[0.875rem] leading-relaxed text-[var(--text-tertiary)]">
+                {t('noResultsDescription')}
+              </p>
             </div>
           )}
 
           {!loading && results.length === 0 && suggestions.length > 0 && (
             <div>
-              <div className="px-4 pt-3 pb-1" style={{ color: '#5a4838', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
-                이런 결과를 찾으셨나요?
+              <div className="border-b border-[rgba(200,144,10,0.12)] px-4 pb-2 pt-3 font-mono text-[0.75rem] uppercase tracking-[0.08em] text-[var(--gold-dim)]">
+                {t('suggestionsTitle')}
               </div>
             </div>
           )}
@@ -361,14 +399,19 @@ export default function SearchModal({ open, onClose }: Props) {
             const isActive = idx === activeIndex
 
             return (
-              <button
+              <motion.button
                 key={`${item.type}-${item.label}-${idx}`}
-                className="flex items-center gap-3 w-full text-left px-4 py-2.5 transition-colors"
+                data-search-index={idx}
+                className="flex min-h-[4.75rem] w-full items-center gap-3 px-3 py-3 text-left transition-colors sm:px-4"
                 style={{
                   background: isActive ? 'rgba(200,144,10,0.08)' : 'transparent',
                   borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                  borderBottom: '1px solid rgba(200,144,10,0.08)',
                   cursor: 'pointer',
                 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.16, delay: Math.min(idx, 8) * 0.018, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => navigate(item.href)}
                 onMouseEnter={() => setActiveIndex(idx)}
               >
@@ -376,9 +419,9 @@ export default function SearchModal({ open, onClose }: Props) {
                 <div
                   className="flex items-center justify-center overflow-hidden"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: item.type === 'keyword' ? 6 : 8,
+                    width: '2.75rem',
+                    height: '2.75rem',
+                    borderRadius: item.type === 'keyword' ? '0.375rem' : '0.5rem',
                     background: item.icon ? '#0d0b08' : `${color}12`,
                     border: `1px solid ${item.icon ? 'rgba(255,255,255,0.08)' : `${color}25`}`,
                     flexShrink: 0,
@@ -393,8 +436,8 @@ export default function SearchModal({ open, onClose }: Props) {
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 500 }}>
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="min-w-0 truncate" style={{ color: '#e8dcc8', fontSize: '1rem', fontWeight: 500 }}>
                       {item.label}
                     </span>
                     {item.rarity && RARITY_ICONS[item.rarity] && (
@@ -421,14 +464,20 @@ export default function SearchModal({ open, onClose }: Props) {
                       fontFamily: 'var(--font-mono)',
                       letterSpacing: '0.05em',
                       opacity: 0.7,
+                      border: `1px solid ${color}33`,
+                      background: `${color}12`,
+                      padding: '0.0625rem 0.375rem',
+                      borderRadius: '0.25rem',
                     }}>
-                      {TYPE_LABEL[item.type]}
+                      {typeLabel[item.type]}
                     </span>
                   </div>
                   {item.sublabel && (
                     <p style={{
-                      color: '#999',
-                      fontSize: '0.6875rem',
+                      color: 'var(--text-tertiary)',
+                      fontSize: '0.875rem',
+                      lineHeight: 1.45,
+                      marginTop: '0.25rem',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -447,7 +496,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: 3,
-                      color: '#555',
+                      color: 'var(--text-muted)',
                       fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                       flexShrink: 0,
@@ -456,29 +505,34 @@ export default function SearchModal({ open, onClose }: Props) {
                     Enter
                   </kbd>
                 )}
-              </button>
+              </motion.button>
             )
           })}
         </div>
 
         {/* Footer */}
-        {displayItems.length > 0 && (
-          <div
-            className="flex items-center justify-between px-4 py-2"
-            style={{ borderTop: '1px solid var(--border)', color: '#999', fontSize: '0.75rem' }}
-          >
-            <span>{results.length > 0 ? `${results.length}개 결과` : `${suggestions.length}개 추천`}</span>
-            <span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>↑↓</span>
-              {' '}이동{' '}
-              <span style={{ fontFamily: 'sans-serif' }}>·</span>
-              {' '}
-              <span style={{ fontFamily: 'var(--font-mono)' }}>Enter</span>
-              {' '}선택
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
+        <div
+          className="flex flex-col gap-2 border-t border-[var(--border)] px-3 py-2 text-[0.875rem] text-[var(--text-tertiary)] sm:flex-row sm:items-center sm:justify-between sm:px-4"
+        >
+          <span>
+            {displayItems.length > 0
+              ? t(results.length > 0 ? 'resultCount' : 'suggestionCount', { count: displayItems.length })
+              : t('footerHint')}
+          </span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <kbd className="rounded border border-white/10 bg-white/[0.04] px-1.5 font-mono text-[0.75rem] text-[var(--text-muted)]">↑↓</kbd>
+            <span>{t('keyboard.move')}</span>
+            <span className="font-sans text-[var(--text-muted)]">/</span>
+            <kbd className="rounded border border-white/10 bg-white/[0.04] px-1.5 font-mono text-[0.75rem] text-[var(--text-muted)]">Enter</kbd>
+            <span>{t('keyboard.select')}</span>
+            <span className="font-sans text-[var(--text-muted)]">/</span>
+            <kbd className="rounded border border-white/10 bg-white/[0.04] px-1.5 font-mono text-[0.75rem] text-[var(--text-muted)]">Esc</kbd>
+            <span>{t('keyboard.close')}</span>
+          </span>
+        </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

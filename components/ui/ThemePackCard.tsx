@@ -174,7 +174,7 @@ export default function ThemePackCard({
       type="button"
       onClick={onClick}
       aria-label={displayName}
-      className="relative group text-left overflow-hidden transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#131110]"
+      className="group relative w-full overflow-hidden text-left transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#131110]"
       style={{
         background: 'transparent',
         border: isSelected ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
@@ -193,7 +193,7 @@ export default function ThemePackCard({
       )}
       {imageSrc ? (
         <div
-          className="relative w-full overflow-hidden transition-transform duration-300 group-hover:scale-[1.03]"
+          className="relative w-full overflow-hidden transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
           style={{
             aspectRatio: THEME_CARD_ASPECT_RATIO,
             borderRadius: 'var(--radius-md)',
