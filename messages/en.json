@@ -60,6 +60,32 @@
       "large": "Large"
     }
   },
+  "globalSearch": {
+    "ariaLabel": "Global search",
+    "placeholder": "Search identities, E.G.O, sinners, keywords, gifts...",
+    "clear": "Clear search",
+    "loading": "Searching",
+    "emptyPromptTitle": "Type to search",
+    "emptyPromptDescription": "Find sinners, identities, E.G.O, keywords, and E.G.O gifts from one command panel.",
+    "noResultsTitle": "No results found",
+    "noResultsDescription": "Try part of a name, initials, or a sinner name.",
+    "suggestionsTitle": "Did you mean one of these?",
+    "resultCount": "{count} results",
+    "suggestionCount": "{count} suggestions",
+    "footerHint": "Type a query, then choose a result",
+    "keyboard": {
+      "move": "Move",
+      "select": "Select",
+      "close": "Close"
+    },
+    "types": {
+      "sinner": "Sinner",
+      "identity": "Identity",
+      "ego": "E.G.O",
+      "keyword": "Keyword",
+      "egoGift": "Gift"
+    }
+  },
   "lang": {
     "filter": "Language",
     "all": "All Languages",
@@ -237,7 +263,7 @@
         }
       },
       "note": {
-        "placeholder": "Write deck notes. Type [ or {{ to insert chips and blocks.",
+        "placeholder": "Write deck notes. Use brackets or double braces to insert chips and blocks.",
         "insert": "Insert",
         "preview": "Preview",
         "edit": "Edit",

@@ -24,6 +24,24 @@
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
 
+/* Compact labels keep the project title face without the global .font-serif stroke. */
+.font-compact-serif {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  -webkit-text-stroke: 0 transparent;
+  text-shadow: none;
+  letter-spacing: 0;
+}
+
+.font-compact-serif-label {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  -webkit-text-stroke: 0 transparent;
+  text-shadow: none;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
 :root {
   --bg-deep:     #0d0b08;
   --bg-card:     #1a1510;

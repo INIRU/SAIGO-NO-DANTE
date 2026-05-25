@@ -701,6 +701,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         {/* 탭 콘텐츠 */}
         {tab === 'identity' && (
           <section className="deck-builder-identity-section">
+            {Object.values(deckSlots).filter(Boolean).length > 0 && (
+              <div className="deck-builder-mobile-stats">
+                <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
+              </div>
+            )}
+
             <IdentityTab
               sinners={sinners}
               identities={identities}
@@ -724,26 +730,30 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               }}
             />
 
-            {Object.values(deckSlots).filter(Boolean).length > 0 && (
-              <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
-            )}
+            <div className="deck-builder-support-stack">
+              {Object.values(deckSlots).filter(Boolean).length > 0 && (
+                <div className="deck-builder-desktop-stats">
+                  <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
+                </div>
+              )}
 
-            <DeckPreviewPanel
-              deckSlots={deckSlots}
-              activatableGifts={activatableGifts}
-              contentType={contentType}
-              showGiftPanel={showGiftPanel}
-              setShowGiftPanel={setShowGiftPanel}
-              giftTabKw={giftTabKw}
-              setGiftTabKw={setGiftTabKw}
-              giftSearch={giftSearch}
-              setGiftSearch={setGiftSearch}
-              giftGradeFilter={giftGradeFilter}
-              setGiftGradeFilter={setGiftGradeFilter}
-              giftStatusFilter={giftStatusFilter}
-              setGiftStatusFilter={setGiftStatusFilter}
-              onOpenGiftModal={() => setShowGiftModal(true)}
-            />
+              <DeckPreviewPanel
+                deckSlots={deckSlots}
+                activatableGifts={activatableGifts}
+                contentType={contentType}
+                showGiftPanel={showGiftPanel}
+                setShowGiftPanel={setShowGiftPanel}
+                giftTabKw={giftTabKw}
+                setGiftTabKw={setGiftTabKw}
+                giftSearch={giftSearch}
+                setGiftSearch={setGiftSearch}
+                giftGradeFilter={giftGradeFilter}
+                setGiftGradeFilter={setGiftGradeFilter}
+                giftStatusFilter={giftStatusFilter}
+                setGiftStatusFilter={setGiftStatusFilter}
+                onOpenGiftModal={() => setShowGiftModal(true)}
+              />
+            </div>
           </section>
         )}
         {tab === 'ego' && (
@@ -782,28 +792,29 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         {/* 편성 순서 탭 → 인격 탭 40%/60% 호버로 통합 */}
 
         {/* ── 통계 + 패시브 미리보기 ── */}
-        {tab !== 'note' && tab !== 'identity' && Object.values(deckSlots).filter(Boolean).length > 0 && (
-          <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
-        )}
-
-        {/* 정보 패널 (note 탭 제외) */}
         {tab !== 'note' && tab !== 'identity' && (
-          <DeckPreviewPanel
-            deckSlots={deckSlots}
-            activatableGifts={activatableGifts}
-            contentType={contentType}
-            showGiftPanel={showGiftPanel}
-            setShowGiftPanel={setShowGiftPanel}
-            giftTabKw={giftTabKw}
-            setGiftTabKw={setGiftTabKw}
-            giftSearch={giftSearch}
-            setGiftSearch={setGiftSearch}
-            giftGradeFilter={giftGradeFilter}
-            setGiftGradeFilter={setGiftGradeFilter}
-            giftStatusFilter={giftStatusFilter}
-            setGiftStatusFilter={setGiftStatusFilter}
-            onOpenGiftModal={() => setShowGiftModal(true)}
-          />
+          <div className="deck-builder-support-stack">
+            {Object.values(deckSlots).filter(Boolean).length > 0 && (
+              <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
+            )}
+
+            <DeckPreviewPanel
+              deckSlots={deckSlots}
+              activatableGifts={activatableGifts}
+              contentType={contentType}
+              showGiftPanel={showGiftPanel}
+              setShowGiftPanel={setShowGiftPanel}
+              giftTabKw={giftTabKw}
+              setGiftTabKw={setGiftTabKw}
+              giftSearch={giftSearch}
+              setGiftSearch={setGiftSearch}
+              giftGradeFilter={giftGradeFilter}
+              setGiftGradeFilter={setGiftGradeFilter}
+              giftStatusFilter={giftStatusFilter}
+              setGiftStatusFilter={setGiftStatusFilter}
+              onOpenGiftModal={() => setShowGiftModal(true)}
+            />
+          </div>
         )}
 
         {/* 덱 노트 */}
@@ -839,8 +850,27 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               margin-top: 0.75rem;
               gap: 0.625rem;
             }
-            .deck-builder-identity-section .deck-stats-panel > div {
-              width: 100% !important;
+            .deck-builder-desktop-stats {
+              display: none;
+            }
+            .deck-builder-mobile-stats {
+              display: block;
+              margin-bottom: 0.625rem;
+            }
+            .deck-builder-mobile-stats .deck-stats-panel {
+              margin-top: 0;
+            }
+            .deck-builder-support-stack {
+              display: grid;
+              gap: 0.625rem;
+            }
+          }
+          @media (min-width: 640px) {
+            .deck-builder-mobile-stats {
+              display: none;
+            }
+            .deck-builder-desktop-stats {
+              display: block;
             }
           }
         `}</style>

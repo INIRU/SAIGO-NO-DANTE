@@ -1208,7 +1208,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           selectedThemeId={activeEntry.theme_id}
           lang={locale}
           onClose={() => setThemeModalOpen(false)}
-          onSelectTheme={theme => selectTheme(theme.id)}
+          onSelectTheme={theme => selectTheme(String(theme.id))}
           meta={
             <>
               <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : activeDifficulty === 'overlap' ? 'purple' : activeDifficulty === 'hard' ? 'gold' : 'neutral'}>

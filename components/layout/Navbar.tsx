@@ -7,6 +7,7 @@ import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { motion, useReducedMotion } from 'motion/react'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
@@ -65,6 +66,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const [openMobileGroups, setOpenMobileGroups] = useState<string[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [isMac, setIsMac] = useState(false)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     setIsMac(/Mac|iPhone/.test(navigator.userAgent))
@@ -210,7 +212,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     gap: '0.625rem',
     padding: '0 1rem',
     fontFamily: 'var(--font-heading)',
-    fontSize: '0.875rem',
+    fontSize: '0.9375rem',
+    fontWeight: 400,
     lineHeight: 1.3,
     color: 'var(--text-secondary)',
     borderBottom: '0',
@@ -234,7 +237,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     padding: '0 0.75rem',
     color: 'var(--text-secondary)',
     fontFamily: 'var(--font-heading)',
-    fontSize: '0.8125rem',
+    fontSize: '0.9375rem',
+    fontWeight: 400,
     background: 'transparent',
     border: '0',
     borderRadius: '0.375rem',
@@ -244,7 +248,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
 
   const mobileUtilityChipStyle: CSSProperties = {
     ...mobileUtilityActionStyle,
-    minHeight: '2.25rem',
+    minHeight: '2.75rem',
     padding: '0 0.625rem',
     border: '0.0625rem solid rgba(200,144,10,0.12)',
     background: 'rgba(200,144,10,0.035)',
@@ -285,10 +289,11 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   <Link
                     key={group.label}
                     href={`${group.items[0].href}`}
-                    className="flex items-center transition-colors duration-200 hover:text-yellow-300"
+                    className="font-compact-serif-label flex items-center transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
-                      fontSize: '0.875rem',
+                      fontSize: '0.9375rem',
+                      fontWeight: 400,
                       color: isActive ? 'var(--gold)' : '#a08a60',
                       padding: '0.25rem 0',
                     }}
@@ -313,10 +318,11 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   <button
                     aria-expanded={openGroup === group.label}
                     aria-haspopup="true"
-                    className="flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
+                    className="font-compact-serif-label flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
                     style={{
                       fontFamily: 'var(--font-heading)',
-                      fontSize: '0.875rem',
+                      fontSize: '0.9375rem',
+                      fontWeight: 400,
                       color: isActive ? 'var(--gold)' : '#a08a60',
                       cursor: 'pointer',
                       background: 'none',
@@ -358,11 +364,12 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                             key={item.href}
                             href={`${item.href}`}
                             role="menuitem"
-                            className="block transition-all duration-150"
+                            className="font-compact-serif-label block transition-all duration-150"
                             style={{
                               padding: '0.625rem 1.25rem',
                               fontFamily: 'var(--font-heading)',
-                              fontSize: 'var(--text-sm)',
+                              fontSize: '0.9375rem',
+                              fontWeight: 400,
                               color: active ? 'var(--gold)' : 'var(--text-tertiary)',
                               whiteSpace: 'nowrap',
                               background: active ? 'rgba(200,144,10,0.06)' : 'transparent',
@@ -395,59 +402,55 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
             <LanguageSwitcher />
 
             {/* 검색 버튼 */}
-            <button
+            <motion.button
               onClick={() => setSearchOpen(true)}
+              data-open={searchOpen}
               aria-label="검색 열기 (Ctrl+K)"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="nav-search-trigger flex min-h-9 items-center gap-1.5 rounded-md px-2.5 py-1 transition-[background-color,border-color,color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0b08]"
+              whileHover={reduceMotion ? undefined : { y: -1 }}
+              whileTap={reduceMotion ? undefined : { y: 0, scale: 0.985 }}
+              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
               style={{
                 cursor: 'pointer',
                 color: 'var(--text-tertiary)',
-                border: '1px solid rgba(200,144,10,0.12)',
-                background: 'rgba(200,144,10,0.04)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(200,144,10,0.08)'
-                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.2)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(200,144,10,0.04)'
-                e.currentTarget.style.borderColor = 'rgba(200,144,10,0.12)'
+                border: `1px solid ${searchOpen ? 'rgba(232,176,48,0.32)' : 'rgba(200,144,10,0.16)'}`,
+                background: searchOpen ? 'rgba(200,144,10,0.1)' : 'rgba(18,14,9,0.62)',
               }}
               title="검색 (Ctrl+K)"
             >
-              <Search size={13} style={{ opacity: 0.7 }} />
-              <span style={{ fontSize: '0.75rem', color: '#5a4838', fontFamily: 'var(--font-heading)' }}>{t('common.search' as TranslationKey)}</span>
-              <div className="flex items-center gap-0.5" style={{ marginLeft: '0.25rem' }}>
+              <Search size={14} style={{ opacity: 0.72 }} aria-hidden="true" />
+              <span className="font-compact-serif-label" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1 }}>{t('common.search' as TranslationKey)}</span>
+              <div className="hidden items-center gap-0.5 sm:flex" style={{ marginLeft: '0.125rem' }} aria-hidden="true">
                 <kbd style={{
-                  padding: '0.125rem 0.3125rem',
+                  padding: '0.0625rem 0.25rem',
                   fontSize: '0.6875rem',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   color: '#6a5838',
-                  background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
-                  border: '1px solid rgba(200,144,10,0.15)',
+                  background: 'rgba(200,144,10,0.06)',
+                  border: '1px solid rgba(200,144,10,0.14)',
                   borderRadius: 4,
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
-                  lineHeight: '1.3',
+                  boxShadow: 'none',
+                  lineHeight: '1.2',
                   fontWeight: 500,
                 }}>
                   {isMac ? '⌘' : 'Ctrl'}
                 </kbd>
                 <kbd style={{
-                  padding: '0.125rem 0.3125rem',
+                  padding: '0.0625rem 0.25rem',
                   fontSize: '0.6875rem',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   color: '#6a5838',
-                  background: 'linear-gradient(180deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.05) 100%)',
-                  border: '1px solid rgba(200,144,10,0.15)',
+                  background: 'rgba(200,144,10,0.06)',
+                  border: '1px solid rgba(200,144,10,0.14)',
                   borderRadius: 4,
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
-                  lineHeight: '1.3',
+                  boxShadow: 'none',
+                  lineHeight: '1.2',
                   fontWeight: 500,
                 }}>
                   K
                 </kbd>
               </div>
-            </button>
+            </motion.button>
 
             {/* 데스크탑 로그인 / 유저 메뉴 */}
             {user ? (
@@ -834,6 +837,31 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .nav-search-trigger {
+          position: relative;
+          overflow: visible;
+          box-shadow: none;
+        }
+        .nav-search-trigger::before {
+          content: '';
+          position: absolute;
+          inset: -0.25rem -0.125rem;
+        }
+        .nav-search-trigger:hover,
+        .nav-search-trigger:focus-visible,
+        .nav-search-trigger[data-open="true"] {
+          background: rgba(200,144,10,0.1) !important;
+          border-color: rgba(232,176,48,0.32) !important;
+          color: var(--text-secondary) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .nav-search-trigger {
+            transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+          }
+        }
+      `}</style>
 
       {/* 전역 검색 모달 */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
