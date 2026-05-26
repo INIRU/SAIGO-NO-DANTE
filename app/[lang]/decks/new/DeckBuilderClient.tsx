@@ -4,6 +4,7 @@ import { showError } from '@/lib/toast'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { motion, useReducedMotion } from 'motion/react'
 import { useRouter } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
@@ -195,6 +196,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [giftGradeFilter, setGiftGradeFilter] = useQueryState('gg', parseAsString.withDefault('전체'))
   const [giftStatusFilter, setGiftStatusFilter] = useState<'all' | 'met' | 'unmet'>('all')
   const [showGiftModal, setShowGiftModal] = useState(false)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     setHasDraft(!!localStorage.getItem('limbus-deck-draft'))
@@ -666,7 +668,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     const active = contentType === ct
                     const colors = CONTENT_TYPE_COLORS[ct]
                     return (
-                      <button
+                      <motion.button
                         key={ct}
                         type="button"
                         onClick={() => setContentType(active ? '' : ct)}
@@ -679,9 +681,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                           fontSize: '0.9375rem',
                           fontWeight: active ? 700 : 500,
                         }}
+                        whileHover={reduceMotion ? undefined : { y: -1 }}
+                        whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                        transition={{ type: 'spring', stiffness: 430, damping: 32, mass: 0.5 }}
                       >
                         {deckT(`contentTypes.${contentTypeMessageKey(ct)}`)}
-                      </button>
+                      </motion.button>
                     )
                   })}
                 </div>
@@ -700,7 +705,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
         {/* 탭 콘텐츠 */}
         {tab === 'identity' && (
-          <section className="deck-builder-identity-section">
+          <motion.section
+            key="identity"
+            className="deck-builder-identity-section"
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
             {Object.values(deckSlots).filter(Boolean).length > 0 && (
               <div className="deck-builder-mobile-stats">
                 <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
@@ -754,46 +765,65 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 onOpenGiftModal={() => setShowGiftModal(true)}
               />
             </div>
-          </section>
+          </motion.section>
         )}
         {tab === 'ego' && (
-          <EgoTab
-            sinners={sinners}
-            egos={egos}
-            egoSlots={egoSlots}
-            lang={locale as SupportedLang}
-            onEgoSelect={ego => {
-              setEgoSlots(prev => ({
-                ...prev,
-                [ego.sinner_id]: { ...(prev[ego.sinner_id] ?? {}), [ego.grade]: ego }
-              }))
-            }}
-            onEgoDeselect={(sinnerId, grade) => {
-              if (grade === 'ZAYIN') return
-              setEgoSlots(prev => {
-                const s = { ...(prev[sinnerId] ?? {}) }
-                delete s[grade]
-                return { ...prev, [sinnerId]: s }
-              })
-            }}
-          />
+          <motion.div
+            key="ego"
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <EgoTab
+              sinners={sinners}
+              egos={egos}
+              egoSlots={egoSlots}
+              lang={locale as SupportedLang}
+              onEgoSelect={ego => {
+                setEgoSlots(prev => ({
+                  ...prev,
+                  [ego.sinner_id]: { ...(prev[ego.sinner_id] ?? {}), [ego.grade]: ego }
+                }))
+              }}
+              onEgoDeselect={(sinnerId, grade) => {
+                if (grade === 'ZAYIN') return
+                setEgoSlots(prev => {
+                  const s = { ...(prev[sinnerId] ?? {}) }
+                  delete s[grade]
+                  return { ...prev, [sinnerId]: s }
+                })
+              }}
+            />
+          </motion.div>
         )}
         {tab === 'skillset' && (
-          <SkillsetTab
-            sinners={sinners}
-            deckSlots={deckSlots}
-            skillsByIdentityId={skillsByIdentityId}
-            skillDistribution={skillDistribution}
-            onDistributionChange={(sinnerId, dist) =>
-              setSkillDistribution(prev => ({ ...prev, [sinnerId]: dist }))
-            }
-          />
+          <motion.div
+            key="skillset"
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <SkillsetTab
+              sinners={sinners}
+              deckSlots={deckSlots}
+              skillsByIdentityId={skillsByIdentityId}
+              skillDistribution={skillDistribution}
+              onDistributionChange={(sinnerId, dist) =>
+                setSkillDistribution(prev => ({ ...prev, [sinnerId]: dist }))
+              }
+            />
+          </motion.div>
         )}
         {/* 편성 순서 탭 → 인격 탭 40%/60% 호버로 통합 */}
 
         {/* ── 통계 + 패시브 미리보기 ── */}
         {tab !== 'note' && tab !== 'identity' && (
-          <div className="deck-builder-support-stack">
+          <motion.div
+            className="deck-builder-support-stack"
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
+          >
             {Object.values(deckSlots).filter(Boolean).length > 0 && (
               <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
             )}
@@ -814,28 +844,35 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               setGiftStatusFilter={setGiftStatusFilter}
               onOpenGiftModal={() => setShowGiftModal(true)}
             />
-          </div>
+          </motion.div>
         )}
 
         {/* 덱 노트 */}
         {tab === 'note' && (
-          <DeckNoteEditor
-            sinners={sinners}
-            identities={identities}
-            deckSlots={deckSlots}
-            egoSlots={egoSlots}
-            skillsByIdentityId={skillsByIdentityId}
-            passivesByIdentityId={passivesByIdentityId}
-            egoGifts={egoGifts}
-            formationOrder={formationOrder}
-            formationGiftKeywordCounts={formationGiftKeywordCounts}
-            allGiftKeywordCounts={allGiftKeywordCounts}
-            locale={locale as SupportedLang}
-            description={description}
-            setDescription={setDescription}
-            descPreview={descPreview}
-            setDescPreview={setDescPreview}
-          />
+          <motion.div
+            key="note"
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <DeckNoteEditor
+              sinners={sinners}
+              identities={identities}
+              deckSlots={deckSlots}
+              egoSlots={egoSlots}
+              skillsByIdentityId={skillsByIdentityId}
+              passivesByIdentityId={passivesByIdentityId}
+              egoGifts={egoGifts}
+              formationOrder={formationOrder}
+              formationGiftKeywordCounts={formationGiftKeywordCounts}
+              allGiftKeywordCounts={allGiftKeywordCounts}
+              locale={locale as SupportedLang}
+              description={description}
+              setDescription={setDescription}
+              descPreview={descPreview}
+              setDescPreview={setDescPreview}
+            />
+          </motion.div>
         )}
 
         <style jsx global>{`

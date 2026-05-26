@@ -1,10 +1,11 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { Variants, HTMLMotionProps } from 'motion/react'
 import { fadeInUp } from '@/lib/animations'
 
 type MotionTag = 'div' | 'section' | 'article' | 'aside' | 'li' | 'span'
+type VariantState = NonNullable<Variants[string]>
 
 interface ScrollRevealProps extends Omit<HTMLMotionProps<'div'>, 'variants' | 'initial' | 'whileInView' | 'viewport'> {
   /** Animation variant to use. Defaults to fadeInUp. */
@@ -13,6 +14,21 @@ interface ScrollRevealProps extends Omit<HTMLMotionProps<'div'>, 'variants' | 'i
   delay?: number
   /** HTML element to render. Defaults to 'div'. */
   as?: MotionTag
+}
+
+function removeInitialOpacity(variant: Variants): Variants {
+  const initial = variant.initial
+
+  if (!initial || typeof initial !== 'object' || Array.isArray(initial)) {
+    return variant
+  }
+
+  const { opacity: _opacity, ...initialWithoutOpacity } = initial as Record<string, unknown>
+
+  return {
+    ...variant,
+    initial: initialWithoutOpacity as VariantState,
+  }
 }
 
 /**
@@ -39,6 +55,7 @@ export default function ScrollReveal({
   ...rest
 }: ScrollRevealProps) {
   const Tag = motion[as] as typeof motion.div
+  const shouldReduceMotion = useReducedMotion()
 
   // Merge a per-element delay into the animate transition without mutating
   // the shared variant object.
@@ -57,15 +74,16 @@ export default function ScrollReveal({
         },
       }
     : variant
+  const hydrationSafeVariant = removeInitialOpacity(mergedVariant)
 
   return (
     <Tag
       className={className}
       style={style}
-      variants={mergedVariant}
-      initial="initial"
-      whileInView="animate"
-      viewport={{ once: true, margin: '-50px' }}
+      variants={shouldReduceMotion ? undefined : hydrationSafeVariant}
+      initial={shouldReduceMotion ? false : 'initial'}
+      whileInView={shouldReduceMotion ? undefined : 'animate'}
+      viewport={shouldReduceMotion ? undefined : { once: true, margin: '-50px' }}
       {...rest}
     >
       {children}

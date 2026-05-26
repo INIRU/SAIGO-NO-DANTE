@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
+import { motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -32,6 +33,7 @@ import {
   normalizeBlessingMessages,
   ReadOnlyBlessingGrid,
 } from '@/components/planner/BlessingTab'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -212,10 +214,15 @@ function DetailSection({
   children: ReactNode
   className?: string
 }) {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
-    <section className={`min-w-0 rounded-md border border-[#241c14] bg-[#120e09]/92 p-3 sm:p-4 ${className}`}>
+    <motion.section
+      className={`min-w-0 rounded-md border border-[#241c14] bg-[#120e09]/92 p-3 sm:p-4 ${className}`}
+      variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+    >
       {children}
-    </section>
+    </motion.section>
   )
 }
 
@@ -277,6 +284,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
 
@@ -292,7 +300,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   // Maps
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
-  const themeMap = useMemo(() => new Map(themes.map(t => [t.id, t])), [themes])
+  const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
 
   // 레시피맵
   const giftByName = useMemo(() => {
@@ -454,7 +462,12 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           {tDetail('backToCommunity')}
         </Link>
 
-        <header className="mb-5 border-y border-[#2a2118] bg-[#100c08]/76">
+        <motion.header
+          className="mb-5 border-y border-[#2a2118] bg-[#100c08]/76"
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+        >
           <div className="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,21rem)]">
             <div className="min-w-0 px-3 py-3.5 sm:px-5 sm:py-4">
               <div className="mb-2.5 flex min-w-0 flex-wrap items-center gap-2">
@@ -530,11 +543,19 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               />
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <main className="min-w-0 space-y-5 overflow-x-hidden">
+        <motion.main
+          className="min-w-0 space-y-5 overflow-x-hidden"
+          variants={shouldReduceMotion ? undefined : staggerContainer(0.055, 0.04)}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+        >
             {plan.description && (
-              <article className="border-y border-[#241c14] bg-[#0f0b07] px-4 py-5 sm:px-5 sm:py-6">
+              <motion.article
+                variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+                className="border-y border-[#241c14] bg-[#0f0b07] px-4 py-5 sm:px-5 sm:py-6"
+              >
                 <div className="min-w-0 w-full">
                   <h2 className="mb-4 border-b border-[#241c14] pb-2 text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">
                     {tDetail('descriptionTitle')}
@@ -554,7 +575,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                     />
                   </div>
                 </div>
-              </article>
+              </motion.article>
             )}
 
             <DetailSection>
@@ -639,7 +660,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             <DetailSection>
               <PlanComments planId={plan.id} />
             </DetailSection>
-        </main>
+        </motion.main>
       </div>
 
       {/* 기프트 상세 모달 */}

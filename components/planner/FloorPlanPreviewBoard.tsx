@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
+import { motion, useReducedMotion } from 'motion/react'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/ui/GiftCard'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
@@ -11,6 +12,7 @@ import {
   getThemePackCompositeImageUrl,
   getThemePackVisualConfig,
 } from '@/lib/data/theme-pack-visuals'
+import { staggerContainer, workbenchStaggerItem } from '@/lib/animations'
 
 type FloorPreviewEntry = {
   floor: number
@@ -83,6 +85,7 @@ export default function FloorPlanPreviewBoard({
 }: FloorPlanPreviewBoardProps) {
   const locale = useLocale() as SupportedLang
   const tFloor = useTranslations('planner.floorTab')
+  const shouldReduceMotion = useReducedMotion()
   const segments = FLOOR_PLAN_SEGMENTS
     .map(segment => ({
       ...segment,
@@ -99,10 +102,17 @@ export default function FloorPlanPreviewBoard({
   }
 
   return (
-    <div className="space-y-3">
+    <motion.div
+      className="space-y-3"
+      variants={shouldReduceMotion ? undefined : staggerContainer(0.045)}
+      initial={shouldReduceMotion ? false : 'initial'}
+      whileInView={shouldReduceMotion ? undefined : 'animate'}
+      viewport={shouldReduceMotion ? undefined : { once: true, margin: '-60px' }}
+    >
       {segments.map(segment => (
-        <section
+        <motion.section
           key={segment.start}
+          variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
           className="overflow-hidden rounded-md border border-[#241c14] bg-[#120e09]"
           aria-label={tFloor(`segment.${segment.labelKey}`, { start: segment.start, end: segment.end })}
         >
@@ -118,7 +128,7 @@ export default function FloorPlanPreviewBoard({
           <div className="divide-y divide-[#201810]">
             {segment.entries.map(entry => {
               const floorDifficulty = getFloorDifficulty(entry, planDifficulty)
-              const theme = entry.theme_id ? themeMap.get(entry.theme_id) : null
+              const theme = entry.theme_id ? themeMap.get(String(entry.theme_id)) : null
               const themeName = theme
                 ? getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
                 : tFloor('empty')
@@ -131,8 +141,9 @@ export default function FloorPlanPreviewBoard({
               const themeImageSrc = theme ? getThemeImageSrc(theme) : null
 
               return (
-                <div
+                <motion.div
                   key={entry.floor}
+                  variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                   className="grid min-w-0 grid-cols-[2.5rem_minmax(5.75rem,6.75rem)_minmax(0,1fr)] items-stretch gap-3 px-2.5 py-3 sm:min-h-[10.5rem] sm:grid-cols-[2.75rem_minmax(7.25rem,8.5rem)_minmax(0,1fr)] sm:px-3"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded border border-[#3a2a10] bg-[#1a1510] font-mono text-[0.9375rem] font-bold tabular-nums text-[#e8b030] sm:h-11 sm:w-11">
@@ -244,12 +255,12 @@ export default function FloorPlanPreviewBoard({
                       </p>
                     )}
                   </div>
-                </div>
+                </motion.div>
               )
             })}
           </div>
-        </section>
+        </motion.section>
       ))}
-    </div>
+    </motion.div>
   )
 }

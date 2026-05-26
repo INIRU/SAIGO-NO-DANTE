@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useEffect, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useRouter } from '@/lib/i18n/navigation'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -18,6 +19,7 @@ import FloorTab from '@/components/planner/FloorTab'
 import SummaryTab from '@/components/planner/SummaryTab'
 import BlessingTab from '@/components/planner/BlessingTab'
 import GiftPlanTab from '@/components/planner/GiftPlanTab'
+import { workbenchReveal } from '@/lib/animations'
 
 interface Props {
   themes: ThemeData[]
@@ -52,6 +54,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const dispatch = usePlannerStore(s => s.dispatch)
   const [tabParam, setTabParam] = useQueryState('tab', parseAsString.withDefault('deck'))
   const activeTab = isPlannerTab(tabParam) ? tabParam : 'deck'
+  const shouldReduceMotion = useReducedMotion()
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   const giftConditionState = useMemo<PlannerState>(() => ({
@@ -241,11 +244,32 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     dispatch({ type: 'LOAD_PLAN', state: createInitialState('hard') })
   }, [dispatch, egos, identities])
 
+  const tabContent = (() => {
+    if (activeTab === 'deck') {
+      return <DeckTab state={state} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} egos={egos} />
+    }
+    if (activeTab === 'blessing') {
+      return <BlessingTab state={state} dispatch={dispatch} />
+    }
+    if (activeTab === 'gift') {
+      return <GiftPlanTab state={giftConditionState} dispatch={dispatch} gifts={gifts} recipes={recipes} giftMap={giftMap} />
+    }
+    if (activeTab === 'floor') {
+      return <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />
+    }
+    return <SummaryTab state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
+  })()
+
   return (
     <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
       <div className="max-w-6xl mx-auto px-3 sm:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <motion.div
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6"
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+        >
           <div>
             <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.875rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
@@ -390,10 +414,17 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                   : (editId ? tPlanner('actions.update') : tPlanner('actions.upload'))}
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* 탭 바 */}
-        <div className="flex mb-6 overflow-x-auto" style={{ borderBottom: '1px solid #222', WebkitOverflowScrolling: 'touch' }}>
+        <motion.div
+          className="flex mb-6 overflow-x-auto"
+          style={{ borderBottom: '1px solid #222', WebkitOverflowScrolling: 'touch' }}
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+          transition={{ delay: shouldReduceMotion ? 0 : 0.04 }}
+        >
           {TABS.map(tab => {
             const active = activeTab === tab.key
             const Icon = tab.icon
@@ -404,7 +435,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                   dispatch({ type: 'SET_TAB', tab: tab.key })
                   void setTabParam(tab.key, { history: 'push' })
                 }}
-                className="flex items-center gap-1.5 px-3 sm:px-5 py-2.5 font-semibold transition-all whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 sm:px-5 py-2.5 font-semibold transition-colors whitespace-nowrap"
                 style={{
                   color: active ? '#e8dcc8' : '#555',
                   fontSize: '0.9375rem',
@@ -418,24 +449,20 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               </button>
             )
           })}
-        </div>
+        </motion.div>
 
         {/* 탭 콘텐츠 */}
-        {activeTab === 'deck' && (
-          <DeckTab state={state} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} egos={egos} />
-        )}
-        {activeTab === 'blessing' && (
-          <BlessingTab state={state} dispatch={dispatch} />
-        )}
-        {activeTab === 'gift' && (
-          <GiftPlanTab state={giftConditionState} dispatch={dispatch} gifts={gifts} recipes={recipes} giftMap={giftMap} />
-        )}
-        {activeTab === 'floor' && (
-          <FloorTab state={state} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />
-        )}
-        {activeTab === 'summary' && (
-          <SummaryTab state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} skills={skills} passives={passives} />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            variants={shouldReduceMotion ? undefined : workbenchReveal}
+            initial={shouldReduceMotion ? false : 'initial'}
+            animate={shouldReduceMotion ? undefined : 'animate'}
+            exit={shouldReduceMotion ? undefined : 'exit'}
+          >
+            {tabContent}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Toast는 Sonner가 글로벌로 처리 */}

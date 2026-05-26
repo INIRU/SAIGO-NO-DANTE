@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
 import { useRouter, usePathname } from '@/lib/i18n/navigation'
@@ -74,6 +74,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
+  const shouldReduceMotion = useReducedMotion()
   useRoutePrefetch([`/${lang}/sinners/identities`, `/${lang}/sinners/ego`])
   const { sinMap: kwSinMap, iconMap: kwIconMap } = useKeywordData()
 
@@ -398,9 +399,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <motion.div
             className="lg:sticky lg:top-24 lg:self-start"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.6, ease: [0.33, 1, 0.68, 1] }}
           >
             <div className="p-3 sm:p-6" style={{
               background: 'linear-gradient(180deg, rgba(20,18,14,0.96) 0%, rgba(15,13,10,0.9) 100%)',
@@ -511,9 +512,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           {/* 우측: 탭 콘텐츠 */}
           <motion.div
             className="min-w-0"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2, ease: [0.33, 1, 0.68, 1] }}
           >
             {/* 탭 */}
             <div
@@ -712,8 +713,15 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             </div>
 
             {/* 인격 탭 */}
+            <AnimatePresence mode="wait" initial={false}>
             {tab === 'identities' && (
-              <div>
+              <motion.div
+                key="identities"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}
+              >
                 {/* 필터 바 */}
                 <div
                   className="mb-3 sm:mb-4 lg:mb-3 p-2 sm:p-2.5 lg:px-2.5 lg:py-1.5 rounded-md"
@@ -863,12 +871,18 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     ))}
                   </StaggerReveal>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* EGO 탭 */}
             {tab === 'ego' && (
-              <div>
+              <motion.div
+                key="ego"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}
+              >
                 {/* 정렬 + 보유 필터 */}
                 <div className="flex items-center justify-end gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   <button
@@ -921,7 +935,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         <motion.div
                           key={ego.id}
                           variants={staggerItem}
-                          whileHover={{ scale: 1.035 }}
+                          whileHover={shouldReduceMotion ? undefined : { scale: 1.035 }}
                         >
                           <EgoDisplayCard
                             ego={ego}
@@ -935,8 +949,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     })}
                   </StaggerReveal>
                 )}
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </motion.div>
         </div>
       </div>

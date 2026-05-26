@@ -242,7 +242,7 @@ function DeckStatsPanel({
           .deck-stats-attack-count{width:auto!important;font-size:0.875rem}
           .deck-stats-defense-row{margin-top:0.5rem;padding-top:0.5rem}
         }
-        @media (max-width:29rem){
+        @media (max-width:22.5rem){
           .deck-stats-summary-card__attacks{grid-template-columns:1fr}
         }
       `}</style>

@@ -176,11 +176,10 @@ export function PlannerIdentityBoard({
   const locale = useLocale() as SupportedLang
   const getLocalizedSinnerName = useSinnerName(locale, getSinnerName)
   const compactNameStyle = getCompactNameStyle(locale)
-  const reduceMotion = useReducedMotion()
 
   return (
     <div className="planner-deck-identity-grid">
-      {sinners.map((sinner, sinnerIndex) => {
+      {sinners.map(sinner => {
         const boardSlot = slots[sinner.id]
         const identity = boardSlot?.identity ?? null
         const slotOrder = boardSlot?.slotOrder ?? null
@@ -195,13 +194,13 @@ export function PlannerIdentityBoard({
             key={sinner.id}
             className="relative min-w-0"
             style={{ overflow: 'visible' }}
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: Math.min(sinnerIndex, 11) * 0.018, ease: [0.22, 1, 0.36, 1] }}
           >
             <div
               className="planner-deck-identity-card group relative w-full"
               data-filled={identity ? 'true' : 'false'}
+              role="group"
+              tabIndex={0}
+              aria-label={identity ? `${identityName} ${t('change')}` : `${sinnerName} ${t('form')}`}
               style={{
                 border: `0.09375rem ${identity ? 'solid' : 'dashed'} ${identity ? (rarityColor?.border ?? '#2a2015') : '#2a2015'}`,
                 boxShadow: identity ? `0 0 0.5rem ${rarityColor?.glow ?? 'transparent'}` : 'none',
@@ -335,11 +334,16 @@ export function PlannerIdentityBoard({
           background: linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%);
           border-radius: 0.25rem;
           overflow: hidden;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
         }
         .planner-deck-identity-card:focus-within,
+        .planner-deck-identity-card:focus-visible,
         .planner-deck-identity-card:hover {
           filter: brightness(1.04);
+        }
+        .planner-deck-identity-card:focus-visible {
+          outline: 0.125rem solid rgba(232,176,48,0.72);
+          outline-offset: 0.125rem;
         }
         .planner-deck-identity-card__name {
           position: absolute;
@@ -370,13 +374,19 @@ export function PlannerIdentityBoard({
           display: flex;
           flex-direction: column;
           opacity: 0;
+          pointer-events: none;
+          visibility: hidden;
           backdrop-filter: blur(0.375rem) brightness(0.4);
           -webkit-backdrop-filter: blur(0.375rem) brightness(0.4);
-          transition: opacity 0.18s ease;
+          transition: opacity 0.18s ease, visibility 0s linear 0.18s;
         }
         .planner-deck-identity-card:hover .planner-deck-identity-card__overlay,
+        .planner-deck-identity-card:focus .planner-deck-identity-card__overlay,
         .planner-deck-identity-card:focus-within .planner-deck-identity-card__overlay {
           opacity: 1;
+          pointer-events: auto;
+          visibility: visible;
+          transition-delay: 0s;
         }
         .planner-deck-identity-card__overlay-button {
           display: flex;
@@ -496,6 +506,9 @@ export function PlannerIdentityBoard({
           }
           .planner-deck-identity-card__overlay {
             opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            transition-delay: 0s;
           }
           .planner-deck-identity-card__overlay-button {
             font-size: 0.875rem;
@@ -706,10 +719,8 @@ export function PlannerEgoBoard({
               opacity: enabled ? 1 : 0.5,
               cursor: enabled ? 'pointer' : 'default',
             }}
-            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={reduceMotion ? undefined : { opacity: enabled ? 1 : 0.5, y: 0 }}
-            whileHover={reduceMotion || !enabled ? undefined : { y: -2 }}
-            transition={{ duration: 0.18, delay: Math.min(sinnerIndex, 11) * 0.016, ease: [0.22, 1, 0.36, 1] }}
+            animate={{ opacity: enabled ? 1 : 0.5 }}
+            transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex min-w-0 items-center gap-1.5" style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #1a1208' }}>
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
@@ -922,16 +933,17 @@ export function PlannerEgoSelectModal({
                       {gradeEgos.map(ego => {
                         const isSelected = selectedForGrade?.id === ego.id
                         return (
-                          <EgoDisplayCard
-                            key={ego.id}
-                            onClick={() => onSelect(ego)}
-                            ego={ego}
-                            name={localizeEgoName(ego, locale)}
-                            sinnerId={ego.sinner_id}
-                            lang={locale}
-                            selected={isSelected}
-                            className="transition-[filter] duration-200 ease-out brightness-95 hover:brightness-105 hover:saturate-110"
-                          />
+                          <div key={ego.id}>
+                            <EgoDisplayCard
+                              onClick={() => onSelect(ego)}
+                              ego={ego}
+                              name={localizeEgoName(ego, locale)}
+                              sinnerId={ego.sinner_id}
+                              lang={locale}
+                              selected={isSelected}
+                              className="transition-[filter] duration-200 ease-out brightness-95 hover:brightness-105 hover:saturate-110"
+                            />
+                          </div>
                         )
                       })}
                     </div>

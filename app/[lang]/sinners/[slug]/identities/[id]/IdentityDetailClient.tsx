@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import { Settings } from 'lucide-react'
 import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
@@ -38,6 +39,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 interface Props {
   sinner: Sinner
@@ -90,6 +92,7 @@ export default function IdentityDetailClient({
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
+  const shouldReduceMotion = useReducedMotion()
   const localSkillName = (s: Skill) =>
     lang === 'en' && s.name_en ? s.name_en : lang === 'ja' && s.name_jp ? s.name_jp : s.name
   const localPassiveName = (p: Passive) =>
@@ -414,10 +417,19 @@ export default function IdentityDetailClient({
   }, [filteredSkills, filteredPassives, allIdentities, allEgos, sinnerNameMap, sinner.name_kr, sinner.name, sinner.name_jp, identity, skillImgIdxMap, variantMap, egoGifts, lang, t])
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
+    <motion.div
+      className="min-h-[100dvh] pt-24 pb-16"
+      variants={shouldReduceMotion ? undefined : workbenchReveal}
+      initial={shouldReduceMotion ? false : 'initial'}
+      animate="animate"
+    >
       <div className="max-w-6xl mx-auto px-6">
         {/* 브레드크럼 */}
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
+        <motion.div
+          className="mb-8 flex items-center gap-2 text-sm"
+          style={{ color: '#888888' }}
+          variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+        >
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             {t('sinners.title')}
           </Link>
@@ -427,11 +439,16 @@ export default function IdentityDetailClient({
           </Link>
           <span>›</span>
           <span style={{ color: sinColor }}>{getLocalizedName(identity, lang) || identity.name}</span>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <motion.div
+          className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-8"
+          variants={shouldReduceMotion ? undefined : staggerContainer(0.07, 0.06)}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate="animate"
+        >
           {/* 좌측: 인격 이미지 + 이름 (1/3) */}
-          <div className="identity-detail-portrait">
+          <motion.div className="identity-detail-portrait" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
           <IdentityPortraitSection
             sinner={sinner}
             identity={identity}
@@ -444,10 +461,13 @@ export default function IdentityDetailClient({
             sinColor={sinColor}
             rarityNum={rarityNum}
           />
-          </div>
+          </motion.div>
 
           {/* 우측: 스탯 + 스킬 (2/3) */}
-          <div className="identity-detail-content lg:col-span-2 space-y-8">
+          <motion.div
+            className="identity-detail-content min-w-0 space-y-8"
+            variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.08)}
+          >
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
             <div className="flex" style={{ borderBottom: '0.125rem solid var(--border)' }}>
               {([
@@ -482,17 +502,38 @@ export default function IdentityDetailClient({
               })}
             </div>
 
-            {pageTab === 'decks' && (
-              <IdentityDecksTab identityId={identity.id} />
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              {pageTab === 'decks' && (
+                <motion.div
+                  key="decks"
+                  variants={shouldReduceMotion ? undefined : workbenchReveal}
+                  initial={shouldReduceMotion ? false : 'initial'}
+                  animate="animate"
+                  exit={shouldReduceMotion ? undefined : 'exit'}
+                >
+                  <IdentityDecksTab identityId={identity.id} />
+                </motion.div>
+              )}
 
-            {pageTab === 'info' && (<>
-              <IdentityInfoCard identity={identity} sinColor={sinColor} currentSeason={currentSeason} />
+              {pageTab === 'info' && (
+                <motion.div
+                  key="info"
+                  className="space-y-8"
+                  variants={shouldReduceMotion ? undefined : staggerContainer(0.05)}
+                  initial={shouldReduceMotion ? false : 'initial'}
+                  animate="animate"
+                  exit={shouldReduceMotion ? undefined : 'exit'}
+                >
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                <IdentityInfoCard identity={identity} sinColor={sinColor} currentSeason={currentSeason} />
+              </motion.div>
 
-              <IdentityStatsCard identity={identity} sinColor={sinColor} />
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                <IdentityStatsCard identity={identity} sinColor={sinColor} />
+              </motion.div>
 
               {/* 운영법 / AI 분석 탭 */}
-              <div>
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
                   {([
                     { key: 'ai' as const, label: t('identity.ai.title') },
@@ -517,41 +558,59 @@ export default function IdentityDetailClient({
                     )
                   })}
                 </div>
-                {guideTab === 'ai' && (
-                  <IdentityAISection
-                    identityId={identity.id}
-                    sinColor={sinColor}
-                    isAdmin={isAdmin}
-                    allowedKeywords={allowedKeywords}
-                    skillLookup={skillTokenLookup}
-                    passiveLookup={passiveLookup}
-                    egoLookup={egoTokenLookup}
-                    identityLookup={identityTokenLookup}
-                    egoGiftLookup={egoGiftLookup}
-                    skills={filteredSkills}
-                    passives={filteredPassives}
-                    identity={identity}
-                    isLoggedIn={isLoggedIn}
-                  />
-                )}
-                {guideTab === 'guide' && (
-                  <IdentityGuideSection
-                    identityId={identity.id}
-                    initialGuides={initialGuides ?? []}
-                    canEditGuide={canEditGuide}
-                    sinColor={sinColor}
-                    skillTokenLookup={skillTokenLookup}
-                    passiveLookup={passiveLookup}
-                    egoTokenLookup={egoTokenLookup}
-                    identityTokenLookup={identityTokenLookup}
-                    egoGiftLookup={egoGiftLookup}
-                    acPool={acPool}
-                  />
-                )}
-              </div>
+                <AnimatePresence mode="wait" initial={false}>
+                  {guideTab === 'ai' && (
+                    <motion.div
+                      key="ai"
+                      variants={shouldReduceMotion ? undefined : workbenchReveal}
+                      initial={shouldReduceMotion ? false : 'initial'}
+                      animate="animate"
+                      exit={shouldReduceMotion ? undefined : 'exit'}
+                    >
+                      <IdentityAISection
+                        identityId={identity.id}
+                        sinColor={sinColor}
+                        isAdmin={isAdmin}
+                        allowedKeywords={allowedKeywords}
+                        skillLookup={skillTokenLookup}
+                        passiveLookup={passiveLookup}
+                        egoLookup={egoTokenLookup}
+                        identityLookup={identityTokenLookup}
+                        egoGiftLookup={egoGiftLookup}
+                        skills={filteredSkills}
+                        passives={filteredPassives}
+                        identity={identity}
+                        isLoggedIn={isLoggedIn}
+                      />
+                    </motion.div>
+                  )}
+                  {guideTab === 'guide' && (
+                    <motion.div
+                      key="guide"
+                      variants={shouldReduceMotion ? undefined : workbenchReveal}
+                      initial={shouldReduceMotion ? false : 'initial'}
+                      animate="animate"
+                      exit={shouldReduceMotion ? undefined : 'exit'}
+                    >
+                      <IdentityGuideSection
+                        identityId={identity.id}
+                        initialGuides={initialGuides ?? []}
+                        canEditGuide={canEditGuide}
+                        sinColor={sinColor}
+                        skillTokenLookup={skillTokenLookup}
+                        passiveLookup={passiveLookup}
+                        egoTokenLookup={egoTokenLookup}
+                        identityTokenLookup={identityTokenLookup}
+                        egoGiftLookup={egoGiftLookup}
+                        acPool={acPool}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
               {/* 스킬/패시브 탭 + 컨텐츠 */}
-              <div>
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 {/* 탭 바 + 동기화 토글 */}
                 <div className="flex items-end gap-2">
                   <div
@@ -631,42 +690,65 @@ export default function IdentityDetailClient({
                   )}
                 </div>
 
-                {activeTab === 'skills' && (
-                  <IdentitySkillsTab
-                    identity={identity}
-                    filteredSkills={filteredSkills}
-                    skillNameColors={skillNameColors}
-                    skillImgIdxMap={skillImgIdxMap}
-                    variantMap={variantMap}
-                    allowedKeywords={allowedKeywords}
-                    skillDiffs={skillDiffResult?.diffs}
-                    newSkills={skillDiffResult?.newSkills}
-                    showDiff={showDiff && uptieLevel === 3 && hasUptieData}
-                    onToggleDiff={() => setShowDiff(d => {
-                      const next = !d
-                      localStorage.setItem('uptie-diff', next ? 'on' : 'off')
-                      return next
-                    })}
-                  />
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {activeTab === 'skills' && (
+                    <motion.div
+                      key="skills"
+                      variants={shouldReduceMotion ? undefined : workbenchReveal}
+                      initial={shouldReduceMotion ? false : 'initial'}
+                      animate="animate"
+                      exit={shouldReduceMotion ? undefined : 'exit'}
+                    >
+                      <IdentitySkillsTab
+                        identity={identity}
+                        filteredSkills={filteredSkills}
+                        skillNameColors={skillNameColors}
+                        skillImgIdxMap={skillImgIdxMap}
+                        variantMap={variantMap}
+                        allowedKeywords={allowedKeywords}
+                        skillDiffs={skillDiffResult?.diffs}
+                        newSkills={skillDiffResult?.newSkills}
+                        showDiff={showDiff && uptieLevel === 3 && hasUptieData}
+                        onToggleDiff={() => setShowDiff(d => {
+                          const next = !d
+                          localStorage.setItem('uptie-diff', next ? 'on' : 'off')
+                          return next
+                        })}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === 'passives' && (
-                  <IdentityPassivesTab
-                    filteredPassives={filteredPassives}
-                    sinColor={sinColor}
-                    skillNameColors={skillNameColors}
-                    allowedKeywords={allowedKeywords}
-                    passiveDiffs={passiveDiffResult?.diffs}
-                    newPassives={passiveDiffResult?.newPassives}
-                  />
-                )}
-              </div>
+                  {activeTab === 'passives' && (
+                    <motion.div
+                      key="passives"
+                      variants={shouldReduceMotion ? undefined : workbenchReveal}
+                      initial={shouldReduceMotion ? false : 'initial'}
+                      animate="animate"
+                      exit={shouldReduceMotion ? undefined : 'exit'}
+                    >
+                      <IdentityPassivesTab
+                        filteredPassives={filteredPassives}
+                        sinColor={sinColor}
+                        skillNameColors={skillNameColors}
+                        allowedKeywords={allowedKeywords}
+                        passiveDiffs={passiveDiffResult?.diffs}
+                        newPassives={passiveDiffResult?.newPassives}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
-              <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
+              </motion.div>
 
-              <IdentityReviewSection identityId={identity.id} sinColor={sinColor} />
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                <IdentityReviewSection identityId={identity.id} sinColor={sinColor} />
+              </motion.div>
 
               {/* 수감자 페이지로 돌아가기 */}
+              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
               <Link
                 href={`/sinners/${sinner.id}`}
                 className="block text-center py-3 font-medium text-sm transition-all duration-300 hover:border-opacity-60"
@@ -687,9 +769,12 @@ export default function IdentityDetailClient({
               >
                 {t('identity.backToSinner')}
               </Link>
-            </>)}
-          </div>
-        </div>
+              </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
       </div>
 
       {isAdmin && (
@@ -718,6 +803,6 @@ export default function IdentityDetailClient({
           <Settings size={18} />
         </Link>
       )}
-    </div>
+    </motion.div>
   )
 }

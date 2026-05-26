@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback, useEffect, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { Users, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   DEFAULT_SKILL_DISTRIBUTION,
   getIdentitySkillDistribution,
@@ -114,6 +115,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>({})
   const [passiveSubTab, setPassiveSubTab] = useState<'battle' | 'support'>('battle')
+  const reduceMotion = useReducedMotion()
 
   // Modal state
   const [identityModalSinner, setIdentityModalSinner] = useState<string | null>(null)
@@ -469,29 +471,32 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           const active = subTab === tab.key
           const Icon = tab.icon
           return (
-            <button
+            <motion.button
               key={tab.key}
               type="button"
               role="tab"
               aria-selected={active}
               onClick={() => setSubTab(tab.key)}
-              className="flex flex-shrink-0 items-center gap-1.5 transition-all"
+              className="flex flex-shrink-0 items-center gap-1.5 transition-[background-color,border-color,color] duration-200"
               style={{
                 ...COMPACT_KOTRA_STYLE,
                 padding: '0.5rem 1rem',
-                fontSize: '0.8125rem',
+                fontSize: '0.9375rem',
                 color: active ? '#e8dcc8' : '#555',
                 borderBottom: active ? '2px solid #c8900a' : '2px solid transparent',
                 background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
                 cursor: 'pointer',
               }}
+              whileHover={reduceMotion ? undefined : { y: -1 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 430, damping: 32, mass: 0.5 }}
             >
               <Icon style={{ width: '0.875rem', height: '0.875rem' }} />
               {tDeck(tab.labelKey)}
-            </button>
+            </motion.button>
           )
         })}
-        <div className="ml-auto flex flex-shrink-0 items-center" style={{ fontSize: '0.75rem', color: '#666', paddingRight: '0.5rem' }}>
+        <div className="ml-auto flex flex-shrink-0 items-center font-mono" style={{ fontSize: '0.875rem', color: '#666', paddingRight: '0.5rem' }}>
           {state.identitySlots.length} / 12
         </div>
       </div>
@@ -507,7 +512,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             const keywordLabel = getLocalizedKeywordLabel(keyword)
             const accessibleName = isManualAttackKeyword ? keywordLabel : tDeck('mainKeywords.keywordCount', { keyword: keywordLabel, count })
             return (
-              <button
+              <motion.button
                 key={keyword}
                 type="button"
                 className="planner-main-keyword"
@@ -517,6 +522,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 aria-pressed={selected}
                 aria-label={accessibleName}
                 title={accessibleName}
+                whileHover={reduceMotion || disabled ? undefined : { y: -1 }}
+                whileTap={reduceMotion || disabled ? undefined : { scale: 0.985 }}
+                transition={{ type: 'spring', stiffness: 430, damping: 32, mass: 0.5 }}
               >
                 {iconUrl && (
                   <Image
@@ -531,7 +539,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 {!isManualAttackKeyword && (
                   <span className="planner-main-keyword__count">{count}</span>
                 )}
-              </button>
+              </motion.button>
             )
           })}
           <style jsx>{`

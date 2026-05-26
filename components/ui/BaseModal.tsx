@@ -2,6 +2,12 @@
 
 import { type ReactNode, useEffect, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import {
+  modalOverlayVariants,
+  modalPanelVariants,
+  reducedModalPanelVariants,
+} from '@/lib/animations'
 
 interface BaseModalProps {
   open: boolean
@@ -36,6 +42,8 @@ export default function BaseModal({
   padding = '1rem',
 }: BaseModalProps) {
   const scrollYRef = useRef(0)
+  const reduceMotion = useReducedMotion()
+  const panelVariants = reduceMotion ? reducedModalPanelVariants : modalPanelVariants
 
   useEffect(() => {
     if (open) {
@@ -53,32 +61,51 @@ export default function BaseModal({
 
   return (
     <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <Dialog.Portal>
-        <Dialog.Overlay
-          className="fixed inset-0"
-          style={{
-            zIndex,
-            background: 'rgba(0,0,0,0.75)',
-            ...(blur ? { backdropFilter: 'blur(0.5rem)', WebkitBackdropFilter: 'blur(0.5rem)' } : {}),
-          }}
-        />
-        <Dialog.Content
-          className="fixed inset-0 flex items-center justify-center"
-          style={{ zIndex: zIndex + 1, padding, pointerEvents: 'none' }}
-          {...(!description ? { 'aria-describedby': undefined } : {})}
-          onPointerDownOutside={() => onClose()}
-          onEscapeKeyDown={() => onClose()}
-        >
-          <Dialog.Title className="sr-only">{title}</Dialog.Title>
-          {description && <Dialog.Description className="sr-only">{description}</Dialog.Description>}
-          <div
-            className={`relative w-full ${className}`}
-            style={{ maxWidth, pointerEvents: 'auto' }}
-          >
-            {children}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
+      <AnimatePresence initial={false}>
+        {open && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div
+                className="fixed inset-0"
+                style={{
+                  zIndex,
+                  background: 'rgba(0,0,0,0.75)',
+                  ...(blur ? { backdropFilter: 'blur(0.5rem)', WebkitBackdropFilter: 'blur(0.5rem)' } : {}),
+                }}
+                variants={modalOverlayVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+            </Dialog.Overlay>
+            <Dialog.Content
+              asChild
+              forceMount
+              {...(!description ? { 'aria-describedby': undefined } : {})}
+              onPointerDownOutside={() => onClose()}
+              onEscapeKeyDown={() => onClose()}
+            >
+              <motion.div
+                className="fixed inset-0 flex items-center justify-center"
+                style={{ zIndex: zIndex + 1, padding, pointerEvents: 'none' }}
+                variants={panelVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <Dialog.Title className="sr-only">{title}</Dialog.Title>
+                {description && <Dialog.Description className="sr-only">{description}</Dialog.Description>}
+                <div
+                  className={`relative w-full ${className}`}
+                  style={{ maxWidth, pointerEvents: 'auto' }}
+                >
+                  {children}
+                </div>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
     </Dialog.Root>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from 'react'
 import Image from 'next/image'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   Sinner,
   Identity,
@@ -110,6 +111,7 @@ export function IdentityTab({
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
   const locale = useLocale() as SupportedLang
   const { getIconUrl, keywords: keywordInfo } = useKeywordData()
+  const reduceMotion = useReducedMotion()
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) ?? null : null
   const modalIdentities = modalSinnerId
     ? identities
@@ -153,7 +155,7 @@ export function IdentityTab({
         const keywordLabel = localizeDeckKeyword(keyword, keywordInfo[keyword], locale)
         const accessibleName = isManualAttackKeyword ? keywordLabel : `${keywordLabel} ${count}`
         return (
-          <button
+          <motion.button
             key={keyword}
             type="button"
             className="deck-builder-pinned-keyword"
@@ -163,6 +165,9 @@ export function IdentityTab({
             aria-pressed={selected}
             aria-label={accessibleName}
             title={accessibleName}
+            whileHover={reduceMotion || disabled ? undefined : { y: -1 }}
+            whileTap={reduceMotion || disabled ? undefined : { scale: 0.985 }}
+            transition={{ type: 'spring', stiffness: 430, damping: 32, mass: 0.5 }}
           >
             {iconUrl && (
               <Image
@@ -177,7 +182,7 @@ export function IdentityTab({
             {!isManualAttackKeyword && (
               <span className="deck-builder-pinned-keyword__count">{count}</span>
             )}
-          </button>
+          </motion.button>
         )
       })}
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
@@ -33,6 +34,7 @@ import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import type { Identity } from '@/lib/types'
 import SkillExchangePanel from './SkillExchangePanel'
 import FloorPlanPreviewBoard from './FloorPlanPreviewBoard'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -155,6 +157,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
@@ -314,10 +317,18 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   }, [state.difficulty, state.floorPlan])
 
   return (<>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <motion.div
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+      variants={shouldReduceMotion ? undefined : staggerContainer(0.045)}
+      initial={shouldReduceMotion ? false : 'initial'}
+      animate={shouldReduceMotion ? undefined : 'animate'}
+    >
 
       {/* ── 플랜 정보 ── */}
-      <section style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.5rem', padding: '0.875rem 1rem' }}>
+      <motion.section
+        variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+        style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.5rem', padding: '0.875rem 1rem' }}
+      >
         <input
           type="text" placeholder="플랜 제목..." value={state.title}
           onChange={e => dispatch({ type: 'SET_TITLE', title: e.target.value })}
@@ -361,10 +372,10 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
             </span>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ── 덱 편성 (DeckTab 스타일 서브탭) ── */}
-      <div>
+      <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #222', marginBottom: '0.75rem' }}>
           {([
             { key: 'identity' as const, label: `${tDeck('subTabs.identity')} (${state.identitySlots.length}/12)` },
@@ -388,33 +399,45 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           })}
         </div>
 
-        {/* 인격 그리드 (수감자 순서, 미편성도 표시) */}
-        {deckSubTab === 'identity' && (
-          <FormationBoard slots={boardSlots} className="mt-4" />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {deckSubTab === 'identity' && (
+            <motion.div
+              key="identity"
+              variants={shouldReduceMotion ? undefined : workbenchReveal}
+              initial={shouldReduceMotion ? false : 'initial'}
+              animate={shouldReduceMotion ? undefined : 'animate'}
+              exit={shouldReduceMotion ? undefined : 'exit'}
+            >
+              <FormationBoard slots={boardSlots} className="mt-4" />
+              {state.identitySlots.length > 0 && (() => {
+                const selectedEgoIds = new Set(state.egoSlots.map(e => e.ego_id))
+                const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
+                const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
+                const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
+                return (
+                  <DeckStatsPanel
+                    identitySlots={state.identitySlots}
+                    skills={skills}
+                    passives={passives}
+                    sinners={sinners}
+                    egoCosts={selectedEgoCosts}
+                    egoSinAffinities={selectedEgoSins}
+                  />
+                )
+              })()}
+            </motion.div>
+          )}
 
-        {/* 공격 유형 분포 + 죄악 자원 + 패시브 */}
-        {deckSubTab === 'identity' && state.identitySlots.length > 0 && (() => {
-          const selectedEgoIds = new Set(state.egoSlots.map(e => e.ego_id))
-          const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
-          const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
-          const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
-          return (
-            <DeckStatsPanel
-              identitySlots={state.identitySlots}
-              skills={skills}
-              passives={passives}
-              sinners={sinners}
-              egoCosts={selectedEgoCosts}
-              egoSinAffinities={selectedEgoSins}
-            />
-          )
-        })()}
-
-        {/* EGO 그리드 (DeckTab 스타일) */}
-        {deckSubTab === 'ego' && (
-          state.identitySlots.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
+          {deckSubTab === 'ego' && (
+            <motion.div
+              key="ego"
+              variants={shouldReduceMotion ? undefined : workbenchReveal}
+              initial={shouldReduceMotion ? false : 'initial'}
+              animate={shouldReduceMotion ? undefined : 'animate'}
+              exit={shouldReduceMotion ? undefined : 'exit'}
+            >
+              {state.identitySlots.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
               {sinners.map(sinner => {
                 const slot = state.identitySlots.find(s => s.sinner_id === sinner.id)
                 const selectedEgos = state.egoSlots.filter(e => e.sinner_id === sinner.id)
@@ -474,16 +497,23 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   </div>
                 )
               })}
-            </div>
-          ) : (
-            <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
-          )
-        )}
+                </div>
+              ) : (
+                <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
+              )}
+            </motion.div>
+          )}
 
-        {/* 스킬 교환 (DeckTab 스킬 배분 스타일, 읽기 전용) */}
-        {deckSubTab === 'skillset' && (
-          state.identitySlots.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
+          {deckSubTab === 'skillset' && (
+            <motion.div
+              key="skillset"
+              variants={shouldReduceMotion ? undefined : workbenchReveal}
+              initial={shouldReduceMotion ? false : 'initial'}
+              animate={shouldReduceMotion ? undefined : 'animate'}
+              exit={shouldReduceMotion ? undefined : 'exit'}
+            >
+              {state.identitySlots.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
               {sinners.map(sinner => {
                 const slot = state.identitySlots.find(s => s.sinner_id === sinner.id)
                 if (!slot) return null
@@ -544,15 +574,17 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
                   </div>
                 )
               })}
-            </div>
-          ) : (
-            <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
-          )
-        )}
-      </div>
+                </div>
+              ) : (
+                <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* ── 가호 (BlessingTab 스타일) ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '0.375rem' }}>
+      <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '0.375rem' }}>
         <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>{tBlessing('title')}</span>
         {selectedBlessings.size > 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -562,7 +594,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         ) : (
           <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{tBlessing('none')}</span>
         )}
-      </div>
+      </motion.div>
       <ReadOnlyBlessingGrid
         blessings={localizedBlessings}
         selectedBlessings={selectedBlessings}
@@ -626,7 +658,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           recipe={recipeMap.get(selectedGift.gift.game_id) ?? null}
         />
       )}
-    </div>
+    </motion.div>
 
     {identityModalId && (
       <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
