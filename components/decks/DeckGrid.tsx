@@ -3,8 +3,10 @@
 import { memo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { motion, useReducedMotion } from 'motion/react'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import type { SupportedLang } from '@/lib/i18n'
+import { workbenchReveal } from '@/lib/animations'
 
 interface DeckGridProps {
   filtered: DeckSummary[]
@@ -27,6 +29,7 @@ function DeckGrid({
 }: DeckGridProps) {
   const t = useTranslations('decks')
   const locale = useLocale() as SupportedLang
+  const shouldReduceMotion = useReducedMotion()
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -49,7 +52,12 @@ function DeckGrid({
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <motion.div
+        className="flex flex-col items-center justify-center py-32 gap-4"
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+      >
         <div style={{ color: '#5a5065', fontSize: '3rem' }}>⊘</div>
         <p className="font-serif text-base" style={{ color: '#555570' }}>
           {hasAnyFilter ? t('grid.noResults') : t('grid.empty')}
@@ -64,26 +72,41 @@ function DeckGrid({
             {t('grid.createFirst')}
           </Link>
         )}
-      </div>
+      </motion.div>
     )
   }
 
   return (
     <>
-      <div
+      <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ position: 'relative', zIndex: 0 }}
+        initial={false}
       >
         {filtered.map(deck => (
-          <div key={deck.id} className="h-full">
+          <motion.div
+            key={deck.id}
+            className="h-full"
+            initial={false}
+            whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
+          >
             <DeckCard deck={deck} onTagClick={onTagClick} />
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* 무한 스크롤 센티널 */}
       {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-8">
+        <motion.div
+          ref={sentinelRef}
+          className="flex justify-center py-8"
+          initial={shouldReduceMotion ? false : 'initial'}
+          whileInView={shouldReduceMotion ? undefined : 'animate'}
+          viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+        >
           {loadingMore && (
             <div className="flex items-center gap-2 text-xs" style={{ color: '#888888' }}>
               <div
@@ -93,7 +116,7 @@ function DeckGrid({
               {t('grid.loadingMore')}
             </div>
           )}
-        </div>
+        </motion.div>
       )}
     </>
   )

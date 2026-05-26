@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, RotateCcw, LayoutList, Grid3X3 } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useLocale } from 'next-intl'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import FilterSidebar from '@/components/browser/FilterSidebar'
@@ -12,6 +13,7 @@ import KeywordModal from './KeywordModal'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
+import { workbenchReveal } from '@/lib/animations'
 
 /* ── 타입 ── */
 interface Keyword {
@@ -87,6 +89,7 @@ export default function KeywordsClient({
 }) {
   const [selected, setSelected] = useState<Keyword | null>(null)
   const formatSkillDesc = useFormatSkillDesc()
+  const shouldReduceMotion = useReducedMotion()
 
   const locale = useLocale()
   const lang = locale as SupportedLang
@@ -234,9 +237,14 @@ export default function KeywordsClient({
   const handleClose = useCallback(() => setSelected(null), [])
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+    <div className="min-h-[100dvh] pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
       {/* ── 헤더 ── */}
-      <div className="text-center mb-10">
+      <motion.div
+        className="text-center mb-10"
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+      >
         <p className="font-mono text-[0.625rem] tracking-[0.3em] mb-2" style={{ color: '#c8900a' }}>
           {t('keyword.label')}
         </p>
@@ -246,73 +254,87 @@ export default function KeywordsClient({
         <p className="text-[0.8125rem]" style={{ color: '#7a6845' }}>
           {t('keyword.subtitle').replace('{count}', String(keywords.length))}
         </p>
-      </div>
+      </motion.div>
 
       {/* 장식선 */}
-      <div className="flex items-center justify-center gap-2 mb-8">
+      <motion.div
+        className="flex items-center justify-center gap-2 mb-8"
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+      >
         <div style={{ width: '4rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3))' }} />
         <div style={{ width: '0.25rem', height: '0.25rem', background: '#c8900a', transform: 'rotate(45deg)', opacity: 0.5 }} />
         <div style={{ width: '4rem', height: '0.0625rem', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent)' }} />
-      </div>
+      </motion.div>
 
       {/* ── 사이드바 + 콘텐츠 ── */}
       <div className="flex gap-6">
-        <FilterSidebar activeCount={activeFilterCount}>
-          {/* 카테고리 필터 */}
-          <div role="group" aria-label={t('keyword.filter.categoryAria')}>
-            <div className="font-mono mb-2" style={{
-              fontSize: '0.5625rem',
-              letterSpacing: '0.15em',
-              color: 'var(--gold-dim)',
-              textTransform: 'uppercase',
-            }}>
-              {t('keyword.category.label')}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {CATEGORIES.map(cat => {
-                const active = selectedCategories.has(cat.value)
-                const count = categoryCounts[cat.value] || 0
-                return (
-                  <button
-                    key={cat.value}
-                    onClick={() => toggleCategory(cat.value)}
-                    aria-pressed={active}
-                    className="flex items-center justify-between rounded px-2.5 py-2 transition-all duration-200"
-                    style={{
-                      cursor: 'pointer',
-                      border: `1px solid ${active ? cat.color + '60' : 'rgba(255,255,255,0.08)'}`,
-                      background: active ? cat.color + '15' : 'rgba(255,255,255,0.02)',
-                      opacity: active ? 1 : 0.55,
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="rounded-full"
-                        style={{
-                          width: '0.375rem', height: '0.375rem',
-                          background: active ? cat.color : cat.color + '60',
-                        }}
-                      />
+        <motion.div
+          className="shrink-0"
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate="animate"
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+        >
+          <FilterSidebar activeCount={activeFilterCount}>
+            {/* 카테고리 필터 */}
+            <div role="group" aria-label={t('keyword.filter.categoryAria')}>
+              <div className="font-mono mb-2" style={{
+                fontSize: '0.5625rem',
+                letterSpacing: '0.15em',
+                color: 'var(--gold-dim)',
+                textTransform: 'uppercase',
+              }}>
+                {t('keyword.category.label')}
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {CATEGORIES.map(cat => {
+                  const active = selectedCategories.has(cat.value)
+                  const count = categoryCounts[cat.value] || 0
+                  return (
+                    <motion.button
+                      key={cat.value}
+                      onClick={() => toggleCategory(cat.value)}
+                      aria-pressed={active}
+                      className="flex items-center justify-between rounded px-2.5 py-2 transition-[background,border-color,opacity,color] duration-200"
+                      whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+                      whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
+                      style={{
+                        cursor: 'pointer',
+                        border: `1px solid ${active ? cat.color + '60' : 'rgba(255,255,255,0.08)'}`,
+                        background: active ? cat.color + '15' : 'rgba(255,255,255,0.02)',
+                        opacity: active ? 1 : 0.55,
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="rounded-full"
+                          style={{
+                            width: '0.375rem', height: '0.375rem',
+                            background: active ? cat.color : cat.color + '60',
+                          }}
+                        />
+                        <span style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: active ? 600 : 400,
+                          color: active ? cat.color : '#888',
+                        }}>
+                          {cat.label}
+                        </span>
+                      </div>
                       <span style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: active ? 600 : 400,
-                        color: active ? cat.color : '#888',
+                        fontSize: '0.5625rem',
+                        color: active ? cat.color + 'aa' : '#555',
+                        fontFamily: 'var(--font-mono)',
                       }}>
-                        {cat.label}
+                        {count}
                       </span>
-                    </div>
-                    <span style={{
-                      fontSize: '0.5625rem',
-                      color: active ? cat.color + 'aa' : '#555',
-                      fontFamily: 'var(--font-mono)',
-                    }}>
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
+                    </motion.button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
 
           {/* 구분선 */}
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
@@ -375,12 +397,18 @@ export default function KeywordsClient({
               </button>
             </div>
           )}
-        </FilterSidebar>
+          </FilterSidebar>
+        </motion.div>
 
         {/* ── 메인 콘텐츠 ── */}
         <div className="flex-1 min-w-0">
           {/* 카운트 + 뷰모드 + 정렬 */}
-          <div className="flex items-center justify-between mb-5">
+          <motion.div
+            className="flex items-center justify-between mb-5"
+            initial={shouldReduceMotion ? false : 'initial'}
+            animate="animate"
+            variants={shouldReduceMotion ? undefined : workbenchReveal}
+          >
             <p aria-live="polite" style={{ color: '#888', fontSize: '0.8125rem' }}>
               {filtered.length !== keywords.length ? (
                 <>{t('keyword.count.filtered').replace('{filtered}', String(filtered.length)).replace('{total}', String(keywords.length))}</>
@@ -427,16 +455,24 @@ export default function KeywordsClient({
                 defaultValue={'default' as SortKey}
               />
             </div>
-          </div>
+          </motion.div>
 
           {/* 그리드 */}
-          <KeywordGrid
-            keywords={filtered}
-            countMaps={{ identity: identityCountMap, ego: egoCountMap, gift: giftCountMap }}
-            onSelect={(kw) => setSelected(kw as Keyword)}
-            viewMode={viewMode === 'compact' ? 'compact' : 'detail'}
-            lang={lang}
-          />
+          <motion.div
+            key={`${viewMode}-${search}-${catParam}-${sortParam}`}
+            initial={shouldReduceMotion ? false : 'initial'}
+            whileInView={shouldReduceMotion ? undefined : 'animate'}
+            viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
+            variants={shouldReduceMotion ? undefined : workbenchReveal}
+          >
+            <KeywordGrid
+              keywords={filtered}
+              countMaps={{ identity: identityCountMap, ego: egoCountMap, gift: giftCountMap }}
+              onSelect={(kw) => setSelected(kw as Keyword)}
+              viewMode={viewMode === 'compact' ? 'compact' : 'detail'}
+              lang={lang}
+            />
+          </motion.div>
         </div>
       </div>
 
@@ -453,14 +489,6 @@ export default function KeywordsClient({
           lang={lang}
         />
       )}
-
-      {/* CSS 애니메이션 */}
-      <style>{`
-        @keyframes kwCardIn {
-          from { opacity: 0; transform: translateY(0.75rem); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

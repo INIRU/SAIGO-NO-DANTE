@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { Package, Plus, Search, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
@@ -36,6 +37,7 @@ import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChip
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { staggerContainer, workbenchStaggerItem } from '@/lib/animations'
 
 const FLOOR_SEGMENTS = [
   { id: 'early', start: 1, end: 5, tone: '#c8900a' },
@@ -169,6 +171,7 @@ interface FloorTabProps {
 export default function FloorTab({ state, dispatch, themes, gifts, recipes, giftMap }: FloorTabProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.floorTab')
+  const shouldReduceMotion = useReducedMotion()
   const [activeFloor, setActiveFloor] = useState(() => state.floorPlan[0]?.floor ?? 1)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
@@ -516,8 +519,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-5 2xl:grid-cols-[repeat(15,minmax(0,1fr))]">
-          {state.floorPlan.map(entry => {
+        <motion.div
+          className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
+          variants={shouldReduceMotion ? undefined : staggerContainer(0.035)}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+        >
+          {state.floorPlan.map((entry, index) => {
             const floorDifficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
             const floorTheme = entry.theme_id ? themeMap.get(entry.theme_id) ?? null : null
             const floorThemeName = floorTheme
@@ -530,9 +538,11 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             const floorThemeImageSrc = floorTheme ? getThemeImageSrc(floorTheme) : null
 
             return (
-              <button
+              <motion.button
                 key={entry.floor}
                 type="button"
+                variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+                custom={index}
                 onClick={() => {
                   setActiveFloor(entry.floor)
                   setThemeModalOpen(false)
@@ -541,7 +551,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 }}
                 aria-label={t('chooseFloorAria', { floor: entry.floor })}
                 aria-pressed={isActive}
-                className="group relative flex min-h-[7rem] min-w-0 flex-col overflow-hidden rounded-md border p-2.5 text-left transition-transform active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+                className="group relative flex min-h-[7.25rem] min-w-0 flex-col overflow-hidden rounded-md border p-2.5 text-left transition-transform active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
                 style={{
                   background: floorThemeImageSrc
                     ? '#100c08'
@@ -622,10 +632,10 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                     {t('shortGiftCount', { count: entry.gift_ids.length })}
                   </span>
                 )}
-              </button>
+              </motion.button>
             )
           })}
-        </div>
+        </motion.div>
       </section>
 
       <section

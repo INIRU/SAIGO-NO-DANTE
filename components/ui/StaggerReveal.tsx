@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { HTMLMotionProps } from 'motion/react'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 
@@ -48,16 +48,17 @@ export default function StaggerReveal({
   ...rest
 }: StaggerRevealProps) {
   const Tag = motion[as] as typeof motion.div
+  const shouldReduceMotion = useReducedMotion()
   const containerVariant = staggerContainer(staggerDelay, delayChildren)
 
   return (
     <Tag
       className={className}
       style={style}
-      variants={containerVariant}
-      initial="initial"
-      whileInView="animate"
-      viewport={{ once: true, margin: '-50px' }}
+      variants={shouldReduceMotion ? undefined : containerVariant}
+      initial={shouldReduceMotion ? false : 'initial'}
+      whileInView={shouldReduceMotion ? undefined : 'animate'}
+      viewport={shouldReduceMotion ? undefined : { once: true, margin: '-50px' }}
       {...rest}
     >
       {children}

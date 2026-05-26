@@ -174,11 +174,11 @@ function PlanCard({
   const hiddenKeywordCount = Math.max(0, topKeywords.length - visibleKeywords.length)
 
   return (
-    <div
-      className="group relative flex flex-col h-full transition-all duration-200 overflow-hidden"
+    <article
+      className="group relative flex flex-col h-full overflow-hidden"
       style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.375rem' }}
     >
-      <div className="h-px w-0 group-hover:w-full transition-all duration-300" style={{ background: `linear-gradient(to right, ${diffStyle.color}, transparent)` }} />
+      <div className="h-px w-0 transition-[width] duration-300 group-hover:w-full" style={{ background: `linear-gradient(to right, ${diffStyle.color}, transparent)` }} />
 
       <Link href={`/planner/community/${plan.id}`} className="flex flex-col flex-1">
         {/* 인격 포트레이트 6x2 그리드 */}
@@ -291,7 +291,7 @@ function PlanCard({
           </div>
         )}
       </div>
-    </div>
+    </article>
   )
 }
 

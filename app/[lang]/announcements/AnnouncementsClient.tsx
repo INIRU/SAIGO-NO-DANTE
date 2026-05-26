@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, Pin, ChevronDown } from 'lucide-react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useLocale } from 'next-intl'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 interface Announcement {
   id: string
@@ -15,6 +16,7 @@ interface Announcement {
 
 export default function AnnouncementsClient() {
   const locale = useLocale()
+  const shouldReduceMotion = useReducedMotion()
   const [items, setItems] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -34,20 +36,20 @@ export default function AnnouncementsClient() {
 
   const copy = locale === 'en'
     ? {
-        loading: 'Loading...',
+        loading: 'Loading…',
         loadError: 'Failed to load announcements.',
         retry: 'Retry',
         empty: 'No announcements yet.',
       }
     : locale === 'ja'
       ? {
-          loading: '読み込み中...',
+          loading: '読み込み中…',
           loadError: 'お知らせの読み込みに失敗しました。',
           retry: '再試行',
           empty: '登録されたお知らせはありません。',
         }
       : {
-          loading: '로딩 중...',
+          loading: '로딩 중…',
           loadError: '공지사항을 불러오는 데 실패했습니다.',
           retry: '다시 시도',
           empty: '등록된 공지가 없습니다.',
@@ -55,20 +57,35 @@ export default function AnnouncementsClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
+      <motion.div
+        className="flex items-center gap-2"
+        style={{ color: '#888888', fontSize: '0.8125rem' }}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+      >
         <Loader2 size={14} className="animate-spin" /> {copy.loading}
-      </div>
+      </motion.div>
     )
   }
 
   if (error) {
     return (
-      <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
+      <motion.div
+        className="card"
+        style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+      >
         <p style={{ color: '#aa6644', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
           {copy.loadError}
         </p>
-        <button
+        <motion.button
           onClick={load}
+          whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
           style={{
             padding: '0.4375rem 1rem',
             borderRadius: '0.25rem',
@@ -80,31 +97,32 @@ export default function AnnouncementsClient() {
           }}
         >
           {copy.retry}
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     )
   }
 
   if (items.length === 0) {
     return (
-      <div
+      <motion.div
         className="card"
         style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
       >
         {copy.empty}
-      </div>
+      </motion.div>
     )
   }
 
   return (
     <motion.div
       style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.06, delayChildren: 0.2 } },
-      }}
+      initial={shouldReduceMotion ? false : 'initial'}
+      whileInView={shouldReduceMotion ? undefined : 'animate'}
+      viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
+      variants={shouldReduceMotion ? undefined : staggerContainer(0.045, 0.08)}
     >
       {items.map(item => {
         const isExpanded = expandedId === item.id
@@ -112,25 +130,31 @@ export default function AnnouncementsClient() {
           <motion.div
             key={item.id}
             className="card"
-            variants={{
-              hidden: { opacity: 0, y: 15 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-            }}
+            variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
             style={{
               overflow: 'hidden',
               border: item.pinned ? '1px solid rgba(200,144,10,0.3)' : undefined,
             }}
           >
             {/* 헤더 행 */}
-            <div
+            <motion.button
+              type="button"
               onClick={() => setExpandedId(isExpanded ? null : item.id)}
+              aria-expanded={isExpanded}
+              whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                width: '100%',
                 gap: '0.625rem',
                 padding: '0.875rem 1.125rem',
+                background: 'transparent',
+                border: 0,
                 cursor: 'pointer',
                 userSelect: 'none',
+                textAlign: 'left',
                 transition: 'background 0.15s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.03)')}
@@ -157,25 +181,31 @@ export default function AnnouncementsClient() {
                   transition: 'transform 0.25s ease',
                 }}
               />
-            </div>
+            </motion.button>
 
             {/* 본문 */}
-            {isExpanded && item.content && (
-              <div
-                style={{
-                  padding: '0 1.125rem 1rem 1.125rem',
-                  marginLeft: item.pinned ? '1.375rem' : 0,
-                  color: '#7a6845',
-                  fontSize: '0.8125rem',
-                  lineHeight: 1.8,
-                  borderTop: '1px solid rgba(200,144,10,0.08)',
-                  paddingTop: '0.875rem',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {item.content}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {isExpanded && item.content && (
+                <motion.div
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: 0.16, ease: [0.33, 1, 0.68, 1] }}
+                  style={{
+                    padding: '0 1.125rem 1rem 1.125rem',
+                    marginLeft: item.pinned ? '1.375rem' : 0,
+                    color: '#7a6845',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.8,
+                    borderTop: '1px solid rgba(200,144,10,0.08)',
+                    paddingTop: '0.875rem',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {item.content}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )
       })}

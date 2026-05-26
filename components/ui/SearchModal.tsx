@@ -9,6 +9,11 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { useDebounce } from '@/hooks/useDebounce'
 import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
+import {
+  modalOverlayVariants,
+  modalPanelVariants,
+  reducedModalPanelVariants,
+} from '@/lib/animations'
 
 // Korean consonant (초성) list for fuzzy search
 const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
@@ -154,6 +159,7 @@ export default function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
   const t = useTranslations('globalSearch')
   const reduceMotion = useReducedMotion()
+  const panelVariants = reduceMotion ? reducedModalPanelVariants : modalPanelVariants
   const inputRef = useRef<HTMLInputElement>(null)
   const [rawQuery, setRawQuery] = useState('')
   const query = useDebounce(rawQuery, 300)
@@ -282,10 +288,10 @@ export default function SearchModal({ open, onClose }: Props) {
       aria-label={t('ariaLabel')}
       className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-[4.75rem] sm:pt-[12vh]"
       style={{ background: 'rgba(5,4,3,0.76)', backdropFilter: 'blur(4px)' }}
-      initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-      transition={{ duration: reduceMotion ? 0.08 : 0.16, ease: [0.22, 1, 0.36, 1] }}
+      variants={modalOverlayVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       onClick={onClose}
     >
       <motion.div
@@ -295,10 +301,10 @@ export default function SearchModal({ open, onClose }: Props) {
           border: '1px solid rgba(200,144,10,0.24)',
           boxShadow: '0 1.25rem 3rem rgba(0,0,0,0.52)',
         }}
-        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.99 }}
-        transition={{ duration: reduceMotion ? 0.08 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+        variants={panelVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
         onClick={e => e.stopPropagation()}
       >
         {/* Input */}

@@ -23,6 +23,14 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { normalizeThemeKeyword, THEME_KEYWORDS } from '@/lib/constants/keywords'
 import type { SupportedLang } from '@/lib/i18n/types'
 import {
+  modalOverlayVariants,
+  modalPanelVariants,
+  reducedModalPanelVariants,
+  staggerContainer,
+  workbenchReveal,
+  workbenchStaggerItem,
+} from '@/lib/animations'
+import {
   localizeEgoName,
   localizeIdentityName,
   localizePassiveDescription,
@@ -192,10 +200,10 @@ export default function DeckIdentityPreviewModal({
             paddingLeft: 'max(0.5rem, env(safe-area-inset-left))',
             paddingRight: 'max(0.5rem, env(safe-area-inset-right))',
           }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0.01 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+          variants={modalOverlayVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
           onMouseDown={onClose}
         >
           <motion.div
@@ -208,10 +216,10 @@ export default function DeckIdentityPreviewModal({
               border: '1px solid rgba(232,176,48,0.18)',
               boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.62)',
             }}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.975 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
-            transition={{ duration: reduceMotion ? 0.01 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            variants={reduceMotion ? reducedModalPanelVariants : modalPanelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             onMouseDown={event => event.stopPropagation()}
           >
             <header
@@ -322,26 +330,42 @@ export default function DeckIdentityPreviewModal({
                       })}
                     </div>
 
+                    <AnimatePresence mode="wait" initial={false}>
                     {activeTab === 'skills' && (
-                      <div className="grid gap-3 p-3 xl:grid-cols-2">
+                      <motion.div
+                        key="skills"
+                        className="grid gap-3 p-3 xl:grid-cols-2"
+                        variants={reduceMotion ? undefined : staggerContainer(0.035)}
+                        initial={reduceMotion ? false : 'initial'}
+                        animate="animate"
+                        exit={reduceMotion ? undefined : 'exit'}
+                      >
                         {sortedSkills.length > 0 ? sortedSkills.map(skill => (
-                          <IdentitySkillFrameCard
-                            key={skill.id}
-                            skill={skill}
-                            skills={sortedSkills}
-                            identity={identity}
-                            lang={lang}
-                            size="4rem"
-                            className="rounded p-3"
-                          />
+                          <motion.div key={skill.id} variants={reduceMotion ? undefined : workbenchStaggerItem}>
+                            <IdentitySkillFrameCard
+                              skill={skill}
+                              skills={sortedSkills}
+                              identity={identity}
+                              lang={lang}
+                              size="4rem"
+                              className="rounded p-3"
+                            />
+                          </motion.div>
                         )) : (
                           <EmptySection label={t('noSkills')} />
                         )}
-                      </div>
+                      </motion.div>
                     )}
 
                     {activeTab === 'passives' && (
-                      <div className="p-3 sm:p-4">
+                      <motion.div
+                        key="passives"
+                        className="p-3 sm:p-4"
+                        variants={reduceMotion ? undefined : workbenchReveal}
+                        initial={reduceMotion ? false : 'initial'}
+                        animate="animate"
+                        exit={reduceMotion ? undefined : 'exit'}
+                      >
                         {sortedPassives.length > 0 ? (
                           <PreviewPassives
                             passives={sortedPassives}
@@ -353,29 +377,38 @@ export default function DeckIdentityPreviewModal({
                         ) : (
                           <EmptySection label={t('noPassives')} />
                         )}
-                      </div>
+                      </motion.div>
                     )}
 
                     {activeTab === 'ego' && (
-                      <div className="grid grid-cols-2 justify-items-center gap-x-2 gap-y-6 p-3 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-7">
+                      <motion.div
+                        key="ego"
+                        className="grid grid-cols-2 justify-items-center gap-x-2 gap-y-6 p-3 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-7"
+                        variants={reduceMotion ? undefined : staggerContainer(0.035)}
+                        initial={reduceMotion ? false : 'initial'}
+                        animate="animate"
+                        exit={reduceMotion ? undefined : 'exit'}
+                      >
                         {egos.length > 0 ? egos.map(({ grade, ego }) => (
-                          <EgoDisplayCard
-                            key={ego.id}
-                            ego={{
-                              grade: ego.grade ?? grade,
-                              image_url: ego.image_url,
-                              sin_affinity: ego.sin_affinity,
-                            }}
-                            lang={supportedLang}
-                            name={localizeEgoName(ego, lang)}
-                            onClick={() => onEgoClick?.(ego.id)}
-                            sinnerId={ego.sinner_id || identity.sinner_id}
-                          />
+                          <motion.div key={ego.id} variants={reduceMotion ? undefined : workbenchStaggerItem}>
+                            <EgoDisplayCard
+                              ego={{
+                                grade: ego.grade ?? grade,
+                                image_url: ego.image_url,
+                                sin_affinity: ego.sin_affinity,
+                              }}
+                              lang={supportedLang}
+                              name={localizeEgoName(ego, lang)}
+                              onClick={() => onEgoClick?.(ego.id)}
+                              sinnerId={ego.sinner_id || identity.sinner_id}
+                            />
+                          </motion.div>
                         )) : (
                           <EmptySection label={t('noEgo')} />
                         )}
-                      </div>
+                      </motion.div>
                     )}
+                    </AnimatePresence>
                   </div>
                 </section>
               </div>

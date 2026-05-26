@@ -56,9 +56,9 @@ export default function FormationBoard({ slots, className }: FormationBoardProps
         .formation-board-grid>*{min-width:0}
         @media (min-width:40rem){.formation-board-grid{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:0.75rem;row-gap:0.9rem}}
         @media (min-width:64rem){.formation-board-grid{grid-template-columns:repeat(6,minmax(0,1fr));column-gap:1.75rem;row-gap:1.25rem}}
-        .formation-board-button{transform:translate3d(0,0,0);transition:transform 220ms cubic-bezier(.22,1,.36,1),filter 220ms cubic-bezier(.22,1,.36,1)}
-        .formation-board-button:not(:disabled):is(:hover,:focus-visible){transform:translate3d(0,-0.25rem,0);filter:brightness(1.08)}
-        .formation-board-button:not(:disabled):active{transform:translate3d(0,-0.0625rem,0);filter:brightness(1.02)}
+        .formation-board-button{transition:filter 220ms cubic-bezier(.22,1,.36,1)}
+        .formation-board-button:not(:disabled):is(:hover,:focus-visible){filter:brightness(1.08)}
+        .formation-board-button:not(:disabled):active{filter:brightness(1.02)}
         .formation-board-empty-slot{position:relative;aspect-ratio:2/3;width:100%;overflow:hidden;border-radius:.25rem;background:linear-gradient(160deg,#1e1810 0%,#120e08 60%,#1a1410 100%);border:.09375rem dashed #2a2015;transition:border-color 180ms ease,background 180ms ease,box-shadow 180ms ease}
         .formation-board-button:not(:disabled):is(:hover,:focus-visible) .formation-board-empty-slot{border-color:rgba(232,176,48,.58);background:linear-gradient(160deg,#241b0e 0%,#130f09 58%,#20160c 100%);box-shadow:inset 0 0 0 1px rgba(232,176,48,.12)}
         .formation-board-empty-slot__logo{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
@@ -70,7 +70,7 @@ export default function FormationBoard({ slots, className }: FormationBoardProps
         .formation-board-empty-slot__action{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(13,11,8,.5);color:#e8b030;font-family:var(--font-body),var(--font-sans);font-size:1rem;font-weight:700;opacity:0;text-shadow:0 0 .5rem rgba(200,144,10,.5),0 .125rem .375rem rgba(0,0,0,.9);transition:opacity 180ms ease,background-color 180ms ease}
         .formation-board-button:not(:disabled):is(:hover,:focus-visible) .formation-board-empty-slot__action{opacity:1;background:rgba(200,144,10,.12)}
         @media (max-width:39.9375rem){.formation-board-empty-slot__logo img{height:1.5rem;width:1.5rem}.formation-board-empty-slot__name{padding-top:1rem;padding-bottom:.3125rem}.formation-board-empty-slot__name-text{font-size:.875rem;line-height:1.12}.formation-board-empty-slot__action{font-size:.9375rem}}
-        @media (prefers-reduced-motion:reduce){.formation-board-button{transition:filter 120ms ease}.formation-board-button:not(:disabled):is(:hover,:focus-visible),.formation-board-button:not(:disabled):active{transform:none}}
+        @media (prefers-reduced-motion:reduce){.formation-board-button{transition:filter 120ms ease}}
       `}</style>
       <div className="formation-board-grid">
         {slots.map(slot => {

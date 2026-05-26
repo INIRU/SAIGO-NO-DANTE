@@ -24,13 +24,14 @@ export default function ScrollAnimations() {
             '.latest-card, .latest-header, .feature-card',
             { opacity: 1, clearProps: 'transform' }
           )
+          return
         }
 
         if (document.querySelector('.latest-card')) {
           gsap.fromTo('.latest-card',
-            { opacity: 0, y: 50, scale: 0.94 },
+            { y: 40, scale: 0.965 },
             {
-              opacity: 1, y: 0, scale: 1,
+              y: 0, scale: 1,
               duration: 0.6, stagger: 0.07, ease: 'power2.out',
               scrollTrigger: { trigger: '.latest-section', start: 'top 78%' },
             }
@@ -38,9 +39,9 @@ export default function ScrollAnimations() {
         }
         if (document.querySelector('.latest-header')) {
           gsap.fromTo('.latest-header',
-            { opacity: 0, x: -20 },
+            { x: -14 },
             {
-              opacity: 1, x: 0,
+              x: 0,
               duration: 0.6, ease: 'power2.out',
               scrollTrigger: { trigger: '.latest-section', start: 'top 85%' },
             }
@@ -49,9 +50,9 @@ export default function ScrollAnimations() {
 
         if (document.querySelector('.feature-card')) {
           gsap.fromTo('.feature-card',
-            { opacity: 0, y: 30 },
+            { y: 24 },
             {
-              opacity: 1, y: 0,
+              y: 0,
               duration: 0.5, stagger: 0.08, ease: 'power2.out',
               scrollTrigger: { trigger: '.features-section', start: 'top 80%' },
             }

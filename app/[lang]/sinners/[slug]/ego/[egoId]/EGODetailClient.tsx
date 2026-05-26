@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import {
@@ -18,6 +19,7 @@ import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 const RESISTANCE_STYLE: Record<string, { color: string; bg: string }> = {
@@ -301,6 +303,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
+  const shouldReduceMotion = useReducedMotion()
   const obtainingMethod = getLocalizedObtainingMethod(ego, lang)
 
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
@@ -345,28 +348,17 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
 
-  useEffect(() => {
-    let controls: Array<{ stop: () => void }> = []
-    let cancelled = false
-    void import('motion').then(({ animate }) => {
-      if (cancelled) return
-      controls = [
-        animate('.ego-detail-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] }),
-        animate('.ego-detail-content', { opacity: [0, 1], y: [20, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' }),
-      ]
-    })
-    return () => {
-      cancelled = true
-      controls.forEach(control => control.stop())
-    }
-  }, [])
-
   return (
     <>
-    <div className="min-h-screen pb-16" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
 
       {/* ─── 히어로 배너 ─── */}
-      <div className="ego-detail-header" style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604', opacity: 0 }}>
+      <motion.div
+        className="ego-detail-header"
+        style={{ position: 'relative', width: '100%', aspectRatio: '16 / 5', overflow: 'hidden', background: '#080604' }}
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+        animate="animate"
+      >
         {ego.image_url && (
           <Image src={ego.image_url} alt="" fill quality={50}
             style={{ objectFit: 'cover', objectPosition: '50% 10%', filter: 'blur(20px) brightness(0.45)', transform: 'scale(1.1)' }}
@@ -378,33 +370,37 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%', background: 'linear-gradient(to bottom, transparent, #0d0b08)' }} />
         {/* 장식 라인 */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '0.0625rem', background: `linear-gradient(90deg, transparent, ${sinColor}40, transparent)` }} />
-        <div style={{ position: 'absolute', bottom: '1.75rem', left: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.375rem' }}>
+        <div className="ego-detail-header__title">
           <GradeImg grade={ego.grade} height={20} />
-          <h1 className="font-serif" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 2.5rem ${sinColor}60` }} suppressHydrationWarning>
+          <h1 className="font-serif" style={{ fontWeight: 'bold', color: '#e8b030', lineHeight: 1.1, textShadow: `0 0 2.5rem ${sinColor}60` }} suppressHydrationWarning>
             {egoLocalName}
           </h1>
           {ego.name_kr && (
             <p className="font-mono" style={{ fontSize: '0.8125rem', color: '#8a6010', letterSpacing: '0.08em' }} suppressHydrationWarning>{ego.name}</p>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── 메인 ─── */}
-      <div className="ego-detail-content max-w-6xl mx-auto px-6 pt-8" style={{ opacity: 0 }}>
+      <motion.div
+        className="ego-detail-content max-w-6xl mx-auto px-6 pt-8"
+        variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.1)}
+        animate="animate"
+      >
 
         {/* 브레드크럼 */}
-        <div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }}>
+        <motion.div className="mb-8 flex items-center gap-2 text-sm" style={{ color: '#888888' }} variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors" suppressHydrationWarning>{t('nav.sinnerList')}</Link>
           <span style={{ color: '#333344' }}>&rsaquo;</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors" suppressHydrationWarning>{sinnerLocalName}</Link>
           <span style={{ color: '#333344' }}>&rsaquo;</span>
           <span style={{ color: sinColor }} suppressHydrationWarning>{egoLocalName}</span>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(14rem,0.92fr)_minmax(0,2fr)] gap-8">
 
           {/* ─── 좌측 사이드바 (sticky) ─── */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-5">
+          <motion.div className="lg:sticky lg:top-24 lg:self-start space-y-5" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
 
             {/* 원형 이미지 */}
             <div className="flex flex-col items-center gap-4">
@@ -515,14 +511,17 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             >
               &larr; <span suppressHydrationWarning>{t('ego.backToEgoList')}</span>
             </Link>
-          </div>
+          </motion.div>
 
           {/* ─── 우측 메인 ─── */}
-          <div className="lg:col-span-2 space-y-6">
+          <motion.div
+            className="min-w-0 space-y-6"
+            variants={shouldReduceMotion ? undefined : staggerContainer(0.05, 0.06)}
+          >
 
             {/* 패시브 */}
             {(ego.passive_name || ego.passive_name_en || ego.passive_name_jp) && (
-              <div className="card p-6" style={{
+              <motion.div className="card p-6" variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{
                 background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
                 border: `0.0625rem solid ${sinColor}18`,
                 borderRadius: '0.5rem',
@@ -577,12 +576,12 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                     />
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* EGO 스킬 (일반) */}
             {normalSkillList.length > 0 && (
-              <div className="card p-6" style={{
+              <motion.div className="card p-6" variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{
                 background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
                 border: `0.0625rem solid ${sinColor}18`,
                 borderRadius: '0.5rem',
@@ -609,27 +608,34 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   </div>
                 </div>
                 {currentSkills.length > 0 ? (
-                  <div className="space-y-6">
+                  <motion.div
+                    className="space-y-6"
+                    variants={shouldReduceMotion ? undefined : staggerContainer(0.04)}
+                    animate="animate"
+                    key={`normal-${skillLevel}`}
+                  >
                     {currentSkills.map((skill, i) => (
-                      <SkillFramePanel
-                        key={i}
-                        skill={skill}
-                        sinColor={sinColor}
-                        skillIconUrl={awakenIconUrl}
-                        lang={lang}
-                      />
+                      <motion.div key={`${skill.name}-${i}`} variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                        <SkillFramePanel
+                          skill={skill}
+                          sinColor={sinColor}
+                          skillIconUrl={awakenIconUrl}
+                          lang={lang}
+                        />
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 ) : (
                   <p style={{ color: '#444', fontSize: '0.8125rem', fontStyle: 'italic' }}>{t('ego.noSkillData')}</p>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* EGO 침식 스킬 */}
             {hasCor && (
-              <div
+              <motion.div
                 className="rounded-lg overflow-hidden"
+                variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                 style={{
                   position: 'relative',
                   border: '1px solid rgba(180,20,20,0.5)',
@@ -680,25 +686,26 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                 <div className="p-6 space-y-6">
                   {currentCorSkills.length > 0 ? (
                     currentCorSkills.map((skill, i) => (
-                      <SkillFramePanel
-                        key={i}
-                        skill={skill}
-                        sinColor={sinColor}
-                        skillIconUrl={erosionIconUrl}
-                        lang={lang}
-                      />
+                      <motion.div key={`${skill.name}-${i}`} variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                        <SkillFramePanel
+                          skill={skill}
+                          sinColor={sinColor}
+                          skillIconUrl={erosionIconUrl}
+                          lang={lang}
+                        />
+                      </motion.div>
                     ))
                   ) : (
                     <p style={{ color: '#442222', fontSize: '0.8125rem', fontStyle: 'italic' }}>{t('ego.noCorSkillData')}</p>
                   )}
                 </div>
 
-              </div>
+              </motion.div>
             )}
 
             {/* 키워드 */}
             {ego.keywords && ego.keywords.length > 0 && (
-              <div className="card p-6" style={{
+              <motion.div className="card p-6" variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{
                 background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
                 border: `0.0625rem solid ${sinColor}18`,
                 borderRadius: '0.5rem',
@@ -715,7 +722,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   </span>
                   <div className="flex-1" style={{ height: '1px', background: `linear-gradient(90deg, ${sinColor}40 0%, transparent 100%)` }} />
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-2">
+                <motion.div className="flex flex-wrap gap-x-3 gap-y-2" variants={shouldReduceMotion ? undefined : staggerContainer(0.025)}>
                   {ego.keywords.map((kw, i) => {
                     const info = keywordData[kw]
                     const iconUrl = getKeywordIconUrl(kw, info?.iconSlug)
@@ -723,23 +730,68 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                       ? getGiftKeywordColor(kw)
                       : (info?.sinAffinity ? SIN_COLORS[info.sinAffinity as SinType] ?? '#999' : '#999')
                     return (
-                      <span key={i} className="inline-flex items-center gap-1.5" style={{ color: kwColor }}>
+                      <motion.span key={i} className="inline-flex items-center gap-1.5" variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{ color: kwColor }}>
                         {iconUrl && (
                           <Image src={iconUrl} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem', objectFit: 'contain' }} />
                         )}
                         <span style={{ fontSize: '0.8125rem', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
                           {getLocalizedKeywordName(kw, info ? { nameEn: info.nameEn, nameJp: info.nameJp, descEn: null, descJp: null } : undefined, lang)}
                         </span>
-                      </span>
+                      </motion.span>
                     )
                   })}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             )}
 
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
+      <style jsx>{`
+        .ego-detail-header {
+          min-height: 16rem;
+        }
+        .ego-detail-header__title {
+          position: absolute;
+          bottom: 1.75rem;
+          left: 2.5rem;
+          right: 2.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.375rem;
+        }
+        .ego-detail-header__title h1 {
+          font-size: clamp(2rem, 4vw, 3rem);
+          max-width: min(48rem, 100%);
+          overflow-wrap: anywhere;
+        }
+        @media (max-width: 47.9375rem) {
+          .ego-detail-header {
+            min-height: 23rem;
+            aspect-ratio: auto !important;
+          }
+          .ego-detail-header__title {
+            bottom: 2rem;
+            left: 1.25rem;
+            right: 1.25rem;
+          }
+          .ego-detail-header__title h1 {
+            font-size: clamp(2.125rem, 9vw, 2.5rem);
+            line-height: 1.08;
+          }
+          .ego-detail-content {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 1.5rem;
+          }
+        }
+        @media (max-width: 26.875rem) {
+          .ego-detail-header {
+            min-height: 24.5rem;
+          }
+        }
+      `}</style>
     </div>
     </>
   )

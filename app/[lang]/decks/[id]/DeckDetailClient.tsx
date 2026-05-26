@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
+import { motion, useReducedMotion } from 'motion/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -41,6 +42,7 @@ import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/
 import DeckComments from '@/components/deck-detail/DeckComments'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
@@ -512,6 +514,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
   const rootT = useTranslations()
+  const shouldReduceMotion = useReducedMotion()
   const { status: authStatus } = useSession()
 
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
@@ -912,7 +915,13 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     <div className="min-h-[100dvh]" style={{ background: '#0d0b08' }}>
 
       {/* ── 플래너 스타일 헤더 ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+      <motion.div
+        className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-4"
+        style={{ borderBottom: '1px solid var(--border)' }}
+        variants={shouldReduceMotion ? undefined : workbenchReveal}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+      >
         {/* 라인 1: 뒤로가기 + 제목 */}
         <div className="flex items-center gap-3 mb-2">
           <Link
@@ -999,31 +1008,43 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── 콘텐츠 ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-24 pt-6">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 md:px-6 pb-24 pt-6"
+        variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.08)}
+        initial={shouldReduceMotion ? false : 'initial'}
+        animate="animate"
+      >
 
         {/* 모바일 액션바 */}
-        <DeckMobileActionBar {...headerProps} />
+        <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+          <DeckMobileActionBar {...headerProps} />
+        </motion.div>
 
         <div className="flex gap-5 items-start">
 
           {/* 데스크탑 사이드바 */}
-          <aside className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
+          <motion.aside
+            className="hidden lg:block"
+            style={{ width: '15.75rem', flexShrink: 0 }}
+            variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+          >
             <DeckSidebarPanel {...headerProps} />
-          </aside>
+          </motion.aside>
 
           {/* 수감자 탭 + 인격 상세 */}
-          <main className="flex-1 min-w-0">
+          <motion.main className="flex-1 min-w-0" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
             {filledSlots.length === 0 ? (
               <p className="text-sm italic" style={{ color: '#2a2a3a', fontFamily: 'var(--font-body)' }}>{t('identityEmpty')}</p>
             ) : (
               <>
                 {/* Dante Planner 스타일 12슬롯 편성 보드 */}
-                <section
+                <motion.section
                   className="mb-5"
                   aria-label={t('boardLabel')}
+                  variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                 >
                   <FormationBoard
                     slots={boardSlots.map((slot, index): FormationBoardSlot => {
@@ -1053,7 +1074,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   >
                     {t('boardHint')}
                   </p>
-                </section>
+                </motion.section>
 
                 {/* 덱 노트 */}
                 {deck.description?.trim() && (
@@ -1209,7 +1230,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                         .deck-detail-skill-mix-card:hover{transform:none}
                       }
                     `}</style>
-                    <section className="deck-detail-note-section mb-5" aria-labelledby="deck-detail-note-title">
+                    <motion.section
+                      className="deck-detail-note-section mb-5"
+                      aria-labelledby="deck-detail-note-title"
+                      variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+                    >
                       <div className="deck-detail-note-header">
                         <h2 id="deck-detail-note-title" className="deck-detail-note-title">{t('deckNote')}</h2>
                       </div>
@@ -1224,7 +1249,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                         {customSkillSlots.length > 0 && (
                           <div className="deck-detail-skill-mix">
                             <span className="deck-detail-skill-mix-label">{t('skillDistribution')}</span>
-                            <div className="deck-detail-skill-mix-grid">
+                            <motion.div
+                              className="deck-detail-skill-mix-grid"
+                              variants={shouldReduceMotion ? undefined : staggerContainer(0.035)}
+                            >
                               {customSkillSlots.map((slot, i) => {
                                 const id_ = slot.identities!
                                 const identityName = localizeIdentityName(id_, locale)
@@ -1242,7 +1270,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                                 const adaptedIdentity = adaptBoardIdentity(id_, locale)
                                 const identityImageUrl = getIdentityInfoUrl(adaptedIdentity)
                                 return (
-                                  <div key={`${id_.id}-${i}`} className="deck-detail-skill-mix-card">
+                                  <motion.div
+                                    key={`${id_.id}-${i}`}
+                                    className="deck-detail-skill-mix-card"
+                                    variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
+                                  >
                                     <div className="deck-detail-skill-mix-art">
                                       {identityImageUrl && (
                                         <Image
@@ -1287,32 +1319,38 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                                         })}
                                       </div>
                                     </div>
-                                  </div>
+                                  </motion.div>
                                 )
                               })}
-                            </div>
+                            </motion.div>
                           </div>
                         )}
                       </div>
-                    </section>
+                    </motion.section>
                   </>
                 )}
 
                 {/* 패시브 패널 */}
-                <SectionBlock title={t('passives')} defaultOpen={true}>
-                  <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
-                </SectionBlock>
+                <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                  <SectionBlock title={t('passives')} defaultOpen={true}>
+                    <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
+                  </SectionBlock>
+                </motion.div>
 
-                <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
+                <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+                  <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
+                </motion.div>
 
               </>
             )}
-          </main>
+          </motion.main>
 
         </div>
 
-        <DeckComments deckId={id} initialComments={initialComments ?? []} />
-      </div>
+        <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+          <DeckComments deckId={id} initialComments={initialComments ?? []} />
+        </motion.div>
+      </motion.div>
 
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
