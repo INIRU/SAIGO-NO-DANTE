@@ -135,7 +135,6 @@ export default function FloorPlanPreviewBoard({
               const floorGifts = entry.gift_ids
                 .map(id => giftMap.get(parseInt(id, 10)))
                 .filter((gift): gift is GiftData => Boolean(gift))
-              const shownGifts = floorGifts.slice(0, 4)
               const memoPreview = getMemoPreview(entry.memo)
 
               const themeImageSrc = theme ? getThemeImageSrc(theme) : null
@@ -194,43 +193,36 @@ export default function FloorPlanPreviewBoard({
                     </div>
 
                     <div
-                      className="flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5"
+                      className="flex min-w-0 items-start rounded-md border px-2 py-1.5"
                       style={{
                         minHeight: '4.5rem',
                         borderColor: floorGifts.length > 0 ? 'rgba(200,144,10,0.22)' : '#241c14',
                         background: floorGifts.length > 0 ? 'rgba(13,11,8,0.62)' : 'rgba(13,11,8,0.34)',
                       }}
                     >
-                      {shownGifts.length > 0 ? (
-                        <>
-                          <div className="flex min-w-0 flex-wrap items-start gap-1.5 overflow-visible">
-                            {shownGifts.map(gift => {
-                              const giftName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
-                              return (
-                                <div
-                                  key={gift.game_id}
-                                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-visible rounded-sm bg-[#17120d]/70 p-0.5"
-                                >
-                                  <GiftCard
-                                    gift={gift}
-                                    onClick={() => onGiftClick?.(gift)}
-                                    disabled={!onGiftClick}
-                                    title={giftName}
-                                    ariaLabel={giftName}
-                                    size="2.75rem"
-                                    showName={false}
-                                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-                                  />
-                                </div>
-                              )
-                            })}
-                          </div>
-                          {floorGifts.length > shownGifts.length && (
-                            <span className="ml-auto inline-flex min-h-8 shrink-0 items-center rounded border border-[#3a2a10] bg-[#17120d] px-2 font-mono text-[0.875rem] font-semibold text-[#d6bd83]">
-                              +{floorGifts.length - shownGifts.length}
-                            </span>
-                          )}
-                        </>
+                      {floorGifts.length > 0 ? (
+                        <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5 overflow-visible">
+                          {floorGifts.map(gift => {
+                            const giftName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+                            return (
+                              <div
+                                key={gift.game_id}
+                                className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-visible rounded-sm bg-[#17120d]/70 p-0.5"
+                              >
+                                <GiftCard
+                                  gift={gift}
+                                  onClick={() => onGiftClick?.(gift)}
+                                  disabled={!onGiftClick}
+                                  title={giftName}
+                                  ariaLabel={giftName}
+                                  size="2.75rem"
+                                  showName={false}
+                                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                                />
+                              </div>
+                            )
+                          })}
+                        </div>
                       ) : (
                         <span className="text-[0.875rem] text-[#5d5144]">{tFloor('acquiredGiftCount', { count: 0 })}</span>
                       )}
