@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
@@ -347,6 +347,22 @@ export default function EGODetailClient({ sinner, ego }: Props) {
 
   const currentSkills = pickByLevel(normalSkillList, skillLevel)
   const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
+
+  useEffect(() => {
+    let controls: Array<{ stop: () => void }> = []
+    let cancelled = false
+    void import('motion/react').then(({ animate }) => {
+      if (cancelled) return
+      controls = [
+        animate('.ego-detail-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] }),
+        animate('.ego-detail-content', { opacity: [0, 1], y: [20, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' }),
+      ]
+    })
+    return () => {
+      cancelled = true
+      controls.forEach(control => control.stop())
+    }
+  }, [])
 
   return (
     <>

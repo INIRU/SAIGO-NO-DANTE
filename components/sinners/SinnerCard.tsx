@@ -38,7 +38,8 @@ export default async function SinnerCard({ sinner, index = 0, priority: priority
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
               unoptimized
-              priority={priorityProp}
+              loading={priorityProp ? 'eager' : 'lazy'}
+              fetchPriority={priorityProp ? 'high' : undefined}
               className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
               style={{ objectPosition: '50% 15%' }}
             />
@@ -70,7 +71,7 @@ export default async function SinnerCard({ sinner, index = 0, priority: priority
               width={28}
               height={28}
               className="opacity-85 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ filter: 'drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.8))' }}
+              style={{ width: '1.75rem', height: 'auto', filter: 'drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.8))' }}
             />
           </div>
 
@@ -81,7 +82,8 @@ export default async function SinnerCard({ sinner, index = 0, priority: priority
               alt={`#${String(sinner.order_num).padStart(2, '0')}`}
               width={389}
               height={1023}
-              priority={priorityProp}
+              loading={priorityProp ? 'eager' : 'lazy'}
+              fetchPriority={priorityProp ? 'high' : undefined}
               className="w-full h-auto"
             />
           </div>
