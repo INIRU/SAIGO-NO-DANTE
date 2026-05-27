@@ -116,22 +116,11 @@ export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconS
           >
             {getName(identity.name_kr, identity.name_en, identity.name_jp)}
           </div>
-          <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5" style={{ marginTop: '0.125rem' }}>
-            <span
-              className="font-compact-serif-label whitespace-nowrap [overflow-wrap:normal] [word-break:keep-all]"
-              style={{ color: 'var(--text-muted)', fontSize: '0.875rem', flexShrink: 0 }}
-            >
-              {getName(identity.sinner?.name_kr, identity.sinner?.name_en, identity.sinner?.name_jp) || identity.sinner_id}
-            </span>
-            {identity.release_date && (
-              <>
-                <span className="font-sans" style={{ color: '#5a4a35', fontSize: '0.75rem', flexShrink: 1 }}>/</span>
-                <span className="font-mono" style={{ color: '#5a4a35', fontSize: '0.8125rem', minWidth: 0 }}>
-                  {formatDate(identity.release_date)}
-                </span>
-              </>
-            )}
-          </div>
+          {identity.release_date && (
+            <div className="font-mono whitespace-nowrap" style={{ color: '#5a4a35', fontSize: '0.875rem', marginTop: '0.125rem' }}>
+              {formatDate(identity.release_date)}
+            </div>
+          )}
         </div>
       </div>
     </Link>
