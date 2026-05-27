@@ -31,8 +31,8 @@ export default function PlannerTab() {
   return (
     <>
       {/* 서브탭 + CTA */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex gap-1">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1 overflow-x-auto">
           {[
             { key: 'mine' as const, label: '내 플랜', count: myPlans.length },
             { key: 'voted' as const, label: '추천한 플랜', count: votedPlans.length },
@@ -40,7 +40,7 @@ export default function PlannerTab() {
             <button
               key={key}
               onClick={() => setSubTab(key)}
-              className="px-3 py-1.5 text-xs rounded-md transition-all duration-200"
+              className="min-h-11 rounded-md px-3 text-[0.9375rem] transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
               style={{
                 background: subTab === key ? 'rgba(200,144,10,0.1)' : 'transparent',
                 color: subTab === key ? 'var(--gold)' : 'var(--text-tertiary)',
@@ -51,17 +51,17 @@ export default function PlannerTab() {
             >
               {label}
               {count > 0 && (
-                <span style={{ marginLeft: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.625rem' }}>{count}</span>
+                <span style={{ marginLeft: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>{count}</span>
               )}
             </button>
           ))}
         </div>
         <Link
           href="/planner"
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-all duration-200 hover:brightness-110 active:scale-95"
+          className="flex min-h-11 items-center gap-1.5 rounded px-4 text-[0.9375rem] font-medium transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
           style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '0.25rem', fontFamily: 'var(--font-heading)' }}
         >
-          <Plus size={12} />
+          <Plus size={16} aria-hidden="true" />
           새 플랜
         </Link>
       </div>
@@ -69,17 +69,16 @@ export default function PlannerTab() {
       {/* 플랜 목록 */}
       {activePlans.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-16 gap-4"
-          style={{ background: 'linear-gradient(180deg, #1a1510 0%, #120e09 100%)', border: '1px solid var(--border)', borderRadius: '0.5rem' }}
+          className="flex flex-col items-center justify-center gap-4 rounded-lg border border-[var(--border)] bg-[#1a1510] py-16"
         >
-          <Map size={28} style={{ color: '#3a2a18', strokeWidth: 1.5 }} />
-          <p className="font-serif text-sm" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
+          <Map size={28} style={{ color: '#3a2a18', strokeWidth: 1.5 }} aria-hidden="true" />
+          <p className="font-serif text-[1rem]" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
             {subTab === 'mine' ? '아직 작성한 플랜이 없습니다.' : '아직 추천한 플랜이 없습니다.'}
           </p>
           <Link
             href={subTab === 'mine' ? '/planner' : '/planner/community'}
-            className="transition-all duration-200 hover:opacity-90"
-            style={{ color: 'var(--bg-deep)', background: 'var(--gold)', fontSize: '0.75rem', padding: '0.375rem 1rem', borderRadius: '0.25rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
+            className="inline-flex min-h-11 items-center rounded px-4 transition-all duration-200 hover:opacity-90"
+            style={{ color: 'var(--bg-deep)', background: 'var(--gold)', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
           >
             {subTab === 'mine' ? '첫 번째 플랜 만들기' : '플래너 커뮤니티 둘러보기'}
           </Link>

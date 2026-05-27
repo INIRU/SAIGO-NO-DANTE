@@ -62,28 +62,28 @@ export default function MypageTabs({ activeTab, onTabChange, counts }: Props) {
             aria-controls={`panel-${key}`}
             tabIndex={isActive ? 0 : -1}
             onClick={() => onTabChange(key)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0"
+            className="flex min-h-11 flex-shrink-0 items-center gap-2 rounded-md px-4 transition-all duration-200 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
             style={{
               background: isActive ? 'rgba(200,144,10,0.1)' : 'transparent',
               color: isActive ? 'var(--gold)' : 'var(--text-tertiary)',
-              fontSize: '0.8125rem',
+              fontSize: '0.9375rem',
               fontFamily: 'var(--font-body)',
               cursor: 'pointer',
               border: isActive ? '1px solid rgba(200,144,10,0.2)' : '1px solid transparent',
             }}
           >
-            <Icon style={{ width: '0.875rem', height: '0.875rem' }} />
+            <Icon style={{ width: '1rem', height: '1rem' }} aria-hidden="true" />
             <span>{label}</span>
             {count !== undefined && count > 0 && (
               <span
                 style={{
-                  fontSize: '0.625rem',
+                  fontSize: '0.875rem',
                   fontFamily: 'var(--font-mono)',
                   color: isActive ? 'var(--gold)' : '#555',
                   background: isActive ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
                   padding: '0 0.375rem',
                   borderRadius: '2rem',
-                  lineHeight: '1.25rem',
+                  lineHeight: '1.375rem',
                 }}
               >
                 {count}

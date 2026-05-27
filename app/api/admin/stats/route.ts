@@ -1,10 +1,92 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const FALLBACK_TIME_ZONE = 'Asia/Seoul'
 
-export async function GET() {
+function isValidTimeZone(timeZone: string): boolean {
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone }).format()
+    return true
+  } catch {
+    return false
+  }
+}
+
+function selectTimeZone(request: NextRequest): string {
+  const candidates = [
+    request.headers.get('x-user-timezone'),
+    request.headers.get('x-vercel-ip-timezone'),
+    FALLBACK_TIME_ZONE,
+  ]
+
+  for (const candidate of candidates) {
+    const timeZone = candidate?.trim()
+    if (timeZone && isValidTimeZone(timeZone)) return timeZone
+  }
+
+  return FALLBACK_TIME_ZONE
+}
+
+function getZonedParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+
+  const values = Object.fromEntries(
+    parts
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, Number(part.value)]),
+  )
+
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hour: values.hour,
+    minute: values.minute,
+    second: values.second,
+  }
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = getZonedParts(date, timeZone)
+  const zonedAsUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  )
+
+  return zonedAsUtc - date.getTime()
+}
+
+function getLocalStartOfDayIso(timeZone: string, now = new Date()): string {
+  const localDate = getZonedParts(now, timeZone)
+  const localMidnightAsUtc = Date.UTC(localDate.year, localDate.month - 1, localDate.day, 0, 0, 0, 0)
+  let utcTimestamp = localMidnightAsUtc
+
+  for (let i = 0; i < 3; i += 1) {
+    const offset = getTimeZoneOffsetMs(new Date(utcTimestamp), timeZone)
+    const nextTimestamp = localMidnightAsUtc - offset
+    if (nextTimestamp === utcTimestamp) break
+    utcTimestamp = nextTimestamp
+  }
+
+  return new Date(utcTimestamp).toISOString()
+}
+
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) {
@@ -12,9 +94,7 @@ export async function GET() {
     }
 
     const supabase = createAdminClient()
-    const dayStart = new Date()
-    dayStart.setHours(0, 0, 0, 0)
-    const dayStartIso = dayStart.toISOString()
+    const dayStartIso = getLocalStartOfDayIso(selectTimeZone(request))
 
     const [decks, users, todayDecks, views, activeUsers, auditToday, suspendedProfiles] = await Promise.all([
       supabase.schema('limbus').from('decks').select('id', { count: 'exact', head: true }),
