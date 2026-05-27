@@ -44,7 +44,7 @@ type ViewMode = 'sinner' | 'all'
 
 // ── 카드 렌더링 헬퍼 ─────────────────────────────────────────────────────
 
-function IdentityCard({ identity, isOwned, priority = false }: { identity: IdentityInfo; isOwned: boolean; priority?: boolean }) {
+function IdentityCard({ identity, isOwned, aboveFold = false }: { identity: IdentityInfo; isOwned: boolean; aboveFold?: boolean }) {
   const url = identityInfoUrl(identity)
   const nameRef = useRef<HTMLParagraphElement>(null)
   const [nameWidth, setNameWidth] = useState(0)
@@ -86,7 +86,8 @@ function IdentityCard({ identity, isOwned, priority = false }: { identity: Ident
           fill
           sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
           className="object-cover"
-          priority={priority}
+          loading={aboveFold ? 'eager' : 'lazy'}
+          fetchPriority={aboveFold ? 'high' : undefined}
           style={{
             objectPosition: 'center top',
             filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
@@ -548,7 +549,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
                   {currentIdentities.length > 0 ? (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                       {currentIdentities.map((identity, idx) => (
-                        <IdentityCard key={identity.id} identity={identity} isOwned={owned.has(identity.id)} priority={idx === 0} />
+                        <IdentityCard key={identity.id} identity={identity} isOwned={owned.has(identity.id)} aboveFold={idx === 0} />
                       ))}
                     </div>
                   ) : (

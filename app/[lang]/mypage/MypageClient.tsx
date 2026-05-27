@@ -74,7 +74,7 @@ export default function MypageClient() {
     localStorage.setItem('mypage-tab', tab)
 
     // 탭 전환 애니메이션
-    void import('motion').then(({ animate }) => {
+    void import('motion/react').then(({ animate }) => {
       animate('.mypage-panel', { opacity: [0, 1], y: [8, 0] }, { duration: 0.3, ease: 'easeOut' })
     })
   }, [router])
@@ -86,7 +86,7 @@ export default function MypageClient() {
     animPlayed.current = true
     let controls: Array<{ stop: () => void }> = []
     let cancelled = false
-    void import('motion').then(({ animate }) => {
+    void import('motion/react').then(({ animate }) => {
       if (cancelled) return
       controls = [
         animate('.mypage-header', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, ease: [0.33, 1, 0.68, 1] }),

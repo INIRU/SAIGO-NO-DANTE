@@ -333,7 +333,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
                 width={66}
                 height={82}
                 unoptimized
-                priority
+                loading="eager"
                 className="home-logo-mark h-auto w-[1.5rem] opacity-0 sm:w-[2rem] md:w-[4.125rem]"
                 style={{ flexShrink: 0 }}
               />
