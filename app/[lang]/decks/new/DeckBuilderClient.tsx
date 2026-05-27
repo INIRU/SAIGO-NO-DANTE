@@ -16,9 +16,7 @@ import {
   EGO,
   Skill,
   Passive,
-  type ActivationCondition,
 } from '@/lib/data/sinners'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
@@ -27,9 +25,7 @@ import CompactButton from '@/components/ui/CompactButton'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
-import DeckPreviewPanel from '@/components/deck-builder/DeckPreviewPanel'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
-import EgoGiftModal from '@/components/deck-builder/EgoGiftModal'
 import { contentTypeMessageKey } from '@/components/decks/decks-types'
 import {
   localizeIdentityName,
@@ -44,13 +40,9 @@ import {
   computeAllGiftKeywordCounts,
   computeDeckKeywordCounts,
   computeDeckMainKeywordsFromSlots,
-  computeAllGiftAffiliationCounts,
-  computeFormationGiftAffiliationCounts,
-  countGiftConditionAffiliations,
   computeFormationGiftKeywordCounts,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 
 interface EditMode {
   deckId: string
@@ -105,18 +97,6 @@ const DeckNoteEditor = dynamic(() => import('@/components/deck-builder/DeckNoteE
   loading: () => null,
 })
 
-function localizeGiftName(gift: EgoGiftNote, locale: string): string {
-  if (locale === 'en') return gift.name_en?.trim() || gift.name_jp?.trim() || gift.name
-  if (locale === 'ja') return gift.name_jp?.trim() || gift.name_en?.trim() || gift.name
-  return gift.name
-}
-
-function localizeGiftEffect(gift: EgoGiftNote, locale: string): string | null {
-  if (locale === 'en') return gift.effect_base_en?.trim() || gift.effect_base_jp?.trim() || gift.effect_base
-  if (locale === 'ja') return gift.effect_base_jp?.trim() || gift.effect_base_en?.trim() || gift.effect_base
-  return gift.effect_base
-}
-
 function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[] {
   if (!value) return []
   const allowed = new Set<string>(DECK_MAIN_KEYWORDS)
@@ -129,7 +109,6 @@ function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[
 }
 
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode, forkMode }: Props) {
-  const { getIconUrl: kwGetIconUrl } = useKeywordData()
   const locale = useLocale()
   const sinnerT = useTranslations('sinner')
   const deckT = useTranslations('decks')
@@ -190,12 +169,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const { status: authStatus } = useSession()
   const [draftSaved, setDraftSaved] = useState(false)
   const [hasDraft, setHasDraft] = useState(false)
-  const [showGiftPanel, setShowGiftPanel] = useState(false)
-  const [giftTabKw, setGiftTabKw] = useState('전체')
-  const [giftSearch, setGiftSearch] = useQueryState('gq', parseAsString.withDefault(''))
-  const [giftGradeFilter, setGiftGradeFilter] = useQueryState('gg', parseAsString.withDefault('전체'))
-  const [giftStatusFilter, setGiftStatusFilter] = useState<'all' | 'met' | 'unmet'>('all')
-  const [showGiftModal, setShowGiftModal] = useState(false)
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
@@ -321,8 +294,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const effectiveMainKeywords = mainKeywordsManual ? selectedMainKeywords : autoMainKeywords
   const formationGiftKeywordCounts = useMemo(() => computeFormationGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
   const allGiftKeywordCounts = useMemo(() => computeAllGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
-  const formationGiftAffiliationCounts = useMemo(() => computeFormationGiftAffiliationCounts(deckKeywordSlots), [deckKeywordSlots])
-  const allGiftAffiliationCounts = useMemo(() => computeAllGiftAffiliationCounts(deckKeywordSlots), [deckKeywordSlots])
 
   useEffect(() => {
     if (!mainKeywordsManual) return
@@ -342,65 +313,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       return [...baseKeywords, keyword]
     })
   }
-
-  // 활성 가능한 EGO 기프트 계산
-  const activatableGifts = useMemo(() => {
-    if (!deckKeywordSlots.some(slot => (
-      typeof slot.slot_order === 'number' && slot.slot_order >= 0 && slot.slot_order < 99
-    ))) return []
-
-    type GiftStatus = {
-      name: string; keyword: string; grade: string; image_url: string | null
-      effect_base: string | null; condition: ActivationCondition
-      current: number; formationCurrent: number; allCurrent: number
-      met: boolean; level: 'met' | 'warn' | 'unmet'
-    }
-
-    const results: GiftStatus[] = []
-    const countCondition = (
-      c: ActivationCondition,
-      keywordCounts: Record<string, number>,
-      affiliationCounts: Record<string, number>,
-    ) => {
-      if (c.type === 'keyword') {
-        return keywordCounts[normalizeThemeKeyword(c.keyword!)] ?? 0
-      }
-      if (c.type === 'multi_keyword') {
-        return c.keywords!.reduce((sum, kw) => sum + (keywordCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      }
-      if (c.type === 'affiliation') {
-        const affiliations = c.affiliations ?? (c.affiliation ? [c.affiliation] : [])
-        return countGiftConditionAffiliations(affiliationCounts, affiliations)
-      }
-      return 0
-    }
-
-    for (const g of egoGifts) {
-      const c = g.activation_condition
-      if (!c) continue
-      if (c.type === 'skill') continue
-      const formationCurrent = countCondition(c, formationGiftKeywordCounts, formationGiftAffiliationCounts)
-      const allCurrent = countCondition(c, allGiftKeywordCounts, allGiftAffiliationCounts)
-      const level = formationCurrent >= c.count ? 'met' : allCurrent >= c.count ? 'warn' : 'unmet'
-      const current = level === 'met' ? formationCurrent : allCurrent
-
-      if (current > 0) {
-        results.push({
-          name: localizeGiftName(g, locale), keyword: g.keyword, grade: g.grade,
-          image_url: g.image_url, effect_base: localizeGiftEffect(g, locale),
-          condition: c, current, formationCurrent, allCurrent,
-          met: level === 'met', level,
-        })
-      }
-    }
-
-    const levelOrder = { met: 0, warn: 1, unmet: 2 } satisfies Record<GiftStatus['level'], number>
-    results.sort((a, b) => {
-      if (a.level !== b.level) return levelOrder[a.level] - levelOrder[b.level]
-      return (b.current / b.condition.count) - (a.current / a.condition.count)
-    })
-    return results
-  }, [allGiftAffiliationCounts, allGiftKeywordCounts, deckKeywordSlots, egoGifts, formationGiftAffiliationCounts, formationGiftKeywordCounts])
 
   const identityCount = Object.values(deckSlots).filter(Boolean).length
   const egoCount = Object.values(egoSlots).reduce((s, g) => s + Object.keys(g).length, 0)
@@ -747,23 +659,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                   <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
                 </div>
               )}
-
-              <DeckPreviewPanel
-                deckSlots={deckSlots}
-                activatableGifts={activatableGifts}
-                contentType={contentType}
-                showGiftPanel={showGiftPanel}
-                setShowGiftPanel={setShowGiftPanel}
-                giftTabKw={giftTabKw}
-                setGiftTabKw={setGiftTabKw}
-                giftSearch={giftSearch}
-                setGiftSearch={setGiftSearch}
-                giftGradeFilter={giftGradeFilter}
-                setGiftGradeFilter={setGiftGradeFilter}
-                giftStatusFilter={giftStatusFilter}
-                setGiftStatusFilter={setGiftStatusFilter}
-                onOpenGiftModal={() => setShowGiftModal(true)}
-              />
             </div>
           </motion.section>
         )}
@@ -827,23 +722,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             {Object.values(deckSlots).filter(Boolean).length > 0 && (
               <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
             )}
-
-            <DeckPreviewPanel
-              deckSlots={deckSlots}
-              activatableGifts={activatableGifts}
-              contentType={contentType}
-              showGiftPanel={showGiftPanel}
-              setShowGiftPanel={setShowGiftPanel}
-              giftTabKw={giftTabKw}
-              setGiftTabKw={setGiftTabKw}
-              giftSearch={giftSearch}
-              setGiftSearch={setGiftSearch}
-              giftGradeFilter={giftGradeFilter}
-              setGiftGradeFilter={setGiftGradeFilter}
-              giftStatusFilter={giftStatusFilter}
-              setGiftStatusFilter={setGiftStatusFilter}
-              onOpenGiftModal={() => setShowGiftModal(true)}
-            />
           </motion.div>
         )}
 
@@ -914,14 +792,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       </div>
 
       {/* Toast는 Sonner가 글로벌로 처리 */}
-
-      {/* ── 테마팩(EGO 기프트) 모달 ───────────────────── */}
-      <EgoGiftModal
-        open={showGiftModal}
-        onClose={() => setShowGiftModal(false)}
-        activatableGifts={activatableGifts}
-        getIconUrl={kwGetIconUrl}
-      />
     </div>
   )
 }

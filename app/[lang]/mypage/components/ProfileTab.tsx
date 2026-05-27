@@ -2,20 +2,14 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Pencil, Calendar, X, Check, LogOut, Layers, Map, Bookmark, Heart } from 'lucide-react'
+import { Pencil, Calendar, X, Check, LogOut } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { showSuccess, showError } from '@/lib/toast'
 import AvatarPicker, { AvatarEditOverlay } from '@/components/mypage/AvatarPicker'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import LocalTime from '@/components/ui/LocalTime'
 
 // Design Ref: §5.2 — 프로필 카드 + 통계 + 계정관리
-
-type Stats = {
-  deckCount: number
-  planCount: number
-  bookmarkCount: number
-  totalVotesReceived: number
-}
 
 type Profile = {
   username: string | null
@@ -29,18 +23,10 @@ type Props = {
   profile: Profile
   email: string
   displayName: string
-  stats: Stats
   onProfileUpdate: (updates: Partial<Profile>) => void
 }
 
-const STAT_ITEMS: { key: keyof Stats; label: string; icon: typeof Layers }[] = [
-  { key: 'deckCount', label: '덱', icon: Layers },
-  { key: 'planCount', label: '플랜', icon: Map },
-  { key: 'bookmarkCount', label: '북마크', icon: Bookmark },
-  { key: 'totalVotesReceived', label: '받은 추천', icon: Heart },
-]
-
-export default function ProfileTab({ profile, email, displayName, stats, onProfileUpdate }: Props) {
+export default function ProfileTab({ profile, email, displayName, onProfileUpdate }: Props) {
   // 닉네임 편집
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(profile.username ?? '')
@@ -59,12 +45,7 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
   const [withdrawing, setWithdrawing] = useState(false)
 
   const avatarUrl = profile.avatar_url || DEFAULT_AVATAR_URL
-  const joinDate = profile.created_at
-    ? (() => {
-        const d = profile.created_at.slice(0, 10) // "YYYY-MM-DD"
-        return d.replace(/-/g, '.')
-      })()
-    : null
+  const joinDateFallback = profile.created_at?.slice(0, 10).replace(/-/g, '.') ?? null
 
   const saveName = async () => {
     if (!nameValue.trim()) return
@@ -167,210 +148,182 @@ export default function ProfileTab({ profile, email, displayName, stats, onProfi
 
   return (
     <>
-      {/* 프로필 카드 */}
-      <section
-        style={{
-          background: '#1a1510',
-          border: '1px solid var(--border)',
-          borderRadius: '0.5rem',
-          padding: '1.5rem',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* 골드 상단 장식선 */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '0.125rem', background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* 아바타 */}
-          <div style={{ position: 'relative', width: '5rem', height: '5rem', flexShrink: 0 }}>
-            <div style={{
-              width: '5rem', height: '5rem', borderRadius: '50%', overflow: 'hidden', position: 'relative',
-              border: '0.125rem solid var(--gold-dim)',
-              boxShadow: '0 0 1rem rgba(200,144,10,0.35)',
-            }}>
-              <Image src={avatarUrl} alt="" fill sizes="80px" style={{ objectFit: 'cover' }} />
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <section className="rounded-lg border border-[var(--border)] bg-[#1a1510] p-4 sm:p-5">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <div className="relative h-24 w-24 flex-none">
+              <div className="relative h-24 w-24 overflow-hidden rounded-md border border-[rgba(200,144,10,0.45)] bg-[#120e09]">
+                <Image src={avatarUrl} alt="" fill sizes="96px" className="object-cover" />
+              </div>
+              <AvatarEditOverlay onClick={() => setAvatarPickerOpen(true)} />
             </div>
-            <AvatarEditOverlay onClick={() => setAvatarPickerOpen(true)} />
-          </div>
 
-          {/* 정보 */}
-          <div className="flex-1 text-center sm:text-left">
-            {/* 닉네임 */}
-            {editingName ? (
-              <div className="flex items-center gap-1.5 justify-center sm:justify-start">
-                <input
-                  value={nameValue}
-                  onChange={e => setNameValue(e.target.value)}
-                  maxLength={20}
-                  autoFocus
-                  className="px-2 py-1 text-sm outline-none"
-                  style={{
-                    background: '#120e09', border: '1px solid var(--gold-dim)', borderRadius: '0.25rem',
-                    color: '#e8dcc8', fontFamily: 'var(--font-body)', minWidth: 0, maxWidth: '12rem',
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') saveName()
-                    if (e.key === 'Escape') { setEditingName(false); setNameValue(profile.username ?? '') }
-                  }}
-                />
-                <button onClick={saveName} disabled={nameSaving} style={{ color: 'var(--gold)', cursor: 'pointer', padding: '0.25rem' }}>
-                  <Check size={14} />
-                </button>
-                <button onClick={() => { setEditingName(false); setNameValue(profile.username ?? '') }} style={{ color: '#555', cursor: 'pointer', padding: '0.25rem' }}>
-                  <X size={14} />
-                </button>
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+                {editingName ? (
+                  <>
+                    <input
+                      value={nameValue}
+                      onChange={e => setNameValue(e.target.value)}
+                      maxLength={20}
+                      autoFocus
+                      className="min-h-11 min-w-0 rounded bg-[#120e09] px-3 text-[1rem] outline-none"
+                      style={{ border: '1px solid var(--gold-dim)', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') saveName()
+                        if (e.key === 'Escape') { setEditingName(false); setNameValue(profile.username ?? '') }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={saveName}
+                      disabled={nameSaving}
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border border-[rgba(200,144,10,0.35)] text-[var(--gold)] transition hover:bg-[rgba(200,144,10,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                      aria-label="닉네임 저장"
+                    >
+                      <Check size={16} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingName(false); setNameValue(profile.username ?? '') }}
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border border-[var(--border)] text-[#8a7a62] transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                      aria-label="닉네임 편집 취소"
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="min-w-0 break-words font-serif text-[1.625rem] leading-tight" style={{ color: '#e8dcc8' }}>{displayName}</h2>
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(true)}
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border border-transparent text-[#8a7a62] transition hover:border-[var(--border)] hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                      aria-label="닉네임 편집"
+                    >
+                      <Pencil size={16} aria-hidden="true" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <p className="break-all text-[0.875rem]" style={{ color: 'var(--text-tertiary)' }}>{email}</p>
+
+              {profile.created_at && (
+                <div className="mt-2 flex items-center gap-1.5 text-[0.875rem]" style={{ color: 'var(--text-tertiary)' }}>
+                  <Calendar size={15} aria-hidden="true" />
+                  <LocalTime className="font-mono" value={profile.created_at} fallback={joinDateFallback} locale="ko-KR" dateStyle="medium" />
+                </div>
+              )}
+
+              <div className="mt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="font-heading text-[1rem]" style={{ color: 'var(--gold)' }}>내 소개</h3>
+                  {!editingBio && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingBio(true)}
+                      className="inline-flex min-h-11 items-center gap-2 rounded border border-[var(--border)] px-3 text-[0.9375rem] text-[#9a8a70] transition hover:border-[rgba(200,144,10,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                    >
+                      <Pencil size={15} aria-hidden="true" />
+                      편집
+                    </button>
+                  )}
+                </div>
+
+                {editingBio ? (
+                  <div>
+                    <textarea
+                      value={bioValue}
+                      onChange={e => setBioValue(e.target.value)}
+                      maxLength={300}
+                      rows={5}
+                      autoFocus
+                      placeholder="간단한 자기소개를 작성해보세요."
+                      className="w-full resize-none rounded bg-[#120e09] px-3 py-3 text-[1rem] leading-relaxed outline-none"
+                      style={{ border: '1px solid var(--gold-dim)', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
+                    />
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[0.875rem]" style={{ color: 'var(--text-tertiary)' }}>{bioValue.length}/300</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingBio(false); setBioValue(profile.bio ?? '') }}
+                          className="min-h-11 rounded border border-[var(--border)] px-4 text-[0.9375rem] text-[#9a8a70] transition hover:bg-white/5"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={saveBio}
+                          disabled={bioSaving}
+                          className="min-h-11 rounded bg-[var(--gold)] px-4 font-heading text-[0.9375rem] font-semibold text-[var(--bg-deep)] transition hover:brightness-110 disabled:opacity-60"
+                        >
+                          {bioSaving ? '저장 중' : '저장'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="min-h-20 whitespace-pre-wrap rounded border border-[rgba(200,144,10,0.1)] bg-[#120e09] p-3 text-[1rem] leading-relaxed" style={{ color: profile.bio ? '#b7a783' : '#6f634f' }}>
+                    {profile.bio || '아직 소개가 없습니다.'}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="rounded-lg border border-[var(--border)] bg-[#1a1510] p-4">
+          <h3 className="font-heading text-[1rem]" style={{ color: 'var(--gold)' }}>계정 관리</h3>
+          <div className="mt-4 grid gap-2">
+            {!showWithdraw && (
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded border border-[var(--border)] bg-white/[0.03] px-4 text-[0.9375rem] text-[#b7a783] transition hover:border-[rgba(200,144,10,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+              >
+                <LogOut size={16} aria-hidden="true" />
+                로그아웃
+              </button>
+            )}
+
+            {showWithdraw ? (
+              <div className="grid gap-3 rounded border border-[rgba(139,26,26,0.45)] bg-[rgba(139,26,26,0.08)] p-3">
+                <p className="text-[0.9375rem] leading-relaxed text-[#ff8a8a]">
+                  탈퇴하면 모든 덱과 프로필이 영구 삭제됩니다. 정말 탈퇴하시겠습니까?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowWithdraw(false)}
+                    className="min-h-11 flex-1 rounded border border-[var(--border)] px-3 text-[0.9375rem] text-[#b7a783]"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={withdrawAccount}
+                    disabled={withdrawing}
+                    className="min-h-11 flex-1 rounded border border-[rgba(139,26,26,0.5)] bg-[rgba(139,26,26,0.9)] px-3 text-[0.9375rem] font-semibold text-[#ff8a8a] disabled:opacity-60"
+                  >
+                    {withdrawing ? '처리 중' : '탈퇴 확인'}
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 justify-center sm:justify-start">
-                <span className="font-serif font-light text-lg" style={{ color: '#e8dcc8' }}>{displayName}</span>
-                <button onClick={() => setEditingName(true)} style={{ color: '#555', cursor: 'pointer', padding: '0.25rem' }} className="hover:opacity-70 transition-opacity">
-                  <Pencil size={12} />
-                </button>
-              </div>
-            )}
-
-            <p style={{ color: '#6a6080', fontSize: '0.6875rem', marginTop: '0.25rem' }}>{email}</p>
-
-            {joinDate && (
-              <div className="flex items-center gap-1.5 justify-center sm:justify-start mt-1" style={{ color: '#6a6080', fontSize: '0.6875rem' }}>
-                <Calendar size={12} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem' }}>{joinDate}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowWithdraw(true)}
+                className="min-h-11 rounded border border-transparent px-4 text-[0.9375rem] text-[#8b5a5a] transition hover:border-[rgba(139,26,26,0.35)] hover:bg-[rgba(139,26,26,0.08)]"
+              >
+                회원 탈퇴
+              </button>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* ABOUT ME */}
-      <section
-        style={{
-          background: '#1a1510',
-          border: '1px solid var(--border)',
-          borderRadius: '0.5rem',
-          padding: '1.5rem',
-          marginTop: '0.75rem',
-        }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="flex items-center gap-2" style={{ borderLeft: '0.1875rem solid var(--gold)', paddingLeft: '0.625rem' }}>
-            <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em' }}>ABOUT ME</span>
-            <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>내 소개</span>
-          </h2>
-          {!editingBio && (
-            <button onClick={() => setEditingBio(true)} style={{ color: '#555', cursor: 'pointer', padding: '0.25rem' }} className="hover:opacity-70 transition-opacity">
-              <Pencil size={13} />
-            </button>
-          )}
-        </div>
-
-        {editingBio ? (
-          <div>
-            <textarea
-              value={bioValue}
-              onChange={e => setBioValue(e.target.value)}
-              maxLength={300}
-              rows={4}
-              autoFocus
-              placeholder="간단한 자기소개를 작성해보세요..."
-              className="w-full px-3 py-2 text-sm outline-none resize-none"
-              style={{ background: '#120e09', border: '1px solid var(--gold-dim)', borderRadius: '0.25rem', color: '#e8dcc8', fontFamily: 'var(--font-body)' }}
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>{bioValue.length}/300</span>
-              <div className="flex gap-2">
-                <button onClick={() => { setEditingBio(false); setBioValue(profile.bio ?? '') }} className="px-3 py-1 text-xs" style={{ color: '#666', cursor: 'pointer', border: '1px solid var(--border)', borderRadius: '0.25rem' }}>
-                  취소
-                </button>
-                <button onClick={saveBio} disabled={bioSaving} className="px-3 py-1 text-xs font-medium" style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '0.25rem', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}>
-                  저장
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p style={{ color: profile.bio ? '#9a8a70' : '#5a5070', fontSize: '0.8125rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-            {profile.bio || '아직 소개가 없습니다.'}
-          </p>
-        )}
-      </section>
-
-      {/* Plan SC: SC-05 — 활동 통계 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-        {STAT_ITEMS.map(({ key, label, icon: Icon }) => (
-          <div
-            key={key}
-            style={{
-              background: '#1a1510',
-              border: '1px solid var(--border)',
-              borderRadius: '0.5rem',
-              padding: '1rem',
-              textAlign: 'center',
-            }}
-          >
-            <Icon size={14} style={{ color: 'var(--gold-dim)', margin: '0 auto 0.375rem' }} />
-            <div style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700, lineHeight: 1.2 }}>
-              {stats[key]}
-            </div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem', marginTop: '0.25rem' }}>{label}</div>
-          </div>
-        ))}
+        </aside>
       </div>
 
-      {/* 계정 관리 */}
-      <div
-        style={{
-          background: '#1a1510',
-          border: '1px solid var(--border)',
-          borderRadius: '0.5rem',
-          padding: '1rem',
-          marginTop: '0.75rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-        }}
-      >
-        {!showWithdraw && (
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="flex items-center gap-2 w-full justify-center transition-all duration-200 hover:opacity-90"
-            style={{
-              color: '#9a8a70', fontSize: '0.75rem', cursor: 'pointer',
-              border: '1px solid var(--border)', borderRadius: '0.25rem',
-              padding: '0.4375rem 0.75rem', background: 'rgba(255,255,255,0.03)', fontFamily: 'var(--font-body)',
-            }}
-          >
-            <LogOut size={13} />
-            로그아웃
-          </button>
-        )}
-
-        {!showWithdraw && (
-          <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border), transparent)' }} />
-        )}
-
-        {showWithdraw ? (
-          <div className="flex flex-col gap-3">
-            <p style={{ color: '#ff6060', fontSize: '0.75rem', lineHeight: 1.6 }}>
-              탈퇴하면 모든 덱과 프로필이 영구 삭제됩니다. 정말 탈퇴하시겠습니까?
-            </p>
-            <div className="flex gap-2">
-              <button onClick={() => setShowWithdraw(false)} className="flex-1 py-1.5 text-xs" style={{ color: '#888', cursor: 'pointer', border: '1px solid var(--border)', borderRadius: '0.25rem' }}>
-                취소
-              </button>
-              <button onClick={withdrawAccount} disabled={withdrawing} className="flex-1 py-1.5 text-xs font-medium" style={{ background: 'rgba(139,26,26,0.9)', color: '#ff6060', borderRadius: '0.25rem', cursor: 'pointer', border: '1px solid rgba(139,26,26,0.5)' }}>
-                {withdrawing ? '처리 중...' : '탈퇴 확인'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button onClick={() => setShowWithdraw(true)} className="flex items-center gap-1.5 w-full justify-center transition-opacity hover:opacity-80" style={{ color: '#4a3030', fontSize: '0.6875rem', cursor: 'pointer' }}>
-            회원 탈퇴
-          </button>
-        )}
-      </div>
-
-      {/* 아바타 피커 */}
       <AvatarPicker
         open={avatarPickerOpen}
         currentUrl={profile.avatar_url}
