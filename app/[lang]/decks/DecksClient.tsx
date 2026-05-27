@@ -487,13 +487,26 @@ export default function DecksClient({
     let cancelled = false
     void import('motion/react').then(({ animate }) => {
       if (cancelled) return
-      controls = [
-        animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] }),
-        animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' }),
-        animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }),
-        animate('.decks-filters', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.5, ease: 'easeOut' }),
-        animate('.decks-divider-bottom', { scaleX: [0, 1] }, { duration: 0.6, delay: 0.7, ease: [0.33, 1, 0.68, 1] }),
-      ]
+      const animateSelector = (selector: string, startAnimation: () => { stop: () => void }) => {
+        if (!document.querySelector(selector)) return
+        controls.push(startAnimation())
+      }
+
+      animateSelector('.decks-header-line', () =>
+        animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] })
+      )
+      animateSelector('.decks-header-tag', () =>
+        animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' })
+      )
+      animateSelector('.decks-header-title', () =>
+        animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] })
+      )
+      animateSelector('.decks-filters', () =>
+        animate('.decks-filters', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.5, ease: 'easeOut' })
+      )
+      animateSelector('.decks-divider-bottom', () =>
+        animate('.decks-divider-bottom', { scaleX: [0, 1] }, { duration: 0.6, delay: 0.7, ease: [0.33, 1, 0.68, 1] })
+      )
     })
     return () => {
       cancelled = true
