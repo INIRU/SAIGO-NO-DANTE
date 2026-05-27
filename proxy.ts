@@ -48,6 +48,22 @@ function isBlockedPath(pathname: string): boolean {
   return false
 }
 
+function getParsedOrigin(value: string | null): string | null {
+  if (!value) return null
+  try {
+    return new URL(value).origin
+  } catch {
+    return null
+  }
+}
+
+function isAllowedOrigin(value: string | null, requestOrigin: string): boolean {
+  const parsedOrigin = getParsedOrigin(value)
+  if (!parsedOrigin) return false
+
+  return parsedOrigin === requestOrigin || ALLOWED_ORIGINS.includes(parsedOrigin)
+}
+
 // 빈 403 응답 (봇에게 최소 정보 노출)
 const FORBIDDEN_RESPONSE = new Response(null, { status: 403 })
 
@@ -195,11 +211,11 @@ export async function proxy(request: NextRequest) {
   // 서버 내부 호출 (SSR, API 내부 호출) — origin/referer 모두 없음
   if (isInternalCall) return NextResponse.next()
 
-  if (origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+  if (isAllowedOrigin(origin, request.nextUrl.origin)) {
     return NextResponse.next()
   }
 
-  if (referer && ALLOWED_ORIGINS.some(o => referer.startsWith(o))) {
+  if (isAllowedOrigin(referer, request.nextUrl.origin)) {
     return NextResponse.next()
   }
 
@@ -210,5 +226,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|icons|sw\\.js|manifest|api|monitoring|.*\\..*).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|icons|sw\\.js|manifest|monitoring|.*\\..*).*)'],
 }

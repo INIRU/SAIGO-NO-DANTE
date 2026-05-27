@@ -46,6 +46,14 @@ function formatNumber(value: number | undefined) {
   return typeof value === 'number' ? value.toLocaleString('ko-KR') : '-'
 }
 
+function getUserTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+  } catch {
+    return undefined
+  }
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,8 +61,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     let active = true
+    const timeZone = getUserTimeZone()
     setLoading(true)
-    fetch('/api/admin/stats')
+    fetch('/api/admin/stats', timeZone ? { headers: { 'x-user-timezone': timeZone } } : undefined)
       .then(async response => {
         if (!response.ok) throw new Error('stats')
         return response.json() as Promise<Stats>

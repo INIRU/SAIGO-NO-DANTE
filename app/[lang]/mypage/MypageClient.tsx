@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from '@/lib/i18n/navigation'
+import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
+import Image from 'next/image'
 import { showSuccess, showError } from '@/lib/toast'
 import MypageTabs, { type MypageTab } from './components/MypageTabs'
 import ProfileTab from './components/ProfileTab'
@@ -12,6 +13,9 @@ import DecksTab from './components/DecksTab'
 import PlannerTab from './components/PlannerTab'
 import CollectionTab from './components/CollectionTab'
 import { DeckSummary } from '@/components/decks/DeckCard'
+import LocalTime from '@/components/ui/LocalTime'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { Archive, Bookmark, Calendar, Layers, Map, Plus } from 'lucide-react'
 
 // Design Ref: §2 — Option C Pragmatic Balance, 탭 컨테이너
 
@@ -38,10 +42,15 @@ type ProfileData = {
   stats: Stats
 }
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 export default function MypageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [entryOpacity, setEntryOpacity] = useState(() => prefersReducedMotion() ? 1 : 0)
 
   const [activeTab, setActiveTab] = useState<MypageTab>(() => {
     const param = searchParams?.get('tab')
@@ -54,6 +63,12 @@ export default function MypageClient() {
     if (saved && ['profile', 'decks', 'planner', 'collection'].includes(saved)) {
       setActiveTab(saved as MypageTab)
     }
+  }, [])
+
+  const setEntryElementsOpacity = useCallback((opacity: 0 | 1) => {
+    document.querySelectorAll<HTMLElement>('.mypage-header, .mypage-tabs, .mypage-panel').forEach((element) => {
+      element.style.opacity = String(opacity)
+    })
   }, [])
 
   // SWR: 프로필 로드 (인증 시에만)
@@ -73,16 +88,26 @@ export default function MypageClient() {
     router.replace(`/mypage?tab=${tab}`, { scroll: false })
     localStorage.setItem('mypage-tab', tab)
 
-    // 탭 전환 애니메이션
+    if (prefersReducedMotion()) {
+      setEntryOpacity(1)
+      requestAnimationFrame(() => setEntryElementsOpacity(1))
+      return
+    }
     void import('motion/react').then(({ animate }) => {
       animate('.mypage-panel', { opacity: [0, 1], y: [8, 0] }, { duration: 0.3, ease: 'easeOut' })
     })
-  }, [router])
+  }, [router, setEntryElementsOpacity])
 
   // 초기 진입 애니메이션
   const animPlayed = useRef(false)
   useEffect(() => {
     if (loading || !data || animPlayed.current) return
+    if (prefersReducedMotion()) {
+      animPlayed.current = true
+      setEntryOpacity(1)
+      setEntryElementsOpacity(1)
+      return
+    }
     animPlayed.current = true
     let controls: Array<{ stop: () => void }> = []
     let cancelled = false
@@ -98,7 +123,7 @@ export default function MypageClient() {
       cancelled = true
       controls.forEach(control => control.stop())
     }
-  }, [loading, data])
+  }, [loading, data, setEntryElementsOpacity])
 
   // 덱 삭제
   const deleteDeck = useCallback(async (deckId: string) => {
@@ -137,20 +162,20 @@ export default function MypageClient() {
   // 로딩 스켈레톤
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-10">
-            <div style={{ width: '5rem', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.5rem' }} />
-            <div style={{ width: '11.25rem', height: '2rem', background: '#2a2015', borderRadius: '0.25rem' }} />
+      <div className="min-h-[100dvh] px-4 pb-16 pt-24 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-5 rounded-lg border border-[rgba(200,144,10,0.14)] bg-[#120e09] p-4 sm:p-5">
+            <div style={{ width: '9rem', height: '1rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.75rem' }} />
+            <div style={{ width: '16rem', maxWidth: '80%', height: '2.5rem', background: '#2a2015', borderRadius: '0.25rem' }} />
           </div>
-          <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '0.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '0.25rem', marginBottom: '1rem' }}>
             <div className="flex gap-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{ width: '5rem', height: '2.25rem', background: '#2a2015', borderRadius: '0.375rem', opacity: 0.4 + i * 0.1 }} />
+                <div key={i} style={{ width: '6rem', height: '2.75rem', background: '#2a2015', borderRadius: '0.375rem', opacity: 0.4 + i * 0.1 }} />
               ))}
             </div>
           </div>
-          <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', height: '12rem' }} />
+          <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', height: '18rem' }} />
         </div>
       </div>
     )
@@ -160,30 +185,72 @@ export default function MypageClient() {
 
   const { profile, email } = data
   const displayName = profile.username ?? session.user.name ?? email
+  const avatarUrl = profile.avatar_url || DEFAULT_AVATAR_URL
+  const currentTabLabel = activeTab === 'profile' ? '프로필' : activeTab === 'decks' ? '덱' : activeTab === 'planner' ? '플래너' : '컬렉션'
+  const statItems = [
+    { label: '덱', value: data.stats.deckCount, icon: Layers, tab: 'decks' as const },
+    { label: '플랜', value: data.stats.planCount, icon: Map, tab: 'planner' as const },
+    { label: '북마크', value: data.stats.bookmarkCount, icon: Bookmark, tab: 'decks' as const },
+    { label: '받은 추천', value: data.stats.totalVotesReceived, icon: Archive, tab: 'profile' as const },
+  ]
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Background atmospheric glow */}
-      <div style={{
-        position: 'fixed', top: '-10rem', right: '-5rem',
-        width: '35rem', height: '35rem', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
-        pointerEvents: 'none', zIndex: 0,
-      }} />
+    <div className="min-h-[100dvh] px-4 pb-16 pt-24 sm:px-6" style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="mx-auto max-w-6xl">
+        <section
+          className="mypage-header mb-4 grid gap-4 rounded-lg border border-[rgba(200,144,10,0.16)] bg-[#120e09]/90 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto]"
+          style={{ opacity: entryOpacity }}
+        >
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="relative h-16 w-16 flex-none overflow-hidden rounded-md border border-[rgba(200,144,10,0.35)] bg-[#1a1510] sm:h-20 sm:w-20">
+              <Image src={avatarUrl} alt="" fill sizes="80px" className="object-cover" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-mono text-[0.875rem]" style={{ color: 'var(--gold-dim)' }}>MY PAGE</p>
+              <h1 className="mt-1 break-words font-serif text-[2rem] leading-tight sm:text-[2.5rem]" style={{ color: 'var(--gold)' }}>
+                {displayName}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1" style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                <span className="min-w-0 break-all">{email}</span>
+                {profile.created_at && (
+                  <span className="inline-flex items-center gap-1.5 font-mono">
+                    <Calendar size={14} aria-hidden="true" />
+                    <LocalTime value={profile.created_at} locale="ko-KR" dateStyle="medium" />
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
 
-      <div className="max-w-5xl mx-auto">
-        {/* 섹션 헤더 */}
-        <div className="mypage-header mb-8" style={{ opacity: 0 }}>
-          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-            MY PAGE
-          </p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold" style={{ color: 'var(--gold)' }}>
-            마이 페이지
-          </h1>
-          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[26rem]">
+            {statItems.map(({ label, value, icon: Icon, tab }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => handleTabChange(tab)}
+                className="min-h-16 rounded-md border border-[rgba(200,144,10,0.12)] bg-[#1a1510] px-3 py-2 text-left transition-colors hover:border-[rgba(200,144,10,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+              >
+                <span className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                  <Icon size={15} aria-hidden="true" />
+                  {label}
+                </span>
+                <span className="mt-1 block font-mono text-[1.375rem] leading-none" style={{ color: 'var(--gold)' }}>{value}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="font-mono text-[0.875rem]" style={{ color: 'var(--text-tertiary)' }}>{currentTabLabel}</p>
+          <Link
+            href="/decks/new"
+            className="inline-flex min-h-11 items-center gap-2 rounded bg-[var(--gold)] px-4 font-heading text-[0.9375rem] font-semibold text-[var(--bg-deep)] transition hover:brightness-110 active:scale-[0.98]"
+          >
+            <Plus size={16} aria-hidden="true" />
+            새 덱
+          </Link>
         </div>
 
-        {/* Plan SC: SC-01 — 4탭 네비게이션 */}
         <div className="mb-6">
           <MypageTabs
             activeTab={activeTab}
@@ -198,14 +265,13 @@ export default function MypageClient() {
           role="tabpanel"
           id={`panel-${activeTab}`}
           aria-labelledby={`tab-${activeTab}`}
-          style={{ opacity: 0 }}
+          style={{ opacity: entryOpacity }}
         >
           {activeTab === 'profile' && (
             <ProfileTab
               profile={profile}
               email={email}
               displayName={displayName}
-              stats={data.stats}
               onProfileUpdate={handleProfileUpdate}
             />
           )}
