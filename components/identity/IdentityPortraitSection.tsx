@@ -196,7 +196,7 @@ export default function IdentityPortraitSection({
                 placeholder="blur"
                 blurDataURL={getBlurDataURL(infoSrc) ?? BLUR_PLACEHOLDER}
                 className="w-full h-auto max-w-[320px] mx-auto"
-                priority
+                preload
                 onError={() => {
                   if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
                     setInfoSrc(fallbackInfoUrl)

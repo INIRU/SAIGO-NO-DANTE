@@ -3,19 +3,23 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface NavigatorWithConnection extends Navigator {
-  connection?: {
-    effectiveType?: string
-  }
+type NavigatorConnection = {
+  effectiveType?: string
+  saveData?: boolean
+}
+
+type NavigatorWithNetworkHints = Navigator & {
+  connection?: NavigatorConnection
   deviceMemory?: number
 }
 
 function shouldSkip(): boolean {
   if (typeof window === 'undefined') return true
   if (window.matchMedia('(prefers-reduced-data)').matches) return true
-  const nav = navigator as NavigatorWithConnection
+  const nav = navigator as NavigatorWithNetworkHints
   const conn = nav.connection
-  if (conn?.effectiveType && ['2g', '3g'].includes(conn.effectiveType)) return true
+  if (conn?.saveData) return true
+  if (conn?.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return true
   const mem = nav.deviceMemory
   if (mem && mem < 4) return true
   return false
@@ -23,40 +27,50 @@ function shouldSkip(): boolean {
 
 export function useRoutePrefetch(routes: string[], delay = 2000, enabled = false): void {
   const router = useRouter()
-  const routeKey = routes.join('\n')
+  const routesKey = routes.join('\0')
 
   useEffect(() => {
-    if (!enabled || !routeKey || shouldSkip()) return
+    if (!enabled || shouldSkip()) return
+    const routeList = routesKey ? routesKey.split('\0') : []
+    if (routeList.length === 0) return
 
-    const routeList = routeKey.split('\n').filter(Boolean)
+    let cancelled = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     let idleId: number | undefined
-    let fallbackId: number | undefined
 
-    const timeoutId = window.setTimeout(() => {
+    const prefetchOne = (index: number) => {
+      if (cancelled || index >= routeList.length) return
+
       const run = () => {
-        for (const route of routeList) {
-          try {
-            router.prefetch(route)
-          } catch {
-            if (process.env.NODE_ENV === 'development') {
-              console.debug(`[useRoutePrefetch] prefetch failed: ${route}`)
-            }
+        if (cancelled) return
+        const route = routeList[index]
+        try {
+          router.prefetch(route)
+        } catch {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug(`[useRoutePrefetch] prefetch failed: ${route}`)
           }
         }
+        prefetchOne(index + 1)
       }
 
-      const requestIdleCallback = window.requestIdleCallback
-      if (typeof requestIdleCallback === 'function') {
-        idleId = requestIdleCallback(run, { timeout: 5000 })
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(run, { timeout: 5000 })
       } else {
-        fallbackId = window.setTimeout(run, 4000)
+        timeoutId = setTimeout(run, 4000)
       }
+    }
+
+    timeoutId = setTimeout(() => {
+      prefetchOne(0)
     }, delay)
 
     return () => {
-      window.clearTimeout(timeoutId)
-      if (idleId !== undefined) window.cancelIdleCallback(idleId)
-      if (fallbackId !== undefined) window.clearTimeout(fallbackId)
+      cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
+      if (idleId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId)
+      }
     }
-  }, [router, delay, enabled, routeKey])
+  }, [router, routesKey, delay, enabled])
 }

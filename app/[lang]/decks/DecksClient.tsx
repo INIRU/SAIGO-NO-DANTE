@@ -481,6 +481,26 @@ export default function DecksClient({
   const [codeError, setCodeError] = useState(false)
   const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
 
+  // ── Entry animation ──
+  useEffect(() => {
+    let controls: Array<{ stop: () => void }> = []
+    let cancelled = false
+    void import('motion/react').then(({ animate }) => {
+      if (cancelled) return
+      controls = [
+        animate('.decks-header-line', { scaleX: [0, 1] }, { duration: 0.8, ease: [0.33, 1, 0.68, 1] }),
+        animate('.decks-header-tag', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.2, ease: 'easeOut' }),
+        animate('.decks-header-title', { opacity: [0, 1], y: [-20, 0] }, { duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }),
+        animate('.decks-filters', { opacity: [0, 1], y: [10, 0] }, { duration: 0.5, delay: 0.5, ease: 'easeOut' }),
+        animate('.decks-divider-bottom', { scaleX: [0, 1] }, { duration: 0.6, delay: 0.7, ease: [0.33, 1, 0.68, 1] }),
+      ]
+    })
+    return () => {
+      cancelled = true
+      controls.forEach(control => control.stop())
+    }
+  }, [])
+
   // ── Initial deck load (skip if server data present) ──
   useEffect(() => {
     if (!hasServerBackedFilters && initialDataKey.current === `${sort}:${languageFilter}`) {
