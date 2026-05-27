@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'

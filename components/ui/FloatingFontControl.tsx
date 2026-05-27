@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { usePathname } from '@/lib/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus } from 'lucide-react'
 
 const FONT_SIZES = ['small', 'default', 'large'] as const
