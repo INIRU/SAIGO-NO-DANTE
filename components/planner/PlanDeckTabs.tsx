@@ -7,6 +7,12 @@ import { useLocale, useTranslations } from 'next-intl'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
+import type {
+  EgoEntry,
+  IdentitySlot as DeckIdentityPreviewSlot,
+  PassiveDetail,
+  SkillDetail,
+} from '@/components/deck-detail/DeckIdentityCard'
 import type { Identity } from '@/lib/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
@@ -14,7 +20,7 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
 import SkillExchangePanel from './SkillExchangePanel'
 
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
+const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 
 const S = STORAGE_BASE
@@ -29,6 +35,7 @@ type IdentitySlot = {
   rarity?: number
   keywords?: string[]
   skill_keyword_list?: string[] | null
+  gacksung?: boolean
   s1_count?: number | null
   s2_count?: number | null
   s3_count?: number | null
@@ -47,14 +54,25 @@ type EgoSlot = {
 type IdentityData = {
   id: string
   sinner_id: string
+  name?: string | null
   name_kr: string
   name_en?: string | null
   name_jp?: string | null
+  tier: number
   rarity: number
   keywords: string[] | null
   skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
   game_id: string | null
   folder_name: string | null
+  hp: number | null
+  speed_min: number | null
+  speed_max: number | null
+  def_level: number | null
+  slash_res: string | null
+  pierce_res: string | null
+  blunt_res: string | null
 }
 
 type SinnerData = {
@@ -68,29 +86,51 @@ type EgoData = {
   sinner_id: string
   name: string
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: string | null
+  folder_name?: string | null
   image_url: string | null
   cost: number[] | null
 }
 
 type SkillSummary = {
+  id: string
   identity_id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   sin_affinity: string
   skill_type: string
+  atk_type?: string | null
+  coins: number | null
+  base_power: number | null
+  coin_power: number | null
   skill_order: number
+  variant_order?: number | null
+  atk_weight: number | null
+  offense_level: number | null
+  description?: string | null
+  description_en?: string | null
+  description_jp?: string | null
   uptie_level: number | null
 }
 
 type PassiveSummary = {
+  id: string
   identity_id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
   active_cond: string | null
   description: string | null
+  description_en?: string | null
+  description_jp?: string | null
+  passive_order: number
   uptie_level: number | null
 }
 
@@ -139,6 +179,125 @@ function adaptPlanBoardIdentity(slot: IdentitySlot, identity: IdentityData | und
   }
 }
 
+function adaptPreviewSkills(identityId: string, skills: SkillSummary[]): SkillDetail[] {
+  return skills
+    .filter(skill => skill.identity_id === identityId)
+    .map(skill => ({
+      id: skill.id,
+      name: skill.name,
+      name_en: skill.name_en,
+      name_jp: skill.name_jp,
+      skill_type: skill.skill_type,
+      atk_type: skill.atk_type,
+      sin_affinity: skill.sin_affinity,
+      coins: skill.coins ?? 0,
+      base_power: skill.base_power ?? 0,
+      coin_power: skill.coin_power ?? 0,
+      skill_order: skill.skill_order,
+      atk_weight: skill.atk_weight,
+      offense_level: skill.offense_level,
+      description: skill.description,
+      description_en: skill.description_en,
+      description_jp: skill.description_jp,
+      uptie_level: skill.uptie_level,
+      variant_order: skill.variant_order,
+    }))
+}
+
+function adaptPreviewPassives(identityId: string, passives: PassiveSummary[]): Array<PassiveDetail & { id?: string }> {
+  return passives
+    .filter(passive => passive.identity_id === identityId)
+    .map(passive => ({
+      id: passive.id,
+      name: passive.name,
+      name_en: passive.name_en,
+      name_jp: passive.name_jp,
+      passive_type: passive.passive_type,
+      sin_affinity: passive.sin_affinity,
+      sin_count: passive.sin_count,
+      active_cond: passive.active_cond,
+      description: passive.description ?? '',
+      description_en: passive.description_en,
+      description_jp: passive.description_jp,
+      passive_order: passive.passive_order,
+      uptie_level: passive.uptie_level,
+    }))
+}
+
+function adaptPreviewSlot(
+  slot: IdentitySlot,
+  identity: IdentityData | undefined,
+  skills: SkillSummary[],
+  passives: PassiveSummary[],
+): DeckIdentityPreviewSlot | null {
+  const identityId = slot.identity_id ?? identity?.id
+  const sinnerId = slot.sinner_id ?? identity?.sinner_id
+  if (!identityId || !sinnerId) return null
+
+  const source = identity ?? slot
+  const nameKr = source.name_kr ?? slot.name_kr ?? identityId
+
+  return {
+    slot_order: slot.slot_order ?? 99,
+    gacksung: slot.gacksung ?? false,
+    s1_count: slot.s1_count ?? undefined,
+    s2_count: slot.s2_count ?? undefined,
+    s3_count: slot.s3_count ?? undefined,
+    identities: {
+      id: identityId,
+      sinner_id: sinnerId,
+      folder_name: source.folder_name ?? null,
+      game_id: source.game_id ?? null,
+      keywords: source.keywords ?? [],
+      skill_keyword_list: source.skill_keyword_list ?? null,
+      affiliation: identity?.affiliation ?? null,
+      association_list: identity?.association_list ?? null,
+      name: identity?.name ?? null,
+      name_kr: nameKr,
+      name_en: identity?.name_en ?? slot.name_en ?? null,
+      name_jp: identity?.name_jp ?? slot.name_jp ?? null,
+      tier: identity?.tier ?? 0,
+      rarity: source.rarity ?? 1,
+      hp: identity?.hp ?? null,
+      speed_min: identity?.speed_min ?? null,
+      speed_max: identity?.speed_max ?? null,
+      def_level: identity?.def_level ?? null,
+      slash_res: identity?.slash_res ?? null,
+      pierce_res: identity?.pierce_res ?? null,
+      blunt_res: identity?.blunt_res ?? null,
+      skills: adaptPreviewSkills(identityId, skills),
+      passives: adaptPreviewPassives(identityId, passives),
+    },
+  }
+}
+
+function adaptPreviewEgos(sinnerId: string | null | undefined, egoSlots: EgoSlot[], egos: EgoData[]): EgoEntry[] {
+  if (!sinnerId) return []
+  const egoMap = new Map(egos.map(ego => [ego.id, ego]))
+  return egoSlots
+    .filter(slot => slot.sinner_id === sinnerId && slot.ego_id)
+    .map((slot): EgoEntry | null => {
+      const ego = egoMap.get(slot.ego_id!)
+      if (!ego) return null
+      return {
+        grade: slot.grade ?? ego.grade,
+        ego: {
+          id: ego.id,
+          name: ego.name,
+          name_kr: ego.name_kr,
+          name_en: ego.name_en,
+          name_jp: ego.name_jp,
+          grade: ego.grade,
+          sin_affinity: ego.sin_affinity,
+          sinner_id: ego.sinner_id,
+          folder_name: ego.folder_name ?? null,
+          image_url: ego.image_url,
+        },
+      }
+    })
+    .filter((entry): entry is EgoEntry => Boolean(entry))
+}
+
 export default function PlanDeckTabs({
   deck,
   egoSlots,
@@ -156,6 +315,17 @@ export default function PlanDeckTabs({
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
+
+  const selectedPreviewSlot = useMemo(() => {
+    if (!identityModalId) return null
+    const slot = deck.find(item => item.identity_id === identityModalId)
+    if (!slot) return null
+    return adaptPreviewSlot(slot, identityMap.get(identityModalId), skills, passives)
+  }, [deck, identityMap, identityModalId, passives, skills])
+
+  const selectedPreviewEgos = useMemo(() => (
+    adaptPreviewEgos(selectedPreviewSlot?.identities?.sinner_id, egoSlots, egos)
+  ), [egoSlots, egos, selectedPreviewSlot?.identities?.sinner_id])
 
   const slotBySinner = useMemo(() => {
     const map: Record<string, IdentitySlot> = {}
@@ -406,9 +576,13 @@ export default function PlanDeckTabs({
       )}
 
       {/* 모달 */}
-      {identityModalId && (
-        <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
-      )}
+      <DeckIdentityPreviewModal
+        open={Boolean(selectedPreviewSlot)}
+        slot={selectedPreviewSlot}
+        egos={selectedPreviewEgos}
+        onEgoClick={setEgoModalId}
+        onClose={() => setIdentityModalId(null)}
+      />
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}

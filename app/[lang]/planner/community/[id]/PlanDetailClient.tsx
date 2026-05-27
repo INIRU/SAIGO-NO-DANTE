@@ -60,8 +60,15 @@ type IdentitySlot = {
   identity_id?: string
   sinner_id?: string
   name_kr?: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity?: number
   keywords?: string[]
+  skill_keyword_list?: string[] | null
+  gacksung?: boolean
+  s1_count?: number | null
+  s2_count?: number | null
+  s3_count?: number | null
   game_id?: string | null
   folder_name?: string | null
   slot_order?: number
@@ -114,14 +121,25 @@ type ThemeData = {
 type IdentityData = {
   id: string
   sinner_id: string
+  name?: string | null
   name_kr: string
   name_en?: string | null
   name_jp?: string | null
+  tier: number
   rarity: number
   keywords: string[] | null
   skill_keyword_list?: string[] | null
+  affiliation?: string | null
+  association_list?: string[] | null
   game_id: string | null
   folder_name: string | null
+  hp: number | null
+  speed_min: number | null
+  speed_max: number | null
+  def_level: number | null
+  slash_res: string | null
+  pierce_res: string | null
+  blunt_res: string | null
 }
 
 type SinnerData = {
@@ -139,20 +157,35 @@ type EgoData = {
   name_jp?: string | null
   grade: string
   sin_affinity: string | null
+  folder_name?: string | null
   image_url: string | null
   cost: number[] | null
 }
 
 type SkillSummary = {
+  id: string
   identity_id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   sin_affinity: string
   skill_type: string
+  atk_type?: string | null
+  coins: number | null
+  base_power: number | null
+  coin_power: number | null
   skill_order: number
+  variant_order?: number | null
+  atk_weight: number | null
+  offense_level: number | null
+  description?: string | null
+  description_en?: string | null
+  description_jp?: string | null
   uptie_level: number | null
 }
 
 type PassiveSummary = {
+  id: string
   identity_id: string
   name: string
   name_en?: string | null
@@ -164,6 +197,7 @@ type PassiveSummary = {
   description: string | null
   description_en?: string | null
   description_jp?: string | null
+  passive_order: number
   uptie_level: number | null
 }
 

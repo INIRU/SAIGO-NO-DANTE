@@ -64,14 +64,22 @@ export default async function PlanDetailPage({ params }: Props) {
   // 그룹 2: 인격/수감자/스킬/패시브
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: skills, error: skillsError }, { data: passives, error: passivesError }] = await Promise.all([
     supabase.schema('limbus').from('identities')
-      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, game_id, folder_name')
+      .select(`
+        id, sinner_id, name, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list,
+        affiliation, association_list, game_id, folder_name,
+        hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res
+      `)
       .order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     supabase.schema('limbus').from('skills')
-      .select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level')
+      .select(`
+        id, identity_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins,
+        base_power, coin_power, skill_order, variant_order, atk_weight, offense_level,
+        description, description_en, description_jp, uptie_level
+      `)
       .eq('uptie_level', 4),
     supabase.schema('limbus').from('passives')
-      .select('identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level')
+      .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, passive_order, uptie_level')
       .eq('uptie_level', 4),
   ])
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
