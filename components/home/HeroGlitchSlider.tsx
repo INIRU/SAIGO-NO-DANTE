@@ -195,7 +195,12 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     }
 
     const { gsap } = await loadGsap()
-    kenBurnsCtxRef.current?.revert()
+    const frozenTransform = window.getComputedStyle(a).transform
+    const frozenTransformOrigin = window.getComputedStyle(a).transformOrigin
+    gsap.killTweensOf(a)
+    if (frozenTransform && frozenTransform !== 'none') {
+      gsap.set(a, { transform: frozenTransform, transformOrigin: frozenTransformOrigin })
+    }
     kenBurnsCtxRef.current = null
     glitchTlRef.current?.kill()
 
@@ -337,7 +342,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     }
 
     glitchTlRef.current
-      .set(a, { autoAlpha: 1, scale: 1, filter: 'none', willChange: 'opacity, filter' }, 0)
+      .set(a, { autoAlpha: 1, filter: 'none', willChange: 'opacity, filter' }, 0)
       .to(a, { filter: 'brightness(1.18) contrast(1.06)' }, 0.034)
       .to(a, { filter: 'brightness(0.96) contrast(1.18) saturate(0.96)' }, 0.116)
       .to(a, { filter: 'brightness(1.08) contrast(1.1)' }, 0.188)
