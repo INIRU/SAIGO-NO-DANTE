@@ -52,6 +52,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
   const layerARef        = useRef<HTMLDivElement>(null)
   const pendingLayerRef  = useRef<HTMLDivElement>(null)
+  const glitchSliceRef   = useRef<HTMLDivElement>(null)
   const chromaRRef       = useRef<HTMLDivElement>(null)
   const chromaBRef       = useRef<HTMLDivElement>(null)
   const scanlineRef      = useRef<HTMLDivElement>(null)
@@ -180,6 +181,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
 
     const a = layerARef.current
     const nextLayer = pendingLayerRef.current
+    const glitchSlice = glitchSliceRef.current
     const rCh = chromaRRef.current
     const bCh = chromaBRef.current
     const scanline = scanlineRef.current
@@ -198,9 +200,9 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     glitchTlRef.current?.kill()
 
     const resetGlitchLayers = () => {
-      const glitchTargets = [a, nextLayer, rCh, bCh, scanline].filter((el): el is HTMLDivElement => Boolean(el))
+      const glitchTargets = [a, nextLayer, glitchSlice, rCh, bCh, scanline].filter((el): el is HTMLDivElement => Boolean(el))
       gsap.set(glitchTargets, {
-        clearProps: 'clipPath,x,y,scale,filter,transform,willChange,opacity',
+        clearProps: 'clipPath,x,y,scale,filter,transform,willChange,opacity,visibility',
       })
     }
 
@@ -225,30 +227,103 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     if (nextLayer) {
       glitchTlRef.current
         .set(nextLayer, {
-          opacity: 0,
+          autoAlpha: 0,
           scale: 1.018,
           filter: 'brightness(0.62) saturate(0.86)',
           willChange: 'opacity, transform, filter',
         }, 0)
         .to(nextLayer, {
-          opacity: 1,
+          autoAlpha: 1,
           scale: 1,
           filter: 'brightness(1) saturate(1)',
-          duration: 0.222,
-          ease: 'power2.out',
-        }, 0.018)
+          duration: 0.064,
+          ease: 'power3.out',
+        }, 0.246)
+    }
+
+    if (glitchSlice) {
+      glitchTlRef.current
+        .set(glitchSlice, {
+          autoAlpha: 0,
+          x: 0,
+          y: 0,
+          scale: 1,
+          clipPath: 'inset(0 0 100% 0)',
+          filter: 'brightness(1) contrast(1) saturate(1)',
+          willChange: 'opacity, transform, clip-path, filter',
+        }, 0)
+        .to(glitchSlice, {
+          autoAlpha: 0.92,
+          x: '-0.64rem',
+          y: '-0.03rem',
+          clipPath: 'inset(8% 0 77% 0)',
+          filter: 'brightness(1.74) contrast(1.24) saturate(0.92)',
+        }, 0)
+        .to(glitchSlice, {
+          autoAlpha: 0.78,
+          x: '0.52rem',
+          y: '0.04rem',
+          clipPath: 'inset(39% 0 43% 0)',
+          filter: 'brightness(0.84) contrast(1.42) saturate(1.18)',
+        }, 0.034)
+        .to(glitchSlice, {
+          autoAlpha: 0.86,
+          x: '-0.38rem',
+          y: 0,
+          clipPath: 'inset(3% 0 88% 0)',
+          filter: 'brightness(2.1) contrast(1.18) saturate(0.82)',
+        }, 0.072)
+        .to(glitchSlice, {
+          autoAlpha: 0.72,
+          x: '0.42rem',
+          y: '-0.02rem',
+          clipPath: 'inset(61% 0 21% 0)',
+          filter: 'brightness(1.08) contrast(1.52) saturate(1.1)',
+        }, 0.108)
+        .to(glitchSlice, {
+          autoAlpha: 0.88,
+          x: '-0.72rem',
+          y: '0.03rem',
+          clipPath: 'inset(23% 0 62% 0)',
+          filter: 'brightness(1.56) contrast(1.32) saturate(0.9)',
+        }, 0.148)
+        .to(glitchSlice, {
+          autoAlpha: 0.62,
+          x: '0.28rem',
+          y: 0,
+          clipPath: 'inset(72% 0 9% 0)',
+          filter: 'brightness(0.96) contrast(1.62) saturate(1.16)',
+        }, 0.188)
+        .to(glitchSlice, {
+          autoAlpha: 0.46,
+          x: '-0.18rem',
+          clipPath: 'inset(17% 0 73% 0)',
+          filter: 'brightness(1.86) contrast(1.2) saturate(0.92)',
+        }, 0.224)
+        .to(glitchSlice, {
+          autoAlpha: 0,
+          x: 0,
+          y: 0,
+          clipPath: 'inset(0 0 100% 0)',
+          filter: 'brightness(1) contrast(1) saturate(1)',
+          duration: 0.054,
+          ease: 'power1.in',
+        }, 0.254)
     }
 
     if (rCh && bCh) {
       glitchTlRef.current
-        .set([rCh, bCh], { opacity: 0.82, clipPath: 'inset(0 0 0 0)', willChange: 'opacity, transform, clip-path' }, 0)
-        .to(rCh, { x: '-0.42rem', y: '-0.04rem' }, 0)
-        .to(bCh, { x: '0.46rem', y: '0.04rem' }, 0)
-        .to(rCh, { x: '0.34rem', y: 0, clipPath: 'inset(43% 0 34% 0)' }, 0.052)
-        .to(bCh, { x: '-0.38rem', y: 0, clipPath: 'inset(9% 0 78% 0)' }, 0.052)
-        .to(rCh, { x: '-0.2rem', clipPath: 'inset(70% 0 10% 0)' }, 0.112)
-        .to(bCh, { x: '0.24rem', clipPath: 'inset(24% 0 58% 0)' }, 0.112)
-        .to([rCh, bCh], { opacity: 0, x: 0, y: 0, duration: 0.052 }, 0.188)
+        .set([rCh, bCh], { opacity: 0.62, clipPath: 'inset(0 0 0 0)', willChange: 'opacity, transform, clip-path' }, 0)
+        .to(rCh, { x: '-0.3rem', y: '-0.03rem' }, 0)
+        .to(bCh, { x: '0.34rem', y: '0.03rem' }, 0)
+        .to(rCh, { x: '0.26rem', y: 0, clipPath: 'inset(43% 0 34% 0)' }, 0.052)
+        .to(bCh, { x: '-0.28rem', y: 0, clipPath: 'inset(9% 0 78% 0)' }, 0.052)
+        .to(rCh, { x: '-0.16rem', clipPath: 'inset(70% 0 10% 0)' }, 0.112)
+        .to(bCh, { x: '0.2rem', clipPath: 'inset(24% 0 58% 0)' }, 0.112)
+        .to([rCh, bCh], { opacity: 0.28, x: 0, y: 0, duration: 0.05 }, 0.188)
+        .to(rCh, { opacity: 0.22, x: '-0.12rem', clipPath: 'inset(31% 0 47% 0)', duration: 0.026 }, 0.232)
+        .to(bCh, { opacity: 0.22, x: '0.14rem', clipPath: 'inset(52% 0 27% 0)', duration: 0.026 }, 0.232)
+        .to([rCh, bCh], { opacity: 0, x: 0, duration: 0.066 }, 0.268)
     }
 
     if (scanline) {
@@ -256,17 +331,17 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
         .set(scanline, { opacity: 0, x: '-0.75rem', willChange: 'opacity, transform' }, 0)
         .to(scanline, { opacity: 0.42, x: '0.22rem', duration: 0.046, ease: 'power1.out' }, 0.034)
         .to(scanline, { opacity: 0.18, x: '0.68rem', duration: 0.05, ease: 'power1.inOut' }, 0.104)
-        .to(scanline, { opacity: 0, x: '1rem', duration: 0.048, ease: 'power1.in' }, 0.172)
+        .to(scanline, { opacity: 0.08, x: '1rem', duration: 0.052, ease: 'power1.in' }, 0.172)
+        .to(scanline, { opacity: 0.26, x: '-0.18rem', duration: 0.026, ease: 'power1.out' }, 0.224)
+        .to(scanline, { opacity: 0, x: '0.72rem', duration: 0.052, ease: 'power1.in' }, 0.256)
     }
 
     glitchTlRef.current
-      .set(a, { willChange: 'clip-path, transform, filter' }, 0)
-      .to(a, { clipPath: 'inset(8% 0 78% 0)', x: '-0.32rem', y: '-0.04rem', filter: 'brightness(1.65) contrast(1.12)' }, 0)
-      .to(a, { clipPath: 'inset(47% 0 32% 0)', x: '0.42rem', y: 0, filter: 'hue-rotate(56deg) brightness(1.28)' }, 0.046)
-      .to(a, { clipPath: 'inset(5% 0 84% 0)', x: '-0.24rem', y: '0.03rem', filter: 'brightness(2.05) saturate(1.18)' }, 0.092)
-      .to(a, { clipPath: 'inset(69% 0 11% 0)', x: '0.3rem', y: 0, filter: 'hue-rotate(-42deg) brightness(1.22)' }, 0.136)
-      .to(a, { clipPath: 'inset(26% 0 57% 0)', x: '-0.18rem', y: '-0.02rem', filter: 'brightness(1.46)' }, 0.176)
-      .to(a, { clipPath: 'inset(0 0 100% 0)', x: 0, y: 0, filter: 'none', duration: 0.044 }, 0.212)
+      .set(a, { autoAlpha: 1, scale: 1, filter: 'none', willChange: 'opacity, filter' }, 0)
+      .to(a, { filter: 'brightness(1.18) contrast(1.06)' }, 0.034)
+      .to(a, { filter: 'brightness(0.96) contrast(1.18) saturate(0.96)' }, 0.116)
+      .to(a, { filter: 'brightness(1.08) contrast(1.1)' }, 0.188)
+      .to(a, { autoAlpha: 0, filter: 'brightness(0.84) contrast(1.2)', duration: 0.052, ease: 'power2.in' }, 0.246)
   }, [currentIdx, slides.length])
 
   // advance ref 최신화
@@ -326,10 +401,12 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           sizes="(max-width: 768px) 100vw, 62vw"
           quality={90}
         />
-        {/* RGB Chromatic Aberration 오버레이 */}
-        <div ref={chromaRRef} className={heroStyles.chromaR} style={chromaImageStyle} />
-        <div ref={chromaBRef} className={heroStyles.chromaB} style={chromaImageStyle} />
       </div>
+      {/* Current 이미지 기반 글리치 오버레이: base 레이어는 full-cover로 유지한다. */}
+      <div ref={glitchSliceRef} className={heroStyles.glitchSlice} style={chromaImageStyle} />
+      {/* RGB Chromatic Aberration 오버레이 */}
+      <div ref={chromaRRef} className={heroStyles.chromaR} style={chromaImageStyle} />
+      <div ref={chromaBRef} className={heroStyles.chromaB} style={chromaImageStyle} />
       <div ref={scanlineRef} className={heroStyles.scanline} />
       {/* 그라디언트 오버레이 */}
       <div

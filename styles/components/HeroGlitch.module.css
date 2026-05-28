@@ -11,6 +11,41 @@
   transform-origin: center top;
 }
 
+.glitchSlice {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -2.5rem;
+  right: -2.5rem;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  background-image: var(--hero-glitch-image);
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  mix-blend-mode: screen;
+  transform: translate3d(0, 0, 0);
+}
+
+.glitchSlice::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 238, 186, 0.16) 0,
+      rgba(255, 238, 186, 0.16) 0.0625rem,
+      transparent 0.0625rem,
+      transparent 0.3125rem
+    ),
+    linear-gradient(90deg, transparent 0%, rgba(232, 176, 48, 0.14) 48%, transparent 100%);
+  content: "";
+  mix-blend-mode: overlay;
+}
+
 .chromaR,
 .chromaB {
   position: absolute;
@@ -18,7 +53,7 @@
   bottom: 0;
   left: -2.5rem;
   right: -2.5rem;
-  z-index: 2;
+  z-index: 13;
   pointer-events: none;
   opacity: 0;
   background-image: var(--hero-glitch-image);
