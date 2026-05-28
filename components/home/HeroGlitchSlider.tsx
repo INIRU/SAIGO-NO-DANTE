@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 
+import heroStyles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityInfoUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useLocale } from 'next-intl'
@@ -42,11 +43,13 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   const [currentIdx, setCurrentIdx]       = useState(0)
   const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
   const layerARef        = useRef<HTMLDivElement>(null)
+  const chromaRRef       = useRef<HTMLDivElement>(null)
+  const chromaBRef       = useRef<HTMLDivElement>(null)
   const sliderRef        = useRef<HTMLDivElement>(null)
   const isTransitionRef  = useRef(false)
   const advanceRef       = useRef<() => void>(() => {})
-  const kenBurnsRef      = useRef<Animation | null>(null)
-  const glitchRef        = useRef<Animation | null>(null)
+  const kenBurnsCtxRef   = useRef<ReturnType<typeof import('gsap')['gsap']['context']> | null>(null)
+  const glitchTlRef      = useRef<ReturnType<typeof import('gsap')['gsap']['timeline']> | null>(null)
 
   // 각성 이미지 존재 여부 확인 (404 → 스킵). Idle 이후 한 장씩 확인해 홈 초기 네트워크를 막지 않는다.
   useEffect(() => {
@@ -111,7 +114,9 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   useEffect(() => {
     const el = layerARef.current
     if (!el) return
-    kenBurnsRef.current?.cancel()
+    let cancelled = false
+    kenBurnsCtxRef.current?.revert()
+    kenBurnsCtxRef.current = null
 
     if (prefersReducedMotion()) {
       el.style.transform = ''
@@ -119,20 +124,33 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       return
     }
 
-    el.style.transformOrigin = 'right center'
-    kenBurnsRef.current = el.animate(
-      [
-        { transform: 'translate3d(0%, 0%, 0) scale(1)' },
-        { transform: 'translate3d(-1%, -0.8%, 0) scale(1.06)' },
-      ],
-      { duration: 8000, easing: 'linear', fill: 'forwards' },
-    )
+    ;(async () => {
+      const { gsap } = await import('gsap')
+      if (cancelled) return
+
+      gsap.killTweensOf(el)
+      kenBurnsCtxRef.current = gsap.context(() => {
+        gsap.fromTo(
+          el,
+          { scale: 1, x: '0%', y: '0%' },
+          { scale: 1.06, x: '-1%', y: '-0.8%', duration: 8, ease: 'none', transformOrigin: 'right center' },
+        )
+      }, el)
+    })()
 
     return () => {
-      kenBurnsRef.current?.cancel()
-      kenBurnsRef.current = null
+      cancelled = true
+      kenBurnsCtxRef.current?.revert()
+      kenBurnsCtxRef.current = null
     }
   }, [currentIdx])
+
+  useEffect(() => {
+    return () => {
+      kenBurnsCtxRef.current?.revert()
+      glitchTlRef.current?.kill()
+    }
+  }, [])
 
   // 글리치 전환
   const glitchTo = useCallback(async (nextIdx: number) => {
@@ -143,6 +161,8 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     await new Promise(r => setTimeout(r, 16))
 
     const a = layerARef.current
+    const rCh = chromaRRef.current
+    const bCh = chromaBRef.current
     if (!a) { isTransitionRef.current = false; return }
 
     if (prefersReducedMotion()) {
@@ -152,31 +172,50 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       return
     }
 
-    kenBurnsRef.current?.cancel()
-    glitchRef.current?.cancel()
-    glitchRef.current = a.animate(
-      [
-        { clipPath: 'inset(0 0 0 0)', transform: 'translate3d(0, 0, 0)', filter: 'none' },
-        { clipPath: 'inset(12% 0 75% 0)', transform: 'translate3d(-0.4375rem, 0, 0)', filter: 'brightness(1.8)' },
-        { clipPath: 'inset(50% 0 28% 0)', transform: 'translate3d(0.5625rem, 0, 0)', filter: 'hue-rotate(80deg)' },
-        { clipPath: 'inset(6% 0 82% 0)', transform: 'translate3d(-0.3125rem, 0, 0)', filter: 'brightness(2.2)' },
-        { clipPath: 'inset(70% 0 10% 0)', transform: 'translate3d(0.375rem, 0, 0)', filter: 'hue-rotate(-60deg)' },
-        { clipPath: 'inset(28% 0 52% 0)', transform: 'translate3d(-0.5rem, 0, 0)', filter: 'brightness(1.5)' },
-        { clipPath: 'inset(0 0 100% 0)', transform: 'translate3d(0, 0, 0)', filter: 'none' },
-      ],
-      { duration: 280, easing: 'steps(1, end)', fill: 'forwards' },
-    )
+    const { gsap } = await import('gsap')
+    kenBurnsCtxRef.current?.revert()
+    kenBurnsCtxRef.current = null
+    glitchTlRef.current?.kill()
 
-    try {
-      await glitchRef.current.finished
-    } finally {
-      setCurrentIdx(nextIdx)
-      setPendingIdx(null)
-      a.style.clipPath = ''
-      a.style.transform = ''
-      a.style.filter = ''
-      isTransitionRef.current = false
+    const resetGlitchLayers = () => {
+      gsap.set(a, { clearProps: 'clipPath,x,filter,transform' })
+      if (rCh) gsap.set(rCh, { opacity: 0, x: 0, clipPath: 'none' })
+      if (bCh) gsap.set(bCh, { opacity: 0, x: 0, clipPath: 'none' })
     }
+
+    glitchTlRef.current = gsap.timeline({
+      defaults: { ease: 'steps(1)' },
+      onComplete: () => {
+        setCurrentIdx(nextIdx)
+        setPendingIdx(null)
+        resetGlitchLayers()
+        isTransitionRef.current = false
+        glitchTlRef.current = null
+      },
+      onInterrupt: () => {
+        resetGlitchLayers()
+        isTransitionRef.current = false
+        glitchTlRef.current = null
+      },
+    })
+
+    if (rCh && bCh) {
+      glitchTlRef.current
+        .set([rCh, bCh], { opacity: 0.9, clipPath: 'inset(0 0 0 0)' }, 0)
+        .to(rCh, { x: -10, duration: 0.05 }, 0)
+        .to(bCh, { x: 10, duration: 0.05 }, 0)
+        .to(rCh, { x: 8, clipPath: 'inset(50% 0 28% 0)', duration: 0.04 }, 0.05)
+        .to(bCh, { x: -8, clipPath: 'inset(6% 0 82% 0)', duration: 0.04 }, 0.05)
+        .to([rCh, bCh], { opacity: 0, x: 0, clipPath: 'none', duration: 0.06 }, 0.18)
+    }
+
+    glitchTlRef.current
+      .to(a, { clipPath: 'inset(12% 0 75% 0)', x: -7, filter: 'brightness(1.8)', duration: 0.05 }, 0)
+      .to(a, { clipPath: 'inset(50% 0 28% 0)', x: 9, filter: 'hue-rotate(80deg)', duration: 0.04 })
+      .to(a, { clipPath: 'inset(6% 0 82% 0)', x: -5, filter: 'brightness(2.2)', duration: 0.05 })
+      .to(a, { clipPath: 'inset(70% 0 10% 0)', x: 6, filter: 'hue-rotate(-60deg)', duration: 0.04 })
+      .to(a, { clipPath: 'inset(28% 0 52% 0)', x: -8, filter: 'brightness(1.5)', duration: 0.04 })
+      .to(a, { clipPath: 'inset(0 0 100% 0)', x: 0, filter: 'none', duration: 0.06 })
   }, [slides.length])
 
   // advance ref 최신화
@@ -233,6 +272,31 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           sizes="(max-width: 768px) 100vw, 62vw"
           quality={90}
         />
+        {/* RGB Chromatic Aberration 오버레이 */}
+        <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
+          <Image
+            src={current.url}
+            alt=""
+            fill
+            loading="lazy"
+            className="object-cover object-top"
+            style={{ filter: 'grayscale(1)' }}
+            sizes="(max-width: 768px) 100vw, 62vw"
+            quality={60}
+          />
+        </div>
+        <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
+          <Image
+            src={current.url}
+            alt=""
+            fill
+            loading="lazy"
+            className="object-cover object-top"
+            style={{ filter: 'grayscale(1)' }}
+            sizes="(max-width: 768px) 100vw, 62vw"
+            quality={60}
+          />
+        </div>
       </div>
       {/* 그라디언트 오버레이 */}
       <div
@@ -263,7 +327,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
                 border: 'none',
                 cursor: 'pointer',
                 padding: 0,
-                transition: 'all 0.3s ease',
+                transition: 'width 0.3s ease, background-color 0.3s ease',
               }}
             />
           ))}
