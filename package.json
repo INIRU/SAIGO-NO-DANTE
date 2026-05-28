@@ -28,6 +28,7 @@
     "@types/three": "^0.183.1",
     "@vercel/analytics": "^1.6.1",
     "ai": "^6.0.146",
+    "gsap": "^3.14.2",
     "html2canvas": "^1.4.1",
     "lucide-react": "^1.7.0",
     "motion": "^12.40.0",
