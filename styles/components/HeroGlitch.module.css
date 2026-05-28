@@ -1,5 +1,16 @@
 /* Hero Image RGB Chromatic Aberration (전환 시에만) */
 
+.pendingLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(1.018);
+  filter: brightness(0.62) saturate(0.86);
+  transform-origin: center top;
+}
+
 .chromaR,
 .chromaB {
   position: absolute;
@@ -7,8 +18,85 @@
   bottom: 0;
   left: -2.5rem;
   right: -2.5rem;
+  z-index: 2;
   pointer-events: none;
   opacity: 0;
+  background-image: var(--hero-glitch-image);
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: cover;
   mix-blend-mode: screen;
-  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.chromaR {
+  filter: grayscale(1) sepia(1) saturate(7) hue-rotate(315deg) brightness(1.18) contrast(1.08);
+}
+
+.chromaB {
+  filter: grayscale(1) sepia(1) saturate(8) hue-rotate(132deg) brightness(1.22) contrast(1.05);
+}
+
+.scanline {
+  position: absolute;
+  inset: -1px;
+  z-index: 14;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(232, 176, 48, 0.16) 48%, transparent 100%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 236, 178, 0.13) 0,
+      rgba(255, 236, 178, 0.13) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  mix-blend-mode: screen;
+  transform: translate3d(-0.75rem, 0, 0);
+}
+
+.indicator {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: 999rem;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.indicator::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 0.1875rem;
+  background: rgba(200, 164, 90, 0.25);
+  content: "";
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.24s cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 0.24s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.indicator:hover::before,
+.indicator:focus-visible::before {
+  background: rgba(232, 176, 48, 0.58);
+}
+
+.indicator:focus-visible {
+  outline: 0.125rem solid rgba(232, 176, 48, 0.72);
+  outline-offset: -0.625rem;
+}
+
+.indicatorActive::before {
+  width: 1.125rem;
+  background: var(--gold);
+  box-shadow: 0 0 0.75rem rgba(200, 144, 10, 0.32);
 }

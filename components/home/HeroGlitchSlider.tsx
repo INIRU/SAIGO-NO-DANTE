@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties } from 'react'
 import Image from 'next/image'
 
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
@@ -10,10 +10,18 @@ import { useLocale } from 'next-intl'
 
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
 type ProbeImage = HTMLImageElement & { fetchPriority?: 'high' | 'low' | 'auto' }
+type GsapModule = typeof import('gsap')
 
 interface HeroGlitchSliderProps {
   identities: IdentityWithSinner[]
   onSlideChange: (identity: IdentityWithSinner) => void
+}
+
+let gsapModulePromise: Promise<GsapModule> | null = null
+
+function loadGsap() {
+  gsapModulePromise ??= import('gsap')
+  return gsapModulePromise
 }
 
 function prefersReducedMotion() {
@@ -43,8 +51,10 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   const [currentIdx, setCurrentIdx]       = useState(0)
   const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
   const layerARef        = useRef<HTMLDivElement>(null)
+  const pendingLayerRef  = useRef<HTMLDivElement>(null)
   const chromaRRef       = useRef<HTMLDivElement>(null)
   const chromaBRef       = useRef<HTMLDivElement>(null)
+  const scanlineRef      = useRef<HTMLDivElement>(null)
   const sliderRef        = useRef<HTMLDivElement>(null)
   const isTransitionRef  = useRef(false)
   const advanceRef       = useRef<() => void>(() => {})
@@ -91,6 +101,14 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     }
   }, [identities])
 
+  // 첫 상호작용에서 GSAP chunk를 기다리지 않도록 idle 시점에 미리 데운다.
+  useEffect(() => {
+    if (prefersReducedMotion()) return
+    return requestIdle(() => {
+      void loadGsap()
+    })
+  }, [])
+
   const slides = useMemo<HeroSlide[]>(() => {
     const result: HeroSlide[] = []
     identities.forEach(identity => {
@@ -125,7 +143,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     }
 
     ;(async () => {
-      const { gsap } = await import('gsap')
+      const { gsap } = await loadGsap()
       if (cancelled) return
 
       gsap.killTweensOf(el)
@@ -154,15 +172,17 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
 
   // 글리치 전환
   const glitchTo = useCallback(async (nextIdx: number) => {
-    if (isTransitionRef.current || slides.length < 2) return
+    if (nextIdx === currentIdx || nextIdx < 0 || nextIdx >= slides.length || isTransitionRef.current || slides.length < 2) return
     isTransitionRef.current = true
     setPendingIdx(nextIdx)
 
-    await new Promise(r => setTimeout(r, 16))
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
 
     const a = layerARef.current
+    const nextLayer = pendingLayerRef.current
     const rCh = chromaRRef.current
     const bCh = chromaBRef.current
+    const scanline = scanlineRef.current
     if (!a) { isTransitionRef.current = false; return }
 
     if (prefersReducedMotion()) {
@@ -172,25 +192,28 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       return
     }
 
-    const { gsap } = await import('gsap')
+    const { gsap } = await loadGsap()
     kenBurnsCtxRef.current?.revert()
     kenBurnsCtxRef.current = null
     glitchTlRef.current?.kill()
 
     const resetGlitchLayers = () => {
-      gsap.set(a, { clearProps: 'clipPath,x,filter,transform' })
-      if (rCh) gsap.set(rCh, { opacity: 0, x: 0, clipPath: 'none' })
-      if (bCh) gsap.set(bCh, { opacity: 0, x: 0, clipPath: 'none' })
+      const glitchTargets = [a, nextLayer, rCh, bCh, scanline].filter((el): el is HTMLDivElement => Boolean(el))
+      gsap.set(glitchTargets, {
+        clearProps: 'clipPath,x,y,scale,filter,transform,willChange,opacity',
+      })
     }
 
     glitchTlRef.current = gsap.timeline({
-      defaults: { ease: 'steps(1)' },
+      defaults: { ease: 'steps(1)', duration: 0.026 },
       onComplete: () => {
         setCurrentIdx(nextIdx)
-        setPendingIdx(null)
-        resetGlitchLayers()
-        isTransitionRef.current = false
-        glitchTlRef.current = null
+        requestAnimationFrame(() => {
+          setPendingIdx(null)
+          resetGlitchLayers()
+          isTransitionRef.current = false
+          glitchTlRef.current = null
+        })
       },
       onInterrupt: () => {
         resetGlitchLayers()
@@ -199,24 +222,52 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       },
     })
 
+    if (nextLayer) {
+      glitchTlRef.current
+        .set(nextLayer, {
+          opacity: 0,
+          scale: 1.018,
+          filter: 'brightness(0.62) saturate(0.86)',
+          willChange: 'opacity, transform, filter',
+        }, 0)
+        .to(nextLayer, {
+          opacity: 1,
+          scale: 1,
+          filter: 'brightness(1) saturate(1)',
+          duration: 0.222,
+          ease: 'power2.out',
+        }, 0.018)
+    }
+
     if (rCh && bCh) {
       glitchTlRef.current
-        .set([rCh, bCh], { opacity: 0.9, clipPath: 'inset(0 0 0 0)' }, 0)
-        .to(rCh, { x: -10, duration: 0.05 }, 0)
-        .to(bCh, { x: 10, duration: 0.05 }, 0)
-        .to(rCh, { x: 8, clipPath: 'inset(50% 0 28% 0)', duration: 0.04 }, 0.05)
-        .to(bCh, { x: -8, clipPath: 'inset(6% 0 82% 0)', duration: 0.04 }, 0.05)
-        .to([rCh, bCh], { opacity: 0, x: 0, clipPath: 'none', duration: 0.06 }, 0.18)
+        .set([rCh, bCh], { opacity: 0.82, clipPath: 'inset(0 0 0 0)', willChange: 'opacity, transform, clip-path' }, 0)
+        .to(rCh, { x: '-0.42rem', y: '-0.04rem' }, 0)
+        .to(bCh, { x: '0.46rem', y: '0.04rem' }, 0)
+        .to(rCh, { x: '0.34rem', y: 0, clipPath: 'inset(43% 0 34% 0)' }, 0.052)
+        .to(bCh, { x: '-0.38rem', y: 0, clipPath: 'inset(9% 0 78% 0)' }, 0.052)
+        .to(rCh, { x: '-0.2rem', clipPath: 'inset(70% 0 10% 0)' }, 0.112)
+        .to(bCh, { x: '0.24rem', clipPath: 'inset(24% 0 58% 0)' }, 0.112)
+        .to([rCh, bCh], { opacity: 0, x: 0, y: 0, duration: 0.052 }, 0.188)
+    }
+
+    if (scanline) {
+      glitchTlRef.current
+        .set(scanline, { opacity: 0, x: '-0.75rem', willChange: 'opacity, transform' }, 0)
+        .to(scanline, { opacity: 0.42, x: '0.22rem', duration: 0.046, ease: 'power1.out' }, 0.034)
+        .to(scanline, { opacity: 0.18, x: '0.68rem', duration: 0.05, ease: 'power1.inOut' }, 0.104)
+        .to(scanline, { opacity: 0, x: '1rem', duration: 0.048, ease: 'power1.in' }, 0.172)
     }
 
     glitchTlRef.current
-      .to(a, { clipPath: 'inset(12% 0 75% 0)', x: -7, filter: 'brightness(1.8)', duration: 0.05 }, 0)
-      .to(a, { clipPath: 'inset(50% 0 28% 0)', x: 9, filter: 'hue-rotate(80deg)', duration: 0.04 })
-      .to(a, { clipPath: 'inset(6% 0 82% 0)', x: -5, filter: 'brightness(2.2)', duration: 0.05 })
-      .to(a, { clipPath: 'inset(70% 0 10% 0)', x: 6, filter: 'hue-rotate(-60deg)', duration: 0.04 })
-      .to(a, { clipPath: 'inset(28% 0 52% 0)', x: -8, filter: 'brightness(1.5)', duration: 0.04 })
-      .to(a, { clipPath: 'inset(0 0 100% 0)', x: 0, filter: 'none', duration: 0.06 })
-  }, [slides.length])
+      .set(a, { willChange: 'clip-path, transform, filter' }, 0)
+      .to(a, { clipPath: 'inset(8% 0 78% 0)', x: '-0.32rem', y: '-0.04rem', filter: 'brightness(1.65) contrast(1.12)' }, 0)
+      .to(a, { clipPath: 'inset(47% 0 32% 0)', x: '0.42rem', y: 0, filter: 'hue-rotate(56deg) brightness(1.28)' }, 0.046)
+      .to(a, { clipPath: 'inset(5% 0 84% 0)', x: '-0.24rem', y: '0.03rem', filter: 'brightness(2.05) saturate(1.18)' }, 0.092)
+      .to(a, { clipPath: 'inset(69% 0 11% 0)', x: '0.3rem', y: 0, filter: 'hue-rotate(-42deg) brightness(1.22)' }, 0.136)
+      .to(a, { clipPath: 'inset(26% 0 57% 0)', x: '-0.18rem', y: '-0.02rem', filter: 'brightness(1.46)' }, 0.176)
+      .to(a, { clipPath: 'inset(0 0 100% 0)', x: 0, y: 0, filter: 'none', duration: 0.044 }, 0.212)
+  }, [currentIdx, slides.length])
 
   // advance ref 최신화
   useEffect(() => {
@@ -235,6 +286,9 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
 
   const current = slides[currentIdx]
   const pending = pendingIdx !== null ? slides[pendingIdx] : null
+  const chromaImageStyle = useMemo(() => ({
+    '--hero-glitch-image': `url("${current?.url.replace(/"/g, '\\"') ?? ''}")`,
+  }) as CSSProperties, [current?.url])
 
   if (!current) return null
 
@@ -246,7 +300,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     >
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
-        <div className="absolute inset-0" style={{ zIndex: 5 }}>
+        <div ref={pendingLayerRef} className={heroStyles.pendingLayer}>
           <Image
             src={pending.url}
             alt=""
@@ -273,31 +327,10 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           quality={90}
         />
         {/* RGB Chromatic Aberration 오버레이 */}
-        <div ref={chromaRRef} className={heroStyles.chromaR} style={{ zIndex: 2 }}>
-          <Image
-            src={current.url}
-            alt=""
-            fill
-            loading="lazy"
-            className="object-cover object-top"
-            style={{ filter: 'grayscale(1)' }}
-            sizes="(max-width: 768px) 100vw, 62vw"
-            quality={60}
-          />
-        </div>
-        <div ref={chromaBRef} className={heroStyles.chromaB} style={{ zIndex: 2 }}>
-          <Image
-            src={current.url}
-            alt=""
-            fill
-            loading="lazy"
-            className="object-cover object-top"
-            style={{ filter: 'grayscale(1)' }}
-            sizes="(max-width: 768px) 100vw, 62vw"
-            quality={60}
-          />
-        </div>
+        <div ref={chromaRRef} className={heroStyles.chromaR} style={chromaImageStyle} />
+        <div ref={chromaBRef} className={heroStyles.chromaB} style={chromaImageStyle} />
       </div>
+      <div ref={scanlineRef} className={heroStyles.scanline} />
       {/* 그라디언트 오버레이 */}
       <div
         className="absolute pointer-events-none"
@@ -318,17 +351,10 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
             <button
               key={i}
               onClick={() => glitchTo(i)}
+              aria-label={`${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''} 슬라이드 보기`}
+              aria-current={i === currentIdx ? 'true' : undefined}
+              className={`${heroStyles.indicator} ${i === currentIdx ? heroStyles.indicatorActive : ''}`}
               title={`${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''}`}
-              style={{
-                width: i === currentIdx ? '1.125rem' : '0.3125rem',
-                height: '0.3125rem',
-                borderRadius: '0.1875rem',
-                background: i === currentIdx ? 'var(--gold)' : 'rgba(200,164,90,0.25)',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'width 0.3s ease, background-color 0.3s ease',
-              }}
             />
           ))}
         </div>
