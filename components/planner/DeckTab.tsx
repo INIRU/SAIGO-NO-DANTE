@@ -535,14 +535,14 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     className="planner-main-keyword__icon"
                   />
                 )}
-                <span>{keywordLabel}</span>
+                <span className="planner-main-keyword__label">{keywordLabel}</span>
                 {!isManualAttackKeyword && (
                   <span className="planner-main-keyword__count">{count}</span>
                 )}
               </motion.button>
             )
           })}
-          <style jsx>{`
+          <style jsx global>{`
             .planner-main-keywords {
               display: flex;
               flex-wrap: wrap;
@@ -553,6 +553,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             }
             .planner-main-keyword {
               display: inline-flex;
+              flex: 0 0 auto;
+              min-width: 5.25rem;
+              max-width: 100%;
               min-height: 2.75rem;
               align-items: center;
               justify-content: center;
@@ -587,12 +590,20 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
               opacity: 0.42;
             }
             .planner-main-keyword__icon {
+              flex: 0 0 auto;
               height: 1rem;
               width: 1rem;
               object-fit: contain;
             }
+            .planner-main-keyword__label {
+              min-width: 0;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
             .planner-main-keyword__count {
               display: inline-flex;
+              flex: 0 0 auto;
               min-width: 1.25rem;
               height: 1.25rem;
               align-items: center;

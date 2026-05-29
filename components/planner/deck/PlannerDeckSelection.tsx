@@ -2,7 +2,7 @@
 
 import { useMemo, type CSSProperties } from 'react'
 import Image from 'next/image'
-import { X } from 'lucide-react'
+import { RefreshCcw, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import BaseModal from '@/components/ui/BaseModal'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
@@ -315,7 +315,7 @@ export function PlannerIdentityBoard({
                 className="planner-deck-identity-card__art-button"
                 data-active={isGacksung}
               >
-                &#x21BA;
+                <RefreshCcw aria-hidden="true" strokeWidth={2} />
               </button>
             )}
           </motion.div>
@@ -447,41 +447,44 @@ export function PlannerIdentityBoard({
         }
         .planner-deck-identity-card__art-button {
           position: absolute;
-          top: -0.4375rem;
-          right: -0.4375rem;
+          top: 0.375rem;
+          right: 0.375rem;
           z-index: 20;
           display: flex;
-          min-height: 2.75rem;
-          min-width: 2.75rem;
-          align-items: flex-start;
-          justify-content: flex-end;
-          border: 0;
-          background: transparent;
-          color: rgba(232,220,200,0.78);
-          cursor: pointer;
-          font-size: 0.8125rem;
-          line-height: 1;
-          padding: 0;
-        }
-        .planner-deck-identity-card__art-button::after {
-          content: '';
-          position: absolute;
-          top: 0.4375rem;
-          right: 0.4375rem;
-          z-index: -1;
-          height: 1.375rem;
-          width: 1.375rem;
+          height: 2.75rem;
+          width: 2.75rem;
+          align-items: center;
+          justify-content: center;
           border: 0.09375rem solid #2a2015;
           border-radius: 999px;
           background: rgba(18,14,9,0.92);
+          color: rgba(232,220,200,0.78);
+          cursor: pointer;
+          line-height: 1;
+          padding: 0;
+          box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.45);
+          transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+        .planner-deck-identity-card__art-button:hover,
+        .planner-deck-identity-card__art-button:focus-visible {
+          border-color: rgba(232,176,48,0.58);
+          background: rgba(42,32,21,0.95);
+          color: #f0d48a;
+          box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.5), inset 0 0 0 1px rgba(232,176,48,0.1);
+        }
+        .planner-deck-identity-card__art-button:active {
+          transform: scale(0.96);
+        }
+        .planner-deck-identity-card__art-button svg {
+          height: 1rem;
+          width: 1rem;
+          flex: 0 0 auto;
         }
         .planner-deck-identity-card__art-button[data-active="true"] {
           color: #0d0b08;
-        }
-        .planner-deck-identity-card__art-button[data-active="true"]::after {
           border-color: #c8900a;
           background: rgba(200,144,10,0.92);
-          box-shadow: 0 0 0.5rem rgba(200,144,10,0.5);
+          box-shadow: 0 0 0.5rem rgba(200,144,10,0.5), 0 0.25rem 0.75rem rgba(0,0,0,0.45);
         }
         @media (min-width: 40rem) {
           .planner-deck-identity-grid {
@@ -517,6 +520,10 @@ export function PlannerIdentityBoard({
           .planner-deck-identity-card__overlay-button--empty {
             font-size: 0.9375rem;
           }
+          .planner-deck-identity-card__art-button {
+            top: 0.1875rem;
+            right: 0.1875rem;
+          }
         }
         @media (max-width: 22.4375rem) {
           .planner-deck-identity-grid {
@@ -526,7 +533,8 @@ export function PlannerIdentityBoard({
         @media (prefers-reduced-motion: reduce) {
           .planner-deck-identity-card,
           .planner-deck-identity-card__overlay,
-          .planner-deck-identity-card__overlay-button {
+          .planner-deck-identity-card__overlay-button,
+          .planner-deck-identity-card__art-button {
             transition: none;
           }
         }
