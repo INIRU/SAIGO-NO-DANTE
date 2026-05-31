@@ -7,6 +7,7 @@ import {
   findStaleRichTextKeywordMetaNames,
   hasLocalizedSkillContent,
   normalizeKrPersonalityDisplayName,
+  resolveKeywordMetaSourceForSyncTest,
   translateDescriptionForSyncTest,
   translateDesc,
 } from './identity-data'
@@ -35,6 +36,158 @@ describe('identity-data sync helpers', () => {
       '<sprite name="x" />충전',
       '   <b>진동</b>   ',
     ])
+  })
+
+  it('resolves duplicate keyword_meta candidates by source identity tag before same-name enemy tags', () => {
+    const cases = [
+      {
+        name: '지령[쪽지] III',
+        krCandidates: [
+          { id: 'IndexPrescriptEnemy_2', description: 'enemy row' },
+          { id: 'IndexPrescriptFaust_2', description: 'faust row' },
+          { id: 'IndexPrescriptYi_2', description: 'identity row' },
+        ],
+        krNameToTags: ['IndexPrescriptEnemy_2', 'IndexPrescriptFaust_2', 'IndexPrescriptYi_2'],
+        sourceTag: 'IndexPrescriptYi_2',
+        gameId: '10115',
+      },
+      {
+        name: '생체 재료',
+        krCandidates: [
+          { id: 'CorpusIngredient', description: 'base row' },
+          { id: 'ChargeBodyArt', description: 'identity row' },
+        ],
+        krNameToTags: ['CorpusIngredient', 'ChargeBodyArt'],
+        sourceTag: 'ChargeBodyArt',
+        gameId: '10116',
+      },
+      {
+        name: '조망',
+        krCandidates: [
+          { id: 'ObservationTheRings', description: 'enemy row' },
+          { id: 'GoldenOpportunity', description: 'identity row' },
+        ],
+        krNameToTags: ['ObservationTheRings', 'GoldenOpportunity'],
+        sourceTag: 'GoldenOpportunity',
+        gameId: '10614',
+      },
+      {
+        name: '대행 [헤르메스]',
+        krCandidates: [
+          { id: 'ProcurationHermes', description: 'base row' },
+          { id: 'StackYisangSpecialSkill', description: 'identity row' },
+        ],
+        krNameToTags: ['ProcurationHermes', 'StackYisangSpecialSkill'],
+        sourceTag: 'StackYisangSpecialSkill',
+        gameId: '10115',
+      },
+      {
+        name: '원호 방어',
+        krCandidates: [
+          { id: 'AssistDefense', description: 'base row' },
+          { id: 'SupportProtect', description: 'identity row' },
+        ],
+        krNameToTags: ['AssistDefense', 'SupportProtect'],
+        sourceTag: 'SupportProtect',
+        gameId: '11115',
+      },
+    ]
+
+    for (const item of cases) {
+      const resolved = resolveKeywordMetaSourceForSyncTest({
+        name: item.name,
+        krCandidates: item.krCandidates,
+        krNameToTags: item.krNameToTags,
+        sourceHit: {
+          gameIds: new Set([item.gameId]),
+          tags: new Set([item.sourceTag]),
+        },
+      })
+
+      expect(resolved.tag).toBe(item.sourceTag)
+      expect(resolved.krData?.description).toBe('identity row')
+    }
+  })
+
+  it('keeps existing keyword icons unless a duplicate source-backed tag is safer', () => {
+    expect(resolveKeywordMetaSourceForSyncTest({
+      name: '지령[쪽지] III',
+      existingIconSlug: 'index-prescript-enemy-2',
+      krCandidates: [{ id: 'IndexPrescriptYi_2', description: 'identity row' }],
+      krNameToTags: ['IndexPrescriptEnemy_2', 'IndexPrescriptYi_2'],
+      sourceHit: {
+        gameIds: new Set(['10115']),
+        tags: new Set(['IndexPrescriptYi_2']),
+      },
+    }).iconSlug).toBe('index-prescript-yi-2')
+
+    expect(resolveKeywordMetaSourceForSyncTest({
+      name: '지령[쪽지] III',
+      existingIconSlug: 'curated-directive-note-3',
+      krCandidates: [{ id: 'IndexPrescriptYi_2', description: 'identity row' }],
+      krNameToTags: ['IndexPrescriptEnemy_2', 'IndexPrescriptYi_2'],
+      sourceHit: {
+        gameIds: new Set(['10115']),
+        tags: new Set(['IndexPrescriptYi_2']),
+      },
+    }).iconSlug).toBe('curated-directive-note-3')
+  })
+
+  it('uses curated storage slugs for selected source-backed identity keyword icon variants', () => {
+    const cases = [
+      {
+        name: '생체 재료',
+        existingIconSlug: 'corpus-ingredient',
+        tag: 'ChargeBodyArt',
+        expected: 'corpus-ingredient-2',
+      },
+      {
+        name: '대행 [헤르메스]',
+        existingIconSlug: 'proxy-hermes',
+        tag: 'StackYisangSpecialSkill',
+        expected: 'procuration-hermes-2',
+      },
+      {
+        name: '원호 방어',
+        existingIconSlug: 'assist-defense',
+        tag: 'SupportProtect',
+        expected: 'assist-defense-2',
+      },
+      {
+        name: '조망',
+        existingIconSlug: 'viewing-the-tableau',
+        tag: 'GoldenOpportunity',
+        expected: 'viewing-the-tableau-2',
+      },
+      {
+        name: '아이언 메이든',
+        existingIconSlug: 'iron-maiden',
+        tag: 'IronMaidenPersonality',
+        expected: 'iron-maiden-2',
+      },
+      {
+        name: '지령 탐닉',
+        existingIconSlug: 'directive-indulgence',
+        tag: 'BlackNightmareYisang',
+        expected: 'indulgence-in-prescripts-2',
+      },
+    ]
+
+    for (const item of cases) {
+      expect(resolveKeywordMetaSourceForSyncTest({
+        name: item.name,
+        existingIconSlug: item.existingIconSlug,
+        krCandidates: [
+          { id: `${item.tag}Base`, description: 'base row' },
+          { id: item.tag, description: 'identity row' },
+        ],
+        krNameToTags: [`${item.tag}Base`, item.tag],
+        sourceHit: {
+          gameIds: new Set(['source-id']),
+          tags: new Set([item.tag]),
+        },
+      }).iconSlug).toBe(item.expected)
+    }
   })
 
   it('uses title as KR display name when nameWithTitle only repeats the sinner name', () => {
