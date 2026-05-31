@@ -60,6 +60,26 @@ const KEYWORD_ICON_SLUG_OVERRIDES: Record<string, string> = {
   '원호 공격': 'assist-attack',
   '원호 방어': 'assist-defense',
 }
+const SOURCE_BACKED_KEYWORD_ICON_SLUG_OVERRIDES: Record<string, Record<string, string>> = {
+  '생체 재료': {
+    ChargeBodyArt: 'corpus-ingredient-2',
+  },
+  '대행 [헤르메스]': {
+    StackYisangSpecialSkill: 'procuration-hermes-2',
+  },
+  '원호 방어': {
+    SupportProtect: 'assist-defense-2',
+  },
+  '조망': {
+    GoldenOpportunity: 'viewing-the-tableau-2',
+  },
+  '아이언 메이든': {
+    IronMaidenPersonality: 'iron-maiden-2',
+  },
+  '지령 탐닉': {
+    BlackNightmareYisang: 'indulgence-in-prescripts-2',
+  },
+}
 const KEYWORD_DESCRIPTION_OVERRIDES: Record<string, string> = {
   '원호 공격': '- 이 효과를 부여한 대상의 공격 스킬 종료 시, 부여 대상이 공격한 적을 스킬 1로 일방 공격 함.\n- 원호 공격 시 해당 캐릭터의 사용할 스킬 목록에 영향을 주지 않음.',
   '원호 방어': '- 최댓값 : 3\n- 아군이 적에게 일방공격 당할 때, 수치를 1 소모하여 적의 공격 대상을 자신으로 변경하고, 원호 방어 전용 스킬 사용\n- 원호 방어를 보유한 아군이 여러 명이면, 가장 높은 수치를 가진 아군이 우선 발동\n- 수비 스킬을 장착한 아군에게는 발동하지 않음\n- 턴 종료시 소멸',
@@ -525,8 +545,14 @@ interface KeywordContext {
   passiveDetails: PassiveDetail[]
 }
 
+interface KeywordDescriptionCandidate {
+  id: string
+  description: string | null
+}
+
 interface SourceKeywordHit {
   gameIds: Set<string>
+  tags: Set<string>
 }
 
 type AcquisitionType = 'default' | 'standard' | 'event' | 'limited' | 'walpurgis' | 'attendance'
@@ -808,8 +834,8 @@ function loadKrAssociationMap(unitKeywordMap: Record<string, string>): Record<st
 let UNIT_KEYWORD_MAP: Record<string, string> = { ...UNIT_KEYWORD_FALLBACK_MAP }
 let ASSOCIATION_NAME_MAP: Record<string, string> = { ...ASSOCIATION_MAP }
 
-function loadKrKeywordDescriptions(): Map<string, { id: string; description: string | null }> {
-  const map = new Map<string, { id: string; description: string | null }>()
+function loadKrKeywordDescriptions(): Map<string, KeywordDescriptionCandidate[]> {
+  const map = new Map<string, KeywordDescriptionCandidate[]>()
   const dirs: Array<{ dir: string; ext: string }> = []
   if (existsSync(KR_LATEST_DIR)) dirs.push({ dir: KR_LATEST_DIR, ext: '.json' })
   if (existsSync(KR_DIR)) dirs.push({ dir: KR_DIR, ext: '.txt' })
@@ -822,11 +848,13 @@ function loadKrKeywordDescriptions(): Map<string, { id: string; description: str
         const parsed = z.object({ id: z.string(), name: z.string(), desc: z.string().optional() }).safeParse(item)
         if (!parsed.success) continue
         const name = cleanLocaleContent(parsed.data.name)
-        const current = map.get(name)
-        const shouldPreferYisangDirective = name === '지령 탐닉' && parsed.data.id === 'BlackNightmareYisang'
-        if (!current || shouldPreferYisangDirective) {
-          map.set(name, { id: parsed.data.id, description: parsed.data.desc ? cleanLocaleContent(parsed.data.desc) : null })
-        }
+        const candidates = map.get(name) ?? []
+        if (candidates.some(candidate => candidate.id === parsed.data.id)) continue
+        candidates.push({
+          id: parsed.data.id,
+          description: parsed.data.desc ? cleanLocaleContent(parsed.data.desc) : null,
+        })
+        map.set(name, candidates)
       }
     }
   }
@@ -2231,39 +2259,49 @@ function buildPassiveRows(
 
 // ── Four-source keyword extraction ───────────────────────────────────────────
 
-function addMappedKeyword(keywords: Set<string>, tag: string): void {
-  const keyword = TAG_MAP[tag] ?? UNIT_KEYWORD_MAP[tag]
-  if (keyword && !KEYWORD_PLACEHOLDERS.has(keyword)) keywords.add(keyword)
+function recordSourceKeywordTag(sourceTags: Map<string, Set<string>> | undefined, keyword: string, tag: string): void {
+  if (!sourceTags) return
+  const tags = sourceTags.get(keyword) ?? new Set<string>()
+  tags.add(tag)
+  sourceTags.set(keyword, tags)
 }
 
-function collectBuffKeywords(value: unknown, keywords: Set<string>): void {
+function addMappedKeyword(keywords: Set<string>, tag: string, sourceTags?: Map<string, Set<string>>): void {
+  const keyword = TAG_MAP[tag] ?? UNIT_KEYWORD_MAP[tag]
+  if (keyword && !KEYWORD_PLACEHOLDERS.has(keyword)) {
+    keywords.add(keyword)
+    recordSourceKeywordTag(sourceTags, keyword, tag)
+  }
+}
+
+function collectBuffKeywords(value: unknown, keywords: Set<string>, sourceTags?: Map<string, Set<string>>): void {
   if (!value) return
   if (Array.isArray(value)) {
-    for (const item of value) collectBuffKeywords(item, keywords)
+    for (const item of value) collectBuffKeywords(item, keywords, sourceTags)
     return
   }
   if (typeof value !== 'object') return
   const obj = value as Record<string, unknown>
-  if (typeof obj.buffKeyword === 'string') addMappedKeyword(keywords, obj.buffKeyword)
+  if (typeof obj.buffKeyword === 'string') addMappedKeyword(keywords, obj.buffKeyword, sourceTags)
   if (typeof obj.scriptName === 'string') {
     const sn = obj.scriptName
     for (const tag of Object.keys(TAG_MAP)) {
       if (CONDITION_TAG_MAP[tag]) continue
       if (tag.length < 6) continue
       if (EXCLUDED_TAGS.has(tag)) continue
-      if (sn.includes(tag)) addMappedKeyword(keywords, tag)
+      if (sn.includes(tag)) addMappedKeyword(keywords, tag, sourceTags)
     }
   }
-  for (const child of Object.values(obj)) collectBuffKeywords(child, keywords)
+  for (const child of Object.values(obj)) collectBuffKeywords(child, keywords, sourceTags)
 }
 
-function collectBracketKeywords(rawTexts: string[], keywords: Set<string>): void {
+function collectBracketKeywords(rawTexts: string[], keywords: Set<string>, sourceTags?: Map<string, Set<string>>): void {
   const rawText = rawTexts.join('\n')
   for (const match of rawText.matchAll(TAG_PATTERN)) {
     const tag = match[1]
     if (CONDITION_TAG_MAP[tag]) continue
     if (EXCLUDED_TAGS.has(tag)) continue
-    addMappedKeyword(keywords, tag)
+    addMappedKeyword(keywords, tag, sourceTags)
   }
 }
 
@@ -2324,21 +2362,22 @@ function populateIdentityKeywordContext(
   }
 }
 
-function addSkillKeywords(keywords: Set<string>, keywordList: string[] | undefined): void {
+function addSkillKeywords(keywords: Set<string>, keywordList: string[] | undefined, sourceTags?: Map<string, Set<string>>): void {
   for (const keyword of keywordList ?? []) {
     const mapped = TAG_MAP[keyword]
     if (mapped && !CONDITION_TAG_MAP[keyword] && !KEYWORD_PLACEHOLDERS.has(mapped)) {
       keywords.add(mapped)
+      recordSourceKeywordTag(sourceTags, mapped, keyword)
     }
   }
 }
 
-function extractKeywords(ctx: KeywordContext): string[] {
+function extractKeywords(ctx: KeywordContext, sourceTags?: Map<string, Set<string>>): string[] {
   if (!ctx.gamePerson) return []
   const keywords = new Set<string>()
 
   // Source 1: official representative/main skill keywords only.
-  addSkillKeywords(keywords, ctx.gamePerson.skillKeywordList)
+  addSkillKeywords(keywords, ctx.gamePerson.skillKeywordList, sourceTags)
 
   // Source 2: buffKeyword from skill coinList abilityScriptList
   const skillIds = [
@@ -2346,16 +2385,16 @@ function extractKeywords(ctx: KeywordContext): string[] {
     ...(ctx.gamePerson.defenseSkillIDList ?? []),
   ]
   for (const sid of skillIds) {
-    collectBuffKeywords(ctx.skillMap.get(sid)?.skillData, keywords)
+    collectBuffKeywords(ctx.skillMap.get(sid)?.skillData, keywords, sourceTags)
   }
 
   // Source 3: buffKeyword from passive details
   for (const detail of ctx.passiveDetails) {
-    collectBuffKeywords(detail, keywords)
+    collectBuffKeywords(detail, keywords, sourceTags)
   }
 
   // Source 4: [EnglishTag] patterns in raw KR texts
-  collectBracketKeywords(ctx.rawKrTexts, keywords)
+  collectBracketKeywords(ctx.rawKrTexts, keywords, sourceTags)
 
   return [...keywords].sort()
 }
@@ -2387,10 +2426,14 @@ function extractSourceIdentityKeywords(): Map<string, SourceKeywordHit> {
     }
     populateIdentityKeywordContext(ctx, gamePerson, gameSkillMap, krSkillMap, passiveMappings, passiveDetailMap, krPassiveMap)
 
-    for (const keyword of extractKeywords(ctx)) {
+    const sourceTags = new Map<string, Set<string>>()
+    for (const keyword of extractKeywords(ctx, sourceTags)) {
       if (KEYWORD_PLACEHOLDERS.has(keyword)) continue
-      const hit = keywords.get(keyword) ?? { gameIds: new Set<string>() }
+      const hit = keywords.get(keyword) ?? { gameIds: new Set<string>(), tags: new Set<string>() }
       hit.gameIds.add(String(gamePerson.id))
+      for (const tag of sourceTags.get(keyword) ?? []) {
+        hit.tags.add(tag)
+      }
       keywords.set(keyword, hit)
     }
   }
@@ -2411,22 +2454,142 @@ function slugifyKeywordIconPart(value: string | null | undefined): string | null
   return slug || null
 }
 
+function isSourceVariantTag(tag: string): boolean {
+  return /(?:_2|2)$/i.test(tag.replace(/ID$/, ''))
+}
+
+function sortSourceKeywordTags(tags: Iterable<string>, supportedTags: Set<string>): string[] {
+  return [...tags].sort((a, b) => {
+    const aSupported = supportedTags.has(a)
+    const bSupported = supportedTags.has(b)
+    if (aSupported !== bSupported) return aSupported ? -1 : 1
+
+    const aVariant = isSourceVariantTag(a)
+    const bVariant = isSourceVariantTag(b)
+    if (aVariant !== bVariant) return aVariant ? -1 : 1
+
+    return a.localeCompare(b)
+  })
+}
+
+function getSourceBackedKeywordIconSlug(name: string, tag: string | undefined, sourceBackedTag: boolean | undefined): string | null {
+  if (!sourceBackedTag || !tag) return null
+  const iconSlugByTag = SOURCE_BACKED_KEYWORD_ICON_SLUG_OVERRIDES[name]
+  if (!iconSlugByTag) return null
+
+  return iconSlugByTag[tag] ?? iconSlugByTag[tag.replace(/ID$/, '')] ?? null
+}
+
+function resolveKeywordMetaSource(options: {
+  name: string
+  krCandidates?: KeywordDescriptionCandidate[]
+  krNameToTags?: string[]
+  sourceHit?: SourceKeywordHit
+}): {
+  tag: string | null
+  krData: KeywordDescriptionCandidate | undefined
+  sourceBackedTag: boolean
+} {
+  const krCandidates = options.krCandidates ?? []
+  const krCandidateById = new Map(krCandidates.map(candidate => [candidate.id, candidate]))
+  const krNameToTags = options.krNameToTags ?? []
+  const supportedTags = new Set([
+    ...krCandidateById.keys(),
+    ...krNameToTags,
+  ])
+  const sourceTags = options.sourceHit
+    ? sortSourceKeywordTags(options.sourceHit.tags, supportedTags)
+    : []
+
+  for (const tag of sourceTags) {
+    const krData = krCandidateById.get(tag)
+    if (krData) return { tag, krData, sourceBackedTag: true }
+  }
+
+  for (const tag of sourceTags) {
+    if (supportedTags.has(tag)) {
+      return { tag, krData: krCandidateById.get(tag), sourceBackedTag: true }
+    }
+  }
+
+  const krData = krCandidates[0]
+  return {
+    tag: krData?.id ?? krNameToTags[0] ?? null,
+    krData,
+    sourceBackedTag: false,
+  }
+}
+
 function deriveKeywordIconSlug(options: {
   name: string
   existingIconSlug?: string | null
   nameEn?: string | null
   tag?: string
+  sourceBackedTag?: boolean
+  duplicateTags?: string[]
 }): string | null {
+  const sourceBackedIconSlug = getSourceBackedKeywordIconSlug(options.name, options.tag, options.sourceBackedTag)
+  if (sourceBackedIconSlug) return sourceBackedIconSlug
+
   const override = KEYWORD_ICON_SLUG_OVERRIDES[options.name]
   if (override) return override
 
   const existingIconSlug = options.existingIconSlug?.trim()
-  if (existingIconSlug) return existingIconSlug
+  const tagSlug = slugifyKeywordIconPart(options.tag?.replace(/ID$/, ''))
+  const duplicateTagSlugs = new Set(
+    (options.duplicateTags ?? [])
+      .map(tag => slugifyKeywordIconPart(tag.replace(/ID$/, '')))
+      .filter((slug): slug is string => Boolean(slug)),
+  )
+  const hasSourceSpecificDuplicate = Boolean(
+    options.sourceBackedTag
+    && options.tag
+    && tagSlug
+    && duplicateTagSlugs.size > 1
+    && duplicateTagSlugs.has(tagSlug)
+    && isSourceVariantTag(options.tag),
+  )
+
+  if (existingIconSlug) {
+    if (
+      hasSourceSpecificDuplicate
+      && tagSlug
+      && existingIconSlug !== tagSlug
+      && duplicateTagSlugs.has(existingIconSlug)
+    ) {
+      return tagSlug
+    }
+    return existingIconSlug
+  }
+
+  if (hasSourceSpecificDuplicate && tagSlug) return tagSlug
 
   const nameSlug = slugifyKeywordIconPart(options.nameEn)
   if (nameSlug) return nameSlug
 
-  return slugifyKeywordIconPart(options.tag?.replace(/ID$/, ''))
+  return tagSlug
+}
+
+export function resolveKeywordMetaSourceForSyncTest(options: {
+  name: string
+  existingIconSlug?: string | null
+  nameEn?: string | null
+  krCandidates?: KeywordDescriptionCandidate[]
+  krNameToTags?: string[]
+  sourceHit?: SourceKeywordHit
+}): ReturnType<typeof resolveKeywordMetaSource> & { iconSlug: string | null } {
+  const resolved = resolveKeywordMetaSource(options)
+  return {
+    ...resolved,
+    iconSlug: deriveKeywordIconSlug({
+      name: options.name,
+      existingIconSlug: options.existingIconSlug,
+      nameEn: options.nameEn,
+      tag: resolved.tag ?? undefined,
+      sourceBackedTag: resolved.sourceBackedTag,
+      duplicateTags: options.krNameToTags,
+    }),
+  }
 }
 
 // ── Diff helpers ──────────────────────────────────────────────────────────────
@@ -2906,10 +3069,12 @@ async function rebuildKeywordMeta(): Promise<void> {
   const sourceOnlyCount = [...sourceIdentityKeywords.keys()].filter(k => !dbUsedKeywords.has(k)).length
   console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (DB ${dbUsedKeywords.size}개 + source 인격 ${sourceIdentityKeywords.size}개, source-only ${sourceOnlyCount}개)`)
 
-  // Build reverse map: KR name → tag ID (from TAG_MAP which is tag → KR)
-  const krNameToTag: Record<string, string> = {}
+  // Build reverse map: KR name → candidate tag IDs (from TAG_MAP which is tag → KR)
+  const krNameToTags = new Map<string, string[]>()
   for (const [tag, krName] of Object.entries(TAG_MAP)) {
-    if (!krNameToTag[krName]) krNameToTag[krName] = tag
+    const tags = krNameToTags.get(krName) ?? []
+    if (!tags.includes(tag)) tags.push(tag)
+    krNameToTags.set(krName, tags)
   }
 
   // Load EN/JP tag maps: tag ID → localized name
@@ -2956,8 +3121,16 @@ async function rebuildKeywordMeta(): Promise<void> {
     in_source: boolean
   }> = []
   for (const name of usedKeywords) {
-    const krData = krKeywords.get(name)
-    const tag = krData?.id ?? krNameToTag[name]
+    const krCandidates = krKeywords.get(name) ?? []
+    const sourceHit = sourceIdentityKeywords.get(name)
+    const resolved = resolveKeywordMetaSource({
+      name,
+      krCandidates,
+      krNameToTags: krNameToTags.get(name),
+      sourceHit,
+    })
+    const krData = resolved.krData
+    const tag = resolved.tag
     const existing = existingMetaMap.get(name)
     const enData = tag ? enKeywordData.get(tag) : undefined
     const jpData = tag ? jpKeywordData.get(tag) : undefined
@@ -2967,7 +3140,9 @@ async function rebuildKeywordMeta(): Promise<void> {
       name,
       existingIconSlug: existing?.icon_slug,
       nameEn: name_en,
-      tag,
+      tag: tag ?? undefined,
+      sourceBackedTag: resolved.sourceBackedTag,
+      duplicateTags: krNameToTags.get(name),
     })
     rows.push({
       name,
@@ -3013,6 +3188,16 @@ async function rebuildKeywordMeta(): Promise<void> {
       'MiddleFingerTattooID',
       'RetaliationBook',
       'RetaliationBookFamily',
+      'BlackNightmareYisang',
+      'IndexPrescriptYi_2',
+      'IndexPrescriptEnemy_2',
+      'ChargeBodyArt',
+      'TibiaPersonality',
+      'FasciaPersonality',
+      'GoldenOpportunity',
+      'IronMaidenPersonality',
+      'MelodyBodyArt',
+      'ArrowShiFau',
     ]
     const rowsByTag = new Map(rows.filter(row => row.tag).map(row => [row.tag, row]))
     const rowsByName = new Map(rows.map(row => [row.name, row]))
@@ -3030,6 +3215,8 @@ async function rebuildKeywordMeta(): Promise<void> {
           existingIconSlug: existing?.icon_slug,
           nameEn,
           tag,
+          sourceBackedTag: name ? sourceIdentityKeywords.get(name)?.tags.has(tag) : false,
+          duplicateTags: name ? krNameToTags.get(name) : undefined,
         })
         : slugifyKeywordIconPart(tag.replace(/ID$/, '')))
       const origins = [
