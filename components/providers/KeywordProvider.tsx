@@ -1,11 +1,12 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
 import { ATK_TYPE_ICON_MAP, STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
+import { SIN_COLORS } from '@/lib/constants/sin'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import type { SinType } from '@/lib/types'
@@ -15,6 +16,8 @@ export type KeywordInfo = {
   maxStack?: number
   iconSlug?: string
   sinAffinity?: string
+  effectType?: 'positive' | 'negative' | 'neutral' | null
+  effect_type?: 'positive' | 'negative' | 'neutral' | null
   nameEn?: string | null
   nameJp?: string | null
   descEn?: string | null
@@ -30,6 +33,134 @@ const BASE_ATTACK_ICON_KEYS: Record<string, keyof typeof ATK_TYPE_ICON_MAP> = {
   '참격': 'slash',
   '관통': 'pierce',
   '타격': 'blunt',
+}
+
+const KEYWORD_POSITIVE_COLOR = '#f8c200'
+const KEYWORD_NEGATIVE_COLOR = '#e30000'
+const KEYWORD_WARNING_COLOR = '#ff0000'
+const KEYWORD_DEFAULT_COLOR = '#e8dcc8'
+
+const WARNING_BRACKET_KEYWORDS = new Set([
+  'CantDuel',
+  'CannotDuel',
+  'Cannot Duel',
+  "Can't Duel",
+  'Unclashable',
+  '합 불가',
+  '합 불가능',
+  '일방 공격',
+])
+
+const POSITIVE_KEYWORD_FALLBACKS = new Set([
+  '도발치',
+  '신속',
+  '피해량 증가',
+  '공격 레벨 증가',
+  '위력 증가',
+  '우울 위력 증가',
+  '수비 위력 증가',
+  '공격 위력 증가',
+  '크리티컬 피해량 증가',
+  '타격 피해량 증가',
+  '타격 위력 증가',
+  '정신력 회복 효율',
+  '빼기 코인 강화',
+  '관통 피해량 증가',
+  '관통 위력 증가',
+  '더하기 코인 강화',
+  '보호',
+  '참격 피해량 증가',
+  '참격 위력 증가',
+  '체력 회복 증가',
+  '기본 위력 증가',
+  '분노 위력 증가',
+  '색욕 위력 증가',
+  '나태 위력 증가',
+  '탐식 위력 증가',
+  '오만 위력 증가',
+  '질투 위력 증가',
+  '호흡',
+  '충전',
+  '얽힘',
+  'Poise',
+  'Charge',
+  'Entanglement',
+  'Haste',
+  'Protection',
+  'Damage Up',
+  'Attack Level Up',
+  'Power Up',
+  'Coin Power Up',
+])
+
+const NEGATIVE_KEYWORD_FALLBACKS = new Set([
+  '공격 레벨 감소',
+  '속박',
+  '화상',
+  '방어 레벨 감소',
+  '연약',
+  '출혈',
+  '검흔[잔상]',
+  '검흔',
+  '잔상',
+  '신경 손상',
+  '마비',
+  '위력 감소',
+  '침잠',
+  '체력 회복 감소',
+  '진동',
+  '질투 취약',
+  '취약',
+  '파열',
+  'Burn',
+  'Bleed',
+  'Bladetrail [Afterimage]',
+  'Bladetrail',
+  'Afterimage',
+  'Tremor',
+  'Rupture',
+  'Sinking',
+  'Paralysis',
+  'Bind',
+  'Fragile',
+  'Vulnerable',
+  'Damage Down',
+  'Attack Down',
+  'Attack Level Down',
+])
+
+function normalizedKeywordToken(value: string): string {
+  const trimmed = value.trim()
+  const wrapperMatch = trimmed.match(/^(?:\[([^\]]+)\]|【([^】]+)】)$/)
+  return wrapperMatch ? (wrapperMatch[1] ?? wrapperMatch[2]).trim() : trimmed
+}
+
+function resolveKeywordTextColor(keyword: string, info?: KeywordInfo, fallbackKey?: string): string {
+  const token = normalizedKeywordToken(keyword)
+  const key = fallbackKey ? normalizedKeywordToken(fallbackKey) : token
+  if (WARNING_BRACKET_KEYWORDS.has(token) || WARNING_BRACKET_KEYWORDS.has(key)) return KEYWORD_WARNING_COLOR
+  const effectType = info?.effectType ?? info?.effect_type
+  if (effectType === 'negative') return KEYWORD_NEGATIVE_COLOR
+  if (effectType === 'positive') return KEYWORD_POSITIVE_COLOR
+  if (!effectType) {
+    if (NEGATIVE_KEYWORD_FALLBACKS.has(key) || NEGATIVE_KEYWORD_FALLBACKS.has(token)) return KEYWORD_NEGATIVE_COLOR
+    if (
+      token.includes('검흔') ||
+      token.includes('잔상') ||
+      token.includes('Bladetrail') ||
+      token.includes('Afterimage') ||
+      key.includes('검흔') ||
+      key.includes('잔상') ||
+      key.includes('Bladetrail') ||
+      key.includes('Afterimage')
+    ) return KEYWORD_NEGATIVE_COLOR
+    if (POSITIVE_KEYWORD_FALLBACKS.has(key) || POSITIVE_KEYWORD_FALLBACKS.has(token)) return KEYWORD_POSITIVE_COLOR
+  }
+
+  const sin = info?.sinAffinity
+  if (sin && sin in SIN_COLORS) return SIN_COLORS[sin as SinType]
+
+  return KEYWORD_DEFAULT_COLOR
 }
 
 export function resolveKeywordIconUrl(keyword: string, iconSlug?: string | null): string | null {
@@ -198,9 +329,9 @@ export function useFormatSkillDesc() {
             return allowedKeywords.has(krName) || allowedKeywords.has(kw)
           })
         : localKeywords
-      return formatSkillDescInner(text, color, filtered, skillNameColors, localToKr)
+      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr)
     },
-    [localKeywords, localToKr],
+    [keywords, localKeywords, localToKr],
   )
 }
 
@@ -341,12 +472,14 @@ export function KeywordWithTooltip({
   krKey,
   inline,
   children,
+  displayColor,
 }: {
   keyword: string
   /** KR key for lookup when keyword is an EN/JP name */
   krKey?: string
   inline?: boolean
   children?: React.ReactNode
+  displayColor?: string
 }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
@@ -387,12 +520,32 @@ export function KeywordWithTooltip({
     return () => document.removeEventListener('pointerdown', handler)
   }, [rect])
 
-  if (!info && !iconUrl) return <>{children}</>
+  const textColorHint = `${keyword} ${lookupKey}`
+  const iconColorHint = `${info?.iconSlug ?? ''} ${iconUrl ?? ''}`.toLowerCase()
+  const hasBladetrailHint =
+    textColorHint.includes('검흔') ||
+    textColorHint.includes('잔상') ||
+    textColorHint.includes('Bladetrail') ||
+    iconColorHint.includes('bladetrail-afterimage') ||
+    iconColorHint.includes('bladetrail')
+  const explicitEffectType = info?.effectType ?? info?.effect_type
+  let resolvedDisplayColor = !explicitEffectType && hasBladetrailHint ? KEYWORD_NEGATIVE_COLOR : displayColor
+  if (!resolvedDisplayColor || resolvedDisplayColor === KEYWORD_DEFAULT_COLOR) {
+    resolvedDisplayColor = resolveKeywordTextColor(keyword, info, lookupKey)
+  }
+
+  const renderedChildren = resolvedDisplayColor !== KEYWORD_DEFAULT_COLOR
+    ? isValidElement<{ style?: React.CSSProperties }>(children)
+      ? cloneElement(children, { style: { ...children.props.style, color: resolvedDisplayColor } })
+      : <span style={{ color: resolvedDisplayColor }}>{children}</span>
+    : children
+
+  if (!info && !iconUrl) return <>{renderedChildren}</>
 
   return (
     <span
       ref={ref}
-      className="inline"
+      className="inline keyword-token"
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
@@ -414,7 +567,7 @@ export function KeywordWithTooltip({
           }}
         />
       )}
-      {children}
+      {renderedChildren}
       {rect && info && typeof document !== 'undefined' && createPortal(
         <KwTooltipPopup rect={rect} iconUrl={iconUrl} keyword={lookupKey} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
         document.body,
@@ -427,6 +580,7 @@ function formatSkillDescInner(
   text: string,
   color: string,
   allKeywords: string[],
+  keywordInfo: Record<string, KeywordInfo>,
   skillNameColors?: Record<string, string>,
   localToKr?: Record<string, string>,
 ) {
@@ -523,23 +677,32 @@ function formatSkillDescInner(
       case 'bracket':
         if (p.krKey) {
           const inner = p.text.replace(/^[\[【]|[\]】]$/g, '')
+          const resolvedColor = resolveKeywordTextColor(inner, keywordInfo[p.krKey], p.krKey)
           return (
-            <KeywordWithTooltip key={i} keyword={inner} krKey={p.krKey} inline>
-              <span style={{ color: '#e8dcc8', fontWeight: 600 }}>{inner}</span>
+            <KeywordWithTooltip key={i} keyword={inner} krKey={p.krKey} inline displayColor={resolvedColor}>
+              <span style={{ color: resolvedColor, fontWeight: 600 }}>{inner}</span>
             </KeywordWithTooltip>
           )
         }
-        return <span key={i} style={{ color, fontWeight: 600 }}>{p.text}</span>
-      case 'keyword':
+        const resolvedBracketColor = resolveKeywordTextColor(p.text)
         return (
-          <KeywordWithTooltip key={i} keyword={p.text} krKey={p.krKey} inline>
-            <span style={{ color: '#e8dcc8', fontWeight: 600 }}>{p.text}</span>
+          <span key={i} style={{ color: resolvedBracketColor === KEYWORD_DEFAULT_COLOR ? color : resolvedBracketColor, fontWeight: 600 }}>
+            {p.text}
+          </span>
+        )
+      case 'keyword':
+        const lookupKey = p.krKey ?? p.text
+        const resolvedKeywordColor = resolveKeywordTextColor(p.text, keywordInfo[lookupKey], lookupKey)
+        return (
+          <KeywordWithTooltip key={i} keyword={p.text} krKey={p.krKey} inline displayColor={resolvedKeywordColor}>
+            <span style={{ color: resolvedKeywordColor, fontWeight: 600 }}>{p.text}</span>
           </KeywordWithTooltip>
         )
       case 'number':
         return <span key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{p.text}</span>
       case 'skillname':
-        return <span key={i} style={{ color: p.skillColor, fontWeight: 600 }}>{p.text}</span>
+        const resolvedSkillNameColor = resolveKeywordTextColor(p.text)
+        return <span key={i} style={{ color: resolvedSkillNameColor === KEYWORD_DEFAULT_COLOR ? p.skillColor : resolvedSkillNameColor, fontWeight: 600 }}>{p.text}</span>
       default:
         return <span key={i}>{p.text}</span>
     }

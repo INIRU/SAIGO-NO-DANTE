@@ -279,6 +279,11 @@ textarea:focus-visible {
   display: none !important;
 }
 
+.keyword-token img[src*="bladetrail-afterimage"] + span,
+span.inline img[src*="bladetrail-afterimage"] + span {
+  color: #e30000 !important;
+}
+
 /* ── 히어로 슬라이더 CSS 애니메이션 ─────────────────────────────────────── */
 
 /* 켄번즈 줌인 (layerARef에 JS로 직접 적용) */

@@ -14,11 +14,11 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-
 |--------|---------|------|
 | `sinners` | 8 | 12명의 수감자 기본 정보 |
 | `identities` | 31 | 인격 카드 |
-| `skills` | 20 | 인격 스킬 (업타이 3/4) |
-| `passives` | 14 | 인격 패시브 |
+| `skills` | 23 | 인격 스킬 (업타이 3/4) |
+| `passives` | 17 | 인격 패시브 |
 | `ego` | 29 | E.G.O |
 | `ego_skills` | 19 | E.G.O 스킬 (각성/침식, 해석 3/4) |
-| `keyword_meta` | 10 | 키워드 사전 (아이콘, 설명, 죄악 속성) |
+| `keyword_meta` | 11 | 키워드 사전 (아이콘, 설명, 죄악 속성, 효과 분류) |
 | `panic_types` | 7 | 패닉 유형 |
 | `mental_condition_templates` | 7 | 정신력 조건 템플릿 |
 | `identity_sanity_conditions` | 6 | 인격별 정신력 조건 |
@@ -229,6 +229,7 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 | `base_power` | INT | | 기본 위력 |
 | `coin_power` | INT | | 코인 위력 |
 | `description` | TEXT | | 스킬 설명 (코인 효과 포함) |
+| `flavor` | TEXT | | 스킬 flavor 대사/설정 텍스트 (KR, 게임 locale `flavor`) |
 | `skill_order` | INT | | 스킬 슬롯 (1, 2, 3) |
 | `atk_weight` | INT | DEFAULT 1 | 공격 가중치 |
 | `offense_level` | INT | DEFAULT 60 | 공격 레벨 (프론트엔드에서 -60 보정값 표시) |
@@ -240,6 +241,8 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 | `name_jp` | TEXT | | 일본어 번역명 (i18n) |
 | `description_en` | TEXT | | 영문 설명 (i18n) |
 | `description_jp` | TEXT | | 일본어 설명 (i18n) |
+| `flavor_en` | TEXT | | 영문 flavor 대사/설정 텍스트 (i18n) |
+| `flavor_jp` | TEXT | | 일본어 flavor 대사/설정 텍스트 (i18n) |
 
 - RLS: **비활성화** (⚠️ 보안 갭)
 - sync: `scripts/sync/identity-data.ts`
@@ -260,12 +263,15 @@ RLS가 비활성화된 테이블 — 리스크 평가:
 | `sin_count` | INT | | 필요 자원 수 |
 | `active_cond` | TEXT | | 발동 조건 유형 (`공명`, `보유` 등) |
 | `description` | TEXT | | 패시브 설명 |
+| `flavor` | TEXT | | 패시브 flavor 대사/설정 텍스트 (KR, 게임 locale `flavor`) |
 | `passive_order` | INT | DEFAULT 1 | 같은 타입 내 순서 |
 | `uptie_level` | INT | DEFAULT 3 | 동기화 단계 (3 또는 4) |
 | `name_en` | TEXT | | 영문 번역명 (i18n) |
 | `name_jp` | TEXT | | 일본어 번역명 (i18n) |
 | `description_en` | TEXT | | 영문 설명 (i18n) |
 | `description_jp` | TEXT | | 일본어 설명 (i18n) |
+| `flavor_en` | TEXT | | 영문 flavor 대사/설정 텍스트 (i18n) |
+| `flavor_jp` | TEXT | | 일본어 flavor 대사/설정 텍스트 (i18n) |
 
 - RLS: 모든 사용자 읽기 가능
 - 인덱스: `identity_id`
@@ -344,7 +350,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 
 ### keyword_meta (키워드 사전)
 
-게임 키워드 메타데이터 (아이콘, 설명, 죄악 속성).
+게임 키워드 메타데이터 (아이콘, 설명, 죄악 속성, 효과 분류).
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |------|------|------|------|
@@ -358,6 +364,7 @@ E.G.O 각성/침식 스킬. 해석 3/4 단계별 저장.
 | `name_jp` | TEXT | | 일본어 번역명 (i18n) |
 | `description_en` | TEXT | | 영문 설명 (i18n) |
 | `description_jp` | TEXT | | 일본어 설명 (i18n) |
+| `effect_type` | TEXT | | 로컬 게임 `*buff*.txt`의 `buffType` 기반 효과 분류 (`positive`, `negative`, `neutral`) |
 
 - RLS: 모든 사용자 읽기 가능
 

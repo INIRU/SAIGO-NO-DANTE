@@ -220,6 +220,7 @@ let TAG_MAP: Record<string, string> = { ...CONDITION_TAG_MAP }
 
 const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 const EXCLUDED_TAGS = new Set(['Target', 'Result', 'Damage', 'Attack', 'Return', 'Recover', 'Shield'])
+const INLINE_DESCRIPTION_TAGS_TO_DROP = new Set(['TabExplain'])
 const UPTIE_LEVELS = [3, 4] as const
 
 // Fields compared for existing identities — only game-sourced stats, tags, and source-backed quote.
@@ -292,6 +293,7 @@ const LevelEntrySchema = z.object({
   level: z.number(),
   name: z.string().optional(),
   desc: z.string().optional(),
+  flavor: z.string().optional(),
   coinlist: z.array(CoinListItemSchema).optional(),
 })
 
@@ -352,6 +354,7 @@ const KrPassiveSchema = z.object({
   id: z.number(),
   name: z.string().optional(),
   desc: z.string().optional(),
+  flavor: z.string().optional(),
 })
 
 const EgoReleaseDateSourceSchema = z.object({
@@ -438,8 +441,11 @@ interface SkillRow {
   coins: number
   offense_level: number | null
   description: string
+  flavor?: string | null
   description_en?: string | null
   description_jp?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
   skill_order: number
   atk_weight: number
   variant_order: number
@@ -465,10 +471,13 @@ const SKILL_COMPARE_FIELDS = [
   'offense_level',
   'defense_level',
   'description',
+  'flavor',
   'name_en',
   'name_jp',
   'description_en',
   'description_jp',
+  'flavor_en',
+  'flavor_jp',
   'variant_order',
 ] as const
 
@@ -532,10 +541,70 @@ interface PassiveRow {
   sin_count: number | null
   active_cond: 'stock' | 'resonance' | null
   description: string
+  flavor?: string | null
   description_en?: string | null
   description_jp?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
   passive_order: number
   uptie_level: number
+}
+
+type DbPassiveRow = Partial<PassiveRow> & {
+  id?: string
+}
+
+const PASSIVE_COMPARE_FIELDS = [
+  'name',
+  'name_en',
+  'name_jp',
+  'passive_type',
+  'sin_affinity',
+  'sin_count',
+  'active_cond',
+  'description',
+  'flavor',
+  'description_en',
+  'description_jp',
+  'flavor_en',
+  'flavor_jp',
+  'passive_order',
+  'uptie_level',
+] as const
+
+type PassiveCompareField = typeof PASSIVE_COMPARE_FIELDS[number]
+type PassiveComparable = Record<PassiveCompareField, string | number | null>
+
+const PASSIVE_SELECT_FIELDS = [
+  'id',
+  ...PASSIVE_COMPARE_FIELDS,
+].join(',')
+
+function comparablePassive(row: Partial<PassiveRow>): PassiveComparable {
+  return PASSIVE_COMPARE_FIELDS.reduce((acc, field) => {
+    acc[field] = normalizeSkillCompareValue(row[field])
+    return acc
+  }, {} as PassiveComparable)
+}
+
+function sortComparablePassives(rows: PassiveComparable[]): PassiveComparable[] {
+  return [...rows].sort((a, b) => (
+    comparePrimitive(a.uptie_level, b.uptie_level)
+    || comparePrimitive(a.passive_order, b.passive_order)
+    || comparePrimitive(a.passive_type, b.passive_type)
+    || comparePrimitive(a.name, b.name)
+  ))
+}
+
+export function arePassiveRowsDifferent(
+  generatedRows: Array<Partial<PassiveRow>>,
+  dbRows: Array<Partial<PassiveRow> & { id?: string }>,
+): boolean {
+  if (generatedRows.length !== dbRows.length) return true
+
+  const generatedComparable = sortComparablePassives(generatedRows.map(row => comparablePassive(row)))
+  const dbComparable = sortComparablePassives(dbRows.map(row => comparablePassive(row)))
+  return JSON.stringify(generatedComparable) !== JSON.stringify(dbComparable)
 }
 
 interface KeywordContext {
@@ -549,6 +618,8 @@ interface KeywordDescriptionCandidate {
   id: string
   description: string | null
 }
+
+type KeywordEffectType = 'positive' | 'negative' | 'neutral'
 
 interface SourceKeywordHit {
   gameIds: Set<string>
@@ -698,6 +769,11 @@ export function hasLimbusRichTextTags(value: string): boolean {
 
 export function cleanLocaleContent(value: string): string {
   return stripLimbusRichTextTags(value).trim()
+}
+
+function nullableLocaleContent(value: string | undefined): string | null {
+  const cleaned = cleanLocaleContent(value ?? '')
+  return cleaned || null
 }
 
 export function findStaleRichTextKeywordMetaNames(existingNames: Iterable<string>): string[] {
@@ -891,6 +967,27 @@ function loadLangKeywordDescriptions(lang: 'en' | 'jp'): Map<string, { name: str
   return map
 }
 
+function normalizeKeywordEffectType(value: unknown): KeywordEffectType | null {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
+  if (normalized === 'positive') return 'positive'
+  if (normalized === 'negative') return 'negative'
+  if (normalized === 'neutral') return 'neutral'
+  return null
+}
+
+function loadKeywordEffectTypesFromSource(): Map<string, KeywordEffectType> {
+  const map = new Map<string, KeywordEffectType>()
+  for (const file of globFiles(DATA_DIR, /buff.*\.txt$/i)) {
+    for (const item of extractRecordList(readTxt(join(DATA_DIR, file)))) {
+      const idValue = toStringValue(item.id) ?? (toNumberValue(item.id) != null ? String(toNumberValue(item.id)) : null)
+      const effectType = normalizeKeywordEffectType(item.buffType)
+      if (!idValue || !effectType || map.has(idValue)) continue
+      map.set(idValue, effectType)
+    }
+  }
+  return map
+}
+
 function loadKrPersonalities(): Map<string, KrPersonality> {
   const map = new Map<string, KrPersonality>()
   if (!existsSync(KR_DIR)) return map
@@ -978,6 +1075,7 @@ function cleanKrSkill(skill: KrSkill): KrSkill {
       ...level,
       name: level.name ? cleanLocaleContent(level.name) : level.name,
       desc: level.desc ? cleanLocaleContent(level.desc) : level.desc,
+      flavor: level.flavor ? cleanLocaleContent(level.flavor) : level.flavor,
       coinlist: cleanCoinList(level.coinlist),
     })),
   }
@@ -1537,6 +1635,7 @@ function cleanKrPassive(passive: KrPassive): KrPassive {
     ...passive,
     name: passive.name ? cleanLocaleContent(passive.name) : passive.name,
     desc: passive.desc ? cleanLocaleContent(passive.desc) : passive.desc,
+    flavor: passive.flavor ? cleanLocaleContent(passive.flavor) : passive.flavor,
   }
 }
 
@@ -1648,11 +1747,11 @@ function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
   return map
 }
 
-type LangSkillLevelEntry = { level: number; name: string; desc: string; coinlist?: any[] }
+type LangSkillLevelEntry = { level: number; name: string; desc: string; flavor?: string; coinlist?: any[] }
 
 type LangLocaleData = {
   skillMap: Map<number, { levelList: LangSkillLevelEntry[] }>
-  passiveMap: Map<number, { name: string; desc: string }>
+  passiveMap: Map<number, { name: string; desc: string; flavor?: string }>
 }
 
 function cleanLangCoinList(coinlist: any[] | undefined): any[] | undefined {
@@ -1671,7 +1770,7 @@ function loadLangLocale(lang: 'en' | 'jp'): LangLocaleData {
   const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
 
   const skillMap = new Map<number, { levelList: LangSkillLevelEntry[] }>()
-  const passiveMap = new Map<number, { name: string; desc: string }>()
+  const passiveMap = new Map<number, { name: string; desc: string; flavor?: string }>()
 
   // Load skills — pattern: {LANG}_Skills*.{json|txt}
   for (const dir of [latestDir, fallbackDir]) {
@@ -1686,6 +1785,7 @@ function loadLangLocale(lang: 'en' | 'jp'): LangLocaleData {
           level: lv.level ?? lv.gaksungLevel ?? 0,
           name: cleanLocaleContent(lv.name ?? ''),
           desc: cleanLocaleContent(lv.desc ?? ''),
+          flavor: cleanLocaleContent(lv.flavor ?? ''),
           coinlist: cleanLangCoinList(lv.coinlist),
         }))
         if (levelList.length === 0) continue
@@ -1716,6 +1816,7 @@ function loadLangLocale(lang: 'en' | 'jp'): LangLocaleData {
         passiveMap.set(id, {
           name: cleanLocaleContent((item as any).name ?? ''),
           desc: cleanLocaleContent((item as any).desc ?? ''),
+          flavor: cleanLocaleContent((item as any).flavor ?? ''),
         })
       }
     }
@@ -1833,7 +1934,8 @@ function translateDescLang(
     .replace(/\{0\}/g, potency)
     .replace(/\{1\}/g, count)
     .replace(/\[([A-Za-z_][A-Za-z0-9_]*)\]/g, (match, tag) => {
-      const name = cleanLocaleContent(tagMap[tag] ?? '')
+      if (INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag)) return ''
+      const name = cleanLocaleContent(tagMap[tag] ?? conditionTags[tag] ?? '')
       if (!name) return match
       if (conditionTags[tag]) return `[${name}]`
       return name
@@ -1897,7 +1999,12 @@ function translateKeywords(keywordList: string[] | undefined): string[] {
   const result: string[] = []
   for (const kw of keywordList ?? []) {
     const kr = TAG_MAP[kw]
-    if (kr && !CONDITION_TAG_MAP[kw] && !KEYWORD_PLACEHOLDERS.has(kr)) result.push(kr)
+    if (
+      kr
+      && !CONDITION_TAG_MAP[kw]
+      && !INLINE_DESCRIPTION_TAGS_TO_DROP.has(kw)
+      && !KEYWORD_PLACEHOLDERS.has(kr)
+    ) result.push(kr)
   }
   return result
 }
@@ -2030,7 +2137,8 @@ function translateDescWithTagMap(
   if (!desc) return ''
   return stripLimbusRichTextTags(desc)
     .replace(/\[([A-Za-z_][A-Za-z0-9_]*)\]/g, (match, tag, offset, str) => {
-      const kr = cleanLocaleContent(tagMap[tag] ?? '')
+      if (INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag)) return ''
+      const kr = cleanLocaleContent(tagMap[tag] ?? conditionTags[tag] ?? '')
       if (!kr) return match
       if (conditionTags[tag]) return `[${kr}]`
       const before = offset > 0 ? (str as string)[offset - 1] : ''
@@ -2119,8 +2227,11 @@ export function buildSkillRows(
         coins: coinList.length || 1,
         offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
         description,
+        flavor: nullableLocaleContent(best?.flavor),
         description_en: enSkillLvl ? buildDescriptionLang(enSkillLvl, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
         description_jp: jpSkillLvl ? buildDescriptionLang(jpSkillLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
+        flavor_en: nullableLocaleContent(enSkillLvl?.flavor),
+        flavor_jp: nullableLocaleContent(jpSkillLvl?.flavor),
         skill_order: skillOrder,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -2161,8 +2272,11 @@ export function buildSkillRows(
         coins: coinList.length || 1,
         offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
         description,
+        flavor: nullableLocaleContent(best?.flavor),
         description_en: enDefLvl ? buildDescriptionLang(enDefLvl, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
         description_jp: jpDefLvl ? buildDescriptionLang(jpDefLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
+        flavor_en: nullableLocaleContent(enDefLvl?.flavor),
+        flavor_jp: nullableLocaleContent(jpDefLvl?.flavor),
         skill_order: 4,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -2214,8 +2328,11 @@ function buildPassiveRows(
           sin_count: sinCond?.value ?? null,
           active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
           description: translateDesc(kr?.desc ?? ''),
+          flavor: nullableLocaleContent(kr?.flavor),
           description_en: enLocale ? translateDescLang(enLocale.passiveMap.get(pid)?.desc, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
           description_jp: jpLocale ? translateDescLang(jpLocale.passiveMap.get(pid)?.desc, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
+          flavor_en: nullableLocaleContent(enLocale?.passiveMap.get(pid)?.flavor),
+          flavor_jp: nullableLocaleContent(jpLocale?.passiveMap.get(pid)?.flavor),
           passive_order: ++passiveOrder,
           uptie_level: uptie,
         })
@@ -2246,8 +2363,11 @@ function buildPassiveRows(
           sin_count: sinCond?.value ?? null,
           active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
           description: translateDesc(kr?.desc ?? ''),
+          flavor: nullableLocaleContent(kr?.flavor),
           description_en: enLocale ? translateDescLang(enLocale.passiveMap.get(pid)?.desc, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
           description_jp: jpLocale ? translateDescLang(jpLocale.passiveMap.get(pid)?.desc, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
+          flavor_en: nullableLocaleContent(enLocale?.passiveMap.get(pid)?.flavor),
+          flavor_jp: nullableLocaleContent(jpLocale?.passiveMap.get(pid)?.flavor),
           passive_order: ++passiveOrder,
           uptie_level: uptie,
         })
@@ -2286,7 +2406,7 @@ function collectBuffKeywords(value: unknown, keywords: Set<string>, sourceTags?:
   if (typeof obj.scriptName === 'string') {
     const sn = obj.scriptName
     for (const tag of Object.keys(TAG_MAP)) {
-      if (CONDITION_TAG_MAP[tag]) continue
+      if (CONDITION_TAG_MAP[tag] || INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag)) continue
       if (tag.length < 6) continue
       if (EXCLUDED_TAGS.has(tag)) continue
       if (sn.includes(tag)) addMappedKeyword(keywords, tag, sourceTags)
@@ -2299,7 +2419,7 @@ function collectBracketKeywords(rawTexts: string[], keywords: Set<string>, sourc
   const rawText = rawTexts.join('\n')
   for (const match of rawText.matchAll(TAG_PATTERN)) {
     const tag = match[1]
-    if (CONDITION_TAG_MAP[tag]) continue
+    if (CONDITION_TAG_MAP[tag] || INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag)) continue
     if (EXCLUDED_TAGS.has(tag)) continue
     addMappedKeyword(keywords, tag, sourceTags)
   }
@@ -2365,7 +2485,12 @@ function populateIdentityKeywordContext(
 function addSkillKeywords(keywords: Set<string>, keywordList: string[] | undefined, sourceTags?: Map<string, Set<string>>): void {
   for (const keyword of keywordList ?? []) {
     const mapped = TAG_MAP[keyword]
-    if (mapped && !CONDITION_TAG_MAP[keyword] && !KEYWORD_PLACEHOLDERS.has(mapped)) {
+    if (
+      mapped
+      && !CONDITION_TAG_MAP[keyword]
+      && !INLINE_DESCRIPTION_TAGS_TO_DROP.has(keyword)
+      && !KEYWORD_PLACEHOLDERS.has(mapped)
+    ) {
       keywords.add(mapped)
       recordSourceKeywordTag(sourceTags, mapped, keyword)
     }
@@ -2480,6 +2605,34 @@ function getSourceBackedKeywordIconSlug(name: string, tag: string | undefined, s
   return iconSlugByTag[tag] ?? iconSlugByTag[tag.replace(/ID$/, '')] ?? null
 }
 
+const KEYWORD_EFFECT_TYPE_FALLBACK_PRIORITY: Record<KeywordEffectType, number> = {
+  negative: 3,
+  positive: 2,
+  neutral: 1,
+}
+
+function resolveKeywordEffectType(options: {
+  tag: string | null
+  sourceHit?: SourceKeywordHit
+  effectTypesByTag: ReadonlyMap<string, KeywordEffectType>
+}): KeywordEffectType | null {
+  if (options.tag) {
+    const exact = options.effectTypesByTag.get(options.tag)
+    if (exact) return exact
+  }
+
+  const sourceTags = options.sourceHit ? [...options.sourceHit.tags] : []
+  const fallback = sourceTags
+    .map(tag => ({ tag, effectType: options.effectTypesByTag.get(tag) }))
+    .filter((item): item is { tag: string; effectType: KeywordEffectType } => Boolean(item.effectType))
+    .sort((a, b) => (
+      KEYWORD_EFFECT_TYPE_FALLBACK_PRIORITY[b.effectType] - KEYWORD_EFFECT_TYPE_FALLBACK_PRIORITY[a.effectType]
+      || a.tag.localeCompare(b.tag)
+    ))[0]
+
+  return fallback?.effectType ?? null
+}
+
 function resolveKeywordMetaSource(options: {
   name: string
   krCandidates?: KeywordDescriptionCandidate[]
@@ -2590,6 +2743,64 @@ export function resolveKeywordMetaSourceForSyncTest(options: {
       duplicateTags: options.krNameToTags,
     }),
   }
+}
+
+export function resolveKeywordEffectTypeForSyncTest(options: {
+  tag: string | null
+  sourceHit?: SourceKeywordHit
+  effectTypesByTag: ReadonlyMap<string, KeywordEffectType>
+}): KeywordEffectType | null {
+  return resolveKeywordEffectType(options)
+}
+
+type ExistingKeywordMetaRow = {
+  name: string
+  description: string | null
+  name_en: string | null
+  name_jp: string | null
+  description_en: string | null
+  description_jp: string | null
+  icon_slug: string | null
+  effect_type: KeywordEffectType | null
+}
+
+function isMissingKeywordEffectTypeColumnError(error: { code?: string; message?: string }): boolean {
+  return error.code === '42703' || /effect_type/i.test(error.message ?? '')
+}
+
+async function loadExistingKeywordMetaRows(): Promise<ExistingKeywordMetaRow[]> {
+  const baseSelect = 'name, description, name_en, name_jp, description_en, description_jp, icon_slug'
+  const withEffectType = `${baseSelect}, effect_type`
+  const { data, error } = await supabase
+    .from('keyword_meta')
+    .select(withEffectType)
+    .limit(5000)
+
+  if (!error) {
+    return (data ?? []).map(row => ({
+      ...(row as Omit<ExistingKeywordMetaRow, 'effect_type'>),
+      effect_type: normalizeKeywordEffectType((row as { effect_type?: unknown }).effect_type),
+    }))
+  }
+
+  if (!isMissingKeywordEffectTypeColumnError(error)) {
+    throw new Error(`keyword_meta 기존 메타데이터 로드 실패: ${error.message}`)
+  }
+
+  console.warn(YELLOW('  [경고] keyword_meta.effect_type 컬럼이 없어 기존 메타데이터를 기본 컬럼만 로드합니다.'))
+  const fallback = await supabase
+    .from('keyword_meta')
+    .select(baseSelect)
+    .limit(5000)
+
+  if (fallback.error) {
+    throw new Error(`keyword_meta 기존 메타데이터 로드 실패: ${fallback.error.message}`)
+  }
+
+  return (fallback.data ?? []).map(row => ({
+    ...(row as Omit<ExistingKeywordMetaRow, 'effect_type'>),
+    effect_type: null,
+  }))
 }
 
 // ── Diff helpers ──────────────────────────────────────────────────────────────
@@ -2738,6 +2949,65 @@ async function syncExistingIdentitySkills(
   }
 
   console.log(GREEN(`    스킬 재구축: 삭제 ${dbRows.length}개 / 삽입 ${generatedRows.length}개`))
+  await sleep(100)
+  return { changed: true, deleted: dbRows.length, inserted: generatedRows.length }
+}
+
+async function loadPassiveRowsForIdentity(identityId: string): Promise<DbPassiveRow[] | null> {
+  const { data, error } = await supabase
+    .from('passives')
+    .select(PASSIVE_SELECT_FIELDS)
+    .eq('identity_id', identityId)
+    .limit(100)
+
+  if (error) {
+    console.error(RED(`    [ERROR] 패시브 로드 실패: ${error.message}`))
+    return null
+  }
+
+  return (data ?? []) as DbPassiveRow[]
+}
+
+async function syncExistingIdentityPassives(
+  identityId: string,
+  identityName: string,
+  gameId: string,
+  generatedRows: PassiveRow[],
+): Promise<{ changed: boolean; deleted: number; inserted: number }> {
+  const dbRows = await loadPassiveRowsForIdentity(identityId)
+  if (!dbRows) return { changed: false, deleted: 0, inserted: 0 }
+
+  if (!arePassiveRowsDifferent(generatedRows, dbRows)) {
+    return { changed: false, deleted: 0, inserted: 0 }
+  }
+
+  if (generatedRows.length === 0 && dbRows.length > 0) {
+    console.warn(YELLOW(`  [경고] ${identityName} (${gameId}): 게임 패시브 0개라 DB ${dbRows.length}개 삭제를 건너뜁니다.`))
+    return { changed: true, deleted: 0, inserted: 0 }
+  }
+
+  console.log(CYAN(`  [패시브 diff] ${identityName} (${gameId}): DB ${dbRows.length}개 → 게임 ${generatedRows.length}개`))
+
+  if (DRY_RUN) {
+    return { changed: true, deleted: 0, inserted: 0 }
+  }
+
+  if (dbRows.length > 0) {
+    const { error: delErr } = await supabase
+      .from('passives')
+      .delete()
+      .eq('identity_id', identityId)
+    if (delErr) {
+      console.error(RED(`    [ERROR] 패시브 삭제 실패 (${identityName}): ${delErr.message}`))
+      return { changed: true, deleted: 0, inserted: 0 }
+    }
+  }
+
+  if (generatedRows.length > 0) {
+    await supaInsertBatch('passives', generatedRows)
+  }
+
+  console.log(GREEN(`    패시브 재구축: 삭제 ${dbRows.length}개 / 삽입 ${generatedRows.length}개`))
   await sleep(100)
   return { changed: true, deleted: dbRows.length, inserted: generatedRows.length }
 }
@@ -3017,6 +3287,8 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Load KR keyword data with descriptions
   const krKeywords = loadKrKeywordDescriptions()
   console.log(`  KR 키워드/버프 데이터: ${krKeywords.size}개`)
+  const keywordEffectTypes = loadKeywordEffectTypesFromSource()
+  console.log(`  키워드 effect_type 소스: ${keywordEffectTypes.size}개`)
 
   // Fetch actually used keywords from DB (identities, ego, ego_gifts)
   console.log('  DB에서 실제 사용 키워드 수집 중...')
@@ -3083,27 +3355,12 @@ async function rebuildKeywordMeta(): Promise<void> {
   const enKeywordData = loadLangKeywordDescriptions('en')
   const jpKeywordData = loadLangKeywordDescriptions('jp')
 
-  const { data: existingMeta, error: existingMetaError } = await supabase
-    .from('keyword_meta')
-    .select('name, description, name_en, name_jp, description_en, description_jp, icon_slug')
-    .limit(5000)
-
-  if (existingMetaError) {
-    throw new Error(`keyword_meta 기존 메타데이터 로드 실패: ${existingMetaError.message}`)
-  }
+  const existingMeta = await loadExistingKeywordMetaRows()
 
   const existingMetaMap = new Map(
     (existingMeta ?? []).map(row => [
       String(row.name),
-      row as {
-        name: string
-        description: string | null
-        name_en: string | null
-        name_jp: string | null
-        description_en: string | null
-        description_jp: string | null
-        icon_slug: string | null
-      },
+      row,
     ]),
   )
 
@@ -3116,6 +3373,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     description_en: string | null
     description_jp: string | null
     icon_slug: string | null
+    effect_type: KeywordEffectType | null
     tag: string | null
     in_db: boolean
     in_source: boolean
@@ -3152,6 +3410,11 @@ async function rebuildKeywordMeta(): Promise<void> {
       description_en: enData?.description ?? existing?.description_en ?? null,
       description_jp: jpData?.description ?? existing?.description_jp ?? null,
       icon_slug,
+      effect_type: resolveKeywordEffectType({
+        tag: tag ?? null,
+        sourceHit,
+        effectTypesByTag: keywordEffectTypes,
+      }),
       tag: tag ?? null,
       in_db: dbUsedKeywords.has(name),
       in_source: sourceIdentityKeywords.has(name),
@@ -3240,6 +3503,7 @@ async function rebuildKeywordMeta(): Promise<void> {
       description_en: row.description_en,
       description_jp: row.description_jp,
       icon_slug: row.icon_slug,
+      effect_type: row.effect_type,
     }))
     const { error } = await supabase
       .from('keyword_meta')
@@ -3570,7 +3834,7 @@ async function main(): Promise<void> {
     }
   }
 
-  let passiveInserted = 0, passiveDeleted = 0
+  let passiveInserted = 0, passiveDeleted = 0, passiveDiffs = 0
 
   if (!EGO_ONLY) {
     // ══════════════════════════════════════════════════════════
@@ -3581,51 +3845,31 @@ async function main(): Promise<void> {
     console.log('═'.repeat(60))
 
     for (const sinner of targetSinners) {
-    const { data: dbIdentities } = await supabase
-      .from('identities')
-      .select('id,game_id,name')
-      .eq('sinner_id', sinner.slug)
-    if (!dbIdentities?.length) continue
+      const { data: dbIdentities } = await supabase
+        .from('identities')
+        .select('id,game_id,name')
+        .eq('sinner_id', sinner.slug)
+      if (!dbIdentities?.length) continue
 
-    for (const identity of dbIdentities) {
-      const gameId = String(identity.game_id)
-      if (!gameId) continue
+      for (const identity of dbIdentities) {
+        const gameId = String(identity.game_id)
+        if (!gameId) continue
 
-      const pm = passiveMappings.find(p => String(p.personalityID) === gameId)
-      if (!pm) continue
+        const pm = passiveMappings.find(p => String(p.personalityID) === gameId)
+        if (!pm) continue
 
-      const newPassives = buildPassiveRows(pm, identity.id as string, krPassiveMap, passiveDetailMap, enLocale, jpLocale, enTagMap, jpTagMap)
-      if (newPassives.length === 0) continue
-
-      const { data: dbPassives } = await supabase
-        .from('passives')
-        .select('id')
-        .eq('identity_id', identity.id)
-        .limit(100)
-
-      if (DRY_RUN) {
-        console.log(GRAY(`  ${identity.name}: DB ${dbPassives?.length ?? 0}개 → 게임 ${newPassives.length}개`))
-      } else {
-        if ((dbPassives?.length ?? 0) > 0) {
-          const { error: delErr } = await supabase
-            .from('passives')
-            .delete()
-            .eq('identity_id', identity.id)
-          if (delErr) {
-            console.error(RED(`  [ERROR] 패시브 삭제 실패 (${identity.name}): ${delErr.message}`))
-            continue
-          }
-          passiveDeleted += dbPassives!.length
-        }
-        await supaInsertBatch('passives', newPassives)
-        passiveInserted += newPassives.length
-        await sleep(100)
+        const newPassives = buildPassiveRows(pm, identity.id as string, krPassiveMap, passiveDetailMap, enLocale, jpLocale, enTagMap, jpTagMap)
+        const passiveSync = await syncExistingIdentityPassives(identity.id as string, String(identity.name), gameId, newPassives)
+        if (passiveSync.changed) passiveDiffs++
+        passiveDeleted += passiveSync.deleted
+        passiveInserted += passiveSync.inserted
       }
     }
-  }
 
     if (!DRY_RUN) {
       console.log(GREEN(`  패시브 삭제: ${passiveDeleted}개 / 삽입: ${passiveInserted}개`))
+    } else if (passiveDiffs > 0) {
+      console.log(CYAN(`  패시브 diff: ${passiveDiffs}건`))
     }
 
     // ══════════════════════════════════════════════════════════

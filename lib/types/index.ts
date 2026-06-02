@@ -93,6 +93,7 @@ export type Skill = {
   base_power: number
   coin_power: number
   description: string
+  flavor?: string | null
   skill_order: number
   atk_weight?: number
   offense_level?: number
@@ -103,6 +104,8 @@ export type Skill = {
   name_jp?: string | null
   description_en?: string | null
   description_jp?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
 }
 
 export type Passive = {
@@ -114,12 +117,15 @@ export type Passive = {
   sin_count: number | null
   active_cond: string | null
   description: string
+  flavor?: string | null
   passive_order: number
   uptie_level?: number
   name_en?: string | null
   name_jp?: string | null
   description_en?: string | null
   description_jp?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
 }
 
 export type EGOSkill = {

@@ -25,6 +25,9 @@ type SkillData = {
   description: string | null
   description_en?: string | null
   description_jp?: string | null
+  flavor?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
   skill_order: number
   atk_weight: number | null
   offense_level: number | null
@@ -35,11 +38,18 @@ type SkillData = {
 type PassiveData = {
   id: string
   name: string
+  name_en?: string | null
+  name_jp?: string | null
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
   active_cond: string | null
   description: string
+  description_en?: string | null
+  description_jp?: string | null
+  flavor?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
   passive_order: number
   uptie_level: number | null
 }
@@ -172,6 +182,17 @@ function sinColor(sin: string): string {
 function sinIconUrl(sin: string): string {
   const cap = sin.charAt(0).toUpperCase() + sin.slice(1)
   return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
+}
+
+function localizedText(
+  lang: string | undefined,
+  fallback: string | null | undefined,
+  en?: string | null,
+  jp?: string | null,
+): string | null | undefined {
+  if (lang === 'en') return en || fallback
+  if (lang === 'ja') return jp || fallback
+  return fallback
 }
 
 function getRepresentativeKeywords(identity: IdentityData) {
@@ -610,23 +631,41 @@ function SkillCard({
   skills: SkillData[]
   lang?: string
 }) {
+  const flavor = localizedText(lang, skill.flavor, skill.flavor_en, skill.flavor_jp)
+
   return (
-    <IdentitySkillFrameCard
-      skill={skill}
-      skills={skills}
-      identity={identity}
-      lang={lang}
-    />
+    <div>
+      <IdentitySkillFrameCard
+        skill={skill}
+        skills={skills}
+        identity={identity}
+        lang={lang}
+      />
+      {flavor && (
+        <div style={{ marginTop: '0.25rem', paddingLeft: '0.625rem' }}>
+          <SkillDescription
+            description=""
+            accentColor={sinColor(skill.sin_affinity)}
+            variant="compact"
+            flavorText={flavor}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
 // ── PassiveCard ───────────────────────────────────────────────────────────
 function PassiveCard({ passive }: { passive: PassiveData }) {
+  const lang = useLocale()
   const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
   // DB에 영문(pride) 또는 한글(오만) 둘 다 올 수 있음
   const ALL_SINS = new Set(['wrath','lust','sloth','gluttony','gloom','pride','envy'])
   const sinTypes = sinNames.map(s => ALL_SINS.has(s) ? s : SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
   const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
+  const passiveName = localizedText(lang, passive.name, passive.name_en, passive.name_jp) ?? passive.name
+  const passiveDescription = localizedText(lang, passive.description, passive.description_en, passive.description_jp)
+  const passiveFlavor = localizedText(lang, passive.flavor, passive.flavor_en, passive.flavor_jp)
 
   return (
     <div className="py-1.5">
@@ -645,7 +684,7 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
               fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
               paddingRight: '4em',
             }}>
-              {passive.name}
+              {passiveName}
             </span>
           </div>
         </div>
@@ -672,8 +711,13 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
       )}
 
       {/* 설명 */}
-      {passive.description && (
-        <SkillDescription description={passive.description} accentColor={pc} variant="compact" />
+      {(passiveDescription || passiveFlavor) && (
+        <SkillDescription
+          description={passiveDescription ?? ''}
+          accentColor={pc}
+          variant="compact"
+          flavorText={passiveFlavor}
+        />
       )}
     </div>
   )

@@ -73,6 +73,7 @@ interface SkillDescriptionProps {
   showCoinBadges?: boolean
   allowedKeywords?: Set<string>
   level4Desc?: string
+  flavorText?: string | null
 }
 
 export default function SkillDescription({
@@ -83,16 +84,19 @@ export default function SkillDescription({
   showCoinBadges,
   allowedKeywords,
   level4Desc,
+  flavorText,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
   const t = useTranslations()
   const styles = SKILL_DESC_STYLES[variant]
   const showBadges = showCoinBadges ?? variant !== 'tooltip'
+  const flavor = flavorText?.trim()
 
-  if (!description) return null
+  if (!description && !flavor) return null
 
   const { globalEffects, coinSections, paragraphBreaks } = parseDescription(description)
   const parsed4 = level4Desc ? parseDescription(level4Desc) : null
+  const hasEffectLines = globalEffects.length > 0 || coinSections.length > 0
 
   return (
     <div style={{ color: styles.color, fontSize: styles.fontSize, lineHeight: styles.lineHeight, whiteSpace: 'pre-line' }}>
@@ -225,6 +229,20 @@ export default function SkillDescription({
         </div>
       ))}
 
+      {flavor && (
+        <div
+          style={{
+            marginTop: hasEffectLines ? '0.5rem' : 0,
+            color: '#9b6b43',
+            fontStyle: 'italic',
+            fontSize: '0.95em',
+            lineHeight: 1.55,
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {flavor}
+        </div>
+      )}
     </div>
   )
 }

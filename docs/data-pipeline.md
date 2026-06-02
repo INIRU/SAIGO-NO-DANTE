@@ -44,9 +44,9 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 | 파일 패턴 | 내용 |
 |-----------|------|
 | `KR_Personalities.json` | 인격 이름/타이틀 |
-| `KR_Skills_personality-{NN}.json` | 스킬 텍스트 |
+| `KR_Skills_personality-{NN}.json` | 스킬 텍스트 (`desc`, `coinlist`, `flavor`) |
 | `KR_Skills_Ego.json` | EGO 스킬 텍스트 |
-| `KR_Passives.json` | 패시브 텍스트 + sin 코스트 |
+| `KR_Passives.json` | 패시브 텍스트 + flavor + sin 코스트 |
 | `KR_EGOgift_*.json` | 기프트 이름 매핑 (`dataList[].id` + `dataList[].name`) |
 | `KR_ActionEvents_Mirror*.json` | 거울 던전 이벤트 텍스트 |
 | `KR_AbEvents*.txt` | 이상현상 이벤트 텍스트 |
@@ -94,11 +94,16 @@ npx tsx scripts/sync/identity-data.ts --fix
 
 - `KR/EN/JP_Personalities*`에서 `name_kr`, `name_en`, `name_jp` 구성
 - `personality-*`, `personality-skill-*`, `personality-passive-*`에서 인격 스탯, 스킬, 패시브 구성
-- `KR/EN/JP_Skills*`, `KR/EN/JP_Passive*`에서 스킬/패시브 로컬라이즈 구성
+- `KR/EN/JP_Skills*`, `KR/EN/JP_Passive*`에서 스킬/패시브 이름, 설명, flavor 로컬라이즈 구성
 - `KR/EN/JP_Skills_Ego*`, `KR/EN/JP_Passive_Ego*`에서 EGO 스킬/패시브 로컬라이즈 구성
 - `ego-*` true EGO 파일의 `updatedDate`로 `ego.release_date` 구성
 - `personality-*`, `gacha-*`, `*-event`, `KR/EN/JP_GachaTitle`, `KR_Items*`에서 `acquisition`/`acquisition_info` 구성
 - `KR/EN/JP_BattleKeywords`, `Bufs`, `BuffAbilities`에서 키워드명/설명 보강
+- `Json (Text)/*buff*.txt`의 `buffType`에서 `keyword_meta.effect_type` 구성
+  - `Positive` → `positive` (스킬 설명 키워드 표시색 `#f8c200`)
+  - `Negative` → `negative` (스킬 설명 키워드 표시색 `#e30000`)
+  - `Neutral` → `neutral` (강제 색상 없이 기존 죄악/기본색 fallback)
+  - 동일 한글명 후보가 여러 개면 display name이 아니라 실제 source tag 기준으로 먼저 해소한다.
 
 ### mirror-dungeon-data.ts
 
@@ -142,7 +147,7 @@ npx tsx scripts/sync/mirror-dungeon-data.ts --fix
 ~/Documents/Limbus/assets/data/
 ├── Json (Text)/personality-skill-{NN}.txt    ─────┐
 ├── Json (Text)/ego-skill-{N}.json            ─────┤
-├── Json (Text)/KR/KR_Skills_personality-*.txt ────┤
+├── Json (Text)/KR/KR_Skills_personality-*.txt ────┤  desc/coinlist/flavor
 └── Json (Text)/KR/KR_Skills_Ego.txt          ─────┤
                                                     │
                                                     ▼
