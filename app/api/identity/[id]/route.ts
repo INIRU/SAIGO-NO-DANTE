@@ -33,14 +33,14 @@ export async function GET(
       supabase
         .schema('limbus')
         .from('skills')
-        .select('id, name, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, skill_order, atk_weight, offense_level, quantity, uptie_level, variant_order')
+        .select('id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, flavor, flavor_en, flavor_jp, skill_order, atk_weight, offense_level, quantity, uptie_level, variant_order')
         .eq('identity_id', id)
         .order('skill_order')
         .order('variant_order'),
       supabase
         .schema('limbus')
         .from('passives')
-        .select('id, name, passive_type, sin_affinity, sin_count, active_cond, description, passive_order, uptie_level')
+        .select('id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, flavor, flavor_en, flavor_jp, passive_order, uptie_level')
         .eq('identity_id', id)
         .order('passive_order'),
       supabase

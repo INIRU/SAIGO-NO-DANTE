@@ -53,6 +53,12 @@ const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
   '타격': 'blunt',
 }
 
+type SkillWithFlavor = Skill & {
+  flavor?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
+}
+
 function normalizeAttackType(atkType?: string | null): 'slash' | 'pierce' | 'blunt' | null {
   if (!atkType) return null
   return ATTACK_TYPE_MAP[atkType.trim().toLowerCase()] ?? ATTACK_TYPE_MAP[atkType.trim()] ?? null
@@ -65,6 +71,13 @@ function skillAttackType(skill: Skill): 'slash' | 'pierce' | 'blunt' | null {
     attack_type?: string | null
   }
   return normalizeAttackType(attackSkill.atk_type ?? attackSkill.atkType ?? attackSkill.attack_type ?? skill.skill_type)
+}
+
+function localSkillFlavor(skill: Skill, locale: string): string | null | undefined {
+  const s = skill as SkillWithFlavor
+  if (locale === 'en') return s.flavor_en || s.flavor
+  if (locale === 'ja') return s.flavor_jp || s.flavor
+  return s.flavor
 }
 
 interface IdentitySkillsTabProps {
@@ -169,6 +182,8 @@ export default function IdentitySkillsTab({
             : (v && v.total > 1 ? `S${baseOrder}-${v.idx}` : `S${baseOrder}`)
           const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
           const atkTypeKey = skillAttackType(skill)
+          const skillDescription = localSkillDesc(skill)
+          const skillFlavor = localSkillFlavor(skill, locale)
 
           // 파괴 불가 코인 감지
           const unbreakableCoins = new Set<number>()
@@ -293,13 +308,14 @@ export default function IdentitySkillsTab({
               </div>
 
               {/* 스킬 설명 */}
-              {skill.description && (
+              {(skillDescription || skillFlavor) && (
                 <SkillDescription
-                  description={localSkillDesc(skill)}
+                  description={skillDescription}
                   accentColor={skillSinColor}
                   variant="detail"
                   skillNameColors={skillNameColors}
                   allowedKeywords={allowedKeywords}
+                  flavorText={skillFlavor}
                   level4Desc={diff?.hasDescDiff ? (
                     locale === 'en' && diff.level4Desc_en ? diff.level4Desc_en
                     : locale === 'ja' && diff.level4Desc_jp ? diff.level4Desc_jp
@@ -317,6 +333,8 @@ export default function IdentitySkillsTab({
         <div className="mt-4 flex flex-col gap-3">
           {newSkills.map(skill => {
             const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#888'
+            const skillDescription = localSkillDesc(skill)
+            const skillFlavor = localSkillFlavor(skill, locale)
             return (
               <div
                 key={skill.id}
@@ -336,13 +354,16 @@ export default function IdentitySkillsTab({
                   <span className="text-xs font-bold" style={{ color: skillSinColor }}>{localSkillName(skill)}</span>
                   <span className="text-xs" style={{ color: '#555' }}>{SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}</span>
                 </div>
-                <SkillDescription
-                  description={localSkillDesc(skill)}
-                  accentColor={skillSinColor}
-                  variant="detail"
-                  skillNameColors={skillNameColors}
-                  allowedKeywords={allowedKeywords}
-                />
+                {(skillDescription || skillFlavor) && (
+                  <SkillDescription
+                    description={skillDescription}
+                    accentColor={skillSinColor}
+                    variant="detail"
+                    skillNameColors={skillNameColors}
+                    allowedKeywords={allowedKeywords}
+                    flavorText={skillFlavor}
+                  />
+                )}
               </div>
             )
           })}

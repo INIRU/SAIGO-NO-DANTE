@@ -23,12 +23,25 @@ const KeywordRowSchema = z.object({
   max_stack: z.number().nullable().optional(),
   icon_slug: z.string().nullable().optional(),
   sin_affinity: z.string().nullable().optional(),
+  effect_type: z.enum(['positive', 'negative', 'neutral']).nullable().optional(),
   name_en: z.string().nullable().optional(),
   name_jp: z.string().nullable().optional(),
   description_en: z.string().nullable().optional(),
   description_jp: z.string().nullable().optional(),
 })
 const KeywordRowsSchema = z.array(KeywordRowSchema)
+const KEYWORD_META_BASE_SELECT = 'name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp'
+const KEYWORD_META_EFFECT_SELECT = `${KEYWORD_META_BASE_SELECT}, effect_type`
+
+function isMissingEffectTypeError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown }
+  const text = [candidate.message, candidate.details, candidate.hint]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toLowerCase()
+  return candidate.code === '42703' || (text.includes('effect_type') && text.includes('column'))
+}
 
 // decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
 const songMyung = Song_Myung({
@@ -203,37 +216,31 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
 
   const supabase = createAdminClient()
   const allData: any[] = []
-  let fetchError = false
-  let from = 0
 
-  while (true) {
-    const { data, error } = await supabase
-      .schema('limbus')
-      .from('keyword_meta')
-      .select('name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp')
-      .range(from, from + 999)
-    if (error) { fetchError = true; break }
-    if (!data || data.length === 0) break
-    allData.push(...data)
-    if (data.length < 1000) break
-    from += 1000
-  }
-
-  // icon_slug/sin_affinity 컬럼이 아직 없으면 기본 컬럼만으로 재시도
-  if (fetchError) {
-    allData.length = 0
-    from = 0
+  const fetchKeywordRows = async (selectColumns: string) => {
+    const rows: any[] = []
+    let from = 0
     while (true) {
       const { data, error } = await supabase
         .schema('limbus')
         .from('keyword_meta')
-        .select('name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp')
+        .select(selectColumns)
         .range(from, from + 999)
-      if (error || !data || data.length === 0) break
-      allData.push(...data)
+      if (error) return { rows, error }
+      if (!data || data.length === 0) break
+      rows.push(...data)
       if (data.length < 1000) break
       from += 1000
     }
+    return { rows, error: null }
+  }
+
+  const effectResult = await fetchKeywordRows(KEYWORD_META_EFFECT_SELECT)
+  if (effectResult.error && isMissingEffectTypeError(effectResult.error)) {
+    const baseResult = await fetchKeywordRows(KEYWORD_META_BASE_SELECT)
+    allData.push(...baseResult.rows)
+  } else {
+    allData.push(...effectResult.rows)
   }
 
   const keywords: Record<string, KeywordInfo> = {}
@@ -250,6 +257,7 @@ async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
       ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
       ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
       ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
+      ...(row.effect_type ? { effectType: row.effect_type } : {}),
       nameEn: row.name_en ?? null,
       nameJp: row.name_jp ?? null,
       descEn: row.description_en ?? null,

@@ -15,6 +15,19 @@ interface IdentityPassivesTabProps {
   newPassives?: Passive[]
 }
 
+type PassiveWithFlavor = Passive & {
+  flavor?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
+}
+
+function localPassiveFlavor(passive: Passive, locale: string): string | null | undefined {
+  const p = passive as PassiveWithFlavor
+  if (locale === 'en') return p.flavor_en || p.flavor
+  if (locale === 'ja') return p.flavor_jp || p.flavor
+  return p.flavor
+}
+
 export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives }: IdentityPassivesTabProps) {
   const t = useTranslations()
   const locale = useLocale()
@@ -43,6 +56,8 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
     const sinNames = p.sin_affinity ? p.sin_affinity.split(', ').map(s => s.trim()) : []
     const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s] ?? (SIN_COLORS[s as keyof typeof SIN_COLORS] ? s : null)).filter(Boolean) as Array<keyof typeof SIN_COLORS>
     const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : '#cccccc'
+    const passiveDescription = localPassiveDesc(p)
+    const passiveFlavor = localPassiveFlavor(p, locale)
 
     return (
       <div key={p.id} className="py-2">
@@ -101,14 +116,15 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
         )}
 
         {/* 설명 */}
-        {p.description && (
+        {(passiveDescription || passiveFlavor) && (
           <SkillDescription
-            description={localPassiveDesc(p)}
+            description={passiveDescription}
             accentColor={primaryColor}
             variant="detail"
             skillNameColors={skillNameColors}
             showCoinBadges={false}
             allowedKeywords={allowedKeywords}
+            flavorText={passiveFlavor}
             level4Desc={passiveDiffs?.get(p.id)?.hasDescDiff ? (() => {
               const pd = passiveDiffs.get(p.id)!
               return locale === 'en' && pd.level4Desc_en ? pd.level4Desc_en
@@ -173,6 +189,8 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
         <div className="mt-4 space-y-2">
           {newPassives.map(p => {
             const pColor = p.sin_affinity ? SIN_COLORS[SIN_KR_TO_EN[p.sin_affinity] || p.sin_affinity] || sinColor : sinColor
+            const passiveDescription = localPassiveDesc(p)
+            const passiveFlavor = localPassiveFlavor(p, locale)
             return (
               <div
                 key={p.id}
@@ -192,14 +210,17 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
                   <span className="text-xs font-bold" style={{ color: pColor }}>{localPassiveName(p)}</span>
                   <span className="text-xs" style={{ color: '#555' }}>{p.passive_type === 'battle' ? t('identity.passives.typeBattle') : t('identity.passives.typeSupport')}</span>
                 </div>
-                <SkillDescription
-                  description={localPassiveDesc(p)}
-                  accentColor={pColor}
-                  variant="detail"
-                  skillNameColors={skillNameColors}
-                  showCoinBadges={false}
-                  allowedKeywords={allowedKeywords}
-                />
+                {(passiveDescription || passiveFlavor) && (
+                  <SkillDescription
+                    description={passiveDescription}
+                    accentColor={pColor}
+                    variant="detail"
+                    skillNameColors={skillNameColors}
+                    showCoinBadges={false}
+                    allowedKeywords={allowedKeywords}
+                    flavorText={passiveFlavor}
+                  />
+                )}
               </div>
             )
           })}

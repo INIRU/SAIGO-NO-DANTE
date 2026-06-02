@@ -7,6 +7,7 @@ import {
   findStaleRichTextKeywordMetaNames,
   hasLocalizedSkillContent,
   normalizeKrPersonalityDisplayName,
+  resolveKeywordEffectTypeForSyncTest,
   resolveKeywordMetaSourceForSyncTest,
   translateDescriptionForSyncTest,
   translateDesc,
@@ -188,6 +189,44 @@ describe('identity-data sync helpers', () => {
         },
       }).iconSlug).toBe(item.expected)
     }
+  })
+
+  it('resolves keyword effect type from exact source tag before conflicting fallback tags', () => {
+    expect(resolveKeywordEffectTypeForSyncTest({
+      tag: 'ExactPositive',
+      sourceHit: {
+        gameIds: new Set(['source-id']),
+        tags: new Set(['FallbackNegative', 'ExactPositive']),
+      },
+      effectTypesByTag: new Map([
+        ['ExactPositive', 'positive'],
+        ['FallbackNegative', 'negative'],
+      ]),
+    })).toBe('positive')
+  })
+
+  it('falls back to sourceHit tags with negative priority when exact source tag is missing', () => {
+    expect(resolveKeywordEffectTypeForSyncTest({
+      tag: 'MissingExactTag',
+      sourceHit: {
+        gameIds: new Set(['source-id']),
+        tags: new Set(['FallbackNeutral', 'FallbackPositive', 'FallbackNegative']),
+      },
+      effectTypesByTag: new Map([
+        ['FallbackNeutral', 'neutral'],
+        ['FallbackPositive', 'positive'],
+        ['FallbackNegative', 'negative'],
+      ]),
+    })).toBe('negative')
+  })
+
+  it('returns null keyword effect type when no source tag is available', () => {
+    expect(resolveKeywordEffectTypeForSyncTest({
+      tag: null,
+      effectTypesByTag: new Map([
+        ['UnusedPositive', 'positive'],
+      ]),
+    })).toBeNull()
   })
 
   it('uses title as KR display name when nameWithTitle only repeats the sinner name', () => {
