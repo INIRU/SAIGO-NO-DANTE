@@ -11,7 +11,7 @@ import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Eye, MessageCircle } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type RecipeData } from '@/lib/planner/types'
+import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { showError } from '@/lib/toast'
@@ -27,6 +27,7 @@ import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
 import {
   getSelectedBlessingCost,
   getSelectedBlessingLevels,
@@ -419,33 +420,35 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }, [finalGifts])
 
   // Condition checks for final gifts
-  const { formationKwCounts, allKwCounts } = useMemo(() => {
-    const formation: Record<string, number> = {}
-    const all: Record<string, number> = {}
-    for (const slot of deck) {
-      const order = slot.slot_order ?? 99
-      if (order >= 99) continue
-      const isFormation = order < 7
-      const normalized = new Set<string>((slot.keywords ?? []).map(normalizeThemeKeyword))
-      for (const kw of normalized) {
-        all[kw] = (all[kw] ?? 0) + 1
-        if (isFormation) formation[kw] = (formation[kw] ?? 0) + 1
-      }
-    }
-    return { formationKwCounts: formation, allKwCounts: all }
-  }, [deck])
+  const { formationKeywordCounts: formationKwCounts, allKeywordCounts: allKwCounts } = useMemo(() => {
+    const conditionSlots: PlannerIdentitySlot[] = deck
+      .filter(slot => slot.identity_id && slot.sinner_id)
+      .map(slot => ({
+        identity_id: slot.identity_id!,
+        sinner_id: slot.sinner_id!,
+        name_kr: slot.name_kr ?? '',
+        rarity: slot.rarity ?? 1,
+        keywords: slot.keywords ?? [],
+        skill_keyword_list: slot.skill_keyword_list,
+        game_id: slot.game_id ?? null,
+        folder_name: slot.folder_name ?? null,
+        slot_order: slot.slot_order ?? 99,
+      }))
+    return getGiftConditionCountsForSlots(conditionSlots, identities)
+  }, [deck, identities])
 
   function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
     const cond = gift.activation_condition
     if (!cond || !cond.count) return null
     let fHave = 0, aHave = 0, label = ''
     if (cond.type === 'keyword' && cond.keyword) {
-      fHave = formationKwCounts[cond.keyword] ?? 0
-      aHave = allKwCounts[cond.keyword] ?? 0
+      const keyword = normalizeThemeKeyword(cond.keyword)
+      fHave = formationKwCounts[keyword] ?? 0
+      aHave = allKwCounts[keyword] ?? 0
       label = cond.keyword
     } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[kw] ?? 0), 0)
-      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[kw] ?? 0), 0)
+      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
+      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
       label = cond.keywords.join('+')
     } else { return null }
     if (fHave >= cond.count) return null

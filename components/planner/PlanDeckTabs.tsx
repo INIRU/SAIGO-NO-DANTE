@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -16,8 +16,13 @@ import type {
 import type { Identity } from '@/lib/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
+import { computeKeywordDistribution } from '@/lib/planner/fusion'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
+import KeywordChart, { type KeywordChartContributor } from './KeywordChart'
 import SkillExchangePanel from './SkillExchangePanel'
 
 const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
@@ -153,6 +158,14 @@ function EmptyState({ text }: { text: string }) {
       padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: '#333',
     }}>{text}</div>
   )
+}
+
+function getIdentityKeywordSource(slot: IdentitySlot, sourceIdentity: IdentityData | undefined): string[] {
+  return slot.skill_keyword_list
+    ?? sourceIdentity?.skill_keyword_list
+    ?? slot.keywords
+    ?? sourceIdentity?.keywords
+    ?? []
 }
 
 function adaptPlanBoardIdentity(slot: IdentitySlot, identity: IdentityData | undefined, locale: string): Identity {
@@ -310,11 +323,17 @@ export default function PlanDeckTabs({
 }: Props) {
   const locale = useLocale()
   const tDeck = useTranslations('planner.deckTab')
+  const { keywords: keywordInfo } = useKeywordData()
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
+
+  const getLocalizedKeywordLabel = useCallback(
+    (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
+    [keywordInfo, locale],
+  )
 
   const selectedPreviewSlot = useMemo(() => {
     if (!identityModalId) return null
@@ -364,6 +383,41 @@ export default function PlanDeckTabs({
     return map
   }, [egoSlots])
 
+  const keywordDist = useMemo(() => {
+    const allKeywords = deck.map(slot => {
+      const sourceIdentity = slot.identity_id ? identityMap.get(slot.identity_id) : undefined
+      return getIdentityKeywordSource(slot, sourceIdentity)
+    })
+    return computeKeywordDistribution(allKeywords)
+  }, [deck, identityMap])
+
+  const keywordContributors = useMemo<Record<string, KeywordChartContributor[]>>(() => {
+    const map: Record<string, KeywordChartContributor[]> = {}
+    for (const slot of deck) {
+      if (!slot.identity_id) continue
+      const sourceIdentity = identityMap.get(slot.identity_id)
+      const keywordsForSlot = getIdentityKeywordSource(slot, sourceIdentity)
+      const imageSource = sourceIdentity ?? slot
+      const imageUrl = imageSource.sinner_id && imageSource.folder_name && imageSource.game_id
+        ? getIdentityImageUrl(imageSource.sinner_id, imageSource.folder_name, `${imageSource.game_id}_normal_info`)
+        : ''
+      if (!imageUrl) continue
+
+      const contributor: KeywordChartContributor = {
+        id: slot.identity_id,
+        name: localizeIdentityName(sourceIdentity ?? slot, locale),
+        imageUrl,
+      }
+
+      for (const keyword of new Set(keywordsForSlot.map(normalizeThemeKeyword))) {
+        if (!keyword) continue
+        if (!map[keyword]) map[keyword] = []
+        map[keyword].push(contributor)
+      }
+    }
+    return map
+  }, [deck, identityMap, locale])
+
   const tabs = [
     { key: 'identity' as const, label: `${tDeck('subTabs.identity')} (${deck.length}/12)`, hint: tDeck('identity.openDetailHint') },
     { key: 'ego' as const, label: `${tDeck('subTabs.ego')} (${egoSlots.length})` },
@@ -410,6 +464,30 @@ export default function PlanDeckTabs({
         <div className="relative">
           <FormationBoard slots={boardSlots} className="mt-5" />
         </div>
+      )}
+
+      {deckSubTab === 'identity' && deck.length > 0 && (
+        <section
+          className="mt-5 border-t border-[#2a1f12] pt-4"
+          aria-labelledby="plan-detail-keyword-distribution"
+        >
+          <h3
+            id="plan-detail-keyword-distribution"
+            className="mb-3 font-serif"
+            style={{ color: '#e8dcc8', fontSize: '1rem', fontWeight: 400, WebkitTextStroke: '0 transparent' }}
+          >
+            {tDeck('stats.keywordDistribution')}
+          </h3>
+          {keywordDist.length > 0 ? (
+            <KeywordChart
+              distribution={keywordDist}
+              getKeywordLabel={getLocalizedKeywordLabel}
+              contributorsByKeyword={keywordContributors}
+            />
+          ) : (
+            <p style={{ color: '#6f6252', fontSize: '0.875rem' }}>{tDeck('stats.keywordEmpty')}</p>
+          )}
+        </section>
       )}
 
       {/* 공격 유형 + 죄악 자원 + 패시브 */}
