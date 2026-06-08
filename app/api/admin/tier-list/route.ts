@@ -1,15 +1,25 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 const REROLL_CATEGORY = 'reroll'
 const REROLL_TIERS = ['S+', 'S', 'A', 'B', 'C'] as const
+const SUPPORTED_LOCALES = ['ko', 'en', 'ja'] as const
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 type RerollTier = typeof REROLL_TIERS[number]
 
 function isValidTier(value: string): value is RerollTier {
   return REROLL_TIERS.includes(value as RerollTier)
+}
+
+function revalidateTierListCaches() {
+  revalidateTag(CACHE_TAGS.tierList, 'max')
+  for (const locale of SUPPORTED_LOCALES) {
+    revalidatePath(`/${locale}/tier-list`)
+  }
 }
 
 export async function GET() {
@@ -120,6 +130,8 @@ export async function PUT(request: Request) {
     const { error: deleteErr } = await deleteQuery
 
     if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 })
+
+    revalidateTierListCaches()
 
     return NextResponse.json({ success: true, count: rows.length })
   } catch (err: unknown) {
