@@ -22,6 +22,7 @@ export const CACHE_TAGS = {
 
   // ── 공지 (admin 수정 시) ──────────────────────────────────────────────────
   announcements: 'announcements',
+  calendar: 'calendar',
 
   // ── 유저 콘텐츠 (user mutation 시) ────────────────────────────────────────
   decksList: 'decks-list',

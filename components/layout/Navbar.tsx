@@ -5,7 +5,7 @@ import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, ChevronDown, Search } from 'lucide-react'
+import { CalendarDays, Menu, X, ChevronDown, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { motion, useReducedMotion } from 'motion/react'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
@@ -16,7 +16,7 @@ import type { TranslationKey } from '@/lib/i18n/translations'
 
 type NavGroupDef = {
   labelKey: string
-  items: { href: string; labelKey: string }[]
+  items: { href: string; labelKey: string; icon?: 'calendar' }[]
 }
 
 const NAV_GROUPS: NavGroupDef[] = [
@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroupDef[] = [
   {
     labelKey: 'nav.other.title',
     items: [
+      { href: '/calendar',   labelKey: 'nav.calendar', icon: 'calendar' },
       { href: '/meta',       labelKey: 'nav.other.meta' },
       { href: '/extraction', labelKey: 'nav.other.extraction' },
       { href: '/random',     labelKey: 'nav.other.random' },
@@ -146,6 +147,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     items: g.items.map(item => ({
       href: item.href,
       label: t(item.labelKey as TranslationKey),
+      icon: item.icon,
     })),
   })), [t])
 
@@ -179,6 +181,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const strippedPathname = pathname.replace(/^\/(ko|en|ja)(?=\/|$)/, '') || '/'
 
   const isActiveHref = (href: string) => strippedPathname === href || strippedPathname?.startsWith(href + '/')
+  const calendarNavLabel = t('nav.calendar' as TranslationKey)
 
   useEffect(() => {
     if (!mobileMenuOpen) return
@@ -389,6 +392,13 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                             }}
                             onClick={() => setOpenGroup(null)}
                           >
+                            {item.icon === 'calendar' && (
+                              <CalendarDays
+                                size={14}
+                                aria-hidden="true"
+                                style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: '-0.125rem', color: active ? 'var(--gold)' : 'var(--gold-dim)' }}
+                              />
+                            )}
                             {item.label}
                           </Link>
                         )
@@ -398,6 +408,20 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                 </div>
               )
             })}
+
+            <Link
+              href="/calendar"
+              aria-label={calendarNavLabel}
+              title={calendarNavLabel}
+              className="nav-calendar-shortcut relative flex h-10 w-10 items-center justify-center rounded-md transition-[background-color,box-shadow,color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0b08]"
+              style={{
+                color: isActiveHref('/calendar') ? 'var(--gold)' : 'var(--text-tertiary)',
+                background: isActiveHref('/calendar') ? 'rgba(200,144,10,0.07)' : 'transparent',
+                boxShadow: isActiveHref('/calendar') ? 'inset 0 -0.0625rem rgba(232,176,48,0.42)' : 'none',
+              }}
+            >
+              <CalendarDays className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+            </Link>
 
             <LanguageSwitcher />
 
@@ -725,6 +749,9 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                                   }}
                                 />
                               )}
+                              {item.icon === 'calendar' && (
+                                <CalendarDays className="h-4 w-4 shrink-0" style={{ color: active ? 'var(--gold)' : 'var(--gold-dim)' }} aria-hidden="true" />
+                              )}
                               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {item.label}
                               </span>
@@ -856,9 +883,33 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
           border-color: rgba(232,176,48,0.32) !important;
           color: var(--text-secondary) !important;
         }
+        .nav-calendar-shortcut {
+          overflow: visible;
+        }
+        .nav-calendar-shortcut::before {
+          content: '';
+          position: absolute;
+          inset: -0.125rem;
+          border-radius: 0.5rem;
+        }
+        .nav-calendar-shortcut:hover,
+        .nav-calendar-shortcut:focus-visible {
+          background: rgba(200,144,10,0.06) !important;
+          color: var(--gold) !important;
+          transform: translateY(-0.0625rem);
+        }
+        .nav-calendar-shortcut:active {
+          transform: scale(0.985);
+        }
         @media (prefers-reduced-motion: reduce) {
-          .nav-search-trigger {
+          .nav-search-trigger,
+          .nav-calendar-shortcut {
             transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+          }
+          .nav-calendar-shortcut:hover,
+          .nav-calendar-shortcut:focus-visible,
+          .nav-calendar-shortcut:active {
+            transform: none;
           }
         }
       `}</style>

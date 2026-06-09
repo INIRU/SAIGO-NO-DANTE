@@ -5,6 +5,7 @@
     "sinnerList": "囚人一覧",
     "decks": "デッキ掲示板",
     "planner": "ミラーダンジョン",
+    "calendar": "公式カレンダー",
     "community": {
       "title": "コミュニティ",
       "planner": "ミラダンプランナー",
@@ -25,6 +26,71 @@
       "meta": "分析",
       "extraction": "抽出",
       "random": "ランダム編成"
+    }
+  },
+  "maintenance": {
+    "eyebrow": "ARCHIVE MAINTENANCE",
+    "statusLabel": "STATUS HOLD",
+    "title": "アーカイブ整備中",
+    "description": "記録保管庫のデータ整備中のため、この経路へのアクセスを一時停止しています。整備が完了すると同じ経路から再入場できます。",
+    "terminalLine": "メフィストフェレスへのアクセスは一時停止中です。管理者の整備が完了するまでお待ちください。",
+    "detailTitle": "アクセス制限情報",
+    "detailCaption": "ACCESS REPORT",
+    "defaultMessage": "管理者の整備が完了するまで、記録保管庫への要求を保留しています。",
+    "unknownReason": "管理者整備",
+    "unknownEnd": "未定",
+    "currentRoute": "現在の経路",
+    "home": "入口へ戻る",
+    "labels": {
+      "reason": "理由",
+      "endsAt": "再開予定",
+      "route": "要求経路"
+    }
+  },
+  "calendar": {
+    "meta": {
+      "title": "公式ニュースカレンダー | SAIGO NO DANTE",
+      "description": "リンバスカンパニー公式SteamニュースとX投稿を今月のカレンダーで確認できます。"
+    },
+    "eyebrow": "OFFICIAL NEWS",
+    "title": "公式ニュースカレンダー",
+    "description": "Steamのお知らせとX投稿を、今月の日付ごとにまとめて表示します。",
+    "currentMonthOnly": "この初期版では現在の月のみ表示します。前月・翌月への移動はありません。",
+    "summary": "合計{count}件 · Steam {steam} · X {x}",
+    "loading": "カレンダーを読み込み中…",
+    "errorTitle": "カレンダーを読み込めませんでした。",
+    "errorDescription": "しばらくしてから再試行してください。問題が続く場合は公式ソースを確認してください。",
+    "retry": "再試行",
+    "emptyTitle": "今月登録された公式ニュースはありません。",
+    "emptyDescription": "新しいSteamニュースやX投稿が収集されると、このカレンダーの日付に表示されます。",
+    "moreEvents": "他{count}件",
+    "openDayEvents": "{date}の非表示ニュース{count}件を表示",
+    "dayEventsTitle": "{date}のニュース",
+    "dayEventsFallbackTitle": "日付別ニュース",
+    "dayEventsDescription": "この日付の公式ニュース{count}件から選択してください。",
+    "openEvent": "{source}のニュースを開く: {title}",
+    "detailTitle": "公式ニュース詳細",
+    "entryTypes": {
+      "post": "投稿",
+      "schedule": "予定"
+    },
+    "sourcePostTitles": {
+      "steam": "Steam投稿",
+      "x": "X投稿"
+    },
+    "publishedContext": "投稿基準: {date}",
+    "galleryLabel": "添付画像",
+    "galleryCount": "画像{count}枚",
+    "openImage": "{title}の画像{index}を拡大表示",
+    "imageViewerTitle": "画像ビューア",
+    "imageAlt": "{title}の添付画像{index}",
+    "close": "閉じる",
+    "sourceLink": "原文を見る",
+    "noBody": "本文は提供されていません。詳細は原文で確認してください。",
+    "tags": "タグ",
+    "sources": {
+      "steam": "Steam",
+      "x": "X"
     }
   },
   "common": {
