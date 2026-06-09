@@ -2,6 +2,31 @@
 
 export type SinType = 'wrath' | 'lust' | 'sloth' | 'gluttony' | 'gloom' | 'pride' | 'envy'
 
+export type OfficialNewsSource = 'steam' | 'x'
+
+export type OfficialNewsEvent = {
+  id: string
+  source: OfficialNewsSource
+  source_item_id: string
+  source_url: string
+  title: string
+  summary: string
+  body: string
+  starts_at: string
+  ends_at: string | null
+  published_at: string | null
+  image_url: string | null
+  image_path: string | null
+  image_urls: string[]
+  image_paths: string[]
+  image_bucket: string | null
+  locale: string | null
+  tags: string[]
+  raw_payload: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
 export type Sinner = {
   id: string
   name: string

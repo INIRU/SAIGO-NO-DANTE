@@ -135,7 +135,7 @@ Next.js 16에서는 `middleware.ts` 대신 `proxy.ts`를 사용.
 
 ### 주요 기능
 
-1. **점검 모드**: `site_maintenance` 테이블에서 활성 점검 경로 확인 → `/maintenance`로 리다이렉트
+1. **점검 모드**: `site_maintenance` 테이블에서 활성 점검 경로 확인 → 같은 언어의 `/[lang]/maintenance`로 rewrite
 2. **봇/스캐너 차단**: WordPress, PHP, 민감 파일 경로 접근 차단 (404 반환)
 3. **확장자 차단**: `.php`, `.asp`, `.sql` 등 비 Next.js 확장자 차단
 4. **CORS**: 허용된 오리진만 API 접근 가능
@@ -143,6 +143,8 @@ Next.js 16에서는 `middleware.ts` 대신 `proxy.ts`를 사용.
 6. **관리자 인증**: `/admin/*` 경로 JWT 토큰 검증
 
 ### 제외 경로
+
+점검 모드 매칭은 locale prefix를 제거한 경로 기준으로 수행합니다. 예를 들어 DB의 `/sinners` 항목은 `/ko/sinners`, `/en/sinners`, `/ja/sinners`와 하위 경로에 적용됩니다. DB 경로 `/`는 제외 경로를 뺀 전체 공개 페이지에 적용됩니다.
 
 점검 모드에서 제외: `/api`, `/admin`, `/maintenance`, `/login`, `/auth`, `/_next`, `/icons`
 

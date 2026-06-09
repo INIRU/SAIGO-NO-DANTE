@@ -59,12 +59,47 @@ SAIGO NO DANTE의 게임 데이터 동기화 파이프라인 문서.
 
 ## 동기화 스크립트
 
-운영용 데이터 동기화 스크립트는 두 개만 유지한다. 둘 다 게임 클라이언트 JSON과 KR/EN/JP 로컬라이즈를 함께 읽으며, 기본 동작은 dry-run이다. `--fix` 실행은 dry-run 결과 확인 후 사용자 승인받고 수행한다.
+운영용 게임 데이터 동기화 스크립트는 두 개만 유지한다. 둘 다 게임 클라이언트 JSON과 KR/EN/JP 로컬라이즈를 함께 읽으며, 기본 동작은 dry-run이다. `--fix` 실행은 dry-run 결과 확인 후 사용자 승인받고 수행한다. 공식 뉴스 캘린더는 게임 클라이언트 데이터가 아니라 Steam 공식 feed와 Nitter-compatible X 타임라인을 별도 수집한다.
 
 | 스크립트 | 런타임 | 설명 | 대상 테이블 |
 |----------|--------|------|-------------|
 | `scripts/sync/identity-data.ts` | tsx | 인격 정보 전체 동기화. 인격 row, 인격 스킬, 패시브, EGO 스킬/패시브 로컬라이즈, EGO 출시일, 인격 획득처, 키워드 메타를 한 번에 처리 | `identities`, `skills`, `passives`, `ego`, `ego_skills`, `keyword_meta` |
 | `scripts/sync/mirror-dungeon-data.ts` | tsx | 거던 데이터 전체 동기화. E.G.O 기프트, 테마팩, 레시피, 이벤트/선택지, KR/EN/JP 이름·설명을 한 번에 처리 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices` |
+| `scripts/sync/official-news-calendar.ts` | tsx | Steam 공식 뉴스와 Nitter-compatible X 게시물을 공식 뉴스 캘린더 이벤트로 수집. 기본 dry-run, `--apply`에서만 DB/Storage/revalidate 쓰기 수행 | `official_news_events`, Storage `limbus-assets/official-news/**` |
+
+### official-news-calendar.ts
+
+```bash
+npx tsx scripts/sync/official-news-calendar.ts --dry-run
+npx tsx scripts/sync/official-news-calendar.ts --source steam --dry-run
+npx tsx scripts/sync/official-news-calendar.ts --source x --nitter-html /tmp/limbus-nitter.html --dry-run
+npx tsx scripts/sync/official-news-calendar.ts --source x --nitter-base-url https://nitter.example.com --dry-run
+npx tsx scripts/sync/official-news-calendar.ts --cleanup-only --dry-run
+npx tsx scripts/sync/official-news-calendar.ts --apply
+```
+
+주요 옵션:
+
+| 옵션 | 설명 |
+|------|------|
+| `--dry-run` | 수집/cleanup 계획만 출력. 기본값 |
+| `--apply` | DB upsert, Storage upload/delete, calendar cache revalidation 수행 |
+| `--source steam\|x` | 특정 공식 소스만 수집 |
+| `--x-username <handle>` | X 공식 계정 handle 지정. 기본값 `LimbusCompany_B` |
+| `--nitter-html <path>` | Browser 등으로 저장한 Nitter timeline HTML snapshot에서 X 게시물 수집 |
+| `--nitter-html-base-url <url>` | HTML snapshot 안의 상대 이미지/link를 해석할 기준 Nitter URL |
+| `--nitter-base-url <url>` | HTTP 접근 가능한 Nitter-compatible instance에서 직접 timeline fetch. 반복 지정 가능 |
+| `--cleanup-only` | 이전 달 이전 row와 feature-owned Storage 파일 정리만 수행 |
+
+처리 범위:
+
+- Steam: `ISteamNews/GetNewsForApp/v2`와 Limbus Company app id `1973530`으로 최신 feed를 찾은 뒤, 각 item의 Steam event gid를 따라 `store.steampowered.com/news/app/1973530/view/{event_gid}?l=koreana`에서 한국어 원문을 읽는다.
+- X: `--nitter-html` snapshot 또는 `--nitter-base-url`로 지정한 Nitter-compatible timeline에서 `.timeline-item`, `.tweet-content`, `.tweet-date`, media attachment를 읽는다. 저장 URL은 Nitter URL이 아니라 `https://x.com/{username}/status/{tweetId}` canonical 링크로 정규화한다.
+- 일정일: 캘린더 배치는 게시일이 아니라 실제 일정일 기준이다. Steam `rtime32_start_time/end_time`을 우선 사용하고, 없으면 제목/본문의 날짜/시간 패턴을 파싱하며, 명시 일정이 없을 때만 게시일로 fallback한다.
+- Upsert 범위: `starts_at`이 현재 달 시작 이후인 이벤트만 upsert한다. 이전 달에 게시된 공지라도 실제 일정일이 현재 달이면 유지된다.
+- 이미지: feed가 이미지 URL을 제공하면 이벤트당 최대 8개 후보를 수집한다. Nitter 첨부는 `.still-image[href]` 원본 후보가 있으면 같은 첨부의 nested media thumbnail 후보를 저장하지 않고, 원본 후보가 없을 때만 media `img` fallback을 사용한다. 첫 이미지는 `limbus-assets/official-news/YYYY-MM/<source>-<source_item_id>.<ext>`, 추가 이미지는 `-2`, `-3` suffix 경로로 업로드하고, 전체 공개 URL/path는 `image_urls`/`image_paths`에 저장한다. 기존 호환용 `image_url`/`image_path`는 첫 이미지와 동일하게 유지한다.
+- Cleanup: `COALESCE(ends_at, starts_at)`가 현재 달 시작보다 이전인 row만 삭제하고, `image_path` 및 `image_paths`에 저장된 `limbus-assets/official-news/` 소유 경로만 Storage에서 제거
+- Cache: apply 후 calendar cache tag와 `/ko|en|ja/calendar` path를 revalidate endpoint로 무효화
 
 ### identity-data.ts
 
@@ -243,6 +278,7 @@ Base URL: `https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/lim
 | `icons/stats/{slash,pierce,blunt}.webp` | 공격 타입 아이콘 | `ATK_TYPE_ICON_MAP[type]` |
 | `icons/keywords/{slug}.webp` | 키워드 아이콘 (200+) | `getKeywordIconUrl(keyword)` |
 | `icons/Sinners/{sinnerId}.webp` | 수감자 로고 (12) | `getSinnerLogoUrl(sinnerId)` |
+| `official-news/YYYY-MM/<source>-<source_item_id>[-N].<ext>` | 공식 뉴스 캘린더 이미지. 첫 이미지는 suffix 없음, 추가 이미지는 `-2`부터 시작 | DB `official_news_events.image_urls`/`image_paths` |
 | `icons/skills/{sinnerId}/{gameId}{NN}.webp` | 스킬 아이콘 | `getSkillIconUrl(identity, idx)` |
 | `icons/sd/{sinnerId}/{gameId}_idle.webp` | SD 스프라이트 | - |
 | `icons/theme-packs/{packSpriteId}.webp` | 테마팩 선택 이미지 (380x690) | - |

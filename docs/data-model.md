@@ -1,6 +1,6 @@
 # 데이터 모델 (DB Schema)
 
-SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-30 identity game tag arrays migration 기준.**
+SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (54 테이블). **2026-06-09 official news calendar migration 기준.**
 
 > Supabase Dashboard > Settings > API > Extra search path에 `limbus`가 추가되어야 한다.
 
@@ -71,6 +71,7 @@ SAIGO NO DANTE Supabase PostgreSQL `limbus` 스키마 (53 테이블). **2026-04-
 | 테이블 | 컬럼 수 | 설명 |
 |--------|---------|------|
 | `announcements` | 6 | 공지사항 |
+| `official_news_events` | 20 | 공식 Steam/X 뉴스 캘린더 이벤트 |
 | `site_maintenance` | 9 | 페이지별 점검 상태 |
 | `audit_logs` | 7 | 관리자 활동 로그 |
 | `profile_access_signals` | 9 | 최근 5개 접속 신호 |
@@ -1063,14 +1064,48 @@ AI 자동화가 웹 커뮤니티 의견을 개별 표본으로 저장하는 테�
 
 ---
 
+### official_news_events (공식 뉴스 캘린더)
+
+Steam 공식 뉴스와 Nitter-compatible X 게시물을 월간 캘린더용 이벤트로 정규화해 저장한다. 수집 스크립트는 `(source, source_item_id)`로 upsert하므로 반복 실행이 idempotent하다. Steam은 공개 feed에서 item을 찾은 뒤 한국어 Steam 뉴스 view를 따라가 `ko-KR` 원문을 저장하고, X는 Nitter timeline에서 읽되 원문 URL은 canonical `x.com` status 링크로 저장한다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | 공개 이벤트 ID |
+| `source` | TEXT | NOT NULL, CHECK (`steam`/`x`) | 공식 소스 |
+| `source_item_id` | TEXT | NOT NULL | Steam `gid` 또는 X tweet id |
+| `source_url` | TEXT | NOT NULL, HTTPS CHECK | 원문 URL |
+| `title` | TEXT | NOT NULL | 캘린더/상세 제목 |
+| `summary` | TEXT | NOT NULL, DEFAULT '' | 짧은 요약 |
+| `body` | TEXT | NOT NULL, DEFAULT '' | feed 본문을 plain text로 정규화한 상세 내용 |
+| `starts_at` | TIMESTAMPTZ | NOT NULL | 캘린더 날짜 기준. 게시일이 아니라 공지 안의 실제 일정일을 우선 저장 |
+| `ends_at` | TIMESTAMPTZ | | 종료 시각. 없으면 단일 날짜 이벤트 |
+| `published_at` | TIMESTAMPTZ | | 원문 게시 시각 |
+| `image_url` | TEXT | | 대표 첫 이미지 Supabase Storage 공개 URL. 기존 UI/API 호환 필드 |
+| `image_path` | TEXT | `official-news/%` 소유 경로만 허용 | 대표 첫 이미지 Storage cleanup 대상 경로. 기존 UI/API 호환 필드 |
+| `image_urls` | TEXT[] | NOT NULL, DEFAULT `{}` | 업로드된 모든 이벤트 이미지 공개 URL. 첫 원소는 `image_url`과 동일 |
+| `image_paths` | TEXT[] | NOT NULL, DEFAULT `{}` | 업로드된 모든 이벤트 이미지 Storage 경로. 첫 원소는 `image_path`와 동일 |
+| `image_bucket` | TEXT | DEFAULT `limbus-assets` | Storage bucket |
+| `locale` | VARCHAR(5) | `ko`/`en`/`ja` 계열 nullable | 소스 로케일 힌트 |
+| `tags` | TEXT[] | NOT NULL, DEFAULT `{}` | 소스/분류 태그 |
+| `raw_payload` | JSONB | NOT NULL, DEFAULT `{}` | 원본 feed/Nitter parse payload 증거 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
+
+- Unique: `(source, source_item_id)`
+- Index: `starts_at`, `(source, published_at DESC)`, `COALESCE(ends_at, starts_at)` cleanup index
+- `raw_payload.calendar_date_source`: `steam_event_time`, `parsed_content`, `published_at_fallback` 중 어떤 기준으로 `starts_at`을 정했는지 기록
+- RLS: enabled. anon/authenticated는 SELECT만 가능, write는 service_role 자동화만 수행
+
+---
+
 ### site_maintenance (점검 상태)
 
-페이지별 점검 상태 관리. `proxy.ts`에서 점검 중인 경로 접근 시 `/maintenance`로 리다이렉트.
+페이지별 점검 상태 관리. `proxy.ts`에서 점검 중인 경로 접근 시 같은 언어의 `/[lang]/maintenance`로 rewrite한다. `path`는 locale 없는 경로로 저장하며, `/sinners`는 `/ko/sinners`, `/en/sinners`, `/ja/sinners` 및 하위 경로에 매칭된다. `/`는 점검 제외 경로를 뺀 전체 공개 페이지에 적용된다.
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |------|------|------|------|
 | `id` | SERIAL | PK | |
-| `path` | TEXT | NOT NULL | 점검 대상 경로 (e.g. `/sinners`) |
+| `path` | TEXT | NOT NULL | 점검 대상 경로 (e.g. `/sinners`, 전체 공개 사이트는 `/`) |
 | `label` | TEXT | DEFAULT '' | 관리 화면 표시명 |
 | `message` | TEXT | NOT NULL, DEFAULT '현재 점검 중입니다. 잠시 후 다시 시도해주세요.' | 점검 안내 메시지 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT false | 점검 활성화 여부 |
@@ -1321,5 +1356,6 @@ story_episodes (1)──(N) story_lines
 |--------|--------|------|------|
 | `decks_updated_at` | `decks` | BEFORE UPDATE | `update_updated_at()` |
 | `announcements_updated_at` | `announcements` | BEFORE UPDATE | `update_updated_at()` |
+| `official_news_events_updated_at` | `official_news_events` | BEFORE UPDATE | `update_updated_at()` |
 | `identity_guides_updated_at` | `identity_guides` | BEFORE UPDATE | `update_updated_at()` |
 | `on_auth_user_created` | `auth.users` | AFTER INSERT | `handle_new_user()` |

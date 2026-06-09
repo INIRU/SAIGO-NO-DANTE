@@ -5,6 +5,7 @@
     "sinnerList": "Sinner List",
     "decks": "Deck Board",
     "planner": "Mirror Dungeon",
+    "calendar": "Official Calendar",
     "community": {
       "title": "Community",
       "planner": "MD Planner",
@@ -25,6 +26,71 @@
       "meta": "Analysis",
       "extraction": "Extraction",
       "random": "Random"
+    }
+  },
+  "maintenance": {
+    "eyebrow": "ARCHIVE MAINTENANCE",
+    "statusLabel": "STATUS HOLD",
+    "title": "Archive Under Maintenance",
+    "description": "Access to this route is paused while archive data is being serviced. You can return through the same route once maintenance is complete.",
+    "terminalLine": "Mephistopheles access is temporarily paused. Please stand by until maintenance is complete.",
+    "detailTitle": "Access restriction details",
+    "detailCaption": "ACCESS REPORT",
+    "defaultMessage": "Archive requests are on hold until administrator maintenance is complete.",
+    "unknownReason": "Administrator maintenance",
+    "unknownEnd": "Not scheduled",
+    "currentRoute": "Current route",
+    "home": "Return to the entrance",
+    "labels": {
+      "reason": "Reason",
+      "endsAt": "Resumes",
+      "route": "Requested route"
+    }
+  },
+  "calendar": {
+    "meta": {
+      "title": "Official News Calendar | SAIGO NO DANTE",
+      "description": "View official Limbus Company Steam news and X posts in a current-month calendar."
+    },
+    "eyebrow": "OFFICIAL NEWS",
+    "title": "Official News Calendar",
+    "description": "Steam notices and X posts are grouped by date for the current month.",
+    "currentMonthOnly": "This first version shows the current month only. Previous and next month controls are not available.",
+    "summary": "{count} total · Steam {steam} · X {x}",
+    "loading": "Loading calendar…",
+    "errorTitle": "Calendar couldn't load.",
+    "errorDescription": "Try again in a moment. If the problem continues, check the official source links.",
+    "retry": "Retry",
+    "emptyTitle": "No official news is registered for this month.",
+    "emptyDescription": "New Steam news or X posts will appear on their dates after collection.",
+    "moreEvents": "+{count} more",
+    "openDayEvents": "Show {count} hidden events for {date}",
+    "dayEventsTitle": "{date} events",
+    "dayEventsFallbackTitle": "Day events",
+    "dayEventsDescription": "Choose one of {count} official events for this date.",
+    "openEvent": "Open {source} event: {title}",
+    "detailTitle": "Official news details",
+    "entryTypes": {
+      "post": "Post",
+      "schedule": "Schedule"
+    },
+    "sourcePostTitles": {
+      "steam": "Steam post",
+      "x": "X post"
+    },
+    "publishedContext": "Post reference: {date}",
+    "galleryLabel": "Attached images",
+    "galleryCount": "{count} images",
+    "openImage": "Open image {index} for {title}",
+    "imageViewerTitle": "Image viewer",
+    "imageAlt": "Attached image {index} for {title}",
+    "close": "Close",
+    "sourceLink": "View source",
+    "noBody": "No body text was provided. Open the source for details.",
+    "tags": "Tags",
+    "sources": {
+      "steam": "Steam",
+      "x": "X"
     }
   },
   "common": {

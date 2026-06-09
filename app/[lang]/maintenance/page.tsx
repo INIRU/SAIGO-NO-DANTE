@@ -1,309 +1,487 @@
 'use client'
 
 import { Link } from '@/lib/i18n/navigation'
+import { ArrowRight, Construction } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
-import { useState, useEffect, Suspense } from 'react'
-import { Construction } from 'lucide-react'
+import { Suspense, useMemo } from 'react'
 
-const CHARON_LINES = [
-  '카론, 기다리는 거 못해. 100초만 기다려 줄게.',
-  '늦으면 메피랑 먼저 갈 거야.',
-  '아야하는 승객들 있어. 울면 안 돼.',
-  '승객들, 좌석에 앉아서 기다려. 카론이 째깍째깍 해줄게.',
-  '알쏭달쏭해. 뭐가 나올지 모르겠어.',
-  '카론, 빙글빙글.',
-  '…멀미 봉투는 좌석 밑에 있어. 메피한테 토하지 마.',
-  '그래서 카론이 안전벨트 잘 하라고 했잖아.',
-]
+function formatEndTime(iso: string, locale: string) {
+  const date = new Date(iso)
 
-function formatEndTime(iso: string) {
-  const d = new Date(iso)
-  const month = d.getMonth() + 1
-  const day = d.getDate()
-  const hour = d.getHours().toString().padStart(2, '0')
-  const min = d.getMinutes().toString().padStart(2, '0')
-  return `${month}월 ${day}일 ${hour}:${min}`
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 function MaintenanceContent() {
+  const t = useTranslations('maintenance')
+  const locale = useLocale()
   const searchParams = useSearchParams()
+
   const from = searchParams?.get('from') ?? null
   const message = searchParams?.get('message') ?? null
   const reason = searchParams?.get('reason') ?? null
-  const ends_at = searchParams?.get('ends_at') ?? null
+  const endsAt = searchParams?.get('ends_at') ?? null
 
-  const [line] = useState(() => CHARON_LINES[Math.floor(Math.random() * CHARON_LINES.length)])
-  const [typed, setTyped] = useState('')
-  const [mounted, setMounted] = useState(false)
+  const terminalLine = t('terminalLine')
+  const operatorMessage = message ?? t('defaultMessage')
 
-  useEffect(() => { setMounted(true) }, [])
+  const endTime = useMemo(() => {
+    if (!endsAt) return null
+    return formatEndTime(endsAt, locale)
+  }, [endsAt, locale])
 
-  // Typewriter effect for Charon's quote
-  useEffect(() => {
-    if (!mounted) return
-    let i = 0
-    const interval = setInterval(() => {
-      if (i <= line.length) {
-        setTyped(line.slice(0, i))
-        i++
-      } else {
-        clearInterval(interval)
-      }
-    }, 50)
-    return () => clearInterval(interval)
-  }, [line, mounted])
+  const metadataRows = [
+    { label: t('labels.reason'), value: reason ?? t('unknownReason') },
+    { label: t('labels.endsAt'), value: endTime ?? t('unknownEnd') },
+    { label: t('labels.route'), value: from ?? t('currentRoute'), code: Boolean(from) },
+  ] as Array<{ label: string; value: string; code?: boolean }>
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#0d0b08', position: 'relative', overflow: 'hidden' }}>
-      {/* CSS Animations */}
+    <main className="maintenance-shell">
       <style>{`
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-        @keyframes float-up {
-          0% { transform: translateY(100vh) scale(0); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 0.6; }
-          100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        @keyframes panel-enter {
+          from { opacity: 0; transform: translateY(0.875rem); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes flicker { 0%, 95%, 100% { opacity: 1; } 96% { opacity: 0.4; } 97% { opacity: 0.9; } 98% { opacity: 0.3; } 99% { opacity: 0.8; } }
-        @keyframes scan-line { 0% { top: -10%; } 100% { top: 110%; } }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes border-glow {
-          0%, 100% { border-color: rgba(200,144,10,0.15); box-shadow: 0 0 1.25rem rgba(200,144,10,0.05); }
-          50% { border-color: rgba(200,144,10,0.35); box-shadow: 0 0 2.5rem rgba(200,144,10,0.12); }
+
+        @keyframes rail-scan {
+          from { transform: translateY(-100%); opacity: 0; }
+          18%, 78% { opacity: 0.72; }
+          to { transform: translateY(100%); opacity: 0; }
         }
-        @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .particle {
+
+        .maintenance-shell {
+          position: relative;
+          display: grid;
+          min-height: 100dvh;
+          place-items: center;
+          overflow-x: hidden;
+          background:
+            linear-gradient(180deg, rgba(13, 11, 8, 0.92), rgba(13, 11, 8, 1)),
+            repeating-linear-gradient(90deg, rgba(200, 144, 10, 0.035) 0 0.0625rem, transparent 0.0625rem 5rem),
+            repeating-linear-gradient(0deg, rgba(232, 176, 48, 0.026) 0 0.0625rem, transparent 0.0625rem 4.5rem),
+            #0d0b08;
+          padding: 5.25rem 1rem 2.25rem;
+          color: #dcc99a;
+          isolation: isolate;
+        }
+
+        .maintenance-shell::before {
           position: absolute;
-          width: 0.125rem;
-          height: 0.125rem;
-          background: rgba(200,144,10,0.3);
-          border-radius: 50%;
-          animation: float-up linear infinite;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          content: '';
+          background:
+            linear-gradient(90deg, rgba(13, 11, 8, 0.94), transparent 18%, transparent 82%, rgba(13, 11, 8, 0.94)),
+            radial-gradient(circle at 22% 28%, rgba(200, 144, 10, 0.08), transparent 18rem),
+            radial-gradient(circle at 78% 70%, rgba(138, 96, 16, 0.08), transparent 16rem);
+          opacity: 0.95;
+        }
+
+        .status-board {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr);
+          width: min(100%, 68rem);
+          min-height: 28rem;
+          border: 0.0625rem solid rgba(200, 144, 10, 0.3);
+          border-radius: 0.25rem;
+          background:
+            linear-gradient(90deg, rgba(232, 176, 48, 0.045) 0 0.0625rem, transparent 0.0625rem),
+            linear-gradient(180deg, rgba(26, 21, 16, 0.96), rgba(14, 12, 9, 0.98)),
+            #1a1510;
+          box-shadow:
+            0 1.5rem 3rem rgba(0, 0, 0, 0.46),
+            inset 0 0 0 0.0625rem rgba(232, 176, 48, 0.07);
+          animation: panel-enter 520ms ease-out both;
+        }
+
+        .status-board::before,
+        .status-board::after {
+          position: absolute;
+          width: 1.15rem;
+          height: 1.15rem;
+          border-color: rgba(232, 176, 48, 0.45);
+          content: '';
+          pointer-events: none;
+        }
+
+        .status-board::before {
+          top: 0.75rem;
+          left: 0.75rem;
+          border-top: 0.0625rem solid;
+          border-left: 0.0625rem solid;
+        }
+
+        .status-board::after {
+          right: 0.75rem;
+          bottom: 0.75rem;
+          border-right: 0.0625rem solid;
+          border-bottom: 0.0625rem solid;
+        }
+
+        .status-main {
+          position: relative;
+          display: grid;
+          grid-template-columns: 0.25rem minmax(0, 1fr);
+          gap: 1.5rem;
+          padding: 3rem 2.5rem 2.35rem;
+        }
+
+        .status-rail {
+          position: relative;
+          overflow: hidden;
+          border: 0.0625rem solid rgba(232, 176, 48, 0.2);
+          background: linear-gradient(180deg, rgba(232, 176, 48, 0.78), rgba(138, 96, 16, 0.3));
+        }
+
+        .status-rail::after {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, transparent, rgba(255, 232, 174, 0.75), transparent);
+          animation: rail-scan 2.8s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+          content: '';
+        }
+
+        .status-copy {
+          min-width: 0;
+        }
+
+        .status-label {
+          display: inline-flex;
+          align-items: center;
+          min-height: 2rem;
+          margin: 0 0 1.15rem;
+          border-block: 0.0625rem solid rgba(200, 144, 10, 0.18);
+          color: #9f8758;
+          font-family: var(--font-mono);
+          font-size: 0.875rem;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        .status-stamp {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          margin-left: 0.75rem;
+          border: 0.0625rem solid rgba(138, 96, 16, 0.45);
+          padding: 0.28rem 0.5rem;
+          color: #6f6042;
+          font-size: 0.75rem;
+          letter-spacing: 0.11em;
+        }
+
+        .maintenance-title {
+          margin: 0;
+          color: #e8b030;
+          font-size: clamp(2.25rem, 5vw, 4rem);
+          line-height: 1.02;
+          letter-spacing: 0;
+          text-wrap: balance;
+        }
+
+        .maintenance-description {
+          max-width: 38rem;
+          margin: 1.15rem 0 0;
+          color: #cdb989;
+          font-size: 1rem;
+          line-height: 1.8;
+          text-wrap: pretty;
+        }
+
+        .terminal-strip {
+          display: flex;
+          min-height: 3rem;
+          align-items: center;
+          gap: 0.75rem;
+          margin: 1.65rem 0 0;
+          border-block: 0.0625rem solid rgba(200, 144, 10, 0.16);
+          background:
+            linear-gradient(90deg, rgba(200, 144, 10, 0.075), transparent 55%),
+            rgba(13, 11, 8, 0.52);
+          padding: 0.7rem 0.85rem;
+          color: #b69b60;
+          font-family: var(--font-mono);
+          font-size: 0.9375rem;
+          line-height: 1.55;
+        }
+
+        .terminal-caret {
+          width: 0.5rem;
+          height: 1.15rem;
+          flex: 0 0 auto;
+          background: rgba(232, 176, 48, 0.62);
+        }
+
+        .home-link {
+          display: inline-flex;
+          min-height: 2.75rem;
+          align-items: center;
+          justify-content: center;
+          gap: 0.55rem;
+          margin-top: 1.65rem;
+          border: 0.0625rem solid rgba(200, 144, 10, 0.42);
+          border-radius: 0.25rem;
+          background: rgba(200, 144, 10, 0.12);
+          padding: 0.75rem 1.15rem;
+          color: #f1c765;
+          font-size: 0.9375rem;
+          font-weight: 700;
+          text-decoration: none;
+          transition:
+            border-color 180ms cubic-bezier(0.32, 0.72, 0, 1),
+            background 180ms cubic-bezier(0.32, 0.72, 0, 1),
+            color 180ms cubic-bezier(0.32, 0.72, 0, 1),
+            transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .home-link:hover,
+        .home-link:focus-visible {
+          border-color: rgba(232, 176, 48, 0.72);
+          background: rgba(200, 144, 10, 0.18);
+          color: #ffe4a0;
+          outline: none;
+          transform: translateY(-0.0625rem);
+        }
+
+        .home-link:active {
+          transform: translateY(0);
+        }
+
+        .home-link:focus-visible {
+          box-shadow: 0 0 0 0.1875rem rgba(232, 176, 48, 0.22);
+        }
+
+        .detail-panel {
+          position: relative;
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+          border-left: 0.0625rem solid rgba(200, 144, 10, 0.22);
+          background:
+            linear-gradient(180deg, rgba(13, 11, 8, 0.42), rgba(13, 11, 8, 0.72)),
+            rgba(13, 11, 8, 0.36);
+          padding: 2rem 1.5rem 1.5rem;
+        }
+
+        .detail-panel::before {
+          position: absolute;
+          top: 0;
+          right: 1rem;
+          left: 1rem;
+          height: 0.0625rem;
+          background: linear-gradient(90deg, transparent, rgba(232, 176, 48, 0.36), transparent);
+          content: '';
+        }
+
+        .detail-heading {
+          margin: 0;
+          color: #e5d4a5;
+          font-size: 1rem;
+          font-weight: 700;
+          line-height: 1.45;
+        }
+
+        .detail-caption {
+          margin: 0.35rem 0 1.05rem;
+          color: #796947;
+          font-family: var(--font-mono);
+          font-size: 0.875rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .operator-message {
+          margin: 0;
+          border-block: 0.0625rem solid rgba(200, 144, 10, 0.16);
+          padding: 1rem 0;
+          color: #cdb989;
+          font-size: 1rem;
+          line-height: 1.7;
+          text-wrap: pretty;
+        }
+
+        .metadata-list {
+          display: grid;
+          margin: 1rem 0 0;
+        }
+
+        .metadata-row {
+          display: grid;
+          grid-template-columns: minmax(7.2rem, 0.72fr) minmax(0, 1fr);
+          gap: 1rem;
+          border-top: 0.0625rem solid rgba(200, 144, 10, 0.14);
+          padding: 0.85rem 0;
+        }
+
+        .metadata-label {
+          color: #7c6a46;
+          font-family: var(--font-mono);
+          font-size: 0.875rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+        }
+
+        .metadata-value {
+          min-width: 0;
+          overflow-wrap: anywhere;
+          color: #c5ad78;
+          font-size: 1rem;
+          line-height: 1.55;
+        }
+
+        .metadata-value code {
+          color: #d6c18d;
+          font-family: var(--font-mono);
+          font-size: 0.875rem;
+        }
+
+        @media (max-width: 50rem) {
+          .maintenance-shell {
+            align-items: start;
+            padding: 4.75rem 0.875rem 1.25rem;
+          }
+
+          .status-board {
+            grid-template-columns: 1fr;
+            min-height: 0;
+          }
+
+          .status-main {
+            grid-template-columns: 0.2rem minmax(0, 1fr);
+            gap: 1rem;
+            padding: 1.6rem 1rem 1.2rem;
+          }
+
+          .status-label {
+            margin-bottom: 0.85rem;
+            letter-spacing: 0.09em;
+          }
+
+          .status-stamp {
+            display: none;
+          }
+
+          .maintenance-description {
+            margin-top: 0.8rem;
+            line-height: 1.65;
+          }
+
+          .maintenance-title {
+            font-size: 2rem;
+            line-height: 1.08;
+            overflow-wrap: anywhere;
+          }
+
+          .terminal-strip {
+            margin-top: 1rem;
+          }
+
+          .home-link {
+            width: 100%;
+            margin-top: 1rem;
+          }
+
+          .detail-panel {
+            border-top: 0.0625rem solid rgba(200, 144, 10, 0.2);
+            border-left: 0;
+            padding: 1.2rem 1rem 1rem;
+          }
+
+          .metadata-row {
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
+            padding: 0.75rem 0;
+          }
+
+          .operator-message {
+            padding: 0.85rem 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .status-board,
+          .status-rail::after {
+            animation: none;
+          }
+
+          .home-link {
+            transition: none;
+          }
         }
       `}</style>
 
-      {/* Scan line overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-        overflow: 'hidden', opacity: 0.03,
-      }}>
-        <div style={{
-          position: 'absolute', left: 0, right: 0, height: '30%',
-          background: 'linear-gradient(to bottom, transparent, rgba(200,144,10,0.5), transparent)',
-          animation: 'scan-line 4s linear infinite',
-        }} />
-      </div>
+      <section className="status-board" aria-labelledby="maintenance-title">
+        <div className="status-main">
+          <div className="status-rail" aria-hidden="true" />
+          <div className="status-copy">
+            <p className="status-label">
+              {t('eyebrow')}
+              <span className="status-stamp">{t('statusLabel')}</span>
+            </p>
+            <h1 id="maintenance-title" className="maintenance-title font-serif">
+              {t('title')}
+            </h1>
+            <p className="maintenance-description">{t('description')}</p>
 
-      {/* Atmospheric particles */}
-      {mounted && Array.from({ length: 20 }).map((_, i) => (
-        <div
-          key={i}
-          className="particle"
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDuration: `${6 + Math.random() * 8}s`,
-            animationDelay: `${Math.random() * 8}s`,
-            opacity: 0.1 + Math.random() * 0.3,
-            width: `${0.0625 + Math.random() * 0.125}rem`,
-            height: `${0.0625 + Math.random() * 0.125}rem`,
-          }}
-        />
-      ))}
-
-      {/* Background radial glow */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '50rem', height: '50rem', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.05) 0%, rgba(200,144,10,0.015) 35%, transparent 65%)',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Outer ornamental ring */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '28rem', height: '28rem', borderRadius: '50%',
-        border: '0.0625rem solid rgba(200,144,10,0.06)',
-        animation: 'spin-slow 120s linear infinite',
-        pointerEvents: 'none',
-      }}>
-        {/* Tick marks on the ring */}
-        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
-          <div key={deg} style={{
-            position: 'absolute', top: '50%', left: '50%',
-            width: '0.0625rem', height: '0.75rem',
-            background: 'rgba(200,144,10,0.15)',
-            transform: `translate(-50%, -50%) rotate(${deg}deg) translateY(-14rem)`,
-          }} />
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="text-center" style={{
-        position: 'relative', zIndex: 5, maxWidth: '28rem',
-        animation: mounted ? 'fade-in 1s ease-out' : 'none',
-      }}>
-
-        {/* Anchor icon with glow ring */}
-        <div className="mx-auto" style={{
-          width: '6rem', height: '6rem', marginBottom: '2rem',
-          position: 'relative',
-        }}>
-          <div style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '0.0625rem solid rgba(200,144,10,0.2)',
-            animation: 'border-glow 3s ease-in-out infinite',
-          }} />
-          <div style={{
-            position: 'absolute', inset: '0.375rem', borderRadius: '50%',
-            background: 'rgba(200,144,10,0.04)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Construction style={{
-              width: '2.25rem', height: '2.25rem', color: '#c8900a',
-              animation: 'pulse-glow 3s ease-in-out infinite',
-              filter: 'drop-shadow(0 0 0.5rem rgba(200,144,10,0.3))',
-            }} />
-          </div>
-        </div>
-
-        {/* Title */}
-        <h1 className="font-serif" style={{
-          fontSize: '1.75rem', fontWeight: 700,
-          color: '#c8900a', letterSpacing: '0.15em',
-          marginBottom: '0.25rem',
-          animation: 'flicker 8s linear infinite',
-          textShadow: '0 0 1.5rem rgba(200,144,10,0.3)',
-        }}>
-          점 검 중
-        </h1>
-
-        <p className="font-mono" style={{
-          color: '#4a3d2a', fontSize: '0.625rem',
-          letterSpacing: '0.3em', textTransform: 'uppercase',
-          marginBottom: '1.5rem',
-        }}>
-          MAINTENANCE IN PROGRESS
-        </p>
-
-        {/* Ornamental divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '3rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3))' }} />
-          <div style={{ width: '0.25rem', height: '0.25rem', background: '#c8900a', transform: 'rotate(45deg)', opacity: 0.5 }} />
-          <div style={{ width: '3rem', height: '0.0625rem', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent)' }} />
-        </div>
-
-        {/* Charon quote box */}
-        <div style={{
-          background: 'rgba(26,21,16,0.8)',
-          border: '0.0625rem solid rgba(200,144,10,0.12)',
-          borderRadius: '0.5rem',
-          padding: '1.25rem 1.5rem',
-          marginBottom: '1.5rem',
-          backdropFilter: 'blur(0.5rem)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {/* Corner ornaments */}
-          <div style={{ position: 'absolute', top: '0.375rem', left: '0.375rem', width: '0.5rem', height: '0.5rem', borderTop: '0.0625rem solid rgba(200,144,10,0.25)', borderLeft: '0.0625rem solid rgba(200,144,10,0.25)' }} />
-          <div style={{ position: 'absolute', top: '0.375rem', right: '0.375rem', width: '0.5rem', height: '0.5rem', borderTop: '0.0625rem solid rgba(200,144,10,0.25)', borderRight: '0.0625rem solid rgba(200,144,10,0.25)' }} />
-          <div style={{ position: 'absolute', bottom: '0.375rem', left: '0.375rem', width: '0.5rem', height: '0.5rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.25)', borderLeft: '0.0625rem solid rgba(200,144,10,0.25)' }} />
-          <div style={{ position: 'absolute', bottom: '0.375rem', right: '0.375rem', width: '0.5rem', height: '0.5rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.25)', borderRight: '0.0625rem solid rgba(200,144,10,0.25)' }} />
-
-          <p style={{
-            color: '#e8b030', fontSize: '0.6875rem', fontWeight: 600,
-            letterSpacing: '0.08em', marginBottom: '0.5rem',
-            fontFamily: 'var(--font-heading)',
-          }}>
-            — 카론
-          </p>
-          <p style={{
-            color: '#a89070', fontSize: '0.9375rem', lineHeight: 1.8,
-            fontStyle: 'italic', minHeight: '1.75rem',
-          }}>
-            &ldquo;{typed}&rdquo;
-            <span style={{ animation: 'cursor-blink 1s step-end infinite', color: '#c8900a' }}>▎</span>
-          </p>
-        </div>
-
-        {/* Maintenance info panel */}
-        <div style={{
-          background: 'rgba(13,11,8,0.6)',
-          border: '0.0625rem solid rgba(200,144,10,0.08)',
-          borderRadius: '0.375rem',
-          padding: '1rem 1.25rem',
-          marginBottom: '1.5rem',
-          textAlign: 'left',
-        }}>
-          {message && (
-            <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '0.0625rem solid rgba(200,144,10,0.06)' }}>
-              <p style={{ color: '#a89070', fontSize: '0.8125rem', lineHeight: 1.6 }}>{message}</p>
+            <div className="terminal-strip" aria-live="polite">
+              <span className="terminal-caret" aria-hidden="true" />
+              <span>{terminalLine}</span>
             </div>
-          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.375rem 1rem', fontSize: '0.75rem' }}>
-            {reason && (
-              <>
-                <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>사유</span>
-                <span style={{ color: '#7a6845' }}>{reason}</span>
-              </>
-            )}
-            <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>종료</span>
-            <span style={{ color: ends_at ? '#e8b030' : '#555566' }}>
-              {ends_at ? formatEndTime(ends_at) : '미정'}
-            </span>
-            {from && (
-              <>
-                <span className="font-mono" style={{ color: '#4a3d2a', letterSpacing: '0.05em' }}>경로</span>
-                <code style={{ color: '#888888', fontSize: '0.6875rem' }}>{from}</code>
-              </>
-            )}
+            <Link href="/" className="home-link">
+              {t('home')}
+              <ArrowRight size={18} strokeWidth={1.8} aria-hidden="true" />
+            </Link>
           </div>
         </div>
 
-        {/* Return button */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 transition-all"
-          style={{
-            padding: '0.625rem 1.5rem',
-            background: 'rgba(200,144,10,0.08)',
-            color: '#c8900a',
-            border: '0.0625rem solid rgba(200,144,10,0.2)',
-            borderRadius: '0.375rem',
-            fontSize: '0.8125rem',
-            letterSpacing: '0.03em',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(200,144,10,0.15)'
-            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.4)'
-            e.currentTarget.style.boxShadow = '0 0 1.5rem rgba(200,144,10,0.1)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(200,144,10,0.08)'
-            e.currentTarget.style.borderColor = 'rgba(200,144,10,0.2)'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        >
-          카론이 데려다줄게. 돌아가자.
-        </Link>
-      </div>
-    </div>
+        <aside className="detail-panel" aria-labelledby="maintenance-detail-title">
+          <h2 id="maintenance-detail-title" className="detail-heading">
+            {t('detailTitle')}
+          </h2>
+          <p className="detail-caption">{t('detailCaption')}</p>
+          <p className="operator-message">{operatorMessage}</p>
+
+          <dl className="metadata-list">
+            {metadataRows.map((row) => (
+              <div key={row.label} className="metadata-row">
+                <dt className="metadata-label">{row.label}</dt>
+                <dd className="metadata-value">
+                  {row.code ? <code>{row.value}</code> : row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
+      </section>
+    </main>
   )
 }
 
 export default function MaintenancePage() {
   return (
-    <div>
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d0b08' }}>
-          <Construction style={{ width: '2rem', height: '2rem', color: '#c8900a', opacity: 0.3 }} />
-        </div>
-      }>
-        <MaintenanceContent />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <main className="grid min-h-dvh place-items-center bg-[#0d0b08] text-[#c8900a]">
+          <Construction size={32} strokeWidth={1.8} aria-hidden="true" />
+        </main>
+      }
+    >
+      <MaintenanceContent />
+    </Suspense>
   )
 }

@@ -5,6 +5,7 @@
     "sinnerList": "수감자 목록",
     "decks": "덱 게시판",
     "planner": "거울 던전",
+    "calendar": "공식 캘린더",
     "community": {
       "title": "커뮤니티",
       "planner": "거던 플래너",
@@ -25,6 +26,71 @@
       "meta": "분석",
       "extraction": "추출",
       "random": "랜덤 편성"
+    }
+  },
+  "maintenance": {
+    "eyebrow": "ARCHIVE MAINTENANCE",
+    "statusLabel": "STATUS HOLD",
+    "title": "기록 보관소 점검 중",
+    "description": "현재 기록 보관소 데이터를 정비하는 동안 이 경로의 접근을 잠시 멈췄습니다. 정비가 끝나면 같은 경로로 다시 입장할 수 있습니다.",
+    "terminalLine": "메피스토펠레스 접근이 일시 중단되었습니다. 관리자 정비가 끝날 때까지 대기하세요.",
+    "detailTitle": "접근 제한 정보",
+    "detailCaption": "ACCESS REPORT",
+    "defaultMessage": "관리자 정비가 끝날 때까지 기록 보관소 요청을 보류합니다.",
+    "unknownReason": "관리자 정비",
+    "unknownEnd": "미정",
+    "currentRoute": "현재 경로",
+    "home": "초기 화면으로 돌아가기",
+    "labels": {
+      "reason": "사유",
+      "endsAt": "재개 예정",
+      "route": "요청 경로"
+    }
+  },
+  "calendar": {
+    "meta": {
+      "title": "공식 뉴스 캘린더 | SAIGO NO DANTE",
+      "description": "림버스 컴퍼니 공식 Steam 뉴스와 X 소식을 이번 달 캘린더로 확인하세요."
+    },
+    "eyebrow": "OFFICIAL NEWS",
+    "title": "공식 뉴스 캘린더",
+    "description": "Steam 공지와 X 소식을 현재 월 기준으로 모아 날짜별로 보여줍니다.",
+    "currentMonthOnly": "이번 범위에서는 현재 월만 표시하며 이전/다음 달 이동은 제공하지 않습니다.",
+    "summary": "총 {count}건 · Steam {steam} · X {x}",
+    "loading": "캘린더를 불러오는 중…",
+    "errorTitle": "캘린더를 불러오지 못했습니다.",
+    "errorDescription": "잠시 후 다시 시도하세요. 문제가 계속되면 공식 소스 링크를 확인해 주세요.",
+    "retry": "다시 시도",
+    "emptyTitle": "이번 달 등록된 공식 소식이 없습니다.",
+    "emptyDescription": "새 Steam 뉴스나 X 게시물이 수집되면 이 달력에 날짜별로 표시됩니다.",
+    "moreEvents": "외 {count}건",
+    "openDayEvents": "{date}의 숨겨진 소식 {count}건 보기",
+    "dayEventsTitle": "{date} 소식",
+    "dayEventsFallbackTitle": "날짜별 소식",
+    "dayEventsDescription": "이 날짜의 공식 소식 {count}건 중 하나를 선택하세요.",
+    "openEvent": "{source} 소식 열기: {title}",
+    "detailTitle": "공식 소식 상세",
+    "entryTypes": {
+      "post": "게시물",
+      "schedule": "일정"
+    },
+    "sourcePostTitles": {
+      "steam": "스팀 게시물",
+      "x": "트위터 게시물"
+    },
+    "publishedContext": "게시물 기준: {date}",
+    "galleryLabel": "첨부 이미지",
+    "galleryCount": "이미지 {count}장",
+    "openImage": "{title} 이미지 {index} 크게 보기",
+    "imageViewerTitle": "이미지 크게 보기",
+    "imageAlt": "{title} 첨부 이미지 {index}",
+    "close": "닫기",
+    "sourceLink": "원문 보기",
+    "noBody": "제공된 본문이 없습니다. 원문에서 자세한 내용을 확인하세요.",
+    "tags": "태그",
+    "sources": {
+      "steam": "Steam",
+      "x": "X"
     }
   },
   "common": {

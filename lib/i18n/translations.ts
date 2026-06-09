@@ -5,6 +5,7 @@ export const translations = {
   'nav.sinnerList': { ko: '수감자 목록', en: 'Sinner List', ja: '囚人一覧' },
   'nav.decks': { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' },
   'nav.planner': { ko: '거울 던전', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
+  'nav.calendar': { ko: '공식 캘린더', en: 'Official Calendar', ja: '公式カレンダー' },
   'nav.community.title': { ko: '커뮤니티', en: 'Community', ja: 'コミュニティ' },
 
   // Common actions

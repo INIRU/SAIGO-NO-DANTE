@@ -16,6 +16,8 @@ const ALLOWED_ORIGINS = [
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+const SUPPORTED_LOCALES = routing.locales
+type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 
 // 점검 대상에서 제외할 경로 접두사
 const MAINTENANCE_SKIP = ['/api', '/admin', '/maintenance', '/login', '/auth', '/_next', '/icons']
@@ -64,11 +66,53 @@ function isAllowedOrigin(value: string | null, requestOrigin: string): boolean {
   return parsedOrigin === requestOrigin || ALLOWED_ORIGINS.includes(parsedOrigin)
 }
 
+function isSupportedLocale(value: string | undefined): value is SupportedLocale {
+  return Boolean(value && (SUPPORTED_LOCALES as readonly string[]).includes(value))
+}
+
+function normalizePathname(pathname: string): string {
+  const withLeadingSlash = pathname.startsWith('/') ? pathname : `/${pathname}`
+  const withoutTrailingSlash = withLeadingSlash.length > 1
+    ? withLeadingSlash.replace(/\/+$/, '')
+    : withLeadingSlash
+  return withoutTrailingSlash || '/'
+}
+
+function getLocalizedPathInfo(pathname: string): {
+  locale: SupportedLocale | null
+  routePathname: string
+} {
+  const normalizedPathname = normalizePathname(pathname)
+  const [, maybeLocale, ...rest] = normalizedPathname.split('/')
+
+  if (!isSupportedLocale(maybeLocale)) {
+    return { locale: null, routePathname: normalizedPathname }
+  }
+
+  return {
+    locale: maybeLocale,
+    routePathname: rest.length > 0 ? normalizePathname(`/${rest.join('/')}`) : '/',
+  }
+}
+
+function hasPathPrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`)
+}
+
+function matchesMaintenancePath(routePathname: string, maintenancePath: string): boolean {
+  const maintenanceRoutePathname = getLocalizedPathInfo(maintenancePath).routePathname
+  if (maintenanceRoutePathname === '/') return true
+
+  return routePathname === maintenanceRoutePathname
+    || routePathname.startsWith(`${maintenanceRoutePathname}/`)
+}
+
 // 빈 403 응답 (봇에게 최소 정보 노출)
 const FORBIDDEN_RESPONSE = new Response(null, { status: 403 })
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const { locale, routePathname } = getLocalizedPathInfo(pathname)
 
   // ── 1. 봇/스캐너 프로빙 즉시 차단 ──
   if (isBlockedPath(pathname)) {
@@ -76,7 +120,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 2. Admin 경로 proxy 레벨 보호 ──
-  if (pathname.startsWith('/admin')) {
+  if (hasPathPrefix(routePathname, '/admin')) {
     const token = await getToken({ req: request })
     if (!(token as Record<string, unknown>)?.isAdmin) {
       // 비인증 사용자에게 admin 존재 자체를 숨김 (404)
@@ -85,7 +129,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 3. 점검 모드 체크 (페이지 요청만) ──
-  if (!MAINTENANCE_SKIP.some(p => pathname.startsWith(p)) && pathname !== '/favicon.ico') {
+  if (!MAINTENANCE_SKIP.some(p => hasPathPrefix(routePathname, p)) && pathname !== '/favicon.ico') {
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message,reason,ends_at`,
@@ -104,7 +148,7 @@ export async function proxy(request: NextRequest) {
         const matched = entries.find(e => {
           // 종료 시간이 지난 항목은 무시
           if (e.ends_at && new Date(e.ends_at) < now) return false
-          return pathname === e.path || pathname.startsWith(e.path + '/')
+          return matchesMaintenancePath(routePathname, e.path)
         })
 
         if (matched) {
@@ -112,7 +156,7 @@ export async function proxy(request: NextRequest) {
           const token = await getToken({ req: request })
           if (!(token as Record<string, unknown>)?.isAdmin) {
             const url = request.nextUrl.clone()
-            url.pathname = '/maintenance'
+            url.pathname = locale ? `/${locale}/maintenance` : '/maintenance'
             url.searchParams.set('from', pathname)
             if (matched.message) url.searchParams.set('message', matched.message)
             if (matched.reason) url.searchParams.set('reason', matched.reason)
@@ -130,7 +174,7 @@ export async function proxy(request: NextRequest) {
   // 쓰기 API(POST/PUT/PATCH/DELETE) 또는 보호 페이지 접근 시 정지된 사용자 차단
   const method = request.method
   const isWriteApi = pathname.startsWith('/api/') && method !== 'GET' && !pathname.startsWith('/api/auth/')
-  const isSuspendedPage = ['/decks/new', '/mypage'].some(p => pathname.startsWith(p))
+  const isSuspendedPage = ['/decks/new', '/mypage'].some(p => hasPathPrefix(routePathname, p))
 
   if (isWriteApi || isSuspendedPage) {
     const token = await getToken({ req: request })
@@ -143,7 +187,7 @@ export async function proxy(request: NextRequest) {
       }
       // 페이지 접근 시 정지 안내로 리다이렉트
       const url = request.nextUrl.clone()
-      url.pathname = '/login'
+      url.pathname = locale ? `/${locale}/login` : '/login'
       url.searchParams.set('error', 'suspended')
       return NextResponse.redirect(url)
     }
@@ -182,7 +226,7 @@ export async function proxy(request: NextRequest) {
     // returning users aren't dropped to the default locale on first visit.
     const legacyCookie = request.cookies.get('preferred_lang')?.value
     const nextLocaleCookie = request.cookies.get('NEXT_LOCALE')?.value
-    if (legacyCookie && !nextLocaleCookie && ['ko', 'en', 'ja'].includes(legacyCookie)) {
+    if (legacyCookie && !nextLocaleCookie && isSupportedLocale(legacyCookie)) {
       // Clone the request with NEXT_LOCALE set so intlMiddleware picks it up
       const mutableHeaders = new Headers(request.headers)
       mutableHeaders.set(
