@@ -1,5 +1,7 @@
 'use client'
 
+
+import { getIdentityPortraitUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 import { useState } from 'react'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
@@ -111,8 +113,8 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const RARITY_COLORS: Record<string, string> = {
-  '1성': '#667788',
-  '2성': '#4898b0',
+  '1성': '#a87340',
+  '2성': '#c83030',
   '3성': '#c8900a',
 }
 
@@ -124,15 +126,15 @@ const GRADE_ICON_URL: Record<string, string> = {
 }
 
 const STAT_ICON_URL: Record<string, string> = {
-  hp:  `${STORAGE_BASE}/icons/stats/health.webp`,
-  spd: `${STORAGE_BASE}/icons/stats/speed.webp`,
-  def: `${STORAGE_BASE}/icons/stats/defense.webp`,
+  hp:  getDetailStatIconUrl('health'),
+  spd: getDetailStatIconUrl('speed'),
+  def: getDetailStatIconUrl('defense'),
 }
 
 const RES_ATK_ICON: Record<string, string> = {
-  '참': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  '관': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  '타': `${STORAGE_BASE}/icons/stats/blunt.webp`,
+  '참': getDetailStatIconUrl('slash'),
+  '관': getDetailStatIconUrl('pierce'),
+  '타': getDetailStatIconUrl('blunt'),
 }
 
 const RES_STYLE: Record<string, { color: string; bg: string; border: string }> = {
@@ -229,9 +231,7 @@ export function portraitUrl(
   gacksung: boolean,
 ): string {
   if (!game_id || !folder_name) return ''
-  const prefix = gacksung ? 'gacksung' : 'normal'
-  const folder = encodeURIComponent(folder_name)
-  return `${STORAGE_BASE}/sinners/${sinner_id}/identities/${folder}/${game_id}_${prefix}_info.webp`
+  return getIdentityPortraitUrl(sinner_id, folder_name, game_id, gacksung)
 }
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────

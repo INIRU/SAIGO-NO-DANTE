@@ -1,0 +1,271 @@
+{
+  "source": "New_MainUI_Formation_3.png",
+  "sourceFolder": "https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z",
+  "sourceSha256": "0654f057c95008c0cea36e87bb0e03f815b7f72a03b1b45138d65482727127a5",
+  "entries": [
+    {
+      "rarity": 1,
+      "stage": 1,
+      "crop": [
+        24,
+        24,
+        360,
+        484
+      ],
+      "alphaBounds": [
+        20,
+        10,
+        324,
+        452
+      ],
+      "size": [
+        304,
+        442
+      ],
+      "file": "1star/1.webp",
+      "sha256": "2ca919d369c55e960d937d7736063bd888d31b8fb98edb54e0c6c80768557ad1"
+    },
+    {
+      "rarity": 1,
+      "stage": 2,
+      "crop": [
+        378,
+        0,
+        720,
+        484
+      ],
+      "alphaBounds": [
+        7,
+        0,
+        335,
+        484
+      ],
+      "size": [
+        328,
+        484
+      ],
+      "file": "1star/2.webp",
+      "sha256": "bc8a48b62b1ffb046b64f39ed30fadc6e1e4382dff102ddd43b386eb44586424"
+    },
+    {
+      "rarity": 1,
+      "stage": 3,
+      "crop": [
+        728,
+        14,
+        1072,
+        484
+      ],
+      "alphaBounds": [
+        5,
+        12,
+        328,
+        470
+      ],
+      "size": [
+        323,
+        458
+      ],
+      "file": "1star/3.webp",
+      "sha256": "ea13b062641d06f8b6c7dfda27a83eb112440566495ba9311a5f4c26cbf47ebc"
+    },
+    {
+      "rarity": 1,
+      "stage": 4,
+      "crop": [
+        24,
+        1484,
+        360,
+        1956
+      ],
+      "alphaBounds": [
+        12,
+        7,
+        332,
+        465
+      ],
+      "size": [
+        320,
+        458
+      ],
+      "file": "1star/4.webp",
+      "sha256": "2e55b08ac9d157e48fe2c23905d0916e683608b6acbd6b607e7ea8790dd4b582"
+    },
+    {
+      "rarity": 2,
+      "stage": 1,
+      "crop": [
+        24,
+        504,
+        360,
+        968
+      ],
+      "alphaBounds": [
+        20,
+        16,
+        324,
+        458
+      ],
+      "size": [
+        304,
+        442
+      ],
+      "file": "2star/1.webp",
+      "sha256": "090a1f945eaa3f863f34d049b929537b3a1880a13a418329e0031dd7e08b1ee0"
+    },
+    {
+      "rarity": 2,
+      "stage": 2,
+      "crop": [
+        378,
+        482,
+        720,
+        968
+      ],
+      "alphaBounds": [
+        12,
+        0,
+        335,
+        486
+      ],
+      "size": [
+        323,
+        486
+      ],
+      "file": "2star/2.webp",
+      "sha256": "1f9068c1a2e2a915e7d337eab145937a6c6eed0824e2410f1010630b65e5a44b"
+    },
+    {
+      "rarity": 2,
+      "stage": 3,
+      "crop": [
+        728,
+        498,
+        1072,
+        968
+      ],
+      "alphaBounds": [
+        6,
+        12,
+        330,
+        467
+      ],
+      "size": [
+        324,
+        455
+      ],
+      "file": "2star/3.webp",
+      "sha256": "6a0104efdb074634ef097e1198464a2ca260cd10acdefe658578a5d171ee3af7"
+    },
+    {
+      "rarity": 2,
+      "stage": 4,
+      "crop": [
+        378,
+        1484,
+        720,
+        1956
+      ],
+      "alphaBounds": [
+        7,
+        7,
+        327,
+        465
+      ],
+      "size": [
+        320,
+        458
+      ],
+      "file": "2star/4.webp",
+      "sha256": "e9acc99af17e0caca212ef809d55c29b5e92de82717c83ee8b90ae53a0d9a615"
+    },
+    {
+      "rarity": 3,
+      "stage": 1,
+      "crop": [
+        24,
+        986,
+        360,
+        1460
+      ],
+      "alphaBounds": [
+        20,
+        19,
+        325,
+        462
+      ],
+      "size": [
+        305,
+        443
+      ],
+      "file": "3star/1.webp",
+      "sha256": "7102420228c34629f7a592450cdc4e976996564b7290ff58a7abc88f85c1ecc6"
+    },
+    {
+      "rarity": 3,
+      "stage": 2,
+      "crop": [
+        378,
+        968,
+        720,
+        1460
+      ],
+      "alphaBounds": [
+        12,
+        0,
+        334,
+        481
+      ],
+      "size": [
+        322,
+        481
+      ],
+      "file": "3star/2.webp",
+      "sha256": "06f7480f86173117b72af40456d263a69fe6e825a6c9de45a34530ec64f78e24"
+    },
+    {
+      "rarity": 3,
+      "stage": 3,
+      "crop": [
+        728,
+        980,
+        1072,
+        1460
+      ],
+      "alphaBounds": [
+        2,
+        13,
+        333,
+        475
+      ],
+      "size": [
+        331,
+        462
+      ],
+      "file": "3star/3.webp",
+      "sha256": "f63c6b7de9c7cd897dc861137b2105625a5165e8394ca18008686bc149cec0b8"
+    },
+    {
+      "rarity": 3,
+      "stage": 4,
+      "crop": [
+        728,
+        1484,
+        1072,
+        1956
+      ],
+      "alphaBounds": [
+        5,
+        7,
+        325,
+        465
+      ],
+      "size": [
+        320,
+        458
+      ],
+      "file": "3star/4.webp",
+      "sha256": "903057490567cf3bbdecb7e0312f6f485280a5c29a2f312da6ab4f14d16090ea"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 'use client'
 
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
+import { unbreakableCoinIndices } from '@/lib/identity/skill-description'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
@@ -83,18 +84,6 @@ function variantLabel(skill: SkillFrameSkill, skills: SkillFrameSkill[]): string
   return `S${skill.skill_order}-${variantIndex >= 0 ? variantIndex + 1 : 1}`
 }
 
-function unbreakableCoinSet(description?: string | null): Set<number> {
-  const coins = new Set<number>()
-  if (!description) return coins
-
-  const matches = description.matchAll(/\[코인\s?(\d+)\]\s*파괴 불가 코인/g)
-  for (const match of matches) {
-    const coinIndex = Number(match[1]) - 1
-    if (Number.isInteger(coinIndex) && coinIndex >= 0) coins.add(coinIndex)
-  }
-  return coins
-}
-
 export default function IdentitySkillFrameCard({
   skill,
   skills,
@@ -140,7 +129,7 @@ export default function IdentitySkillFrameCard({
         atkWeight={skill.atk_weight || 1}
         isDefense={Boolean(DEFENSE_LABELS[skill.skill_type])}
         description={description}
-        unbreakableCoins={unbreakableCoinSet(skill.description)}
+        unbreakableCoins={unbreakableCoinIndices(skill.description)}
         descVariant="compact"
         allowedKeywords={allowedKeywords}
       />

@@ -1,5 +1,7 @@
 'use client'
 
+import GiftGrade from '@/components/ui/GiftGrade'
+
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import BaseModal from '@/components/ui/BaseModal'
@@ -10,9 +12,8 @@ import { useLocale } from 'next-intl'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName, getLocalizedAffiliation } from '@/lib/i18n/localize'
-import { STORAGE_BASE } from '@/lib/data/sinners'
 import { OCTAGON_CLIP, GIFT_BG_URL } from '@/lib/constants/gift'
-import { KEYWORD_COLORS, GRADE_LABELS } from './types'
+import { KEYWORD_COLORS, } from './types'
 import type { EgoGift, Recipe, EgoGiftTheme } from './types'
 import EffectBlock from './EffectBlock'
 import MetaItem from './MetaItem'
@@ -98,7 +99,6 @@ export default function GiftModal({
   } as const)
 
   const kwColor = KEYWORD_COLORS[gift.keyword] ?? '#666'
-  const gradeLabel = GRADE_LABELS[gift.grade] ?? gift.grade
   const isEX = gift.grade === 'EX'
   const displayName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
   const getEffect = (kr: string | null, en: string | null | undefined, jp: string | null | undefined): string | null => {
@@ -200,12 +200,12 @@ export default function GiftModal({
                 width: '5rem',
                 height: '5rem',
                 backgroundImage: `url(${GIFT_BG_URL})`,
-                backgroundSize: 'cover',
+                backgroundSize: 'contain',
                 backgroundPosition: 'center',
                 clipPath: OCTAGON_CLIP,
               }}
             >
-              <span
+              <GiftGrade grade={gift.grade}
                 className="absolute top-[4%] left-[5%] z-10 pointer-events-none"
                 style={{
                   fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
@@ -217,9 +217,7 @@ export default function GiftModal({
                     ? '0 0 10px rgb(251,255,8), 0 0 4px rgb(12,90,0), 1px 1px 2px rgba(0,0,0,0.8)'
                     : '0 0 6px rgb(255,114,21), 0 0 2px rgba(0,0,0,0.6)',
                 }}
-              >
-                {gradeLabel}
-              </span>
+               />
               <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
                 {(() => {
                   const iconUrl = getGiftKeywordIcon(gift.keyword)
@@ -317,10 +315,10 @@ export default function GiftModal({
             style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
             {gift.price != null && (
-              <MetaItem label={t('mirrorDungeon.gift.price')} value={`${gift.price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
+              <MetaItem label={t('mirrorDungeon.gift.price')} value={`${gift.price}`} />
             )}
             {gift.sell_price != null && (
-              <MetaItem label={t('mirrorDungeon.gift.sellPrice')} value={`${gift.sell_price}`} icon={`${STORAGE_BASE}/icons/ui/credits.webp`} />
+              <MetaItem label={t('mirrorDungeon.gift.sellPrice')} value={`${gift.sell_price}`} />
             )}
             {gift.buy_disabled && (
               <MetaItem label={t('mirrorDungeon.gift.purchase')} value={t('mirrorDungeon.gift.unavailable')} valueColor="#c83030" />

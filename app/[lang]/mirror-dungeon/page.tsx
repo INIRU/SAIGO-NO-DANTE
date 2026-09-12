@@ -63,7 +63,7 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
     supabase
       .schema('limbus')
       .from('md_events')
-      .select('id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category')
+      .select('id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category, judgment')
       .order('id'),
     supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
   ])

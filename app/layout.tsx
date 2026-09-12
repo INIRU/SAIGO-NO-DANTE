@@ -4,6 +4,7 @@ import { Black_Han_Sans, Song_Myung, Noto_Sans_JP, Noto_Sans_Mono } from 'next/f
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { MotionConfig } from 'motion/react'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
 import SessionProvider from '@/components/providers/SessionProvider'
@@ -112,11 +113,10 @@ const pretendard = localFont({
   weight: '400',
   variable: '--font-pretendard',
   display: 'swap',
-  preload: false,
+  preload: true,
   fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
-// decorative — display:optional prevents FOUT
 const paperlogy = localFont({
   src: [
     { path: '../public/fonts/Paperlogy-Light.woff2', weight: '300', style: 'normal' },
@@ -124,7 +124,7 @@ const paperlogy = localFont({
     { path: '../public/fonts/Paperlogy-Bold.woff2', weight: '700', style: 'normal' },
   ],
   variable: '--font-paperlogy',
-  display: 'optional',
+  display: 'swap',
   preload: false,
 })
 
@@ -158,13 +158,13 @@ export const metadata: Metadata = {
     default: '최애의 관리자 | SAIGO NO DANTE',
     template: '%s | 최애의 관리자',
   },
-  description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO 데이터베이스, 거울 던전 기프트 도감, 키워드 도감, 덱 빌더, 티어표, 메타 분석까지 한 곳에서.',
+  description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO 데이터베이스, 거울 던전 기프트 도감, 키워드 도감, 덱 빌더, 메타 분석까지 한 곳에서.',
   keywords: [
     'Limbus Company', '림버스 컴퍼니', '림버스', '림버스 정보', '림버스 정보 사이트',
     '림버스 컴퍼니 도감', '림버스 인격', '림버스 EGO', '림버스 덱', '림버스 덱 빌더',
     '수감자', '인격', 'EGO', '거울 던전', '에고 기프트', '키워드 도감',
     '림버스 거던', '거던 조합식', '거던 레시피', '거던 덱', '거던 기프트 조합',
-    '덱 빌더', '메타 분석', '티어표', '리세마라', '림버스 티어표',
+    '덱 빌더', '메타 분석',
     '팬 아카이브', '최애의 관리자', 'SAIGO NO DANTE',
     'Project Moon', '프로젝트 문',
   ],
@@ -176,13 +176,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: '최애의 관리자',
     title: '최애의 관리자 | 림버스 컴퍼니 정보 사이트',
-    description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 덱 빌더, 티어표',
+    description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 덱 빌더',
     images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: '최애의 관리자 | 림버스 컴퍼니 정보 사이트',
-    description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 덱 빌더, 티어표',
+    description: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 덱 빌더',
   },
   robots: {
     index: true,
@@ -201,8 +201,8 @@ export const metadata: Metadata = {
     title: '최애의 관리자',
   },
   icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png',
+    icon: '/icons/icon-192x192.webp',
+    apple: '/icons/icon-192x192.webp',
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -288,7 +288,7 @@ export default async function RootLayout({
             <SessionProvider>
               <SWRProvider>
                 <KeywordProvider keywords={keywords}>
-                  {children}
+                  <MotionConfig reducedMotion="user">{children}</MotionConfig>
                 </KeywordProvider>
               </SWRProvider>
             </SessionProvider>

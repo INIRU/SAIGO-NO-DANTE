@@ -1,3 +1,5 @@
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import type { SinType } from '@/lib/types'
 
 // ── 죄악 색상 ────────────────────────────────────────────────────────────────
@@ -29,16 +31,15 @@ export const SIN_KR_TO_EN: Record<string, SinType> = {
 }
 
 // ── 죄악 아이콘 URL ─────────────────────────────────────────────────────────
-import { STORAGE_BASE } from '@/lib/constants/game'
 
 export const SIN_ICON_MAP: Record<SinType, string> = {
-  wrath:    `${STORAGE_BASE}/icons/Sins/transparent/Wrath.webp`,
-  lust:     `${STORAGE_BASE}/icons/Sins/transparent/Lust.webp`,
-  sloth:    `${STORAGE_BASE}/icons/Sins/transparent/Sloth.webp`,
-  gluttony: `${STORAGE_BASE}/icons/Sins/transparent/Gluttony.webp`,
-  gloom:    `${STORAGE_BASE}/icons/Sins/transparent/Gloom.webp`,
-  pride:    `${STORAGE_BASE}/icons/Sins/transparent/Pride.webp`,
-  envy:     `${STORAGE_BASE}/icons/Sins/transparent/Envy.webp`,
+  wrath:    getGameUiAsset('sins/wrath'),
+  lust:     getGameUiAsset('sins/lust'),
+  sloth:    getGameUiAsset('sins/sloth'),
+  gluttony: getGameUiAsset('sins/gluttony'),
+  gloom:    getGameUiAsset('sins/gloom'),
+  pride:    getGameUiAsset('sins/pride'),
+  envy:     getGameUiAsset('sins/envy'),
 }
 
 export function getSinIconUrl(sin: SinType): string {

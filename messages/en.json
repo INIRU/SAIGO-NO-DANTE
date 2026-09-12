@@ -5,16 +5,10 @@
     "sinnerList": "Sinner List",
     "decks": "Deck Board",
     "planner": "Mirror Dungeon",
-    "calendar": "Official Calendar",
     "community": {
       "title": "Community",
       "planner": "MD Planner",
-      "tierList": "Tier List",
       "collection": "Collection"
-    },
-    "story": {
-      "title": "Story",
-      "main": "Main Story"
     },
     "db": {
       "title": "DB",
@@ -24,9 +18,15 @@
     "other": {
       "title": "More",
       "meta": "Analysis",
-      "extraction": "Extraction",
-      "random": "Random"
-    }
+      "random": "Random",
+      "developers": "Developer tools"
+    },
+    "tools": {
+      "title": "Tools",
+      "experience": "EXP calculator",
+      "lunacy": "Monthly Lunacy planner"
+    },
+    "support": "Support"
   },
   "maintenance": {
     "eyebrow": "ARCHIVE MAINTENANCE",
@@ -45,52 +45,6 @@
       "reason": "Reason",
       "endsAt": "Resumes",
       "route": "Requested route"
-    }
-  },
-  "calendar": {
-    "meta": {
-      "title": "Official News Calendar | SAIGO NO DANTE",
-      "description": "View official Limbus Company Steam news and X posts in a current-month calendar."
-    },
-    "eyebrow": "OFFICIAL NEWS",
-    "title": "Official News Calendar",
-    "description": "Steam notices and X posts are grouped by date for the current month.",
-    "currentMonthOnly": "This first version shows the current month only. Previous and next month controls are not available.",
-    "summary": "{count} total · Steam {steam} · X {x}",
-    "loading": "Loading calendar…",
-    "errorTitle": "Calendar couldn't load.",
-    "errorDescription": "Try again in a moment. If the problem continues, check the official source links.",
-    "retry": "Retry",
-    "emptyTitle": "No official news is registered for this month.",
-    "emptyDescription": "New Steam news or X posts will appear on their dates after collection.",
-    "moreEvents": "+{count} more",
-    "openDayEvents": "Show {count} hidden events for {date}",
-    "dayEventsTitle": "{date} events",
-    "dayEventsFallbackTitle": "Day events",
-    "dayEventsDescription": "Choose one of {count} official events for this date.",
-    "openEvent": "Open {source} event: {title}",
-    "detailTitle": "Official news details",
-    "entryTypes": {
-      "post": "Post",
-      "schedule": "Schedule"
-    },
-    "sourcePostTitles": {
-      "steam": "Steam post",
-      "x": "X post"
-    },
-    "publishedContext": "Post reference: {date}",
-    "galleryLabel": "Attached images",
-    "galleryCount": "{count} images",
-    "openImage": "Open image {index} for {title}",
-    "imageViewerTitle": "Image viewer",
-    "imageAlt": "Attached image {index} for {title}",
-    "close": "Close",
-    "sourceLink": "View source",
-    "noBody": "No body text was provided. Open the source for details.",
-    "tags": "Tags",
-    "sources": {
-      "steam": "Steam",
-      "x": "X"
     }
   },
   "common": {
@@ -1139,12 +1093,6 @@
     "title": "Guides",
     "write": "Write Guide"
   },
-  "ai": {
-    "summary": "AI Summary",
-    "generate": "Generate AI Summary",
-    "generating": "Generating AI Summary...",
-    "noSummary": "No summary yet"
-  },
   "sinner": {
     "yi-sang": "Yi Sang",
     "faust": "Faust",
@@ -1193,10 +1141,6 @@
       "mirrorDungeonDesc": "EGO Gift encyclopedia, keyword filter, fusion recipes.",
       "collection": "Collection",
       "collectionDesc": "My identity & EGO checklist, shareable via URL.",
-      "tierList": "Tier List",
-      "tierListDesc": "Community vote-based reroll tier ranking.",
-      "extraction": "Extraction Sim",
-      "extractionDesc": "Test your luck with gacha probability simulation.",
       "random": "Random Comp",
       "randomDesc": "Slot machine UI for random compositions with keyword filter.",
       "planner": "MD Planner",
@@ -1208,6 +1152,9 @@
       "discordSub": "Bot intro · Join server",
       "youtubeSub": "Official Channel"
     },
+    "watchVideo": "Watch video",
+    "archiveShortcuts": "Explore the archive",
+    "officialChannels": "Official channels",
     "latestVideo": "Latest Video",
     "viewChannel": "View Channel",
     "latestIdentity": "Latest Identity",
@@ -1283,7 +1230,6 @@
       "extraction": "Extraction",
       "shardPostRelease7d": "7d post-release",
       "fragmentExchange": "Shard Exchange",
-      "sdDragHint": "Drag to move · Scroll to zoom · Double-click to reset",
       "type": {
         "default": "Default",
         "standard": "Extraction",
@@ -1312,7 +1258,8 @@
       "slash": "Slash",
       "pierce": "Pierce",
       "blunt": "Blunt",
-      "season": "Season"
+      "season": "Season",
+      "traits": "Trait keywords · Affiliation"
     },
     "stats": {
       "title": "Stats",
@@ -1394,17 +1341,6 @@
       "addNew": "Add new",
       "untitled": "Untitled"
     },
-    "ai": {
-      "title": "AI Summary",
-      "generate": "Generate AI Summary",
-      "regenerate": "Regenerate",
-      "expired": "Expired",
-      "generating": "Generating...",
-      "streaming": "Streaming...",
-      "disclaimer": "AI-generated summary. May differ from actual gameplay.",
-      "description": "AI analyzes this identity's skills, strategies, and recommended team compositions.",
-      "created": "generated"
-    },
     "decks": "Decks",
     "tab": {
       "skills": "Skills",
@@ -1439,7 +1375,7 @@
     },
     "notFound": "Identity not found",
     "meta": {
-      "description": "Stats, skills, passives, AI summary, guides"
+      "description": "Stats, skills, passives, guides"
     },
     "season": "Season",
     "panic": "Panic",
@@ -1499,5 +1435,102 @@
   },
   "keyword": {
     "maxStack": "Max"
+  },
+  "meta": {
+    "title": "Identity meta analysis",
+    "description": "Public formations from the deck board and Mirror Dungeon planner",
+    "source": {
+      "all": "Combined",
+      "decks": "Deck board",
+      "planner": "Dungeon planner"
+    },
+    "emptyPeriod": "No formations were published in this period.",
+    "showAllTime": "View all time",
+    "periodLabel": "Time range",
+    "period": {
+      "30": "Last 30 days",
+      "90": "Last 90 days",
+      "all": "All time",
+      "7": "Last 7 days"
+    },
+    "sample": "{count} valid formations · {decks} decks · {planner} plans · {excluded} empty formations excluded",
+    "methodologyLabel": "How counts work",
+    "methodology": "Each public post has equal weight. Identities, EGO and keywords count once per formation. Keywords and co-occurrence use battle identities only. These are adoption frequencies, not strength or win rates.",
+    "smallSample": "Fewer than 20 samples. Individual posts can strongly affect the results.",
+    "loadError": "Could not load statistics.",
+    "retry": "Try again",
+    "loading": "Loading statistics",
+    "analysis": {
+      "companions": "Identities deployed together",
+      "companionsHint": "Based on {count} formations deploying this identity in battle. Backup slots are excluded. Multiple identities can appear together, so percentages may total over 100%.",
+      "companionCount": "{count} of {total} formations",
+      "noCompanions": "No other identities were deployed alongside this identity.",
+      "identity": "Identity to analyze",
+      "empty": "No public formations to analyze.",
+      "method": "Based on {count} public posts using this identity in battle. EGO rates count equipment on the same Sinner.",
+      "order": "Formation order",
+      "position": "Position {order}",
+      "purpose": "Common deck purposes",
+      "purposeHint": "Uses main keywords selected by authors. Multiple keywords are counted separately, so percentages may exceed 100%.",
+      "unclassified": "No main keywords specified.",
+      "egos": "Equipped EGO",
+      "excludeBase": "Exclude base EGO",
+      "decks": "Decks and plans using this identity",
+      "keyword": "Deck keyword",
+      "all": "All",
+      "detail": "Identity details",
+      "baseOnly": "No non-base EGO records. Turn off the switch to include base EGOs.",
+      "change": "Change identity",
+      "search": "Search identity or sinner",
+      "sinner": "Sinner",
+      "close": "Close",
+      "noMatches": "No matches. Try another name.",
+      "more": "Show more"
+    }
+  },
+  "experience": {
+    "title": "EXP calculator",
+    "subtitle": "Use your tickets wisely. Farm only what you need.",
+    "levels": "Level settings",
+    "current": "Current level",
+    "target": "Target level",
+    "progress": "EXP earned within current level",
+    "inventory": "Owned training tickets",
+    "inventoryHelp": "Enter your stock of regular training tickets I–IV.",
+    "ticket": "Identity Training Ticket {tier}",
+    "reset": "Reset tickets",
+    "required": "EXP needed to target",
+    "owned": "Owned ticket EXP",
+    "missing": "Additional EXP needed",
+    "farming": "EXP Luxcavation",
+    "stage": "Unlocked Luxcavation stage",
+    "stageOption": "Stage {stage}",
+    "fixed": "Fixed rewards · minimum = average = maximum",
+    "manual": "Manual battle",
+    "skip": "Skip",
+    "runs": "Runs needed",
+    "modules": "Enkephalin modules",
+    "enkephalin": "Enkephalin equivalent",
+    "perRun": "EXP per run",
+    "perModule": "EXP per module",
+    "runCount": "{count} runs",
+    "moduleCount": "{count} modules",
+    "reward": "Tickets per run",
+    "recommendation": "Recommended ticket use",
+    "planHelp": "Combines your owned tickets with rewards from the selected farming method.",
+    "noFarm": "Your tickets already cover the target level.",
+    "already": "You have already reached the target level.",
+    "use": "Use",
+    "left": "Left over",
+    "spent": "EXP applied",
+    "excess": "EXP above target",
+    "excessHelp": "Minimizes excess EXP first, then ticket count. Below the level cap, excess carries into the next level.",
+    "skipHelp": "Skipping costs 2× modules and gives 1.5× each ticket quantity, rounded up. 20 Enkephalin = 1 module.",
+    "levelTable": "Cumulative EXP by level",
+    "level": "Level",
+    "cumulative": "Total EXP from level 1",
+    "next": "EXP to next level",
+    "max": "Level cap",
+    "tools": "Tools"
   }
 }

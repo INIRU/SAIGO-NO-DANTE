@@ -1,5 +1,8 @@
 'use client'
 
+import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useState, useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
@@ -325,8 +328,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
 
-  const deck: IdentitySlot[] = Array.isArray(plan.deck) ? plan.deck : []
-  const egoSlots: EgoSlot[] = Array.isArray(plan.egos) ? plan.egos : []
+  const deck: IdentitySlot[] = (Array.isArray(plan.deck) ? plan.deck : []).map(slot => ({ ...slot, identity_id: resolvePlannerIdentity(slot, identities)?.id ?? slot.identity_id }))
+  const egoSlots: EgoSlot[] = (Array.isArray(plan.egos) ? plan.egos : []).map(slot => ({ ...slot, ego_id: resolvePlannerEgo(slot, egos)?.id ?? slot.ego_id }))
   const floorPlan: FloorEntry[] = normalizeFloorPlanDifficulty(plan.floor_plan, plan.difficulty).floorPlan as FloorEntry[]
   const giftInventory: string[] = Array.isArray(plan.gift_inventory) ? plan.gift_inventory : []
 
@@ -632,7 +635,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               <SectionTitle title={tBlessing('title')} count={selectedBlessings.size > 0 ? String(totalBlessingCost) : tBlessing('none')} />
               {selectedBlessings.size > 0 && (
                 <div className="flex items-center justify-end gap-1.5 text-[0.875rem] font-semibold text-[#c8900a]">
-                  <Image src={`${S}/icons/start-buffs/starlight.webp`} alt={tBlessing('starlightAlt')} width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
+                  <Image src={getGameUiAsset('start-buffs/starlight')} alt={tBlessing('starlightAlt')} width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
                   <span className="font-mono tabular-nums">{totalBlessingCost}</span>
                 </div>
               )}
@@ -668,6 +671,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 caption={tDetail('floorPlanCaption')}
               />
               <FloorPlanPreviewBoard
+                inventory={giftInventory}
+                recipes={recipes}
                 floorPlan={floorPlan}
                 planDifficulty={plan.difficulty}
                 themeMap={themeMap}

@@ -205,6 +205,8 @@ export default function IdentityGuideSection({
         }}
         onSelect={ac.onTextSelect}
         onKeyDown={ac.handleKeyDown}
+        onCompositionStart={ac.onCompositionStart}
+        onCompositionEnd={ac.onCompositionEnd}
         placeholder={placeholder}
         rows={8}
         className="w-full rounded p-3 text-sm resize-y"

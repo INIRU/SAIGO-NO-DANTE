@@ -1,334 +1,43 @@
-# 배포 및 인프라
+# 배포와 복구
 
-SAIGO NO DANTE 프로젝트의 배포, 인프라, CI/CD 문서.
+현재 코드의 호스팅 설정은 Vercel, DB/Storage는 Supabase, 인증은 NextAuth Google OAuth다. 저장소가 있다고 서비스가 운영 중인 것은 아니다. 배포·도메인·DB 활성 상태를 각각 확인한다.
 
----
+## 환경
 
-## 기술 스택
+로컬 .env.local과 배포 플랫폼에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
 
-| 구분 | 기술 | 버전/비고 |
-|------|------|-----------|
-| 프레임워크 | Next.js | 16.x (App Router) |
-| 런타임 | React | 19.x |
-| 언어 | TypeScript | 6.x |
-| 호스팅 | Vercel | 자동 배포 |
-| 데이터베이스 | Supabase (PostgreSQL) | `limbus` 커스텀 스키마 |
-| 스토리지 | Supabase Storage | `limbus-assets` 버킷 |
-| 인증 | NextAuth (v4) | Google OAuth |
-| 에러 추적 | Sentry | `@sentry/nextjs` |
-| CSS | Tailwind CSS | v4 |
-| 상태 관리 | Zustand | 5.x |
-| 이미지 처리 | sharp | 서버사이드 WebP 변환 |
-| 애니메이션 | GSAP, Framer Motion | |
-| AI | AI SDK (`ai`, `@ai-sdk/openai`) | |
-| 분석 | Vercel Analytics | `@vercel/analytics` |
-| 테스트 | Vitest, Playwright | 단위/E2E |
-
----
-
-## 플랫폼 구성
-
-### Vercel (호스팅)
-
-- **프로젝트**: Vercel에 연결된 Next.js 앱
-- **도메인**: `saigo-no-dante.com`, `saigo-no-dante.vercel.app`
-- **빌드 명령어**: `next build`
-- **Node.js 버전**: 20.x+
-- **프레임워크 프리셋**: Next.js (자동 감지)
-
-### Supabase (데이터베이스 + 스토리지)
-
-- **프로젝트 ID**: `lpgqcleszdlldneiwgep`
-- **스키마**: `limbus` (커스텀, `public` 아님)
-- **API search_path**: `limbus`가 Extra search path에 추가되어야 함
-- **스토리지 버킷**: `limbus-assets` (공개 접근)
-- **스토리지 Base URL**: `https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets`
-
-### GitHub
-
-- **리포지토리**: `INIRU/SAIGO-NO-DANTE`
-- **기본 브랜치**: `main`
-- **접근**: Private
-
----
-
-## 환경 변수
-
-### 필수 (런타임)
-
-| 변수 | 설명 | 위치 |
-|------|------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | Vercel + .env.local |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon 공개 키 | Vercel + .env.local |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서비스 롤 키 (RLS 바이패스) | Vercel + .env.local |
-| `NEXTAUTH_SECRET` | NextAuth 암호화 시크릿 | Vercel + .env.local |
-| `NEXTAUTH_URL` | NextAuth 콜백 URL (프로덕션: `https://saigo-no-dante.com`) | Vercel + .env.local |
-| `GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID | Vercel + .env.local |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth 클라이언트 시크릿 | Vercel + .env.local |
-
-### 선택 (기능별)
-
-| 변수 | 설명 | 위치 |
-|------|------|------|
-| `ADMIN_EMAILS` | 관리자 이메일 목록 (콤마 구분) | Vercel + .env.local |
-| `SENTRY_ORG` | Sentry 조직명 | Vercel |
-| `SENTRY_PROJECT` | Sentry 프로젝트명 | Vercel |
-| `SENTRY_AUTH_TOKEN` | Sentry 인증 토큰 (소스맵 업로드) | Vercel |
-| `OPENAI_API_KEY` | OpenAI API 키 (AI 요약 기능) | Vercel + .env.local |
-
-### 로컬 개발
-
-`.env.local` 파일에 환경 변수를 설정:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://lpgqcleszdlldneiwgep.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-NEXTAUTH_SECRET=...
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 NEXTAUTH_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-ADMIN_EMAILS=admin@example.com
+NEXTAUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+ADMIN_EMAILS=
 ```
 
-> `.env.local`은 `.gitignore`에 포함되어 있으므로 커밋되지 않는다.
+일부 동기화 스크립트는 SUPABASE_SERVICE_ROLE_KEY도 받지만 앱의 현재 관리자 클라이언트는 SUPABASE_SECRET_KEY를 읽는다. 오래된 ANON_KEY 예시를 그대로 사용하지 않는다.
+선택 설정은 SENTRY_ORG/PROJECT/AUTH_TOKEN, 캐시 무효화용 REVALIDATION_SECRET, 공지 수집용 SITE_URL 등의 실제 호출자를 확인한다.
 
----
+## 복구 순서
 
-## Next.js 설정
+1. 원본의 미커밋 변경·rebase·백업을 보존하고 정상 Git 작업본을 확보한다.
+2. npm ci, typecheck, 단위 테스트, production build를 실행한다.
+3. Chrome에서 수감자 상세, 스킬/패시브, 운영법, 덱·플래너, 검색과 locale 전환을 확인한다. 제거한 페이지는 더 이상 제공되지 않아야 한다.
+4. 운영 DB의 활성 상태, 권한과 실제 데이터, OAuth 콜백, Storage 이미지, 도메인·배포 환경을 확인한다.
+5. 승인된 배포 범위에서 배포하고 외부 도메인에서 다시 검증한다. 유지보수 해제와 DB 쓰기는 각각 실제 변경 내역을 확인한다.
 
-`next.config.ts` 주요 설정:
+## Git과 롤백
 
-| 설정 | 값 | 설명 |
-|------|-----|------|
-| `poweredByHeader` | `false` | X-Powered-By 헤더 제거 |
-| `serverExternalPackages` | `['sharp']` | sharp를 클라이언트 번들에서 제외 |
-| `cacheComponents` | `true` | `"use cache"` 디렉티브 + PPR 활성화 |
-| `cacheLife` | 커스텀 프로필 4개 | `page-1m`, `page-5m`, `page-10m`, `page-1h` |
-| `optimizePackageImports` | lucide, sonner, motion 등 | 배럴 파일 트리 쉐이킹 |
-| `images.remotePatterns` | Supabase Storage, Google 프로필 | 허용 이미지 소스 |
-| `images.minimumCacheTTL` | `2592000` (30일) | 게임 에셋은 거의 변경 없음 |
-| `images.formats` | `['image/avif', 'image/webp']` | 최적화 포맷 |
+기능별 작은 커밋을 유지한다. main에는 PR로 반영한다. 되돌릴 때 git log --oneline으로 커밋을 찾고 의존하는 후속 변경부터 git revert한다. DB를 건드리지 않은 기능 삭제 커밋은 Git으로 코드 복구가 가능하다.
 
-### 보안 헤더
+이번 복구 작업본은 limbus-archive-restored다. 기존 limbus-archive는 중단된 rebase와 iCloud 파일을 보존하기 위해 그대로 두었다. 기준 원격 커밋은 e613824다. 기존 폴더를 삭제하기 전 별도의 미커밋/비추적 자료 확인이 필요하다.
 
-모든 경로에 다음 보안 헤더가 적용됨:
+2026-09-10 게임 DB와 Storage 복구를 실행하고 읽기 검증했다. 건수·출처·백업·미확정 에셋은 [데이터 동기화](data-pipeline.md)에 기록했다. 삭제 기능 보관과 EGO 스킬 정규화 마이그레이션도 적용했다. 원격 push와 배포는 수행하지 않았다. 로컬 터널은 임시 미리보기이며 운영 배포나 OAuth 검증을 의미하지 않는다.
 
-- `X-Frame-Options: DENY`
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-- `X-Content-Type-Options: nosniff`
-- `Content-Security-Policy` (self, Supabase, Vercel Analytics 허용)
+2026-09-12 AI 요약 기능을 제거하고 전용 `limbus-ollama` 컨테이너를 중지(자동 재시작 없음)했다. 전용 Nginx/Traefik 경로는 비활성화했으며 설정 백업은 `/opt/limbus-ai/disabled`, 모델 볼륨은 보존했다. Minecraft 서버는 중지 상태를 유지한다.
 
-### Sentry 통합
+## 약관 원문 복구
 
-- `@sentry/nextjs`로 래핑
-- 소스맵: 프로덕션 + `SENTRY_AUTH_TOKEN` 존재 시에만 업로드
-- 터널 라우트: `/monitoring` (CSP 우회)
-
----
-
-## 미들웨어 (proxy.ts)
-
-Next.js 16에서는 `middleware.ts` 대신 `proxy.ts`를 사용.
-
-### 주요 기능
-
-1. **점검 모드**: `site_maintenance` 테이블에서 활성 점검 경로 확인 → 같은 언어의 `/[lang]/maintenance`로 rewrite
-2. **봇/스캐너 차단**: WordPress, PHP, 민감 파일 경로 접근 차단 (404 반환)
-3. **확장자 차단**: `.php`, `.asp`, `.sql` 등 비 Next.js 확장자 차단
-4. **CORS**: 허용된 오리진만 API 접근 가능
-5. **Rate Limiting**: `lib/rate-limit.ts` 기반 속도 제한
-6. **관리자 인증**: `/admin/*` 경로 JWT 토큰 검증
-
-### 제외 경로
-
-점검 모드 매칭은 locale prefix를 제거한 경로 기준으로 수행합니다. 예를 들어 DB의 `/sinners` 항목은 `/ko/sinners`, `/en/sinners`, `/ja/sinners`와 하위 경로에 적용됩니다. DB 경로 `/`는 제외 경로를 뺀 전체 공개 페이지에 적용됩니다.
-
-점검 모드에서 제외: `/api`, `/admin`, `/maintenance`, `/login`, `/auth`, `/_next`, `/icons`
-
----
-
-## Git 워크플로우
-
-### 브랜치 전략
-
-```
-main ──────────────────────── (프로덕션, 직접 push 금지)
-  │
-  └─ {worktree 브랜치} ──── (영구, 삭제 금지)
-       ├─ feat/xxx → PR → main merge → 삭제
-       └─ fix/xxx → PR → main merge → 삭제
-```
-
-### 작업 흐름
-
-1. Worktree 브랜치에서 작업 후 커밋
-2. PR용 브랜치 생성 (`feat/`, `fix/` 등)
-3. Push: `git push -u origin <branch>`
-4. PR 생성: `gh pr create`
-5. Squash merge: `gh pr merge <num> --squash --delete-branch`
-6. Worktree 브랜치로 복귀: `git fetch origin && git rebase origin/main`
-
-### 규칙
-
-- `main`에 직접 commit/push 금지 (PR로만 merge)
-- Worktree 브랜치는 절대 삭제하지 않는다
-- PR용 브랜치만 merge 후 삭제
-- `docs/` 디렉토리는 `.gitignore`에 포함 — 커밋하지 않는다
-
----
-
-## CI/CD
-
-### 자동 배포
-
-```
-git push origin main (또는 PR merge)
-       │
-       ▼
-GitHub Webhook → Vercel
-       │
-       ▼
-Vercel Build
-  ├── npm install
-  ├── next build
-  ├── Sentry 소스맵 업로드 (프로덕션)
-  └── Edge/Serverless Functions 배포
-       │
-       ▼
-프로덕션 배포 완료
-```
-
-### Preview 배포
-
-- `main`이 아닌 브랜치에 push하면 Vercel이 자동으로 Preview 배포 생성
-- PR에 Preview URL이 코멘트로 추가됨
-- Preview 환경은 프로덕션과 동일한 환경 변수 사용 (Vercel 설정에 따라)
-
-### 빌드 확인
-
-```bash
-# 로컬 빌드 테스트
-npm run build
-
-# 타입 체크
-npx tsc --noEmit
-
-# 테스트
-npm run test
-```
-
----
-
-## 데이터베이스 마이그레이션
-
-### 마이그레이션 파일 위치
-
-`supabase/` 디렉토리에 SQL 파일로 관리:
-
-| 파일 | 설명 |
-|------|------|
-| `schema.sql` | 기본 스키마 (sinners, identities, skills, ego, profiles, decks 등) |
-| `migration-passives.sql` | 패시브 테이블 |
-| `migration-ego-skills.sql` | EGO 스킬 테이블 |
-| `migration-ego-gifts.sql` | EGO 기프트 + 레시피 테이블 |
-| `migration-announcements.sql` | 공지사항 테이블 |
-| `migration-affiliation.sql` | 인격 소속 컬럼 + 키워드 메타 테이블 |
-| `migration-uptie.sql` | 업타이 단계 컬럼 + 정신력 컬럼 |
-| `migration-sanity-fk.sql` | 정신력 정규화 (panic_types, templates, conditions) |
-| `migration-reviews.sql` | 인격 리뷰 테이블 |
-| `migration-guides.sql` | 인격 가이드 테이블 |
-| `migration-deck-egos.sql` | 덱 EGO 편성 테이블 |
-| `migration-deck-code.sql` | 덱 편성코드 컬럼 |
-| `migration-bio.sql` | 프로필 bio 컬럼 |
-| `migration-user-roles.sql` | 유저 역할/정지 관리 |
-| `migration-rarity-int.sql` | 등급 TEXT → INT 변환 |
-| `migration-keyword-columns.sql` | 키워드 icon_slug + sin_affinity |
-| `migration-audit-logs.sql` | 감사 로그 테이블 |
-| `migration-i18n.sql` | 다국어 지원 (번역, AI 요약) |
-| `migration-security-hardening.sql` | RLS + 권한 강화 |
-
-### 마이그레이션 실행
-
-Supabase Dashboard > SQL Editor에서 직접 실행.
-자동화된 마이그레이션 도구 (Supabase CLI)는 사용하지 않음.
-
-> 마이그레이션 파일은 참고용으로 `supabase/` 디렉토리에 보관.
-> 모든 DDL 변경은 Supabase Dashboard에서 수동 실행.
-
----
-
-## 모니터링
-
-| 도구 | 용도 |
-|------|------|
-| Vercel Analytics | 페이지 조회수, Web Vitals |
-| Sentry | 에러 추적, 성능 모니터링 |
-| Supabase Dashboard | DB 쿼리 성능, 스토리지 사용량 |
-
-### Sentry 터널
-
-CSP 제한으로 Sentry SDK가 직접 통신할 수 없으므로, `/monitoring` 경로를 터널로 사용:
-
-```typescript
-// next.config.ts
-tunnelRoute: "/monitoring"
-```
-
----
-
-## 로컬 개발 환경 설정
-
-```bash
-# 1. 리포지토리 클론
-git clone git@github.com:INIRU/SAIGO-NO-DANTE.git limbus-archive
-cd limbus-archive
-
-# 2. 의존성 설치
-npm install
-
-# 3. 환경 변수 설정
-cp .env.example .env.local  # 또는 직접 생성
-# .env.local 편집하여 실제 키 입력
-
-# 4. 개발 서버 시작
-npm run dev
-
-# 5. http://localhost:3000 접속
-```
-
-### 개발 서버 포트
-
-- 기본: `3000`
-- 대체: `3001` (CORS 허용 목록에 포함)
-
----
-
-## 트러블슈팅
-
-### 빌드 실패
-
-```bash
-# 타입 에러 확인
-npx tsc --noEmit 2>&1 | grep -E 'error TS' | head -10
-
-# 의존성 재설치
-rm -rf node_modules .next && npm install
-```
-
-### 환경 변수 누락
-
-스크립트 실행 시 `SUPABASE_SERVICE_ROLE_KEY` 누락 에러:
-```bash
-# 동기화 스크립트 — dotenv 내장 (자동 로드)
-npx tsx scripts/sync/identity-data.ts --dry-run
-npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run
-```
-
-### 이미지 최적화 이슈
-
-- `sharp`는 서버에서만 실행됨 (`serverExternalPackages`에 포함)
-- Supabase Storage 이미지는 `next/image`의 `remotePatterns`에 등록되어야 함
-- 캐시 TTL: 30일 (`minimumCacheTTL: 2592000`)
+`node scripts/restore-legal-docs.mjs`로 누락된 한국어 문서를 확인하고, `--apply`를 붙여 등록한다. `backups/2026-03-23/legal_docs.json`의 2026년 2월 28일자 원문과 날짜를 그대로 복구하며, 이미 등록된 문서와 동의 기록은 덮어쓰지 않는다. 연결 환경의 `NEXT_PUBLIC_SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 사용한다. 복구 후 `/ko/terms`, `/ko/privacy` 및 번역 경로의 페이지 캐시를 무효화한다. 원문 복구는 현재 기능에 맞춘 약관 개정과 별개다.

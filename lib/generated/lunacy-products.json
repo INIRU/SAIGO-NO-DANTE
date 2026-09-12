@@ -1,0 +1,233 @@
+[
+  {
+    "id": "1",
+    "name": {
+      "ko": "광기",
+      "en": "Lunacy",
+      "ja": "狂気"
+    },
+    "price": 1100,
+    "paid": 70,
+    "free": 0,
+    "firstPaid": 140,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "2",
+    "name": {
+      "ko": "광기 묶음",
+      "en": "Lunacy Bundle",
+      "ja": "狂気の房"
+    },
+    "price": 5100,
+    "paid": 294,
+    "free": 31,
+    "firstPaid": 588,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "3",
+    "name": {
+      "ko": "광기 다발",
+      "en": "Lunacy Bouquet",
+      "ja": "狂気の束"
+    },
+    "price": 17000,
+    "paid": 1014,
+    "free": 156,
+    "firstPaid": 2028,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "4",
+    "name": {
+      "ko": "광기 상자",
+      "en": "Lunacy Crate",
+      "ja": "狂気の箱"
+    },
+    "price": 33000,
+    "paid": 2147,
+    "free": 323,
+    "firstPaid": 4294,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "5",
+    "name": {
+      "ko": "광기 더미",
+      "en": "Lunacy Mound",
+      "ja": "狂気の山"
+    },
+    "price": 55000,
+    "paid": 4103,
+    "free": 642,
+    "firstPaid": 8206,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "6",
+    "name": {
+      "ko": "광기 모음",
+      "en": "Lunacy Hoard",
+      "ja": "狂気の寄せ集め"
+    },
+    "price": 110000,
+    "paid": 8336,
+    "free": 1349,
+    "firstPaid": 16672,
+    "limit": "none",
+    "max": 1
+  },
+  {
+    "id": "21",
+    "name": {
+      "ko": "월간 광기",
+      "en": "Monthly Lunacy Supply",
+      "ja": "狂気(毎月)"
+    },
+    "price": 9900,
+    "paid": 650,
+    "free": 0,
+    "dailyFree": 65,
+    "days": 30,
+    "limit": "membership",
+    "max": 1
+  },
+  {
+    "id": "22",
+    "name": {
+      "ko": "월간 광기 소형",
+      "en": "Monthly Lunacy Batch",
+      "ja": "小型狂気(毎月)"
+    },
+    "price": 4400,
+    "paid": 130,
+    "free": 0,
+    "dailyFree": 39,
+    "days": 30,
+    "limit": "membership",
+    "max": 1
+  },
+  {
+    "id": "131",
+    "name": {
+      "ko": "주간 추출 패키지",
+      "en": "Weekly Extraction Pack",
+      "ja": "抽出パッケージ(毎週)"
+    },
+    "price": 9900,
+    "paid": 273,
+    "free": 0,
+    "limit": "weekly",
+    "max": 1
+  },
+  {
+    "id": "143",
+    "name": {
+      "ko": "주간 추출 티켓 패키지 I",
+      "en": "Weekly Extraction Ticket Pack I",
+      "ja": "抽出チケットパッケージI(毎週)"
+    },
+    "price": 9900,
+    "paid": 0,
+    "free": 0,
+    "limit": "weekly",
+    "max": 1
+  },
+  {
+    "id": "101",
+    "name": {
+      "ko": "월간 추출 패키지",
+      "en": "Monthly Extraction Pack",
+      "ja": "抽出パッケージ(毎月)"
+    },
+    "price": 14000,
+    "paid": 650,
+    "free": 0,
+    "limit": "monthly",
+    "max": 1
+  },
+  {
+    "id": "141",
+    "name": {
+      "ko": "월간 추출 티켓 패키지 I",
+      "en": "Monthly Extraction Ticket Pack I",
+      "ja": "抽出チケットパッケージI(毎月)"
+    },
+    "price": 28000,
+    "paid": 0,
+    "free": 0,
+    "limit": "monthly",
+    "max": 1
+  },
+  {
+    "id": "142",
+    "name": {
+      "ko": "월간 추출 티켓 패키지 II",
+      "en": "Monthly Extraction Ticket Pack II",
+      "ja": "抽出チケットパッケージII(毎月)"
+    },
+    "price": 46000,
+    "paid": 0,
+    "free": 0,
+    "limit": "monthly",
+    "max": 1
+  },
+  {
+    "id": "108",
+    "name": {
+      "ko": "월간 성장 지원 패키지 I",
+      "en": "Monthly Training Pack I",
+      "ja": "成長支援パッケージI(毎月)"
+    },
+    "price": 44000,
+    "paid": 1690,
+    "free": 0,
+    "limit": "monthly",
+    "max": 1
+  },
+  {
+    "id": "103",
+    "name": {
+      "ko": "월간 성장 지원 패키지 II",
+      "en": "Monthly Training Pack II",
+      "ja": "成長支援パッケージII(毎月)"
+    },
+    "price": 44000,
+    "paid": 1690,
+    "free": 0,
+    "limit": "monthly",
+    "max": 1
+  },
+  {
+    "id": "605",
+    "name": {
+      "ko": "시즌 7 시작 광기 패키지",
+      "en": "Season 7 Commencement Lunacy Pack",
+      "ja": "シーズン7開始狂気パッケージ"
+    },
+    "price": 15000,
+    "paid": 1300,
+    "free": 0,
+    "limit": "seasonal",
+    "max": 1
+  },
+  {
+    "id": "606",
+    "name": {
+      "ko": "시즌 7 정착 지원품",
+      "en": "Season 7 Settler Supplies",
+      "ja": "シーズン7 定着支援品"
+    },
+    "price": 99000,
+    "paid": 5040,
+    "free": 0,
+    "limit": "seasonal",
+    "max": 1
+  }
+]

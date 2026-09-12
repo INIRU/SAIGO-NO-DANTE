@@ -1,0 +1,5 @@
+/* Workspaces keep navigation useful without a second large page at the bottom. */
+body:has([data-admin-shell]) :is(.site-navigation, .site-footer) { display: none; }
+body:has(.support-desk, .community-shell, [data-developer-console], [data-announcements]) .site-footer { margin-top: 2rem; }
+body:has(.support-desk, .community-shell, [data-developer-console], [data-announcements]) .site-footer :is(.footer-decoration, .footer-brand, nav) { display: none; }
+body:has(.support-desk, .community-shell, [data-developer-console], [data-announcements]) .footer-content { gap: .75rem; padding-block: 1.5rem; }

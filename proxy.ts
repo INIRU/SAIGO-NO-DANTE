@@ -4,6 +4,7 @@ import { getToken } from 'next-auth/jwt'
 import { checkRateLimit } from '@/lib/rate-limit'
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './lib/i18n/routing'
+import { isAllowedRequestOrigin } from './lib/request-origin'
 
 const intlMiddleware = createMiddleware(routing)
 
@@ -48,22 +49,6 @@ function isBlockedPath(pathname: string): boolean {
   if (BLOCKED_PATHS.some(p => lower.startsWith(p.toLowerCase()))) return true
   if (BLOCKED_EXTENSIONS.some(ext => lower.endsWith(ext))) return true
   return false
-}
-
-function getParsedOrigin(value: string | null): string | null {
-  if (!value) return null
-  try {
-    return new URL(value).origin
-  } catch {
-    return null
-  }
-}
-
-function isAllowedOrigin(value: string | null, requestOrigin: string): boolean {
-  const parsedOrigin = getParsedOrigin(value)
-  if (!parsedOrigin) return false
-
-  return parsedOrigin === requestOrigin || ALLOWED_ORIGINS.includes(parsedOrigin)
 }
 
 function isSupportedLocale(value: string | undefined): value is SupportedLocale {
@@ -195,7 +180,7 @@ export async function proxy(request: NextRequest) {
 
   // ── 5. Rate Limiting ──
   // 공개 GET API (scraper 방어용 퍼미시브 제한)
-  const PUBLIC_GET_ROUTES = ['/api/search', '/api/keyword-meta', '/api/announcements', '/api/tier-list']
+  const PUBLIC_GET_ROUTES = ['/api/search', '/api/keyword-meta', '/api/announcements']
   const isPublicGetApi = method === 'GET' && PUBLIC_GET_ROUTES.some(r => pathname.startsWith(r))
 
   // SSR 내부 호출(origin/referer 없음)은 rate limit 제외
@@ -255,11 +240,11 @@ export async function proxy(request: NextRequest) {
   // 서버 내부 호출 (SSR, API 내부 호출) — origin/referer 모두 없음
   if (isInternalCall) return NextResponse.next()
 
-  if (isAllowedOrigin(origin, request.nextUrl.origin)) {
+  if (isAllowedRequestOrigin(origin, request.nextUrl.origin, request.headers.get('host'), ALLOWED_ORIGINS)) {
     return NextResponse.next()
   }
 
-  if (isAllowedOrigin(referer, request.nextUrl.origin)) {
+  if (isAllowedRequestOrigin(referer, request.nextUrl.origin, request.headers.get('host'), ALLOWED_ORIGINS)) {
     return NextResponse.next()
   }
 

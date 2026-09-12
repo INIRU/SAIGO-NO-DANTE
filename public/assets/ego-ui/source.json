@@ -1,0 +1,377 @@
+{
+  "sourceFolder": "https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z",
+  "layers": [
+    "artwork",
+    "circular frame",
+    "sinner badge",
+    "sin panel",
+    "grade symbol",
+    "rank banner",
+    "interpretation numeral"
+  ],
+  "entries": [
+    {
+      "file": "common-frame/ego-frame-outer.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        0,
+        0,
+        522,
+        524
+      ],
+      "alphaBounds": [
+        7,
+        4,
+        515,
+        512
+      ],
+      "size": [
+        508,
+        508
+      ],
+      "sha256": "a0e6486367b4e510474b4a8ff79c6df27720f4a029919427b6c9082e8f548122"
+    },
+    {
+      "file": "rank-banners/zayin.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        1572,
+        264,
+        1768,
+        354
+      ],
+      "alphaBounds": [
+        2,
+        15,
+        187,
+        86
+      ],
+      "size": [
+        185,
+        71
+      ],
+      "sha256": "39e1d722ac06328f6c35ecf11d16c6d51bf0871554d47d12fd22694269e3a8ba"
+    },
+    {
+      "file": "rank-banners/teth.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        1572,
+        350,
+        1768,
+        426
+      ],
+      "alphaBounds": [
+        2,
+        4,
+        187,
+        75
+      ],
+      "size": [
+        185,
+        71
+      ],
+      "sha256": "06b078390da811501e9a035d1c1978edd7d9cdefb1e2871d16331e139449739e"
+    },
+    {
+      "file": "rank-banners/he.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        1572,
+        428,
+        1768,
+        508
+      ],
+      "alphaBounds": [
+        2,
+        0,
+        187,
+        73
+      ],
+      "size": [
+        185,
+        73
+      ],
+      "sha256": "139fa3f06d0aceb262fb05d795cb3cd20c74019bd4a2a6cf40cdb775f2e9df0e"
+    },
+    {
+      "file": "rank-banners/waw.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        1782,
+        262,
+        1980,
+        346
+      ],
+      "alphaBounds": [
+        3,
+        0,
+        188,
+        84
+      ],
+      "size": [
+        185,
+        84
+      ],
+      "sha256": "89d049e0030bb61afaffacd5409fcc3c5f85f0e38a4e8a03f54a6401db777c32"
+    },
+    {
+      "file": "rank-banners/aleph.webp",
+      "source": "MainUI_Formation_9.png",
+      "sourceSha256": "87e033f527e3e981f5eefb5329ae3bdd85549c8e5eb8664139ed30e6e864c257",
+      "crop": [
+        1782,
+        348,
+        1980,
+        424
+      ],
+      "alphaBounds": [
+        3,
+        0,
+        188,
+        73
+      ],
+      "size": [
+        185,
+        73
+      ],
+      "sha256": "29961f2cecaac3966c12dddc49756de74016d288fb701cdd1b2f986381b3fea4"
+    },
+    {
+      "file": "common-frame/sinner-badge.webp",
+      "source": "New_MainUI_Formation_3.png",
+      "sourceSha256": "0654f057c95008c0cea36e87bb0e03f815b7f72a03b1b45138d65482727127a5",
+      "crop": [
+        1086,
+        22,
+        1348,
+        282
+      ],
+      "alphaBounds": [
+        5,
+        2,
+        259,
+        256
+      ],
+      "size": [
+        254,
+        254
+      ],
+      "sha256": "8f0fd7f4a70a2bf9c8d5e42bc1ff204457a0ca6488fe9d48f88c5079509ef0af"
+    },
+    {
+      "file": "grade-symbols/grade-zayin-symbol.webp",
+      "source": "MainUI_Formation_7.png",
+      "sourceSha256": "e3c87735d8d79cbc18a0ed45846d38237995f8105844651e2e0f7b034f4444f4",
+      "crop": [
+        1326,
+        1824,
+        1428,
+        1996
+      ],
+      "alphaBounds": [
+        9,
+        21,
+        89,
+        155
+      ],
+      "size": [
+        80,
+        134
+      ],
+      "sha256": "dd9d2ac8c37b91ac11114313196a3f41080580af3771e9bd27756375636a9374"
+    },
+    {
+      "file": "grade-symbols/grade-teth-symbol.webp",
+      "source": "MainUI_Formation_7.png",
+      "sourceSha256": "e3c87735d8d79cbc18a0ed45846d38237995f8105844651e2e0f7b034f4444f4",
+      "crop": [
+        1420,
+        1824,
+        1566,
+        1996
+      ],
+      "alphaBounds": [
+        10,
+        24,
+        128,
+        152
+      ],
+      "size": [
+        118,
+        128
+      ],
+      "sha256": "be1bb87ef92406921e6984058779dc8c7d2b7dbefebc686705386ca32e6552fa"
+    },
+    {
+      "file": "grade-symbols/grade-he-symbol.webp",
+      "source": "MainUI_Formation_7.png",
+      "sourceSha256": "e3c87735d8d79cbc18a0ed45846d38237995f8105844651e2e0f7b034f4444f4",
+      "crop": [
+        1560,
+        1824,
+        1704,
+        1996
+      ],
+      "alphaBounds": [
+        8,
+        19,
+        126,
+        157
+      ],
+      "size": [
+        118,
+        138
+      ],
+      "sha256": "eb4ab40799ff0b5821fc19e26e39931629759a66f2ddfd9a511ca0623590ec19"
+    },
+    {
+      "file": "grade-symbols/grade-waw-symbol.webp",
+      "source": "MainUI_Formation_7.png",
+      "sourceSha256": "e3c87735d8d79cbc18a0ed45846d38237995f8105844651e2e0f7b034f4444f4",
+      "crop": [
+        1698,
+        1824,
+        1778,
+        1996
+      ],
+      "alphaBounds": [
+        8,
+        18,
+        79,
+        156
+      ],
+      "size": [
+        71,
+        138
+      ],
+      "sha256": "f3af133a76834db73da5eabc123427b430cf6d9239a540663b999b3b5c6f2f76"
+    },
+    {
+      "file": "grade-symbols/grade-aleph-symbol.webp",
+      "source": "MainUI_Formation_7.png",
+      "sourceSha256": "e3c87735d8d79cbc18a0ed45846d38237995f8105844651e2e0f7b034f4444f4",
+      "crop": [
+        1792,
+        1824,
+        1952,
+        1996
+      ],
+      "alphaBounds": [
+        5,
+        19,
+        142,
+        155
+      ],
+      "size": [
+        137,
+        136
+      ],
+      "sha256": "b41c3ca09825d76442565fa6f548a503c59b9f345d4fb163f3aa61c1d8ef6eef"
+    }
+  ],
+  "sinPanels": {
+    "source": "New_MainUI_Formation_1.png",
+    "sourceSha256": "dfef75dd9eaa12a30db8307749be91c12c95cc2c89792ca647cf3ea97414fd73",
+    "crop": [
+      1690,
+      908,
+      2048,
+      1063
+    ],
+    "size": [
+      358,
+      155
+    ],
+    "alphaSha256": "d0ebba8a20ed14803894e3f838dd409a0b92df642536ab58ef20ee64ba43a368",
+    "composition": "Crop at native resolution; multiply each RGB channel by tint/255; preserve source alpha. No trim, rotation, scaling or extra border.",
+    "colorStatus": "Estimated from retained lossy WebPs. Exact game tint values and original encoder settings remain unconfirmed. Public panels are preserved byte-for-byte.",
+    "panels": [
+      {
+        "sin": "wrath",
+        "file": "sin-frames/sin-frame-candidate-01.webp",
+        "estimatedTintRgb": [
+          255,
+          0,
+          0
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "808dcd106d608ace53f36701b4da7c996f622e8f53d264259e642b9626b12969"
+      },
+      {
+        "sin": "lust",
+        "file": "sin-frames/sin-frame-candidate-07.webp",
+        "estimatedTintRgb": [
+          255,
+          108,
+          1
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "eacab50996d2b358233f95208af94629a1fb41b5184fb14b41299778bd8b6c74"
+      },
+      {
+        "sin": "sloth",
+        "file": "sin-frames/sin-frame-candidate-03.webp",
+        "estimatedTintRgb": [
+          255,
+          204,
+          44
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "de381eb50c008dc90c674938e040b8bdbddfc9399547b784cab7161030d44af5"
+      },
+      {
+        "sin": "gluttony",
+        "file": "sin-frames/sin-frame-candidate-06.webp",
+        "estimatedTintRgb": [
+          153,
+          243,
+          0
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "227b7b88358247df619ea40966ea20ecbb55b9334c48be5100e225e3d6fd9ee1"
+      },
+      {
+        "sin": "gloom",
+        "file": "sin-frames/sin-frame-candidate-04.webp",
+        "estimatedTintRgb": [
+          23,
+          195,
+          236
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "f0f40eaddd0ec3c9f077a9fb3b9abb502fa2bfb6fc9e18ba6ffdf728b6844370"
+      },
+      {
+        "sin": "pride",
+        "file": "sin-frames/sin-frame-candidate-05.webp",
+        "estimatedTintRgb": [
+          0,
+          74,
+          211
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "a0b753fc5c037bd70f02d9f352700b53aa2c1bf7bb887b42f83f8763fd857846"
+      },
+      {
+        "sin": "envy",
+        "file": "sin-frames/sin-frame-candidate-02.webp",
+        "estimatedTintRgb": [
+          141,
+          1,
+          209
+        ],
+        "alphaMatchesSourceExactly": true,
+        "retainedSha256": "5bfaf6d73cfa804196f3b5511ab5b617ea0a1612681f58f2d10125b6eb881638"
+      }
+    ]
+  },
+  "unresolved": [
+    "Exact original sin-panel tint values and encoder settings remain unconfirmed; existing seven WebPs are preserved. No new Dante asset download."
+  ]
+}

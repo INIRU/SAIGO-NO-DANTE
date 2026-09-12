@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { X, Camera } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
+import { BLUR_PLACEHOLDER, getIdentityImageUrl } from '@/lib/utils/images'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
 type Sinner = { id: string; name_kr: string; order_num: number }
@@ -52,11 +52,10 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
   const filtered = identities.filter(i => i.sinner_id === selectedSinner)
 
   const getUrl = (identity: AvatarIdentity, forceNormal = false) => {
-    const folder = encodeURIComponent(identity.folder_name)
     const useGacksung = gacksung && !forceNormal && !failedGacksung.has(identity.game_id)
     const base = useGacksung ? 'gacksung' : 'normal'
     const suffix = failedProfile.has(`${identity.game_id}_${base}`) ? '' : '_profile'
-    return `${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${folder}/${identity.game_id}_${base}${suffix}.webp`
+    return getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_${base}${suffix}`)
   }
 
   return (

@@ -168,6 +168,16 @@ async function seedCurrentLegalAcknowledgements(admin: SupabaseClient, userId: s
   }
 }
 
+// Restored databases may not have the auth.users profile trigger installed.
+// Ignore existing IDs so account names, roles, and avatars are never overwritten.
+async function ensureUserProfile(admin: SupabaseClient, userId: string, username: string): Promise<boolean> {
+  const { error } = await admin.schema('limbus').from('profiles').upsert(
+    { id: userId, username, avatar_url: DEFAULT_AVATAR_URL },
+    { onConflict: 'id', ignoreDuplicates: true },
+  )
+  return !error
+}
+
 // next-auth 유저를 Supabase auth에 find-or-create
 export async function findOrCreateSupabaseUser(
   admin: SupabaseClient,
@@ -186,13 +196,14 @@ export async function findOrCreateSupabaseUser(
       },
     })
     if (!createError) {
+      if (!await ensureUserProfile(admin, created.user.id, userName)) continue
       await seedCurrentLegalAcknowledgements(admin, created.user.id)
       return created.user.id
     }
 
     // 이미 존재하는 경우 페이지네이션으로 이메일 검색 (listUsers는 email 필터 미지원)
     const existingUserId = await findExistingUserIdByEmail(admin, email)
-    if (existingUserId) return existingUserId
+    if (existingUserId && await ensureUserProfile(admin, existingUserId, userName)) return existingUserId
   }
 
   return null

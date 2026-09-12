@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+
+import { getDetailStatIconUrl } from '@/lib/utils/images'
 import Image from 'next/image'
+import SinnerShardIcon from '@/components/ui/SinnerShardIcon'
 import {
   Identity,
   SIN_COLORS,
-  STORAGE_BASE,
   RARITY_ICON_MAP,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
@@ -21,10 +22,11 @@ interface IdentityInfoCardProps {
   currentSeason?: number
 }
 
-function getAssociationChips(identity: Identity, locale: SupportedLang) {
-  const associations = identity.association_list
-    ?.map(association => association.trim())
-    .filter(Boolean)
+export function getAssociationChips(identity: Pick<Identity, 'unit_keyword_list' | 'association_list' | 'affiliation'>, locale: SupportedLang) {
+  const associations = [...new Set([...(identity.unit_keyword_list ?? []), ...(identity.association_list ?? [])])]
+    .map(association => association.trim())
+    // SMALL is an internal unit-size tag, not an identity trait or affiliation.
+    .filter(association => Boolean(association) && !['소형', 'SMALL'].includes(association))
 
   if (associations && associations.length > 0) {
     return associations.map(association => getLocalizedAffiliation(association, locale))
@@ -51,7 +53,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
     ? identity.skill_keyword_list
     : (identity.keywords ?? [])
   const specialChargeKeywords = representativeKeywords.filter(kw => SPECIAL_CHARGE_KEYWORDS.has(kw))
-  const sinKeywords = representativeKeywords.filter(kw => kwSinMap[kw])
+  const sinKeywords = [...new Set(representativeKeywords)].filter(kw => !SPECIAL_CHARGE_KEYWORDS.has(kw))
   return (
     <div className="card p-6">
       <h2
@@ -97,7 +99,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                 </KeywordWithTooltip>
               ))}
               {sinKeywords.map(kw => {
-                const kwColor = SIN_COLORS[kwSinMap[kw]] || '#888'
+                const kwColor = SIN_COLORS[kwSinMap[kw]] || sinColor
                 return (
                   <KeywordWithTooltip key={kw} keyword={kw}>
                     <span
@@ -136,7 +138,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                 style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
               >
                 <Image
-                  src={`${STORAGE_BASE}/icons/stats/${icon}.webp`}
+                  src={getDetailStatIconUrl(icon)}
                   alt=""
                   width={14}
                   height={14}
@@ -155,7 +157,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
       {/* 소속 */}
       {associationChips.length > 0 && (
         <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-          <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>{t('identity.info.affiliation')}</div>
+          <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>{t('identity.info.traits')}</div>
           <div className="flex flex-wrap gap-1.5">
             {associationChips.map(association => (
               <span
@@ -338,6 +340,7 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
                   return (
                     <div className="flex items-center gap-2">
                       <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.fragmentExchange')}</span>
+                      <SinnerShardIcon sinnerId={identity.sinner_id} />
                       <span style={{ fontSize: '0.75rem', color: detailColor }}>
                         {detail}
                       </span>
@@ -347,142 +350,6 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
               </div>
             )
           })()}
-        </div>
-      )}
-      {/* SD 일러스트 */}
-      {identity.game_id && identity.folder_name && (
-        <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-          <div
-            className="relative w-full overflow-hidden rounded-xl"
-            style={{
-              aspectRatio: '16/9',
-              background: '#0a0908',
-              border: `1px solid ${sinColor}20`,
-            }}
-          >
-            {/* 배경: BG 이미지 또는 일러스트 blur */}
-            {identity.bg_image_url ? (
-              <Image
-                src={identity.bg_image_url}
-                alt=""
-                fill
-                sizes="20rem"
-                className="object-contain"
-                style={{ opacity: 0.5 }}
-              />
-            ) : (
-              <Image
-                src={`${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${identity.folder_name}/${identity.game_id}_normal.webp`}
-                alt=""
-                fill
-                sizes="20rem"
-                className="object-cover"
-                style={{ opacity: 0.25, filter: 'blur(8px) saturate(1.2) brightness(0.8)', transform: 'scale(1.1)' }}
-              />
-            )}
-            {/* 하단 그라디언트 */}
-            <div className="absolute" style={{
-              inset: '-1px',
-              background: `linear-gradient(180deg, rgba(10,9,8,0.2) 0%, transparent 30%, transparent 60%, rgba(10,9,8,0.7) 100%)`,
-            }} />
-            {/* SD 캐릭터 — 드래그+줌 */}
-            <SDCharacter
-              src={`${STORAGE_BASE}/icons/sd/${identity.sinner_id}/${identity.game_id}_idle.webp`}
-              alt={`${identity.name_kr || identity.name} SD`}
-              onError={() => {
-                // 컨테이너 숨김
-                const el = document.getElementById(`sd-container-${identity.game_id}`)
-                if (el) el.style.display = 'none'
-              }}
-            />
-          </div>
-          <p className="text-center mt-2" style={{ color: '#555', fontSize: '0.625rem' }}>
-            {t('identity.info.sdDragHint')}
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── SD 캐릭터 드래그+줌 컴포넌트 ── */
-function SDCharacter({ src, alt, onError }: { src: string; alt: string; onError: () => void }) {
-  const [scale, setScale] = useState(1)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const dragging = useRef(false)
-  const lastPos = useRef({ x: 0, y: 0 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  // wheel 이벤트를 non-passive로 등록해야 preventDefault 가능
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const handler = (e: WheelEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setScale(s => Math.min(3, Math.max(0.3, s - e.deltaY * 0.002)))
-    }
-    el.addEventListener('wheel', handler, { passive: false })
-    return () => el.removeEventListener('wheel', handler)
-  }, [])
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    dragging.current = true
-    lastPos.current = { x: e.clientX, y: e.clientY }
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  }, [])
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return
-    const dx = e.clientX - lastPos.current.x
-    const dy = e.clientY - lastPos.current.y
-    lastPos.current = { x: e.clientX, y: e.clientY }
-    setPos(p => ({ x: p.x + dx, y: p.y + dy }))
-  }, [])
-
-  const handlePointerUp = useCallback(() => {
-    dragging.current = false
-  }, [])
-
-  const handleReset = useCallback(() => {
-    setScale(1)
-    setPos({ x: 0, y: 0 })
-  }, [])
-
-  return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onDoubleClick={handleReset}
-      style={{ cursor: dragging.current ? 'grabbing' : 'grab', touchAction: 'none' }}
-    >
-      <div
-        className="absolute inset-0 flex items-end justify-center pb-4"
-        style={{
-          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
-          transition: dragging.current ? 'none' : 'transform 0.15s ease-out',
-        }}
-      >
-        <div className="relative" style={{ width: '70%', height: '85%' }}>
-          <Image
-            src={src}
-            alt={alt}
-            fill
-            sizes="(max-width: 640px) 70vw, 14rem"
-            className="object-contain object-bottom pointer-events-none"
-            style={{ filter: 'drop-shadow(0 0.25rem 1rem rgba(0,0,0,0.6))' }}
-            onError={onError}
-          />
-        </div>
-      </div>
-      {/* 줌 표시 */}
-      {scale !== 1 && (
-        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.5)', color: '#888', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-          {Math.round(scale * 100)}%
         </div>
       )}
     </div>

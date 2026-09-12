@@ -1,5 +1,10 @@
 'use client'
 
+import GiftGrade from '@/components/ui/GiftGrade'
+
+import { GIFT_BG_URL } from '@/lib/constants/gift'
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -13,7 +18,6 @@ import {
   parseFinalGiftIds,
 } from '@/lib/planner/fusion'
 import {
-  STORAGE_BASE,
   GRADE_ROMAN,
   GRADE_COLORS,
   GRADE_ORDER,
@@ -23,7 +27,7 @@ import {
   getKeywordSlug,
 } from './gift-plan/constants'
 import type { GiftSubTab } from './gift-plan/constants'
-import GiftCard from './gift-plan/GiftCard'
+import GiftCard from '@/components/ui/GiftCard'
 import GiftGridPanel from './gift-plan/GiftGridPanel'
 import SelectedPanel from './gift-plan/SelectedPanel'
 import QuickAddSection from './gift-plan/QuickAddSection'
@@ -264,7 +268,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
             <span style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               {t('observe.cost')}
               <Image
-                src={`${STORAGE_BASE}/icons/start-buffs/starlight.webp`}
+                src={getGameUiAsset('start-buffs/starlight')}
                 alt={t('observe.starlightAlt')}
                 width={16}
                 height={16}
@@ -333,7 +337,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                     color: '#8a6010',
                   }}>
                     <Image
-                      src={`${STORAGE_BASE}/icons/start-buffs/starlight.webp`}
+                      src={getGameUiAsset('start-buffs/starlight')}
                       alt={t('observe.starlightAlt')}
                       width={14}
                       height={14}
@@ -442,22 +446,20 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                               <div style={{
                                 width: '3.5rem', height: '3.5rem',
                                 clipPath: OCTAGON_CLIP,
-                                backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-                                backgroundSize: 'cover',
+                                backgroundImage: `url(${GIFT_BG_URL})`,
+                                backgroundSize: 'contain',
                                 position: 'relative',
                                 overflow: 'hidden',
                                 outline: isSelected ? '2px solid #c8900a' : 'none',
                                 outlineOffset: '2px',
                               }}>
-                                <span style={{
+                                <GiftGrade grade={gift.grade} style={{
                                   position: 'absolute', top: '4%', left: '5%', zIndex: 10,
                                   fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
                                   fontWeight: 700, fontSize: '0.875rem', lineHeight: 1,
                                   color: 'rgb(251,183,46)',
                                   textShadow: '0 0 0.375rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-                                }}>
-                                  {GRADE_ROMAN[gift.grade ?? '1']}
-                                </span>
+                                }} />
                                 <div style={{ position: 'absolute', inset: '15%' }}>
                                   {gift.image_url?.startsWith('http') && (
                                     <Image src={gift.image_url} alt={getGiftDisplayName(gift)} fill sizes="56px" style={{ objectFit: 'contain' }} />

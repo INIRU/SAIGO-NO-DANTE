@@ -5,16 +5,10 @@
     "sinnerList": "囚人一覧",
     "decks": "デッキ掲示板",
     "planner": "ミラーダンジョン",
-    "calendar": "公式カレンダー",
     "community": {
       "title": "コミュニティ",
       "planner": "ミラダンプランナー",
-      "tierList": "ティアリスト",
       "collection": "コレクション"
-    },
-    "story": {
-      "title": "ストーリー",
-      "main": "メインストーリー"
     },
     "db": {
       "title": "DB",
@@ -24,9 +18,15 @@
     "other": {
       "title": "その他",
       "meta": "分析",
-      "extraction": "抽出",
-      "random": "ランダム編成"
-    }
+      "random": "ランダム編成",
+      "developers": "開発者ツール"
+    },
+    "tools": {
+      "title": "ツール",
+      "experience": "経験値計算機",
+      "lunacy": "月間狂気計算機"
+    },
+    "support": "お問い合わせ"
   },
   "maintenance": {
     "eyebrow": "ARCHIVE MAINTENANCE",
@@ -45,52 +45,6 @@
       "reason": "理由",
       "endsAt": "再開予定",
       "route": "要求経路"
-    }
-  },
-  "calendar": {
-    "meta": {
-      "title": "公式ニュースカレンダー | SAIGO NO DANTE",
-      "description": "リンバスカンパニー公式SteamニュースとX投稿を今月のカレンダーで確認できます。"
-    },
-    "eyebrow": "OFFICIAL NEWS",
-    "title": "公式ニュースカレンダー",
-    "description": "Steamのお知らせとX投稿を、今月の日付ごとにまとめて表示します。",
-    "currentMonthOnly": "この初期版では現在の月のみ表示します。前月・翌月への移動はありません。",
-    "summary": "合計{count}件 · Steam {steam} · X {x}",
-    "loading": "カレンダーを読み込み中…",
-    "errorTitle": "カレンダーを読み込めませんでした。",
-    "errorDescription": "しばらくしてから再試行してください。問題が続く場合は公式ソースを確認してください。",
-    "retry": "再試行",
-    "emptyTitle": "今月登録された公式ニュースはありません。",
-    "emptyDescription": "新しいSteamニュースやX投稿が収集されると、このカレンダーの日付に表示されます。",
-    "moreEvents": "他{count}件",
-    "openDayEvents": "{date}の非表示ニュース{count}件を表示",
-    "dayEventsTitle": "{date}のニュース",
-    "dayEventsFallbackTitle": "日付別ニュース",
-    "dayEventsDescription": "この日付の公式ニュース{count}件から選択してください。",
-    "openEvent": "{source}のニュースを開く: {title}",
-    "detailTitle": "公式ニュース詳細",
-    "entryTypes": {
-      "post": "投稿",
-      "schedule": "予定"
-    },
-    "sourcePostTitles": {
-      "steam": "Steam投稿",
-      "x": "X投稿"
-    },
-    "publishedContext": "投稿基準: {date}",
-    "galleryLabel": "添付画像",
-    "galleryCount": "画像{count}枚",
-    "openImage": "{title}の画像{index}を拡大表示",
-    "imageViewerTitle": "画像ビューア",
-    "imageAlt": "{title}の添付画像{index}",
-    "close": "閉じる",
-    "sourceLink": "原文を見る",
-    "noBody": "本文は提供されていません。詳細は原文で確認してください。",
-    "tags": "タグ",
-    "sources": {
-      "steam": "Steam",
-      "x": "X"
     }
   },
   "common": {
@@ -1139,12 +1093,6 @@
     "title": "ガイド",
     "write": "ガイドを書く"
   },
-  "ai": {
-    "summary": "AI要約",
-    "generate": "AI要約を生成",
-    "generating": "AI要約を生成中...",
-    "noSummary": "まだ要約がありません"
-  },
   "sinner": {
     "yi-sang": "イサン",
     "faust": "ファウスト",
@@ -1193,10 +1141,6 @@
       "mirrorDungeonDesc": "EGOギフト図鑑、キーワードフィルター、合成レシピ。",
       "collection": "コレクション",
       "collectionDesc": "自分の人格・EGOチェックリスト、URLで共有。",
-      "tierList": "ティアリスト",
-      "tierListDesc": "コミュニティ投票ベースのリセマラティアランキング。",
-      "extraction": "抽出シミュ",
-      "extractionDesc": "ガチャ確率シミュレーションで運命を試す。",
       "random": "ランダム編成",
       "randomDesc": "スロットマシンUIでランダム編成、キーワードフィルター。",
       "planner": "ミラダンプランナー",
@@ -1208,6 +1152,9 @@
       "discordSub": "ボット紹介・サーバー参加",
       "youtubeSub": "公式チャンネル"
     },
+    "watchVideo": "映像を見る",
+    "archiveShortcuts": "アーカイブを探す",
+    "officialChannels": "公式チャンネル",
     "latestVideo": "最新映像",
     "viewChannel": "チャンネルを見る",
     "latestIdentity": "最新人格",
@@ -1283,7 +1230,6 @@
       "extraction": "抽出",
       "shardPostRelease7d": "リリース後7日",
       "fragmentExchange": "破片交換",
-      "sdDragHint": "ドラッグで移動・スクロールで拡大/縮小・ダブルクリックでリセット",
       "type": {
         "default": "デフォルト",
         "standard": "抽出",
@@ -1312,7 +1258,8 @@
       "slash": "斬撃",
       "pierce": "貫通",
       "blunt": "打撃",
-      "season": "シーズン"
+      "season": "シーズン",
+      "traits": "人格キーワード・所属"
     },
     "stats": {
       "title": "ステータス",
@@ -1394,17 +1341,6 @@
       "addNew": "追加する",
       "untitled": "タイトルなし"
     },
-    "ai": {
-      "title": "AI要約",
-      "generate": "AI要約を生成",
-      "regenerate": "再生成",
-      "expired": "期限切れ",
-      "generating": "生成中...",
-      "streaming": "ストリーミング中...",
-      "disclaimer": "AI生成の要約です。実際のゲームと異なる場合があります。",
-      "description": "AIがこの人格のスキル、運用法、おすすめ編成を分析して要約します。",
-      "created": "生成"
-    },
     "decks": "デッキ",
     "tab": {
       "skills": "スキル",
@@ -1439,7 +1375,7 @@
     },
     "notFound": "人格が見つかりません",
     "meta": {
-      "description": "ステータス、スキル、パッシブ、AI要約、ガイド"
+      "description": "ステータス、スキル、パッシブ、ガイド"
     },
     "season": "シーズン",
     "panic": "パニック",
@@ -1499,5 +1435,102 @@
   },
   "keyword": {
     "maxStack": "最大"
+  },
+  "meta": {
+    "title": "人格メタ分析",
+    "description": "デッキ掲示板と鏡ダンジョンプランナーの公開編成に基づく統計",
+    "source": {
+      "all": "統合",
+      "decks": "デッキ掲示板",
+      "planner": "鏡ダンジョンプランナー"
+    },
+    "emptyPeriod": "選択した期間に集計対象の編成がありません。",
+    "showAllTime": "全期間を表示",
+    "periodLabel": "集計期間",
+    "period": {
+      "30": "直近30日",
+      "90": "直近90日",
+      "all": "全期間",
+      "7": "過去7日"
+    },
+    "sample": "有効編成 {count}件 · デッキ {decks}件 · プラン {planner}件 · 空の編成 {excluded}件を除外",
+    "methodologyLabel": "集計基準",
+    "methodology": "公開投稿1件を同じ重みで集計します。人格・EGO・キーワードは編成ごとに1回だけ計上し、キーワードと同時編成は戦闘人格が対象です。採用頻度であり、強さや勝率ではありません。",
+    "smallSample": "標本が20件未満です。少数の投稿の影響を大きく受ける可能性があります。",
+    "loadError": "統計を読み込めませんでした。",
+    "retry": "再試行",
+    "loading": "統計を読み込み中",
+    "analysis": {
+      "companions": "一緒に編成された人格",
+      "companionsHint": "この人格を戦闘編成した{count}件が対象です。待機枠は除外します。複数の人格を同時に編成するため、割合の合計は100%を超える場合があります。",
+      "companionCount": "{total}件中{count}件",
+      "noCompanions": "一緒に戦闘編成された人格はいません。",
+      "identity": "分析する人格",
+      "empty": "集計できる公開編成がありません。",
+      "method": "この人格を戦闘編成した公開投稿{count}件が対象です。EGOは同じ囚人に装備されたものを集計します。",
+      "order": "編成順序",
+      "position": "{order}番",
+      "purpose": "よく使われるデッキ用途",
+      "purposeHint": "作者が指定した主要キーワードを使用します。複数指定は個別集計のため合計が100%を超える場合があります。",
+      "unclassified": "主要キーワードが未指定です。",
+      "egos": "装備されたEGO",
+      "excludeBase": "初期EGOを除外",
+      "decks": "この人格を使うデッキとプラン",
+      "keyword": "デッキのキーワード",
+      "all": "すべて",
+      "detail": "人格詳細",
+      "baseOnly": "基本E.G.O以外の編成記録はありません。スイッチをオフにすると基本E.G.Oも表示します。",
+      "change": "人格を変更",
+      "search": "人格名・囚人名で検索",
+      "sinner": "囚人",
+      "close": "閉じる",
+      "noMatches": "該当する人格がありません。別の名前で検索してください。",
+      "more": "もっと見る"
+    }
+  },
+  "experience": {
+    "title": "経験値計算機",
+    "subtitle": "所持チケットを活用して、必要な分だけ採光しましょう。",
+    "levels": "レベル設定",
+    "current": "現在のレベル",
+    "target": "目標レベル",
+    "progress": "現在のレベルで獲得済みのEXP",
+    "inventory": "所持経験値チケット",
+    "inventoryHelp": "通常の人格学習チケットI〜IVの所持数を入力してください。",
+    "ticket": "人格学習チケット {tier}",
+    "reset": "チケットをリセット",
+    "required": "目標までに必要なEXP",
+    "owned": "所持チケットのEXP",
+    "missing": "追加で必要なEXP",
+    "farming": "経験値採光",
+    "stage": "入場できる採光の段階",
+    "stageOption": "{stage}段階",
+    "fixed": "固定報酬 · 最小 = 平均 = 最大",
+    "manual": "手動戦闘",
+    "skip": "スキップ",
+    "runs": "必要な回数",
+    "modules": "エンケファリンモジュール",
+    "enkephalin": "エンケファリン換算",
+    "perRun": "1回の獲得EXP",
+    "perModule": "モジュールあたりのEXP",
+    "runCount": "{count}回",
+    "moduleCount": "{count}個",
+    "reward": "1回のチケット報酬",
+    "recommendation": "おすすめのチケット使用数",
+    "planHelp": "所持チケットと選択した採光方法の報酬を合わせた組み合わせです。",
+    "noFarm": "所持チケットだけで目標レベルに到達できます。",
+    "already": "目標レベルに到達済みです。",
+    "use": "使用",
+    "left": "使用後の残り",
+    "spent": "投入EXP",
+    "excess": "目標超過EXP",
+    "excessHelp": "超過EXPを最小化し、同じEXPなら使用枚数を減らします。上限未満の超過分は次のレベルに繰り越されます。",
+    "skipHelp": "スキップはモジュール2倍、各チケットの報酬1.5倍（端数切り上げ）です。エンケファリン20 = モジュール1個。",
+    "levelTable": "レベル別累積経験値",
+    "level": "レベル",
+    "cumulative": "レベル1からの累積EXP",
+    "next": "次のレベルに必要なEXP",
+    "max": "最大レベル",
+    "tools": "ツール"
   }
 }

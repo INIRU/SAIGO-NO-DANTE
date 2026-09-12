@@ -1,3 +1,4 @@
+import { UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
 import { COIN_BADGE_STYLES } from './tokens'
 
 interface CoinBadgeProps {
@@ -7,6 +8,7 @@ interface CoinBadgeProps {
 }
 
 export default function CoinBadge({ number, accentColor, isUnbreakable = false }: CoinBadgeProps) {
+  const color = isUnbreakable ? UNBREAKABLE_COIN_COLOR : accentColor
   const style = isUnbreakable ? COIN_BADGE_STYLES.unbreakable : COIN_BADGE_STYLES.normal
   return (
     <div
@@ -15,12 +17,12 @@ export default function CoinBadge({ number, accentColor, isUnbreakable = false }
         width: '1rem',
         height: '1rem',
         borderRadius: '50%',
-        background: `${accentColor}${style.bg}`,
-        border: `1px solid ${accentColor}${style.border}`,
+        background: `${color}${style.bg}`,
+        border: `1px solid ${color}${style.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: accentColor,
+        color,
         fontFamily: 'monospace',
         fontSize: '0.5625rem',
         fontWeight: 'bold',

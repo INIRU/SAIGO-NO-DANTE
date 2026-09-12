@@ -46,17 +46,7 @@ test.describe('정적 페이지 로드', () => {
     await expect(page.locator('#main-content')).toBeVisible()
   })
 
-  test('티어리스트', async ({ page }) => {
-    await page.goto('/tier-list')
-    await expect(page).toHaveTitle(/티어|최애의 관리자/i)
-    await expect(page.locator('#main-content')).toBeVisible()
-  })
 
-  test('추출 시뮬레이션', async ({ page }) => {
-    await page.goto('/extraction')
-    await expect(page).toHaveTitle(/추출|최애의 관리자/i)
-    await expect(page.locator('#main-content')).toBeVisible()
-  })
 
   test('공지사항', async ({ page }) => {
     await page.goto('/announcements')

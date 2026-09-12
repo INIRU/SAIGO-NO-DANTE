@@ -1,10 +1,14 @@
 'use client'
 
+import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
+import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
@@ -85,6 +89,8 @@ function AcTextarea({
         ref={ref} value={value} rows={rows} maxLength={maxLength} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); ac.onTextChange(e) }}
         onSelect={ac.onTextSelect} onKeyDown={ac.handleKeyDown}
+        onCompositionStart={ac.onCompositionStart}
+        onCompositionEnd={ac.onCompositionEnd}
         style={{
           background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem',
           padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#e5e7eb',
@@ -110,7 +116,7 @@ const FLOOR_PLAN_SEGMENTS = [
 ] as const
 
 function isFloorEntryConfigured(entry: PlannerState['floorPlan'][number]) {
-  return Boolean(entry.theme_id || entry.gift_ids.length > 0 || entry.memo.trim())
+  return isConfiguredFloor(entry)
 }
 
 function getVisibleFloorPlanEntries(floorPlan: PlannerState['floorPlan']) {
@@ -336,14 +342,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           style={{ background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', fontSize: '0.9375rem', color: '#e8b030', fontWeight: 700, outline: 'none', width: '100%', boxSizing: 'border-box' }}
         />
         <div style={{ marginTop: '0.5rem' }}>
-          <AcTextarea
-            value={state.description}
-            onChange={desc => dispatch({ type: 'SET_DESCRIPTION', description: desc })}
-            pool={acPool}
-            placeholder="설명 (선택, 키워드·기프트 자동완성 지원)..."
-            rows={3}
-            maxLength={500}
-          />
+          <NoteDocumentEditor pool={acPool} value={state.description} onChange={description => dispatch({ type: 'SET_DESCRIPTION', description })} />
           {state.description.trim() && (
             <div style={{
               marginTop: '0.375rem', background: '#0d0b08', border: '1px solid #222',
@@ -588,7 +587,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8dcc8' }}>{tBlessing('title')}</span>
         {selectedBlessings.size > 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <Image src={`${S}/icons/start-buffs/starlight.webp`} alt={tBlessing('starlightAlt')} width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
+            <Image src={getGameUiAsset('start-buffs/starlight')} alt={tBlessing('starlightAlt')} width={16} height={16} style={{ width: '1rem', height: '1rem' }} />
             <span style={{ fontSize: '0.8125rem', color: '#c8900a', fontWeight: 700 }}>{totalBlessingCost}</span>
           </div>
         ) : (
@@ -623,6 +622,8 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         count={tFloor('configuredFloorCount', { configured: state.floorPlan.filter(f => f.theme_id).length, total: state.floorPlan.length })}
       />
       <FloorPlanPreviewBoard
+                inventory={state.giftInventory}
+                recipes={recipes}
         floorPlan={state.floorPlan}
         planDifficulty={state.difficulty}
         themeMap={themeMap}

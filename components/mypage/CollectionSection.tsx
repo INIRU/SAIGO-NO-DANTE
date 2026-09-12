@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef, forwardRef } from 'react'
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
+import { useEffect, useState, useCallback, useRef, forwardRef } from 'react'
 import Image from 'next/image'
+import { useCollectionModel } from '@/components/collection/useCollectionModel'
 import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsString } from 'nuqs'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
@@ -57,8 +59,7 @@ async function encodeCollection(
 // ── 이미지 URL 헬퍼 ─────────────────────────────────────────────────────────
 function identityProfileUrl(identity: IdentityInfo): string {
   if (!identity.game_id || !identity.folder_name) return ''
-  const folder = encodeURIComponent(identity.folder_name)
-  return `${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${folder}/${identity.game_id}_normal_info.webp`
+  return getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, false)
 }
 
 function sinnerLogoUrl(sinnerId: string): string {
@@ -105,7 +106,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   const [generating, setGenerating] = useState(false)
   const [showDownloadModal, setShowDownloadModal] = useState(false)
   const [downloadOptions, setDownloadOptions] = useState<{ include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }>({ include: new Set(['identity', 'ego']), groupBy: 'sinner' })
-  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
+  const { getIconUrl } = useKeywordData()
   const downloadRef = useRef<HTMLDivElement>(null)
 
   // 데이터 로드
@@ -302,50 +303,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   }, [data, generating])
 
   // 통계
-  const stats = useMemo(() => {
-    if (!data) return { ownedIdentities: 0, totalIdentities: 0, ownedEgos: 0, totalEgos: 0 }
-    let totalIdentities = 0, ownedIdentities = 0, totalEgos = 0, ownedEgos = 0
-    for (const s of data.sinners) {
-      const ids = data.identities[s.id] ?? []
-      const egoList = data.egos[s.id] ?? []
-      totalIdentities += ids.length
-      totalEgos += egoList.length
-      ownedIdentities += ids.filter(i => owned.has(i.id)).length
-      ownedEgos += egoList.filter(e => owned.has(e.id)).length
-    }
-    return { ownedIdentities, totalIdentities, ownedEgos, totalEgos }
-  }, [data, owned])
-
-  // 수감자별 보유 수 (탭 뱃지용)
-  const sinnerOwnedCount = useCallback((sinnerId: string) => {
-    if (!data) return 0
-    const ids = data.identities[sinnerId] ?? []
-    const egoList = data.egos[sinnerId] ?? []
-    return ids.filter(i => owned.has(i.id)).length + egoList.filter(e => owned.has(e.id)).length
-  }, [data, owned])
-
-  const sinnerTotalCount = useCallback((sinnerId: string) => {
-    if (!data) return 0
-    return (data.identities[sinnerId]?.length ?? 0) + (data.egos[sinnerId]?.length ?? 0)
-  }, [data])
-
-  const filterByKeyword = useCallback((identities: IdentityInfo[]) => {
-    if (!keywordFilter || keywordFilter === '') return identities
-    const filterSin = kwSinMap[keywordFilter]
-    return identities.filter(i =>
-      i.keywords?.some(kw => {
-        const nkw = normalizeThemeKeyword(kw)
-        return nkw === keywordFilter || kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin)
-      })
-    )
-  }, [keywordFilter, kwSinMap])
-
-  const filterEgoByKeyword = useCallback((egoList: EGOInfo[]) => {
-    if (!keywordFilter || keywordFilter === '') return egoList
-    const filterSin = kwSinMap[keywordFilter]
-    if (!filterSin) return egoList
-    return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
-  }, [keywordFilter, kwSinMap])
+  const { stats, sinnerCounts, filtered } = useCollectionModel(data, owned, keywordFilter)
 
   if (loading) {
     return (
@@ -367,8 +325,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
   if (!data) return null
 
-  const allIdentities = filterByKeyword(data.identities[activeSinner] ?? [])
-  const allEgos = filterEgoByKeyword(data.egos[activeSinner] ?? [])
+  const allIdentities = (filtered.identities[activeSinner] ?? [])
+  const allEgos = (filtered.egos[activeSinner] ?? [])
   const currentIdentities = showUnowned === 'true' ? allIdentities : allIdentities.filter(i => owned.has(i.id))
   const currentEgos = showUnowned === 'true' ? allEgos : allEgos.filter(e => owned.has(e.id))
 
@@ -412,8 +370,8 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         >
           {data.sinners.map(s => {
             const isActive = s.id === activeSinner
-            const ownCount = sinnerOwnedCount(s.id)
-            const totalCount = sinnerTotalCount(s.id)
+            const ownCount = (sinnerCounts[s.id]?.owned ?? 0)
+            const totalCount = (sinnerCounts[s.id]?.total ?? 0)
             return (
               <button
                 key={s.id}

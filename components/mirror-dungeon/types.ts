@@ -114,7 +114,15 @@ export interface MirrorDungeonEvent {
 
 // ── New event types for redesigned 2-table DB ────────────────────────────────
 
+export interface EventJudgment {
+  intro?: { ko: string; en: string; ja: string }
+  participantInfo?: { min: number; max: number }
+  judgement?: { upDownType: number; inclusiveValue: number; exclusiveValue: number; judgementDataList: { attributeType: string }[] }
+  corrections?: { correctionCase: string; adder: number; labels: { ko: string; en: string; ja: string } }[]
+}
+
 export interface MdEvent {
+  judgment?: EventJudgment | null
   id: number
   name: string | null
   desc_text: string | null
@@ -132,6 +140,11 @@ export interface MdEvent {
 }
 
 export interface MdEventChoice {
+  option_index?: number | null
+  result_index?: number | null
+  outcome?: string | null
+  result_condition?: string | null
+  selection_condition?: string | null
   id: number
   event_id: number
   sort_order: number
@@ -150,6 +163,8 @@ export interface MdEventChoice {
 }
 
 export interface ChoiceEffect {
+  text?: { ko: string; en: string; ja: string }
+  source?: Record<string, unknown>
   type: string
   amount?: number
   hp?: number

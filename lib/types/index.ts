@@ -2,31 +2,6 @@
 
 export type SinType = 'wrath' | 'lust' | 'sloth' | 'gluttony' | 'gloom' | 'pride' | 'envy'
 
-export type OfficialNewsSource = 'steam' | 'x'
-
-export type OfficialNewsEvent = {
-  id: string
-  source: OfficialNewsSource
-  source_item_id: string
-  source_url: string
-  title: string
-  summary: string
-  body: string
-  starts_at: string
-  ends_at: string | null
-  published_at: string | null
-  image_url: string | null
-  image_path: string | null
-  image_urls: string[]
-  image_paths: string[]
-  image_bucket: string | null
-  locale: string | null
-  tags: string[]
-  raw_payload: Record<string, unknown>
-  created_at: string
-  updated_at: string
-}
-
 export type Sinner = {
   id: string
   name: string
@@ -65,6 +40,7 @@ export type Identity = {
   name_en?: string | null
   name_jp?: string | null
   tier: number
+  sin_affinity?: SinType | null
   hp: number
   speed_min: number
   speed_max: number
@@ -154,6 +130,7 @@ export type Passive = {
 }
 
 export type EGOSkill = {
+  gameSkillId?: number | null
   name: string
   power: string
   mentalConsume: number
@@ -187,7 +164,21 @@ export type EGOSkill = {
   coin5Effect_jp?: string | null
 }
 
+export interface EGOPassive {
+  game_passive_id: number
+  min_stage: number
+  max_stage: number
+  name: string
+  description: string
+  name_en?: string | null
+  description_en?: string | null
+  name_jp?: string | null
+  description_jp?: string | null
+}
+
 export type EGO = {
+  stage_passives?: EGOPassive[]
+  max_construe_level?: number
   id: string
   sinner_id: string
   name: string

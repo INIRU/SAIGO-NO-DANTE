@@ -1,6 +1,8 @@
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
-import { Sinner, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE } from '@/lib/data/sinners'
+import { Sinner, getSinnerProfileUrl, getSinnerLogoUrl } from '@/lib/data/sinners'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n'
 import { getTranslations, getLocale } from 'next-intl/server'
@@ -78,8 +80,8 @@ export default async function SinnerCard({ sinner, index = 0, priority: priority
           {/* 순번 이미지 (우상단) */}
           <div className="absolute top-0 right-0 z-[8] pointer-events-none opacity-80" style={{ width: '45%' }}>
             <Image
-              src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`}
-              alt={`#${String(sinner.order_num).padStart(2, '0')}`}
+              src={getGameUiAsset(`sinners/${sinner.id}`)}
+              alt={`#${String(sinner.order_num >= 10 ? sinner.order_num + 1 : sinner.order_num).padStart(2, '0')}`}
               width={389}
               height={1023}
               loading={priorityProp ? 'eager' : 'lazy'}

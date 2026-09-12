@@ -16,13 +16,11 @@ export const CACHE_TAGS = {
   egoGifts: 'ego-gifts',
   themes: 'themes',
   keywords: 'keywords',
-  tierList: 'tier-list',
   meta: 'meta',
   mirrorDungeon: 'mirror-dungeon',
 
   // ── 공지 (admin 수정 시) ──────────────────────────────────────────────────
   announcements: 'announcements',
-  calendar: 'calendar',
 
   // ── 유저 콘텐츠 (user mutation 시) ────────────────────────────────────────
   decksList: 'decks-list',
@@ -44,7 +42,6 @@ export const ALL_GAME_DATA_TAGS: readonly string[] = [
   CACHE_TAGS.egoGifts,
   CACHE_TAGS.themes,
   CACHE_TAGS.keywords,
-  CACHE_TAGS.tierList,
   CACHE_TAGS.meta,
   CACHE_TAGS.mirrorDungeon,
 ] as const
@@ -59,7 +56,6 @@ export type GameDataTag = typeof CACHE_TAGS[
   | 'egoGifts'
   | 'themes'
   | 'keywords'
-  | 'tierList'
   | 'meta'
   | 'mirrorDungeon'
 ]

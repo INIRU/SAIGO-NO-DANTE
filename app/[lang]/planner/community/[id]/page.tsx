@@ -1,3 +1,5 @@
+import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
+import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
@@ -61,6 +63,13 @@ export default async function PlanDetailPage({ params }: Props) {
   if (giftsError) console.error('Failed to fetch gifts:', giftsError)
   if (recipesError) console.error('Failed to fetch recipes:', recipesError)
 
+  const { data: identityCatalog, error: catalogError } = await supabase.schema('limbus').from('identities').select('id,sinner_id,game_id')
+  if (catalogError) throw catalogError
+  const memberIds = [...new Set((Array.isArray(plan.deck) ? plan.deck : []).flatMap(slot => {
+    const identity = resolvePlannerIdentity(slot, identityCatalog ?? [])
+    return identity ? [identity.id] : []
+  }))]
+
   // 그룹 2: 인격/수감자/스킬/패시브
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: skills, error: skillsError }, { data: passives, error: passivesError }] = await Promise.all([
     supabase.schema('limbus').from('identities')
@@ -77,10 +86,10 @@ export default async function PlanDetailPage({ params }: Props) {
         base_power, coin_power, skill_order, variant_order, atk_weight, offense_level,
         description, description_en, description_jp, uptie_level
       `)
-      .eq('uptie_level', 4),
+      .in('identity_id', memberIds).or('uptie_level.eq.3,uptie_level.eq.4,uptie_level.is.null'),
     supabase.schema('limbus').from('passives')
       .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, passive_order, uptie_level')
-      .eq('uptie_level', 4),
+      .in('identity_id', memberIds).or('uptie_level.eq.3,uptie_level.eq.4,uptie_level.is.null'),
   ])
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
   if (sinnersError) console.error('Failed to fetch sinners:', sinnersError)
@@ -101,8 +110,8 @@ export default async function PlanDetailPage({ params }: Props) {
         recipes={recipes ?? []}
         identities={identities ?? []}
         sinners={sinners ?? []}
-        skills={skills ?? []}
-        passives={passives ?? []}
+        skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4))}
+        passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4))}
         egos={egos ?? []}
       />
     </Suspense>

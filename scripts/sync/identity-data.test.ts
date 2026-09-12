@@ -11,9 +11,35 @@ import {
   resolveKeywordMetaSourceForSyncTest,
   translateDescriptionForSyncTest,
   translateDesc,
+  deriveIdentityAcquisition,
 } from './identity-data'
 
 describe('identity-data sync helpers', () => {
+  it('keeps the historical launch season of a permanent identity without seasonal restrictions', () => {
+    const identity = { id: 'test', game_id: '10305', sinner_id: 'don-quixote', name_kr: 'test', rarity: 3,
+      acquisition: '추출(상시)', acquisition_info: { type: 'standard' as const, release_season: 2, fragment_cost: 400, gacha: 'always' as const } }
+    const result = deriveIdentityAcquisition(identity, { id: 10305, characterId: 3, rank: 3, season: 0 }, new Map(), new Map(), true)
+    expect(result.acquisition_info).toEqual(identity.acquisition_info)
+    expect(result.acquisition).toContain('상시')
+  })
+  it('preserves original event and attendance routes when their shop is absent from the current source', () => {
+    for (const type of ['event', 'attendance'] as const) {
+      const identity = { id: 'test', game_id: '10409', sinner_id: 'ryoshu', name_kr: 'test', rarity: 2,
+        acquisition: '시간살인시간 회중시계 500개 교환', acquisition_info: { type, release_season: 4, fragment_cost: 150, gacha: 'none' as const, event_cost: 500, event_currency: '회중시계', exchange_from_season: 6 } }
+      const result = deriveIdentityAcquisition(identity, { id: 10409, characterId: 4, rank: 2, season: 4, additionalAttachment: 'EVENT' }, new Map(), new Map(), true)
+      expect(result.acquisition_info).toEqual(identity.acquisition_info)
+      expect(result.acquisition).toBe(identity.acquisition)
+    }
+  })
+  it('uses source season zero for standard identities and decodes the Walpurgis edition', () => {
+    const identity = { id: 'test', game_id: '11216', sinner_id: 'gregor', name_kr: 'test', rarity: 3,
+      acquisition: '', acquisition_info: { type: 'standard' as const, release_season: 1, fragment_cost: 400, gacha: 'seasonal' as const } }
+    const source = { id: 11216, characterId: 12, rank: 3, season: 0 }
+    expect(deriveIdentityAcquisition(identity, source, new Map(), new Map(), true).acquisition_info)
+      .toMatchObject({ type: 'standard', release_season: 0, gacha: 'always', fragment_cost: 400 })
+    expect(deriveIdentityAcquisition(identity, { ...source, season: 9109, walpurgisType: 'LOR' }, new Map(), new Map(), true).acquisition_info)
+      .toMatchObject({ type: 'walpurgis', release_season: 0, gacha: 'walpurgis', walpurgis_edition: 9 })
+  })
   it('Unity rich text tags are stripped before locale text is normalized', () => {
     const source = '자신에게 <style="highlight"><b><i><u><s>중지</s></u></i></b></style> - 원한 문신 [<s>큰 누님</s>] <color=#ff00ff><link="x"><size=80%><mark=#fff>강화</mark></size></link></color><sprite name="x" />'
 

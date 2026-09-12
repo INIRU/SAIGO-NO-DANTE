@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 
 // 키워드 → slug 매핑 (주요 키워드)
 const KEYWORD_SLUG: Record<string, string> = {
@@ -43,6 +44,7 @@ export default function KeywordChart({
     <div className="space-y-2">
       {distribution.slice(0, maxItems).map(d => {
         const slug = KEYWORD_SLUG[d.keyword]
+        const iconUrl = slug ? getGiftKeywordIconUrl(slug) : null
         const color = KEYWORD_COLOR[d.keyword] ?? '#888'
         const pct = (d.count / maxCount) * 100
         const contributors = contributorsByKeyword?.[d.keyword] ?? []
@@ -50,9 +52,9 @@ export default function KeywordChart({
         return (
           <div key={d.keyword} className="space-y-1.5">
             <div className="grid items-center gap-2" style={{ gridTemplateColumns: '1rem minmax(4rem, 5.5rem) minmax(0, 1fr) 1.75rem' }}>
-              {slug ? (
-                <Image
-                  src={`${STORAGE_BASE}/icons/keywords/${slug}.webp`}
+              {iconUrl ? (
+                <KeywordIcon
+                  src={iconUrl}
                   alt="" width={16} height={16}
                   style={{ width: '1rem', height: '1rem', objectFit: 'contain' }}
                 />

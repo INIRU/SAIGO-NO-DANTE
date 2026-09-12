@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import Image from 'next/image'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import { getLocalizedKeywordName } from '@/lib/i18n/localize'
@@ -116,7 +116,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode, l
                   }}
                 >
                   {iconUrl ? (
-                    <Image src={iconUrl} alt={displayName} width={20} height={20}
+                    <KeywordIcon src={iconUrl} alt={displayName} width={20} height={20}
                       style={{ width: '1.25rem', height: 'auto' }} unoptimized />
                   ) : (
                     <span style={{ color: '#555', fontSize: '0.625rem' }}>?</span>

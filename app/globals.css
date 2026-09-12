@@ -68,7 +68,7 @@
   --font-logo:    var(--font-bebas-kai), var(--font-kotra-bold), sans-serif;
   --font-title:   var(--font-bebas-kai), sans-serif;
   --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  --font-body:    var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body:    var(--font-pretendard), var(--font-scdream), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-mono:    var(--font-noto-sans-mono), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
   --font-perfect-dos: var(--font-mono);
 
@@ -139,7 +139,7 @@ html[lang="ja"] {
 
 /* English font override */
 html[lang="en"] {
-  --font-body: var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Segoe UI', sans-serif;
+  --font-body: var(--font-pretendard), var(--font-scdream), 'SCDream5 Fallback', 'Segoe UI', sans-serif;
   --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', sans-serif;
 }
 
@@ -314,3 +314,21 @@ span.inline img[src*="bladetrail-afterimage"] + span {
   0%, 100% { opacity: 0.4; transform: scaleY(1); }
   50%       { opacity: 1;   transform: scaleY(1.2); }
 }
+
+/* Shared document body: visible Korean fallback and stable composition layout. */
+.note-document-content { min-height: 14rem; padding: 1.25rem; outline: none; color: var(--text-primary); font-family: var(--font-body), sans-serif; font-size: .875rem; line-height: 1.8; overflow-wrap: anywhere; }
+.note-document-content p { min-height: 1.8em; }
+.note-document-content h1, .note-document-content h2 { margin: 1.3rem 0 .5rem; font-family: var(--font-heading); color: var(--gold); font-size: 1.125rem; }
+.note-document-content ul { list-style: disc; padding-left: 1.5rem; }
+.note-document-content ol { list-style: decimal; padding-left: 1.5rem; }
+.note-document-content blockquote { border-left: 2px solid var(--gold-dim); padding-left: 1rem; }
+.note-document-content .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: var(--text-muted); pointer-events: none; }
+.note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
+
+/* The rendered browse panel controls both server-rendered board headers. */
+.community-board .board-header { padding-top: 6.5rem; padding-bottom: 1.5rem; }
+.community-board .board-header-back { display: none; }
+.community-board:has([data-board-browse]) .board-header { padding-top: 5.25rem; padding-bottom: 1.75rem; }
+.community-board:has([data-board-browse]) .board-header-overview { display: none; }
+.community-board:has([data-board-browse]) .board-header-back { display: flex; }
+.community-board :is(button, a, input):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }

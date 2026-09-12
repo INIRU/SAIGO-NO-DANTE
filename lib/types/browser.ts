@@ -10,6 +10,7 @@ export type IdentityBrowserItem = {
   name: string
   name_kr: string
   rarity: number
+  sin_affinity?: SinType | null
   keywords: string[]
   skill_keyword_list?: string[]
   folder_name: string | null
@@ -36,6 +37,7 @@ export type IdentityBrowserItem = {
 
 /** 서버에서 가공하여 클라이언트로 전달하는 EGO 데이터 */
 export type EGOBrowserItem = {
+  max_construe_level?: number
   id: string
   sinner_id: string
   name: string

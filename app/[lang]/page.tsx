@@ -28,10 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 const HOME_FAQ = [
   {
-    question: '림버스 컴퍼니 리세마라 추천 인격은?',
-    answer: '최애의 관리자 티어표 페이지에서 S+/S/A/B/C/F 등급별 추천 인격을 커뮤니티 투표 기반으로 확인할 수 있습니다. 티어표는 주기적으로 업데이트됩니다.',
-  },
-  {
     question: '림버스 컴퍼니 거울 던전 기프트 조합식은 어디서 볼 수 있나요?',
     answer: '거울 던전 페이지에서 E.G.O 기프트 408종의 키워드별 필터, 등급별 검색, 조합 레시피를 확인할 수 있습니다. 테마팩별 전용 기프트도 확인 가능합니다.',
   },

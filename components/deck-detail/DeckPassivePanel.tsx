@@ -1,11 +1,8 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import PlannerPassivePanel, {
-  type PlannerPassiveIdentitySlot,
-  type PlannerPassiveLike,
-  type PlannerPassiveSinnerLike,
-} from '@/components/planner/PlannerPassivePanel'
+import PlannerPassivePanel from '@/components/passive/PassivePanel'
+import type { PlannerPassiveIdentitySlot, PlannerPassiveLike, PlannerPassiveSinnerLike } from '@/lib/planner/passives'
 import type { IdentitySlot, PassiveDetail } from '@/components/deck-detail/DeckIdentityCard'
 
 function dedupePassives(identityId: string, passives: PassiveDetail[]): PlannerPassiveLike[] {

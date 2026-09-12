@@ -1,8 +1,9 @@
 'use client'
 
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import Image from 'next/image'
 import type { SanityCondition, PanicType } from '@/lib/types'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface IdentitySanitySectionProps {
@@ -10,10 +11,10 @@ interface IdentitySanitySectionProps {
   panicInfo?: PanicType | null
 }
 
-const BRAIN_URL = `${STORAGE_BASE}/icons/stats/panic.webp`
-const BRAIN_LOVE_HATE_URL = `${STORAGE_BASE}/icons/stats/panic_love_hate.webp`
-const SANITY_INCREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_increase_bg.webp`
-const SANITY_DECREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_decrease_bg.webp`
+const BRAIN_URL = getGameUiAsset('sanity/9999')
+const BRAIN_LOVE_HATE_URL = getGameUiAsset('sanity/9994')
+const SANITY_INCREASE_BG = getGameUiAsset('sanity/increase')
+const SANITY_DECREASE_BG = getGameUiAsset('sanity/decrease')
 
 /** Parse <color=X>text</color> tags and strip <size> tags. */
 function parseMarkupTags(text: string): React.ReactNode[] {
@@ -114,9 +115,9 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
   const increaseConditions = sanityConditions.filter(c => c.condition_type === 'increase')
   const decreaseConditions = sanityConditions.filter(c => c.condition_type === 'decrease')
 
-  // Use KR name for image check (ID 9994 is always '사랑과 증오' in DB)
+  // Original panic ID selects the image independently of localized text.
   const panicImageUrl =
-    panicInfo?.name === '사랑과 증오' ? BRAIN_LOVE_HATE_URL : BRAIN_URL
+    panicInfo?.id === 9994 ? BRAIN_LOVE_HATE_URL : BRAIN_URL
 
   return (
     <div className="card p-6">
@@ -157,9 +158,9 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
                   width={88}
                   height={88}
                   style={{
-                    width: 'auto',
-                    height: 'auto',
-                    filter: 'drop-shadow(0 0 8px rgba(200,60,60,0.5))',
+                    width: '5.5rem',
+                    height: '5.5rem',
+                    objectFit: 'contain',
                   }}
                 />
               </div>

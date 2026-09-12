@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, useReducedMotion } from 'motion/react'
+import { Children } from 'react'
 import type { HTMLMotionProps } from 'motion/react'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 
@@ -49,7 +50,9 @@ export default function StaggerReveal({
 }: StaggerRevealProps) {
   const Tag = motion[as] as typeof motion.div
   const shouldReduceMotion = useReducedMotion()
-  const containerVariant = staggerContainer(staggerDelay, delayChildren)
+  // Large catalogs should settle as promptly as a small row of cards.
+  const interval = Math.min(staggerDelay, 0.24 / Math.max(1, Children.count(children) - 1))
+  const containerVariant = staggerContainer(interval, Math.min(delayChildren, 0.2))
 
   return (
     <Tag

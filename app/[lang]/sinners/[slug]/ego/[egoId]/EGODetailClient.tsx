@@ -11,6 +11,8 @@ import {
   getSinIconUrl,
   SIN_ORDER,
 } from '@/lib/data/sinners'
+import EgoStageTabs from '@/components/ego/EgoStageTabs'
+import { egoStages, egoSkillsAtStage, egoPassiveAtStage } from '@/lib/ego/stages'
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { getGiftKeywordColor } from '@/lib/constants/gift'
@@ -297,8 +299,15 @@ interface Props {
 }
 
 export default function EGODetailClient({ sinner, ego }: Props) {
-  const [skillLevel, setSkillLevel] = useState<3 | 4>(4)
-  const [corSkillLevel, setCorSkillLevel] = useState<3 | 4>(4)
+  const normalSkillList = ego.ego_skills ?? []
+  const corSkillList = ego.ego_cor_skills ?? []
+  const normalStages = egoStages(normalSkillList)
+  const corrosionStages = egoStages(corSkillList)
+  const [normalSelection, setSkillLevel] = useState(() => normalStages.at(-1) ?? 1)
+  const [corrosionSelection, setCorSkillLevel] = useState(() => corrosionStages.at(-1) ?? 1)
+  const skillLevel = normalStages.includes(normalSelection) ? normalSelection : normalStages.at(-1) ?? 1
+  const corSkillLevel = corrosionStages.includes(corrosionSelection) ? corrosionSelection : corrosionStages.at(-1) ?? 1
+  const passive = egoPassiveAtStage(ego, skillLevel)
   const keywordData = useKeywords()
   const t = useTranslations()
   const locale = useLocale()
@@ -309,9 +318,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
-  // ego_skills가 단일 객체(JSONB)인 경우 배열로 정규화
-  const normalSkillList = Array.isArray(ego.ego_skills) ? ego.ego_skills : ego.ego_skills ? [ego.ego_skills] : []
-  const corSkillList = Array.isArray(ego.ego_cor_skills) ? ego.ego_cor_skills : ego.ego_cor_skills ? [ego.ego_cor_skills] : []
   const hasCor = corSkillList.length > 0
 
   // EGO 아이콘 URL 계산
@@ -333,20 +339,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   )
   const sinnerLocalName = getLocalizedName(sinner, lang)
 
-  // 이름별 그룹화 후 선택된 해석 레벨 스킬 추출
-  function pickByLevel(list: EGOSkill[], level: 3 | 4): EGOSkill[] {
-    const groups: Record<string, EGOSkill[]> = {}
-    for (const s of list) {
-      if (!groups[s.name]) groups[s.name] = []
-      groups[s.name].push(s)
-    }
-    return Object.values(groups).map(
-      group => group.find(s => s.construeLevel === level) ?? group[0]
-    )
-  }
-
-  const currentSkills = pickByLevel(normalSkillList, skillLevel)
-  const currentCorSkills = pickByLevel(corSkillList, corSkillLevel)
+  const currentSkills = egoSkillsAtStage(normalSkillList, skillLevel)
+  const currentCorSkills = egoSkillsAtStage(corSkillList, corSkillLevel)
 
   useEffect(() => {
     let controls: Array<{ stop: () => void }> = []
@@ -536,7 +530,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
           >
 
             {/* 패시브 */}
-            {(ego.passive_name || ego.passive_name_en || ego.passive_name_jp) && (
+            {(passive.passive_name || passive.passive_name_en || passive.passive_name_jp) && (
               <motion.div className="card p-6" variants={shouldReduceMotion ? undefined : workbenchStaggerItem} style={{
                 background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
                 border: `0.0625rem solid ${sinColor}18`,
@@ -573,19 +567,19 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                           paddingRight: '3.5em',
                           color: '#e8dcc8',
                         }} suppressHydrationWarning>
-                          {lang === 'en' && ego.passive_name_en ? ego.passive_name_en
-                            : lang === 'ja' && ego.passive_name_jp ? ego.passive_name_jp
-                            : ego.passive_name}
+                          {lang === 'en' && passive.passive_name_en ? passive.passive_name_en
+                            : lang === 'ja' && passive.passive_name_jp ? passive.passive_name_jp
+                            : passive.passive_name}
                         </span>
                       </div>
                     </div>
                   </div>
-                  {(ego.passive_content || ego.passive_content_en || ego.passive_content_jp) && (
+                  {(passive.passive_content || passive.passive_content_en || passive.passive_content_jp) && (
                     <SkillDescription
                       description={
-                        lang === 'en' && ego.passive_content_en ? ego.passive_content_en
-                          : lang === 'ja' && ego.passive_content_jp ? ego.passive_content_jp
-                          : ego.passive_content ?? ''
+                        lang === 'en' && passive.passive_content_en ? passive.passive_content_en
+                          : lang === 'ja' && passive.passive_content_jp ? passive.passive_content_jp
+                          : passive.passive_content ?? ''
                       }
                       accentColor={sinColor}
                       variant="detail"
@@ -605,23 +599,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               }}>
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>{t('ego.egoSkill')}</h2>
-                  {/* 3해석 / 4해석 */}
-                  <div className="flex rounded overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-                    {([3, 4] as const).map(lv => (
-                      <button
-                        key={lv}
-                        onClick={() => setSkillLevel(lv)}
-                        className="px-3 py-1.5 text-xs font-semibold transition-all"
-                        style={{
-                          background: skillLevel === lv ? `${sinColor}20` : 'transparent',
-                          color: skillLevel === lv ? sinColor : '#444',
-                          borderRight: lv === 3 ? '1px solid var(--border)' : undefined,
-                        }}
-                      >
-                        {lv} {t('ego.construeLevel')}
-                      </button>
-                    ))}
-                  </div>
+                  <EgoStageTabs levels={normalStages} value={skillLevel} onChange={setSkillLevel}
+                    label={t('ego.construeLevel')} color={sinColor} />
                 </div>
                 {currentSkills.length > 0 ? (
                   <motion.div
@@ -679,23 +658,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                   }}>
                     ▌ {t('ego.corrosionSection')}
                   </span>
-                  {/* 3해석 / 4해석 */}
-                  <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(180,20,20,0.4)' }}>
-                    {([3, 4] as const).map(lv => (
-                      <button
-                        key={lv}
-                        onClick={() => setCorSkillLevel(lv)}
-                        className="px-3 py-1.5 text-xs font-semibold transition-all"
-                        style={{
-                          background: corSkillLevel === lv ? 'rgba(180,20,20,0.3)' : 'transparent',
-                          color: corSkillLevel === lv ? '#dd4444' : 'rgba(180,60,60,0.4)',
-                          borderRight: lv === 3 ? '1px solid rgba(180,20,20,0.4)' : undefined,
-                        }}
-                      >
-                        {lv} {t('ego.construeLevel')}
-                      </button>
-                    ))}
-                  </div>
+                  <EgoStageTabs levels={corrosionStages} value={corSkillLevel} onChange={setCorSkillLevel}
+                    label={t('ego.construeLevel')} color="#dd4444" corrosion />
                 </div>
 
                 {/* 침식 스킬 */}

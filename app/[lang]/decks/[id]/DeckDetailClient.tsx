@@ -11,7 +11,7 @@ import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide
 import { showSuccess, showError } from '@/lib/toast'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
-import { getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { getIdentityPortraitUrl, getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
 import {
   computeAllGiftAffiliationCounts,
@@ -101,6 +101,7 @@ type DeckDetail = {
   deck_code?: string
   is_owner?: boolean
   is_admin?: boolean
+  user_id: string
   profiles: { username: string } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
@@ -364,7 +365,7 @@ function buildNoteLookups(
     const sinnerTokenNames = uniqueNames(koreanSinnerName, localizedSinnerName)
     const identityName = localizeIdentityName(id_, locale)
     const identityImageUrl = id_.game_id && id_.folder_name
-      ? `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${id_.folder_name}/${id_.game_id}_normal_info.webp`
+      ? getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
       : undefined
 
     const identityEntry: NoteIdentityEntry = {
@@ -946,7 +947,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           {/* 왼쪽: 작성자 · 날짜 · 조회수 */}
           <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
             {deck.profiles?.username && (
-              <span style={{ color: 'var(--text-secondary)' }}>{deck.profiles.username}</span>
+              <Link href={`/users/${deck.user_id}`} className="text-[var(--text-secondary)] hover:text-[var(--gold)] hover:underline">{deck.profiles.username}</Link>
             )}
             {deck.profiles?.username && <span style={{ fontFamily: 'sans-serif' }}>·</span>}
             <span suppressHydrationWarning>{date}</span>
@@ -1075,6 +1076,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                     {t('boardHint')}
                   </p>
                 </motion.section>
+
 
                 {/* 덱 노트 */}
                 {deck.description?.trim() && (

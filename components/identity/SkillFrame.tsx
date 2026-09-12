@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { getSkillFrameOuterUrl, getSkillFrameInnerUrl } from '@/lib/utils/images'
+import { getSkillFrameInnerUrl } from '@/lib/utils/images'
 
 interface SkillFrameProps {
   skillIconUrl: string
   skillIconFallback?: string
   sin: string
-  /** 1 | 2 | 3 */
+  /** 1 | 2 | 3 | 4 (defense) */
   skillSlot: number
   sinColor: string
   label: string
@@ -36,7 +36,6 @@ export default function SkillFrame({
     setIconFailed(false)
   }
 
-  const outerUrl = getSkillFrameOuterUrl(sin, skillSlot)
   const innerUrl = getSkillFrameInnerUrl(sin, skillSlot)
 
   return (
@@ -44,17 +43,13 @@ export default function SkillFrame({
       className="relative shrink-0"
       style={{ width: size, height: size }}
     >
-      {/* Layer 1: outer glow */}
       <Image
-        src={outerUrl}
-        alt=""
-        width={128}
-        height={128}
+        src={getSkillFrameInnerUrl(sin, skillSlot, 'base')}
+        alt="" width={128} height={128}
         className="absolute inset-0 pointer-events-none"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
-
-      {/* Layer 2: skill icon (center, octagonal clip) */}
+      {/* Skill icon remains centered inside the original atlas cell. */}
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
@@ -95,7 +90,7 @@ export default function SkillFrame({
         </div>
       </div>
 
-      {/* Layer 3: inner frame border */}
+      {/* Original frame shading and transparent edges, tinted to the sin. */}
       <Image
         src={innerUrl}
         alt=""

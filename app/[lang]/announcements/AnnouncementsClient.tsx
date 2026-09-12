@@ -1,214 +1,40 @@
 'use client'
-
-import { useEffect, useState } from 'react'
-import { Loader2, Pin, ChevronDown } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+import { Loader2, Pin, ArrowLeft, Megaphone } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useLocale } from 'next-intl'
-import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
-
-interface Announcement {
-  id: string
-  title: string
-  content: string
-  pinned: boolean
-  created_at: string
-}
-
+import AnnouncementBody from '@/components/announcements/AnnouncementBody'
+import type { RichNode } from '@/lib/announcements'
+interface Announcement { content_doc?: RichNode | null; id: string; title: string; content: string; pinned: boolean; created_at: string }
 export default function AnnouncementsClient() {
-  const locale = useLocale()
-  const shouldReduceMotion = useReducedMotion()
-  const [items, setItems] = useState<Announcement[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-
+  const locale = useLocale(), reduced = useReducedMotion()
+  const label = (ko:string, ja:string, en:string) => locale === 'ko' ? ko : locale === 'ja' ? ja : en
+  const [items,setItems] = useState<Announcement[]>([])
+  const [loading,setLoading] = useState(true), [error,setError] = useState(false)
+  const [selected,setSelected] = useState<string | null>(null)
+  const article = useRef<HTMLElement>(null)
   function load() {
-    setError(false)
-    setLoading(true)
-    fetch(`/api/announcements?lang=${encodeURIComponent(locale)}`)
-      .then(r => r.json())
-      .then(res => setItems(res.data ?? []))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+    setLoading(true); setError(false)
+    fetch(`/api/announcements?lang=${encodeURIComponent(locale)}`).then(r => {if (!r.ok) throw Error(); return r.json()}).then(r => setItems(r.data ?? [])).catch(() => setError(true)).finally(() => setLoading(false))
   }
-
   useEffect(() => { load() }, [locale])
-
-  const copy = locale === 'en'
-    ? {
-        loading: 'Loading…',
-        loadError: 'Failed to load announcements.',
-        retry: 'Retry',
-        empty: 'No announcements yet.',
-      }
-    : locale === 'ja'
-      ? {
-          loading: '読み込み中…',
-          loadError: 'お知らせの読み込みに失敗しました。',
-          retry: '再試行',
-          empty: '登録されたお知らせはありません。',
-        }
-      : {
-          loading: '로딩 중…',
-          loadError: '공지사항을 불러오는 데 실패했습니다.',
-          retry: '다시 시도',
-          empty: '등록된 공지가 없습니다.',
-        }
-
-  if (loading) {
-    return (
-      <motion.div
-        className="flex items-center gap-2"
-        style={{ color: '#888888', fontSize: '0.8125rem' }}
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-      >
-        <Loader2 size={14} className="animate-spin" /> {copy.loading}
-      </motion.div>
-    )
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        className="card"
-        style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-      >
-        <p style={{ color: '#aa6644', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
-          {copy.loadError}
-        </p>
-        <motion.button
-          onClick={load}
-          whileHover={shouldReduceMotion ? undefined : { y: -1 }}
-          whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-          transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
-          style={{
-            padding: '0.4375rem 1rem',
-            borderRadius: '0.25rem',
-            border: '1px solid var(--gold-dim)',
-            background: 'rgba(200,144,10,0.1)',
-            color: 'var(--gold)',
-            fontSize: '0.8125rem',
-            cursor: 'pointer',
-          }}
-        >
-          {copy.retry}
-        </motion.button>
-      </motion.div>
-    )
-  }
-
-  if (items.length === 0) {
-    return (
-      <motion.div
-        className="card"
-        style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: '#888888', fontSize: '0.8125rem' }}
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-      >
-        {copy.empty}
-      </motion.div>
-    )
-  }
-
-  return (
-    <motion.div
-      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-      initial={shouldReduceMotion ? false : 'initial'}
-      whileInView={shouldReduceMotion ? undefined : 'animate'}
-      viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
-      variants={shouldReduceMotion ? undefined : staggerContainer(0.045, 0.08)}
-    >
-      {items.map(item => {
-        const isExpanded = expandedId === item.id
-        return (
-          <motion.div
-            key={item.id}
-            className="card"
-            variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-            style={{
-              overflow: 'hidden',
-              border: item.pinned ? '1px solid rgba(200,144,10,0.3)' : undefined,
-            }}
-          >
-            {/* 헤더 행 */}
-            <motion.button
-              type="button"
-              onClick={() => setExpandedId(isExpanded ? null : item.id)}
-              aria-expanded={isExpanded}
-              whileHover={shouldReduceMotion ? undefined : { y: -1 }}
-              whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                gap: '0.625rem',
-                padding: '0.875rem 1.125rem',
-                background: 'transparent',
-                border: 0,
-                cursor: 'pointer',
-                userSelect: 'none',
-                textAlign: 'left',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,144,10,0.03)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              {item.pinned && (
-                <Pin size={12} style={{ color: '#c8900a', flexShrink: 0, transform: 'rotate(45deg)' }} />
-              )}
-              <span
-                className="font-serif font-light"
-                style={{ color: item.pinned ? 'var(--gold-light)' : '#c8a450', fontSize: '0.875rem', flex: 1, minWidth: 0 }}
-              >
-                {item.title}
-              </span>
-              <span className="font-mono" style={{ color: '#7a6845', fontSize: '0.625rem', flexShrink: 0 }}>
-                {item.created_at.slice(0, 10).replace(/-/g, '.')}
-              </span>
-              <ChevronDown
-                size={14}
-                style={{
-                  color: '#8a6010',
-                  flexShrink: 0,
-                  transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.25s ease',
-                }}
-              />
-            </motion.button>
-
-            {/* 본문 */}
-            <AnimatePresence initial={false}>
-              {isExpanded && item.content && (
-                <motion.div
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                  transition={{ duration: 0.16, ease: [0.33, 1, 0.68, 1] }}
-                  style={{
-                    padding: '0 1.125rem 1rem 1.125rem',
-                    marginLeft: item.pinned ? '1.375rem' : 0,
-                    color: '#7a6845',
-                    fontSize: '0.8125rem',
-                    lineHeight: 1.8,
-                    borderTop: '1px solid rgba(200,144,10,0.08)',
-                    paddingTop: '0.875rem',
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {item.content}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )
-      })}
-    </motion.div>
-  )
+  if (loading) return <p role="status" className="flex items-center gap-2 py-8 text-sm text-[var(--text-muted)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" />{label('불러오는 중…','読み込み中…','Loading…')}</p>
+  if (error) return <div role="alert" className="py-8 text-sm"><p>{label('공지를 불러오지 못했습니다.','お知らせを読み込めません。','Could not load announcements.')}</p><button className="mt-3 min-h-11 text-[var(--gold)]" onClick={load}>{label('다시 시도','再試行','Retry')}</button></div>
+  if (!items.length) return <div className="flex flex-col items-center gap-4 py-16 text-[var(--text-muted)]"><Megaphone size={28} /><p>{label('등록된 공지가 없습니다.','お知らせはありません。','No announcements yet.')}</p></div>
+  const current = items.find(i => i.id === selected)
+  return <div className="grid items-start gap-8 md:grid-cols-[18rem_minmax(0,1fr)]">
+    <nav aria-label={label('공지 목록','お知らせ一覧','Announcements')} className={`space-y-2 ${current ? 'hidden md:block' : ''}`}>
+      {items.map(item => <button key={item.id} aria-current={current?.id === item.id ? 'true' : undefined} onClick={() => {setSelected(item.id);requestAnimationFrame(()=>article.current?.focus())}} className={`flex w-full items-start gap-3 rounded-md p-4 text-left transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${current?.id === item.id ? 'bg-[var(--gold)]/10' : ''}`}>
+        {item.pinned && <Pin size={16} className="mt-1 shrink-0 text-[var(--gold)]" aria-label={label('고정 공지','固定','Pinned')} />}
+        <span className="min-w-0"><span className="block break-words font-[family-name:var(--font-paperlogy)] text-sm font-bold leading-relaxed text-[var(--text-primary)]">{item.title}</span><time className="mt-1 block text-xs text-[var(--text-muted)]">{item.created_at.slice(0,10).replaceAll('-','.')}</time></span>
+      </button>)}
+    </nav>
+    {current ? <motion.article key={current.id} ref={article} tabIndex={-1} initial={reduced ? false : {opacity:0,y:5}} animate={{opacity:1,y:0}} transition={{duration:.2}} className="min-w-0 outline-none">
+      <p className="mb-2 text-xs text-[var(--gold)]">{label('공지','お知らせ','Notice')}</p>
+      <h2 className="break-words font-[family-name:var(--font-paperlogy)] text-xl font-bold leading-snug tracking-[-0.02em]">{current.title}</h2>
+      <time className="mt-3 block text-xs text-[var(--text-muted)]">{current.created_at.slice(0,10).replaceAll('-','.')}</time>
+      <div className="my-8 text-sm leading-8 text-[var(--text-secondary)]"><AnnouncementBody doc={current.content_doc} text={current.content} /></div>
+      <button className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/[0.04] px-4 text-sm focus-visible:outline-2 focus-visible:outline-[var(--gold)]" onClick={()=>{setSelected(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('[data-announcements] nav button')?.focus())}}><ArrowLeft size={16}/>{label('목록으로','一覧へ','Back to list')}</button>
+    </motion.article> : <div className="hidden rounded-lg bg-[var(--bg-panel)] px-8 py-14 text-center text-sm text-[var(--text-muted)] md:block">{label('읽을 공지를 선택해주세요.','お知らせを選択してください。','Select an announcement to read.')}</div>}
+  </div>
 }

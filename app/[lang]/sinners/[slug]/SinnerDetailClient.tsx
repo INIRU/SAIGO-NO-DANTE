@@ -6,7 +6,9 @@ import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
 import { useRouter, usePathname } from '@/lib/i18n/navigation'
 import Image from 'next/image'
-import { Search, X } from 'lucide-react'
+import KeywordIcon from '@/components/ui/KeywordIcon'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
+import { Search, X, ArrowLeft } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
@@ -19,6 +21,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 import { getLocalizedAffiliations } from '@/lib/i18n/localize'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import styles from '@/styles/components/SinnerDetail.module.css'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 
 interface Props {
@@ -372,7 +375,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   return (
-    <div className="min-h-[100dvh] pt-[4.75rem] sm:pt-24 pb-16 relative">
+    <div className={`${styles.page} min-h-[100dvh] pt-[4.75rem] sm:pt-24 pb-16 relative`}>
       {/* 배경 글로우 */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
         <div style={{
@@ -385,17 +388,17 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           background: 'radial-gradient(circle, rgba(200,144,10,0.03) 0%, transparent 60%)',
         }} />
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative" style={{ zIndex: 1 }}>
+      <div className="max-w-[90rem] mx-auto px-5 sm:px-8 relative" style={{ zIndex: 1 }}>
         {/* 브레드크럼 */}
         <div className="mb-2 sm:mb-8 flex items-center gap-2 text-xs sm:text-sm" style={{ color: '#888888' }}>
-          <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
-            {t('sinners.title')}
+          <Link href="/sinners" className="inline-flex min-h-11 items-center gap-2 hover:text-yellow-300 transition-colors">
+            <ArrowLeft size={16} aria-hidden />{t('sinners.title')}
           </Link>
           <span style={{ color: '#333344' }}>&rsaquo;</span>
           <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)] gap-3 sm:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)] gap-5 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <motion.div
             className="lg:sticky lg:top-24 lg:self-start"
@@ -410,10 +413,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
               borderRadius: '0.375rem',
               boxShadow: '0 0.75rem 2rem rgba(0,0,0,0.28)',
             }}>
-              <div className="flex gap-3 sm:block">
+              <div className="flex gap-4 lg:block">
               {/* 프로필 이미지 */}
               <div
-                className="relative w-16 sm:w-full rounded-md sm:rounded-lg mb-0 sm:mb-6 overflow-hidden flex-shrink-0"
+                className="relative w-16 sm:w-24 lg:w-full rounded-md sm:rounded-lg mb-0 lg:mb-6 overflow-hidden flex-shrink-0"
                 style={{ aspectRatio: '3/4', background: 'var(--bg-elevated)' }}
               >
                 {getSinnerProfileUrl(sinner.id) ? (
@@ -421,7 +424,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     src={getSinnerProfileUrl(sinner.id)}
                     alt={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                     fill
-                    sizes="(max-width: 640px) 4rem, 20rem"
+                    sizes="(max-width: 639px) 4rem, (max-width: 1023px) 6rem, 16rem"
                     quality={90}
                     placeholder="blur"
                     blurDataURL={getBlurDataURL(getSinnerProfileUrl(sinner.id)) ?? BLUR_PLACEHOLDER}
@@ -451,8 +454,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                  
                   className="w-6 h-6 sm:w-10 sm:h-10"
                   style={{
-                    width: 'auto',
-                    height: 'auto',
                     filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
                     opacity: 0.9,
                   }}
@@ -462,7 +463,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     className="font-serif text-lg sm:text-[clamp(1.5rem,22cqw,1.875rem)] font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
                     style={{
                       color: 'var(--gold)',
-                      fontFamily: 'var(--font-heading)',
+                      fontFamily: 'var(--font-paperlogy), sans-serif',
                     }}
                   >
                     {getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
@@ -518,7 +519,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           >
             {/* 탭 */}
             <div
-              className="flex gap-0 mb-2 sm:mb-4 overflow-hidden"
+              className={`${styles.tabs} flex gap-0 mb-4 sm:mb-5 overflow-hidden`}
               style={{
                 border: '0.0625rem solid var(--border)',
                 borderRadius: '0.375rem',
@@ -573,7 +574,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     border: '1px solid var(--border)',
                     color: '#ccc',
                     outline: 'none',
-                    minHeight: '2.375rem',
+                    minHeight: '3rem',
                   }}
                   onFocus={() => { if (searchQuery.trim()) setShowAutocomplete(true) }}
                   onKeyDown={handleSearchKeyDown}
@@ -629,8 +630,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 }}
                               >
                                 {iconSlug && (
-                                  <Image
-                                    src={`${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`}
+                                  <KeywordIcon
+                                    src={getKeywordIconUrl(kw, iconSlug)!}
                                     alt="" width={14} height={14} unoptimized
                                     style={{ width: '0.875rem', height: '0.875rem' }}
                                   />
@@ -724,14 +725,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
               >
                 {/* 필터 바 */}
                 <div
-                  className="mb-3 sm:mb-4 lg:mb-3 p-2 sm:p-2.5 lg:px-2.5 lg:py-1.5 rounded-md"
-                  style={{
-                    background: 'rgba(10,8,6,0.38)',
-                    border: '1px solid rgba(200,144,10,0.12)',
-                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.02)',
-                  }}
+                  className={styles.filters}
                 >
-                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2">
+                  <div className="flex flex-wrap items-center gap-3">
                   {/* 등급 필터 */}
                   <div
                     className="grid grid-cols-4 rounded overflow-hidden lg:flex-none"
@@ -754,7 +750,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                           type="button"
                           key={label}
                           onClick={() => setRarityFilter(value)}
-                          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] min-w-[3.25rem] lg:min-w-[3rem]"
+                          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 text-xs font-medium transition-all duration-200 min-h-11 min-w-[3.25rem] lg:min-w-[3rem]"
                           style={{
                             background: isActive ? `${borderColor}20` : 'transparent',
                             borderRight: index === items.length - 1 ? '0' : '1px solid var(--border)',
@@ -784,10 +780,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     })}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:min-w-0 lg:flex-none lg:flex-nowrap lg:gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2 lg:min-w-0 lg:flex-none lg:flex-nowrap lg:gap-1.5">
                     {/* 보유 필터 드롭다운 */}
                     {ownedIds !== null && (
-                      <div className="min-w-0 sm:min-w-[7rem] lg:w-[7rem] lg:min-w-[7rem] [&>div]:w-full [&>div>button]:w-full [&>div>button]:min-h-[2.25rem] lg:[&>div>button]:min-h-[2rem] [&>div>button]:justify-between lg:[&>div>button]:px-2">
+                      <div className="min-w-0 sm:min-w-[7rem] lg:w-[7rem] lg:min-w-[7rem] [&>div]:w-full [&>div>button]:w-full [&>div>button]:min-h-11 [&>div>button]:justify-between lg:[&>div>button]:px-2">
                       <Dropdown
                         value={ownershipFilter}
                         defaultValue="all"
@@ -806,7 +802,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     <button
                       type="button"
                       onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
-                      className="flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
+                      className="flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-11 sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
                       style={{
                         background: 'rgba(200,164,90,0.08)',
                         border: '1px solid var(--border)',
@@ -827,7 +823,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   <button
                     type="button"
                     onClick={() => setGacksung(!gacksung)}
-                    className="flex min-w-0 items-center justify-center gap-2 px-3 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-[2.25rem] lg:min-h-[2rem] sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
+                    className="flex min-w-0 items-center justify-center gap-2 px-3 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-11 sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
                     style={{
                       background: gacksung ? 'rgba(255,107,107,0.15)' : 'rgba(200,164,90,0.1)',
                       border: `1px solid ${gacksung ? 'rgba(255,107,107,0.4)' : 'var(--border)'}`,
@@ -852,7 +848,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noIdentities')}
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className="grid grid-cols-[repeat(3,minmax(0,1fr))] sm:grid-cols-[repeat(4,minmax(0,1fr))] md:grid-cols-[repeat(5,minmax(0,1fr))] xl:grid-cols-[repeat(6,minmax(0,1fr))] gap-x-1.5 gap-y-4 sm:gap-x-3 sm:gap-y-5" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className={styles.identityGrid} staggerDelay={0.05}>
                     {filteredIdentities.map((identity) => (
                       <motion.div
                         key={identity.id}

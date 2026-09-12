@@ -1,0 +1,60 @@
+.announcement-body {
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.announcement-body p {
+  margin: 0.75rem 0;
+}
+.announcement-body h2,
+.announcement-body h3 {
+  color: var(--gold-light);
+  font-family: var(--font-heading);
+  margin: 1.75rem 0 0.75rem;
+  line-height: 1.4;
+}
+.announcement-body h2 {
+  font-size: 1.5rem;
+}
+.announcement-body h3 {
+  font-size: 1.2rem;
+}
+.announcement-body ul,
+.announcement-body ol {
+  padding-left: 1.6rem;
+  margin: 1rem 0;
+}
+.announcement-body ul {
+  list-style: disc;
+}
+.announcement-body ol {
+  list-style: decimal;
+}
+.announcement-body blockquote {
+  border-left: 0.2rem solid var(--gold);
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-card);
+  margin: 1rem 0;
+}
+.announcement-body a {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+.announcement-body img {
+  max-width: 100%;
+  height: auto;
+  max-height: 38rem;
+  object-fit: contain;
+  margin: 1.5rem auto;
+  border-radius: 0.3rem;
+}
+.announcement-body hr {
+  border-color: var(--border);
+  margin: 1.5rem 0;
+}
+.announcement-body code {
+  background: var(--bg-deep);
+  padding: 0.1rem 0.3rem;
+}

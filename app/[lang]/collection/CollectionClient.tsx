@@ -1,13 +1,14 @@
 'use client'
 
-import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
+import { Suspense, useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
+import { useCollectionModel } from '@/components/collection/useCollectionModel'
 import { useSearchParams } from 'next/navigation'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { Check, CheckSquare, Square } from 'lucide-react'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
@@ -30,8 +31,7 @@ const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
 
 function identityInfoUrl(identity: IdentityInfo): string {
   if (!identity.game_id || !identity.folder_name) return ''
-  const folder = encodeURIComponent(identity.folder_name)
-  return `${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${folder}/${identity.game_id}_normal_info.webp`
+  return getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, false)
 }
 
 function sinnerLogoUrl(sinnerId: string): string {
@@ -311,7 +311,6 @@ function CollectionViewer({ data }: { data: CollectionData }) {
   const [keywordFilter, setKeywordFilter] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'sinner' | 'all'>('sinner')
   const [showUnowned, setShowUnowned] = useState(true)
-  const { sinMap: kwSinMap } = useKeywordData()
 
   // Decode ?code URL param into owned Set — client-only because it reads searchParams
   useEffect(() => {
@@ -321,36 +320,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
       .catch(() => {/* ignore malformed codes */})
   }, [code, data])
 
-  const stats = useMemo(() => {
-    let totalIdentities = 0, ownedIdentities = 0, totalEgos = 0, ownedEgos = 0
-    for (const s of data.sinners) {
-      const ids = data.identities[s.id] ?? []
-      const egoList = data.egos[s.id] ?? []
-      totalIdentities += ids.length
-      totalEgos += egoList.length
-      ownedIdentities += ids.filter(i => owned.has(i.id)).length
-      ownedEgos += egoList.filter(e => owned.has(e.id)).length
-    }
-    return { ownedIdentities, totalIdentities, ownedEgos, totalEgos }
-  }, [data, owned])
-
-  const filterByKeyword = (identities: IdentityInfo[]) => {
-    if (!keywordFilter) return identities
-    const filterSin = kwSinMap[keywordFilter]
-    return identities.filter(i =>
-      i.keywords?.some(kw => {
-        const nkw = normalizeThemeKeyword(kw)
-        return nkw === keywordFilter || kw === keywordFilter || (filterSin && kwSinMap[kw] === filterSin)
-      })
-    )
-  }
-
-  const filterEgoByKeyword = (egoList: EGOInfo[]) => {
-    if (!keywordFilter) return egoList
-    const filterSin = kwSinMap[keywordFilter]
-    if (!filterSin) return egoList
-    return egoList.filter(e => normalizeSin(e.sin_affinity) === filterSin)
-  }
+  const { stats, sinnerCounts, filtered } = useCollectionModel(data, owned, keywordFilter)
 
   if (!code) {
     return (
@@ -374,18 +344,9 @@ function CollectionViewer({ data }: { data: CollectionData }) {
     )
   }
 
-  const sinnerOwnedCount = (sinnerId: string) => {
-    const ids = data.identities[sinnerId] ?? []
-    const egoList = data.egos[sinnerId] ?? []
-    return ids.filter(i => owned.has(i.id)).length + egoList.filter(e => owned.has(e.id)).length
-  }
-  const sinnerTotalCount = (sinnerId: string) => {
-    return (data.identities[sinnerId]?.length ?? 0) + (data.egos[sinnerId]?.length ?? 0)
-  }
-
   // ── 수감자별 모드 데이터 ──
-  const filteredIdentities = filterByKeyword(data.identities[activeSinner] ?? [])
-  const filteredEgos = filterEgoByKeyword(data.egos[activeSinner] ?? [])
+  const filteredIdentities = (filtered.identities[activeSinner] ?? [])
+  const filteredEgos = (filtered.egos[activeSinner] ?? [])
   const currentIdentities = showUnowned ? filteredIdentities : filteredIdentities.filter(i => owned.has(i.id))
   const currentEgos = showUnowned ? filteredEgos : filteredEgos.filter(e => owned.has(e.id))
 
@@ -467,8 +428,8 @@ function CollectionViewer({ data }: { data: CollectionData }) {
             >
               {data.sinners.map(s => {
                 const isActive = s.id === activeSinner
-                const ownCount = sinnerOwnedCount(s.id)
-                const totalCount = sinnerTotalCount(s.id)
+                const ownCount = (sinnerCounts[s.id]?.owned ?? 0)
+                const totalCount = (sinnerCounts[s.id]?.total ?? 0)
                 return (
                   <button
                     key={s.id}
@@ -568,8 +529,8 @@ function CollectionViewer({ data }: { data: CollectionData }) {
             {viewMode === 'all' && (
               <div className="space-y-6">
                 {data.sinners.map(sinner => {
-                  const allIds = filterByKeyword(data.identities[sinner.id] ?? [])
-                  const allEgoList = filterEgoByKeyword(data.egos[sinner.id] ?? [])
+                  const allIds = (filtered.identities[sinner.id] ?? [])
+                  const allEgoList = (filtered.egos[sinner.id] ?? [])
                   const ids = showUnowned ? allIds : allIds.filter(i => owned.has(i.id))
                   const egoList = showUnowned ? allEgoList : allEgoList.filter(e => owned.has(e.id))
                   if (ids.length === 0 && egoList.length === 0) return null

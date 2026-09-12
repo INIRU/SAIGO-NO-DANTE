@@ -46,7 +46,7 @@ function MaintenanceContent() {
   ] as Array<{ label: string; value: string; code?: boolean }>
 
   return (
-    <main className="maintenance-shell">
+    <div className="maintenance-shell">
       <style>{`
         @keyframes panel-enter {
           from { opacity: 0; transform: translateY(0.875rem); }
@@ -468,7 +468,7 @@ function MaintenanceContent() {
           </dl>
         </aside>
       </section>
-    </main>
+    </div>
   )
 }
 
@@ -476,9 +476,9 @@ export default function MaintenancePage() {
   return (
     <Suspense
       fallback={
-        <main className="grid min-h-dvh place-items-center bg-[#0d0b08] text-[#c8900a]">
+        <div className="grid min-h-dvh place-items-center bg-[#0d0b08] text-[#c8900a]">
           <Construction size={32} strokeWidth={1.8} aria-hidden="true" />
-        </main>
+        </div>
       }
     >
       <MaintenanceContent />

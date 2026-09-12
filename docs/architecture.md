@@ -1,331 +1,40 @@
-# 기술 아키텍처
+# 구조
 
-## 기술 스택
+관리자 화면은 공지(`/admin/announcements`)와 문의(`/admin/inquiries`) 두 영역만 제공한다. 이전 유저·덱·게임 데이터·키워드·점검·법률·감사 로그 관리 화면과 전용 API는 제거하고 DB 기록은 보존한다. 커뮤니티 메뉴의 `/support`에서 로그인 사용자가 비공개 문의를 작성하며, 서버가 작성자 ID를 지정하고 조회 범위를 제한한다.
 
-```
-┌─────────────────────────────────────────────────────┐
-│                      Vercel                         │
-│  ┌───────────────────────────────────────────────┐  │
-│  │           Next.js 16 (App Router)             │  │
-│  │  ┌─────────────┐  ┌───────────┐  ┌─────────┐ │  │
-│  │  │   React 19  │  │ Tailwind 4│  │  GSAP   │ │  │
-│  │  │  Zustand    │  │           │  │ Framer  │ │  │
-│  │  │  SWR / nuqs │  │           │  │ Motion  │ │  │
-│  │  └─────────────┘  └───────────┘  └─────────┘ │  │
-│  └───────────────────────────────────────────────┘  │
-│                         │                           │
-│                         ▼                           │
-│  ┌───────────────────────────────────────────────┐  │
-│  │              Supabase (PostgreSQL)            │  │
-│  │         스키마: limbus.* │ Storage: limbus-assets│  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
-```
+공지는 Tiptap 문서 JSON과 평문을 함께 저장한다. 관리자 미리보기, 공개 공지 목록, 메인 공지는 동일한 안전한 본문 렌더러를 사용한다. 임의 HTML을 실행하지 않으며, 이미지 업로드는 관리자 전용 서버에서 WebP로 변환한다.
 
-| 계층 | 기술 | 역할 |
-|------|------|------|
-| 프레임워크 | Next.js 16 (App Router) | SSR/SSG/ISR, 라우팅, API Routes |
-| UI | React 19, Tailwind CSS v4 | 컴포넌트, 스타일링 |
-| 상태 관리 | Zustand, SWR, nuqs | 클라이언트 상태, 데이터 페칭, URL 상태 |
-| 애니메이션 | GSAP, Framer Motion | 페이지 전환, 슬롯머신, 호버 효과 |
-| 3D | Three.js | 히어로 페이지 3D 효과 |
-| 유효성 검사 | Zod v4 | 스키마 기반 데이터 검증 |
-| 데이터베이스 | Supabase (PostgreSQL) | `limbus` 스키마, RLS |
-| 인증 | NextAuth v4 + Google OAuth | 로그인, 세션 관리 |
-| 스토리지 | Supabase Storage | `limbus-assets` 버킷 (이미지) |
-| 모니터링 | Sentry, Vercel Analytics | 에러 트래킹, 사용자 분석 |
-| 배포 | Vercel | 자동 빌드/배포, Edge Network |
-| 테스트 | Vitest, Playwright | 단위 테스트, E2E 테스트 |
+Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에 있고 ko/en/ja를 지원한다.
 
----
+| 영역 | 역할 |
+|---|---|
+| app/[lang] | 서버 조회, 메타데이터, 페이지 조합 |
+| components | 기능별 UI, 재사용 가능한 ui/ primitive |
+| hooks, lib/hooks, lib/stores | 브라우저 상태와 생명주기 |
+| lib/identity, lib/decks, lib/planner, lib/random | 독립 검증 가능한 도메인 로직 |
+| app/api, lib/schemas | 요청·인증·입력 검증 |
+| lib/db, lib/supabase | DB 조회와 권한별 클라이언트 |
+| lib/i18n, messages | 번역과 데이터 이름의 지역화 |
+| scripts/sync, supabase | 동기화와 스키마 이력 |
 
-## 프로젝트 구조
+인격 상세의 경계:
+- IdentityDetailClient: 페이지 탭, 초상화, 각 영역 조합.
+- useIdentitySkillModel: 동기화 단계와 비교 상태, 메모이제이션.
+- lib/identity/skill-model: 단계별 행 선택, 스킬 정렬과 변형 번호.
+- IdentityCombatSection: 스킬/패시브 탭과 동기화 조작.
+- useIdentityGuideData: 기존 운영법 토큰의 한/영/일 별칭과 자동완성.
+- IdentityGuideSection: 사람이 작성한 운영법. AI 생성 경로는 없다.
 
-```
-limbus-archive/
-├── app/                        # App Router 페이지 + API
-│   ├── layout.tsx              # 루트 레이아웃 (Providers, Navbar, Footer)
-│   ├── page.tsx                # 히어로 페이지 (GSAP 애니메이션)
-│   ├── globals.css             # 글로벌 CSS (Tailwind)
-│   ├── sinners/                # 죄수/인격/E.G.O 페이지
-│   ├── mirror-dungeon/         # 거울 던전 백과사전
-│   ├── decks/                  # 덱 빌더 + 상세 + 편집
-│   ├── collection/             # 컬렉션 체크리스트
-│   ├── tier-list/              # 리롤 티어 리스트
-│   ├── extraction/             # 뽑기 시뮬레이터
-│   ├── random/                 # 랜덤 편성
-│   ├── mypage/                 # 마이페이지
-│   ├── admin/                  # 관리자 페이지
-│   ├── login/                  # 로그인
-│   ├── maintenance/            # 점검 페이지
-│   └── api/                    # API Route Handlers
-│       ├── auth/[...nextauth]/ # NextAuth
-│       ├── decks/              # 덱 CRUD + 투표/북마크/댓글
-│       ├── ego-gifts/          # E.G.O 기프트 조회
-│       ├── keyword-meta/       # 키워드 메타 조회
-│       ├── search/             # 글로벌 검색
-│       ├── collection/         # 컬렉션
-│       ├── tier-list/          # 티어 리스트
-│       ├── meta/               # 사용 통계
-│       └── admin/              # 관리자 API
-├── components/                 # 재사용 컴포넌트
-│   ├── layout/                 # Navbar (스크롤 숨김), Footer
-│   ├── ui/                     # BaseModal, GiftCard, KeywordChip, SearchModal 등
-│   ├── sinners/                # SinnerCard, IdentityCard, KeywordTooltip
-│   ├── decks/                  # DeckCard, NoteChips
-│   ├── random/                 # SlotMachine, SlotReel, OptionPanel
-│   ├── admin/                  # AdminButton, AdminTable, AdminToast
-│   └── providers/              # SessionProvider, KeywordProvider
-├── lib/                        # 공유 라이브러리
-│   ├── constants/              # 게임 상수 (STORAGE_BASE, SIN_ICON_MAP 등)
-│   ├── utils/                  # 이미지 URL 헬퍼 (images.ts), 공통 유틸
-│   └── supabase/               # Supabase 클라이언트 설정
-├── scripts/                    # 데이터 동기화 스크립트 (최종 2개 tsx)
-├── public/                     # 정적 에셋 (폰트)
-├── proxy.ts                    # 라우트 미들웨어 (점검 리다이렉트, 레이트 리밋)
-├── tailwind.config.ts          # Tailwind 설정
-└── package.json                # 의존성 정의
-```
+재사용은 실제 중복·변경 이유를 기준으로 한다. 거대한 파일은 도메인 계산, 데이터 경계, 상태, 화면으로 나누되 단순 전달 wrapper는 만들지 않는다.
 
----
+공통 컴포넌트와 계산:
+- `components/passive/PassivePanel`, `PassiveEffect`: 덱·플래너·노트가 같은 패시브 UI를 사용하고 panel/note 변형만 구분한다. 조건 계산과 인격별 색인은 `lib/planner/passives`가 담당한다.
+- `components/ui/GiftCard`: 기존 hover 확대·그림자·0.2초 전환을 CSS로 유지하며 hover만으로 React 상태를 갱신하지 않는다.
+- `lib/keywords/catalog`: 카탈로그 객체별 WeakMap에 지역화·별칭·죄악 색인을 공유한다. 원본 객체가 교체되면 새 색인을 만든다.
+- `components/collection/useCollectionModel`: 보유 수 집계와 검색 필터를 분리한다.
 
-## 데이터 플로우
+메타분석은 `lib/meta/aggregate`의 순수 집계를 서버 페이지와 `/api/meta/usage`가 공유한다. 공개 덱과 `md_plans`의 편성을 30일/90일/전체 기간 및 출처별로 읽는다. 게시물당 같은 비중이며 알려진 전투 인격이 없는 편성은 분모에서 제외한다. 같은 수감자의 중복 인격·같은 EGO·키워드는 편성당 한 번 계산하고, 동시 편성은 전투 슬롯끼리 계산한다. 채용 빈도를 성능/승률로 해석하지 않는다.
 
-```
-게임 클라이언트 JSON ──→ 동기화 스크립트 ──→ Supabase DB ──→ API Routes ──→ Client Components
-        │                     │                   │              │               │
- Json (Text)/*.txt     identity-data.ts      limbus.*      app/api/*     React 19 + SWR
- Json-2/*.json         mirror-dungeon-data.ts 테이블들      Route Handler  Zustand
- kr/en/jp/*.json       로컬라이즈 포함                                   nuqs
-```
+메타 조회는 공개 클라이언트를 사용하고 페이지 제한을 끝까지 읽는다. 오류 시 부분 통계를 반환하지 않는다. `decksList`/`plansList` 태그로 수정·삭제 시 통계를 함께 무효화한다. 클라이언트 SWR은 출처/기간 변경과 오류·재시도를 처리한다. 막대/숫자 애니메이션을 유지하면서 관찰자 2개와 RAF 루프 1개를 공유한다.
 
-### 1단계: 게임 데이터 추출
-
-게임 클라이언트에서 추출한 JSON 파일이 1차 소스이다.
-
-| 소스 경로 | 내용 | 형식 |
-|-----------|------|------|
-| `Json (Text)/*.txt` | 인격 스탯, 스킬 수치, 패시브 배정 | JSON (BOM 포함, `.replace(/^\uFEFF/, '')` 필수) |
-| `Json-2/*.json` | E.G.O, 가챠, 거울 던전 데이터 | JSON |
-| `kr/*.json` | KR 로케일 (이름, 스킬 텍스트, 패시브 텍스트) | JSON |
-
-### 2단계: 동기화 스크립트
-
-```bash
-npx tsx scripts/sync/identity-data.ts --dry-run        # 인격 정보 전체 프리뷰
-npx tsx scripts/sync/identity-data.ts --fix            # 인격 정보 전체 DB 반영
-npx tsx scripts/sync/mirror-dungeon-data.ts --dry-run  # 거던 데이터 전체 프리뷰
-npx tsx scripts/sync/mirror-dungeon-data.ts --fix      # 거던 데이터 전체 DB 반영
-```
-
-| 스크립트 | 용도 |
-|----------|------|
-| `identity-data.ts` | 인격 정보 전체 동기화 (로컬라이즈 포함) |
-| `mirror-dungeon-data.ts` | 거던 데이터 전체 동기화 (로컬라이즈 포함) |
-
-### 3단계: Supabase DB
-
-`limbus` 스키마 내 핵심 테이블:
-
-| 테이블 | 설명 |
-|--------|------|
-| `sinners` | 12명 죄수 기본 정보 |
-| `identities` | 인격 (스탯, 저항, 소속, 키워드) |
-| `skills` | 인격 스킬 (업타이 3/4 별도 행, `variant_order`로 표시 순서 보장) |
-| `passives` | 인격 패시브 (전투/서포터) |
-| `ego` | E.G.O |
-| `ego_skills` | E.G.O 스킬 (각성/침식, 감정해석 3/4) |
-| `keyword_meta` | 키워드 메타 (이름, 설명, 아이콘, 죄 친화도) |
-| `ego_gifts` | E.G.O 기프트 (활성화 조건 JSONB) |
-| `ego_gift_recipes` | 기프트 합성 레시피 |
-| `ego_gift_themes` | 테마팩 (소속/전용 기프트, 보스, 난이도, 층 정보) |
-| `decks` | 유저 덱 |
-| `deck_identities` | 덱-인격 매핑 |
-| `deck_votes` | 덱 투표 |
-| `deck_comments` | 덱 댓글 (대댓글 지원) |
-| `profiles` | 유저 프로필 |
-| `announcements` | 공지사항 |
-| `site_maintenance` | 페이지별 점검 상태 |
-| `panic_types` | 패닉 유형 |
-| `mental_condition_templates` | 정신력 조건 템플릿 |
-| `identity_sanity_conditions` | 인격별 정신력 조건 |
-
-### 4단계: API Routes → 클라이언트
-
-API Route Handler가 Supabase에서 데이터를 조회하여 클라이언트 컴포넌트에 전달한다.
-
----
-
-## 인증
-
-```
-브라우저 ──→ /login ──→ NextAuth (Google OAuth) ──→ 세션 생성
-                                                      │
-                                    SessionProvider (전역 Context)
-                                                      │
-                              API Routes에서 getServerSession()으로 인증 확인
-```
-
-- **NextAuth v4** + Google OAuth Provider
-- `SessionProvider`로 클라이언트 세션 관리
-- 관리자 API: `getServerSession()` + 관리자 역할 확인
-- 감사 로그: 관리자 행동 기록 (`admin/audit-logs`)
-
----
-
-## 스토리지
-
-**Supabase Storage** — `limbus-assets` 버킷
-
-```
-limbus-assets/
-├── icons/
-│   ├── Rarity/          # 등급 별/프레임 아이콘
-│   ├── Sins/            # 7죄 아이콘
-│   ├── stats/           # 공격 유형 아이콘 (참격/관통/타격)
-│   ├── keywords/        # 키워드 아이콘 (200+)
-│   ├── Sinners/         # 죄수 로고 아이콘 (12개)
-│   ├── skills/          # 스킬 아이콘 (죄수별 폴더)
-│   ├── sd/              # SD 스프라이트
-│   └── theme-packs/     # 테마팩 이미지 + 보스 이미지
-├── sinners/
-│   └── {sinnerId}/
-│       ├── identities/  # 인격 일러스트 (normal, gacksung, info, profile)
-│       └── ego/         # E.G.O 이미지
-└── ego-gifts/           # E.G.O 기프트 이미지
-```
-
-이미지 URL은 반드시 `lib/utils/images.ts`의 헬퍼 함수를 사용한다. 하드코딩 금지.
-
----
-
-## 렌더링 전략
-
-### Cache Components (`'use cache'`)
-
-`cacheComponents: true`가 활성화되어 있으며, 서버 페이지에 `'use cache'` + `cacheLife` 적용.
-
-| 프로필 | stale | revalidate | 적용 페이지 |
-|--------|-------|------------|------------|
-| `page-1m` | 60s | 60s | `/decks/[id]` |
-| `page-5m` | 300s | 300s | `/`, `/sinners`, `/sinners/[slug]`, `/decks`, `/keywords`, `/mirror-dungeon`, `/tier-list`, `/announcements` |
-| `page-10m` | 600s | 600s | (예비) |
-| `page-1h` | 3600s | 3600s | `/bot`, `/offline`, `/story/*`, `/extraction`, `/privacy`, `/terms`, `/random` |
-
-### 렌더링 유형
-
-| 전략 | 적용 페이지 | 이유 |
-|------|------------|------|
-| **Cached (use cache)** | `/sinners`, `/story/*`, `/decks`, `/bot` 등 | 정적 데이터, 캐시 프로필로 revalidation |
-| **Dynamic (SSR)** | `/meta`, `/mypage`, `/admin/*`, `/planner` | `cookies()` 사용, 유저별 데이터 |
-| **Client-side** | `/extraction`, `/random`, `/collection` | 클라이언트 전용 인터랙션 |
-| **force-dynamic** | `api/ego-gifts` | 항상 최신 데이터 보장 |
-
-### Server/Client 컴포넌트 분리 원칙
-
-- **기본은 Server Component** — `'use client'` 없이 작성
-- **Client가 필요한 경우만** `'use client'` 추가: `useState`, `useEffect`, `useContext`, 이벤트 핸들러, 브라우저 API
-- **Server Component에서 Client Component를 children으로 렌더링 가능** — 경계를 트리 하단으로 밀어내기
-- 순수 디스플레이 컴포넌트 (`SinBadge`, `KeywordChip`, `GlitchText` 등)는 Server Component로 유지
-
----
-
-## 핵심 패턴
-
-### 스케일 친화적 사이징
-
-텍스트, spacing, layout, 주요 component dimension은 `rem` 또는 design token을 기본으로 둔다. 이 프로젝트는 `FloatingFontControl`로 root font-size를 조절하므로, 사용자가 읽고 조작하는 UI는 가능한 한 폰트 스케일을 따라가야 한다.
-
-```css
-/* 권장: 사용자 font scale을 따라가는 visible UI */
-font-size: 0.875rem;
-padding: 1rem;
-
-/* 허용: 픽셀 정밀도나 브라우저/API 계약이 필요한 세부 표현 */
-border-width: 1px;
-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-```
-
-`px`는 전면 금지가 아니다. hairline border, shadow offset, icon stroke, canvas/image 내부 처리, DOM 측정값, `next/image` intrinsic `width`/`height`, 외부 라이브러리/API 제약처럼 실제 픽셀 단위가 더 정확한 곳에 사용할 수 있다.
-
-피해야 할 것은 visible text/layout 전체를 fixed `px`로 고정해 font-control, 모바일 fit, 접근성 scaling을 무력화하는 것이다. 그런 결정이 필요하면 컴포넌트 근처에 이유를 남기고 browser/mobile에서 확인한다.
-
-### 폰트 런타임
-
-`font-mono`는 `next/font/google`의 `Noto Sans Mono`와 Pretendard/system Korean fallback을 사용한다. 기존 `PerfectDOS`는 로딩/렌더 문제가 있어 폐기했으며, 새 런타임이나 UI에서 다시 등록하지 않는다.
-
-### 다크 테마
-
-기본이자 유일한 테마이다. 밝은 테마는 없다. 모든 컴포넌트는 다크 배경을 전제로 디자인한다.
-
-### GSAP 애니메이션
-
-SSR 환경에서 GSAP를 사용하기 위해 항상 동적 import한다.
-
-```typescript
-// 올바름
-const gsap = (await import('gsap')).default;
-
-// 금지 (SSR 깨짐)
-import gsap from 'gsap';
-```
-
-적용 사례:
-- 히어로 페이지 진입 애니메이션
-- IdentityCard 호버 효과
-- SlotReel 회전 애니메이션
-- 사용 통계 차트 (`/meta`)
-
-### Zod 유효성 검사
-
-API Route와 동기화 스크립트에서 Zod v4 스키마로 입력 데이터를 검증한다.
-
-### z-index 스태킹
-
-- 그리드/카드 컨테이너: `position: relative; z-index: 0` (스태킹 컨텍스트 격리)
-- 모달: `fixed inset-0 z-50`
-- 호버 요소: 부모의 스태킹 컨텍스트 내에서만 동작
-
-### 이미지 URL 헬퍼
-
-```typescript
-// lib/utils/images.ts
-getIdentityImageUrl(sinnerId, folderName, gameId)
-getIdentityProfileUrl(identity)
-getIdentityInfoUrl(identity)
-getEGOImageUrl(sinnerId, folder)
-getSkillIconUrl(identity, idx)
-getSinnerLogoUrl(sinnerId)
-getKeywordIconUrl(keyword)
-getSinIconUrl(sin)
-```
-
-`STORAGE_BASE`는 `lib/constants/game`에서 import한다. 로컬 재정의 금지.
-
-### 이벤트 전파
-
-클릭 가능한 부모 내부의 버튼(X/제거)은 반드시 `e.stopPropagation()`을 호출한다.
-
----
-
-## 미들웨어
-
-`proxy.ts`가 Next.js 라우트 미들웨어 역할을 한다 (`middleware.ts` 아님).
-
-- 페이지별 점검 모드 리다이렉트 (`site_maintenance` 테이블 참조)
-- 레이트 리밋 (`lib/rate-limit.ts`)
-
----
-
-## 글로벌 검색
-
-`SearchModal` (Cmd+K / Ctrl+K)이 `api/search`를 호출하여 인격, E.G.O, 죄수, 키워드, E.G.O 기프트를 통합 검색한다.
-
----
-
-## 컨텍스트 프로바이더
-
-| Provider | 파일 | 역할 |
-|----------|------|------|
-| `SessionProvider` | `components/providers/SessionProvider.tsx` | NextAuth 세션 전역 관리 |
-| `KeywordProvider` | `components/providers/KeywordProvider.tsx` | 키워드 메타 전역 캐시 (KeywordTooltip 등에서 사용) |
+이미지 경로는 lib/utils/images.ts, 스킬 이미지 번호는 computeSkillImageIndices를 재사용한다. DB skill_order를 이미지 파일 번호로 직접 쓰지 않는다.

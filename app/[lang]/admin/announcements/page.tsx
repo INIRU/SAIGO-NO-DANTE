@@ -1,280 +1,404 @@
 'use client'
-
-import { useEffect, useState, useCallback } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2, Pin, Pencil, X, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
+import { Plus, Eye, PenLine, Trash2, Pin } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 import {
-  AdminCard, AdminInput, AdminTextarea, AdminCheckbox, AdminSelect,
-  AdminButton, AdminIconButton,
-} from '@/components/admin'
-import { showSuccess, showError } from '@/lib/toast'
-import { createAnnouncementSchema } from '@/lib/schemas/admin'
-
-interface Announcement {
-  id: string
-  title: string
-  content: string
-  pinned: boolean
-  lang: 'ko' | 'en' | 'ja'
-  created_at: string
-  updated_at: string
-}
-
-export default function AdminAnnouncementsPage() {
-  const [items, setItems] = useState<Announcement[]>([])
-  const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState<Announcement | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
-
-  interface AnnouncementFormValues {
-    title: string
-    content: string
-    pinned: boolean
-    lang: 'ko' | 'en' | 'ja'
-  }
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<AnnouncementFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(createAnnouncementSchema) as any,
-    defaultValues: { title: '', content: '', pinned: false, lang: 'ko' },
-  })
-
-  const fetchItems = async () => {
-    setLoading(true)
-    const res = await fetch('/api/admin/announcements')
-    const data = await res.json()
-    setItems(Array.isArray(data) ? data : [])
-    setLoading(false)
-  }
-
-  useEffect(() => { fetchItems() }, [])
-
-  const onSubmit = handleSubmit(async (data) => {
-    if (creating) {
-      const res = await fetch('/api/admin/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        showError(`공지 작성 실패: ${err.error ?? res.statusText}`)
-        return
-      }
-      setCreating(false)
-      reset({ title: '', content: '', pinned: false, lang: 'ko' })
-      showSuccess('공지가 작성되었습니다.')
-      fetchItems()
-    } else if (editing) {
-      const res = await fetch(`/api/admin/announcements/${editing.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        showError(`공지 수정 실패: ${err.error ?? res.statusText}`)
-        return
-      }
-      setEditing(null)
-      reset({ title: '', content: '', pinned: false, lang: 'ko' })
-      showSuccess('공지가 수정되었습니다.')
-      fetchItems()
+  type Announcement,
+  type RichNode,
+  plainAnnouncementDocument,
+  announcementText,
+} from '@/lib/announcements'
+import '@/components/support/support.css'
+const AnnouncementEditor = dynamic(
+  () => import('@/components/announcements/AnnouncementEditor'),
+  { ssr: false },
+)
+export default function AdminAnnouncements() {
+  const locale = useLocale()
+  const ko = locale === 'ko',
+    ja = locale === 'ja'
+  const [items, setItems] = useState<Announcement[]>([]),
+    [editing, setEditing] = useState<Announcement | null>(null),
+    [creating, setCreating] = useState(false),
+    [title, setTitle] = useState(''),
+    [doc, setDoc] = useState<RichNode>(plainAnnouncementDocument('')),
+    [lang, setLang] = useState('ko'),
+    [pinned, setPinned] = useState(false),
+    [preview, setPreview] = useState(false),
+    [busy, setBusy] = useState(false),
+    [uploading, setUploading] = useState(false),
+    [error, setError] = useState(''),
+    [notice, setNotice] = useState(''),
+    [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null),
+    [dirty, setDirty] = useState(false),
+    [pending, setPending] = useState<Announcement | 'new' | null>(null)
+  const [editorRevision, setEditorRevision] = useState(0)
+  const failure = ko
+    ? '처리하지 못했습니다. 다시 시도해주세요.'
+    : ja
+      ? '処理できませんでした。再試行してください。'
+      : 'Unable to complete the request. Please retry.'
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch('/api/admin/announcements')
+      if (!r.ok) throw Error()
+      setItems(await r.json())
+    } catch {
+      setError(failure)
     }
-  })
-
-  const handleDelete = useCallback(async () => {
+  }, [failure])
+  useEffect(() => {
+    void load()
+  }, [load])
+  useEffect(() => {
+    if (!dirty) return
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', h)
+    return () => window.removeEventListener('beforeunload', h)
+  }, [dirty])
+  function open(item: Announcement | 'new') {
+    if (busy || uploading) return
+    if (dirty) {
+      setPending(item)
+      return
+    }
+    start(item)
+  }
+  function start(item: Announcement | 'new') {
+    setEditorRevision((n) => n + 1)
+    const row = item === 'new' ? null : item
+    setEditing(row)
+    setCreating(!row)
+    setTitle(row?.title ?? '')
+    setDoc(row?.content_doc ?? plainAnnouncementDocument(row?.content ?? ''))
+    setLang(row?.lang ?? 'ko')
+    setPinned(row?.pinned ?? false)
+    setPreview(false)
+    setError('')
+    setNotice('')
+    setDirty(false)
+  }
+  async function save(published: boolean) {
+    setBusy(true)
+    setError('')
+    try {
+      const r = await fetch(
+        editing
+          ? `/api/admin/announcements/${editing.id}`
+          : '/api/admin/announcements',
+        {
+          method: editing ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            content: announcementText(doc),
+            content_doc: doc,
+            lang,
+            pinned,
+            published,
+          }),
+        },
+      )
+      const row = await r.json()
+      if (!r.ok) throw Error(row.error)
+      setEditing(row)
+      setCreating(false)
+      setDirty(false)
+      setNotice(
+        ko
+          ? published
+            ? '공지가 게시되었습니다.'
+            : '임시 저장되었습니다.'
+          : ja
+            ? '保存しました。'
+            : 'Saved.',
+      )
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : failure)
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function remove() {
     if (!deleteTarget) return
-    const id = deleteTarget.id
-    setDeleteTarget(null)
-    await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
-    setItems(prev => prev.filter(a => a.id !== id))
-    showSuccess('공지가 삭제되었습니다.')
-  }, [deleteTarget])
-
-  const startEdit = (a: Announcement) => {
-    setEditing(a)
-    setCreating(false)
-    reset({ title: a.title, content: a.content, pinned: a.pinned, lang: a.lang ?? 'ko' })
+    setBusy(true)
+    try {
+      const r = await fetch(`/api/admin/announcements/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      if (!r.ok) throw Error()
+      if (editing?.id === deleteTarget.id) {
+        setEditing(null)
+        setCreating(false)
+        setDirty(false)
+      }
+      setDeleteTarget(null)
+      await load()
+    } catch {
+      setError(failure)
+    } finally {
+      setBusy(false)
+    }
   }
-
-  const startCreate = () => {
-    setCreating(true)
-    setEditing(null)
-    reset({ title: '', content: '', pinned: false, lang: 'ko' })
-  }
-
-  const cancelForm = () => {
-    setCreating(false)
-    setEditing(null)
-    reset({ title: '', content: '', pinned: false, lang: 'ko' })
-  }
-
-  const showForm = creating || editing
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <section className="announcement-manager">
+      <header className="desk-heading">
         <div>
-          <h1 className="font-serif text-2xl font-bold mb-1" style={{ color: 'var(--gold)' }}>공지 관리</h1>
-          <p style={{ color: '#888888', fontSize: '0.8125rem' }}>공지사항을 작성하고 관리합니다.</p>
+          <span className="desk-eyebrow">ANNOUNCEMENTS</span>
+          <h1>{ko ? '공지 관리' : ja ? 'お知らせ管理' : 'Announcements'}</h1>
+          <p>
+            {ko
+              ? '작성하고, 미리 보고, 준비되면 게시하세요.'
+              : ja
+                ? '編集・プレビュー・公開をひとつの画面で。'
+                : 'Write, preview, and publish when ready.'}
+          </p>
         </div>
-        {!showForm && (
-          <AdminButton onClick={startCreate} variant="gold" size="sm">
-            <Plus size={14} /> 새 공지
-          </AdminButton>
+        <button className="desk-button primary" onClick={() => open('new')}>
+          <Plus size={16} />
+          {ko ? '새 공지' : ja ? '新規' : 'New'}
+        </button>
+      </header>
+      {error && (
+        <p role="alert" className="desk-feedback error">
+          {error}
+          <button onClick={load}>{ko ? '다시 시도' : 'Retry'}</button>
+        </p>
+      )}
+      {notice && (
+        <p className="desk-feedback" role="status">
+          {notice}
+        </p>
+      )}
+      <div className="announcement-manager-grid">
+        <aside className="announcement-manager-list">
+          {items.length === 0 ? (
+            <p className="desk-empty">
+              {ko
+                ? '첫 공지를 작성해보세요.'
+                : ja
+                  ? 'お知らせを作成してください。'
+                  : 'Write your first announcement.'}
+            </p>
+          ) : (
+            items.map((i) => (
+              <button
+                key={i.id}
+                className={`desk-row ${editing?.id === i.id ? 'active' : ''}`}
+                onClick={() => open(i)}
+              >
+                <span className="desk-row-meta">
+                  <span
+                    className={`desk-status ${i.published ? 'answered' : 'open'}`}
+                  >
+                    {ko
+                      ? i.published
+                        ? '게시됨'
+                        : '임시 저장'
+                      : ja
+                        ? i.published
+                          ? '公開'
+                          : '下書き'
+                        : i.published
+                          ? 'Published'
+                          : 'Draft'}
+                  </span>
+                  <span>{i.lang.toUpperCase()}</span>
+                </span>
+                <strong>{i.title}</strong>
+                <span className="flex items-center gap-2">
+                  {i.pinned && <Pin size={12} />}
+                  <time>
+                    {new Date(i.updated_at ?? i.created_at).toLocaleDateString(
+                      locale,
+                    )}
+                  </time>
+                </span>
+              </button>
+            ))
+          )}
+        </aside>
+        {editing || creating ? (
+          <section className="announcement-compose">
+            <label>
+              {ko ? '제목' : ja ? '件名' : 'Title'}
+              <input
+                className="announcement-title"
+                value={title}
+                maxLength={160}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  setDirty(true)
+                }}
+              />
+            </label>
+            <div className="announcement-options">
+              <label>
+                {ko ? '언어' : ja ? '言語' : 'Language'}
+                <select
+                  value={lang}
+                  onChange={(e) => {
+                    setLang(e.target.value)
+                    setDirty(true)
+                  }}
+                >
+                  <option value="ko">한국어</option>
+                  <option value="en">English</option>
+                  <option value="ja">日本語</option>
+                </select>
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={pinned}
+                  onChange={(e) => {
+                    setPinned(e.target.checked)
+                    setDirty(true)
+                  }}
+                />
+                {ko
+                  ? '메인 우선 표시'
+                  : ja
+                    ? 'ホームに優先表示'
+                    : 'Feature on home'}
+              </label>
+
+            </div>
+            {preview ? (
+              <div className="announcement-preview">
+                <h2>{title}</h2>
+                <AnnouncementBody doc={doc} text="" />
+              </div>
+            ) : (
+              <AnnouncementEditor
+                key={`${editing?.id ?? 'new'}-${editorRevision}`}
+                initial={doc}
+                onChange={(d) => {
+                  setDoc(d)
+                  setDirty(true)
+                }}
+                onUploadingChange={setUploading}
+                lang={locale}
+              />
+            )}
+            <footer className="announcement-compose-actions">
+              <div>
+                {editing && (
+                  <button
+                    className="desk-button"
+                    disabled={busy}
+                    onClick={() => setDeleteTarget(editing)}
+                  >
+                    <Trash2 size={15} />
+                    {ko ? '삭제' : ja ? '削除' : 'Delete'}
+                  </button>
+                )}
+              </div>
+              <div>
+              <button
+                className="desk-button"
+                disabled={uploading}
+              onClick={() => setPreview(!preview)}
+              >
+                {preview ? <PenLine size={16} /> : <Eye size={16} />}{' '}
+                {ko
+                  ? preview
+                    ? '편집'
+                    : '미리보기'
+                  : ja
+                    ? preview
+                      ? '編集'
+                      : 'プレビュー'
+                    : preview
+                      ? 'Edit'
+                      : 'Preview'}
+              </button>
+                <button
+                  className="desk-button"
+                  disabled={busy || uploading || !title.trim()}
+                  onClick={() => save(false)}
+                >
+                  {ko
+                    ? editing?.published
+                      ? '게시 내리기'
+                      : '임시 저장'
+                    : ja
+                      ? '下書き保存'
+                      : 'Save draft'}
+                </button>
+                <button
+                  className="desk-button primary"
+                  disabled={busy || uploading || !title.trim()}
+                  onClick={() => save(true)}
+                >
+                  {busy
+                    ? '…'
+                    : ko
+                      ? editing?.published
+                        ? '변경 게시'
+                        : '게시하기'
+                      : ja
+                        ? '公開'
+                        : 'Publish'}
+                </button>
+              </div>
+            </footer>
+          </section>
+        ) : (
+          <div className="desk-empty">
+            <PenLine size={32} />
+            <p>
+              {ko
+                ? '새 공지를 작성하거나 왼쪽 목록에서 선택하세요.'
+                : ja
+                  ? 'お知らせを作成または選択してください。'
+                  : 'Create an announcement or select one from the list.'}
+            </p>
+          </div>
         )}
       </div>
-
-      {showForm && (
-        <div className="mb-6">
-          <AdminCard
-            title={creating ? '새 공지 작성' : '공지 수정'}
-            headerRight={
-              <button onClick={cancelForm} style={{ color: '#888888', cursor: 'pointer', background: 'none', border: 'none' }}>
-                <X size={16} />
-              </button>
-            }
-          >
-            <form onSubmit={onSubmit}>
-              <div className="space-y-3">
-                <div>
-                  <Controller
-                    name="lang"
-                    control={control}
-                    render={({ field }) => (
-                      <AdminSelect
-                        label="언어"
-                        value={field.value}
-                        onChange={field.onChange}
-                        options={[
-                          { value: 'ko', label: '한국어' },
-                          { value: 'en', label: 'English' },
-                          { value: 'ja', label: '日本語' },
-                        ]}
-                        required
-                      />
-                    )}
-                  />
-                </div>
-                <div>
-                  <Controller
-                    name="title"
-                    control={control}
-                    render={({ field }) => (
-                      <AdminInput
-                        label="제목"
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="제목"
-                        required
-                        error={errors.title?.message}
-                      />
-                    )}
-                  />
-                </div>
-                <Controller
-                  name="content"
-                  control={control}
-                  render={({ field }) => (
-                    <AdminTextarea
-                      label="내용"
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                      placeholder="내용"
-                      rows={5}
-                    />
-                  )}
-                />
-                <Controller
-                  name="pinned"
-                  control={control}
-                  render={({ field }) => (
-                    <AdminCheckbox
-                      label="상단 고정"
-                      checked={field.value ?? false}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
-                <div className="flex gap-2">
-                  <AdminButton
-                    type="submit"
-                    variant="gold"
-                    size="sm"
-                    loading={isSubmitting}
-                    disabled={isSubmitting}
-                  >
-                    {creating ? '작성' : '수정'}
-                  </AdminButton>
-                  <AdminButton onClick={cancelForm} variant="ghost" size="sm">
-                    취소
-                  </AdminButton>
-                </div>
-              </div>
-            </form>
-          </AdminCard>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex items-center gap-2" style={{ color: '#888888', fontSize: '0.8125rem' }}>
-          <Loader2 size={14} className="animate-spin" /> 로딩 중...
-        </div>
-      ) : items.length === 0 ? (
-        <div className="card p-8 text-center" style={{ color: '#888888', fontSize: '0.8125rem' }}>
-          공지가 없습니다.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map(a => (
-            <div key={a.id} className="card p-4 flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  {a.pinned && <Pin size={12} style={{ color: 'var(--gold)' }} />}
-                  <span style={{ color: '#8a7040', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{(a.lang ?? 'ko').toUpperCase()}</span>
-                  <p style={{ color: '#c8a450', fontSize: '0.875rem', fontWeight: 600 }}>{a.title}</p>
-                </div>
-                {a.content && (
-                  <p style={{ color: '#7a6845', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                    {a.content.length > 200 ? a.content.slice(0, 200) + '...' : a.content}
-                  </p>
-                )}
-                <p style={{ color: '#6a6a80', fontSize: '0.6875rem', marginTop: '6px' }}>
-                  {a.created_at.slice(0, 10).replace(/-/g, '.')}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <AdminIconButton onClick={() => startEdit(a)} title="수정">
-                  <Pencil size={14} />
-                </AdminIconButton>
-                <AdminIconButton onClick={() => setDeleteTarget(a)} variant="danger" title="삭제">
-                  <Trash2 size={14} />
-                </AdminIconButton>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       <ConfirmModal
-        open={!!deleteTarget}
-        title="공지 삭제"
-        message={`"${deleteTarget?.title}" 공지를 삭제하시겠습니까?`}
-        confirmLabel="삭제"
-        variant="danger"
-        onConfirm={handleDelete}
+        open={Boolean(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
+        onConfirm={remove}
+        title={
+          ko
+            ? '공지를 삭제할까요?'
+            : ja
+              ? '削除しますか？'
+              : 'Delete announcement?'
+        }
+        message={deleteTarget?.title ?? ''}
       />
-
-    </div>
+      <ConfirmModal
+        open={Boolean(pending)}
+        onCancel={() => setPending(null)}
+        onConfirm={() => {
+          if (pending) start(pending)
+          setPending(null)
+        }}
+        title={
+          ko
+            ? '저장하지 않은 내용을 버릴까요?'
+            : ja
+              ? '変更を破棄しますか？'
+              : 'Discard unsaved changes?'
+        }
+        message={
+          ko
+            ? '저장하지 않은 변경 사항이 사라집니다.'
+            : ja
+              ? '未保存の変更は失われます。'
+              : 'Unsaved changes will be lost.'
+        }
+      />
+    </section>
   )
 }

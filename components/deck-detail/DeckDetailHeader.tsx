@@ -1,5 +1,7 @@
 'use client'
 
+
+import { getDetailStatIconUrl } from '@/lib/utils/images'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, GitFork } from 'lucide-react'
@@ -10,9 +12,9 @@ import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
 
 const ATK_ICON_URL: Record<string, string> = {
-  'slash': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  'pierce': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  'blunt': `${STORAGE_BASE}/icons/stats/blunt.webp`,
+  'slash': getDetailStatIconUrl('slash'),
+  'pierce': getDetailStatIconUrl('pierce'),
+  'blunt': getDetailStatIconUrl('blunt'),
 }
 
 const sidebarActionTextStyle = {

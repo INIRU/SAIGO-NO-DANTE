@@ -1,5 +1,8 @@
 'use client'
 
+import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react'
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryState, useQueryStates } from 'nuqs'
 import { useSession } from 'next-auth/react'
@@ -8,7 +11,6 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
@@ -213,7 +215,7 @@ export default function DecksClient({
 }: DecksClientProps = {}) {
   const locale = useLocale()
   const t = useTranslations('decks')
-  useRoutePrefetch([`/${locale}/decks/new`, `/${locale}/tier-list`])
+  useRoutePrefetch([`/${locale}/decks/new`])
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const { status: authStatus } = useSession()
@@ -234,6 +236,7 @@ export default function DecksClient({
   const [, startTransition] = useTransition()
 
   // ── URL-synced state ──
+  const [browse, setBrowse] = useQueryState('browse', parseAsString.withDefault(''))
   const [sortQuery, setSortQuery] = useQueryState('sort', parseAsString.withDefault('latest'))
   const sort = normalizeSortKey(sortQuery)
   const [languageQuery, setLanguageQuery] = useQueryState('lang', parseAsString.withDefault(initialLanguageFilter))
@@ -303,7 +306,7 @@ export default function DecksClient({
         label: id.name_kr,
         type: 'identity',
         imageUrl: id.game_id && id.folder_name && id.sinner_id
-          ? `${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`
+          ? getIdentityPortraitUrl(id.sinner_id, id.folder_name, id.game_id, false)
           : undefined,
       }))
 
@@ -792,8 +795,10 @@ export default function DecksClient({
   const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount)
   const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount
 
+  if (browse !== 'all' && !(hasAnyFilter)) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
+
   return (
-    <div className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+    <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
 
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         {/* ── 필터 패널 ── */}
@@ -879,7 +884,6 @@ export default function DecksClient({
               aria-live="polite"
               style={{
                 padding: '0.35rem 0',
-                borderBottom: '1px solid rgba(200, 144, 10, 0.14)',
                 color: '#888',
                 fontFamily: 'var(--font-body)',
                 fontSize: '1rem',
@@ -894,7 +898,7 @@ export default function DecksClient({
                 />
               )}
               <span className="min-w-0">
-                <span style={{ color: 'var(--gold)', fontWeight: 700 }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
                   {hasMore ? t('result.countMore', { count: filtered.length }) : t('result.countExact', { count: filtered.length })}
                 </span>
                 {refreshing ? t('result.refreshing') : ''}

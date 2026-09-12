@@ -1,0 +1,136 @@
+{
+  "source": "MainUI_PersonalityList_4.png",
+  "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+  "entries": [
+    {
+      "level": 1,
+      "bounds": [
+        1348,
+        798,
+        1399,
+        983
+      ],
+      "alphaBounds": [
+        0,
+        7,
+        49,
+        176
+      ],
+      "coreBounds": [
+        14,
+        14,
+        35,
+        155
+      ],
+      "size": [
+        224,
+        192
+      ],
+      "sha256": "4a83421eba4bc4eed775610cc3d4541018b4f8a1d88ae4fd9cef6a9a309eb573"
+    },
+    {
+      "level": 2,
+      "bounds": [
+        1236,
+        798,
+        1329,
+        983
+      ],
+      "alphaBounds": [
+        0,
+        4,
+        93,
+        179
+      ],
+      "coreBounds": [
+        9,
+        14,
+        82,
+        161
+      ],
+      "size": [
+        224,
+        192
+      ],
+      "sha256": "6fb33ee8301355bca0c6e1b03d87e5522b5bad9ce5935f8ebee4209caf1b7740"
+    },
+    {
+      "level": 3,
+      "bounds": [
+        1056,
+        798,
+        1207,
+        983
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        151,
+        185
+      ],
+      "coreBounds": [
+        19,
+        21,
+        137,
+        162
+      ],
+      "size": [
+        224,
+        192
+      ],
+      "sha256": "94be1f7a19780c32f283ed6b6be311799e4d2b40f42919a79488695ddf58877f"
+    },
+    {
+      "level": 4,
+      "bounds": [
+        1055,
+        995,
+        1256,
+        1173
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        201,
+        178
+      ],
+      "coreBounds": [
+        20,
+        19,
+        177,
+        161
+      ],
+      "size": [
+        224,
+        192
+      ],
+      "sha256": "c25aa035263969f5ff618e6b743e58cf04004e5ebf3215de1afa139a2cb2ae97"
+    },
+    {
+      "level": 5,
+      "bounds": [
+        1056,
+        1180,
+        1215,
+        1366
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        159,
+        186
+      ],
+      "coreBounds": [
+        27,
+        26,
+        145,
+        168
+      ],
+      "size": [
+        224,
+        192
+      ],
+      "sha256": "b7a17da7efcd59e8d7f1ade14e1c7b1c6d02da1deb764d0d41a18518e448f059"
+    }
+  ]
+}

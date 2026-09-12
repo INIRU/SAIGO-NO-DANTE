@@ -1,5 +1,7 @@
 'use client'
 
+import { unbreakableCoinIndices, COIN_IMAGES } from '@/lib/identity/skill-description'
+
 import Image from 'next/image'
 import {
   Identity,
@@ -10,39 +12,11 @@ import {
   getSkillIconUrl,
 } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
+import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import SkillFrame from '@/components/identity/SkillFrame'
+import { getSkillFrameBadgeUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 import type { SkillDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
-
-/** 스킬명 배너 — SkillFrameBlock와 동일 패턴 (paddingRight + fit-content) */
-function SkillNameBanner({ name, sinColor }: { name: string; sinColor: string }) {
-  return (
-    <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
-      <div style={{
-        color: '#e8dcc8',
-        backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${sinColor}30 1.5em)`,
-      }}>
-        <div style={{
-          padding: '0.1em 0 0.1em 0.3em',
-          backgroundImage: `linear-gradient(290deg, transparent 2em, ${sinColor}40 2em, ${sinColor}40 2.12em, transparent 2.12em, transparent 2.24em, ${sinColor}40 2.24em, ${sinColor}40 2.36em, transparent 2.36em, transparent 2.48em, ${sinColor}40 2.48em, ${sinColor}40 2.6em, transparent 2.6em, transparent 2.72em, ${sinColor}40 2.72em)`,
-          textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
-        }}>
-          <span className="font-bold whitespace-nowrap" style={{
-            fontSize: '0.875rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
-            paddingRight: '3.5em',
-          }}>
-            {name}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const SIN_FRAME_MAP: Record<string, string> = {
-  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
-  gloom: 'azure', pride: 'indigo', envy: 'violet',
-}
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
   slash: 'slash',
@@ -180,17 +154,11 @@ export default function IdentitySkillsTab({
               ? `${SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}-${v.idx}`
               : SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
             : (v && v.total > 1 ? `S${baseOrder}-${v.idx}` : `S${baseOrder}`)
-          const frameSin = SIN_FRAME_MAP[skill.sin_affinity] || 'crimson'
           const atkTypeKey = skillAttackType(skill)
           const skillDescription = localSkillDesc(skill)
           const skillFlavor = localSkillFlavor(skill, locale)
 
-          // 파괴 불가 코인 감지
-          const unbreakableCoins = new Set<number>()
-          if (skill.description) {
-            const ubMatches = skill.description.matchAll(/\[코인\s?(\d+)\]\s*파괴 불가 코인/g)
-            for (const m of ubMatches) unbreakableCoins.add(parseInt(m[1]))
-          }
+          const unbreakableCoins = unbreakableCoinIndices(skillDescription)
 
           return (
             <div
@@ -217,7 +185,7 @@ export default function IdentitySkillsTab({
                     skillIconUrl={skillIconUrl}
                     skillIconFallback={skillIconFallback}
                     sin={skill.sin_affinity || 'neutral'}
-                    skillSlot={baseOrder <= 3 ? baseOrder : 1}
+                    skillSlot={isDefense ? 4 : baseOrder <= 3 ? baseOrder : 1}
                     sinColor={skillSinColor}
                     label={skillLabel}
                     size="100%"
@@ -226,9 +194,7 @@ export default function IdentitySkillsTab({
                   {atkTypeKey && (
                     <div className="absolute z-20 pointer-events-none"
                       style={{ bottom: 0, left: '50%', marginLeft: '-0.875rem', transform: 'translateY(-30%)', width: '1.75rem', height: '1.75rem' }}>
-                      <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
-                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                      <Image src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
+                      <Image src={getSkillFrameBadgeUrl(skill.sin_affinity || 'neutral')}
                         alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       <Image src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
                         alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.875rem', height: '0.875rem' }} />
@@ -269,10 +235,10 @@ export default function IdentitySkillsTab({
                   {/* 코인 시각화 */}
                   <div className="flex items-center gap-0.5 mb-0.5">
                     {Array.from({ length: skill.coins }).map((_, ci) => {
-                      const isUb = unbreakableCoins.has(ci + 1)
+                      const isUb = unbreakableCoins.has(ci)
                       return (
                         <Image key={ci}
-                          src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
+                          src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
                           alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')} width={16} height={16}
                           className="w-3 h-3 sm:w-4 sm:h-4"
                         />
@@ -285,7 +251,7 @@ export default function IdentitySkillsTab({
                   <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
                     {skill.offense_level != null && (
                       <div className="flex items-center gap-1">
-                        <Image src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
+                        <Image src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
                         <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
                           {skill.offense_level}
                           {diff?.offense_level && <DiffBadge from={diff.offense_level.from} to={diff.offense_level.to} />}

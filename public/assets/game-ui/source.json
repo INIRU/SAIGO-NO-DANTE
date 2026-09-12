@@ -1,0 +1,1172 @@
+{
+  "sourceFolder": "https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z",
+  "outputs": [
+    {
+      "file": "sins/wrath.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "alphaBounds": [
+        17,
+        2,
+        239,
+        253
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/lust.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        256,
+        0,
+        512,
+        256
+      ],
+      "alphaBounds": [
+        33,
+        3,
+        223,
+        254
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/sloth.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        512,
+        0,
+        768,
+        256
+      ],
+      "alphaBounds": [
+        7,
+        2,
+        250,
+        254
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/gluttony.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        768,
+        0,
+        1024,
+        256
+      ],
+      "alphaBounds": [
+        23,
+        3,
+        233,
+        253
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/gloom.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1024,
+        0,
+        1280,
+        256
+      ],
+      "alphaBounds": [
+        2,
+        6,
+        253,
+        250
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/pride.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1280,
+        0,
+        1536,
+        256
+      ],
+      "alphaBounds": [
+        32,
+        2,
+        224,
+        256
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "sins/envy.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1536,
+        0,
+        1792,
+        256
+      ],
+      "alphaBounds": [
+        2,
+        6,
+        255,
+        251
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "stats/health.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1410,
+        1052,
+        1537,
+        1168
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        127,
+        116
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/defense.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1539,
+        1047,
+        1661,
+        1174
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        122,
+        127
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/slash.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1663,
+        1056,
+        1791,
+        1165
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        128,
+        109
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/offense.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1818,
+        1051,
+        1943,
+        1178
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        125,
+        127
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/speed.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1282,
+        1176,
+        1402,
+        1304
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        120,
+        128
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/blunt.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1537,
+        1177,
+        1665,
+        1302
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        128,
+        125
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "stats/pierce.webp",
+      "source": "ui-originals/MainUI_PersonalityList_4.png",
+      "sourceSha256": "8723dec2a899898d2f1c1cf6fec966b43b90eb654fd68312f55880e19f17cfa4",
+      "crop": [
+        1665,
+        1190,
+        1793,
+        1291
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        128,
+        101
+      ],
+      "canvas": 160,
+      "trim": false,
+      "width": 160,
+      "height": 160
+    },
+    {
+      "file": "rarity/1.webp",
+      "source": "ui-originals/MainUI_PersonalityList_8.png",
+      "sourceSha256": "9c060a298084b66f5cb91919c117c7a6da854377b5a0bd168935846005c585b5",
+      "crop": [
+        0,
+        1750,
+        256,
+        2016
+      ],
+      "alphaBounds": [
+        2,
+        5,
+        256,
+        259
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "rarity/2.webp",
+      "source": "ui-originals/MainUI_PersonalityList_8.png",
+      "sourceSha256": "9c060a298084b66f5cb91919c117c7a6da854377b5a0bd168935846005c585b5",
+      "crop": [
+        532,
+        1750,
+        792,
+        2016
+      ],
+      "alphaBounds": [
+        0,
+        4,
+        252,
+        260
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "rarity/3.webp",
+      "source": "ui-originals/MainUI_PersonalityList_8.png",
+      "sourceSha256": "9c060a298084b66f5cb91919c117c7a6da854377b5a0bd168935846005c585b5",
+      "crop": [
+        264,
+        1750,
+        526,
+        2016
+      ],
+      "alphaBounds": [
+        0,
+        3,
+        252,
+        258
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "sanity/increase.webp",
+      "source": "ui-originals/New_MainUI_PersonalityList_2.png",
+      "sourceSha256": "9ea8d54609814941214ed8d29cdffc37508e34ba7109856c20b13bc6e21169dd",
+      "crop": [
+        400,
+        200,
+        675,
+        435
+      ],
+      "alphaBounds": [
+        9,
+        8,
+        260,
+        235
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "sanity/decrease.webp",
+      "source": "ui-originals/New_MainUI_PersonalityList_2.png",
+      "sourceSha256": "9ea8d54609814941214ed8d29cdffc37508e34ba7109856c20b13bc6e21169dd",
+      "crop": [
+        685,
+        215,
+        940,
+        455
+      ],
+      "alphaBounds": [
+        0,
+        17,
+        247,
+        240
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "coins/normal.webp",
+      "source": "ui-originals/BattleUI_NewCoin.png",
+      "sourceSha256": "1719b0a0560653baf1d686dfb24b019c528ea4b9926b5f3bb27c18e36dd5b270",
+      "crop": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "alphaBounds": [
+        17,
+        22,
+        240,
+        241
+      ],
+      "canvas": 272,
+      "trim": false,
+      "width": 272,
+      "height": 272
+    },
+    {
+      "file": "coins/unbreakable.webp",
+      "source": "ui-originals/BattleUI_NewCoin.png",
+      "sourceSha256": "1719b0a0560653baf1d686dfb24b019c528ea4b9926b5f3bb27c18e36dd5b270",
+      "crop": [
+        768,
+        0,
+        1024,
+        256
+      ],
+      "alphaBounds": [
+        17,
+        23,
+        239,
+        241
+      ],
+      "canvas": 272,
+      "trim": false,
+      "width": 272,
+      "height": 272
+    },
+    {
+      "file": "sanity/9994.webp",
+      "source": "image-originals/1JRKrQ7sCKkxWkivXIALNeLSat-kGVwpR.png",
+      "sourceSha256": "446fea8ad2bcfffe56e732ebc0f57dd1577d4dad19d28fc9244d5407bf2643d5",
+      "crop": null,
+      "alphaBounds": [
+        40,
+        49,
+        327,
+        299
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "sanity/9999.webp",
+      "source": "image-originals/1f2jCwHTkpivnrmnXKNWifVLCxl3MKU6x.png",
+      "sourceSha256": "65f77ea19f38551c49694bd5bd2cfdf8d0e6e9941a11b5b3dcb6c6b58efc8a46",
+      "crop": null,
+      "alphaBounds": [
+        59,
+        65,
+        296,
+        285
+      ],
+      "canvas": 288,
+      "trim": false,
+      "width": 288,
+      "height": 288
+    },
+    {
+      "file": "sinners/sinclair.webp",
+      "source": "image-originals/1nmw0872gi8SpuFiFlR09yR7N59uAz4pe.png",
+      "sourceSha256": "100e925a6ceab08f836952e39daf1c882d4c58f7bc7474497844ca2c6ad23500",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        352,
+        825
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 352,
+      "height": 825
+    },
+    {
+      "file": "sinners/meursault.webp",
+      "source": "image-originals/1K0y6WsWsnS2zYBIjOoYcarFDogejhczM.png",
+      "sourceSha256": "599503d149d45a7bb46e9740f324e948b26a122ce91a2936bd3857104a89973b",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        352,
+        1020
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 352,
+      "height": 1020
+    },
+    {
+      "file": "sinners/rodion.webp",
+      "source": "image-originals/1Xb5cT4BMkHZsjTYfRNP0DqZojmAbRK-w.png",
+      "sourceSha256": "121d0c8bb3e82b44cf2bc39c3934a708a6b4ee28f106aed050369ca63d32d884",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        350,
+        1023
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 350,
+      "height": 1023
+    },
+    {
+      "file": "sinners/yi-sang.webp",
+      "source": "image-originals/1Xfj8M01ahNk7GBZB7nQJtHCl769LT1hI.png",
+      "sourceSha256": "1d7dbbdb24b621e34f211306bf277281746d123fb60d6fdbcfa38031179b0df5",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        389,
+        1023
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 389,
+      "height": 1023
+    },
+    {
+      "file": "sinners/ishmael.webp",
+      "source": "image-originals/1Qzh7Yb2XP-6tCwgdIF-tk_rXlxcNQcO8.png",
+      "sourceSha256": "a5f8d2c27298f12a18c96f6cf1f828fad951d3879f756dc164ccaf242d1205a5",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        350,
+        1023
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 350,
+      "height": 1023
+    },
+    {
+      "file": "sinners/outis.webp",
+      "source": "image-originals/1Yvw1G7g17Rg5eI5u2_cfqgvxfS34PUe2.png",
+      "sourceSha256": "86df14a5dd8e2a9f2a4a9aef5324e2b3faab12b248abe2e3828168a58ef70b10",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        389,
+        1022
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 389,
+      "height": 1022
+    },
+    {
+      "file": "sinners/ryoshu.webp",
+      "source": "image-originals/1a3g926QqoT8eosx_TSdPjPJnVG0sNILL.png",
+      "sourceSha256": "069ccabb688680e14311169bb3be9783d747fac7fbb26536ab326c828db78afb",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        344,
+        1020
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 344,
+      "height": 1020
+    },
+    {
+      "file": "sinners/heathcliff.webp",
+      "source": "image-originals/1rhDQqrgjkeTulNANLiMAuEKl1qklNGwu.png",
+      "sourceSha256": "9bd220e9b53aeed61d6da2f5bca62035f60530573afc943b9295ce8fb561106f",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        351,
+        1023
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 351,
+      "height": 1023
+    },
+    {
+      "file": "sinners/hong-lu.webp",
+      "source": "image-originals/1-_EO-R-R01jGHYM3g4OBsjbcH6wP4u2H.png",
+      "sourceSha256": "9c61b0892a827efed59c06fda1207f8c8501d1280e01b80712bfc6dd2b01e550",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        350,
+        1022
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 350,
+      "height": 1022
+    },
+    {
+      "file": "sinners/gregor.webp",
+      "source": "image-originals/1jVd2O6UzqROvx5z5EJ4GY6BJNBrjSKs4.png",
+      "sourceSha256": "8969d357ae154893907b9b6cbd578efe1120d1fb94eba671d0dd85ecaf83ed17",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        391,
+        1021
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 391,
+      "height": 1021
+    },
+    {
+      "file": "sinners/don-quixote.webp",
+      "source": "image-originals/19L36yhGiSBPz1e-F8DgV1KlC9zX3yHlj.png",
+      "sourceSha256": "9ea4eb30b58b755922957fa005e9135c019055fe31506316f8412fd65543211e",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        353,
+        1020
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 353,
+      "height": 1020
+    },
+    {
+      "file": "sinners/faust.webp",
+      "source": "image-originals/1JLaE_LX8qpMQjkoKyUTlTcsnsvX4Q84r.png",
+      "sourceSha256": "3e8e63c582ce718bd4ca845e56cab388e8486040f2cab84cf88fba9ccdc6f079",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        352,
+        1023
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 352,
+      "height": 1023
+    },
+    {
+      "file": "keywords/tiantui-star.webp",
+      "source": "image-originals/1mhPT72K3GZgVoOwXnLG3PuMViC7Y9v4k.png",
+      "sourceSha256": "d538cfc1d4b33f0ca9152306f534caac1bc7259e9a41b92b313c7775324633b8",
+      "crop": [
+        896,
+        768,
+        1024,
+        896
+      ],
+      "alphaBounds": [
+        16,
+        10,
+        108,
+        124
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 128,
+      "height": 128,
+      "driveId": "1mhPT72K3GZgVoOwXnLG3PuMViC7Y9v4k",
+      "drivePath": "icons/Status Effects/Icon_buf_18_3.png"
+    },
+    {
+      "file": "keywords/shin-tiantui-star.webp",
+      "source": "image-originals/1mhPT72K3GZgVoOwXnLG3PuMViC7Y9v4k.png",
+      "sourceSha256": "d538cfc1d4b33f0ca9152306f534caac1bc7259e9a41b92b313c7775324633b8",
+      "crop": [
+        896,
+        896,
+        1024,
+        1024
+      ],
+      "alphaBounds": [
+        13,
+        1,
+        116,
+        125
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 128,
+      "height": 128,
+      "driveId": "1mhPT72K3GZgVoOwXnLG3PuMViC7Y9v4k",
+      "drivePath": "icons/Status Effects/Icon_buf_18_3.png"
+    },
+    {
+      "file": "keywords/tremor-burst.webp",
+      "source": "image-originals/1SFLB4r8wFa-qkk8dTZvy-hRb2W1r9JGz.png",
+      "sourceSha256": "3c7369a430c0e2a1a615e5f34e723997fa58354f2a78bc0f12f5512fb8a04ed1",
+      "crop": [
+        512,
+        384,
+        640,
+        512
+      ],
+      "alphaBounds": [
+        5,
+        1,
+        120,
+        127
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 128,
+      "height": 128,
+      "driveId": "1SFLB4r8wFa-qkk8dTZvy-hRb2W1r9JGz",
+      "drivePath": "icons/Status Effects/Icon_buf_3.png"
+    },
+    {
+      "file": "keywords/shimmering-bloodfiend.webp",
+      "source": "image-originals/1SUi36W5guq70jD0Qfmyjt9XYu_CT2tSK.png",
+      "sourceSha256": "2b3d95d660e0b5907736c3cc23c50021b82a5920ea1cc0e0e6cca7d8548b25f3",
+      "crop": [
+        512,
+        128,
+        640,
+        256
+      ],
+      "alphaBounds": [
+        0,
+        3,
+        128,
+        125
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 128,
+      "height": 128,
+      "driveId": "1SUi36W5guq70jD0Qfmyjt9XYu_CT2tSK",
+      "drivePath": "icons/Status Effects/Icon_buf_15.png"
+    },
+    {
+      "file": "start-buffs/100.webp",
+      "source": "image-originals/1-E2vf4ck4QSheCH0DIinBA050wQ1Q6Qq.png",
+      "sourceSha256": "adf6a3b2fc5f052223d6b6f829f623a6e8e2b88650cfe253cc94b75b22e5acd4",
+      "crop": null,
+      "alphaBounds": [
+        24,
+        0,
+        229,
+        230
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 255,
+      "height": 230,
+      "driveId": "1-E2vf4ck4QSheCH0DIinBA050wQ1Q6Qq",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_100.png"
+    },
+    {
+      "file": "start-buffs/101.webp",
+      "source": "image-originals/1tMjSuFH4i07hxN8HqMeQR9ZpMjZhHeMn.png",
+      "sourceSha256": "8455d42114074dad4c5b9e656aa4551379e397aeef71a2326db1694ed63f6843",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        254,
+        223
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 255,
+      "height": 230,
+      "driveId": "1tMjSuFH4i07hxN8HqMeQR9ZpMjZhHeMn",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_101.png"
+    },
+    {
+      "file": "start-buffs/102.webp",
+      "source": "image-originals/1aFOdSVIu7GLffvaI20nPZWPTeVku6Zd1.png",
+      "sourceSha256": "72db274c5d5a27649976ef852eabededc66fca57f066fcb466d3089bd2894865",
+      "crop": null,
+      "alphaBounds": [
+        52,
+        0,
+        195,
+        230
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 246,
+      "height": 231,
+      "driveId": "1aFOdSVIu7GLffvaI20nPZWPTeVku6Zd1",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_102.png"
+    },
+    {
+      "file": "start-buffs/103.webp",
+      "source": "image-originals/1xiNYuuXXtwIr-FfbnqmcNLQ8qTCVIFqB.png",
+      "sourceSha256": "daa71fb9f1f59f8bcd2b84c948e39aa9bcd6b52ae357e9c2ac2b57ed2196321b",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        257,
+        257
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 257,
+      "height": 257,
+      "driveId": "1xiNYuuXXtwIr-FfbnqmcNLQ8qTCVIFqB",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_103.png"
+    },
+    {
+      "file": "start-buffs/104.webp",
+      "source": "image-originals/1xv2wzURFCrRZGkXc1UrED083iW6YZs0h.png",
+      "sourceSha256": "8033bb43a041964b923976298a9512bfc9ac3fd58839af372ef5a065addd3af5",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        28,
+        246,
+        202
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 246,
+      "height": 231,
+      "driveId": "1xv2wzURFCrRZGkXc1UrED083iW6YZs0h",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_104.png"
+    },
+    {
+      "file": "start-buffs/105.webp",
+      "source": "image-originals/111LGWlbGVkyL0rAIcaIMYsU8RPVfc61z.png",
+      "sourceSha256": "d779c255f492b7e0e533e04e730e5eff9c0c09871f621ee4aa0f68cb4f65609d",
+      "crop": null,
+      "alphaBounds": [
+        1,
+        1,
+        254,
+        229
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 255,
+      "height": 230,
+      "driveId": "111LGWlbGVkyL0rAIcaIMYsU8RPVfc61z",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_105.png"
+    },
+    {
+      "file": "start-buffs/106.webp",
+      "source": "image-originals/1y-qq77_mJwhd7TEuKum78aSD3SvGg0xC.png",
+      "sourceSha256": "2acbff82be4dc9d5c0525775988abb67af80da5de5d672b51c4a576aca026072",
+      "crop": null,
+      "alphaBounds": [
+        55,
+        0,
+        235,
+        230
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 255,
+      "height": 230,
+      "driveId": "1y-qq77_mJwhd7TEuKum78aSD3SvGg0xC",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_106.png"
+    },
+    {
+      "file": "start-buffs/107.webp",
+      "source": "image-originals/1u9jZwf0pudhxOF7mjDSvWTMYkyEwvUng.png",
+      "sourceSha256": "84579df1f23e9cc7b07feca334f237a786a2b1b2d49057a9db2ee8f7741bbcc5",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        255,
+        230
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 255,
+      "height": 230,
+      "driveId": "1u9jZwf0pudhxOF7mjDSvWTMYkyEwvUng",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_107.png"
+    },
+    {
+      "file": "start-buffs/108.webp",
+      "source": "image-originals/1_1Ywd7nvDmVyLRd9FdxH8a8bHXfFWlpE.png",
+      "sourceSha256": "9f53defe53a01c636984937198755a7f557e184d766ef9dcb4a4e9f58c32f025",
+      "crop": null,
+      "alphaBounds": [
+        0,
+        0,
+        246,
+        231
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 246,
+      "height": 231,
+      "driveId": "1_1Ywd7nvDmVyLRd9FdxH8a8bHXfFWlpE",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_108.png"
+    },
+    {
+      "file": "start-buffs/109.webp",
+      "source": "image-originals/1RT0_egcY4P8mL8v5z-OVUi1yZxv2DJha.png",
+      "sourceSha256": "3959833adb0531a90f42783c09ed66bfa8a1de6bc342044af2aa9bbcb0066989",
+      "crop": null,
+      "alphaBounds": [
+        1,
+        0,
+        254,
+        254
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 254,
+      "height": 254,
+      "driveId": "1RT0_egcY4P8mL8v5z-OVUi1yZxv2DJha",
+      "drivePath": "icons/Mirror Dungeon/Mirror of the Dreaming/StartBuffIcon_109.png"
+    },
+    {
+      "file": "start-buffs/starlight.webp",
+      "source": "image-originals/15lolTXDC_8oi4TzM8QsZQJ-jY-jLcTPJ.png",
+      "sourceSha256": "f189f9b7506998502c8d0ad86e5b54758b158d2ed25c84aa8b3a12b78a01128e",
+      "crop": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "alphaBounds": [
+        2,
+        1,
+        253,
+        255
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "15lolTXDC_8oi4TzM8QsZQJ-jY-jLcTPJ",
+      "drivePath": "icons/Resources/MainUI_CommonIcon_4.png"
+    },
+    {
+      "file": "resources/md-pass.webp",
+      "source": "image-originals/15lolTXDC_8oi4TzM8QsZQJ-jY-jLcTPJ.png",
+      "sourceSha256": "f189f9b7506998502c8d0ad86e5b54758b158d2ed25c84aa8b3a12b78a01128e",
+      "crop": [
+        1792,
+        0,
+        2048,
+        256
+      ],
+      "alphaBounds": [
+        26,
+        22,
+        229,
+        233
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "15lolTXDC_8oi4TzM8QsZQJ-jY-jLcTPJ",
+      "drivePath": "icons/Resources/MainUI_CommonIcon_4.png"
+    },
+    {
+      "file": "navigation/sinners.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        256,
+        1280,
+        512,
+        1536
+      ],
+      "alphaBounds": [
+        30,
+        40,
+        231,
+        216
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "navigation/formation.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        512,
+        1280,
+        768,
+        1536
+      ],
+      "alphaBounds": [
+        27,
+        44,
+        229,
+        213
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "navigation/mirror.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        512,
+        1024,
+        768,
+        1280
+      ],
+      "alphaBounds": [
+        37,
+        37,
+        219,
+        220
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "navigation/collection.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        0,
+        1280,
+        256,
+        1536
+      ],
+      "alphaBounds": [
+        31,
+        39,
+        224,
+        217
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "navigation/extraction.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        768,
+        1280,
+        1024,
+        1536
+      ],
+      "alphaBounds": [
+        41,
+        31,
+        215,
+        224
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "navigation/planner.webp",
+      "source": "ui-originals/MainUI_BottomMenu_1.png",
+      "sourceSha256": "ecfd0c77d00d9b19599787b382fb0cc49f2b5dfef483ade196c8521060414003",
+      "crop": [
+        768,
+        1024,
+        1024,
+        1280
+      ],
+      "alphaBounds": [
+        31,
+        58,
+        226,
+        200
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 256,
+      "height": 256,
+      "driveId": "13oj-OIvjh6utX0SbCpKFCvMjInrwzwGs",
+      "drivePath": "ui/Main Menu/Other/MainUI_BottomMenu_1.png"
+    },
+    {
+      "file": "gift/background.webp",
+      "source": "ui-originals/MainUI_BattleSelection_15.png",
+      "sourceSha256": "ff6f773bf2dcc879c2f73843308285fe1c89902cd9ec9685172c2ec4137f2119",
+      "crop": [
+        846,
+        1,
+        1200,
+        352
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        354,
+        351
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 354,
+      "height": 351,
+      "driveId": "1OG-ZekizmUSTPPEHsIW8yW6cOaXcxRda",
+      "drivePath": "ui/Main Menu/Mirror Dungeon/Mirror of Mirrors/MainUI_BattleSelection_15.png"
+    },
+    {
+      "file": "gift/grade-ex.webp",
+      "source": "ui-originals/MainUI_MirrorDungeon6_5.png",
+      "sourceSha256": "b6475e88caeca4a6bab928225e17eb114e7e74112d33d4dd3e5b0f16166e91d8",
+      "crop": [
+        1719,
+        1760,
+        1838,
+        1882
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        119,
+        122
+      ],
+      "canvas": null,
+      "trim": false,
+      "width": 119,
+      "height": 122,
+      "driveId": "1xXJnA3uoWj7Bz1XtHdHt9jgfznHYNYcX",
+      "drivePath": "ui/Main Menu/Mirror Dungeon/Mirror of Immortality/MainUI_MirrorDungeon6_5.png"
+    }
+  ]
+}

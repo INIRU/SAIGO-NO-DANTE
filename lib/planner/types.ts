@@ -1,3 +1,4 @@
+import { normalizeConstraints } from './constraints'
 // 거울 던전 플래너 상태 타입
 import {
   getLegacyPlanFloorDifficulty,
@@ -51,6 +52,7 @@ export interface EgoSlot {
 }
 
 export interface FloorEntry {
+  constraints?: number[]
   floor: number
   difficulty: FloorDifficulty
   theme_id: string | null
@@ -83,6 +85,7 @@ export type PlannerAction =
   | { type: 'SET_FLOOR_DIFFICULTY'; floor: number; difficulty: FloorDifficulty; clearSelection?: boolean }
   | { type: 'SET_FLOOR_THEME'; floor: number; themeId: string | null }
   | { type: 'SET_FLOOR_GIFTS'; floor: number; giftIds: string[] }
+  | { type: 'SET_FLOOR_CONSTRAINTS'; floor: number; ids: number[] }
   | { type: 'SET_FLOOR_MEMO'; floor: number; memo: string }
   | { type: 'ADD_GIFT'; giftId: string }
   | { type: 'REMOVE_GIFT'; giftId: string }
@@ -188,6 +191,7 @@ function normalizeFloorEntry(entry: LoadableFloorEntry | undefined, index: numbe
     theme_id: normalizePlannerThemeId(entry?.theme_id),
     gift_ids: normalizeFloorGiftIds(entry?.gift_ids),
     memo: typeof entry?.memo === 'string' ? entry.memo : '',
+    constraints: Array.isArray(entry?.constraints) ? entry.constraints.filter(Number.isInteger) : [],
   }
 }
 
@@ -198,7 +202,7 @@ function normalizeFloorPlanEntries(
 ): FloorEntry[] {
   const source = Array.isArray(floorPlan) ? floorPlan : []
   const floorCount = Math.max(source.length, minFloors)
-  return Array.from({ length: floorCount }, (_, i) => normalizeFloorEntry(source[i], i, planDifficulty))
+  return normalizeConstraints(Array.from({ length: floorCount }, (_, i) => normalizeFloorEntry(source[i], i, planDifficulty)))
 }
 
 export function plannerReducer(state: PlannerState, action: PlannerAction): PlannerState {
@@ -275,6 +279,11 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
           f.floor === action.floor ? { ...f, gift_ids: action.giftIds } : f
         ),
       }
+    case 'SET_FLOOR_CONSTRAINTS': {
+      const updated = state.floorPlan.map(f => f.floor === action.floor ? { ...f, constraints: action.ids } : f)
+      const normalized = new Map(normalizeConstraints(updated).map(f => [f.floor, f.constraints]))
+      return { ...state, floorPlan: updated.map(f => ({ ...f, constraints: normalized.get(f.floor) })) }
+    }
     case 'SET_FLOOR_MEMO':
       return {
         ...state,
