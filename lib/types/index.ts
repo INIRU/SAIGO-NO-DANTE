@@ -85,6 +85,7 @@ export type Identity = {
 }
 
 export type Skill = {
+  image_id?: string | null
   id: string
   identity_id: string
   name: string

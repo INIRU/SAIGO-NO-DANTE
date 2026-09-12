@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadSourceEgoKeywords } from './identity-data'
+import { getKeywordCategory } from '../../lib/keywords/category'
 
 async function main() {
   const [input] = process.argv.slice(2)
@@ -21,8 +22,8 @@ async function main() {
   }
   const existing = await all('keyword_meta'), egos = await all('ego')
   const byName = new Map(existing.map(row=>[row.name,row]))
-  const fields = ['name','description','name_en','name_jp','description_en','description_jp','icon_slug','effect_type']
-  const keywordChanges = audit.map(row=>Object.fromEntries(fields.map(key=>[key,row[key] ?? null])))
+  const fields = ['name','description','name_en','name_jp','description_en','description_jp','icon_slug','effect_type','category']
+  const keywordChanges = audit.map((row): Record<string, any>=>({...Object.fromEntries(fields.map(key=>[key,row[key] ?? null])), category:getKeywordCategory({name:String(row.name),tag:row.tag,effect_type:row.effect_type})}))
     .filter(row=>fields.some(key=>byName.get(row.name)?.[key]!==row[key]))
   const sources = loadSourceEgoKeywords()
   const egoChanges = egos.flatMap(row=>{

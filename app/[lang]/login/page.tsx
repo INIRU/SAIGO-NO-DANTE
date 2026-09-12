@@ -1,343 +1,70 @@
 'use client'
 
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter } from '@/lib/i18n/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { Link } from '@/lib/i18n/navigation'
-import { motion } from 'motion/react'
-import { translations } from '@/lib/i18n/translations'
-import type { SupportedLang } from '@/lib/i18n/types'
+import { ArrowLeft } from 'lucide-react'
+import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useLocale } from 'next-intl'
+import { getIdentityImageUrl, getSinnerProfileUrl } from '@/lib/utils/images'
+import './login.css'
 
-function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div style={{
-      border: '0.0625rem solid rgba(200,144,10,0.15)',
-      borderRadius: '0.375rem',
-      overflow: 'hidden',
-      background: open ? 'rgba(200,144,10,0.03)' : 'transparent',
-      transition: 'background 300ms ease',
-    }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between transition-colors"
-        style={{
-          padding: '0.75rem 1rem',
-          background: 'transparent',
-          cursor: 'pointer',
-          textAlign: 'left',
-          border: 'none',
-        }}
-      >
-        <span style={{
-          color: open ? '#c8a450' : '#777788',
-          fontSize: '0.75rem',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          fontWeight: 600,
-          transition: 'color 300ms ease',
-        }}>{title}</span>
-        <span style={{
-          color: open ? '#c8900a' : '#555566',
-          fontSize: '0.625rem',
-          transition: 'transform 300ms ease, color 300ms ease',
-          transform: open ? 'rotate(180deg)' : 'none',
-        }}>&#9662;</span>
-      </button>
-      <div style={{
-        maxHeight: open ? '16.25rem' : '0',
-        overflow: 'hidden',
-        transition: 'max-height 400ms cubic-bezier(0.4,0,0.2,1)',
-      }}>
-        <div style={{
-          borderTop: '0.0625rem solid rgba(200,144,10,0.1)',
-          padding: '1rem',
-          overflowY: 'auto',
-          maxHeight: '15rem',
-          background: 'rgba(13,11,8,0.6)',
-        }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
+const copy = {
+  ko: { title: '로그인', intro: '나만의 덱과 거울 던전 플랜을 저장하고 공유하세요.', start: 'Google 계정으로 간편하게 시작하세요.', google: 'Google로 계속하기', busy: '연결 중…', home: '홈으로 돌아가기', browse: '로그인 없이 둘러보기', consent: '계속하면 다음 정책에 동의합니다.', terms: '이용약관', privacy: '개인정보 처리방침', deck: '덱 편성', plan: '거울 던전 플랜', error: '로그인에 연결하지 못했습니다. 다시 시도해 주세요.' },
+  en: { title: 'Sign in', intro: 'Save and share your decks and Mirror Dungeon plans.', start: 'Get started with your Google account.', google: 'Continue with Google', busy: 'Connecting…', home: 'Back to home', browse: 'Browse without signing in', consent: 'By continuing, you agree to these policies.', terms: 'Terms of service', privacy: 'Privacy policy', deck: 'Decks', plan: 'Mirror Dungeon plans', error: 'Unable to connect. Please try again.' },
+  ja: { title: 'ログイン', intro: '自分のデッキと鏡ダンジョンのプランを保存・共有しましょう。', start: 'Googleアカウントで簡単に始められます。', google: 'Googleで続ける', busy: '接続中…', home: 'ホームに戻る', browse: 'ログインせずに閲覧', consent: '続行すると、次の規約に同意したものとみなされます。', terms: '利用規約', privacy: 'プライバシーポリシー', deck: 'デッキ編成', plan: '鏡ダンジョンプラン', error: '接続できませんでした。もう一度お試しください。' },
 }
-
-/* 배경 파티클 */
-function Particles() {
-  return (
-    <div className="login-particles" style={{
-      position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0,
-    }}>
-      {Array.from({ length: 20 }).map((_, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          width: `${0.125 + Math.random() * 0.125}rem`,
-          height: `${0.125 + Math.random() * 0.125}rem`,
-          borderRadius: '50%',
-          background: `rgba(200,144,10,${0.15 + Math.random() * 0.25})`,
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          animation: `loginFloat ${6 + Math.random() * 8}s ease-in-out infinite`,
-          animationDelay: `${-Math.random() * 10}s`,
-          filter: 'blur(0.5px)',
-        }} />
-      ))}
-    </div>
-  )
-}
+const portraits = ['yi-sang', 'ryoshu', 'hong-lu', 'faust', 'sinclair', 'heathcliff']
+const planIllustration = getIdentityImageUrl('don-quixote', 'The Manager of La Manchaland', '10310_gacksung')
 
 export default function LoginPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const locale = useLocale()
-  const lang = locale as SupportedLang
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang] ?? entry['ko'] ?? key
+  const t = copy[locale as keyof typeof copy] ?? copy.ko
+  const [pending, setPending] = useState(false)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { if (status === 'authenticated') router.replace('/') }, [status, router])
+  async function login() {
+    if (pending) return
+    setPending(true); setFailed(false)
+    try { await signIn('google', { callbackUrl: `/${locale}` }) }
+    catch { setFailed(true); setPending(false) }
   }
-
-  useEffect(() => {
-    if (status === 'authenticated') router.replace('/')
-  }, [status, router])
-
-  if (status === 'loading' || session) return null
-
   return (
-    <>
-      <style>{`
-        @keyframes loginFloat {
-          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
-          25% { transform: translateY(-1.5rem) translateX(0.5rem); opacity: 0.6; }
-          50% { transform: translateY(-0.5rem) translateX(-0.75rem); opacity: 0.2; }
-          75% { transform: translateY(-2rem) translateX(0.25rem); opacity: 0.5; }
-        }
-        @keyframes loginPulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.7; }
-        }
-        .login-google-btn:hover {
-          box-shadow: 0 0 1.5rem rgba(200,144,10,0.3), inset 0 0 1rem rgba(200,144,10,0.05) !important;
-          border-color: rgba(200,144,10,0.6) !important;
-        }
-        .login-google-btn:active {
-          transform: scale(0.97);
-        }
-      `}</style>
-
-      <div
-        className="min-h-screen flex flex-col items-center justify-center relative"
-        style={{ background: '#0d0b08', padding: '1rem' }}
-      >
-        {/* 배경 레이어 */}
-        <Particles />
-
-        {/* 중앙 광원 글로우 */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, ease: 'easeOut' }}
-          style={{
-            position: 'fixed',
-            top: '30%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '40rem',
-            height: '40rem',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 40%, transparent 70%)',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-
-        {/* 로고 영역 */}
-        <motion.div
-          className="flex flex-col items-center relative"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.33, 1, 0.68, 1] }}
-          style={{
-            marginBottom: '2rem',
-            zIndex: 1,
-          }}
-        >
-          {/* 로고 뒤 글로우 */}
-          <div style={{
-            position: 'absolute',
-            top: '-1rem',
-            width: '6rem',
-            height: '6rem',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(200,144,10,0.25) 0%, transparent 70%)',
-            animation: 'loginPulse 4s ease-in-out infinite',
-            pointerEvents: 'none',
-          }} />
-
-          <Image
-            src="/images/logo.webp" alt="" width={40} height={58} unoptimized
-            style={{
-              width: '2.5rem', height: 'auto',
-              filter: 'drop-shadow(0 0 1rem rgba(200,144,10,0.6))',
-              position: 'relative',
-            }}
-          />
-
-          <h1 className="font-serif font-light" style={{
-            color: '#c8900a',
-            fontSize: '1.625rem',
-            letterSpacing: '0.2em',
-            marginTop: '0.875rem',
-            textShadow: '0 0 2rem rgba(200,144,10,0.3)',
-          }}>
-            {t('login.title')}
-          </h1>
-          <p style={{
-            color: '#888888',
-            fontSize: '0.75rem',
-            letterSpacing: '0.15em',
-            marginTop: '0.5rem',
-          }}>
-            {t('login.subtitle')}
-          </p>
-
-          {/* 구분선 */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.65, 0, 0.35, 1] }}
-            style={{
-              width: '4rem',
-              height: '0.0625rem',
-              background: 'linear-gradient(90deg, transparent, #c8900a, transparent)',
-              marginTop: '1.25rem',
-              transformOrigin: 'center',
-            }}
-          />
-        </motion.div>
-
-        {/* 로그인 카드 */}
-        <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.35, ease: 'easeOut' }}
-          style={{
-            width: '100%',
-            maxWidth: '26rem',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {/* 카드 외곽 글로우 */}
-          <div style={{
-            position: 'absolute',
-            inset: '-0.0625rem',
-            borderRadius: '0.75rem',
-            background: 'linear-gradient(135deg, rgba(200,144,10,0.2), transparent 40%, transparent 60%, rgba(200,144,10,0.1))',
-            pointerEvents: 'none',
-          }} />
-
-          <div style={{
-            position: 'relative',
-            background: 'linear-gradient(180deg, #14120e 0%, #0f0d0a 100%)',
-            border: '0.0625rem solid rgba(200,144,10,0.12)',
-            borderRadius: '0.75rem',
-            padding: '2rem 1.75rem',
-            boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.5), inset 0 0.0625rem 0 rgba(200,144,10,0.08)',
-          }}>
-            <h2 className="font-serif font-light text-center" style={{
-              color: '#c8a450',
-              fontSize: '1rem',
-              letterSpacing: '0.15em',
-              marginBottom: '1.5rem',
-            }}>
-              {t('common.login')}
-            </h2>
-
-            {/* 약관 아코디언 */}
-            <div className="space-y-2" style={{ marginBottom: '1.25rem' }}>
-              <Accordion title={t('login.terms.title')}>
-                <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {t('login.terms.summary')}
-                </div>
-                <Link href="/terms" target="_blank"
-                  style={{ display: 'block', marginTop: '0.625rem', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
-                  {t('login.terms.link')} &rarr;
-                </Link>
-              </Accordion>
-
-              <Accordion title={t('login.privacy.title')}>
-                <div style={{ color: '#666677', fontSize: '0.6875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {t('login.privacy.summary')}
-                </div>
-                <Link href="/privacy" target="_blank"
-                  style={{ display: 'block', marginTop: '0.625rem', color: 'var(--gold-dim)', fontSize: '0.6875rem', textDecoration: 'underline' }}>
-                  {t('login.privacy.link')} &rarr;
-                </Link>
-              </Accordion>
-            </div>
-
-            {/* 동의 문구 */}
-            <p style={{
-              color: '#5a5a70',
-              fontSize: '0.6875rem',
-              textAlign: 'center',
-              marginBottom: '1.25rem',
-              lineHeight: 1.7,
-            }}>
-              {t('login.consent')}
-            </p>
-
-            {/* Google 로그인 버튼 */}
-            <button
-              onClick={() => signIn('google', { callbackUrl: '/' })}
-              className="login-google-btn w-full flex items-center justify-center"
-              style={{
-                gap: '0.625rem',
-                padding: '0.8125rem',
-                borderRadius: '0.5rem',
-                background: 'linear-gradient(135deg, rgba(200,144,10,0.12) 0%, rgba(200,144,10,0.06) 100%)',
-                color: '#e8c860',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                border: '0.0625rem solid rgba(200,144,10,0.3)',
-                cursor: 'pointer',
-                transition: 'all 300ms ease',
-                letterSpacing: '0.03em',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+    <div className="login-page">
+      <header className="login-header">
+        <Link href="/" className="login-brand"><Image src="/images/logo.webp" alt="" width={30} height={42} unoptimized />{locale === 'ko' ? '최애의 관리자' : 'SAIGO NO DANTE'}</Link>
+        <Link href="/" className="login-home"><ArrowLeft size={16} />{t.home}</Link>
+      </header>
+      <div className="login-content">
+        <section className="login-intro" aria-labelledby="login-title">
+          <p className="login-eyebrow">ACCOUNT</p>
+          <h1 id="login-title">{t.title}</h1>
+          <p className="login-description">{t.intro}</p>
+          <div className="login-previews" aria-hidden="true">
+            <div className="login-preview"><div className="login-portraits">{portraits.map(id => <Image key={id} src={getSinnerProfileUrl(id)} alt="" width={90} height={110} unoptimized />)}</div><span>{t.deck}</span></div>
+            <div className="login-preview"><div className="login-illustration"><Image src={planIllustration} alt="" fill sizes="260px" /></div><span>{t.plan}</span></div>
+          </div>
+        </section>
+        <section className="login-panel" aria-labelledby="login-panel-title">
+          <h2 id="login-panel-title">{t.title}</h2>
+          <p>{t.start}</p>
+          <button type="button" className="login-google-btn" onClick={login} disabled={pending || status !== 'unauthenticated'} aria-busy={pending}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
                 <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
                 <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.548 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
-              {t('login.google')}
-            </button>
-          </div>
-        </motion.div>
-
-        {/* 하단 링크 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-          style={{ marginTop: '1.5rem', zIndex: 1 }}
-        >
-          <Link href="/" style={{
-            color: '#444458',
-            fontSize: '0.75rem',
-            letterSpacing: '0.05em',
-            transition: 'color 300ms ease',
-          }}
-            className="hover:text-yellow-300">
-            &larr; {t('login.browse')}
-          </Link>
-        </motion.div>
+            {pending ? t.busy : t.google}
+          </button>
+          {failed && <p role="alert" className="login-error">{t.error}</p>}
+          <div className="login-consent"><p>{t.consent}</p><Link href="/terms" target="_blank" rel="noopener noreferrer">{t.terms}</Link><span> · </span><Link href="/privacy" target="_blank" rel="noopener noreferrer">{t.privacy}</Link></div>
+          <Link href="/" className="login-browse">{t.browse}</Link>
+        </section>
       </div>
-    </>
+      <footer className="login-footer"><Link href="/terms">{t.terms}</Link><span>·</span><Link href="/privacy">{t.privacy}</Link></footer>
+    </div>
   )
 }

@@ -503,13 +503,13 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         </Link>
 
         <motion.header
-          className="mb-5 border-y border-[#2a2118] bg-[#100c08]/76"
+          className="mb-8 rounded-lg bg-[#1a1510]"
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
-          <div className="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,21rem)]">
-            <div className="min-w-0 px-3 py-3.5 sm:px-5 sm:py-4">
+          <div className="grid min-w-0 items-center gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0">
               <div className="mb-2.5 flex min-w-0 flex-wrap items-center gap-2">
                 <span
                   className="inline-flex min-h-9 items-center rounded-sm border px-2.5 text-[0.9375rem] font-semibold"
@@ -517,21 +517,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 >
                   {difficultyLabel}
                 </span>
-                <span className="inline-flex min-h-9 items-center rounded-sm border border-[#2a2118] bg-[#1a1510] px-2.5 font-mono text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
+                <span className="inline-flex min-h-9 items-center rounded-sm bg-[#ffffff05] px-2.5 text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
                   {deckCountLabel}
                 </span>
-                <span className="inline-flex min-h-9 items-center rounded-sm border border-[#2a2118] bg-[#1a1510] px-2.5 font-mono text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
+                <span className="inline-flex min-h-9 items-center rounded-sm bg-[#ffffff05] px-2.5 text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
                   {tDetail('egoCount', { count: egoSlots.length })}
                 </span>
               </div>
 
-              <h1 className="max-w-[34ch] break-words font-serif text-[1.25rem] font-bold leading-[1.18] text-[#e8dcc8] text-pretty sm:max-w-[38ch] sm:text-[1.625rem] lg:text-[1.75rem]">
+              <h1 className="max-w-[34ch] break-words font-[family-name:var(--font-paperlogy)] text-2xl font-semibold leading-snug text-[#e8dcc8] text-pretty sm:text-3xl">
                 {plan.title}
               </h1>
 
-              <div className="mt-3 flex min-w-0 flex-col gap-3 border-l border-[#3a2a10] pl-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-5 flex min-w-0 flex-wrap items-center gap-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-[#3a2a10] bg-[#1a1510]">
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#1a1510]">
                     <Image src={avatarUrl} alt={username} width={40} height={40} className="h-10 w-10 object-cover" />
                   </div>
                   <div className="min-w-0">
@@ -564,7 +564,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               </div>
             </div>
 
-            <div className="min-w-0 border-t border-[#241c14] bg-[#0d0b08]/24 px-3 py-3 sm:px-5 lg:border-l lg:border-t-0 lg:px-4">
+            <div className="min-w-0 lg:max-w-[24rem]">
               <PlanActions
                 planId={plan.id}
                 planTitle={plan.title}
@@ -594,10 +594,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             {plan.description && (
               <motion.article
                 variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                className="border-y border-[#241c14] bg-[#0f0b07] px-4 py-5 sm:px-5 sm:py-6"
+                className="rounded-lg bg-[#1a1510] px-5 py-5 sm:px-6 sm:py-6"
               >
                 <div className="min-w-0 w-full">
-                  <h2 className="mb-4 border-b border-[#241c14] pb-2 text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">
+                  <h2 className="mb-4 text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">
                     {tDetail('descriptionTitle')}
                   </h2>
                   <div
@@ -664,7 +664,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               )}
             </DetailSection>
 
-            <DetailSection className="space-y-3">
+            <DetailSection className="space-y-3 !border-0 !bg-transparent !p-0">
               <SectionTitle
                 title={tPlanner('tabs.floor')}
                 count={tFloor('configuredFloorCount', { configured: floorPlan.filter(f => f.theme_id).length, total: floorPlan.length })}

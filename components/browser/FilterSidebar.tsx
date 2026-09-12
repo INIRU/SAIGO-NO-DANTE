@@ -80,7 +80,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
           <div
             ref={panelRef}
             tabIndex={-1}
-            className="absolute bottom-0 left-0 right-0 rounded-t-2xl overflow-y-auto outline-none"
+            className="popup-drawer absolute bottom-0 left-0 right-0 rounded-t-2xl overflow-y-auto outline-none"
             style={{
               background: '#1a1510',
               maxHeight: '80vh',

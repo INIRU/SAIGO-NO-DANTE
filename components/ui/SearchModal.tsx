@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { remember } from '@/lib/discovery/history'
 
 import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from 'react'
@@ -7,16 +9,13 @@ import { useRouter } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
+import BaseModal from './BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { useDebounce } from '@/hooks/useDebounce'
 import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
-import {
-  modalOverlayVariants,
-  modalPanelVariants,
-  reducedModalPanelVariants,
-} from '@/lib/animations'
+
 
 // Korean consonant (초성) list for fuzzy search
 const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
@@ -50,10 +49,11 @@ const GRADE_COLORS: Record<string, string> = {
 }
 
 const GRADE_ICONS: Record<string, string> = {
-  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
-  TETH: `${STORAGE_BASE}/icons/grade/TETH.webp`,
-  HE: `${STORAGE_BASE}/icons/grade/HE.webp`,
-  WAW: `${STORAGE_BASE}/icons/grade/WAW.webp`,
+  ZAYIN: getEgoGradeBannerUrl('ZAYIN'),
+  TETH: getEgoGradeBannerUrl('TETH'),
+  HE: getEgoGradeBannerUrl('HE'),
+  WAW: getEgoGradeBannerUrl('WAW'),
+  ALEPH: getEgoGradeBannerUrl('ALEPH'),
 }
 
 type IdentityResult = { id: string; name_kr: string; rarity: number; game_id: string; folder_name: string; sinner_id: string; sinners: { id: string; name_kr: string } }
@@ -162,7 +162,6 @@ export default function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
   const t = useTranslations('globalSearch')
   const reduceMotion = useReducedMotion()
-  const panelVariants = reduceMotion ? reducedModalPanelVariants : modalPanelVariants
   const inputRef = useRef<HTMLInputElement>(null)
   const [rawQuery, setRawQuery] = useState('')
   const query = useDebounce(rawQuery, 300)
@@ -179,7 +178,8 @@ export default function SearchModal({ open, onClose }: Props) {
       setResults([])
       setSuggestions([])
       setActiveIndex(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      const timer = setTimeout(() => inputRef.current?.focus(), 50)
+      return () => clearTimeout(timer)
     }
   }, [open])
 
@@ -274,44 +274,10 @@ export default function SearchModal({ open, onClose }: Props) {
     router.push(href)
   }
 
-  // body scroll lock
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [open])
-
   return (
-    <AnimatePresence>
-      {open && (
-    <motion.div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('ariaLabel')}
-      className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-[4.75rem] sm:pt-[12vh]"
-      style={{ background: 'rgba(5,4,3,0.76)', backdropFilter: 'blur(4px)' }}
-      variants={modalOverlayVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      onClick={onClose}
-    >
-      <motion.div
-        className="flex max-h-[calc(100dvh-6rem)] w-full max-w-2xl origin-top flex-col overflow-hidden rounded-lg"
-        style={{
-          background: '#1a1510',
-          border: '1px solid rgba(200,144,10,0.24)',
-          boxShadow: '0 1.25rem 3rem rgba(0,0,0,0.52)',
-        }}
-        variants={panelVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        onClick={e => e.stopPropagation()}
-      >
+    <BaseModal open={open} onClose={onClose} title={t('ariaLabel')} maxWidth="44rem" zIndex={100}>
+      <div className="popup-search flex max-h-[calc(100dvh-3rem)] flex-col overflow-hidden rounded-lg">
+        <header className="popup-header"><h2>{t('ariaLabel')}</h2><button type="button" onClick={onClose} aria-label={t('keyboard.close')}><X size={20}/></button></header>
         {/* Input */}
         <div className="flex min-h-[3.5rem] items-center gap-3 px-3 sm:px-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <Search size={18} style={{ color: 'var(--gold)', flexShrink: 0, opacity: 0.76 }} />
@@ -346,7 +312,7 @@ export default function SearchModal({ open, onClose }: Props) {
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '0.25rem',
-              color: '#555',
+              color: 'var(--text-muted)',
               fontSize: '0.75rem',
               fontFamily: 'var(--font-mono)',
             }}
@@ -543,9 +509,7 @@ export default function SearchModal({ open, onClose }: Props) {
             <span>{t('keyboard.close')}</span>
           </span>
         </div>
-      </motion.div>
-    </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </BaseModal>
   )
 }

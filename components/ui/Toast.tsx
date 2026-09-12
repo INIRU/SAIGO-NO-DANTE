@@ -1,113 +1,32 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertTriangle, X } from 'lucide-react'
+import { useLocale } from 'next-intl'
 
 type ToastType = 'success' | 'error' | 'warning'
-
-interface ToastData {
-  message: string
-  type: ToastType
-  id: number
-}
-
-const DURATION = 3000
+interface ToastData { message: string; type: ToastType; id: number }
+const DURATION = 5000
 
 export function useToast() {
   const [toast, setToast] = useState<ToastData | null>(null)
-
-  const showToast = useCallback((message: string, type: ToastType = 'error') => {
-    const id = Date.now()
-    setToast({ message, type, id })
-    setTimeout(() => setToast(prev => prev?.id === id ? null : prev), DURATION)
-  }, [])
-
-  return { toast, showToast }
+  const showToast = useCallback((message:string,type:ToastType='error')=>setToast({message,type,id:Date.now()}),[])
+  useEffect(()=>{
+    if(!toast)return
+    const timer=setTimeout(()=>setToast(null),DURATION)
+    return ()=>clearTimeout(timer)
+  },[toast])
+  return {toast,showToast}
 }
 
-export function Toast({ toast }: { toast: ToastData | null }) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (toast) {
-      // 약간의 딜레이 후 표시 (mount 후 애니메이션 트리거)
-      requestAnimationFrame(() => setVisible(true))
-      const timer = setTimeout(() => setVisible(false), DURATION - 300)
-      return () => clearTimeout(timer)
-    }
-    setVisible(false)
-  }, [toast?.id])
-
-  if (!toast) return null
-
-  const styles = {
-    error: {
-      bg: 'linear-gradient(135deg, rgba(80,16,16,0.95), rgba(60,12,12,0.95))',
-      color: '#ffa0a0',
-      border: 'rgba(200,60,60,0.35)',
-      shadow: '0 8px 32px rgba(120,20,20,0.4), inset 0 1px 0 rgba(255,120,120,0.08)',
-      bar: 'linear-gradient(90deg, #ff6060, #ff4040)',
-      icon: '#ff6060',
-    },
-    warning: {
-      bg: 'linear-gradient(135deg, rgba(80,60,16,0.95), rgba(60,44,12,0.95))',
-      color: '#ffd080',
-      border: 'rgba(200,160,60,0.35)',
-      shadow: '0 8px 32px rgba(120,80,20,0.4), inset 0 1px 0 rgba(255,200,120,0.08)',
-      bar: 'linear-gradient(90deg, #ffc060, #e0a040)',
-      icon: '#ffc060',
-    },
-    success: {
-      bg: 'linear-gradient(135deg, rgba(20,48,20,0.95), rgba(12,36,12,0.95))',
-      color: '#a0f0a0',
-      border: 'rgba(80,180,80,0.35)',
-      shadow: '0 8px 32px rgba(20,80,20,0.4), inset 0 1px 0 rgba(120,255,120,0.08)',
-      bar: 'linear-gradient(90deg, #60d060, #40c040)',
-      icon: '#60d060',
-    },
-  }
-
-  const s = styles[toast.type]
-  const Icon = toast.type === 'error' ? XCircle : toast.type === 'warning' ? AlertTriangle : CheckCircle2
-
-  return (
-    <div
-      className="fixed top-20 right-4 z-50 sm:right-6"
-      style={{
-        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0) scale(1)' : 'translateY(-12px) scale(0.95)',
-        pointerEvents: visible ? 'auto' : 'none',
-      }}
-    >
-      <div
-        className="relative rounded-lg text-sm backdrop-blur-sm overflow-hidden"
-        style={{
-          background: s.bg,
-          color: s.color,
-          border: `1px solid ${s.border}`,
-          fontFamily: 'var(--font-body)',
-          maxWidth: '320px',
-          minWidth: '200px',
-          boxShadow: s.shadow,
-        }}
-      >
-        <div className="flex items-center gap-2.5 px-4 py-3">
-          <Icon size={18} style={{ color: s.icon, flexShrink: 0 }} />
-          <span style={{ lineHeight: 1.4 }}>{toast.message}</span>
-        </div>
-
-        {/* 진행바 */}
-        <div
-          className="absolute bottom-0 left-0 h-[2px]"
-          style={{
-            background: s.bar,
-            width: visible ? '0%' : '100%',
-            transition: visible ? `width ${DURATION - 300}ms linear` : 'none',
-            opacity: 0.6,
-          }}
-        />
-      </div>
-    </div>
-  )
+export function Toast({toast}:{toast:ToastData|null}) {
+  const locale=useLocale()
+  const [dismissed,setDismissed]=useState<number|null>(null)
+  if(!toast || toast.id===dismissed)return null
+  const Icon=toast.type==='success'?CheckCircle2:toast.type==='warning'?AlertTriangle:XCircle
+  const color=toast.type==='success'?'#85bb83':toast.type==='warning'?'var(--gold-light)':'#e48b7f'
+  return <div key={toast.id} className="popup-toast" role={toast.type==='error'?'alert':'status'}>
+    <Icon size={20} style={{color}} aria-hidden="true"/><span>{toast.message}</span>
+    <button type="button" onClick={()=>setDismissed(toast.id)} aria-label={locale==='ko'?'알림 닫기':locale==='ja'?'通知を閉じる':'Dismiss notification'}><X size={16}/></button>
+  </div>
 }

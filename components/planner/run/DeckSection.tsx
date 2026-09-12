@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { useMemo, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
@@ -356,7 +358,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                         minHeight: '1.5rem',
                       }}>
                         {grade !== 'ALEPH' ? (
-                          <Image src={`${STORAGE_BASE}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized
+                          <Image src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
                             style={{ height: '0.6875rem', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }} />
                         ) : (
                           <span style={{ color: gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
@@ -553,7 +555,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                     {/* 등급 헤더 */}
                     <div className="flex items-center gap-2" style={{ marginBottom: '0.5rem' }}>
                       {grade !== 'ALEPH' ? (
-                        <Image src={`${STORAGE_BASE}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized style={{ height: '0.75rem', width: 'auto' }} />
+                        <Image src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized style={{ height: '0.75rem', width: 'auto' }} />
                       ) : (
                         <span style={{ color: gc, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ALEPH</span>
                       )}

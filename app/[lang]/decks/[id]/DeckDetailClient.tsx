@@ -1294,7 +1294,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                                         {[0, 1, 2].map(idx => {
                                           const skill = sortedSk.find(s => s.skill_order === idx + 1)
                                           const sc = skill ? sinColor(skill.sin_affinity) : '#888'
-                                          const iconUrl = skill ? getSkillIconUrl(adaptedIdentity, skillImageIndices[skill.id] ?? idx + 1) : ''
+                                          const iconUrl = skill ? getSkillIconUrl(adaptedIdentity, skillImageIndices[skill.id] ?? idx + 1, skill) : ''
                                           return (
                                             <div
                                               key={idx}

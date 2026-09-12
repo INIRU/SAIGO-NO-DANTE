@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { useState, useMemo, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
@@ -549,14 +551,10 @@ export default function PlanDeckTabs({
                             cursor: ego?.ego_id ? 'pointer' : 'default',
                           }}
                         >
-                          {grade !== 'ALEPH' ? (
-                            <Image
-                              src={`${S}/icons/grade/${grade}.webp`} alt={grade} width={22} height={11} unoptimized
+                          <Image
+                              src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
                               style={{ height: '0.6875rem', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}
                             />
-                          ) : (
-                            <span style={{ color: gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
-                          )}
                           {ego ? (
                             <span style={{ color: gc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, flex: 1, textAlign: 'left' }}>{ego.name_kr}</span>
                           ) : (

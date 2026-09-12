@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ArrowUpRight, History, Layers3 } from "lucide-react";
+import BoardSkeleton from "./BoardSkeleton";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
 import IdentityCard from "@/components/sinners/IdentityCard";
@@ -119,11 +120,7 @@ export default function DiscoveryShelf({
             )}
           </button>
         )}
-        {!data && !error && (
-          <p role="status" className="py-8 text-[var(--text-muted)]">
-            {label("게시물 불러오는 중", "読み込み中", "Loading posts")}
-          </p>
-        )}
+        {!data && !error && <BoardSkeleton kind={kind} shelf count={3} />}
         {data &&
           (
             [
@@ -139,7 +136,7 @@ export default function DiscoveryShelf({
                   `最近更新された${noun}`,
                   `Recently updated ${noun}`,
                 ),
-                data.updated.filter((p) => p.updated_at > p.created_at),
+                data.updated,
               ],
               [
                 "popular",
@@ -225,9 +222,9 @@ export default function DiscoveryShelf({
           <section>
             <h2 className="mb-4 font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)]">
               {label(
-                "자주 찾는 인격",
-                "注目の人格",
-                "Frequently viewed identities",
+                "관리자분들이 자주 찾는 인격",
+                "管理人たちがよく探す人格",
+                "Identities managers frequently view",
               )}
             </h2>
             <div className="flex gap-6 overflow-x-auto p-4">

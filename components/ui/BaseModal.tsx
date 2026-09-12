@@ -69,8 +69,8 @@ export default function BaseModal({
                 className="fixed inset-0"
                 style={{
                   zIndex,
-                  background: 'rgba(0,0,0,0.75)',
-                  ...(blur ? { backdropFilter: 'blur(0.5rem)', WebkitBackdropFilter: 'blur(0.5rem)' } : {}),
+                  background: 'rgba(0,0,0,0.6)',
+                  ...(blur ? { backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' } : {}),
                 }}
                 variants={modalOverlayVariants}
                 initial="initial"
@@ -96,7 +96,7 @@ export default function BaseModal({
                 <Dialog.Title className="sr-only">{title}</Dialog.Title>
                 {description && <Dialog.Description className="sr-only">{description}</Dialog.Description>}
                 <div
-                  className={`relative w-full ${className}`}
+                  className={`popup-surface relative w-full ${className}`}
                   style={{ maxWidth, pointerEvents: 'auto' }}
                 >
                   {children}

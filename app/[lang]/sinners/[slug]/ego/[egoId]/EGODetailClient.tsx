@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link } from '@/lib/i18n/navigation'
@@ -44,14 +46,9 @@ const RES_KEY_MAP: Record<string, string> = {
 
 // ─── Grade 이미지 ─────────────────────────────────────────────────────
 function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
-  if (grade === 'ALEPH') return (
-    <span style={{ fontFamily: 'monospace', fontSize: `${height - 2}px`, color: '#c83040', letterSpacing: '0.1em' }}>
-      ALEPH
-    </span>
-  )
   return (
     <Image
-      src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
+      src={getEgoGradeBannerUrl(grade)}
       alt={grade}
       width={40}
       height={height}

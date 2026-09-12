@@ -1,7 +1,7 @@
 'use client'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale } from 'next-intl'
-import { MessageSquare, Megaphone, ArrowUpRight } from 'lucide-react'
+import { MessageSquare, Megaphone, Users, ArrowUpRight } from 'lucide-react'
 import './admin.css'
 export default function AdminNavigation() {
   const path = usePathname()
@@ -26,6 +26,7 @@ export default function AdminNavigation() {
             label: ko ? '공지 관리' : ja ? 'お知らせ管理' : 'Announcements',
             icon: Megaphone,
           },
+          { href: '/admin/users', label: ko ? '유저 관리' : ja ? 'ユーザー管理' : 'Users', icon: Users },
         ].map((i) => (
           <Link
             key={i.href}

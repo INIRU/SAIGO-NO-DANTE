@@ -70,8 +70,7 @@ export function useIdentityGuideData({ sinner, identity, filteredSkills, filtere
       map[key] = {
         name: localSkillName(sk), skill_type: sk.skill_type, sin_affinity: sk.sin_affinity as string,
         skill_order: sk.skill_order, description: localSkillDesc(sk),
-        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
-        iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
+        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order, sk),
         identityName: getLocalizedName(identity, lang), sinnerName: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
       }
       // EN key alias
@@ -207,8 +206,7 @@ export function useIdentityGuideData({ sinner, identity, filteredSkills, filtere
         : `[s:${sinner.name_kr}:${base}]`
       pool.push({
         label: `${orderLabel} ${localSkillName(sk)}`, type: 'skill', typeLabel: t('identity.tab.skills'), color: sc,
-        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order),
-        iconFallbackUrl: (skillImgIdxMap[sk.id] ?? sk.skill_order) >= 5 ? getSkillIconUrl(identity, 3) : undefined,
+        iconUrl: getSkillIconUrl(identity, skillImgIdxMap[sk.id] ?? sk.skill_order, sk),
         token,
       })
     }

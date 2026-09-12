@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { stripPlanForList } from "@/lib/planner/stripPlanForList";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 async function load(kind: "deck" | "planner", days: number) {
   "use cache";
   cacheLife("minutes");
   cacheTag(kind === "deck" ? CACHE_TAGS.decksList : CACHE_TAGS.plansList, CACHE_TAGS.gameData);
   const db = createAdminClient().schema("limbus");
-  const columns =
+  const columns: string =
     kind === "deck"
-      ? "id,title,description,tags,main_keywords,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))"
-      : "id,title,description,lang,difficulty,deck,egos,tags,created_at,updated_at,vote_count,view_count,comment_count";
+      ? "id,user_id,profiles!decks_user_id_fkey(username,avatar_url),title,description,tags,main_keywords,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))"
+      : "id,user_id,profiles:user_id(username,avatar_url),title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,updated_at,vote_count,view_count,comment_count";
   const table = kind === "deck" ? "decks" : "md_plans";
-  const [counts, recent, updated] = await Promise.all([
+  const [counts, recent, edits] = await Promise.all([
     db.rpc("discovery_counts", { days }),
     db
       .from(table)
       .select(columns)
       .order("created_at", { ascending: false })
       .limit(6),
-    db
-      .from(table)
-      .select(columns)
-      .order("updated_at", { ascending: false })
-      .limit(6),
+    db.rpc("discovery_recent_edits", { p_kind: kind }),
   ]);
-  if (counts.error || recent.error || updated.error)
+  if (counts.error || recent.error || edits.error)
     throw Error("Discovery unavailable");
   const metrics = counts.data as {
     kind: string;
@@ -40,7 +37,8 @@ async function load(kind: "deck" | "planner", days: number) {
     .filter((r) => r.kind === "identity")
     .slice(0, 12)
     .map((r) => r.entity_id);
-  const [popular, identities] = await Promise.all([
+  const editedIds = (edits.data as { entity_id: string }[]).map(row => row.entity_id);
+  const [popular, identities, updated] = await Promise.all([
     ids.length
       ? db.from(table).select(columns).in("id", ids)
       : Promise.resolve({ data: [], error: null }),
@@ -52,12 +50,21 @@ async function load(kind: "deck" | "planner", days: number) {
           )
           .in("id", identityIds)
       : Promise.resolve({ data: [], error: null }),
+    editedIds.length
+      ? db.from(table).select(columns).in("id", editedIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  if (popular.error || identities.error) throw Error("Discovery unavailable");
+  if (popular.error || identities.error || updated.error) throw Error("Discovery unavailable");
+  const formatPosts = (rows: unknown[]) => rows.map(raw => {
+    const row = raw as Record<string, unknown>;
+    if (kind === "planner") return stripPlanForList(row);
+    const profile = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) as { username?: string | null } | null;
+    return { ...row, username: profile?.username ?? undefined };
+  });
   return {
-    recent: recent.data,
-    updated: updated.data,
-    popular: popular.data,
+    recent: formatPosts(recent.data ?? []),
+    updated: formatPosts([...((updated.data ?? []) as unknown as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),
+    popular: formatPosts(popular.data ?? []),
     identities: identities.data,
     counts: metrics,
   };

@@ -212,7 +212,7 @@ export default function DeckIdentityPreviewModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="deck-identity-preview-title"
-            className="flex h-[calc(100dvh-1rem)] w-full max-w-[80rem] flex-col overflow-hidden rounded-t-2xl sm:h-[82dvh] sm:rounded-xl"
+            className="popup-drawer flex h-[calc(100dvh-1rem)] w-full max-w-[80rem] flex-col overflow-hidden rounded-t-2xl sm:h-[82dvh] sm:rounded-xl"
             style={{
               background: '#0d0b08',
               border: '1px solid rgba(232,176,48,0.18)',
@@ -231,11 +231,7 @@ export default function DeckIdentityPreviewModal({
                 borderBottom: '1px solid rgba(232,176,48,0.14)',
               }}
             >
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                <span className="h-3 w-3 rounded-full" style={{ background: '#d75f57' }} />
-                <span className="h-3 w-3 rounded-full" style={{ background: '#d6a33d' }} />
-                <span className="h-3 w-3 rounded-full" style={{ background: '#6a9f58' }} />
-              </div>
+
               <div className="min-w-0 flex-1 cursor-default select-none text-center sm:text-left">
                 <h2
                   id="deck-identity-preview-title"

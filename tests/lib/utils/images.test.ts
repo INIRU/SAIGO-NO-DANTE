@@ -97,6 +97,13 @@ describe('getIdentityInfoUrl', () => {
 })
 
 describe('getSkillIconUrl', () => {
+  it('uses original sprite IDs for S1/S3 variants, including borrowed artwork', () => {
+    expect(getSkillIconUrl(mockIdentity, 3, {image_id:'1040205'})).toContain('/ryoshu/1040205.webp')
+    expect(getSkillIconUrl(mockIdentity, 3, {image_id:'1040206'})).toContain('/ryoshu/1040206.webp')
+    expect(getSkillIconUrl(mockIdentity, 1, {image_id:'1040207'})).toContain('/ryoshu/1040207.webp')
+    expect(getSkillIconUrl(mockIdentity, 3, {image_id:'1011303'})).toContain('/yi-sang/1011303.webp')
+    expect(getSkillIconUrl(mockIdentity, 1, {image_id:'../invalid'})).toContain('/ryoshu/1040201.webp')
+  })
   it('스킬 아이콘 URL을 생성해야 한다 (2자리 패딩)', () => {
     const url = getSkillIconUrl(mockIdentity, 1)
     expect(url).toBe(`${STORAGE_BASE}/icons/skills/ryoshu/1040201.webp`)

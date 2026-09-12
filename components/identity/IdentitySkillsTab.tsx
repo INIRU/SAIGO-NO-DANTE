@@ -140,10 +140,9 @@ export default function IdentitySkillsTab({
         {filteredSkills.map(skill => {
           const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#cccccc'
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
-          const skillIconUrl = getSkillIconUrl(identity, imgIdx)
+          const skillIconUrl = getSkillIconUrl(identity, imgIdx, skill)
           const v = variantMap[skill.id]
           const baseOrder = v?.baseOrder ?? (skill.skill_order >= 5 ? 3 : skill.skill_order)
-          const skillIconFallback = imgIdx >= 5 ? getSkillIconUrl(identity, baseOrder) : undefined
           const diff = skillDiffs?.get(skill.id)
           const offCorr = skill.offense_level != null ? skill.offense_level - 60 : null
           const offCorrStr = offCorr === null ? '' : offCorr === 0 ? '' : offCorr > 0 ? `(+${offCorr})` : `(${offCorr})`
@@ -183,7 +182,6 @@ export default function IdentitySkillsTab({
                   </div>
                   <SkillFrame
                     skillIconUrl={skillIconUrl}
-                    skillIconFallback={skillIconFallback}
                     sin={skill.sin_affinity || 'neutral'}
                     skillSlot={isDefense ? 4 : baseOrder <= 3 ? baseOrder : 1}
                     sinColor={skillSinColor}

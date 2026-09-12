@@ -11,7 +11,7 @@ export default function Skeleton({
 }) {
   return (
     <div
-      className={`animate-pulse rounded ${className}`}
+      className={`motion-safe:animate-pulse rounded ${className}`}
       style={{ background: '#1a1510', ...style }}
     />
   )

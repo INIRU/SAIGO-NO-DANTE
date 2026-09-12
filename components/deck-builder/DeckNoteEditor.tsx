@@ -343,7 +343,7 @@ export default function DeckNoteEditor({
           sin_affinity: sk.sin_affinity as string,
           skill_order: sk.skill_order,
           description: sk.description,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
+          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order, sk),
           identityName: identity.name_kr,
           sinnerName,
           skill: sk,
@@ -483,7 +483,7 @@ export default function DeckNoteEditor({
           type: 'skill',
           typeLabel: t('types.skill'),
           color: sc,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
+          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order, sk),
           token,
           syntax: 'inline',
         })
@@ -492,7 +492,7 @@ export default function DeckNoteEditor({
           type: 'skill',
           typeLabel: t('types.skillFrame'),
           color: sc,
-          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order),
+          iconUrl: getSkillIconUrl(identity, imgIdx[sk.id] ?? sk.skill_order, sk),
           token: subIdx === 0
             ? `{{skill:${sinnerName}:${baseOrder}}}`
             : `{{skill:${sinnerName}:${baseOrder}:${subIdx + 1}}}`,

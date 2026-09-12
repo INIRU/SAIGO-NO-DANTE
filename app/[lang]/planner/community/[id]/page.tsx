@@ -1,6 +1,7 @@
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
+import { absoluteUrl } from '@/lib/utils/og-image'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -39,6 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: tDetail('metaTitle', { title: plan.title }),
+    openGraph: { images: [{ url: absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`), width: 1200, height: 630, alt: plan.title }] },
+    twitter: { card: 'summary_large_image', images: [absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`)] },
     description: plan.description
       ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: plan.description })
       : tDetail('metaDescription', { difficulty: diff }),
@@ -82,7 +85,7 @@ export default async function PlanDetailPage({ params }: Props) {
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     supabase.schema('limbus').from('skills')
       .select(`
-        id, identity_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins,
+        id, identity_id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins,
         base_power, coin_power, skill_order, variant_order, atk_weight, offense_level,
         description, description_en, description_jp, uptie_level
       `)

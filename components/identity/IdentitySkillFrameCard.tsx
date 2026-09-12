@@ -2,10 +2,9 @@
 
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import { unbreakableCoinIndices } from '@/lib/identity/skill-description'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
-import { computeSkillImageIndices } from '@/lib/utils/images'
+import { computeSkillImageIndices, getSkillIconUrl } from '@/lib/utils/images'
 import type { CSSProperties } from 'react'
 
 type SkillFrameSkill = {
@@ -25,6 +24,7 @@ type SkillFrameSkill = {
   description_en?: string | null
   description_jp?: string | null
   skill_order: number
+  image_id?: string | null
   atk_weight?: number | null
   offense_level?: number | null
   variant_order?: number | null
@@ -99,7 +99,7 @@ export default function IdentitySkillFrameCard({
   const skillImageIdx = computeSkillImageIndices(skills)
   const imageIndex = skillImageIdx[skill.id] ?? skill.skill_order
   const skillIconUrl = identity?.game_id
-    ? `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
+    ? getSkillIconUrl({ sinner_id: identity.sinner_id, game_id: identity.game_id }, imageIndex, skill)
     : ''
   const description = localizedText(lang, skill.description, skill.description_en, skill.description_jp)
   const atkType = skill.atk_type ?? skill.atkType ?? skill.attack_type ?? skill.skill_type

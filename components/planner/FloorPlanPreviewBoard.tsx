@@ -2,6 +2,7 @@
 
 import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
 
+import './floor-preview.css'
 import FloorConstraints from './FloorConstraints'
 import FloorGuidance from './FloorGuidance'
 
@@ -113,7 +114,7 @@ export default function FloorPlanPreviewBoard({
 
   return (
     <motion.div
-      className="space-y-3"
+      className="floor-preview space-y-6"
       variants={shouldReduceMotion ? undefined : staggerContainer(0.045)}
       initial={shouldReduceMotion ? false : 'initial'}
       whileInView={shouldReduceMotion ? undefined : 'animate'}
@@ -123,10 +124,10 @@ export default function FloorPlanPreviewBoard({
         <motion.section
           key={segment.start}
           variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-          className="overflow-hidden rounded-md border border-[#241c14] bg-[#120e09]"
+          className="space-y-3"
           aria-label={tFloor(`segment.${segment.labelKey}`, { start: segment.start, end: segment.end })}
         >
-          <div className="flex items-center justify-between border-b border-[#241c14] bg-[#18120d] px-3 py-2">
+          <div className="flex items-center justify-between gap-4 px-1 py-2">
             <h3 className="text-[1rem] font-semibold text-[#e8dcc8]">
               {segment.start}-{segment.end}
             </h3>
@@ -135,7 +136,7 @@ export default function FloorPlanPreviewBoard({
             </span>
           </div>
 
-          <div className="divide-y divide-[#201810]">
+          <div className="space-y-3">
             {segment.entries.map(entry => {
               const floorDifficulty = getFloorDifficulty(entry, planDifficulty)
               const theme = entry.theme_id ? themeMap.get(String(entry.theme_id)) : null
@@ -153,15 +154,15 @@ export default function FloorPlanPreviewBoard({
                 <motion.div
                   key={entry.floor}
                   variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                  className="grid min-w-0 grid-cols-[2.5rem_minmax(5.75rem,6.75rem)_minmax(0,1fr)] items-stretch gap-3 px-2.5 py-3 sm:min-h-[10.5rem] sm:grid-cols-[2.75rem_minmax(7.25rem,8.5rem)_minmax(0,1fr)] sm:px-3"
+                  className="floor-preview-row"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded border border-[#3a2a10] bg-[#1a1510] font-mono text-[0.9375rem] font-bold tabular-nums text-[#e8b030] sm:h-11 sm:w-11">
-                    {entry.floor}
+                  <div className="floor-preview-number">
+                    {String(entry.floor).padStart(2, '0')}
                   </div>
 
-                  <div className="min-w-0 self-start">
+                  <div className="floor-preview-cover">
                     <div
-                      className="overflow-hidden rounded-md border p-1"
+                      className="overflow-hidden rounded-md"
                       style={{
                         borderColor: theme ? 'rgba(200,144,10,0.34)' : '#2a2118',
                         background: theme ? '#1a1510' : '#0d0b08',
@@ -174,7 +175,7 @@ export default function FloorPlanPreviewBoard({
                             alt={themeName}
                             fill
                             fallbackType="theme"
-                            sizes="(max-width: 640px) 6.75rem, 8.5rem"
+                            sizes="(max-width: 640px) 80px, 112px"
                             className="object-cover saturate-[0.9]"
                           />
                         ) : (
@@ -185,10 +186,10 @@ export default function FloorPlanPreviewBoard({
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 flex-col justify-between gap-2">
+                  <div className="floor-preview-content flex min-w-0 flex-col gap-4">
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <span className="inline-flex min-h-8 max-w-full items-center rounded border border-[#3a2a10] bg-[#1a1510] px-2 text-[0.875rem] font-semibold text-[#b9a47f] sm:min-h-9">
+                        <span className="inline-flex items-center rounded bg-[#c8900a14] px-2 py-1 text-xs font-medium text-[#b9a47f]">
                           {tFloor(`difficulty.${floorDifficulty}`)}
                         </span>
                         {theme && (
@@ -197,19 +198,12 @@ export default function FloorPlanPreviewBoard({
                           </span>
                         )}
                       </div>
-                      <div className="min-w-0 text-[1rem] font-semibold leading-snug text-[#e8dcc8]">
+                      <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-lg font-semibold leading-snug text-[#e8dcc8]">
                         {themeName}
                       </div>
                     </div>
 
-                    <div
-                      className="flex min-w-0 items-start rounded-md border px-2 py-1.5"
-                      style={{
-                        minHeight: '4.5rem',
-                        borderColor: floorGifts.length > 0 ? 'rgba(200,144,10,0.22)' : '#241c14',
-                        background: floorGifts.length > 0 ? 'rgba(13,11,8,0.62)' : 'rgba(13,11,8,0.34)',
-                      }}
-                    >
+                    <div className="flex min-w-0 items-start">
                       {floorGifts.length > 0 ? (
                         <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5 overflow-visible">
                           {floorGifts.map(gift => {
@@ -217,15 +211,16 @@ export default function FloorPlanPreviewBoard({
                             return (
                               <div
                                 key={gift.game_id}
-                                className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-visible rounded-sm bg-[#17120d]/70 p-0.5"
+                                className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-visible"
                               >
                                 <GiftCard
                                   gift={gift}
+                                  warning={theme?.specific_ego_gift_ids?.includes(gift.game_id) ? (locale === 'ko' ? '테마팩 전용 · 이 층에서 획득' : locale === 'ja' ? 'テーマ専用・この階で入手' : 'Pack exclusive · obtain on this floor') : undefined}
                                   onClick={() => onGiftClick?.(gift)}
                                   disabled={!onGiftClick}
                                   title={giftName}
                                   ariaLabel={giftName}
-                                  size="2.75rem"
+                                  size="3.25rem"
                                   showName={false}
                                   className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
                                 />
@@ -239,7 +234,7 @@ export default function FloorPlanPreviewBoard({
                     </div>
 
                     {memoPreview ? (
-                      <details className="group min-w-0 rounded border border-[#241c14] bg-[#0d0b08] px-2.5 py-2">
+                      <details className="group min-w-0 rounded-md bg-[#0d0b0855] px-3 py-2">
                         <summary className="min-h-8 cursor-pointer list-none text-[0.9375rem] font-medium leading-snug text-[#9d8d72] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] [&::-webkit-details-marker]:hidden">
                           <span className="group-open:hidden">
                             <span className="line-clamp-2">{memoPreview}</span>
@@ -251,13 +246,10 @@ export default function FloorPlanPreviewBoard({
                           {renderMemo ? renderMemo(entry.memo.trim()) : entry.memo.trim()}
                         </div>
                       </details>
-                    ) : (
-                      <p className="min-w-0 text-[0.875rem] leading-snug text-[#4c4135]">
-                        {tFloor('memo')}
-                      </p>
-                    )}
+                    ) : null}
                   </div>
-                  <div className="col-span-full"><FloorConstraints floor={entry.floor} entries={floorPlan} /><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} /></div>
+                  <div className="floor-preview-guidance"><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} onGiftClick={onGiftClick} /></div>
+                  {entry.floor >= 11 && <div className="col-span-full"><FloorConstraints floor={entry.floor} entries={floorPlan} /></div>}
                 </motion.div>
               )
             })}

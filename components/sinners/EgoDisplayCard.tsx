@@ -633,7 +633,7 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
               width: '1.4rem', maxWidth: 'none', flexShrink: 0,
               height: '1.2rem',
               filter: 'drop-shadow(0 0.125rem 0.125rem rgba(0,0,0,0.9))',
-              transform: 'skewY(-20deg)',
+              transform: stage === 4 ? 'translateX(0.1rem) skewY(-20deg)' : 'skewY(-20deg)',
               transformOrigin: '50% 50%',
             }}
             unoptimized

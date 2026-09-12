@@ -1135,7 +1135,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           role="dialog"
           aria-modal="false"
           aria-label={t('giftPickerTitle')}
-          className="fixed inset-x-3 bottom-3 z-30 mx-auto flex flex-col overflow-hidden rounded-lg border p-2.5 md:bottom-4 md:max-w-2xl md:p-3"
+          className="popup-drawer fixed inset-x-3 bottom-3 z-30 mx-auto flex flex-col overflow-hidden rounded-lg border p-2.5 md:bottom-4 md:max-w-2xl md:p-3"
           style={{
             background: '#151210',
             borderColor: 'rgba(200,144,10,0.28)',

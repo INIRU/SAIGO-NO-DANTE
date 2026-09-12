@@ -7,6 +7,11 @@ import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
 /** Tiny 4x4 warm-dark blur placeholder for remote images */
 export const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFklEQVQIW2M4c+bMfwYGBgYmBgoBAAPOBAUFVsBzAAAAAElFTkSuQmCC'
 
+/** Original formation-screen rank banners, shared by every E.G.O label. */
+export function getEgoGradeBannerUrl(grade: string): string {
+  return `/assets/ego-ui/rank-banners/${grade.toLowerCase()}.webp`
+}
+
 export function getSinnerLogoUrl(sinnerId: string): string {
   return `${STORAGE_BASE}/icons/Sinners/${sinnerId}.webp`
 }
@@ -66,9 +71,14 @@ export function getIdentityPortraitUrl(
   return getIdentityImageUrl(sinnerId, folderName, `${gameId}_${prefix}_info`)
 }
 
-export function getSkillIconUrl(identity: Identity, imageIndex: number): string {
+export function getSkillIconUrl(identity: Pick<Identity, 'sinner_id' | 'game_id'>, imageIndex: number, skill?: { image_id?: string | null }): string {
   if (!identity.game_id) return ''
-  return `${STORAGE_BASE}/icons/skills/${identity.sinner_id}/${identity.game_id}${String(imageIndex).padStart(2, '0')}.webp`
+  const sprite = skill?.image_id && /^\d+$/.test(skill.image_id)
+    ? skill.image_id
+    : `${identity.game_id}${String(imageIndex).padStart(2, '0')}`
+  // Some transformed skills intentionally borrow another sinner's original sprite.
+  const owner = Object.entries(LCB_IDS).find(([, id]) => sprite.startsWith(String(id).slice(0, 3)))?.[0] ?? identity.sinner_id
+  return `${STORAGE_BASE}/icons/skills/${owner}/${sprite}.webp`
 }
 
 /** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산.

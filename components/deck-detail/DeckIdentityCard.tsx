@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 
 import { getIdentityPortraitUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 import { useState } from 'react'
@@ -22,6 +24,7 @@ import { localizeDeckKeyword } from '@/components/decks/decks-types'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
+  image_id?: string | null
   id: string
   name: string
   name_en?: string | null
@@ -119,10 +122,11 @@ const RARITY_COLORS: Record<string, string> = {
 }
 
 const GRADE_ICON_URL: Record<string, string> = {
-  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
-  TETH:  `${STORAGE_BASE}/icons/grade/TETH.webp`,
-  HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
-  WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
+  ZAYIN: getEgoGradeBannerUrl('ZAYIN'),
+  TETH:  getEgoGradeBannerUrl('TETH'),
+  HE:    getEgoGradeBannerUrl('HE'),
+  WAW:   getEgoGradeBannerUrl('WAW'),
+  ALEPH: getEgoGradeBannerUrl('ALEPH'),
 }
 
 const STAT_ICON_URL: Record<string, string> = {

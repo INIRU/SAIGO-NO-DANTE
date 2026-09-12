@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { getFormationBannerUrl } from '@/lib/utils/images'
 
 import { useMemo, type CSSProperties } from 'react'
@@ -167,6 +169,7 @@ export function PlannerIdentityBoard({
   onFormationToggle,
   onGacksungToggle,
   getSinnerName,
+  formationStyle = 'banner',
 }: {
   sinners: PlannerDeckSinner[]
   slots: Record<string, PlannerIdentityBoardSlot | undefined>
@@ -174,6 +177,7 @@ export function PlannerIdentityBoard({
   onFormationToggle: (sinnerId: string) => void
   onGacksungToggle: (sinnerId: string) => void
   getSinnerName?: (sinner: PlannerDeckSinner) => string
+  formationStyle?: 'banner' | 'label'
 }) {
   const t = useTranslations('planner.deckTab.identity')
   const locale = useLocale() as SupportedLang
@@ -256,12 +260,16 @@ export function PlannerIdentityBoard({
                 </>
               )}
 
-              {identity && slotOrder != null && (() => {
-                const n = slotOrder >= 99 ? null : slotOrder + 1
-                const isFormation = n != null && n <= 7
+              {identity && isFormed && (() => {
+                const n = slotOrder! + 1
+                const isFormation = n <= 6
                 return (
                   <div className="planner-deck-identity-card__formation pointer-events-none">
-                    <Image src={getFormationBannerUrl(isFormation ? 'selected' : 'backup')} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
+                    {formationStyle === 'banner' ? (
+                      <Image src={getFormationBannerUrl(isFormation ? 'selected' : 'backup')} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
+                    ) : (
+                      <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: '#e8b030', textShadow: '0 0.125rem 0.5rem #000' }}>{t('formed')}</span>
+                    )}
                     <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                       {n}
                     </span>
@@ -755,18 +763,14 @@ export function PlannerEgoBoard({
                       minHeight: '1.5rem',
                     }}
                   >
-                    {grade !== 'ALEPH' ? (
-                      <Image
-                        src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
-                        alt={grade}
-                        width={22}
-                        height={11}
-                        unoptimized
-                        style={{ height: '0.6875rem', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}
-                      />
-                    ) : (
-                      <span style={{ color: gradeColor, fontSize: '0.5625rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}>ALEPH</span>
-                    )}
+                    <Image
+                      src={getEgoGradeBannerUrl(grade)}
+                      alt={grade}
+                      width={48}
+                      height={22}
+                      unoptimized
+                      style={{ width: '2.75rem', height: '1.25rem', objectFit: 'contain', opacity: ego ? 1 : 0.45, flexShrink: 0 }}
+                    />
                     {ego ? (() => {
                       const egoName = localizeEgoName(ego, locale)
                       return (
@@ -909,18 +913,14 @@ export function PlannerEgoSelectModal({
               return (
                 <div key={grade}>
                   <div className="mb-2 flex items-center gap-2">
-                    {grade !== 'ALEPH' ? (
-                      <Image
-                        src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
-                        alt={grade}
-                        width={22}
-                        height={11}
-                        unoptimized
-                        style={{ height: '0.75rem', width: 'auto' }}
-                      />
-                    ) : (
-                      <span style={{ color: gradeColor, fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>ALEPH</span>
-                    )}
+                    <Image
+                      src={getEgoGradeBannerUrl(grade)}
+                      alt={grade}
+                      width={48}
+                      height={22}
+                      unoptimized
+                      style={{ width: '3rem', height: '1.375rem', objectFit: 'contain' }}
+                    />
                     <div style={{ flex: 1, height: '1px', background: `${gradeColor}30` }} />
                     {selectedForGrade && grade !== 'ZAYIN' && (
                       <button

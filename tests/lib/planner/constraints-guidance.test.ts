@@ -24,6 +24,8 @@ it('only offers final fusions when all real materials have been planned by that 
  const entries=[{floor:1,gift_ids:['1']},{floor:2,gift_ids:['2']}]
  expect(craftableAtFloor(1,entries,['final_3'],recipes,gifts)).toHaveLength(0)
  expect(craftableAtFloor(2,entries,['final_3'],recipes,gifts)).toHaveLength(1)
+ expect(craftableAtFloor(3,[...entries,{floor:3,gift_ids:[]}],['final_3'],recipes,gifts)).toHaveLength(0)
+ expect(craftableAtFloor(2,[...entries,{floor:2,gift_ids:['3']}],['final_3'],recipes,gifts)).toHaveLength(0)
  expect(craftableAtFloor(2,entries,[],recipes,gifts)).toHaveLength(0)
  expect(craftableAtFloor(2,entries,['final_3'],[{...recipes[0],ingredients:['gift1','unknown']}],gifts)).toHaveLength(0)
 })
