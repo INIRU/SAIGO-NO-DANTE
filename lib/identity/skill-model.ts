@@ -14,6 +14,7 @@ export function selectIdentitySkills(skills: Skill[], level: 3 | 4): Skill[] {
     const orderA = baseSkillOrder(a.skill_order)
     const orderB = baseSkillOrder(b.skill_order)
     return (orderA === 4 ? 99 : orderA) - (orderB === 4 ? 99 : orderB)
+      || (a.variant_order ?? 0) - (b.variant_order ?? 0)
   })
 }
 

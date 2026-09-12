@@ -1,0 +1,20 @@
+import { test, expect } from '@playwright/test'
+test.use({ channel: 'chrome' })
+test.skip(({ browserName }) => browserName !== 'chromium', 'Installed Chrome')
+for (const kind of ['deck', 'planner']) test(`${kind} shelf shows a card skeleton until the request resolves`, async ({ page }, info) => {
+  test.setTimeout(90000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  let release!: () => void
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/api/discovery?*', async r => { await gate; await r.fulfill({ json: { recent: [], updated: [], popular: [], identities: [], counts: [] } }) })
+  await page.goto(kind === 'deck' ? '/ko/decks' : '/ko/planner/community')
+  const shelf = page.locator('[data-discovery-shelf]')
+  await expect(shelf.locator('[data-board-skeleton]')).toBeVisible()
+  expect(await shelf.locator('[data-board-skeleton] .motion-safe\\:animate-pulse').first().evaluate(e => getComputedStyle(e).animationName)).toBe('none')
+  await page.screenshot({ path: info.outputPath(`${kind}-loading.png`), fullPage: true })
+  release()
+  await expect(shelf.locator('[data-board-skeleton]')).toHaveCount(0)
+  await expect(shelf.locator('[data-discovery-empty]')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
+})

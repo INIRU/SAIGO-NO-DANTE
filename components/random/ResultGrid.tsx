@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'motion/react'
@@ -318,18 +320,14 @@ export default function ResultGrid({ sinners, pools, result, activeTab, rollId, 
                     }}
                   >
                     {/* Grade icon */}
-                    {grade !== 'ALEPH' ? (
-                      <Image
-                        src={`${STORAGE_BASE}/icons/grade/${grade}.webp`}
+                    <Image
+                        src={getEgoGradeBannerUrl(grade)}
                         alt={grade}
                         width={22}
                         height={11}
                         unoptimized
                         style={{ height: '0.6875rem', width: 'auto', opacity: isActive ? 0.9 : 0.2, flexShrink: 0, transition: 'opacity 0.2s' }}
                       />
-                    ) : (
-                      <span style={{ color: isActive ? sc : gc, fontSize: '0.375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', opacity: isActive ? 0.9 : 0.2, flexShrink: 0 }}>ALEPH</span>
-                    )}
                     {isActive && ego
                       ? <span style={{ color: sc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'keep-all', flex: 1, textAlign: 'left', textShadow: `0 0 0.5rem ${sc}30` }}>{ego.name_kr || ego.name}</span>
                       : <span style={{ color: '#1a1208', fontSize: '0.625rem', lineHeight: 1 }}>—</span>

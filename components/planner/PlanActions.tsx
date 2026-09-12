@@ -221,8 +221,8 @@ export default function PlanActions({
     setShowDeleteModal(false)
   }
 
-  const actionBase = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-sm border px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 hover:border-[#8a6010] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] focus-visible:outline-offset-2'
-  const quietAction = `${actionBase} border-[#2a2118] bg-[#15100b] text-[#b9a47f]`
+  const actionBase = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 hover:border-[#8a6010] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] focus-visible:outline-offset-2'
+  const quietAction = `${actionBase} border-transparent bg-[#ffffff06] text-[#b9a47f]`
   const primaryAction = `${actionBase} border-[#c8900a] bg-[#c8900a] text-[#0d0b08] hover:bg-[#e8b030] hover:text-[#0d0b08]`
 
   return (

@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@import "../styles/globals/utilities.css";
+@import "../styles/globals/animations.css";
+@import "../styles/globals/popups.css";
+
 /* Local fonts are now loaded via next/font/local in app/layout.tsx */
 
 /*
@@ -16,13 +21,10 @@
 }
 
 
-@import "tailwindcss";
 
 @theme {
   --font-serif: var(--font-kotra-bold), Georgia, serif;
 }
-@import "../styles/globals/utilities.css";
-@import "../styles/globals/animations.css";
 
 /* Compact labels keep the project title face without the global .font-serif stroke. */
 .font-compact-serif {

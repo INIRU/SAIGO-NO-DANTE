@@ -31,6 +31,7 @@ interface GiftCardProps {
   // ── Remove ──
   onRemove?: () => void
   // ── Condition status ──
+  warning?: string
   conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
 }
 
@@ -51,6 +52,7 @@ const GiftCard = memo(function GiftCard({
   onEnhance,
   onRemove,
   conditionStatus,
+  warning,
 }: GiftCardProps) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab.conditionStatus')
@@ -64,7 +66,7 @@ const GiftCard = memo(function GiftCard({
   return (
     <button
       className={`gift-card ${styles.card}${className ? ` ${className}` : ''}`}
-      aria-label={ariaLabel ?? displayName}
+      aria-label={warning ? `${ariaLabel ?? displayName} · ${warning}` : ariaLabel ?? displayName}
       title={title ?? displayName}
       onClick={onClick}
       disabled={disabled}
@@ -186,6 +188,17 @@ const GiftCard = memo(function GiftCard({
           transition: 'opacity 0.2s', pointerEvents: 'none',
         }} />
       </GiftArtwork>
+
+      {warning && (
+        <svg viewBox="0 0 32 32" role="img" aria-label={warning} data-gift-warning
+          className="pointer-events-none absolute right-0 -top-0.5 z-30 h-3.5 w-3.5 drop-shadow-[0_0_1px_#b81924]">
+          <title>{warning}</title>
+          <path d="M16 3 30 28H2Z" fill="#60151c" stroke="#bd2430" strokeWidth="4" strokeLinejoin="round" />
+          <path d="M16 3 30 28H2Z" fill="none" stroke="#ff8b8b" strokeWidth="2.5" />
+          <path d="M16 11v8" stroke="#ffaaaa" strokeWidth="3" />
+          <circle cx="16" cy="23" r="1.7" fill="#ffaaaa" />
+        </svg>
+      )}
 
       {/* Name below card */}
       {showName && !isInsert && (

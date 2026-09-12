@@ -1318,7 +1318,7 @@ export default function DeckListFilters({
           <div
             ref={panelRef}
             tabIndex={-1}
-            className="absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
+            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
             style={{
               background: '#1a1510',
               borderTop: '1px solid rgba(200,144,10,0.25)',

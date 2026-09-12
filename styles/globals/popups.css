@@ -1,0 +1,37 @@
+/* Shared popup chrome; game artwork and card typography retain their own styles. */
+.popup-surface { font-family: var(--font-body); color: var(--text-primary); }
+.popup-surface > :first-child { background-color: var(--bg-card); border-color: rgba(200,170,110,.18) !important; border-radius: .5rem; box-shadow: 0 1.5rem 4rem #0005 !important; }
+.popup-surface :is(h2,h3):not(.sr-only) { font-family: var(--font-paperlogy), var(--font-body) !important; font-weight: 600 !important; letter-spacing: -.025em; line-height: 1.4; -webkit-text-stroke: 0; text-shadow: none; }
+.popup-surface :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select) { min-height: 2.75rem; font-family: var(--font-body); }
+.popup-surface :is(button,a,input,select,textarea):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.popup-surface button[aria-label]:has(>svg:only-child) { min-width: 2.75rem; min-height: 2.75rem; display: inline-grid; place-items: center; }
+.popup-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.25rem .5rem; }
+.popup-header h2 { font-size:1.25rem; }
+.popup-header button { color:var(--text-secondary); border-radius:.375rem; cursor:pointer; }
+.popup-search { background:var(--bg-card); border:1px solid rgba(200,170,110,.18); }
+.popup-search [data-search-index] { margin:.125rem .5rem; width:calc(100% - 1rem); border-radius:.375rem; }
+.popup-confirm { padding:1.75rem; border:1px solid rgba(200,170,110,.18); }
+.popup-confirm h2 { font-size:1.25rem; color:var(--text-primary); margin:0 0 .75rem; }
+.popup-confirm p { color:var(--text-secondary); font-size:.9375rem; line-height:1.75; white-space:pre-line; overflow-wrap:anywhere; }
+.popup-actions { display:flex; gap:.75rem; margin-top:1.5rem; }
+.popup-actions button { flex:1; min-height:2.75rem; padding:.625rem 1rem; border-radius:.375rem; background:#ffffff08; color:var(--text-primary); font:600 .875rem var(--font-body); cursor:pointer; transition:background-color 180ms; }
+.popup-actions .popup-primary { background:var(--gold); color:var(--bg-deep); }
+.popup-actions .popup-danger { background:#783c31; color:#fff0e8; }
+.popup-actions button:hover { filter:brightness(1.15); }
+[data-sonner-toast] { font-family:var(--font-body) !important; border-radius:.5rem !important; box-shadow:0 .5rem 1.5rem #0003 !important; }
+[data-sonner-toast][data-type=success] [data-icon] { color:#85bb83; }
+[data-sonner-toast][data-type=error] [data-icon] { color:#e48b7f; }
+[data-sonner-toast][data-type=warning] [data-icon] { color:var(--gold-light); }
+.popup-toast { position:fixed; top:5rem; right:1rem; z-index:10000; display:flex; align-items:center; gap:.75rem; max-width:calc(100vw - 2rem); width:24rem; padding:.75rem 1rem; background:var(--bg-card); border:1px solid rgba(200,170,110,.18); border-radius:.5rem; color:var(--text-primary); font: .875rem/1.5 var(--font-body); box-shadow:0 .5rem 1.5rem #0003; animation:popup-toast-in 180ms ease-out; }
+.popup-toast > svg { flex-shrink:0; }
+.popup-toast span { flex:1; overflow-wrap:anywhere; }
+.popup-toast button { display:grid; place-items:center; width:2.75rem; height:2.75rem; flex-shrink:0; color:var(--text-muted); cursor:pointer; }
+@keyframes popup-toast-in { from {opacity:0;transform:translateY(-.5rem)} to {opacity:1;transform:none} }
+@media(prefers-reduced-motion:reduce) { .popup-toast {animation:none} .popup-actions button {transition:none} }
+.popup-drawer { background:var(--bg-card) !important; border-color:rgba(200,170,110,.18) !important; box-shadow:0 1.5rem 4rem #0005 !important; font-family:var(--font-body); }
+.popup-drawer :is(h2,h3) { font-family:var(--font-paperlogy),var(--font-body) !important; font-weight:600; letter-spacing:-.025em; -webkit-text-stroke:0; }
+.popup-drawer button[aria-label]:has(>svg:only-child) { min-width:2.75rem; min-height:2.75rem; display:inline-grid; place-items:center; }
+.popup-drawer :is(button,a,input):focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+.popup-surface .planner-deck-select-modal__header span { font:600 1.125rem/1.4 var(--font-paperlogy),var(--font-body) !important; -webkit-text-stroke:0; }
+.popup-surface .planner-deck-select-modal__header { border-bottom-color:rgba(255,255,255,.06); padding:.75rem 1.25rem; }
+@media(prefers-reduced-motion:reduce) { .popup-drawer {animation:none !important} }

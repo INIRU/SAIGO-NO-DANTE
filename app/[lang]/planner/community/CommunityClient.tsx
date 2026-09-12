@@ -1,5 +1,6 @@
 'use client'
 
+import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
@@ -1383,11 +1384,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
           )}
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} style={{ height: '14rem', background: '#1a1510', border: '1px solid #222', borderRadius: '0.375rem', opacity: 0.5 }} />
-              ))}
-            </div>
+            <BoardSkeleton kind="planner" />
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20" style={{ color: '#444' }}>
               <PackageOpen style={{ width: '2.5rem', height: '2.5rem', opacity: 0.4 }} />
@@ -1408,7 +1405,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
               <div ref={sentinelRef} className="flex justify-center py-8" aria-hidden={!hasMore && !loadingMore}>
                 {loadingMore ? (
-                  <span style={{ color: '#8a7a60', fontSize: '0.9375rem' }}>{t('grid.loadingMore')}</span>
+                  <BoardSkeleton kind="planner" count={2} />
                 ) : hasMore ? (
                   <span style={{ color: '#444', fontSize: '0.875rem' }}>{t('grid.scrollForMore')}</span>
                 ) : null}
@@ -1451,7 +1448,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
           <div
             ref={mobilePanelRef}
             tabIndex={-1}
-            className="absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
+            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
             style={{
               background: '#1a1510',
               borderTop: '1px solid rgba(200,144,10,0.25)',

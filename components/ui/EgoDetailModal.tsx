@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
@@ -237,8 +239,8 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
             )}
             <div className="flex items-center gap-2">
               {/* 등급 이미지 */}
-              {['ZAYIN','TETH','HE','WAW'].includes(ego.grade) ? (
-                <Image src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`} alt={ego.grade} width={40} height={14} unoptimized
+              {['ZAYIN','TETH','HE','WAW','ALEPH'].includes(ego.grade) ? (
+                <Image src={getEgoGradeBannerUrl(ego.grade)} alt={ego.grade} width={40} height={14} unoptimized
                   style={{ height: '0.875rem', width: 'auto', opacity: 0.9 }} />
               ) : (
                 <span className="px-1.5 py-0.5 rounded" style={{ background: `${gradeColor}18`, color: gradeColor, border: `1px solid ${gradeColor}38`, fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', fontWeight: 600 }}>

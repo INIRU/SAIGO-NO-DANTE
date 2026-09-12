@@ -33,14 +33,14 @@ type FormationBoardProps = {
   className?: string
 }
 
-const FRONTLINE_SLOT_COUNT = 7
+const FRONTLINE_SLOT_COUNT = 6
 const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
 const BACKUP_BANNER_URL = getFormationBannerUrl('backup')
 
-function getFormationOverlay(slotOrder: number | null) {
-  if (slotOrder == null) return undefined
+export function getFormationOverlay(slotOrder: number | null) {
+  if (slotOrder == null || slotOrder < 0 || slotOrder >= 99) return undefined
 
-  const order = slotOrder >= 99 ? null : slotOrder + 1
+  const order = slotOrder + 1
   const isFrontline = slotOrder < FRONTLINE_SLOT_COUNT
 
   return {

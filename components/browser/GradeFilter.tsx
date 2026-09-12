@@ -1,15 +1,17 @@
 'use client'
 
-import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
+import { GRADE_COLORS } from '@/lib/constants/game'
 import { EGO_GRADES } from '@/lib/types/browser'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
 
 const GRADE_ICON_URL: Record<string, string | undefined> = {
-  ZAYIN: `${STORAGE_BASE}/icons/grade/ZAYIN.webp`,
-  TETH:  `${STORAGE_BASE}/icons/grade/TETH.webp`,
-  HE:    `${STORAGE_BASE}/icons/grade/HE.webp`,
-  WAW:   `${STORAGE_BASE}/icons/grade/WAW.webp`,
-  // ALEPH는 아이콘 없음 — 색상 배지 폴백
+  ZAYIN: getEgoGradeBannerUrl('ZAYIN'),
+  TETH:  getEgoGradeBannerUrl('TETH'),
+  HE:    getEgoGradeBannerUrl('HE'),
+  WAW:   getEgoGradeBannerUrl('WAW'),
+  ALEPH: getEgoGradeBannerUrl('ALEPH'),
 }
 
 type Props = {

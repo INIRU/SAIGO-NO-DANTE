@@ -1,5 +1,7 @@
 'use client'
 
+import { getEgoGradeBannerUrl } from '@/lib/utils/images'
+
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useEffect, useCallback, type ReactNode } from 'react'
 import Image from 'next/image'
@@ -258,7 +260,7 @@ export default function KeywordModal({
                           <p className="text-[0.75rem] truncate" style={{ color: '#e8dcc8' }}>{egoName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <Image
-                              src={`${STORAGE_BASE}/icons/grade/${ego.grade}.webp`}
+                              src={getEgoGradeBannerUrl(ego.grade)}
                               alt={ego.grade} width={28} height={12}
                               style={{ width: '1.75rem', height: 'auto' }}
                             />

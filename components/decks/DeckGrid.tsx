@@ -1,5 +1,6 @@
 'use client'
 
+import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import { memo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
@@ -30,25 +31,7 @@ function DeckGrid({
   const t = useTranslations('decks')
   const locale = useLocale() as SupportedLang
   const shouldReduceMotion = useReducedMotion()
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded"
-            style={{ background: '#1a1510', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.05 }}
-          >
-            <div style={{ padding: '1.25rem' }}>
-              <div style={{ width: '60%', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.625rem' }} />
-              <div style={{ width: '90%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.375rem' }} />
-              <div style={{ width: '70%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem' }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
+  if (loading) return <BoardSkeleton />
 
   if (filtered.length === 0) {
     return (
@@ -108,13 +91,7 @@ function DeckGrid({
           variants={shouldReduceMotion ? undefined : workbenchReveal}
         >
           {loadingMore && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: '#888888' }}>
-              <div
-                className="rounded-full animate-spin"
-                style={{ width: '1rem', height: '1rem', border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
-              />
-              {t('grid.loadingMore')}
-            </div>
+            <BoardSkeleton count={3} />
           )}
         </motion.div>
       )}

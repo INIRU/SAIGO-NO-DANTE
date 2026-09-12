@@ -66,6 +66,7 @@ export async function fetchImageDataUri(url: string, options: ImageDataUriOption
       fit: options.fit ?? 'cover',
       position: options.position ?? 'top',
       withoutEnlargement: false,
+      background: options.format === 'png' ? { r: 13, g: 11, b: 8, alpha: 0 } : '#0d0b08',
     })
 
     const output = options.format === 'png'

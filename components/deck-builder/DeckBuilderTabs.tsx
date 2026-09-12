@@ -137,6 +137,7 @@ export function IdentityTab({
   return (
     <>
     <PlannerIdentityBoard
+      formationStyle="label"
       sinners={sinners}
       slots={boardSlots}
       onOpenIdentityModal={openIdentityModal}
@@ -463,17 +464,17 @@ export function SkillsetTab({
               skills={[
                 skills[0] ? {
                   name: skills[0].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[0].skill_order) : null,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[0].skill_order, skills[0]) : null,
                   sinColor: SIN_COLORS[skills[0].sin_affinity] ?? '#888',
                 } : null,
                 skills[1] ? {
                   name: skills[1].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[1].skill_order) : null,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[1].skill_order, skills[1]) : null,
                   sinColor: SIN_COLORS[skills[1].sin_affinity] ?? '#888',
                 } : null,
                 skills[2] ? {
                   name: skills[2].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[2].skill_order) : null,
+                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[2].skill_order, skills[2]) : null,
                   sinColor: SIN_COLORS[skills[2].sin_affinity] ?? '#888',
                 } : null,
               ]}

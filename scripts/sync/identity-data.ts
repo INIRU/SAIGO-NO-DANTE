@@ -26,6 +26,7 @@ import { collectEgoKeywordTags, collectKeywordTags } from './ego-keywords'
 import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
+import { getKeywordCategory } from '../../lib/keywords/category'
 import { pathToFileURL } from 'url'
 import { z } from 'zod'
 import { config } from 'dotenv'
@@ -454,6 +455,7 @@ interface SkillRow {
   flavor_en?: string | null
   flavor_jp?: string | null
   skill_order: number
+  image_id?: string | null
   atk_weight: number
   variant_order: number
   uptie_level: number
@@ -467,6 +469,7 @@ type DbSkillRow = Partial<SkillRow> & {
 const SKILL_COMPARE_FIELDS = [
   'name',
   'skill_order',
+  'image_id',
   'uptie_level',
   'skill_type',
   'atk_type',
@@ -2284,6 +2287,7 @@ export function buildSkillRows(
         description_jp: jpSkillLvl ? buildDescriptionLang(jpSkillLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         flavor_en: nullableLocaleContent(enSkillLvl?.flavor),
         flavor_jp: nullableLocaleContent(jpSkillLvl?.flavor),
+        image_id: String(/^\d+$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
         skill_order: skillOrder,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -2329,6 +2333,7 @@ export function buildSkillRows(
         description_jp: jpDefLvl ? buildDescriptionLang(jpDefLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         flavor_en: nullableLocaleContent(enDefLvl?.flavor),
         flavor_jp: nullableLocaleContent(jpDefLvl?.flavor),
+        image_id: String(/^\d+$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
         skill_order: 4,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -3642,6 +3647,7 @@ async function rebuildKeywordMeta(): Promise<void> {
       description_jp: row.description_jp,
       icon_slug: row.icon_slug,
       effect_type: row.effect_type,
+      category: getKeywordCategory(row),
     }))
     const { error } = await supabase
       .from('keyword_meta')

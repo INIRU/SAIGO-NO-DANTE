@@ -1,3 +1,4 @@
+import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -60,18 +61,7 @@ async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
 }
 
 function CommunityPageSkeleton() {
-  return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-16 md:px-6">
-      <div className="mx-auto flex w-full max-w-7xl gap-5">
-        <div className="hidden h-[34rem] w-64 shrink-0 rounded-sm lg:block" style={{ background: 'rgba(26,21,16,0.5)' }} />
-        <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-56 rounded-sm" style={{ background: 'rgba(26,21,16,0.55)' }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+  return <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-16 md:px-6"><div className="mx-auto max-w-7xl"><BoardSkeleton kind="planner" shelf count={3} /></div></div>
 }
 
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {
