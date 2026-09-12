@@ -1,15 +1,14 @@
 'use client'
 
+import { COIN_IMAGES } from '@/lib/identity/skill-description'
+
 import Image from 'next/image'
+import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import SkillFrame from './SkillFrame'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { getSkillFrameBadgeUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 import { useTranslations } from 'next-intl'
-
-const SIN_FRAME_MAP: Record<string, string> = {
-  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
-  gloom: 'azure', pride: 'indigo', envy: 'violet',
-}
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
   slash: 'slash',
@@ -88,7 +87,6 @@ export default function SkillFrameBlock({
   mentalConsume,
 }: SkillFrameBlockProps) {
   const t = useTranslations()
-  const frameSin = SIN_FRAME_MAP[sin] ?? 'crimson'
 
   const atkTypeKey = normalizeAttackType(atkType)
   const showAtkTypeIcon = Boolean(atkTypeKey)
@@ -127,7 +125,7 @@ export default function SkillFrameBlock({
           <SkillFrame
             skillIconUrl={skillIconUrl}
             sin={sin}
-            skillSlot={skillSlot}
+            skillSlot={isDefense ? 4 : skillSlot}
             sinColor={sinColor}
             label={label}
             size={size}
@@ -147,12 +145,7 @@ export default function SkillFrameBlock({
                   height: badgeSize,
                 }}>
                 <Image
-                  src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_bg.webp`}
-                  alt="" width={28} height={28} className="absolute inset-0"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-                <Image
-                  src={`${STORAGE_BASE}/icons/skill-frames/extras/${frameSin}_icon_overlay.webp`}
+                  src={getSkillFrameBadgeUrl(sin)}
                   alt="" width={28} height={28} className="absolute inset-0"
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
@@ -207,7 +200,7 @@ export default function SkillFrameBlock({
               return (
                 <Image
                   key={i}
-                  src={`${STORAGE_BASE}/icons/stats/${isUb ? 'unbreakable_coin' : 'coin'}.webp`}
+                  src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
                   alt={isUb ? '파괴 불가 코인' : '코인'}
                   width={16} height={16}
                   style={{ width: coinIconSize, height: coinIconSize }}
@@ -216,36 +209,14 @@ export default function SkillFrameBlock({
             })}
           </div>
 
-          {/* Diagonal gradient skill name banner */}
-          <div className="overflow-hidden mb-1" style={{ width: 'fit-content', maxWidth: '100%' }}>
-            <div style={{
-              color: '#e8dcc8',
-              backgroundImage: `linear-gradient(255deg, transparent 1.2em, ${sinColor}30 1.2em)`,
-            }}>
-              <div style={{
-                padding: '0.1em 0 0.1em 0.3em',
-                backgroundImage: `linear-gradient(290deg, transparent 2em, ${sinColor}40 2em, ${sinColor}40 2.12em, transparent 2.12em, transparent 2.24em, ${sinColor}40 2.24em, ${sinColor}40 2.36em, transparent 2.36em, transparent 2.48em, ${sinColor}40 2.48em, ${sinColor}40 2.6em, transparent 2.6em, transparent 2.72em, ${sinColor}40 2.72em)`,
-                textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
-              }}>
-                <span className="font-bold whitespace-nowrap" style={{
-                  fontSize: skillNameSize,
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 800,
-                  paddingRight: '3.5em',
-                  color: '#e8dcc8',
-                }}>
-                  {name}
-                </span>
-              </div>
-            </div>
-          </div>
+          <SkillNameBanner name={name} sinColor={sinColor} fontSize={skillNameSize} />
 
           {/* Offense level + attack weight */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
             {offenseLevel != null && (
               <div className="flex items-center gap-0.5">
                 <Image
-                  src={`${STORAGE_BASE}/icons/ui/${isDefense ? 'icon-defense' : 'icon-sword'}.webp`}
+                  src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')}
                   alt="" width={22} height={22}
                   style={{ width: offenseIconSize, height: offenseIconSize }}
                 />

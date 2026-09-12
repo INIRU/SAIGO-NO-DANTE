@@ -34,7 +34,7 @@ export async function GET(
       supabase
         .schema('limbus')
         .from('ego_skills')
-        .select('id, name, name_en, name_jp, skill_type, sin_affinity, base_power, coins, coin_power, description, description_en, description_jp, category, construe_level, offense_level, atk_weight')
+        .select('id, game_skill_id, name, name_en, name_jp, skill_type, sin_affinity, base_power, coins, coin_power, description, description_en, description_jp, category, construe_level, offense_level, atk_weight')
         .eq('ego_id', id),
     ])
 

@@ -26,20 +26,6 @@ const HeroGlitchSlider = dynamic(
 
 // ── SVG icons ─────────────────────────────────────────────────────────────
 
-function DiscordIcon({ size = '1rem', style }: { size?: string; style?: React.CSSProperties }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      style={style}
-      aria-hidden="true"
-    >
-      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-    </svg>
-  )
-}
 
 type HeroActionGlyphKind = 'prisoner-list' | 'deck-board' | 'mirror-dungeon-planner'
 
@@ -171,7 +157,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
-  useRoutePrefetch([`/${lang}/decks`, `/${lang}/mirror-dungeon`, `/${lang}/sinners`, `/${lang}/tier-list`, `/${lang}/planner/community`, `/${lang}/keywords`])
+  useRoutePrefetch([`/${lang}/decks`, `/${lang}/mirror-dungeon`, `/${lang}/sinners`, `/${lang}/planner/community`, `/${lang}/keywords`])
 
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
     if (lang === 'en') return en ?? kr ?? ''
@@ -184,7 +170,6 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
     latestIdentities[0] ?? null
   )
 
-  const hasAnnouncement = Boolean(pinnedAnnouncement)
 
   // 최신 출시일과 동일한 인격만 히어로 슬라이더에 사용
   const latestDate = latestIdentities[0]?.release_date
@@ -200,7 +185,6 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
     setSelectedIdentity(identity)
   }, [])
 
-  const firstViewportHeight = hasAnnouncement ? 'calc(100dvh - 3rem)' : '100dvh'
 
   return (
     <>
@@ -220,25 +204,25 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .home-command-surface {
-          animation: homeHeroSurfaceReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+          animation: homeHeroSurfaceReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.02s both;
         }
         .home-logo-mark {
-          animation: homeHeroLogoReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+          animation: homeHeroLogoReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
         }
         .home-brand-title {
-          animation: homeHeroRiseReveal 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+          animation: homeHeroRiseReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
         }
         .home-subtitle {
-          animation: homeHeroRiseReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.34s both;
+          animation: homeHeroRiseReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
         }
         .home-meta-strip {
-          animation: homeHeroRiseReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.46s both;
+          animation: homeHeroRiseReveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
         }
         .home-command-actions {
-          animation: homeHeroRiseReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.58s both;
+          animation: homeHeroRiseReveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
         }
         .home-scroll-prompt {
-          animation: homeHeroRiseReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+          animation: homeHeroRiseReveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.26s both;
         }
         @media (prefers-reduced-motion: reduce) {
           .home-command-surface,
@@ -255,11 +239,12 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         }
       `}</style>
 
+      <div className="home-first-viewport flex min-h-dvh flex-col">
       {/* ── 히어로 ─────────────────────────────────────────────── */}
       <section
         ref={sectionRef}
-        className="relative overflow-hidden flex"
-        style={{ minHeight: firstViewportHeight, background: 'var(--bg-deep)' }}
+        className="home-hero relative flex flex-1 overflow-hidden"
+        style={{ background: 'var(--bg-deep)' }}
       >
         {/* 글리치 슬라이더 (최신 인격 풀 일러스트) */}
         {sliderIdentities.length > 0 && (
@@ -283,7 +268,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
           className="pointer-events-none absolute inset-0 z-[1] hidden md:block"
           style={{
             background: [
-              'linear-gradient(90deg, var(--bg-deep) 0%, rgba(13,11,8,0.96) 20%, rgba(13,11,8,0.74) 43%, rgba(13,11,8,0.22) 66%, transparent 100%)',
+              'linear-gradient(90deg, var(--bg-deep) 0%, var(--bg-deep) 23%, rgba(13,11,8,0.92) 34%, rgba(13,11,8,0.5) 49%, rgba(13,11,8,0.12) 66%, transparent 82%)',
               'linear-gradient(180deg, rgba(13,11,8,0.18) 0%, transparent 32%, rgba(13,11,8,0.68) 100%)',
             ].join(', '),
           }}
@@ -322,8 +307,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
 
         {/* 텍스트 콘텐츠 */}
         <div
-          className="relative z-10 flex w-full flex-col justify-end px-5 pb-16 pt-[48dvh] sm:px-6 md:max-w-[38rem] md:justify-center md:px-16 md:pb-24 md:pt-24 lg:max-w-[42rem] lg:px-24"
-          style={{ minHeight: firstViewportHeight }}
+          className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30dvh] sm:px-6 md:max-w-[38rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7dvh,6rem)] md:pt-[clamp(5rem,10dvh,6rem)] lg:max-w-[42rem] lg:px-24"
         >
           <div className="home-command-surface max-w-full bg-[linear-gradient(90deg,rgba(13,11,8,0.64),rgba(13,11,8,0.22)_78%,transparent)] pl-3 opacity-0 sm:pl-4 md:bg-[linear-gradient(90deg,rgba(13,11,8,0.9),rgba(13,11,8,0.48)_78%,transparent)] md:pl-6">
             <div className="mb-3 flex items-center gap-3 md:mb-5 md:gap-4">
@@ -397,9 +381,6 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
             <CommandUtilityLink href="/planner/community" icon={<HeroActionGlyph kind="mirror-dungeon-planner" size="0.9375rem" />}>
               {t('home.cta.planner')}
             </CommandUtilityLink>
-            <CommandUtilityLink href="/bot" icon={<DiscordIcon size="0.9375rem" />} className="col-span-2">
-              {t('home.cta.discordBot')}
-            </CommandUtilityLink>
           </div>
           </div>
         </div>
@@ -430,6 +411,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
       {pinnedAnnouncement && (
         <AnnouncementBanner announcement={pinnedAnnouncement} />
       )}
+      </div>
     </>
   )
 }

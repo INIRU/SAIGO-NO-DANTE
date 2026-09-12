@@ -1,5 +1,7 @@
 'use client'
 
+import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Link } from '@/lib/i18n/navigation'
@@ -12,7 +14,6 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
@@ -24,7 +25,7 @@ import {
   resolveDeckLanguageParam,
   type DeckLanguageFilter,
 } from '@/components/decks/decks-types'
-import { getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
+import { getIdentityPortraitUrl, getIdentityInfoUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 
 type SortKey = 'latest' | 'popular'
@@ -71,9 +72,6 @@ const DIFFICULTY_STYLE: Record<string, { bg: string; color: string; border: stri
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
 }
 
-function Divider() {
-  return <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
-}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -81,9 +79,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
       className="mb-2"
       style={{
         color: 'var(--deck-filter-text-dim)',
-        fontFamily: 'var(--font-heading)',
+        fontFamily: 'var(--font-body)',
         fontSize: 'var(--deck-filter-label-text)',
-        fontWeight: 700,
+        fontWeight: 600,
       }}
     >
       {children}
@@ -112,7 +110,7 @@ function SectionToggle({
       style={{
         minHeight: 'var(--deck-filter-control-min)',
         color: active ? 'var(--gold)' : '#666',
-        fontFamily: 'var(--font-heading)',
+        fontFamily: 'var(--font-body)',
         fontSize: 'var(--deck-filter-label-text)',
       }}
       aria-expanded={open}
@@ -129,7 +127,7 @@ function SectionToggle({
             borderRadius: '999rem',
             fontSize: 'var(--deck-filter-control-text)',
             fontWeight: 400,
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-body)',
             lineHeight: 1.2,
             textAlign: 'center',
           }}
@@ -162,7 +160,7 @@ function FilterButton({
         minHeight: 'var(--deck-filter-touch-min)',
         padding: '0.25rem 0.1875rem',
         cursor: 'pointer',
-        border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+        border: '1px solid transparent',
         background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
         opacity: active ? 1 : 0.58,
         filter: active ? 'none' : 'grayscale(0.35)',
@@ -181,9 +179,9 @@ function FilterButton({
         className={`${iconUrl ? 'mt-1' : ''} max-w-full truncate text-center leading-tight`}
         style={{
           color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-          fontFamily: 'var(--font-heading)',
+          fontFamily: 'var(--font-body)',
           fontSize: 'var(--deck-filter-control-text)',
-          fontWeight: 700,
+          fontWeight: 600,
           width: '100%',
         }}
       >
@@ -216,12 +214,12 @@ function LanguageFilter({
               className="rounded transition-all duration-200"
               style={{
                 minHeight: 'var(--deck-filter-control-min)',
-                border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                border: '1px solid transparent',
                 background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
                 color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: 'var(--deck-filter-control-text)',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               {t(`languageFilter.${option === 'mine' ? 'current' : option}`)}
@@ -316,6 +314,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       : true
   )
   const [total, setTotal] = useState(initialTotal ?? 0)
+  const [browse, setBrowse] = useQueryState('browse', parseAsString.withDefault(''))
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
@@ -424,7 +423,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         label: id.name_kr,
         type: 'identity',
         imageUrl: id.game_id && id.folder_name && id.sinner_id
-          ? `${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`
+          ? getIdentityPortraitUrl(id.sinner_id, id.folder_name, id.game_id, false)
           : undefined,
       }))
 
@@ -917,7 +916,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   }
 
   const filterSurface = (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-7">
       <section>
         <SectionLabel>{t('search.section')}</SectionLabel>
         <div className="relative" ref={searchRef}>
@@ -1008,7 +1007,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         </p>
       </section>
 
-      <Divider />
 
       <section>
         <SectionLabel>{t('sort.label')}</SectionLabel>
@@ -1023,12 +1021,12 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 className="rounded transition-all duration-200"
                 style={{
                   minHeight: '2.25rem',
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                  border: '1px solid transparent',
                   background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
                   color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                  fontFamily: 'var(--font-heading)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: 'var(--deck-filter-control-text)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 {t(`sort.${key}`)}
@@ -1038,7 +1036,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         </div>
       </section>
 
-      <Divider />
 
       <section>
         <SectionLabel>{t('filters.difficulty')}</SectionLabel>
@@ -1049,12 +1046,12 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
             className="rounded transition-all duration-200"
             style={{
               minHeight: '2.25rem',
-              border: `1px solid ${!difficulty ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+              border: '1px solid transparent',
               background: !difficulty ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
               color: !difficulty ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-body)',
               fontSize: 'var(--deck-filter-control-text)',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
             }}
           >
@@ -1071,12 +1068,12 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 className="rounded transition-all duration-200"
                 style={{
                   minHeight: '2.25rem',
-                  border: `1px solid ${active ? ds.border : 'var(--deck-filter-border)'}`,
+                  border: '1px solid transparent',
                   background: active ? ds.bg : 'var(--deck-filter-surface-muted)',
                   color: active ? ds.color : 'var(--deck-filter-text-muted)',
-                  fontFamily: 'var(--font-heading)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: 'var(--deck-filter-control-text)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                 }}
               >
@@ -1087,7 +1084,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         </div>
       </section>
 
-      <Divider />
 
       <section>
         <div className="flex items-center gap-1">
@@ -1110,7 +1106,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 background: keywordMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
                 color: keywordMode === 'and' ? 'var(--gold)' : '#888',
                 border: `1px solid ${keywordMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: '0.8125rem',
                 letterSpacing: '0.05em',
                 fontWeight: 400,
@@ -1149,7 +1145,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         )}
       </section>
 
-      <Divider />
 
       <section>
         <div className="flex items-center gap-1">
@@ -1173,7 +1168,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 background: identityMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
                 color: identityMode === 'and' ? 'var(--gold)' : '#888',
                 border: `1px solid ${identityMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: '0.8125rem',
                 letterSpacing: '0.05em',
                 fontWeight: 400,
@@ -1261,14 +1256,12 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         )}
       </section>
 
-      <Divider />
 
       <LanguageFilter
         value={languageFilter}
         onChange={value => { void setLanguageQuery(value === 'mine' ? null : value, QUERY_OPTIONS) }}
       />
 
-      <Divider />
 
       <section>
         <SectionToggle
@@ -1331,7 +1324,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                       background: 'rgba(200,144,10,0.1)',
                       color: 'var(--gold)',
                       border: '1px solid rgba(200,144,10,0.28)',
-                      fontFamily: 'var(--font-heading)',
+                      fontFamily: 'var(--font-body)',
                       fontSize: '0.8125rem',
                       cursor: collectionLoading ? 'wait' : 'pointer',
                       opacity: collectionLoading ? 0.6 : 1,
@@ -1353,12 +1346,14 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     </div>
   )
 
+  if (browse !== 'all' && !(search || keywordQuery || identityIdsQuery)) return <DiscoveryShelf kind="planner" onBrowse={() => setBrowse('all', { history: 'push' })} />
+
   return (
-    <div className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+    <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         <aside
           className="hidden h-full w-64 shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
-          style={{ borderRight: '1px solid rgba(200,144,10,0.18)' }}
+
           aria-label={t('filters.aside')}
         >
           {filterSurface}
@@ -1372,7 +1367,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
               aria-live="polite"
               style={{
                 padding: '0.35rem 0',
-                borderBottom: '1px solid rgba(200, 144, 10, 0.14)',
                 color: '#888',
                 fontFamily: 'var(--font-body)',
                 fontSize: '1rem',
@@ -1380,7 +1374,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
               }}
             >
                 <span className="min-w-0">
-                  <span style={{ color: 'var(--gold)', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
                   {hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
                 </span>
                 {hasAnyFilter && <span style={{ color: '#777' }}> {t('result.filterApplied')}</span>}
@@ -1433,7 +1427,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
             cursor: 'pointer',
             background: 'var(--gold)',
             color: '#0d0b08',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.9375rem',
           }}
         >
@@ -1472,7 +1466,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 zIndex: 1,
               }}
             >
-              <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
+              <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-body)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
                 {t('filters.button').toUpperCase()}
               </span>
               <button

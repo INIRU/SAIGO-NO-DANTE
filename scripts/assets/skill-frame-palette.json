@@ -1,0 +1,5 @@
+{
+  "reference": "Dante Planner identity detail, 2026-09-10: 12 LCB identities, 48 skill/defense views. RGB values matched to the rendered frame and silhouette colors; reference images are not distributed.",
+  "outline": {"wrath":"#ff0000","lust":"#ff6b00","sloth":"#ffd232","gluttony":"#a4ff00","gloom":"#19c7ee","pride":"#004dd5","envy":"#9700dd","neutral":"#cccccc"},
+  "base": {"wrath":"#ff1919","lust":"#ff4200","sloth":"#ffff00","gluttony":"#44ff00","gloom":"#00ffff","pride":"#0044ff","envy":"#ff00ff","neutral":"#cccccc"}
+}

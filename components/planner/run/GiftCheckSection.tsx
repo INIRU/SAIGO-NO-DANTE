@@ -6,7 +6,7 @@ import { Search } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
-import GiftCard from '@/components/planner/gift-plan/GiftCard'
+import GiftCard from '@/components/ui/GiftCard'
 
 interface Props {
   state: RunState

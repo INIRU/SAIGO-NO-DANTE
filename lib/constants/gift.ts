@@ -1,4 +1,5 @@
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
 
 // ── 에고 기프트 팔각형 클립패스 ─────────────────────────────────────────────
 export const OCTAGON_CLIP = 'polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%)'
@@ -42,8 +43,8 @@ export const STATS_SLUGS = new Set(['slash', 'pierce', 'blunt'])
 // ── 기프트 키워드 아이콘 URL 유틸 ───────────────────────────────────────────
 export function getGiftKeywordIconUrl(slug: string): string | null {
   if (slug === 'general') return null
-  if (STATS_SLUGS.has(slug)) return `${STORAGE_BASE}/icons/stats/${slug}.webp`
-  return `${STORAGE_BASE}/icons/keywords/${slug}.webp`
+  if (STATS_SLUGS.has(slug)) return getKeywordIconUrl(slug, slug)
+  return getKeywordIconUrl(SLUG_TO_KEYWORD[slug] ?? slug, slug === 'breath' ? 'poise' : slug)
 }
 
 export function getGiftKeywordSlug(keyword: string | null): string | null {
@@ -67,4 +68,4 @@ export function getGiftKeywordColor(keyword: string | null): string {
 }
 
 // ── 기프트 이미지 배경 URL ──────────────────────────────────────────────────
-export const GIFT_BG_URL = `${STORAGE_BASE}/icons/ego-gift-bg.webp`
+export const GIFT_BG_URL = getGameUiAsset('gift/background')

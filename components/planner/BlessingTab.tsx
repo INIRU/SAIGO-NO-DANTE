@@ -1,5 +1,6 @@
 'use client'
 
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, Dispatch, RefObject } from 'react'
 import Image from 'next/image'
@@ -476,7 +477,7 @@ function BlessingCard({
 
       <div className="pointer-events-none absolute min-w-0" style={{ left: '1.625rem', top: '2.8125rem', width: '4.25rem', aspectRatio: '1 / 1', zIndex: 4 }}>
         <Image
-          src={`${S}/icons/start-buffs/${blessing.baseId}.webp`}
+          src={getGameUiAsset(`start-buffs/${blessing.baseId}`)}
           alt=""
           fill
           sizes="4rem"
@@ -498,7 +499,7 @@ function BlessingCard({
         }}
       >
         <Image
-          src={`${S}/icons/start-buffs/starlight.webp`}
+          src={getGameUiAsset('start-buffs/starlight')}
           alt=""
           width={24}
           height={24}
@@ -892,7 +893,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
               boxShadow: 'none',
             }}
           >
-            <Image src={`${S}/icons/start-buffs/starlight.webp`} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem' }} />
+            <Image src={getGameUiAsset('start-buffs/starlight')} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem' }} />
             <span style={{ color: '#d8c1a0', fontSize: '0.9375rem', fontWeight: 500 }}>{t('usedStarlight')}</span>
             <span style={{ color: '#d8c1a0', fontSize: '1rem', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{totalCost}</span>
           </div>

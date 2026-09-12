@@ -62,7 +62,6 @@ const nextConfig: NextConfig = {
       'lucide-react',
       'sonner',
       'motion',
-      '@ai-sdk/react',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-tooltip',
@@ -71,6 +70,12 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    // Source sprite corrections use content-versioned URLs to invalidate stale crops.
+    localPatterns: [
+      { pathname: '/assets/game-ui/**' },
+      { pathname: '/assets/skill-frames/**' },
+      { pathname: '/**', search: '' },
+    ],
     // DNS64/NAT64 can make public Supabase Storage resolve to local-looking IPv6 addresses.
     dangerouslyAllowLocalIP: true,
     remotePatterns: [

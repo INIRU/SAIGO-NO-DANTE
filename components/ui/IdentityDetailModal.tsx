@@ -1,9 +1,13 @@
 'use client'
 
+
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { getIdentityPortraitUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
-import { STORAGE_BASE, ATK_TYPE_ICON_MAP, RARITY_ICON_MAP } from '@/lib/constants/game'
+import { STORAGE_BASE, RARITY_ICON_MAP } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import SkillDescription from '@/components/skill/SkillDescription'
@@ -100,9 +104,9 @@ type ApiResponse = {
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
 const STAT_ICON_URL: Record<string, string> = {
-  hp: `${STORAGE_BASE}/icons/stats/health.webp`,
-  spd: `${STORAGE_BASE}/icons/stats/speed.webp`,
-  def: `${STORAGE_BASE}/icons/stats/defense.webp`,
+  hp: getDetailStatIconUrl('health'),
+  spd: getDetailStatIconUrl('speed'),
+  def: getDetailStatIconUrl('defense'),
 }
 
 const RES_STYLE: Record<string, { color: string; label: string }> = {
@@ -120,10 +124,10 @@ const RES_STYLE: Record<string, { color: string; label: string }> = {
 
 
 // ── 정신력 이미지 상수 ────────────────────────────────────────────────────
-const PANIC_IMG_URL = `${STORAGE_BASE}/icons/stats/panic.webp`
-const PANIC_LOVE_HATE_URL = `${STORAGE_BASE}/icons/stats/panic_love_hate.webp`
-const SANITY_INCREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_increase_bg.webp`
-const SANITY_DECREASE_BG = `${STORAGE_BASE}/icons/stats/sanity_decrease_bg.webp`
+const PANIC_IMG_URL = getGameUiAsset('sanity/9999')
+const PANIC_LOVE_HATE_URL = getGameUiAsset('sanity/9994')
+const SANITY_INCREASE_BG = getGameUiAsset('sanity/increase')
+const SANITY_DECREASE_BG = getGameUiAsset('sanity/decrease')
 
 // ── 정신력 텍스트 파서 ────────────────────────────────────────────────────
 function parseMarkupTags(text: string): React.ReactNode[] {
@@ -310,10 +314,10 @@ function ModalContent({ data }: { data: ApiResponse }) {
   const atkSkills = sortedSkills.filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))
   const defSkills = sortedSkills.filter(s => ['evade', 'defense', 'counter'].includes(s.skill_type))
 
-  const rarityColor = identity.rarity === 3 ? '#c8900a' : identity.rarity === 2 ? '#4898b0' : '#667788'
+  const rarityColor = identity.rarity === 3 ? '#c8900a' : identity.rarity === 2 ? '#c83030' : '#a87340'
 
   const portraitUrl = identity.game_id && identity.folder_name
-    ? `${STORAGE_BASE}/sinners/${identity.sinner_id}/identities/${encodeURIComponent(identity.folder_name)}/${identity.game_id}_normal_info.webp`
+    ? getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, false)
     : null
   const representativeKeywords = getRepresentativeKeywords(identity)
 
@@ -398,7 +402,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
             const st = RES_STYLE[val] ?? { color: '#667788', label: val }
             return (
               <span key={label} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${st.color}15`, color: st.color, border: `1px solid ${st.color}30`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                <Image src={ATK_TYPE_ICON_MAP[icon]} alt={label} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.75 }} />
+                <Image src={getDetailStatIconUrl(icon)} alt={label} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.75 }} />
                 {label}
                 <strong>{val}</strong>
               </span>
@@ -540,7 +544,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                   <div className="flex items-start gap-3 mb-2">
                     <div className="flex-shrink-0">
                       <Image
-                        src={panicInfo.name === '사랑과 증오' ? PANIC_LOVE_HATE_URL : PANIC_IMG_URL}
+                        src={panicInfo.id === 9994 ? PANIC_LOVE_HATE_URL : PANIC_IMG_URL}
                         alt="패닉"
                         width={64}
                         height={64}

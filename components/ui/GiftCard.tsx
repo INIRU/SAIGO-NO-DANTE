@@ -1,25 +1,18 @@
 'use client'
 
-import { useState, memo } from 'react'
-import Image from 'next/image'
+import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
+
+import { memo } from 'react'
+import styles from './GiftCard.module.css'
 import { useLocale, useTranslations } from 'next-intl'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import { X, FlaskConical } from 'lucide-react'
-import { OCTAGON_CLIP, GRADE_ROMAN, GIFT_BG_URL, getGiftKeywordSlug, getGiftKeywordIconUrl } from '@/lib/constants/gift'
+import { X } from 'lucide-react'
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
-interface GiftCardGift {
-  grade?: string | null
-  keyword?: string | null
-  image_url?: string | null
-  name: string
-  name_en?: string | null
-  name_jp?: string | null
-}
+
 
 interface GiftCardProps {
-  gift: GiftCardGift
+  gift: GiftArtworkGift
   onClick: () => void
   className?: string
   variant?: 'default' | 'insert'
@@ -61,12 +54,7 @@ const GiftCard = memo(function GiftCard({
 }: GiftCardProps) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab.conditionStatus')
-  const [hovered, setHovered] = useState(false)
   const isInsert = variant === 'insert'
-  const isEX = gift.grade === 'EX'
-  const gradeLabel = GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade
-  const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
-  const kwIconUrl = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
   const displayName = locale === 'en'
     ? gift.name_en || gift.name
     : locale === 'ja'
@@ -75,13 +63,11 @@ const GiftCard = memo(function GiftCard({
 
   return (
     <button
-      className={className ? `gift-card ${className}` : 'gift-card'}
+      className={`gift-card ${styles.card}${className ? ` ${className}` : ''}`}
       aria-label={ariaLabel ?? displayName}
       title={title ?? displayName}
       onClick={onClick}
       disabled={disabled}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
         width: size ?? '100%',
@@ -92,88 +78,11 @@ const GiftCard = memo(function GiftCard({
         border: 'none',
         padding: 0,
         opacity: disabled ? 0.4 : 1,
-        transform: hovered && !disabled ? 'scale(1.06)' : 'scale(1)',
         transition: 'transform 0.2s ease, opacity 0.15s',
-        zIndex: hovered ? 10 : 1,
         position: 'relative',
       }}
     >
-      {/* Octagon frame */}
-      <div className="gift-frame" style={{
-        position: 'relative',
-        width: '100%',
-        aspectRatio: '1',
-        overflow: 'hidden',
-        backgroundImage: `url(${GIFT_BG_URL})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        clipPath: OCTAGON_CLIP,
-        containerType: 'inline-size',
-        outline: isSelected ? '2px solid #c8900a' : 'none',
-        outlineOffset: '2px',
-        boxShadow: hovered && !disabled ? '0 0 0.75rem rgba(200,144,10,0.3)' : 'none',
-      }}>
-        {/* Grade label */}
-        {!isInsert && (
-          <span style={{
-            position: 'absolute',
-            top: '4%',
-            left: '3%',
-            zIndex: 10,
-            pointerEvents: 'none',
-            fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-            fontWeight: 700,
-            fontSize: 'clamp(1rem, 28cqw, 2.5rem)',
-            lineHeight: 1,
-            color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
-            textShadow: isEX
-              ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0), 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.8)'
-              : '0 0 0.5rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-          }}>
-            {gradeLabel}
-          </span>
-        )}
-
-        {/* Keyword icon */}
-        {!isInsert && kwIconUrl && (
-          <div style={{
-            position: 'absolute',
-            right: '5%',
-            bottom: '5%',
-            zIndex: 10,
-            pointerEvents: 'none',
-            width: '28%',
-            height: '28%',
-          }}>
-            <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
-          </div>
-        )}
-
-        {/* Gift image */}
-        <div style={{
-          position: 'absolute', inset: '15%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {isInsert ? (
-            <span style={{
-              color: '#f0d48a',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 'clamp(1rem, 32cqw, 2rem)',
-              fontWeight: 800,
-              lineHeight: 1,
-              textShadow: '0 0 0.375rem rgba(0,0,0,0.85)',
-            }}>
-              +
-            </span>
-          ) : gift.image_url ? (
-            <div className="relative w-full h-full">
-              <ImageWithFallback src={gift.image_url} alt={displayName} fill fallbackType="gift" className="object-contain" sizes="120px" />
-            </div>
-          ) : (
-            <FlaskConical size="1.5rem" style={{ color: '#444' }} />
-          )}
-        </div>
-
+      <GiftArtwork gift={gift} displayName={displayName} isInsert={isInsert} isSelected={isSelected} className={styles.frame}>
         {/* Selected checkmark */}
         {!isInsert && isSelected && (
           <div style={{
@@ -228,6 +137,7 @@ const GiftCard = memo(function GiftCard({
         {/* Remove button */}
         {!isInsert && onRemove && (
           <div
+            className={styles.remove}
             role="button"
             tabIndex={0}
             onClick={e => { e.stopPropagation(); onRemove() }}
@@ -238,7 +148,7 @@ const GiftCard = memo(function GiftCard({
               width: '1rem', height: '1rem',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', padding: 0,
-              opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+              transition: 'opacity 0.15s',
             }}
           >
             <X size={10} color="#fff" />
@@ -270,13 +180,12 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {/* Hover glow */}
-        <div style={{
+        <div className={styles.glow} style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(135deg, rgba(251,183,46,0.18) 0%, transparent 50%)',
-          opacity: hovered && !disabled ? 1 : 0,
           transition: 'opacity 0.2s', pointerEvents: 'none',
         }} />
-      </div>
+      </GiftArtwork>
 
       {/* Name below card */}
       {showName && !isInsert && (

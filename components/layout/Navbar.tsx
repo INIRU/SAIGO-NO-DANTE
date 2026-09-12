@@ -5,27 +5,22 @@ import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { CalendarDays, Menu, X, ChevronDown, Search } from 'lucide-react'
+import { Menu, X, ChevronDown, Search, MessageCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { motion, useReducedMotion } from 'motion/react'
-const SearchModal = dynamic(() => import('@/components/ui/SearchModal'), { ssr: false })
+const SearchModal = dynamic(() => import('@/components/ui/SearchModal'))
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
 
 type NavGroupDef = {
+  dropdown?: boolean
   labelKey: string
-  items: { href: string; labelKey: string; icon?: 'calendar' }[]
+  items: { href: string; labelKey: string }[]
 }
 
 const NAV_GROUPS: NavGroupDef[] = [
-  {
-    labelKey: 'nav.story.title',
-    items: [
-      { href: '/story', labelKey: 'nav.story.main' },
-    ],
-  },
   {
     labelKey: 'nav.db.title',
     items: [
@@ -39,16 +34,19 @@ const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { href: '/decks',               labelKey: 'nav.decks' },
       { href: '/planner/community',   labelKey: 'nav.community.planner' },
-      { href: '/tier-list',           labelKey: 'nav.community.tierList' },
       { href: '/collection',          labelKey: 'nav.community.collection' },
     ],
   },
   {
+    labelKey: 'nav.tools.title',
+    dropdown: true,
+    items: [{ href: '/tools/experience', labelKey: 'nav.tools.experience' }, { href: '/tools/lunacy', labelKey: 'nav.tools.lunacy' }],
+  },
+  {
     labelKey: 'nav.other.title',
     items: [
-      { href: '/calendar',   labelKey: 'nav.calendar', icon: 'calendar' },
+      { href: '/developers', labelKey: 'nav.other.developers' },
       { href: '/meta',       labelKey: 'nav.other.meta' },
-      { href: '/extraction', labelKey: 'nav.other.extraction' },
       { href: '/random',     labelKey: 'nav.other.random' },
     ],
   },
@@ -144,10 +142,10 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   // next-intl Link handles locale prefix automatically
   const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
     label: t(g.labelKey as TranslationKey),
+    dropdown: g.dropdown,
     items: g.items.map(item => ({
       href: item.href,
       label: t(item.labelKey as TranslationKey),
-      icon: item.icon,
     })),
   })), [t])
 
@@ -181,7 +179,6 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const strippedPathname = pathname.replace(/^\/(ko|en|ja)(?=\/|$)/, '') || '/'
 
   const isActiveHref = (href: string) => strippedPathname === href || strippedPathname?.startsWith(href + '/')
-  const calendarNavLabel = t('nav.calendar' as TranslationKey)
 
   useEffect(() => {
     if (!mobileMenuOpen) return
@@ -281,10 +278,10 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
           </Link>
 
           {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-5">
             {navGroups.map(group => {
               const isActive = group.items.some(i => strippedPathname === i.href || strippedPathname?.startsWith(i.href + '/'))
-              const isSingleItem = group.items.length === 1
+              const isSingleItem = group.items.length === 1 && !group.dropdown
 
               // 아이템 1개 → 바로 이동
               if (isSingleItem) {
@@ -319,6 +316,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   }}
                 >
                   <button
+                    onClick={() => setOpenGroup(group.label)}
                     aria-expanded={openGroup === group.label}
                     aria-haspopup="true"
                     className="font-compact-serif-label flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
@@ -392,13 +390,6 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                             }}
                             onClick={() => setOpenGroup(null)}
                           >
-                            {item.icon === 'calendar' && (
-                              <CalendarDays
-                                size={14}
-                                aria-hidden="true"
-                                style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: '-0.125rem', color: active ? 'var(--gold)' : 'var(--gold-dim)' }}
-                              />
-                            )}
                             {item.label}
                           </Link>
                         )
@@ -409,20 +400,9 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
               )
             })}
 
-            <Link
-              href="/calendar"
-              aria-label={calendarNavLabel}
-              title={calendarNavLabel}
-              className="nav-calendar-shortcut relative flex h-10 w-10 items-center justify-center rounded-md transition-[background-color,box-shadow,color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0b08]"
-              style={{
-                color: isActiveHref('/calendar') ? 'var(--gold)' : 'var(--text-tertiary)',
-                background: isActiveHref('/calendar') ? 'rgba(200,144,10,0.07)' : 'transparent',
-                boxShadow: isActiveHref('/calendar') ? 'inset 0 -0.0625rem rgba(232,176,48,0.42)' : 'none',
-              }}
-            >
-              <CalendarDays className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+            <Link href="/support" data-testid="nav-support" aria-current={isActiveHref('/support') ? 'page' : undefined} className="flex min-h-11 items-center gap-1.5 whitespace-nowrap border-l border-[var(--border)] pl-3 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--gold-light)]">
+              <MessageCircle size={16} aria-hidden="true" />{t('nav.support' as TranslationKey)}
             </Link>
-
             <LanguageSwitcher />
 
             {/* 검색 버튼 */}
@@ -570,7 +550,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
 
           {/* 모바일 햄버거 버튼 */}
           <button
-            className="md:hidden flex items-center justify-center"
+            className="lg:hidden flex items-center justify-center"
             onClick={() => setMobileMenuOpen(v => !v)}
             style={{ color: 'var(--gold)', cursor: 'pointer', padding: '0.25rem' }}
             aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
@@ -585,7 +565,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
       {mobileMenuOpen && (
         <div
           id="mobile-navigation-menu"
-          className="fixed left-0 right-0 z-40 md:hidden"
+          className="fixed left-0 right-0 z-40 lg:hidden"
           role="navigation"
           aria-label={mainNavLabel}
           style={{
@@ -642,7 +622,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
             >
               {navGroups.map(group => {
                 const groupActive = group.items.some(item => isActiveHref(item.href))
-                const isSingleItem = group.items.length === 1
+                const isSingleItem = group.items.length === 1 && !group.dropdown
                 const expanded = openMobileGroups.includes(group.label)
 
                 if (isSingleItem) {
@@ -749,9 +729,6 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                                   }}
                                 />
                               )}
-                              {item.icon === 'calendar' && (
-                                <CalendarDays className="h-4 w-4 shrink-0" style={{ color: active ? 'var(--gold)' : 'var(--gold-dim)' }} aria-hidden="true" />
-                              )}
                               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {item.label}
                               </span>
@@ -763,6 +740,9 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   </div>
                 )
               })}
+              <Link href="/support" data-testid="nav-support-mobile" onClick={() => setMobileMenuOpen(false)} style={{...mobileLinkRowStyle('/support'),borderTop:'1px solid var(--border)',marginTop:'.5rem'}}>
+                <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
+              </Link>
             </div>
 
             <div
@@ -883,34 +863,11 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
           border-color: rgba(232,176,48,0.32) !important;
           color: var(--text-secondary) !important;
         }
-        .nav-calendar-shortcut {
-          overflow: visible;
-        }
-        .nav-calendar-shortcut::before {
-          content: '';
-          position: absolute;
-          inset: -0.125rem;
-          border-radius: 0.5rem;
-        }
-        .nav-calendar-shortcut:hover,
-        .nav-calendar-shortcut:focus-visible {
-          background: rgba(200,144,10,0.06) !important;
-          color: var(--gold) !important;
-          transform: translateY(-0.0625rem);
-        }
-        .nav-calendar-shortcut:active {
-          transform: scale(0.985);
-        }
         @media (prefers-reduced-motion: reduce) {
-          .nav-search-trigger,
-          .nav-calendar-shortcut {
+          .nav-search-trigger {
             transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
           }
-          .nav-calendar-shortcut:hover,
-          .nav-calendar-shortcut:focus-visible,
-          .nav-calendar-shortcut:active {
-            transform: none;
-          }
+
         }
       `}</style>
 

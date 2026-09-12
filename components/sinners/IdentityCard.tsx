@@ -1,9 +1,14 @@
 'use client'
 
+import { getFormationBannerUrl } from '@/lib/utils/images'
+
+import { getSinnerBadgeRingUrl } from '@/lib/utils/images'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { layoutWithLines, prepareWithSegments, setLocale as setPretextLocale } from '@chenglou/pretext'
-import { Identity, getIdentityInfoUrl, getIdentitySinColor, getSinnerLogoUrl, SIN_COLORS, RARITY_ICON_MAP, IDENTITY_CARD_FRAME_MAP, STORAGE_BASE, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { Identity, getIdentityInfoUrl, getIdentitySinColor, getSinnerLogoUrl, SIN_COLORS, RARITY_ICON_MAP, STORAGE_BASE, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { getIdentityCardFrameUrl } from '@/lib/utils/images'
 import { RARITY_COLORS } from '@/lib/constants/game'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -19,12 +24,14 @@ interface IdentityCardProps {
   onClick?: () => void
   selected?: boolean
   gacksung?: boolean
+  uptieLevel?: 1 | 2 | 3 | 4
+  showName?: boolean
   compact?: boolean
   board?: boolean
   disableHoverEffects?: boolean
   formationOverlay?: {
     kind: 'selected' | 'backup'
-    order: number
+    order: number | null
     bannerUrl: string
   }
   giftBadgeUrls?: string[]
@@ -47,7 +54,7 @@ const TITLE_SUFFIX_RE = /^(?:대표|해결사|대행|아비)$/
 const COMPACT_DETERMINISTIC_LINE_UNITS = 6.1
 const REGULAR_DETERMINISTIC_LINE_UNITS = 9.4
 const SHORT_SINGLE_LINE_MAX_WEIGHT = 7
-const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
+const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
 let activePretextLocale: string | null = null
 
 function getRepresentativeKeywords(identity: IdentityWithRepresentativeKeywords) {
@@ -428,7 +435,9 @@ export default function IdentityCard({
   onClick,
   selected = false,
   gacksung = false,
+  uptieLevel = 4,
   compact = false,
+  showName = true,
   board = false,
   disableHoverEffects = false,
   formationOverlay,
@@ -457,11 +466,11 @@ export default function IdentityCard({
     compact ? styles.compact : '',
     board ? styles.board : '',
     selected ? styles.selected : '',
-    hoverEnabled ? 'group transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.04]' : 'group',
+    hoverEnabled ? styles.hoverable : '',
   ].filter(Boolean).join(' ')
   const frameClassName = [
     styles.frame,
-    hoverEnabled ? `transition-[filter] duration-300 group-hover:brightness-130 group-hover:drop-shadow-[0_0_8px_${rarity.glow}]` : '',
+    hoverEnabled ? styles.hoverFrame : '',
   ].filter(Boolean).join(' ')
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
@@ -618,6 +627,12 @@ export default function IdentityCard({
     <div
       ref={cardRef}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? event => {
+        if (event.target !== event.currentTarget) return
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onClick() }
+      } : undefined}
       className={cardClassName}
       data-rarity={rarityNum}
       data-gacksung={gacksung || undefined}
@@ -672,9 +687,9 @@ export default function IdentityCard({
               className={styles.formationBanner}
               sizes="(max-width: 640px) 6.5rem, 8rem"
             />
-            <span className={styles.formationNumber}>
+            {formationOverlay.order != null && <span className={styles.formationNumber}>
               {formationOverlay.order}
-            </span>
+            </span>}
           </div>
         )}
 
@@ -714,7 +729,7 @@ export default function IdentityCard({
         )}
 
         {/* 인격명 */}
-        <div
+        {showName && <div
           ref={nameRef}
           className={styles.name}
           data-locale={locale}
@@ -728,7 +743,7 @@ export default function IdentityCard({
               </span>
             ))
             : displayName}
-        </div>
+        </div>}
 
         {/* 등급 아이콘 */}
         <div className={styles.rarityIcon}>
@@ -771,7 +786,7 @@ export default function IdentityCard({
             />
           </span>
           <Image
-            src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
+            src={getSinnerBadgeRingUrl(rarityNum)}
             alt=""
             fill
             className={styles.sinnerBadgeRing}
@@ -780,9 +795,9 @@ export default function IdentityCard({
         </div>
 
         {/* 등급 프레임 오버레이 */}
-        {IDENTITY_CARD_FRAME_MAP[identity.rarity] && (
+        {(
           <Image
-            src={IDENTITY_CARD_FRAME_MAP[identity.rarity]}
+            src={getIdentityCardFrameUrl(identity.rarity, uptieLevel)}
             alt=""
             width={200}
             height={300}

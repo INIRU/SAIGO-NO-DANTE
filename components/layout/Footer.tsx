@@ -13,18 +13,18 @@ export default async function Footer() {
   const tNav = await getTranslations('nav')
   const tSite = await getTranslations('site')
   return (
-    <footer className="mt-24">
+    <footer className="site-footer mt-24">
       {/* 장식선 */}
-      <div className="flex items-center gap-4 px-8 pt-10 max-w-6xl mx-auto">
+      <div className="footer-decoration flex items-center gap-4 px-8 pt-10 max-w-6xl mx-auto">
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border))' }} />
         <span className="text-xs tracking-[0.3em]" style={{ color: 'rgba(200,144,10,0.5)' }}>◆</span>
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, var(--border))' }} />
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 py-8 flex flex-col items-center gap-6">
+      <div className="footer-content max-w-6xl mx-auto px-8 py-8 flex flex-col items-center gap-6">
 
         {/* 로고 + 사이트명 */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="footer-brand flex flex-col items-center gap-2">
           <Image src="/images/logo.webp" alt="" width={22} height={32} unoptimized
             style={{ width: '1.375rem', height: 'auto', opacity: 0.85, filter: 'drop-shadow(0 0 6px rgba(200,144,10,0.4))' }} />
           <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>
@@ -47,7 +47,7 @@ export default async function Footer() {
         </nav>
 
         {/* 구분 점 */}
-        <div className="flex items-center gap-2">
+        <div className="footer-decoration flex items-center gap-2">
           {[0, 1, 2].map(i => (
             <span key={i} className="inline-block rounded-full" style={{
               width: '3px', height: '3px',

@@ -1,11 +1,16 @@
 'use client'
 
+import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+
+import FloorConstraints from './FloorConstraints'
+import FloorGuidance from './FloorGuidance'
+
 import { useLocale, useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/ui/GiftCard'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
-import type { Difficulty, FloorDifficulty, GiftData, ThemeData } from '@/lib/planner/types'
+import type { Difficulty, FloorDifficulty, GiftData, ThemeData, RecipeData } from '@/lib/planner/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import {
@@ -15,6 +20,7 @@ import {
 import { staggerContainer, workbenchStaggerItem } from '@/lib/animations'
 
 type FloorPreviewEntry = {
+  constraints?: number[]
   floor: number
   difficulty?: FloorDifficulty
   theme_id: string | null
@@ -27,6 +33,8 @@ type FloorPlanPreviewBoardProps = {
   planDifficulty: Difficulty
   themeMap: Map<string, ThemeData>
   giftMap: Map<number, GiftData>
+  inventory?: string[]
+  recipes?: RecipeData[]
   onGiftClick?: (gift: GiftData) => void
   renderMemo?: (memo: string) => React.ReactNode
 }
@@ -38,7 +46,7 @@ const FLOOR_PLAN_SEGMENTS = [
 ] as const
 
 function isEntryConfigured(entry: FloorPreviewEntry) {
-  return Boolean(entry.theme_id || entry.gift_ids.length > 0 || entry.memo.trim())
+  return isConfiguredFloor(entry)
 }
 
 function getVisibleEntriesForSegment(floorPlan: FloorPreviewEntry[], start: number, end: number) {
@@ -80,6 +88,8 @@ export default function FloorPlanPreviewBoard({
   planDifficulty,
   themeMap,
   giftMap,
+  inventory = [],
+  recipes = [],
   onGiftClick,
   renderMemo,
 }: FloorPlanPreviewBoardProps) {
@@ -247,6 +257,7 @@ export default function FloorPlanPreviewBoard({
                       </p>
                     )}
                   </div>
+                  <div className="col-span-full"><FloorConstraints floor={entry.floor} entries={floorPlan} /><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} /></div>
                 </motion.div>
               )
             })}

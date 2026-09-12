@@ -1,5 +1,7 @@
 'use client'
 
+
+import { getDetailStatIconUrl } from '@/lib/utils/images'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -65,15 +67,15 @@ type PreviewIdentity = NonNullable<IdentitySlot['identities']>
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const STAT_ICON_URL: Record<string, string> = {
-  hp: `${STORAGE_BASE}/icons/stats/health.webp`,
-  spd: `${STORAGE_BASE}/icons/stats/speed.webp`,
-  def: `${STORAGE_BASE}/icons/stats/defense.webp`,
+  hp: getDetailStatIconUrl('health'),
+  spd: getDetailStatIconUrl('speed'),
+  def: getDetailStatIconUrl('defense'),
 }
 
 const RES_ATK_ICON: Record<string, string> = {
-  '참': `${STORAGE_BASE}/icons/stats/slash.webp`,
-  '관': `${STORAGE_BASE}/icons/stats/pierce.webp`,
-  '타': `${STORAGE_BASE}/icons/stats/blunt.webp`,
+  '참': getDetailStatIconUrl('slash'),
+  '관': getDetailStatIconUrl('pierce'),
+  '타': getDetailStatIconUrl('blunt'),
 }
 
 const RES_STYLE: Record<string, { color: string; bg: string; border: string }> = {

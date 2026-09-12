@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSinnerById, getEGOById, getEGOs } from '@/lib/db/queries'
+import { getSinnerById, getEGOById } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -53,11 +53,6 @@ export async function generateMetadata({
       images: [ogImage],
     },
   }
-}
-
-export async function generateStaticParams() {
-  const egos = await getEGOs()
-  return egos.map(e => ({ slug: e.sinner_id, egoId: e.id }))
 }
 
 export default async function EGODetailPage({ params }: { params: Promise<{ slug: string; egoId: string }> }) {

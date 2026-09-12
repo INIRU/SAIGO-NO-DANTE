@@ -5,16 +5,10 @@
     "sinnerList": "수감자 목록",
     "decks": "덱 게시판",
     "planner": "거울 던전",
-    "calendar": "공식 캘린더",
     "community": {
       "title": "커뮤니티",
       "planner": "거던 플래너",
-      "tierList": "티어표",
       "collection": "보유 현황"
-    },
-    "story": {
-      "title": "스토리",
-      "main": "메인 스토리"
     },
     "db": {
       "title": "DB",
@@ -24,9 +18,15 @@
     "other": {
       "title": "기타",
       "meta": "분석",
-      "extraction": "추출",
-      "random": "랜덤 편성"
-    }
+      "random": "랜덤 편성",
+      "developers": "개발자 도구"
+    },
+    "tools": {
+      "title": "도구",
+      "experience": "경험치 계산기",
+      "lunacy": "월간 광기 계산기"
+    },
+    "support": "문의"
   },
   "maintenance": {
     "eyebrow": "ARCHIVE MAINTENANCE",
@@ -45,52 +45,6 @@
       "reason": "사유",
       "endsAt": "재개 예정",
       "route": "요청 경로"
-    }
-  },
-  "calendar": {
-    "meta": {
-      "title": "공식 뉴스 캘린더 | SAIGO NO DANTE",
-      "description": "림버스 컴퍼니 공식 Steam 뉴스와 X 소식을 이번 달 캘린더로 확인하세요."
-    },
-    "eyebrow": "OFFICIAL NEWS",
-    "title": "공식 뉴스 캘린더",
-    "description": "Steam 공지와 X 소식을 현재 월 기준으로 모아 날짜별로 보여줍니다.",
-    "currentMonthOnly": "이번 범위에서는 현재 월만 표시하며 이전/다음 달 이동은 제공하지 않습니다.",
-    "summary": "총 {count}건 · Steam {steam} · X {x}",
-    "loading": "캘린더를 불러오는 중…",
-    "errorTitle": "캘린더를 불러오지 못했습니다.",
-    "errorDescription": "잠시 후 다시 시도하세요. 문제가 계속되면 공식 소스 링크를 확인해 주세요.",
-    "retry": "다시 시도",
-    "emptyTitle": "이번 달 등록된 공식 소식이 없습니다.",
-    "emptyDescription": "새 Steam 뉴스나 X 게시물이 수집되면 이 달력에 날짜별로 표시됩니다.",
-    "moreEvents": "외 {count}건",
-    "openDayEvents": "{date}의 숨겨진 소식 {count}건 보기",
-    "dayEventsTitle": "{date} 소식",
-    "dayEventsFallbackTitle": "날짜별 소식",
-    "dayEventsDescription": "이 날짜의 공식 소식 {count}건 중 하나를 선택하세요.",
-    "openEvent": "{source} 소식 열기: {title}",
-    "detailTitle": "공식 소식 상세",
-    "entryTypes": {
-      "post": "게시물",
-      "schedule": "일정"
-    },
-    "sourcePostTitles": {
-      "steam": "스팀 게시물",
-      "x": "트위터 게시물"
-    },
-    "publishedContext": "게시물 기준: {date}",
-    "galleryLabel": "첨부 이미지",
-    "galleryCount": "이미지 {count}장",
-    "openImage": "{title} 이미지 {index} 크게 보기",
-    "imageViewerTitle": "이미지 크게 보기",
-    "imageAlt": "{title} 첨부 이미지 {index}",
-    "close": "닫기",
-    "sourceLink": "원문 보기",
-    "noBody": "제공된 본문이 없습니다. 원문에서 자세한 내용을 확인하세요.",
-    "tags": "태그",
-    "sources": {
-      "steam": "Steam",
-      "x": "X"
     }
   },
   "common": {
@@ -1139,12 +1093,6 @@
     "title": "운영법",
     "write": "운영법 작성"
   },
-  "ai": {
-    "summary": "AI 요약",
-    "generate": "AI 요약 생성",
-    "generating": "AI 요약 생성 중...",
-    "noSummary": "아직 요약이 없습니다"
-  },
   "sinner": {
     "yi-sang": "이상",
     "faust": "파우스트",
@@ -1193,10 +1141,6 @@
       "mirrorDungeonDesc": "EGO 기프트 도감, 키워드 필터, 조합 레시피.",
       "collection": "보유 현황",
       "collectionDesc": "나의 인격·EGO 체크리스트, URL로 공유.",
-      "tierList": "티어표",
-      "tierListDesc": "커뮤니티 투표 기반 리세마라 티어 랭킹.",
-      "extraction": "추출 시뮬",
-      "extractionDesc": "뽑기 확률 시뮬레이션으로 운명을 시험.",
       "random": "랜덤 편성",
       "randomDesc": "슬롯머신 UI로 무작위 편성, 키워드 필터.",
       "planner": "거던 플래너",
@@ -1208,6 +1152,9 @@
       "discordSub": "봇 소개 · 서버 참여",
       "youtubeSub": "공식 채널"
     },
+    "watchVideo": "영상 보기",
+    "archiveShortcuts": "아카이브 바로가기",
+    "officialChannels": "공식 채널",
     "latestVideo": "최신 영상",
     "viewChannel": "채널 더보기",
     "latestIdentity": "최신 인격",
@@ -1283,7 +1230,6 @@
       "extraction": "추출",
       "shardPostRelease7d": "출시 후 7일",
       "fragmentExchange": "파편 교환",
-      "sdDragHint": "드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화",
       "type": {
         "default": "기본",
         "standard": "추출",
@@ -1312,7 +1258,8 @@
       "slash": "참격",
       "pierce": "관통",
       "blunt": "타격",
-      "season": "시즌"
+      "season": "시즌",
+      "traits": "인격 키워드 · 소속"
     },
     "stats": {
       "title": "스탯",
@@ -1394,17 +1341,6 @@
       "addNew": "추가하기",
       "untitled": "제목 없음"
     },
-    "ai": {
-      "title": "AI 요약",
-      "generate": "AI 요약 생성",
-      "regenerate": "재생성",
-      "expired": "만료됨",
-      "generating": "생성 중...",
-      "streaming": "스트리밍 중...",
-      "disclaimer": "AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.",
-      "description": "AI가 이 인격의 스킬, 운영법, 추천 편성을 분석하여 요약합니다.",
-      "created": "생성"
-    },
     "decks": "등록된 덱",
     "tab": {
       "skills": "스킬",
@@ -1439,7 +1375,7 @@
     },
     "notFound": "인격을 찾을 수 없습니다",
     "meta": {
-      "description": "스탯, 스킬, 패시브, AI 요약, 운영법"
+      "description": "스탯, 스킬, 패시브, 운영법"
     },
     "season": "시즌",
     "panic": "패닉",
@@ -1499,5 +1435,102 @@
   },
   "keyword": {
     "maxStack": "최대"
+  },
+  "meta": {
+    "title": "인격 메타 분석",
+    "description": "덱 게시판과 거울 던전 플래너의 공개 편성 기반 통계",
+    "source": {
+      "all": "통합",
+      "decks": "덱 게시판",
+      "planner": "거던 플래너"
+    },
+    "emptyPeriod": "선택한 기간에 집계할 편성이 없습니다.",
+    "showAllTime": "전체 기간 보기",
+    "periodLabel": "집계 기간",
+    "period": {
+      "30": "최근 30일",
+      "90": "최근 90일",
+      "all": "전체 기간",
+      "7": "최근 7일"
+    },
+    "sample": "유효 편성 {count}건 · 덱 {decks}건 · 플래너 {planner}건 · 빈 편성 제외 {excluded}건",
+    "methodologyLabel": "집계 기준",
+    "methodology": "공개 게시물 1건을 같은 비중으로 집계합니다. 인격·EGO·키워드는 편성당 한 번만 계산하며, 키워드와 동시 편성은 전투 인격 기준입니다. 채용 빈도이며 성능이나 승률을 뜻하지 않습니다.",
+    "smallSample": "표본이 20건 미만입니다. 소수 게시물의 영향을 크게 받을 수 있습니다.",
+    "loadError": "통계를 불러오지 못했습니다.",
+    "retry": "다시 시도",
+    "loading": "통계 불러오는 중",
+    "analysis": {
+      "companions": "함께 편성된 인격",
+      "companionsHint": "이 인격을 전투 편성한 {count}건 기준입니다. 대기는 제외하며, 여러 인격을 함께 편성하므로 비율의 합계는 100%를 넘을 수 있습니다.",
+      "companionCount": "{total}건 중 {count}건",
+      "noCompanions": "함께 전투 편성된 인격이 없습니다.",
+      "identity": "분석할 인격",
+      "empty": "집계할 공개 편성이 없습니다.",
+      "method": "이 인격을 전투 편성한 공개 게시물 {count}개 기준입니다. EGO 비율은 이 인격과 같은 수감자에 편성된 EGO를 셉니다.",
+      "order": "편성 순서",
+      "position": "{order}번",
+      "purpose": "주로 사용된 덱 용도",
+      "purposeHint": "작성자가 지정한 주요 키워드 기준입니다. 다중 키워드는 각각 집계하므로 합계가 100%를 넘을 수 있습니다.",
+      "unclassified": "주요 키워드가 지정되지 않았습니다.",
+      "egos": "함께 편성된 EGO",
+      "excludeBase": "기본 EGO 제외",
+      "decks": "이 인격을 사용하는 덱과 플래너",
+      "keyword": "덱 키워드",
+      "all": "전체",
+      "detail": "인격 상세",
+      "baseOnly": "기본 EGO를 제외한 편성 기록이 없습니다. 스위치를 끄면 기본 EGO도 확인할 수 있습니다.",
+      "change": "인격 변경",
+      "search": "인격 이름 또는 수감자 검색",
+      "sinner": "수감자",
+      "close": "닫기",
+      "noMatches": "검색 결과가 없습니다. 다른 이름으로 찾아보세요.",
+      "more": "더 보기"
+    }
+  },
+  "experience": {
+    "title": "경험치 계산기",
+    "subtitle": "보유 티켓부터 계산하고, 필요한 만큼만 채광하세요.",
+    "levels": "레벨 설정",
+    "current": "현재 레벨",
+    "target": "목표 레벨",
+    "progress": "현재 레벨에서 쌓인 EXP",
+    "inventory": "보유 경험치 티켓",
+    "inventoryHelp": "일반 학습 티켓 I~IV의 보유 수량을 입력하세요.",
+    "ticket": "인격 학습 티켓 {tier}",
+    "reset": "티켓 초기화",
+    "required": "목표까지 필요한 EXP",
+    "owned": "보유 티켓 EXP",
+    "missing": "추가로 필요한 EXP",
+    "farming": "경험치 채광",
+    "stage": "입장 가능한 경던 단계",
+    "stageOption": "{stage}단계",
+    "fixed": "고정 보상 · 최소 = 평균 = 최대",
+    "manual": "직접 전투",
+    "skip": "스킵",
+    "runs": "필요 횟수",
+    "modules": "엔케팔린 모듈",
+    "enkephalin": "엔케팔린 환산",
+    "perRun": "1회 획득",
+    "perModule": "모듈당 EXP",
+    "runCount": "{count}회",
+    "moduleCount": "{count}개",
+    "reward": "1회 티켓 보상",
+    "recommendation": "추천 티켓 사용",
+    "planHelp": "선택한 방식의 채광 보상과 보유 티켓을 합친 조합입니다.",
+    "noFarm": "보유 티켓만으로 목표 레벨에 도달합니다.",
+    "already": "이미 목표 레벨에 도달했습니다.",
+    "use": "사용",
+    "left": "사용 후 남음",
+    "spent": "투입 EXP",
+    "excess": "목표 초과 EXP",
+    "excessHelp": "최소 초과 EXP를 우선하고, 같은 EXP면 티켓을 적게 사용합니다. 만렙 미만의 초과분은 다음 레벨로 이어집니다.",
+    "skipHelp": "스킵은 모듈 2배, 티켓별 보상 1.5배(소수점 올림)입니다. 엔케팔린 20 = 모듈 1개.",
+    "levelTable": "레벨별 누적 경험치",
+    "level": "레벨",
+    "cumulative": "1레벨부터 누적 EXP",
+    "next": "다음 레벨 필요 EXP",
+    "max": "최대 레벨",
+    "tools": "도구"
   }
 }

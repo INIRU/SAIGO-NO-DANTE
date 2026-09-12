@@ -15,7 +15,7 @@ export const CONTENT_TYPE_COLORS: Record<string, { bg: string; color: string; bo
 }
 
 export const RARITY_COLORS: Record<string, string> = {
-  '1성': '#667788',
-  '2성': '#4898b0',
+  '1성': '#a87340',
+  '2성': '#c83030',
   '3성': '#c8900a',
 }

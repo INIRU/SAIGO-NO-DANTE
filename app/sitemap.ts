@@ -3,7 +3,6 @@ import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 
-const STORY_CHAPTERS = ['canto-1', 'canto-2', 'canto-3', 'canto-4'] as const
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://saigo-no-dante.com'
@@ -35,25 +34,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/planner/community`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
     { url: `${baseUrl}/keywords`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/meta`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
-    { url: `${baseUrl}/tier-list`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
-    { url: `${baseUrl}/story`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${baseUrl}/story/prologue`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${baseUrl}/bot`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/collection`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
     { url: `${baseUrl}/announcements`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
-    { url: `${baseUrl}/extraction`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/random`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ]
-
-  // 스토리 챕터 페이지
-  const storyPages: MetadataRoute.Sitemap = STORY_CHAPTERS.map(ch => ({
-    url: `${baseUrl}/story/${ch}`,
-    lastModified: now,
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }))
 
   // 수감자 목록 페이지
   const sinnerPages: MetadataRoute.Sitemap = SINNER_SLUGS.map(slug => ({
@@ -97,7 +83,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticPages,
-    ...storyPages,
     ...sinnerPages,
     ...identityPages,
     ...egoPages,

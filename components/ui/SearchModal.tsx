@@ -1,8 +1,11 @@
 'use client'
 
+import { remember } from '@/lib/discovery/history'
+
 import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
 import Image from 'next/image'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 import { Search, X, User, Swords, Brain, Tags, Gift } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { STORAGE_BASE } from '@/lib/constants/game'
@@ -242,6 +245,7 @@ export default function SearchModal({ open, onClose }: Props) {
 
   // Keyboard navigation
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setActiveIndex(i => displayItems.length > 0 ? Math.min(i + 1, displayItems.length - 1) : 0)
@@ -265,6 +269,7 @@ export default function SearchModal({ open, onClose }: Props) {
   }, [activeIndex])
 
   const navigate = (href: string) => {
+    remember(rawQuery)
     onClose()
     router.push(href)
   }
@@ -433,7 +438,9 @@ export default function SearchModal({ open, onClose }: Props) {
                     flexShrink: 0,
                   }}
                 >
-                  {item.icon ? (
+                  {item.icon && item.type === 'keyword' ? (
+                    <KeywordIcon src={item.icon} alt="" width={44} height={44} unoptimized style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+                  ) : item.icon ? (
                     <Image src={item.icon} alt="" width={44} height={44} unoptimized style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   ) : (
                     <Icon size={16} style={{ color }} />

@@ -5,65 +5,8 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
+import { parseSkillDescription, COIN_IMAGES, UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
 import { SKILL_DESC_STYLES, type SkillDescVariant } from './tokens'
-
-interface CoinSection {
-  coinNum: number
-  isUnbreakable: boolean
-  lines: string[]
-}
-
-const UNBREAKABLE_PATTERNS = ['파괴 불가 코인', 'Unbreakable Coin', '破壊不可コイン']
-
-function isUnbreakableText(text: string): boolean {
-  return UNBREAKABLE_PATTERNS.some(p => text === p || text.startsWith(p))
-}
-
-function stripUnbreakablePrefix(text: string): string {
-  for (const p of UNBREAKABLE_PATTERNS) {
-    if (text.startsWith(p)) return text.slice(p.length).trim()
-  }
-  return text
-}
-
-function parseDescription(description: string) {
-  const lines = description.split('\n')
-  const globalEffects: string[] = []
-  const paragraphBreaks = new Set<number>()
-  const coinSections: CoinSection[] = []
-  let currentCoin: CoinSection | null = null
-  let sawEmptyLine = false
-
-  for (const line of lines) {
-    const coinMatch = line.match(/^\[(코인|Coin|コイン)\s?(\d+)\]\s*(.*)/)
-    if (coinMatch) {
-      currentCoin = { coinNum: parseInt(coinMatch[2]), isUnbreakable: false, lines: [] }
-      coinSections.push(currentCoin)
-      sawEmptyLine = false
-      const content = coinMatch[3].trim()
-      if (isUnbreakableText(content)) {
-        currentCoin.isUnbreakable = true
-        const rest = stripUnbreakablePrefix(content)
-        if (rest) currentCoin.lines.push(rest)
-      } else if (content) {
-        currentCoin.lines.push(content)
-      }
-    } else if (currentCoin && line.trim()) {
-      // 같은 코인의 후속 줄
-      currentCoin.lines.push(line.trim())
-    } else if (line.trim()) {
-      if (sawEmptyLine && globalEffects.length > 0) {
-        paragraphBreaks.add(globalEffects.length)
-      }
-      globalEffects.push(line.trim())
-      sawEmptyLine = false
-    } else if (!currentCoin) {
-      sawEmptyLine = true
-    }
-  }
-
-  return { globalEffects, coinSections, paragraphBreaks }
-}
 
 interface SkillDescriptionProps {
   description: string
@@ -94,12 +37,12 @@ export default function SkillDescription({
 
   if (!description && !flavor) return null
 
-  const { globalEffects, coinSections, paragraphBreaks } = parseDescription(description)
-  const parsed4 = level4Desc ? parseDescription(level4Desc) : null
+  const { globalEffects, coinSections, paragraphBreaks } = parseSkillDescription(description)
+  const parsed4 = level4Desc ? parseSkillDescription(level4Desc) : null
   const hasEffectLines = globalEffects.length > 0 || coinSections.length > 0
 
   return (
-    <div style={{ color: styles.color, fontSize: styles.fontSize, lineHeight: styles.lineHeight, whiteSpace: 'pre-line' }}>
+    <div style={{ color: styles.color, fontSize: styles.fontSize, lineHeight: styles.lineHeight, whiteSpace: 'pre-line', overflowWrap: 'anywhere', textAlign: 'left' }}>
       {/* 전체 효과 + 4동기화 diff */}
       {globalEffects.map((line, i) => {
         const newLine = parsed4?.globalEffects[i]
@@ -153,11 +96,11 @@ export default function SkillDescription({
                 accentColor={accentColor}
                 isUnbreakable={coin.isUnbreakable}
               />
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 {coin.isUnbreakable && (
-                  <span className="inline-flex items-center gap-1" style={{ color: '#aaa', fontSize: '0.625rem', fontWeight: 600 }}>
+                  <span className="inline-flex items-center gap-1" style={{ color: UNBREAKABLE_COIN_COLOR, fontSize: '0.625rem', fontWeight: 600 }}>
                     <Image
-                      src={`${STORAGE_BASE}/icons/stats/unbreakable_coin.webp`}
+                      src={COIN_IMAGES.unbreakable}
                       alt=""
                       width={12}
                       height={12}

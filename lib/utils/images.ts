@@ -1,3 +1,6 @@
+
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+import skillFrameVersions from '@/lib/generated/skill-frame-versions.json'
 import type { Identity } from '@/lib/types'
 import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
 
@@ -8,6 +11,15 @@ export function getSinnerLogoUrl(sinnerId: string): string {
   return `${STORAGE_BASE}/icons/Sinners/${sinnerId}.webp`
 }
 
+/** Detail UI uses bronze stat glyphs; battle skill badges use white attack glyphs. */
+export function getDetailStatIconUrl(stat: 'health' | 'speed' | 'defense' | 'offense' | 'slash' | 'pierce' | 'blunt'): string {
+  return getGameUiAsset(`stats/${stat}`)
+}
+
+export function getSinnerBadgeRingUrl(rarity: number): string {
+  return getGameUiAsset(`rarity/${Math.min(3, Math.max(1, Math.trunc(rarity)))}`)
+}
+
 export function getSinnerProfileUrl(sinnerId: string): string {
   const id = LCB_IDS[sinnerId]
   if (!id) return ''
@@ -15,7 +27,11 @@ export function getSinnerProfileUrl(sinnerId: string): string {
 }
 
 export function getIdentityImageUrl(sinnerId: string, identityFolderName: string, filename: string): string {
-  const folder = encodeURIComponent(identityFolderName)
+  // Legacy appearance metadata omits '&'; the verified Drive upload retains it.
+  const sourceFolder = sinnerId === 'ryoshu' && identityFolderName === 'Lobotomy E.G.O Faint Aroma Solitude'
+    ? 'Lobotomy E.G.O Faint Aroma & Solitude'
+    : identityFolderName
+  const folder = encodeURIComponent(sourceFolder)
   return `${STORAGE_BASE}/sinners/${sinnerId}/identities/${folder}/${filename}.webp`
 }
 
@@ -76,26 +92,59 @@ export function computeSkillImageIndices(skills: { id: string; skill_order: numb
 }
 
 // ── 스킬 프레임 (죄악 × 슬롯) ─────────────────────────────────────────────
-const SIN_TO_FRAME_NAME: Record<string, string> = {
-  wrath: 'crimson', lust: 'scarlet', sloth: 'amber', gluttony: 'shamrock',
-  gloom: 'azure', pride: 'indigo', envy: 'violet', neutral: 'neutral',
+const FRAME_SINS = new Set(['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'])
+
+/** 게임 원본 아틀라스의 명암/알파를 보존하여 죄악 색상을 입힌 프레임. */
+export function getSkillFrameInnerUrl(sin: string, skillSlot: number, layer: 'outline' | 'base' = 'outline'): string {
+  const affinity = FRAME_SINS.has(sin) ? sin : 'neutral'
+  const slot = Number.isFinite(skillSlot) ? Math.min(Math.max(Math.trunc(skillSlot), 1), 4) : 1
+  // Defense shares S1's original shape; neutral uses one shape for every slot.
+  // Use the same URL so repeated frames also share browser/Next image caches.
+  const frameSlot = affinity === 'neutral' || slot === 4 ? 1 : slot
+  const file = `${affinity}-${frameSlot}${layer === 'base' ? '-base' : ''}.webp`
+  return `/assets/skill-frames/${file}?v=${skillFrameVersions[file as keyof typeof skillFrameVersions]}`
 }
 
-/** 스킬 프레임 outer (배경 글로우) */
-export function getSkillFrameOuterUrl(sin: string, skillSlot: number): string {
-  const name = SIN_TO_FRAME_NAME[sin] || 'crimson'
-  const slot = Math.min(Math.max(skillSlot, 1), 3)
-  return `${STORAGE_BASE}/icons/skill-frames/outer/${name}_skill${slot}.webp`
-}
-
-/** 스킬 프레임 inner (테두리) */
-export function getSkillFrameInnerUrl(sin: string, skillSlot: number): string {
-  const name = SIN_TO_FRAME_NAME[sin] || 'crimson'
-  const slot = Math.min(Math.max(skillSlot, 1), 3)
-  return `${STORAGE_BASE}/icons/skill-frames/inner/${name}_skill${slot}.webp`
+export function getSkillFrameBadgeUrl(sin: string): string {
+  const file = `${FRAME_SINS.has(sin) ? sin : 'neutral'}-badge.webp`
+  return `/assets/skill-frames/${file}?v=${skillFrameVersions[file as keyof typeof skillFrameVersions]}`
 }
 
 export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {
   const folder = encodeURIComponent(egoFolderName)
   return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/`
+}
+
+/** Four original uptie frames per rarity. Default keeps the existing IV card. */
+export function getIdentityCardFrameUrl(rarity: number, uptie = 4): string {
+  const rank = [1, 2, 3].includes(rarity) ? rarity : 1
+  const stage = [1, 2, 3, 4].includes(uptie) ? uptie : 4
+  return `/assets/identity-card-frames/${rank}star/${stage}.webp`
+}
+
+/** Verified Drive resource sprites; shared by tools and future resource displays. */
+export function getResourceIconUrl(resource: 'ticket-1' | 'ticket-2' | 'ticket-3' | 'ticket-4' | 'module' | 'enkephalin' | 'lunacy'): string {
+  return getGameUiAsset(`resources/${resource}`)
+}
+
+export function getSinnerShardIconUrl(sinnerId: string): string | null {
+  if (!Object.hasOwn(LCB_IDS, sinnerId)) return null
+  return getGameUiAsset(`shards/${sinnerId}`)
+}
+
+export function getLunacyProductIconUrl(id: string): string {
+  return getGameUiAsset(`resources/${['2', '3', '4', '5', '6', '21', '22'].includes(id) ? `lunacy-${id}` : 'lunacy'}`)
+}
+
+/** User-provided SELECTED/BACKUP originals; hashed filenames bypass stale sprite caches. */
+export function getFormationBannerUrl(kind: 'selected' | 'backup'): string {
+  return {
+    backup: '/assets/game-ui/formation/backup-5252a810c322.png',
+    selected: '/assets/game-ui/formation/selected-306bf9823f98.png',
+  }[kind]
+}
+
+/** Original mirror-dungeon constraint card layers, preserving atlas alpha. */
+export function getConstraintAssetUrl(layer: string): string {
+  return `/assets/planner/constraint-ui/md7-${layer}.webp`
 }

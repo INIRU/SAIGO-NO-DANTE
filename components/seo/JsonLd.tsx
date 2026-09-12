@@ -1,14 +1,11 @@
+import { JsonLdScript } from 'next-seo'
+
 type JsonLdProps = {
   data: Record<string, unknown>
 }
 
 export default function JsonLd({ data }: JsonLdProps) {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
-  )
+  return <JsonLdScript data={data} scriptKey={String(data['@type'] ?? 'structured-data')} />
 }
 
 export function websiteJsonLd(siteUrl: string) {
@@ -37,7 +34,7 @@ export function organizationJsonLd(siteUrl: string) {
     '@type': 'Organization',
     name: 'SAIGO NO DANTE',
     url: siteUrl,
-    logo: `${siteUrl}/icons/icon-512x512.png`,
+    logo: `${siteUrl}/icons/icon-512x512.webp`,
   }
 }
 

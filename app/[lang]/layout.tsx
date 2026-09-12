@@ -1,3 +1,6 @@
+import '@/styles/globals/workspaces.css'
+import VisitTracker from '@/components/discovery/VisitTracker'
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, setRequestLocale, getTranslations } from 'next-intl/server'
@@ -67,7 +70,8 @@ export default async function LangLayout({
       <SetHtmlLang lang={validLang} />
       <SkipNav />
       <AprilFoolsWrapper />
-      <Navbar mainNavLabel={mainNavLabel} />
+      <div className="site-navigation"><Navbar mainNavLabel={mainNavLabel} /></div>
+      <Suspense fallback={null}><VisitTracker /></Suspense>
       <main id="main-content">{children}</main>
       <Footer />
       <FloatingFontControl />

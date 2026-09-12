@@ -1,11 +1,12 @@
 'use client'
 
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
-import { STORAGE_BASE, DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -127,8 +128,7 @@ function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] 
   if (!slot?.game_id || !slot?.folder_name || !slot?.sinner_id || failed) {
     return <div className="w-full h-full" style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
   }
-  const folder = encodeURIComponent(slot.folder_name)
-  const url = `${STORAGE_BASE}/sinners/${slot.sinner_id}/identities/${folder}/${slot.game_id}_normal_info.webp`
+  const url = getIdentityPortraitUrl(slot.sinner_id, slot.folder_name, slot.game_id, false)
   return (
     <Image src={url} alt="" fill sizes="(max-width: 768px) 17vw, 8vw" quality={60}
       style={{ objectFit: 'cover', objectPosition: 'center top' }}
@@ -194,7 +194,7 @@ function PlanCard({
 
         <div className="flex flex-col flex-1 p-4">
           {/* 제목 */}
-          <h3 className="font-serif font-light mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
+          <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
             style={{ fontSize: '0.9375rem', color: '#e8dcc8' }}>
             {plan.title}
           </h3>
@@ -241,7 +241,7 @@ function PlanCard({
               display: 'inline-flex', alignItems: 'center', flexShrink: 0,
               padding: '0.125rem 0.4375rem',
               background: DIFFICULTY_STYLE[difficultyBadge.styleKey].bg, color: DIFFICULTY_STYLE[difficultyBadge.styleKey].color, border: `1px solid ${DIFFICULTY_STYLE[difficultyBadge.styleKey].border}`,
-              borderRadius: '0.25rem', fontFamily: 'var(--font-heading)',
+              borderRadius: '0.25rem', fontFamily: 'var(--font-body)',
               fontSize: '0.8125rem', fontWeight: 700,
             }}>
               {difficultyBadge.labelKeys.map(difficulty => localized ? difficultyT(difficulty) : DIFFICULTY_CONFIG[difficulty].label).join('/')}

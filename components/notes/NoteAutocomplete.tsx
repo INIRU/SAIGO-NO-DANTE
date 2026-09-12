@@ -3,10 +3,11 @@
 import { useState, useMemo, useCallback, useRef, type CompositionEvent as ReactCompositionEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 import {
   SIN_COLORS,
-  STORAGE_BASE,
 } from '@/lib/data/sinners'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import type { KeywordInfo } from '@/components/providers/KeywordProvider'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────
@@ -340,7 +341,7 @@ export function buildKeywordPool(kwContext: Record<string, KeywordInfo>): Autoco
       label: kw,
       type: 'keyword' as const,
       color: sc,
-      iconUrl: iconSlug ? `${STORAGE_BASE}/icons/keywords/${iconSlug}.webp` : undefined,
+      iconUrl: getKeywordIconUrl(kw, iconSlug) ?? undefined,
       token: `[k:${kw}]`,
       syntax: 'inline',
     }
@@ -438,7 +439,7 @@ export function useNoteAutocomplete({
 
   const handleKeyDown = useCallback((e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     const maybeComposingEvent = e as ReactKeyboardEvent<HTMLTextAreaElement> & { isComposing?: boolean }
-    if (maybeComposingEvent.isComposing || e.nativeEvent.isComposing || isComposingRef.current) {
+    if (maybeComposingEvent.isComposing || e.nativeEvent.isComposing || e.keyCode === 229 || isComposingRef.current) {
       if (e.key === 'Tab') {
         e.preventDefault()
         e.stopPropagation()
@@ -476,7 +477,8 @@ export function useNoteAutocomplete({
 
   const onCompositionEnd = useCallback((e: ReactCompositionEvent<HTMLTextAreaElement>) => {
     isComposingRef.current = false
-    requestAnimationFrame(() => syncContextFromTextarea(e.currentTarget))
+    const target = e.currentTarget
+    requestAnimationFrame(() => syncContextFromTextarea(target))
   }, [syncContextFromTextarea])
 
   /** 커서 위치에 토큰 삽입 (수동 버튼용) */
@@ -551,6 +553,7 @@ export function NoteAutocompleteDropdown({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.0625rem', maxHeight: `${DROPDOWN_MAX_HEIGHT_REM}rem`, overflowY: 'auto', overscrollBehavior: 'contain' }}>
         {suggestions.map((sugg, i) => {
           const isSelected = i === Math.max(selectedIdx, 0)
+          const Icon = sugg.type === 'keyword' ? KeywordIcon : Image
           const hasLeadingMeta = !sugg.imageUrl && !sugg.iconUrl && Boolean(sugg.typeLabel)
           const trailingMeta = hasLeadingMeta ? undefined : getSuggestionMeta(sugg)
           return (
@@ -576,7 +579,7 @@ export function NoteAutocompleteDropdown({
                 </span>
               ) : sugg.iconUrl ? (
                 <span style={{ width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Image src={sugg.iconUrl} alt="" width={15} height={15} style={{ width: 15, height: 15, objectFit: 'contain' }} unoptimized />
+                  <Icon src={sugg.iconUrl} alt="" width={15} height={15} style={{ width: 15, height: 15, objectFit: 'contain' }} unoptimized />
                 </span>
               ) : sugg.typeLabel ? (
                 <span style={{ fontSize: '0.75rem', color: '#b9aa90', fontFamily: 'var(--font-mono)', flexShrink: 0, minWidth: sugg.syntax === 'block' ? '4rem' : '1.75rem', textAlign: 'center' }}>{sugg.typeLabel}</span>

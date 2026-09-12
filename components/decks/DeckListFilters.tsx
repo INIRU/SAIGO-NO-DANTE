@@ -20,8 +20,8 @@ import {
 } from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
 
+// The closed BaseModal is SSR-safe; opting out here aborts the whole list's Suspense boundary.
 const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'), {
-  ssr: false,
   loading: () => null,
 })
 
@@ -96,9 +96,6 @@ interface DeckListFiltersProps {
 type SortKey = 'latest' | 'popular'
 const INFO_SCORE_OPTIONS = [1, 2, 3] as const
 
-function Divider() {
-  return <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
-}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -106,9 +103,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
       className="mb-2"
       style={{
         color: 'var(--deck-filter-text-dim)',
-        fontFamily: 'var(--font-heading)',
+        fontFamily: 'var(--font-body)',
         fontSize: 'var(--deck-filter-label-text)',
-        fontWeight: 700,
+        fontWeight: 600,
       }}
     >
       {children}
@@ -169,9 +166,9 @@ function InfoScoreLabel({ active }: { active: boolean }) {
         className="min-w-0 truncate"
         style={{
           color: active ? 'var(--gold)' : '#666',
-          fontFamily: 'var(--font-heading)',
+          fontFamily: 'var(--font-body)',
           fontSize: '0.875rem',
-          fontWeight: 700,
+          fontWeight: 600,
         }}
       >
         {t('filters.infoScore')}
@@ -243,7 +240,7 @@ function SectionToggle({
       style={{
         minHeight: 'var(--deck-filter-control-min)',
         color: active ? 'var(--gold)' : '#666',
-        fontFamily: 'var(--font-heading)',
+        fontFamily: 'var(--font-body)',
         fontSize: 'var(--deck-filter-label-text)',
       }}
       aria-expanded={open}
@@ -260,7 +257,7 @@ function SectionToggle({
             borderRadius: '999rem',
             fontSize: 'var(--deck-filter-control-text)',
             fontWeight: 400,
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-body)',
             lineHeight: 1.2,
             textAlign: 'center',
           }}
@@ -288,12 +285,12 @@ function SortControls({ sort, onSortChange }: { sort: string; onSortChange: (s: 
               className="rounded transition-all duration-200"
               style={{
                 minHeight: '2.25rem',
-                border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                border: '1px solid transparent',
                 background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
                 color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: 'var(--deck-filter-control-text)',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               {t(`sort.${s}`)}
@@ -328,12 +325,12 @@ function LanguageFilter({
               className="rounded transition-all duration-200"
               style={{
                 minHeight: 'var(--deck-filter-control-min)',
-                border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+                border: '1px solid transparent',
                 background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
                 color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: 'var(--deck-filter-control-text)',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               {t(`languageFilter.${option === 'mine' ? 'current' : option}`)}
@@ -369,7 +366,7 @@ function SquareToggle({
         minHeight: 'var(--deck-filter-touch-min)',
         padding: '0.25rem 0.1875rem',
         cursor: 'pointer',
-        border: `1px solid ${active ? 'var(--gold)' : 'var(--deck-filter-border)'}`,
+        border: '1px solid transparent',
         background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
         opacity: active ? 1 : 0.5,
         filter: active ? 'none' : 'grayscale(0.5)',
@@ -388,9 +385,9 @@ function SquareToggle({
           className="text-center leading-tight"
           style={{
             color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-body)',
             fontSize: 'var(--deck-filter-control-text)',
-            fontWeight: 700,
+            fontWeight: 600,
           }}
         >
           {label}
@@ -587,7 +584,7 @@ export default function DeckListFilters({
   }, [mobileOpen])
 
   const filterSurface = (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-7">
       <section>
         <SectionLabel>{t('search.section')}</SectionLabel>
         <div className="relative" ref={searchRef}>
@@ -670,11 +667,9 @@ export default function DeckListFilters({
         </p>
       </section>
 
-      <Divider />
 
       <SortControls sort={sort} onSortChange={onSortChange} />
 
-      <Divider />
 
       <section>
         <SectionToggle
@@ -718,7 +713,7 @@ export default function DeckListFilters({
                   color: formationCount !== null ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: '1rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
                 aria-label={t('filters.formationInput')}
               />
@@ -750,7 +745,6 @@ export default function DeckListFilters({
         )}
       </section>
 
-      <Divider />
 
       <section>
         <div className="flex items-center gap-1">
@@ -774,7 +768,7 @@ export default function DeckListFilters({
                 background: identityMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
                 color: identityMode === 'and' ? 'var(--gold)' : '#888',
                 border: `1px solid ${identityMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                fontFamily: 'var(--font-heading)',
+                fontFamily: 'var(--font-body)',
                 fontSize: '0.8125rem',
                 letterSpacing: '0.05em',
                 fontWeight: 400,
@@ -880,7 +874,6 @@ export default function DeckListFilters({
         )}
       </section>
 
-      <Divider />
 
       <section>
         <SectionToggle
@@ -990,7 +983,7 @@ export default function DeckListFilters({
                         background: keywordTagMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
                         color: keywordTagMode === 'and' ? 'var(--gold)' : '#888',
                         border: `1px solid ${keywordTagMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                        fontFamily: 'var(--font-heading)',
+                        fontFamily: 'var(--font-body)',
                         fontSize: '0.8125rem',
                         letterSpacing: '0.05em',
                         fontWeight: 400,
@@ -1029,13 +1022,13 @@ export default function DeckListFilters({
                 style={{
                   minHeight: '2.375rem',
                   padding: '0.25rem',
-                  border: `1px solid ${active ? colors.border : 'rgba(255,255,255,0.08)'}`,
+                  border: '1px solid transparent',
                   background: active ? colors.bg : 'rgba(255,255,255,0.02)',
                   color: active ? colors.color : '#777',
                   opacity: active ? 1 : 0.55,
-                  fontFamily: 'var(--font-heading)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.8125rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 <span className="block truncate">{t(`contentTypes.${contentTypeMessageKey(ct)}`)}</span>
@@ -1047,8 +1040,7 @@ export default function DeckListFilters({
 
       {allTags.length > 0 && (
         <>
-          <Divider />
-          <section>
+              <section>
             <SectionToggle label={t('filters.tags')} open={showTagFilter} active={activeTags.size > 0} count={activeTags.size} onClick={onToggleTagFilter} />
             {showTagFilter && (
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -1073,7 +1065,7 @@ export default function DeckListFilters({
                         padding: '0.1875rem 0.5625rem',
                         background: active ? 'rgba(200,144,10,0.14)' : 'transparent',
                         color: active ? 'var(--gold)' : '#666',
-                        border: `1px solid ${active ? 'rgba(200,144,10,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                        border: '1px solid transparent',
                         fontSize: '0.75rem',
                       }}
                     >
@@ -1089,8 +1081,7 @@ export default function DeckListFilters({
 
       {availableKeywords.length > 0 && (
         <>
-          <Divider />
-          <section>
+              <section>
             <div className="flex items-start justify-between gap-2">
               <SectionLabel>{t('filters.alwaysKeywords')}</SectionLabel>
               {activeMainKeywords.size > 0 && (
@@ -1105,7 +1096,7 @@ export default function DeckListFilters({
                         background: mainKeywordMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
                         color: mainKeywordMode === 'and' ? 'var(--gold)' : '#888',
                         border: `1px solid ${mainKeywordMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                        fontFamily: 'var(--font-heading)',
+                        fontFamily: 'var(--font-body)',
                         fontSize: '0.8125rem',
                         letterSpacing: '0.05em',
                         fontWeight: 400,
@@ -1140,7 +1131,6 @@ export default function DeckListFilters({
         </>
       )}
 
-      <Divider />
 
       <section>
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -1167,12 +1157,12 @@ export default function DeckListFilters({
                 className="flex-1 rounded transition-all duration-200"
                 style={{
                   minHeight: '2.25rem',
-                  border: `1px solid ${active ? 'rgba(200,144,10,0.42)' : 'rgba(255,255,255,0.08)'}`,
+                  border: '1px solid transparent',
                   background: active ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.02)',
                   color: active ? 'var(--gold)' : '#777',
-                  fontFamily: 'var(--font-heading)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.875rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                 }}
               >
@@ -1206,7 +1196,6 @@ export default function DeckListFilters({
         </div>
       </section>
 
-      <Divider />
 
       <section>
         <SectionToggle label={t('filters.collection')} open={showCollectionFilter} active={collectionCount > 0} count={collectionCount} onClick={onToggleCollectionFilter} />
@@ -1260,7 +1249,7 @@ export default function DeckListFilters({
                       background: 'rgba(200,144,10,0.1)',
                       color: 'var(--gold)',
                       border: '1px solid rgba(200,144,10,0.28)',
-                      fontFamily: 'var(--font-heading)',
+                      fontFamily: 'var(--font-body)',
                       fontSize: '0.8125rem',
                       cursor: 'pointer',
                     }}
@@ -1279,7 +1268,6 @@ export default function DeckListFilters({
         )}
       </section>
 
-      <Divider />
 
       <LanguageFilter value={languageFilter} onChange={onLanguageFilterChange} />
     </div>
@@ -1291,7 +1279,6 @@ export default function DeckListFilters({
         className="decks-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
         style={{
           width: '16rem',
-          borderRight: '1px solid rgba(200,144,10,0.18)',
         }}
         aria-label={t('filters.aside')}
       >
@@ -1307,7 +1294,7 @@ export default function DeckListFilters({
             cursor: 'pointer',
             background: 'var(--gold)',
             color: '#0d0b08',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.9375rem',
           }}
         >
@@ -1346,7 +1333,7 @@ export default function DeckListFilters({
                 zIndex: 1,
               }}
             >
-              <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
+              <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-body)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
                 {t('filters.button').toUpperCase()}
               </span>
               <button

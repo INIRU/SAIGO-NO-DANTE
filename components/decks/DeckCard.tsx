@@ -1,11 +1,11 @@
 'use client'
 
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { memo, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { STORAGE_BASE } from '@/lib/data/sinners'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
@@ -35,6 +35,7 @@ export type DeckLanguage = 'ko' | 'en' | 'ja'
 
 export type DeckSummary = {
   id: string
+  user_id?: string
   title: string
   description: string | null
   tags: string[]
@@ -58,9 +59,7 @@ interface DeckCardProps {
 function identityPortraitUrl(id: IdentityPreview, gacksung?: boolean): string {
   const { identities: id_ } = id
   if (!id_?.game_id || !id_?.folder_name) return ''
-  const prefix = (gacksung ?? id.gacksung) ? 'gacksung' : 'normal'
-  const folder = encodeURIComponent(id_.folder_name)
-  return `${STORAGE_BASE}/sinners/${id_.sinner_id}/identities/${folder}/${id_.game_id}_${prefix}_info.webp`
+  return getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, !!(gacksung ?? id.gacksung))
 }
 
 function PortraitSlot({ slot }: { slot: IdentityPreview }) {
@@ -166,7 +165,8 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
         }}
       />
 
-      <Link href={`/decks/${deck.id}`} locale={locale} className="flex flex-col flex-1">
+      <div className="relative flex flex-col flex-1">
+        <Link href={`/decks/${deck.id}`} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
         {/* 인격 포트레이트 그리드 (2×6) */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
           {slots.map((slot, i) => (
@@ -192,7 +192,9 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
           <h3
             className="mb-1.5 leading-snug line-clamp-1"
             style={{
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-paperlogy)',
+              fontWeight: 700,
+              letterSpacing: '-0.015em',
               fontSize: 'var(--text-sm)',
               color: 'var(--text-primary)',
               transition: 'color 0.2s ease',
@@ -308,6 +310,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               {deck.tags.slice(0, 3).map(tag => (
                 <button
                   key={tag}
+                  className="relative z-10"
                   onClick={e => {
                     e.preventDefault()
                     onTagClick?.(tag)
@@ -342,7 +345,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
             >
               {deck.username && (
                 <>
-                  <span style={{ color: 'var(--text-muted)' }}>{deck.username}</span>
+                  {deck.user_id ? <Link href={`/users/${deck.user_id}`} className="relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link> : <span>{deck.username}</span>}
                   <span style={{ color: 'var(--text-tertiary)' }}>·</span>
                 </>
               )}
@@ -371,7 +374,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </div>
   )
 }

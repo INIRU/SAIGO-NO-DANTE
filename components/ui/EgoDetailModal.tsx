@@ -28,6 +28,7 @@ type EgoSkillData = {
   description: string | null
   category: string
   construe_level: number | null
+  game_skill_id?: number | null
   offense_level: number | null
   atk_weight: number | null
 }
@@ -91,12 +92,13 @@ function sinIconUrl(sin: string): string {
   return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
 }
 
-function bestConstrue<T extends { construe_level: number | null; name: string }>(items: T[]): T[] {
+function bestConstrue<T extends { construe_level: number | null; game_skill_id?: number | null; name: string }>(items: T[]): T[] {
   const groups = new Map<string, T>()
   for (const item of items) {
-    const ex = groups.get(item.name)
+    const key = String(item.game_skill_id ?? item.name)
+    const ex = groups.get(key)
     if (!ex || (item.construe_level ?? 3) > (ex.construe_level ?? 3)) {
-      groups.set(item.name, item)
+      groups.set(key, item)
     }
   }
   return [...groups.values()]

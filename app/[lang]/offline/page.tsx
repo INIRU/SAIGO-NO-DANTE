@@ -11,7 +11,7 @@ export default async function OfflinePage() {
   'use cache'
   cacheLife('page-1h')
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex flex-col items-center gap-4">
         {/* Simple decorative bar in gold accent */}
         <div className="h-1 w-16 rounded-full bg-[#c8900a]" />
@@ -28,6 +28,6 @@ export default async function OfflinePage() {
       >
         홈으로 돌아가기
       </Link>
-    </main>
+    </div>
   )
 }

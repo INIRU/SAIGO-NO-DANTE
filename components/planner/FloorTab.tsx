@@ -1,5 +1,10 @@
 'use client'
 
+import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+
+import FloorConstraints from './FloorConstraints'
+import FloorGuidance from './FloorGuidance'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Package, Plus, Search, X } from 'lucide-react'
@@ -126,6 +131,8 @@ function FloorMemo({
         }}
         onSelect={ac.onTextSelect}
         onKeyDown={ac.handleKeyDown}
+        onCompositionStart={ac.onCompositionStart}
+        onCompositionEnd={ac.onCompositionEnd}
         placeholder={t('memoPlaceholder')}
         rows={5}
         className="w-full resize-y rounded-md border bg-[#0d0b08] px-3 py-2 text-base leading-relaxed text-neutral-200 outline-none transition-colors focus:border-[var(--gold)]"
@@ -532,7 +539,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               ? getLocalizedName({ name_kr: floorTheme.name, name_en: floorTheme.name_en, name_jp: floorTheme.name_jp }, locale)
               : null
             const isActive = entry.floor === activeEntry.floor
-            const isPlanned = Boolean(floorTheme || entry.gift_ids.length > 0 || entry.memo.trim())
+            const isPlanned = isConfiguredFloor(entry)
             const segment = getFloorSegment(entry.floor)
             const difficultyTone = getDifficultyTone(floorDifficulty)
             const floorThemeImageSrc = floorTheme ? getThemeImageSrc(floorTheme) : null
@@ -638,6 +645,8 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         </motion.div>
       </section>
 
+      <FloorConstraints floor={activeEntry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: activeEntry.floor, ids })} />
+      <FloorGuidance entry={activeEntry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
       <section
         className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]"
         aria-label={t('activeFloor', { floor: activeEntry.floor })}

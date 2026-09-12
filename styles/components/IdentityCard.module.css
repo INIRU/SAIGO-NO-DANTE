@@ -411,3 +411,15 @@
     transform: scale(0.66);
   }
 }
+
+/* Keep scale on the same animated property in both directions. */
+.hoverable { transition: transform 320ms cubic-bezier(.22,1,.36,1), filter 320ms ease; }
+.hoverFrame { transition: filter 320ms ease; }
+.hoverable:focus-visible { outline: 2px solid var(--gold); outline-offset: .75rem; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hoverable:hover { transform: scale(1.025); z-index: 2; }
+  .hoverable:hover .hoverFrame { filter: brightness(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hoverable, .hoverFrame { transition: none; }
+}

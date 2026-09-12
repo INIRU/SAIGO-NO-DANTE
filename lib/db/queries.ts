@@ -166,24 +166,29 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
   return data ?? []
 }
 
+function withEgoStage<T extends { stage_levels?: { construe_level: number | null }[] }>({ stage_levels, ...row }: T) {
+  const levels = (stage_levels ?? []).map(skill => skill.construe_level ?? 1).filter(level => level >= 1 && level <= 5)
+  return { ...row, max_construe_level: Math.max(1, ...levels) }
+}
+
 export async function getLatestEGOs(limit = 6): Promise<EGOWithSinner[]> {
   const loadByGameId = async () => {
     const { data, error } = await supabase()
       .schema('limbus')
       .from('ego')
-      .select('*, sinner:sinners(*)')
+      .select('*, sinner:sinners(*), stage_levels:ego_skills(construe_level)')
       .not('image_url', 'is', null)
       .not('game_id', 'is', null)
       .order('game_id', { ascending: false })
       .limit(limit)
     if (error) throw error
-    return (data ?? []) as EGOWithSinner[]
+    return (data ?? []).map(withEgoStage) as EGOWithSinner[]
   }
 
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego')
-    .select('*, sinner:sinners(*)')
+    .select('*, sinner:sinners(*), stage_levels:ego_skills(construe_level)')
     .not('image_url', 'is', null)
     .not('game_id', 'is', null)
     .not('release_date', 'is', null)
@@ -195,21 +200,21 @@ export async function getLatestEGOs(limit = 6): Promise<EGOWithSinner[]> {
     throw error
   }
   if (!data || data.length === 0) return loadByGameId()
-  return (data ?? []) as EGOWithSinner[]
+  return (data ?? []).map(withEgoStage) as EGOWithSinner[]
 }
 
 export async function getEGOs(sinnerId?: string): Promise<EGO[]> {
-  let q = supabase().schema('limbus').from('ego').select('*')
+  let q = supabase().schema('limbus').from('ego').select('*, stage_levels:ego_skills(construe_level)')
   if (sinnerId) q = q.eq('sinner_id', sinnerId)
   const { data, error } = await q.order('grade').order('name')
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(withEgoStage) as EGO[]
 }
 
 export async function getEGOById(id: string): Promise<EGO | null> {
   // ego + ego_skills 병렬 조회 (둘 다 id만 사용)
   const [egoRes, skillsRes] = await Promise.all([
-    supabase().schema('limbus').from('ego').select('*').eq('id', id).maybeSingle(),
+    supabase().schema('limbus').from('ego').select('*, stage_passives:ego_passives(*)').eq('id', id).maybeSingle(),
     supabase().schema('limbus')
       .from('ego_skills')
       .select('*')
@@ -220,8 +225,12 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   if (error) throw error
   if (!data) return null
 
-  // ego_skills 릴레이션 테이블에서 스킬 조회 → EGOSkill JSONB 포맷으로 변환
-  const { data: relSkills } = skillsRes
+  // The normalized relation is the single stored source. These arrays are a
+  // presentation model, not a second JSONB copy of the same skills.
+  const { data: relSkills, error: skillsError } = skillsRes
+  if (skillsError) throw skillsError
+  data.ego_skills = []
+  data.ego_cor_skills = []
 
   if (relSkills && relSkills.length > 0) {
     const parseDescription = (desc: string | null | undefined, suffix: string) => {
@@ -231,7 +240,7 @@ export async function getEGOById(id: string): Promise<EGO | null> {
       const coinEffects: string[] = []
       let lastCoinIdx = -1
       // EN/JP uses [Coin N] format, KR uses [코인 N]
-      const coinRegex = /^\[(?:코인|Coin)\s*(\d+)\]\s*(.*)/
+      const coinRegex = /^\[(?:코인|Coin|コイン)\s*(\d+)\]\s*(.*)/
       for (const line of lines) {
         const coinMatch = line.match(coinRegex)
         if (coinMatch) {
@@ -260,8 +269,9 @@ export async function getEGOById(id: string): Promise<EGO | null> {
       const krParsed = parseDescription(s.description as string, 'kr')
       return {
         name: s.name as string,
+        gameSkillId: (s.game_skill_id as number) ?? null,
         power: String((s.base_power as number) ?? 0),
-        mentalConsume: 0,
+        mentalConsume: (s.mental_consume as number) ?? 0,
         atkType: s.skill_type as string,
         resource: s.sin_affinity as string,
         skillPower: (s.base_power as number) ?? 0,
@@ -286,9 +296,8 @@ export async function getEGOById(id: string): Promise<EGO | null> {
     const awakening = relSkills.filter(s => s.category === 'awakening').map(toEGOSkill)
     const corrosion = relSkills.filter(s => s.category === 'corrosion').map(toEGOSkill)
 
-    // 릴레이션 데이터가 있으면 JSONB 컬럼보다 우선
-    if (awakening.length > 0) data.ego_skills = awakening
-    if (corrosion.length > 0) data.ego_cor_skills = corrosion
+    data.ego_skills = awakening
+    data.ego_cor_skills = corrosion
   }
 
   return data
@@ -302,7 +311,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
     supabase()
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
+      .select('id, sinner_id, name, name_kr, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
       .order('rarity', { ascending: false })
       .order('name'),
     supabase()
@@ -341,6 +350,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
       name: id.name,
       name_kr: id.name_kr,
       rarity: id.rarity,
+      sin_affinity: id.sin_affinity as SinType | null,
       keywords: id.keywords ?? [],
       skill_keyword_list: id.skill_keyword_list ?? [],
       folder_name: id.folder_name,
@@ -366,7 +376,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego')
-    .select('id, sinner_id, name, name_kr, grade, sin_affinity, keywords, folder_name, image_url, game_id, sinner:sinners(id, name_kr, order_num)')
+    .select('id, sinner_id, name, name_kr, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
     .order('grade')
     .order('name')
   if (error) throw error
@@ -379,6 +389,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
       name: e.name,
       name_kr: e.name_kr,
       grade: e.grade,
+      max_construe_level: withEgoStage(e).max_construe_level,
       sin_affinity: e.sin_affinity as SinType | null,
       keywords: e.keywords,
       folder_name: e.folder_name,

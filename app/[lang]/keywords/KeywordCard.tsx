@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 import { ChevronRight } from 'lucide-react'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
@@ -102,7 +102,7 @@ export default function KeywordCard({
           }}
         >
           {iconUrl ? (
-            <Image src={iconUrl} alt={displayName} width={22} height={22}
+            <KeywordIcon src={iconUrl} alt={displayName} width={22} height={22}
               style={{ width: '1.375rem', height: 'auto' }} />
           ) : (
             <span style={{ color: '#555', fontSize: '0.75rem' }}>?</span>

@@ -51,8 +51,8 @@ export const IDENTITY_CARD_FRAME_MAP: Record<number, string> = {
 }
 
 export const RARITY_COLORS: Record<number, { border: string; glow: string }> = {
-  1: { border: '#556677', glow: 'rgba(85,102,119,0.3)' },
-  2: { border: '#5588bb', glow: 'rgba(85,136,187,0.3)' },
+  1: { border: '#a87340', glow: 'rgba(168,115,64,0.3)' },
+  2: { border: '#c83030', glow: 'rgba(200,48,48,0.3)' },
   3: { border: '#c8900a', glow: 'rgba(200,144,10,0.4)' },
 }
 

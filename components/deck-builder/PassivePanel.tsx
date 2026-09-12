@@ -1,11 +1,8 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import PlannerPassivePanel, {
-  type PlannerPassiveIdentitySlot,
-  type PlannerPassiveLike,
-  type PlannerPassiveSinnerLike,
-} from '@/components/planner/PlannerPassivePanel'
+import PlannerPassivePanel from '@/components/passive/PassivePanel'
+import type { PlannerPassiveIdentitySlot, PlannerPassiveLike, PlannerPassiveSinnerLike } from '@/lib/planner/passives'
 import {
   localizeIdentityName,
   localizePassiveDescription,

@@ -1,10 +1,12 @@
 'use client'
 
+import { GIFT_BG_URL } from '@/lib/constants/gift'
+
 import Image from 'next/image'
 import { useLocale } from 'next-intl'
 import { ChevronRight, Plus } from 'lucide-react'
 import type { GiftData } from '@/lib/planner/types'
-import { OCTAGON_CLIP, STORAGE_BASE } from './constants'
+import { OCTAGON_CLIP } from './constants'
 
 // ── Quick-add pills ──────────────────────────────────────────────────────────
 export default function QuickAddSection({
@@ -74,8 +76,8 @@ export default function QuickAddSection({
                 height: '1.25rem',
                 flexShrink: 0,
                 clipPath: OCTAGON_CLIP,
-                backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-                backgroundSize: 'cover',
+                backgroundImage: `url(${GIFT_BG_URL})`,
+                backgroundSize: 'contain',
                 position: 'relative',
                 overflow: 'hidden',
               }}>

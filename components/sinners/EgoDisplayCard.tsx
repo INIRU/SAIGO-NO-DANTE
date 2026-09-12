@@ -1,5 +1,7 @@
 'use client'
 
+import { getFormationBannerUrl } from '@/lib/utils/images'
+
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
@@ -11,6 +13,7 @@ import { getBlurDataURL } from '@/lib/utils/thumbhash'
 type EgoDisplayCardProps = {
   ego: {
     grade: string
+    max_construe_level?: number
     image_url?: string | null
     sin_affinity?: string | null
   }
@@ -43,19 +46,15 @@ const EGO_GRADE_SYMBOLS: Record<string, { src: string; width: number; height: nu
   ALEPH: { src: `${EGO_UI_BASE}/grade-symbols/grade-aleph-symbol.webp`, width: 137, height: 136 },
 }
 const EGO_RANK_BANNER_SRC_BY_GRADE: Record<string, string> = {
-  ZAYIN: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/zayin.webp`,
-  TETH: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/teth.webp`,
-  HE: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/he.webp`,
-  WAW: `${STORAGE_BASE}/icons/ego-ui/dante-planner/rank-banners/waw.webp`,
+  ZAYIN: `${EGO_UI_BASE}/rank-banners/zayin.webp`,
+  TETH: `${EGO_UI_BASE}/rank-banners/teth.webp`,
+  HE: `${EGO_UI_BASE}/rank-banners/he.webp`,
+  WAW: `${EGO_UI_BASE}/rank-banners/waw.webp`,
+  ALEPH: `${EGO_UI_BASE}/rank-banners/aleph.webp`,
 }
-const EGO_SELECTED_BANNER_SRC = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
-const EGO_UPTIE_IV_SRC = `${STORAGE_BASE}/icons/ego-ui/dante-planner/iv/tier-4-construe-iv.webp`
-const EGO_BADGE_RING_SRC = `${STORAGE_BASE}/icons/ui/portrait-frame-1star.webp`
-const EGO_CG_FALLBACK_SRC_BY_GAME_ID: Record<string, string> = {
-  '21101': '/assets/ego-cg-fallbacks/outis/21101_cg.png',
-  '21103': '/assets/ego-cg-fallbacks/outis/21103_cg.png',
-}
-
+const EGO_SELECTED_BANNER_SRC = getFormationBannerUrl('selected')
+const ROMAN_STAGES = ['', 'I', 'II', 'III', 'IV', 'V']
+const EGO_BADGE_RING_SRC = `${EGO_UI_BASE}/common-frame/sinner-badge.webp`
 const EGO_NAME_FONT_FAMILY = "var(--font-kotra-bold), var(--font-noto-jp), 'Hiragino Sans', 'Yu Gothic', sans-serif"
 const EGO_NAME_MAX_FONT_REM = 0.82
 const EGO_NAME_MIN_FONT_REM = 0.68
@@ -86,22 +85,10 @@ type EgoNameLineLayout = {
   lines: string[]
 }
 
-const getEgoGameIdFromImageUrl = (imageUrl: string) => {
-  const match =
-    imageUrl.match(/\/(\d+)_(?:awaken|corrosion)_profile\.webp(?=$|[?#])/) ??
-    imageUrl.match(/\/(\d+)_cg\.(?:webp|png)(?=$|[?#])/)
-  return match?.[1] ?? null
-}
-
 const getEgoCgImageUrl = (imageUrl?: string | null) => {
   if (!imageUrl) return null
 
-  const fallbackSrc = EGO_CG_FALLBACK_SRC_BY_GAME_ID[getEgoGameIdFromImageUrl(imageUrl) ?? '']
-  if (fallbackSrc) return fallbackSrc
-
   const cgUrl = imageUrl.replace(/_(?:awaken|corrosion)_profile\.webp(?=$|[?#])/, '_cg.webp')
-  const derivedFallbackSrc = EGO_CG_FALLBACK_SRC_BY_GAME_ID[getEgoGameIdFromImageUrl(cgUrl) ?? '']
-  if (derivedFallbackSrc) return derivedFallbackSrc
 
   return cgUrl === imageUrl ? imageUrl : cgUrl
 }
@@ -116,9 +103,6 @@ const isFinalEgoArtworkLoad = (loadedSrc: string, expectedSrc: string) => {
     decodedLoadedSrc = loadedSrc
   }
 
-  if (expectedSrc.startsWith('/assets/ego-cg-fallbacks/')) {
-    return decodedLoadedSrc.includes(expectedSrc)
-  }
 
   return expectedSrc.includes('_cg.') && decodedLoadedSrc.includes(expectedSrc)
 }
@@ -375,13 +359,21 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
     }
 
     updateLayout()
+    let cancelled = false
+    const fontsReady = () => { if (!cancelled) updateLayout() }
+    void document.fonts.ready.then(fontsReady)
+    document.fonts.addEventListener('loadingdone', fontsReady)
 
     const observer = typeof ResizeObserver !== 'undefined'
       ? new ResizeObserver(updateLayout)
       : null
     observer?.observe(box)
 
-    return () => observer?.disconnect()
+    return () => {
+      cancelled = true
+      observer?.disconnect()
+      document.fonts.removeEventListener('loadingdone', fontsReady)
+    }
   }, [lang, name])
 
   return (
@@ -428,6 +420,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
 }
 
 function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang'>>) {
+  const stage = [1, 2, 3, 4, 5].includes(ego.max_construe_level ?? 4) ? (ego.max_construe_level ?? 4) : 4
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinType = normalizeSin(ego.sin_affinity ?? null)
   const sinFrameSrc = sinType ? EGO_SIN_FRAME_SRC[sinType] : EGO_SIN_FRAME_SRC.gloom
@@ -631,14 +624,14 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
           }}
         >
           <Image
-            src={EGO_UPTIE_IV_SRC}
-            alt="IV"
-            width={40}
-            height={40}
+            src={`/assets/ego-stages/${stage}.webp`}
+            alt={ROMAN_STAGES[stage]}
+            width={224}
+            height={192}
             className="select-none object-contain"
             style={{
-              width: '1.25rem',
-              height: '1.25rem',
+              width: '1.4rem', maxWidth: 'none', flexShrink: 0,
+              height: '1.2rem',
               filter: 'drop-shadow(0 0.125rem 0.125rem rgba(0,0,0,0.9))',
               transform: 'skewY(-20deg)',
               transformOrigin: '50% 50%',

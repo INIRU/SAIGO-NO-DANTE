@@ -1,129 +1,19 @@
 'use client'
 
 import { Link } from '@/lib/i18n/navigation'
-import Image from 'next/image'
 import type { IdentityWithSinner } from '@/lib/types'
-import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
-import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useLocale } from 'next-intl'
+import IdentityCard from '@/components/sinners/IdentityCard'
+import styles from './HomeStaticSections.module.css'
 
-function formatDate(d: string) {
-  const dateOnly = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (dateOnly) {
-    const [, year, month, day] = dateOnly
-    return `${year}.${month}.${day}`
-  }
-  const timestamp = Date.parse(d)
-  if (Number.isNaN(timestamp)) return d
-  const kst = new Date(timestamp + 9 * 60 * 60 * 1000)
-  return `${kst.getUTCFullYear()}.${String(kst.getUTCMonth() + 1).padStart(2, '0')}.${String(kst.getUTCDate()).padStart(2, '0')}`
-}
-
-interface LatestIdentityCardProps {
-  identity: IdentityWithSinner
-  portraitUrl: string
-  logoUrl: string
-  rarityIconSrc: string | null
-}
-
-export function LatestIdentityCard({ identity, portraitUrl, logoUrl, rarityIconSrc }: LatestIdentityCardProps) {
+export function LatestIdentityCard({ identity }: { identity: IdentityWithSinner }) {
   const locale = useLocale()
-
-  const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
-    if (locale === 'en') return en ?? kr ?? ''
-    if (locale === 'ja') return jp ?? kr ?? ''
-    return kr ?? ''
-  }
-
+  const sinner = identity.sinner
+  const name = locale === 'en' ? sinner?.name_en || sinner?.name_kr : locale === 'ja' ? sinner?.name_jp || sinner?.name_kr : sinner?.name_kr
   return (
-    <div className="latest-card" suppressHydrationWarning>
-      <Link
-        href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
-        className="group block"
-      >
-      <div
-        className="relative overflow-hidden"
-        style={{
-          aspectRatio: '3/4',
-          background: 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
-          border: '1px solid var(--border)',
-          borderRadius: '0.25rem',
-          transition: 'border-color 0.25s, box-shadow 0.25s',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.borderColor = 'var(--gold-dim)'
-          e.currentTarget.style.boxShadow = '0 0 1.25rem rgba(200,144,10,0.2), inset 0 0 1.25rem rgba(200,144,10,0.05)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.borderColor = 'var(--border)'
-          e.currentTarget.style.boxShadow = 'none'
-        }}
-      >
-        {portraitUrl ? (
-          <Image
-            src={portraitUrl}
-            alt={identity.name_kr}
-            fill
-            placeholder="blur"
-            blurDataURL={getBlurDataURL(portraitUrl) ?? BLUR_PLACEHOLDER}
-            className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
-            style={{ objectPosition: '50% 10%' }}
-            sizes="200px"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(160deg, #1e1810 0%, #0d0a06 100%)' }}
-          >
-            <span className="font-compact-serif" style={{ fontSize: '2.5rem', color: 'rgba(200,144,10,0.08)' }}>
-              {identity.name_kr?.[0] ?? '?'}
-            </span>
-          </div>
-        )}
-
-        <div className="absolute top-2 left-2 z-10">
-          <Image
-            src={logoUrl}
-            alt=""
-            width={20}
-            height={20}
-            style={{ width: '1.25rem', height: 'auto', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))', opacity: 0.75, objectFit: 'contain' }}
-          />
-        </div>
-
-        {rarityIconSrc && (
-          <div className="absolute top-2 right-2 z-10">
-            <Image
-              src={rarityIconSrc}
-              alt={`${identity.rarity}성`}
-              width={48}
-              height={16}
-              unoptimized
-              style={{ height: '0.6875rem', width: 'auto', objectFit: 'contain' }}
-            />
-          </div>
-        )}
-
-        <div
-          className="absolute z-10"
-          style={{ bottom: '-1px', left: '-1px', right: '-1px', height: 'calc(60% + 1px)', background: 'linear-gradient(to top, rgba(13,11,8,1) 0%, rgba(13,11,8,0.85) 40%, rgba(13,11,8,0.2) 75%, transparent 100%)' }}
-        />
-
-        <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 z-20">
-          <div
-            className="font-compact-serif-label leading-tight group-hover:text-yellow-300 transition-colors"
-            style={{ color: 'var(--gold-light)', fontSize: '0.875rem' }}
-          >
-            {getName(identity.name_kr, identity.name_en, identity.name_jp)}
-          </div>
-          {identity.release_date && (
-            <div className="font-mono whitespace-nowrap" style={{ color: '#5a4a35', fontSize: '0.875rem', marginTop: '0.125rem' }}>
-              {formatDate(identity.release_date)}
-            </div>
-          )}
-        </div>
-      </div>
+    <Link href={`/sinners/${identity.sinner_id}/identities/${identity.id}`} className={styles.identity}>
+      <IdentityCard identity={identity} compact disableHoverEffects />
+      {name && <span className={styles.sinnerName}>{name}</span>}
     </Link>
-    </div>
   )
 }

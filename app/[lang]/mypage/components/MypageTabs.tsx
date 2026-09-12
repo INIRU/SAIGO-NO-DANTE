@@ -1,16 +1,19 @@
 'use client'
 
+import { useLocale } from 'next-intl'
+import { getCommunityCopy } from '@/lib/community/copy'
 import { useRef, useCallback } from 'react'
-import { User, Layers, Map, Archive } from 'lucide-react'
+import { User, Layers, Map, Archive, Users } from 'lucide-react'
 
 // Design Ref: §5.1 — 탭 네비게이션 UI
-export type MypageTab = 'profile' | 'decks' | 'planner' | 'collection'
+export type MypageTab = 'profile' | 'decks' | 'planner' | 'collection' | 'follows'
 
 const TABS: { key: MypageTab; label: string; icon: typeof User }[] = [
   { key: 'profile', label: '프로필', icon: User },
   { key: 'decks', label: '덱', icon: Layers },
   { key: 'planner', label: '플래너', icon: Map },
   { key: 'collection', label: '컬렉션', icon: Archive },
+  { key: 'follows', label: '팔로우', icon: Users },
 ]
 
 type Props = {
@@ -20,6 +23,7 @@ type Props = {
 }
 
 export default function MypageTabs({ activeTab, onTabChange, counts }: Props) {
+  const t = getCommunityCopy(useLocale())
   const tablistRef = useRef<HTMLDivElement>(null)
 
   // Plan SC: SC-09 — 키보드 좌/우 화살표 탭 전환
@@ -39,14 +43,12 @@ export default function MypageTabs({ activeTab, onTabChange, counts }: Props) {
     <div
       ref={tablistRef}
       role="tablist"
-      aria-label="마이페이지 탭"
+      aria-label={t.mypage}
       className="mypage-tabs flex gap-1 overflow-x-auto scrollbar-hide"
       style={{
-        background: '#1a1510',
-        border: '1px solid var(--border)',
-        borderRadius: '0.5rem',
-        padding: '0.25rem',
-        opacity: 0,
+        background: 'transparent',
+        borderTop: '1px solid var(--border)',
+        padding: '1.25rem 0 0',
       }}
       onKeyDown={handleKeyDown}
     >
@@ -69,11 +71,11 @@ export default function MypageTabs({ activeTab, onTabChange, counts }: Props) {
               fontSize: '0.9375rem',
               fontFamily: 'var(--font-body)',
               cursor: 'pointer',
-              border: isActive ? '1px solid rgba(200,144,10,0.2)' : '1px solid transparent',
+              border: 'none',
             }}
           >
             <Icon style={{ width: '1rem', height: '1rem' }} aria-hidden="true" />
-            <span>{label}</span>
+            <span>{t[key]}</span>
             {count !== undefined && count > 0 && (
               <span
                 style={{

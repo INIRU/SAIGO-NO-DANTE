@@ -1,0 +1,12 @@
+.page { font-family: var(--font-body); }
+.tabs button { min-height: 3rem; font-size: .9375rem; font-family: var(--font-body); }
+.filters { margin: .5rem 0 1.25rem; padding: .25rem 0; }
+.filters button { min-height: 2.75rem; font-family: var(--font-body); }
+.identityGrid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 1.75rem 1.25rem; padding: 1rem .75rem; }
+.identityGrid [role="button"] { max-width: none; }
+.page input:focus-visible, .page button:focus-visible, .page a:focus-visible { outline: 2px solid var(--gold) !important; outline-offset: 3px; }
+@media (max-width: 1279px) { .identityGrid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media (max-width: 639px) {
+  .identityGrid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.5rem 1rem; padding: 1rem .5rem; }
+}
+@media (max-width: 380px) { .identityGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }

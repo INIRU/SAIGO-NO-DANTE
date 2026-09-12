@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties }
 import Image from 'next/image'
 
 import heroStyles from '@/styles/components/HeroGlitch.module.css'
-import { type IdentityWithSinner, getIdentityInfoUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
+import { type IdentityWithSinner, getIdentityProfileUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useLocale } from 'next-intl'
 
@@ -68,7 +68,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     let cleanupIdle: (() => void) | undefined
     let img: ProbeImage | undefined
     const candidates = identities
-      .map(identity => ({ identity, url: getIdentityInfoUrl(identity, true) }))
+      .map(identity => ({ identity, url: getIdentityProfileUrl(identity, true) }))
       .filter((entry): entry is { identity: IdentityWithSinner; url: string } => Boolean(entry.url))
 
     const probeNext = (index: number) => {
@@ -113,10 +113,10 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   const slides = useMemo<HeroSlide[]>(() => {
     const result: HeroSlide[] = []
     identities.forEach(identity => {
-      const normalUrl = getIdentityInfoUrl(identity, false)
+      const normalUrl = getIdentityProfileUrl(identity, false)
       if (normalUrl) result.push({ url: normalUrl, identity, gacksung: false })
       if (validGacksung.has(identity.id)) {
-        const gUrl = getIdentityInfoUrl(identity, true)
+        const gUrl = getIdentityProfileUrl(identity, true)
         if (gUrl) result.push({ url: gUrl, identity, gacksung: true })
       }
     })
@@ -375,9 +375,11 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   return (
     <div
       ref={sliderRef}
-      className="absolute inset-0 md:inset-y-0 md:left-auto md:right-0 w-full md:w-[62%] overflow-hidden"
+      data-hero-slider
+      className="absolute inset-0 w-full overflow-hidden"
       style={{ zIndex: 1 }}
     >
+      <div className={heroStyles.artwork} data-hero-artwork>
       {/* Layer B: 다음 이미지 (아래) */}
       {pending && (
         <div ref={pendingLayerRef} className={heroStyles.pendingLayer}>
@@ -387,8 +389,8 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
             fill
             placeholder="blur"
             blurDataURL={getBlurDataURL(pending.url) ?? BLUR_PLACEHOLDER}
-            className="object-cover object-top"
-            sizes="(max-width: 768px) 100vw, 62vw"
+            className="object-cover object-center"
+            sizes="100vw"
             quality={90}
           />
         </div>
@@ -402,30 +404,18 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           preload
           placeholder="blur"
           blurDataURL={getBlurDataURL(current.url) ?? BLUR_PLACEHOLDER}
-          className="object-cover object-top"
-          sizes="(max-width: 768px) 100vw, 62vw"
+          className="object-cover object-center"
+          sizes="100vw"
           quality={90}
         />
       </div>
-      {/* Current 이미지 기반 글리치 오버레이: base 레이어는 full-cover로 유지한다. */}
+      {/* Current 이미지 기반 글리치 오버레이: 모든 레이어는 원화 비율과 우측 정렬을 공유한다. */}
       <div ref={glitchSliceRef} className={heroStyles.glitchSlice} style={chromaImageStyle} />
       {/* RGB Chromatic Aberration 오버레이 */}
       <div ref={chromaRRef} className={heroStyles.chromaR} style={chromaImageStyle} />
       <div ref={chromaBRef} className={heroStyles.chromaB} style={chromaImageStyle} />
       <div ref={scanlineRef} className={heroStyles.scanline} />
-      {/* 그라디언트 오버레이 */}
-      <div
-        className="absolute pointer-events-none"
-        style={{ inset: '-1px', zIndex: 15, background: 'linear-gradient(to right, var(--bg-deep) 0%, rgba(13,11,8,0.9) 25%, rgba(13,11,8,0.5) 55%, transparent 85%)' }}
-      />
-      <div
-        className="absolute pointer-events-none md:hidden"
-        style={{ inset: '-1px', zIndex: 15, background: 'linear-gradient(to right, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.7) 50%, rgba(13,11,8,0.3) 100%)' }}
-      />
-      <div
-        className="absolute pointer-events-none"
-        style={{ inset: '-1px', zIndex: 15, background: 'linear-gradient(to top, var(--bg-deep) 0%, transparent 30%)' }}
-      />
+      </div>
       {/* 슬라이드 인디케이터 */}
       {slides.length > 1 && (
         <div className="absolute bottom-5 right-5 flex gap-2" style={{ zIndex: 20 }}>

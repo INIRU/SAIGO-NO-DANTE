@@ -3,7 +3,7 @@
 // Cache version: bump CACHE_VERSION on each deploy to bust stale caches.
 // ============================================================
 
-const CACHE_VERSION = 'v3'
+const CACHE_VERSION = 'v4'
 const CACHE_STATIC   = `saigo-static-${CACHE_VERSION}`   // Next.js chunks, fonts
 const CACHE_IMAGES   = `saigo-images-${CACHE_VERSION}`   // Supabase Storage + /images/*
 const CACHE_PAGES    = `saigo-pages-${CACHE_VERSION}`    // HTML pages (offline fallback)
@@ -12,8 +12,8 @@ const CACHE_PAGES    = `saigo-pages-${CACHE_VERSION}`    // HTML pages (offline 
 const PRECACHE_URLS = [
   '/',
   '/offline',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/icons/icon-192x192.webp',
+  '/icons/icon-512x512.webp',
 ]
 
 // Cache size limits
@@ -98,8 +98,8 @@ function classifyRequest(request) {
   // Never cache monitoring/sentry tunnel
   if (pathname.startsWith('/monitoring')) return 'skip'
 
-  // Supabase Storage images — cache-first
-  if (origin === SUPABASE_ORIGIN) return 'cache-first-image'
+  // Mutable image URLs: refresh in the background so normal revisits see updates.
+  if (origin === SUPABASE_ORIGIN) return 'stale-while-revalidate'
 
   // Only handle same-origin requests from here on
   if (origin !== self.location.origin) return 'skip'
@@ -107,14 +107,14 @@ function classifyRequest(request) {
   // Next.js build chunks — long-lived hashed filenames, cache-first
   if (pathname.startsWith('/_next/static/')) return 'cache-first-static'
 
-  // Next.js image optimization endpoint — cache-first (already has versioned URLs)
-  if (pathname.startsWith('/_next/image')) return 'cache-first-image'
+  // Image optimization URLs can keep the same source path across data updates.
+  if (pathname.startsWith('/_next/image')) return 'stale-while-revalidate'
 
   // Font files under /fonts/
   if (pathname.startsWith('/fonts/')) return 'cache-first-static'
 
   // Static icon/image assets in public/
-  if (pathname.startsWith('/icons/') || pathname.startsWith('/images/')) return 'cache-first-image'
+  if (pathname.startsWith('/icons/') || pathname.startsWith('/images/')) return 'stale-while-revalidate'
 
   // HTML pages — network-first with page cache fallback
   const acceptsHtml = request.headers.get('accept')?.includes('text/html')
@@ -162,21 +162,19 @@ async function cacheFirstStatic(request) {
   }
 }
 
-async function cacheFirstImage(request) {
-  const cached = await caches.match(request)
-  if (cached) return cached
-
-  try {
-    const response = await fetch(request)
+async function staleWhileRevalidateImage(request, event) {
+  const cache = await caches.open(CACHE_IMAGES)
+  const refresh = fetch(request).then(async (response) => {
     if (response.ok) {
-      const cache = await caches.open(CACHE_IMAGES)
-      cache.put(request, response.clone())
-      trimCache(CACHE_IMAGES, MAX_IMAGE_ENTRIES)
+      await cache.put(request, response.clone())
+      await trimCache(CACHE_IMAGES, MAX_IMAGE_ENTRIES)
     }
     return response
-  } catch {
-    return new Response('Image unavailable offline', { status: 503 })
-  }
+  }).catch(() => null)
+  event.waitUntil(refresh)
+  const cached = await cache.match(request)
+  if (cached) return cached
+  return (await refresh) || new Response('Image unavailable offline', { status: 503 })
 }
 
 // ============================================================
@@ -191,7 +189,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkFirst(event.request))
   } else if (strategy === 'cache-first-static') {
     event.respondWith(cacheFirstStatic(event.request))
-  } else if (strategy === 'cache-first-image') {
-    event.respondWith(cacheFirstImage(event.request))
+  } else if (strategy === 'stale-while-revalidate') {
+    event.respondWith(staleWhileRevalidateImage(event.request, event))
   }
 })

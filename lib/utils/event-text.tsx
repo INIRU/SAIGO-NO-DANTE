@@ -1,166 +1,50 @@
-import type { ReactNode } from 'react'
-import { SIN_KR_TO_EN, SIN_COLORS } from '@/lib/constants/sin'
-import { KEYWORD_COLORS } from '@/components/mirror-dungeon/types'
+import type { CSSProperties, ReactNode } from 'react'
 import { ACTION_EVENT_EFFECTS, AB_EVENT_EFFECTS } from '@/lib/data/event-effects-map'
 
-// ── Unity <color=...> 태그 파서 ─────────────────────────────────────────────
-
-/** Unity <color=#hex>text</color> 태그를 React span으로 변환 (중첩 지원) */
+/** Render only the formatting tags used by the original Unity text. Unknown
+ * angle-bracket dialogue stays text; source strings never become HTML. */
 export function parseUnityColorTags(raw: string): ReactNode {
-  // 잘못된 닫는 태그 정리 (</color=#xxx> → </color>)
-  const cleaned = raw.replace(/<\/color=[^>]*>/g, '</color>')
-  let keyIdx = 0
-
-  function parse(text: string): ReactNode[] {
-    const parts: ReactNode[] = []
-    let cursor = 0
-    const openRe = /<color=(#[0-9a-fA-F]{3,8})>/g
-    let m: RegExpExecArray | null
-
-    while ((m = openRe.exec(text)) !== null) {
-      if (m.index > cursor) parts.push(text.slice(cursor, m.index))
-      const color = m[1]
-      const innerStart = m.index + m[0].length
-      // 중첩 깊이 추적하여 매칭되는 </color> 찾기
-      let depth = 1
-      let i = innerStart
-      while (i < text.length && depth > 0) {
-        if (text.startsWith('<color=', i)) depth++
-        else if (text.startsWith('</color>', i)) depth--
-        if (depth > 0) i++
-        else break
-      }
-      const innerEnd = i
-      const innerText = text.slice(innerStart, innerEnd)
-      parts.push(
-        <span key={keyIdx++} style={{ color, fontWeight: 600 }}>
-          {parse(innerText)}
-        </span>
-      )
-      cursor = innerEnd + '</color>'.length
-      openRe.lastIndex = cursor
-    }
-    if (cursor < text.length) parts.push(text.slice(cursor))
-    return parts
+  type Frame = { tag: string; style: CSSProperties; children: ReactNode[] }
+  const root: Frame = { tag: '', style: {}, children: [] }
+  const stack = [root]
+  const tokens = raw.replace(/<\/color=[^>]*>/g, '</color>').split(/(<\/?(?:color(?:=#[\da-fA-F]{3,8})?|size(?:=\d+(?:\.\d+)?%?)?|i|b)>)/g)
+  let key = 0
+  const close = () => {
+    const frame = stack.pop()!
+    stack[stack.length - 1].children.push(<span key={key++} style={frame.style}>{frame.children}</span>)
   }
-
-  const result = parse(cleaned)
-  return result.length === 1 && typeof result[0] === 'string' ? result[0] : result
+  for (const token of tokens) {
+    const open = /^<(color|size|i|b)(?:=([^>]+))?>$/.exec(token)
+    const closing = /^<\/(color|size|i|b)>$/.exec(token)
+    if (open) {
+      const [, tag, value] = open
+      if ((tag === 'color' || tag === 'size') && !value) { stack[stack.length - 1].children.push(token); continue }
+      const style: CSSProperties = tag === 'i' ? { fontStyle: 'italic' }
+        : tag === 'b' ? { fontWeight: 700 } : tag === 'color' ? { color: value }
+        : Number.parseFloat(value) === 0 ? { display: 'none' }
+        : { fontSize: value.endsWith('%') ? value : `${Number(value) / 16}rem` }
+      stack.push({ tag, style, children: [] })
+    } else if (closing) {
+      const index = stack.findLastIndex(frame => frame.tag === closing[1])
+      if (index > 0) while (stack.length > index) close()
+    } else stack[stack.length - 1].children.push(token)
+  }
+  while (stack.length > 1) close()
+  return root.children
 }
 
-// ── 이벤트 효과 텍스트 조회 ─────────────────────────────────────────────────
-
-/** 액션 이벤트 옵션의 효과 (게임 데이터 직접 조회) */
 export function getOptionEffects(eventId: number, optionIndex: number): ReactNode[] {
-  const texts = ACTION_EVENT_EFFECTS[eventId]?.[optionIndex]
-  if (!texts) return []
-  return texts.map(t => parseUnityColorTags(t))
+  return (ACTION_EVENT_EFFECTS[eventId]?.[optionIndex] ?? []).map(parseUnityColorTags)
 }
-
-/** AbEvent(연계 이벤트)의 성공/실패 효과 */
 export function getAbEventEffects(eventId: number): { success: ReactNode[]; failure: ReactNode[] } {
   const data = AB_EVENT_EFFECTS[eventId]
-  if (!data) return { success: [], failure: [] }
-  return {
-    success: data.success.map(t => parseUnityColorTags(t)),
-    failure: data.failure.map(t => parseUnityColorTags(t)),
-  }
+  return { success: (data?.success ?? []).map(parseUnityColorTags), failure: (data?.failure ?? []).map(parseUnityColorTags) }
 }
-
-// ── 효과 텍스트 컬러 코딩 (나레이션용) ──────────────────────────────────────
-
-const EFFECT_PATTERNS: Array<{ pattern: RegExp; color: string; bold?: boolean }> = [
-  // E.G.O 기프트 (이름 포함) 획득
-  { pattern: /E\.?G\.?O\s*(GIFT|기프트)\s*.*?획득!?/gi, color: '#fcba03', bold: true },
-  { pattern: /E\.?G\.?O\s*(GIFT|기프트)/gi, color: '#fcba03' },
-  // 체력+정신력 동시 피해
-  { pattern: /\d+만큼\s*체력[,\s]*정신력\s*피해!?/g, color: '#e30000', bold: true },
-  // 체력 피해
-  { pattern: /\d+만큼\s*체력\s*피해!?/g, color: '#e30000', bold: true },
-  { pattern: /체력\s*\d+\s*피해/g, color: '#e30000', bold: true },
-  { pattern: /체력을?\s*(잃|회복|감소|피해)/g, color: '#e30000' },
-  // 정신력 피해
-  { pattern: /\d+만큼\s*정신력\s*피해!?/g, color: '#fe4b48', bold: true },
-  { pattern: /정신력\s*\d+\s*(피해|감소|회복)/g, color: '#fe4b48', bold: true },
-  { pattern: /정신력을?\s*(잃|회복|감소|피해)/g, color: '#fe4b48' },
-  // 회복
-  { pattern: /\d+만큼\s*(체력|정신력)\s*회복/g, color: '#00d48a', bold: true },
-  // 전투
-  { pattern: /전투\s*(승리|발생)/g, color: '#d0c0a0', bold: true },
-]
-
-const SIN_NAMES_KR = Object.keys(SIN_KR_TO_EN)
-const SIN_PATTERN = new RegExp(`(${SIN_NAMES_KR.join('|')})`, 'g')
-
-const KEYWORD_NAMES = Object.keys(KEYWORD_COLORS)
-const KEYWORD_PATTERN = new RegExp(`(${KEYWORD_NAMES.join('|')})`, 'g')
-
-type TextMatch = { start: number; end: number; text: string; color: string; bold?: boolean }
-
-/** 이벤트 나레이션 텍스트에 컬러 코딩을 적용하여 ReactNode로 반환 */
-export function colorizeEventText(text: string | null | undefined): ReactNode {
-  if (!text) return null
-  const processed = text.replace(/\{(\d+)\}/g, '???')
-
-  const matches: TextMatch[] = []
-
-  for (const { pattern, color, bold } of EFFECT_PATTERNS) {
-    const re = new RegExp(pattern.source, pattern.flags)
-    let m: RegExpExecArray | null
-    while ((m = re.exec(processed)) !== null) {
-      matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], color, bold })
-    }
-  }
-
-  {
-    const re = new RegExp(SIN_PATTERN.source, SIN_PATTERN.flags)
-    let m: RegExpExecArray | null
-    while ((m = re.exec(processed)) !== null) {
-      const sinEn = SIN_KR_TO_EN[m[0]]
-      if (sinEn) {
-        matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], color: SIN_COLORS[sinEn], bold: true })
-      }
-    }
-  }
-
-  {
-    const re = new RegExp(KEYWORD_PATTERN.source, KEYWORD_PATTERN.flags)
-    let m: RegExpExecArray | null
-    while ((m = re.exec(processed)) !== null) {
-      matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], color: KEYWORD_COLORS[m[0]] })
-    }
-  }
-
-  if (matches.length === 0) return processed
-
-  matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
-  const filtered: TextMatch[] = []
-  let lastEnd = 0
-  for (const m of matches) {
-    if (m.start >= lastEnd) {
-      filtered.push(m)
-      lastEnd = m.end
-    }
-  }
-
-  const parts: ReactNode[] = []
-  let cursor = 0
-  for (const m of filtered) {
-    if (m.start > cursor) parts.push(processed.slice(cursor, m.start))
-    parts.push(
-      <span key={m.start} style={{ color: m.color, fontWeight: m.bold ? 600 : undefined }}>
-        {m.text}
-      </span>
-    )
-    cursor = m.end
-  }
-  if (cursor < processed.length) parts.push(processed.slice(cursor))
-
-  return parts
+export function replaceEventPlaceholders(text: string | null | undefined, lang: string = 'ko'): string {
+  const label = lang === 'en' ? 'Sinner name' : lang === 'ja' ? '囚人名' : '수감자 이름'
+  return (text ?? '').replace(/\{\d+\}/g, `{${label}}`)
 }
-
-/** 플레이스홀더만 치환 (문자열 반환) */
-export function replaceEventPlaceholders(text: string | null | undefined): string {
-  if (!text) return ''
-  return text.replace(/\{(\d+)\}/g, '???')
+/** Preserve original colors and emphasis instead of guessing from Korean words. */
+export function colorizeEventText(text: string | null | undefined, lang: string = 'ko'): ReactNode {
+  return text ? parseUnityColorTags(replaceEventPlaceholders(text, lang)) : null
 }

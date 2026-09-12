@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
-import { Link } from '@/lib/i18n/navigation'
+import BoardHeader from '@/components/discovery/BoardHeader'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import type { PlanSummary } from '@/components/planner/PlanCard'
@@ -80,42 +80,8 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   const { initialPlans, initialTotal } = await getCachedInitialPlans(lang, CARD_META_CACHE_VERSION)
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
-      <div className="w-full max-w-7xl mx-auto shrink-0" style={{ padding: '6.5rem 1.5rem 1.25rem' }}>
-        <p
-          suppressHydrationWarning
-          style={{
-            color: 'var(--gold-dim)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.625rem',
-            letterSpacing: '0.3em',
-            marginBottom: '0.5rem',
-          }}
-        >
-          {t('eyebrow')}
-        </p>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-serif text-3xl font-bold" suppressHydrationWarning style={{ color: 'var(--gold)' }}>
-              {t('title')}
-            </h1>
-            <p style={{ color: '#888888', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
-              {t('subtitle')}
-            </p>
-          </div>
-          <Link
-            href="/planner"
-            className="flex shrink-0 items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all duration-200 hover:brightness-110 active:scale-95"
-            style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '4px', fontFamily: 'var(--font-heading)' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            {t('newPlan')}
-          </Link>
-        </div>
-        <div suppressHydrationWarning style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem', transformOrigin: 'left' }} />
-      </div>
+    <div className="community-board flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
+      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} eyebrow={t('eyebrow')} action={t('newPlan')} />
       <Suspense fallback={<CommunityPageSkeleton />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
       </Suspense>

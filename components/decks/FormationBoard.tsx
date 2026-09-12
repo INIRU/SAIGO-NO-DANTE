@@ -1,10 +1,12 @@
 'use client'
 
+import { getFormationBannerUrl } from '@/lib/utils/images'
+
 import IdentityCard from '@/components/sinners/IdentityCard'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import type { Identity } from '@/lib/types'
 import Image from 'next/image'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import type { ReactNode } from 'react'
 
 export type FormationBoardSlot = {
@@ -32,13 +34,13 @@ type FormationBoardProps = {
 }
 
 const FRONTLINE_SLOT_COUNT = 7
-const SELECTED_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-selected-banner.webp`
-const BACKUP_BANNER_URL = `${STORAGE_BASE}/icons/ui/identity-backup-banner.webp`
+const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
+const BACKUP_BANNER_URL = getFormationBannerUrl('backup')
 
 function getFormationOverlay(slotOrder: number | null) {
-  if (slotOrder == null || slotOrder >= 99) return undefined
+  if (slotOrder == null) return undefined
 
-  const order = slotOrder + 1
+  const order = slotOrder >= 99 ? null : slotOrder + 1
   const isFrontline = slotOrder < FRONTLINE_SLOT_COUNT
 
   return {
@@ -110,7 +112,7 @@ export default function FormationBoard({ slots, className }: FormationBoardProps
                       </div>
                       <div className="formation-board-empty-slot__number">
                         <Image
-                          src={`${STORAGE_BASE}/sinners/${slot.emptySlot.sinnerId}/number.webp`}
+                          src={getGameUiAsset(`sinners/${slot.emptySlot.sinnerId}`)}
                           alt=""
                           width={389}
                           height={1023}

@@ -1,7 +1,9 @@
 'use client'
 
+import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useEffect, useCallback, type ReactNode } from 'react'
 import Image from 'next/image'
+import KeywordIcon from '@/components/ui/KeywordIcon'
 import { Link } from '@/lib/i18n/navigation'
 import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
@@ -140,7 +142,7 @@ export default function KeywordModal({
                       border: `0.0625rem solid ${sinColor ? `${sinColor}25` : 'rgba(200,144,10,0.12)'}`,
                     }}
                   >
-                    <Image
+                    <KeywordIcon
                       src={iconUrl}
                       alt={kwName} width={28} height={28}
                       style={{ width: '1.75rem', height: 'auto' }}
@@ -199,7 +201,7 @@ export default function KeywordModal({
                       >
                         {id.game_id && id.folder_name && (
                           <Image
-                            src={`${STORAGE_BASE}/sinners/${id.sinner_id}/identities/${encodeURIComponent(id.folder_name)}/${id.game_id}_normal_info.webp`}
+                            src={getIdentityPortraitUrl(id.sinner_id, id.folder_name, id.game_id, false)}
                             alt={idName} width={36} height={48}
                             className="rounded shrink-0"
                             style={{ width: '2.25rem', height: '3rem', objectFit: 'cover' }}

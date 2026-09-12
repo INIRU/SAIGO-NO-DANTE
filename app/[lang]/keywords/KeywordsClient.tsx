@@ -74,7 +74,7 @@ interface EGO {
 }
 
 /* ── 상수 ── */
-type KeywordCategory = '상태이상' | '버프' | '디버프' | '고유'
+type KeywordCategory = '상태이상' | '버프' | '디버프' | '고유' | '기타'
 
 type SortKey = 'default' | 'name'
 
@@ -104,6 +104,7 @@ export default function KeywordsClient({
     { value: '버프' as KeywordCategory, label: t('keyword.category.buff'), color: '#50b060' },
     { value: '디버프' as KeywordCategory, label: t('keyword.category.debuff'), color: '#7070c0' },
     { value: '고유' as KeywordCategory, label: t('keyword.category.unique'), color: '#c8900a' },
+    { value: '기타' as KeywordCategory, label: t('keyword.category.other'), color: '#888888' },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [lang])
 
@@ -186,7 +187,7 @@ export default function KeywordsClient({
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {}
     keywords.forEach(kw => {
-      const cat = kw.category || '고유'
+      const cat = kw.category || '기타'
       map[cat] = (map[cat] || 0) + 1
     })
     return map
@@ -195,7 +196,7 @@ export default function KeywordsClient({
   /* ── 필터링 + 정렬 ── */
   const filtered = useMemo(() => {
     return keywords.filter(kw => {
-      if (selectedCategories.size > 0 && !selectedCategories.has((kw.category || '고유') as KeywordCategory)) return false
+      if (selectedCategories.size > 0 && !selectedCategories.has((kw.category || '기타') as KeywordCategory)) return false
       if (search) {
         const localName = getLocalizedKeywordName(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null }, lang)
         const localDesc = getLocalizedKeywordDesc(kw.description ?? '', { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)

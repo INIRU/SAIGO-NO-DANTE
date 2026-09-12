@@ -1,17 +1,18 @@
 'use client'
 
+import GiftGrade from '@/components/ui/GiftGrade'
+
+import { GIFT_BG_URL } from '@/lib/constants/gift'
+
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import KeywordChip from '@/components/ui/KeywordChip'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
-import { STORAGE_BASE } from '@/lib/constants/game'
-import { OCTAGON_CLIP, GRADE_ROMAN, getGiftKeywordColor } from '@/lib/constants/gift'
+import { OCTAGON_CLIP, getGiftKeywordColor } from '@/lib/constants/gift'
 import BaseModal from '@/components/ui/BaseModal'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
-
-const S = STORAGE_BASE
 
 export interface RecipeLookup {
   materials: GiftData[]
@@ -32,7 +33,6 @@ interface Props {
 export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeClick, enhance, conditionStatus, recipe }: Props) {
   const { getIconUrl } = useKeywordData()
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
-  const gradeLabel = GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade
   const isEX = gift.grade === 'EX'
   const kwIconUrl = gift.keyword ? getIconUrl(gift.keyword) : null
 
@@ -65,19 +65,17 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
             {/* 기프트 카드 */}
             <div className="relative flex-shrink-0 overflow-hidden" style={{
               width: '5rem', height: '5rem',
-              backgroundImage: `url(${S}/icons/ego-gift-bg.webp)`, backgroundSize: 'cover', backgroundPosition: 'center',
+              backgroundImage: `url(${GIFT_BG_URL})`, backgroundSize: 'contain', backgroundPosition: 'center',
               clipPath: OCTAGON_CLIP,
             }}>
-              <span className="absolute top-[4%] left-[5%] z-10 pointer-events-none" style={{
+              <GiftGrade grade={gift.grade} className="absolute top-[4%] left-[5%] z-10 pointer-events-none" style={{
                 fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
                 fontWeight: 700, fontSize: '1.5rem', lineHeight: 1,
                 color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
                 textShadow: isEX
                   ? '0 0 0.625rem rgb(251,255,8), 0 0 0.25rem rgb(12,90,0)'
                   : '0 0 0.375rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-              }}>
-                {gradeLabel}
-              </span>
+              }} />
               {kwIconUrl && (
                 <div className="absolute bottom-0 right-0 z-10 w-[30%] h-[30%] pointer-events-none">
                   <Image src={kwIconUrl} alt="" fill sizes="24px" className="object-contain" />

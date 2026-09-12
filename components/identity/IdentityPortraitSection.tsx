@@ -1,5 +1,7 @@
 'use client'
 
+import { getSinnerBadgeRingUrl } from '@/lib/utils/images'
+
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -7,7 +9,6 @@ import { X } from 'lucide-react'
 import {
   Identity,
   Sinner,
-  STORAGE_BASE,
   getIdentityInfoUrl,
   getIdentityProfileUrl,
   getSinnerLogoUrl,
@@ -121,7 +122,7 @@ export default function IdentityPortraitSection({
           {/* 등급 프레임 + 수감자 로고 */}
           <div className="relative shrink-0" style={{ width: '2.5rem', height: '2.5rem' }}>
             <Image
-              src={`${STORAGE_BASE}/icons/ui/portrait-frame-${rarityNum}star.webp`}
+              src={getSinnerBadgeRingUrl(rarityNum)}
               alt="" width={40} height={40}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />

@@ -5,7 +5,6 @@ export const translations = {
   'nav.sinnerList': { ko: '수감자 목록', en: 'Sinner List', ja: '囚人一覧' },
   'nav.decks': { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' },
   'nav.planner': { ko: '거울 던전', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
-  'nav.calendar': { ko: '공식 캘린더', en: 'Official Calendar', ja: '公式カレンダー' },
   'nav.community.title': { ko: '커뮤니티', en: 'Community', ja: 'コミュニティ' },
 
   // Common actions
@@ -48,10 +47,6 @@ export const translations = {
   'guide.write': { ko: '운영법 작성', en: 'Write Guide', ja: 'ガイドを書く' },
 
   // AI Summary
-  'ai.summary': { ko: 'AI 요약', en: 'AI Summary', ja: 'AI要約' },
-  'ai.generate': { ko: 'AI 요약 생성', en: 'Generate AI Summary', ja: 'AI要約を生成' },
-  'ai.generating': { ko: 'AI 요약 생성 중...', en: 'Generating AI Summary...', ja: 'AI要約を生成中...' },
-  'ai.noSummary': { ko: '아직 요약이 없습니다', en: 'No summary yet', ja: 'まだ要約がありません' },
 
   // Sinner names
   'sinner.yi-sang': { ko: '이상', en: 'Yi Sang', ja: 'イサン' },
@@ -68,17 +63,17 @@ export const translations = {
   'sinner.gregor': { ko: '그레고르', en: 'Gregor', ja: 'グレゴール' },
 
   // Navigation groups
-  'nav.story.title': { ko: '스토리', en: 'Story', ja: 'ストーリー' },
-  'nav.story.main': { ko: '메인 스토리', en: 'Main Story', ja: 'メインストーリー' },
   'nav.db.title': { ko: 'DB', en: 'DB', ja: 'DB' },
   'nav.db.mirrorDungeon': { ko: '거던', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
   'nav.db.keywords': { ko: '키워드', en: 'Keywords', ja: 'キーワード' },
   'nav.community.planner': { ko: '거던 플래너', en: 'MD Planner', ja: 'ミラダンプランナー' },
-  'nav.community.tierList': { ko: '티어표', en: 'Tier List', ja: 'ティアリスト' },
+  'nav.support': { ko: '문의', en: 'Support', ja: 'お問い合わせ' },
   'nav.community.collection': { ko: '보유 현황', en: 'Collection', ja: 'コレクション' },
+  'nav.tools.title': { ko: '도구', en: 'Tools', ja: 'ツール' },
+  'nav.tools.lunacy': { ko: '월간 광기 계산기', en: 'Monthly Lunacy planner', ja: '月間狂気計算機' },
+  'nav.tools.experience': { ko: '경험치 계산기', en: 'EXP calculator', ja: '経験値計算機' },
   'nav.other.title': { ko: '기타', en: 'More', ja: 'その他' },
   'nav.other.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
-  'nav.other.extraction': { ko: '추출', en: 'Extraction', ja: '抽出' },
   'nav.other.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
 
   // Mypage
@@ -89,7 +84,6 @@ export const translations = {
   'home.cta.sinners': { ko: '수감자 목록', en: 'Sinner List', ja: '囚人一覧' },
   'home.cta.decks': { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' },
   'home.cta.planner': { ko: '거던 플래너', en: 'MD Planner', ja: 'ミラダンプランナー' },
-  'home.cta.discordBot': { ko: '디스코드 봇', en: 'Discord Bot', ja: 'Discordボット' },
 
   // Home - features
   'home.feat.sinnerDb': { ko: '수감자 DB', en: 'Sinner DB', ja: '囚人DB' },
@@ -100,10 +94,6 @@ export const translations = {
   'home.feat.mirrorDungeonDesc': { ko: 'EGO 기프트 도감, 키워드 필터, 조합 레시피.', en: 'EGO Gift encyclopedia, keyword filter, fusion recipes.', ja: 'EGOギフト図鑑、キーワードフィルター、合成レシピ。' },
   'home.feat.collection': { ko: '보유 현황', en: 'Collection', ja: 'コレクション' },
   'home.feat.collectionDesc': { ko: '나의 인격·EGO 체크리스트, URL로 공유.', en: 'My identity & EGO checklist, shareable via URL.', ja: '自分の人格・EGOチェックリスト、URLで共有。' },
-  'home.feat.tierList': { ko: '티어표', en: 'Tier List', ja: 'ティアリスト' },
-  'home.feat.tierListDesc': { ko: '커뮤니티 투표 기반 리세마라 티어 랭킹.', en: 'Community vote-based reroll tier ranking.', ja: 'コミュニティ投票ベースのリセマラティアランキング。' },
-  'home.feat.extraction': { ko: '추출 시뮬', en: 'Extraction Sim', ja: '抽出シミュ' },
-  'home.feat.extractionDesc': { ko: '뽑기 확률 시뮬레이션으로 운명을 시험.', en: 'Test your luck with gacha probability simulation.', ja: 'ガチャ確率シミュレーションで運命を試す。' },
   'home.feat.random': { ko: '랜덤 편성', en: 'Random Comp', ja: 'ランダム編成' },
   'home.feat.randomDesc': { ko: '슬롯머신 UI로 무작위 편성, 키워드 필터.', en: 'Slot machine UI for random compositions with keyword filter.', ja: 'スロットマシンUIでランダム編成、キーワードフィルター。' },
   'home.feat.planner': { ko: '거던 플래너', en: 'MD Planner', ja: 'ミラダンプランナー' },
@@ -111,14 +101,15 @@ export const translations = {
 
   // Home - official links
   'home.official.site': { ko: '공식 사이트', en: 'Official Site', ja: '公式サイト' },
-  'home.official.discord': { ko: '팬 디스코드', en: 'Fan Discord', ja: 'ファンDiscord' },
-  'home.official.discordSub': { ko: '봇 소개 · 서버 참여', en: 'Bot intro · Join server', ja: 'ボット紹介・サーバー参加' },
   'home.official.youtubeSub': { ko: '공식 채널', en: 'Official Channel', ja: '公式チャンネル' },
 
   // Site name
   'site.name': { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' },
 
   // Home - section headers
+  'home.watchVideo': { ko: '영상 보기', en: 'Watch video', ja: '映像を見る' },
+  'home.archiveShortcuts': { ko: '아카이브 바로가기', en: 'Explore the archive', ja: 'アーカイブを探す' },
+  'home.officialChannels': { ko: '공식 채널', en: 'Official channels', ja: '公式チャンネル' },
   'home.latestVideo': { ko: '최신 영상', en: 'Latest Video', ja: '最新映像' },
   'home.viewChannel': { ko: '채널 더보기', en: 'View Channel', ja: 'チャンネルを見る' },
   'home.latestIdentity': { ko: '최신 인격', en: 'Latest Identity', ja: '最新人格' },
@@ -219,15 +210,6 @@ export const translations = {
   'identity.guide.title': { ko: '운영법', en: 'Guides', ja: 'ガイド' },
   'identity.guide.noGuides': { ko: '아직 작성된 가이드가 없습니다.', en: 'No guides available yet.', ja: 'まだガイドがありません。' },
   'identity.guide.write': { ko: '운영법 작성', en: 'Write Guide', ja: 'ガイド作成' },
-  'identity.ai.title': { ko: 'AI 요약', en: 'AI Summary', ja: 'AI要約' },
-  'identity.ai.generate': { ko: 'AI 요약 생성', en: 'Generate AI Summary', ja: 'AI要約を生成' },
-  'identity.ai.regenerate': { ko: '재생성', en: 'Regenerate', ja: '再生成' },
-  'identity.ai.expired': { ko: '만료됨', en: 'Expired', ja: '期限切れ' },
-  'identity.ai.generating': { ko: '생성 중...', en: 'Generating...', ja: '生成中...' },
-  'identity.ai.streaming': { ko: '스트리밍 중...', en: 'Streaming...', ja: 'ストリーミング中...' },
-  'identity.ai.disclaimer': { ko: 'AI가 생성한 요약입니다. 실제 게임과 다를 수 있습니다.', en: 'AI-generated summary. May differ from actual gameplay.', ja: 'AI生成の要約です。実際のゲームと異なる場合があります。' },
-  'identity.ai.description': { ko: 'AI가 이 인격의 스킬, 운영법, 추천 편성을 분석하여 요약합니다.', en: 'AI analyzes this identity\'s skills, strategies, and recommended team compositions.', ja: 'AIがこの人格のスキル、運用法、おすすめ編成を分析して要約します。' },
-  'identity.ai.created': { ko: '생성', en: 'generated', ja: '生成' },
   'identity.decks': { ko: '등록된 덱', en: 'Decks', ja: 'デッキ' },
   'identity.tab.skills': { ko: '스킬', en: 'Skills', ja: 'スキル' },
   'identity.tab.passives': { ko: '패시브', en: 'Passives', ja: 'パッシブ' },
@@ -248,7 +230,7 @@ export const translations = {
   'identity.timeAgo.hoursAgo': { ko: '시간 전', en: 'h ago', ja: '時間前' },
   'identity.timeAgo.daysAgo': { ko: '일 전', en: 'd ago', ja: '日前' },
   'identity.notFound': { ko: '인격을 찾을 수 없습니다', en: 'Identity not found', ja: '人格が見つかりません' },
-  'identity.meta.description': { ko: '스탯, 스킬, 패시브, AI 요약, 운영법', en: 'Stats, skills, passives, AI summary, guides', ja: 'ステータス、スキル、パッシブ、AI要約、ガイド' },
+  'identity.meta.description': { ko: '스탯, 스킬, 패시브, 운영법', en: 'Stats, skills, passives, guides', ja: 'ステータス、スキル、パッシブ、ガイド' },
   'identity.season': { ko: '시즌', en: 'Season', ja: 'シーズン' },
   'identity.panic': { ko: '패닉', en: 'Panic', ja: 'パニック' },
   'identity.skillType.slash': { ko: '참격', en: 'Slash', ja: '斬撃' },
@@ -292,11 +274,11 @@ export const translations = {
 
   // Identity Info Card
   'identity.info.affiliation': { ko: '소속', en: 'Affiliation', ja: '所属' },
+  'identity.info.traits': { ko: '인격 키워드 · 소속', en: 'Trait keywords · Affiliation', ja: '人格キーワード・所属' },
   'identity.info.releaseDate': { ko: '출시시기', en: 'Release Date', ja: 'リリース時期' },
   'identity.info.acquisition': { ko: '획득 방법', en: 'Acquisition', ja: '獲得方法' },
   'identity.info.extraction': { ko: '추출', en: 'Extraction', ja: '抽出' },
   'identity.info.fragmentExchange': { ko: '파편 교환', en: 'Shard Exchange', ja: '破片交換' },
-  'identity.info.sdDragHint': { ko: '드래그로 이동 · 스크롤로 확대/축소 · 더블클릭으로 초기화', en: 'Drag to move · Scroll to zoom · Double-click to reset', ja: 'ドラッグで移動・スクロールで拡大/縮小・ダブルクリックでリセット' },
   'identity.info.type.default': { ko: '기본', en: 'Default', ja: 'デフォルト' },
   'identity.info.type.standard': { ko: '추출', en: 'Extraction', ja: '抽出' },
   'identity.info.type.limited': { ko: '한정', en: 'Limited', ja: '限定' },
@@ -330,6 +312,7 @@ export const translations = {
   'keyword.category.buff': { ko: '버프', en: 'Buff', ja: 'バフ' },
   'keyword.category.debuff': { ko: '디버프', en: 'Debuff', ja: 'デバフ' },
   'keyword.category.unique': { ko: '고유', en: 'Unique', ja: '固有' },
+  'keyword.category.other': { ko: '기타', en: 'Other', ja: 'その他' },
   'keyword.category.label': { ko: '카테고리', en: 'CATEGORY', ja: 'カテゴリ' },
   'keyword.sort.frequency': { ko: '사용 빈도순', en: 'By frequency', ja: '使用頻度順' },
   'keyword.sort.name': { ko: '이름순', en: 'Alphabetical', ja: '名前順' },
@@ -475,7 +458,7 @@ export const translations = {
 
   // Home — Page metadata
   'home.meta.title': { ko: '최애의 관리자 | SAIGO NO DANTE', en: 'SAIGO NO DANTE | Limbus Company Fan Archive', ja: 'SAIGO NO DANTE | リムバスカンパニー情報サイト' },
-  'home.meta.description': { ko: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더, 티어표', en: 'Limbus Company fan archive — Sinner identities, EGO database, Mirror Dungeon gifts, keyword encyclopedia, deck builder, tier list.', ja: 'リムバスカンパニー情報サイト — 受刑者人格・EGOデータベース、ミラーダンジョンギフト、キーワード図鑑、デッキビルダー、ティア表。' },
+  'home.meta.description': { ko: '림버스 컴퍼니 정보 사이트 — 수감자 인격·EGO DB, 거울 던전 기프트, 키워드 도감, 덱 빌더', en: 'Limbus Company fan archive — Sinner identities, EGO database, Mirror Dungeon gifts, keyword encyclopedia, deck builder.', ja: 'リムバスカンパニー情報サイト — 受刑者人格・EGOデータベース、ミラーダンジョンギフト、キーワード図鑑、デッキビルダー。' },
 
   // Sinners — Page metadata
   'sinners.meta.title': { ko: '수감자 목록 — 림버스 컴퍼니 12인', en: 'Sinner Directory — The Twelve of Limbus Company', ja: '受刑者一覧 — リムバスカンパニー12人' },
@@ -572,6 +555,10 @@ export const translations = {
   'mirrorDungeon.event.modalTitle': { ko: '이벤트 상세', en: 'Event Details', ja: 'イベント詳細' },
   'mirrorDungeon.event.availableGifts': { ko: '획득 가능 기프트', en: 'Available Gifts', ja: '獲得可能ギフト' },
   'mirrorDungeon.event.relatedThemes': { ko: '출현 테마팩', en: 'Related Theme Packs', ja: '登場テーマパック' },
+  'mirrorDungeon.event.choiceResult': { ko: '선택 결과', en: 'Choice outcome', ja: '選択結果' },
+  'mirrorDungeon.event.openArtwork': { ko: '이벤트 원화 크게 보기 (새 탭)', en: 'Open event artwork (new tab)', ja: 'イベント原画を開く（新しいタブ）' },
+  'mirrorDungeon.event.clearSearch': { ko: '검색 지우기', en: 'Clear search', ja: '検索をクリア' },
+  'mirrorDungeon.event.outcomeStory': { ko: '결과 이야기', en: 'Outcome story', ja: '結果の物語' },
   'mirrorDungeon.event.choicesLabel': { ko: '선택지', en: 'Choices', ja: '選択肢' },
   'mirrorDungeon.event.noChoices': { ko: '선택지 정보 없음', en: 'No choice data', ja: '選択肢情報なし' },
   'mirrorDungeon.event.success': { ko: '성공', en: 'Success', ja: '成功' },

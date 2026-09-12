@@ -1,5 +1,7 @@
 'use client'
 
+import { getRootEvents } from '@/lib/utils/event-catalog'
+
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { useQueryState, parseAsString } from 'nuqs'
@@ -189,6 +191,8 @@ export default function MirrorDungeonClient({
     return map
   }, [localizedChoices])
 
+  const eventCount = useMemo(() => getRootEvents(events, choicesByEventId).length, [events, choicesByEventId])
+
   // ThemeModal용 선택지 수 맵 (choices 배열 직접 순회, choicesByEventId 파생)
   const choiceCountByEventId = useMemo(() => {
     const map = new Map<number, number>()
@@ -199,7 +203,9 @@ export default function MirrorDungeonClient({
   // 로컬 상태 (모달/UI)
   const [selected, setSelected] = useState<EgoGift | null>(null)
   const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<MdEvent | null>(null)
+  const [eventIdParam, setEventIdParam] = useQueryState('event', parseAsString.withDefault(''))
+  const selectedEvent = eventById.get(Number(eventIdParam)) ?? null
+  const setSelectedEvent = (event: MdEvent | null) => setEventIdParam(event ? String(event.id) : null)
 
   // game_id → EgoGift 매핑 (테마팩 필터 + EventTab 공용)
   const giftByGameId = useMemo(() => {
@@ -350,7 +356,7 @@ export default function MirrorDungeonClient({
               {(['gifts', 'themes', 'events'] as const).map(tab => {
                 const isActive = activeTab === tab
                 const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
-                const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : events.length
+                const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : eventCount
                 return (
                   <button
                     key={tab}
@@ -395,7 +401,7 @@ export default function MirrorDungeonClient({
             {(['gifts', 'themes', 'events'] as const).map(tab => {
               const isActive = activeTab === tab
               const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
-              const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : events.length
+              const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : eventCount
               return (
                 <button
                   key={tab}

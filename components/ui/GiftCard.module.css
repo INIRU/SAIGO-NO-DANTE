@@ -1,0 +1,27 @@
+.card {
+  transform: scale(1);
+  z-index: 1;
+}
+
+.card:not(:disabled):hover {
+  transform: scale(1.06);
+  z-index: 10;
+}
+
+.frame {
+  box-shadow: none;
+}
+
+.card:not(:disabled):hover .frame {
+  box-shadow: 0 0 0.75rem rgba(200,144,10,0.3);
+}
+
+.remove,
+.glow {
+  opacity: 0;
+}
+
+.card:not(:disabled):hover .remove,
+.card:not(:disabled):hover .glow {
+  opacity: 1;
+}

@@ -46,6 +46,7 @@ export type EgoSlotRaw = {
 }
 
 type FloorPlanEntryRaw = {
+  constraints?: unknown
   floor?: unknown
   difficulty?: unknown
   theme_id?: unknown
@@ -59,9 +60,10 @@ const FLOOR_SEGMENTS = [
   { key: '11-15', start: 11, end: 15 },
 ] as const
 
-function isConfiguredFloor(entry: FloorPlanEntryRaw) {
+export function isConfiguredFloor(entry: FloorPlanEntryRaw) {
   return Boolean(
     entry.theme_id ||
+    (Array.isArray(entry.constraints) && entry.constraints.length > 0) ||
     (Array.isArray(entry.gift_ids) && entry.gift_ids.length > 0) ||
     (typeof entry.memo === 'string' && entry.memo.trim())
   )

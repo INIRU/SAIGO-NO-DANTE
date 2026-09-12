@@ -6,21 +6,21 @@ import type { Variants, Transition } from 'motion/react'
 
 /** Smooth ease-in-out — good for reveals and modals */
 export const smoothTransition: Transition = {
-  duration: 0.5,
-  ease: [0.25, 0.1, 0.25, 1],
+  duration: 0.34,
+  ease: [0.22, 1, 0.36, 1],
 }
 
 /** Snappy ease-out — good for interactive responses */
 export const snappyTransition: Transition = {
-  duration: 0.3,
+  duration: 0.22,
   ease: [0.33, 1, 0.68, 1],
 }
 
 /** Gentle spring — subtle, non-bouncy for premium feel */
 export const springTransition: Transition = {
   type: 'spring',
-  stiffness: 100,
-  damping: 20,
+  stiffness: 240,
+  damping: 28,
 }
 
 // ---------------------------------------------------------------------------
@@ -34,25 +34,25 @@ export const fadeIn: Variants = {
 }
 
 export const fadeInUp: Variants = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: smoothTransition },
   exit: { opacity: 0, y: 10, transition: snappyTransition },
 }
 
 export const fadeInDown: Variants = {
-  initial: { opacity: 0, y: -20 },
+  initial: { opacity: 0, y: -12 },
   animate: { opacity: 1, y: 0, transition: smoothTransition },
   exit: { opacity: 0, y: -10, transition: snappyTransition },
 }
 
 export const fadeInLeft: Variants = {
-  initial: { opacity: 0, x: -20 },
+  initial: { opacity: 0, x: -12 },
   animate: { opacity: 1, x: 0, transition: smoothTransition },
   exit: { opacity: 0, x: -10, transition: snappyTransition },
 }
 
 export const fadeInRight: Variants = {
-  initial: { opacity: 0, x: 20 },
+  initial: { opacity: 0, x: 12 },
   animate: { opacity: 1, x: 0, transition: smoothTransition },
   exit: { opacity: 0, x: 10, transition: snappyTransition },
 }
@@ -62,7 +62,7 @@ export const fadeInRight: Variants = {
 // ---------------------------------------------------------------------------
 
 export const scaleIn: Variants = {
-  initial: { opacity: 0, scale: 0.95 },
+  initial: { opacity: 0, scale: 0.98 },
   animate: { opacity: 1, scale: 1, transition: smoothTransition },
   exit: { opacity: 0, scale: 0.97, transition: snappyTransition },
 }
@@ -118,7 +118,7 @@ export const reducedModalPanelVariants: Variants = {
 export const slideUp: Variants = {
   initial: { opacity: 0, y: 40 },
   animate: { opacity: 1, y: 0, transition: smoothTransition },
-  exit: { opacity: 0, y: 20, transition: snappyTransition },
+  exit: { opacity: 0, y: 12, transition: snappyTransition },
 }
 
 // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ export const pageTransition: Variants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
     opacity: 0,
@@ -171,7 +171,7 @@ export const staggerItem: Variants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
     opacity: 0,
@@ -189,7 +189,7 @@ export const workbenchReveal: Variants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.32, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
     opacity: 0,

@@ -17,12 +17,15 @@
  *   --keywords         기존 인격 keywords 필드도 업데이트 (기본적으로 protected)
  *
  * ⚠️ keyword_meta upsert 경로는 공통/Common/None/공용 placeholder를 반드시 필터링해야 함
+ * (docs/data-model.md의 키워드 카탈로그와 사용 관계 참조)
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
+import { collectEgoKeywordTags, collectKeywordTags } from './ego-keywords'
 import { join, resolve } from 'path'
-import { homedir } from 'os'
+import { gameDataPaths } from './source-paths'
+import { identityMetadata } from './identity-metadata'
 import { pathToFileURL } from 'url'
 import { z } from 'zod'
 import { config } from 'dotenv'
@@ -86,13 +89,14 @@ const KEYWORD_DESCRIPTION_OVERRIDES: Record<string, string> = {
 }
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
-const DATA_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/Json (Text)'))
-const KR_DIR = join(DATA_DIR, 'KR')
-const KR_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/kr'))
-const EN_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/en'))
-const JP_LATEST_DIR = resolve(join(homedir(), 'Documents/Limbus/assets/data/jp'))
-const EN_DIR = join(DATA_DIR, 'EN')
-const JP_DIR = join(DATA_DIR, 'JP')
+const sourcePaths = gameDataPaths()
+const DATA_DIR = sourcePaths.data
+const KR_DIR = sourcePaths.kr
+const KR_LATEST_DIR = sourcePaths.krLatest
+const EN_LATEST_DIR = sourcePaths.enLatest
+const JP_LATEST_DIR = sourcePaths.jpLatest
+const EN_DIR = sourcePaths.en
+const JP_DIR = sourcePaths.jp
 const KR_PERSONALITY_VOICE_LATEST_DIR = join(KR_LATEST_DIR, 'PersonalityVoiceDlg')
 const TRUE_EGO_FILE_RE = /^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i
 const PERSONALITY_FILE_RE = /^personality-(?:\d{2}|a\d+c\d+p\d+)\.txt$/i
@@ -227,7 +231,7 @@ const UPTIE_LEVELS = [3, 4] as const
 // keywords remains protected below; manual fields such as acquisition/acquisition_info are not touched.
 const STAT_FIELDS = [
   'hp', 'base_hp', 'hp_per_level', 'speed_min', 'speed_max', 'def_level',
-  'rarity', 'slash_res', 'pierce_res', 'blunt_res', 'break_section',
+  'rarity', 'sin_affinity', 'release_date', 'slash_res', 'pierce_res', 'blunt_res', 'break_section',
   'skill_keyword_list', 'unit_keyword_list', 'association_list', 'affiliation', 'quote',
 ] as const
 const GAME_ARRAY_COLUMNS = ['skill_keyword_list', 'unit_keyword_list', 'association_list'] as const
@@ -237,7 +241,7 @@ const BASE_IDENTITY_SELECT = [
   'id', 'game_id', 'sinner_id', 'name', 'name_kr', 'name_en', 'name_jp',
   'hp', 'base_hp', 'hp_per_level', 'speed_min', 'speed_max', 'def_level',
   'rarity', 'slash_res', 'pierce_res', 'blunt_res', 'break_section',
-  'keywords', 'folder_name', 'affiliation', 'quote',
+  'keywords', 'folder_name', 'affiliation', 'quote', 'sin_affinity', 'release_date',
 ].join(',')
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
@@ -261,6 +265,7 @@ const PersonalitySchema = z.object({
   rank: z.number().optional(),
   season: z.number().nullable().optional(),
   updatedDate: z.number().nullable().optional(),
+  uniqueAttribute: z.string().optional(),
   additionalAttachment: z.string().optional(),
   walpurgisType: z.string().optional(),
   hp: z.object({
@@ -404,6 +409,8 @@ interface KrPersonality {
 }
 
 interface ComputedIdentity {
+  sin_affinity: string | null
+  release_date: string | null
   game_id: string
   sinner_slug: string | null
   name: string | null
@@ -1322,8 +1329,8 @@ function pickReleasePickup(hits: GachaPickupHit[] | undefined): GachaPickupHit |
   return [...candidates].sort((a, b) => {
     const aDate = a.startDate ?? a.endDate ?? ''
     const bDate = b.startDate ?? b.endDate ?? ''
-    if (aDate !== bDate) return bDate.localeCompare(aDate)
-    return (b.gachaId ?? 0) - (a.gachaId ?? 0)
+    if (aDate !== bDate) return aDate.localeCompare(bDate)
+    return (a.gachaId ?? 0) - (b.gachaId ?? 0)
   })[0] ?? null
 }
 
@@ -1345,11 +1352,17 @@ function existingAcquisitionEventFields(identity: AcquisitionIdentityRow): Parti
 
 function acquisitionReleaseSeason(identity: AcquisitionIdentityRow, personality: Personality, rank: number): number {
   if (rank === 1) return 0
-  const existing = identity.acquisition_info?.release_season
-  const sourceSeason = personality.season ?? 0
-  if (existing && existing > 0) return existing
+  const sourceSeason = personality.season
+  if (sourceSeason == null) return identity.acquisition_info?.release_season ?? 0
+  // Availability season 0 means permanent extraction, not a launch date.
+  // Preserve the original catalogue's chronological season for permanent IDs.
+  if (sourceSeason === 0 && identity.acquisition_info?.gacha === 'always') {
+    return identity.acquisition_info.release_season
+  }
+  if (sourceSeason >= 9000 && identity.acquisition_info?.type === 'walpurgis') {
+    return identity.acquisition_info.release_season
+  }
   if (sourceSeason >= 9000) return 0
-  if (sourceSeason === 0) return 1
   return sourceSeason
 }
 
@@ -1371,7 +1384,7 @@ function isAcquisitionWalpurgis(personality: Personality, releasePickup: GachaPi
   )
 }
 
-function deriveIdentityAcquisition(
+export function deriveIdentityAcquisition(
   identity: AcquisitionIdentityRow,
   personality: Personality,
   eventRewards: Map<string, EventRewardHit>,
@@ -1403,7 +1416,8 @@ function deriveIdentityAcquisition(
   }
 
   if (isAcquisitionWalpurgis(personality, releasePickup)) {
-    const edition = acquisitionWalpurgisEdition(identity, releasePickup)
+    const edition = sourceSeason != null && sourceSeason >= 9101 && sourceSeason <= 9199
+      ? sourceSeason - 9100 : acquisitionWalpurgisEdition(identity, releasePickup)
     return {
       acquisition: `발푸르기스의 밤 기간 내 추출 / 발푸르기스의 밤 기간 내 자아 파편 ${cost} 교환`,
       acquisition_info: {
@@ -1413,6 +1427,21 @@ function deriveIdentityAcquisition(
         gacha: 'walpurgis',
         ...acquisitionGachaFields(identity, releasePickup, enrichGacha),
         ...(edition ? { walpurgis_edition: edition } : {}),
+      },
+      evidence,
+    }
+  }
+
+  // The current extraction omits many historical shops/attendance rewards.
+  // Their curated route must survive a later sync with an incomplete catalogue.
+  if (existing && (existing.type === 'event' || existing.type === 'attendance')) {
+    evidence.push('preserved historical event/attendance acquisition metadata')
+    return {
+      acquisition: identity.acquisition || `${existing.event_name ?? '이벤트'} 보상`,
+      acquisition_info: {
+        ...existing,
+        fragment_cost: cost,
+        ...(existing.gacha !== 'none' ? acquisitionGachaFields(identity, releasePickup, enrichGacha) : {}),
       },
       evidence,
     }
@@ -1452,7 +1481,7 @@ function deriveIdentityAcquisition(
     return {
       acquisition: `${releasePickup?.gachaName ?? `이벤트 한정 추출(시즌 ${season})`} / 자아 파편 ${cost} 교환(시즌 ${season}${exSeason ? `, 시즌 ${exSeason} 이후` : ''})`,
       acquisition_info: {
-        type: 'limited',
+        type: existing?.type ?? 'limited',
         release_season: season,
         fragment_cost: cost,
         gacha,
@@ -1470,7 +1499,7 @@ function deriveIdentityAcquisition(
     }
   }
 
-  if (season > 0) {
+  if ((sourceSeason ?? season) > 0) {
     const exSeason = existing?.exchange_from_season ?? acquisitionExchangeSeason(season)
     const gacha = existing?.gacha ?? 'seasonal'
     return {
@@ -1491,6 +1520,7 @@ function deriveIdentityAcquisition(
         ...existingAcquisitionExchangeOverride(identity),
       },
       evidence,
+      rewrite_acquisition: existing != null && existing.fragment_cost !== cost,
     }
   }
 
@@ -1501,6 +1531,7 @@ function deriveIdentityAcquisition(
       release_season: season,
       fragment_cost: cost,
       gacha: 'always',
+      ...acquisitionGachaFields(identity, releasePickup, enrichGacha),
       ...existingAcquisitionEventFields(identity),
       ...existingAcquisitionExchangeOverride(identity),
     },
@@ -1519,7 +1550,7 @@ function sameAcquisitionInfo(left: AcquisitionInfo | null, right: AcquisitionInf
   return stableJson(left) === stableJson(right)
 }
 
-async function syncIdentityAcquisition(options: IdentityAcquisitionSyncOptions = {}): Promise<{ changed: number; applied: number }> {
+export async function syncIdentityAcquisition(options: IdentityAcquisitionSyncOptions = {}): Promise<{ changed: number; applied: number }> {
   const fix = options.fix === true
   const dryRun = !fix
   const verbose = options.verbose === true
@@ -1895,11 +1926,11 @@ function loadEgoSkillLocale(lang: 'en' | 'jp'): Map<string, EgoSkillLocaleEntry>
   return map
 }
 
-function loadEgoPassiveLocale(lang: 'en' | 'jp'): Map<number, { name: string; desc: string }> {
+function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: string; desc: string }> {
   // Only ego passive files — exclude EN_Passive_Personalities-* etc.
   const prefix = lang.toUpperCase()
-  const latestDir = lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
-  const fallbackDir = lang === 'en' ? EN_DIR : JP_DIR
+  const latestDir = lang === 'kr' ? KR_LATEST_DIR : lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
+  const fallbackDir = lang === 'kr' ? KR_DIR : lang === 'en' ? EN_DIR : JP_DIR
   const map = new Map<number, { name: string; desc: string }>()
 
   for (const dir of [latestDir, fallbackDir]) {
@@ -1987,6 +2018,26 @@ function buildDescriptionKr(langSkillEntry: EgoSkillLocaleEntry | undefined): st
   return parts.join('\n')
 }
 
+/** Shared source-backed formatting for the empty-database EGO importer. */
+export function loadEgoSyncContext() {
+  TAG_MAP = loadKrTagMap()
+  const enTags = loadLangTagMap('en')
+  const jpTags = loadLangTagMap('jp')
+  return {
+    skills: { kr: loadKrEgoSkillLocale(), en: loadEgoSkillLocale('en'), jp: loadEgoSkillLocale('jp') },
+    passives: { kr: loadEgoPassiveLocale('kr'), en: loadEgoPassiveLocale('en'), jp: loadEgoPassiveLocale('jp') },
+    formatSkill(entry: EgoSkillLocaleEntry | undefined, lang: 'kr' | 'en' | 'jp') {
+      return lang === 'kr' ? buildDescriptionKr(entry)
+        : buildDescriptionLang(entry, lang === 'en' ? enTags : jpTags, lang === 'en' ? CONDITION_TAG_EN : CONDITION_TAG_JP, lang)
+    },
+    formatText(text: string | undefined, lang: 'kr' | 'en' | 'jp') {
+      return lang === 'kr' ? translateDesc(text)
+        : translateDescLang(text, lang === 'en' ? enTags : jpTags, lang === 'en' ? CONDITION_TAG_EN : CONDITION_TAG_JP, lang)
+    },
+    keywords(tags: string[]) { return translateKeywords(tags) },
+  }
+}
+
 // ── Stat computation ──────────────────────────────────────────────────────────
 
 function getResistance(p: Personality, atkType: string): string | null {
@@ -2070,6 +2121,7 @@ function calcIdentityStats(
   const quote = quoteMap.get(String(p.id))
 
   const identity: ComputedIdentity = {
+    ...identityMetadata(p),
     game_id: String(p.id),
     sinner_slug,
     name,
@@ -2566,6 +2618,57 @@ function extractSourceIdentityKeywords(): Map<string, SourceKeywordHit> {
   return keywords
 }
 
+export function loadSourceEgoKeywords() {
+  const context = loadEgoSyncContext()
+  function load(pattern: RegExp) {
+    const rows = new Map<number, Record<string, any>>()
+    for (const file of globFiles(DATA_DIR, pattern).sort()) {
+      for (const row of extractRecordList(readTxt(join(DATA_DIR, file)))) rows.set(Number(row.id), row)
+    }
+    return rows
+  }
+  const skills = load(/^ego-skill-.*\.txt$/i)
+  const passives = load(/^passive-.*\.txt$/i)
+  const result = new Map<string, { keywords: string[]; tags: Map<string, Set<string>> }>()
+  for (const ego of load(TRUE_EGO_FILE_RE).values()) {
+    if (ego.hidden || !ego.awakeningSkillId) continue
+    if (SINNER_FILTER && SINNERS.find(s => s.slug === SINNER_FILTER)?.id !== ego.characterId) continue
+    const keywords = new Set<string>(), tags = new Map<string, Set<string>>()
+    for (const tag of collectEgoKeywordTags(ego, skills, passives, context.skills.kr, context.passives.kr)) {
+      if (CONDITION_TAG_MAP[tag] || INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag) || EXCLUDED_TAGS.has(tag)) continue
+      addMappedKeyword(keywords, tag, tags)
+    }
+    result.set(String(ego.id), { keywords: [...keywords].sort((a, b) => a.localeCompare(b, 'ko')), tags })
+  }
+  return result
+}
+
+function loadSourceGiftKeywords(gameIds: Set<number>): Map<string, SourceKeywordHit> {
+  const root = process.env.LIMBUS_RECOVERY_ROOT
+  const inventory = root ? JSON.parse(readFileSync(join(root, 'drive-complete-json.json'), 'utf8')).files as Array<{ id: string; name: string; modifiedTime?: string }> : []
+  const files = root
+    ? inventory.filter(f => /^KR_EGOgift.*\.json$/i.test(f.name))
+      .sort((a, b) => (b.modifiedTime ?? '').localeCompare(a.modifiedTime ?? ''))
+      .map(f => join(root, 'json-originals', f.id + '.json'))
+    : [KR_LATEST_DIR, KR_DIR].flatMap(dir => existsSync(dir) ? globFiles(dir, /^KR_EGOgift.*\.(json|txt)$/i).map(file => join(dir, file)) : [])
+  const seen = new Set<number>(), result = new Map<string, SourceKeywordHit>()
+  for (const file of files) {
+    for (const row of extractRecordList(readTxt(file))) {
+      const id = Number(row.id), baseId = id % 10000
+      if (!gameIds.has(baseId) || seen.has(id)) continue
+      seen.add(id)
+      for (const tag of collectKeywordTags(row)) {
+        if (CONDITION_TAG_MAP[tag] || INLINE_DESCRIPTION_TAGS_TO_DROP.has(tag) || EXCLUDED_TAGS.has(tag)) continue
+        const name = TAG_MAP[tag]
+        if (!name || KEYWORD_PLACEHOLDERS.has(name)) continue
+        const hit = result.get(name) ?? { gameIds: new Set<string>(), tags: new Set<string>() }
+        hit.gameIds.add(`gift:${baseId}`); hit.tags.add(tag); result.set(name, hit)
+      }
+    }
+  }
+  return result
+}
+
 function slugifyKeywordIconPart(value: string | null | undefined): string | null {
   const slug = value
     ?.normalize('NFKD')
@@ -2823,6 +2926,7 @@ function diffIdentity(
   for (const field of STAT_FIELDS) {
     const newVal = computed[field as keyof ComputedIdentity]
     if (field === 'quote' && newVal === undefined) continue
+    if (field === 'release_date' && (dbRow.release_date || !newVal)) continue
     const oldVal = dbRow[field]
     if (!valuesEqual(newVal, oldVal)) {
       changes[field] = { from: oldVal, to: newVal }
@@ -3293,6 +3397,7 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Fetch actually used keywords from DB (identities, ego, ego_gifts)
   console.log('  DB에서 실제 사용 키워드 수집 중...')
   const dbUsedKeywords = new Set<string>()
+  const giftGameIds = new Set<number>()
 
   // Identity keywords (paginated)
   let from = 0
@@ -3319,27 +3424,57 @@ async function rebuildKeywordMeta(): Promise<void> {
   // EGO gift keywords (paginated)
   from = 0
   while (true) {
-    const { data, error } = await supabase.from('ego_gifts').select('keyword').range(from, from + 999)
+    const { data, error } = await supabase.from('ego_gifts').select('game_id,keyword').range(from, from + 999)
     if (error) throw new Error(`ego_gifts keyword 로드 실패: ${error.message}`)
     if (!data?.length) break
-    for (const r of data) { if (r.keyword) dbUsedKeywords.add((r.keyword as string).normalize('NFC')) }
+    for (const r of data) { giftGameIds.add(Number(r.game_id)); if (r.keyword) dbUsedKeywords.add((r.keyword as string).normalize('NFC')) }
     if (data.length < 1000) break
     from += 1000
   }
 
-  console.log('  source 인격 키워드 재추출 중...')
-  const sourceIdentityKeywords = extractSourceIdentityKeywords()
-  const usedKeywords = new Set([...dbUsedKeywords, ...sourceIdentityKeywords.keys()])
+  console.log('  source 인격·EGO·기프트 키워드 재추출 중...')
+  const sourceKeywords = extractSourceIdentityKeywords()
+  // EGO summary lists omit skill/passive buffs. Include all source stages.
+  for (const [gameId, ego] of loadSourceEgoKeywords()) {
+    for (const name of ego.keywords) {
+      const hit = sourceKeywords.get(name) ?? { gameIds: new Set<string>(), tags: new Set<string>() }
+      hit.gameIds.add(gameId)
+      for (const tag of ego.tags.get(name) ?? []) hit.tags.add(tag)
+      sourceKeywords.set(name, hit)
+    }
+  }
+  for (const [name, source] of loadSourceGiftKeywords(giftGameIds)) {
+    const hit = sourceKeywords.get(name) ?? { gameIds: new Set<string>(), tags: new Set<string>() }
+    for (const id of source.gameIds) hit.gameIds.add(id)
+    for (const tag of source.tags) hit.tags.add(tag)
+    sourceKeywords.set(name, hit)
+  }
+  const usedKeywords = new Set([...dbUsedKeywords, ...sourceKeywords.keys()])
+  // Preserve historical catalog entries only when the current source still defines the name.
+  // Normalize typography, never restore malformed concatenations or guess renamed keywords.
+  if (process.env.LIMBUS_KEYWORD_HISTORY) {
+    const normalize = (name: string) => name.normalize('NFKC').replace(/\s/g, '').replace(/【/g, '[').replace(/】/g, ']')
+    const sourceNames = new Map<string, string[]>()
+    for (const name of krKeywords.keys()) {
+      const key = normalize(name)
+      sourceNames.set(key, [...(sourceNames.get(key) ?? []), name])
+    }
+    const history = JSON.parse(readFileSync(process.env.LIMBUS_KEYWORD_HISTORY, 'utf8')) as Array<{ name: string }>
+    for (const row of history) {
+      if (krKeywords.has(row.name)) usedKeywords.add(row.name)
+      else { const names = sourceNames.get(normalize(row.name)); if (names?.length === 1) usedKeywords.add(names[0]) }
+    }
+  }
 
   // Filter out placeholder values that aren't real keywords
   for (const placeholder of KEYWORD_PLACEHOLDERS) {
     dbUsedKeywords.delete(placeholder)
-    sourceIdentityKeywords.delete(placeholder)
+    sourceKeywords.delete(placeholder)
     usedKeywords.delete(placeholder)
   }
 
-  const sourceOnlyCount = [...sourceIdentityKeywords.keys()].filter(k => !dbUsedKeywords.has(k)).length
-  console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (DB ${dbUsedKeywords.size}개 + source 인격 ${sourceIdentityKeywords.size}개, source-only ${sourceOnlyCount}개)`)
+  const sourceOnlyCount = [...sourceKeywords.keys()].filter(k => !dbUsedKeywords.has(k)).length
+  console.log(`  실제 사용 키워드: ${usedKeywords.size}개 (DB ${dbUsedKeywords.size}개 + source ${sourceKeywords.size}개, source-only ${sourceOnlyCount}개)`)
 
   // Build reverse map: KR name → candidate tag IDs (from TAG_MAP which is tag → KR)
   const krNameToTags = new Map<string, string[]>()
@@ -3380,7 +3515,7 @@ async function rebuildKeywordMeta(): Promise<void> {
   }> = []
   for (const name of usedKeywords) {
     const krCandidates = krKeywords.get(name) ?? []
-    const sourceHit = sourceIdentityKeywords.get(name)
+    const sourceHit = sourceKeywords.get(name)
     const resolved = resolveKeywordMetaSource({
       name,
       krCandidates,
@@ -3417,10 +3552,13 @@ async function rebuildKeywordMeta(): Promise<void> {
       }),
       tag: tag ?? null,
       in_db: dbUsedKeywords.has(name),
-      in_source: sourceIdentityKeywords.has(name),
+      in_source: sourceKeywords.has(name),
     })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  if (process.env.LIMBUS_KEYWORD_AUDIT) {
+    writeFileSync(process.env.LIMBUS_KEYWORD_AUDIT, JSON.stringify(rows, null, 2) + '\n')
+  }
   const staleRichTextKeywordMetaNames = findStaleRichTextKeywordMetaNames(
     (existingMeta ?? []).map(row => String(row.name)),
   )
@@ -3478,13 +3616,13 @@ async function rebuildKeywordMeta(): Promise<void> {
           existingIconSlug: existing?.icon_slug,
           nameEn,
           tag,
-          sourceBackedTag: name ? sourceIdentityKeywords.get(name)?.tags.has(tag) : false,
+          sourceBackedTag: name ? sourceKeywords.get(name)?.tags.has(tag) : false,
           duplicateTags: name ? krNameToTags.get(name) : undefined,
         })
         : slugifyKeywordIconPart(tag.replace(/ID$/, '')))
       const origins = [
         row?.in_db || (name ? dbUsedKeywords.has(name) : false) ? 'DB' : null,
-        row?.in_source || (name ? sourceIdentityKeywords.has(name) : false) ? 'source' : null,
+        row?.in_source || (name ? sourceKeywords.has(name) : false) ? 'source' : null,
       ].filter(Boolean).join('+') || 'none'
       console.log(`    ${tag}: ${name ?? '-'} / ${nameEn ?? '-'} / icon_slug=${iconSlug ?? '-'} / meta=${row ? 'included' : 'not-in-used-keywords'} / 포함=${origins}`)
     }
@@ -3711,6 +3849,8 @@ async function main(): Promise<void> {
             speed_max: computed.speed_max,
             def_level: computed.def_level,
             rarity: computed.rarity,
+            sin_affinity: computed.sin_affinity,
+            release_date: computed.release_date,
             game_id: computed.game_id,
             folder_name: computed.folder_name,
             affiliation: computed.affiliation,

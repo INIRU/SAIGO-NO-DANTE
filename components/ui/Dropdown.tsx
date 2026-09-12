@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, type CSSProperties } from 'react'
+import { useState, useRef, useEffect, useId, type CSSProperties } from 'react'
 import { ChevronDown } from 'lucide-react'
 
 export interface DropdownOption<T extends string = string> {
@@ -10,6 +10,7 @@ export interface DropdownOption<T extends string = string> {
 
 interface DropdownProps<T extends string = string> {
   value: T
+  ariaLabel?: string
   options: DropdownOption<T>[]
   onChange: (value: T) => void
   /** 버튼에 표시할 접두어 (예: "등급:") */
@@ -25,6 +26,7 @@ interface DropdownProps<T extends string = string> {
 
 export default function Dropdown<T extends string = string>({
   value,
+  ariaLabel,
   options,
   onChange,
   prefix,
@@ -35,6 +37,15 @@ export default function Dropdown<T extends string = string>({
 }: DropdownProps<T>) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
+  useEffect(() => {
+    if (!open) return
+    const buttons = ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
+    const selected = Math.max(0, options.findIndex(option => option.value === value))
+    buttons?.[selected]?.focus()
+    buttons?.[selected]?.scrollIntoView({ block: 'nearest' })
+  }, [open, options, value])
 
   // 외부 클릭 시 닫기
   useEffect(() => {
@@ -50,9 +61,24 @@ export default function Dropdown<T extends string = string>({
   const currentLabel = options.find(o => o.value === value)?.label ?? value
 
   return (
-    <div className={className ? `relative ${className}` : 'relative'} ref={ref}>
+    <div className={className ? `relative ${className}` : 'relative'} ref={ref} onKeyDown={event => {
+      if (event.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); event.stopPropagation(); return }
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+      event.preventDefault()
+      if (!open) { setOpen(true); return }
+      const buttons = Array.from(ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
+      const current = buttons.findIndex(button => button === document.activeElement)
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
+      buttons[next]?.focus()
+      buttons[next]?.scrollIntoView({ block: 'nearest' })
+    }}>
       <button
         type="button"
+        ref={triggerRef}
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
         style={{
@@ -89,7 +115,9 @@ export default function Dropdown<T extends string = string>({
       </button>
       {open && (
         <div
+          id={menuId}
           role="menu"
+          aria-label={ariaLabel}
           className="absolute top-full mt-1 left-0 z-30 rounded overflow-y-auto"
           style={{
             background: 'var(--bg-card)',
@@ -107,7 +135,7 @@ export default function Dropdown<T extends string = string>({
               role="menuitem"
               key={opt.value}
               onMouseDown={event => event.preventDefault()}
-              onClick={() => { onChange(opt.value); setOpen(false) }}
+              onClick={() => { onChange(opt.value); setOpen(false); triggerRef.current?.focus() }}
               className="block w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/5"
               style={{
                 cursor: 'pointer',

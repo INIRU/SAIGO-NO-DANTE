@@ -1,5 +1,9 @@
 'use client'
 
+import GiftGrade from '@/components/ui/GiftGrade'
+
+import { GIFT_BG_URL } from '@/lib/constants/gift'
+
 import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
@@ -9,9 +13,9 @@ import type { GiftData, RecipeData } from '@/lib/planner/types'
 import { findAvailableFusions, computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, getIdentityGiftConditionKeywords } from '@/lib/planner/gift-condition-status'
 import KeywordChart from '@/components/planner/KeywordChart'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { } from '@/lib/constants/game'
 import { BLUR_PLACEHOLDER } from '@/lib/utils/images'
-import { getKeywordSlug, getKeywordIconUrl, OCTAGON_CLIP, GRADE_ROMAN } from '@/components/planner/gift-plan/constants'
+import { getKeywordSlug, getKeywordIconUrl, OCTAGON_CLIP, } from '@/components/planner/gift-plan/constants'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 
 interface Props {
@@ -66,18 +70,16 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
                 <div style={{
                   position: 'relative', width: '100%', aspectRatio: '1',
                   clipPath: OCTAGON_CLIP, overflow: 'hidden',
-                  backgroundImage: `url(${STORAGE_BASE}/icons/ego-gift-bg.webp)`,
-                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  backgroundImage: `url(${GIFT_BG_URL})`,
+                  backgroundSize: 'contain', backgroundPosition: 'center',
                 }}>
-                  <span style={{
+                  <GiftGrade grade={gift.grade} style={{
                     position: 'absolute', top: '3%', left: '4%', zIndex: 10,
                     fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
                     fontWeight: 700, fontSize: '0.875rem', lineHeight: 1,
                     color: gift.grade === 'EX' ? '#c6ff2e' : '#fbb72e',
                     textShadow: '0 0 0.25rem rgba(0,0,0,0.8)',
-                  }}>
-                    {GRADE_ROMAN[gift.grade ?? '1'] ?? gift.grade}
-                  </span>
+                  }} />
                   <div style={{ position: 'absolute', inset: '15%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {gift.image_url ? (
                       <Image src={gift.image_url} alt={gift.name} fill style={{ objectFit: 'contain' }} sizes="48px" placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />

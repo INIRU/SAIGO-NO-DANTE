@@ -23,29 +23,29 @@ const MODE_VALUES = ['or', 'and'] as const
 const PINNED_DECK_KEYWORD_SET = new Set<string>(DECK_MAIN_KEYWORDS)
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const DECK_LIST_FILTER_BASE_SELECT = `
-        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username)
       `
 const DECK_LIST_FILTER_SELECT_WITH_SKILL_KEYWORDS = `
-        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, identities(id, keywords, skill_keyword_list, skills(atk_type, skill_type))),
         deck_egos(grade)
       `
 const DECK_LIST_FILTER_SELECT_LEGACY = `
-        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, identities(id, keywords)),
         deck_egos(grade)
       `
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
-        id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
         deck_egos(ego_id, grade)
       `
 const DECK_LIST_SELECT_LEGACY = `
-        id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
+        id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
         deck_egos(ego_id, grade)
@@ -581,6 +581,12 @@ export async function POST(request: NextRequest) {
         await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
         return NextResponse.json({ error: egoInsertError.message }, { status: 500 })
       }
+    }
+
+    const { error: activityError } = await admin.schema('limbus').rpc('community_record_deck', { p_deck_id: deck.id, p_user_id: userId })
+    if (activityError) {
+      await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+      return NextResponse.json({ error: '덱을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     await writeAuditLog({

@@ -1,0 +1,42 @@
+import "server-only";
+import type { createAdminClient } from "@/lib/supabase/admin";
+import type { CommunityProfile } from "./rules";
+export async function loadCommunityProfile(
+  db: ReturnType<typeof createAdminClient>,
+  id: string,
+  owner = false,
+): Promise<CommunityProfile | null> {
+  const profileResult = await db
+    .schema("limbus")
+    .from("profiles")
+    .select("id,username,bio,avatar_url,created_at,public_profile,suspended")
+    .eq("id", id)
+    .maybeSingle();
+  if (profileResult.error) throw new Error("Profile lookup failed");
+  const row = profileResult.data;
+  if (!row || (!owner && (!row.public_profile || row.suspended))) return null;
+  const [summary, decks] = await Promise.all([
+    db.schema("limbus").rpc("community_summary", { p_user_id: id }),
+    db
+      .schema("limbus")
+      .from("decks")
+      .select("id,title,description,vote_count,created_at,lang")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false })
+      .limit(24),
+  ]);
+  if (summary.error || decks.error) throw new Error("Community lookup failed");
+  // Never spread the database profile: IPs, device signals, email and account fields stay private.
+  return {
+    profile: {
+      id: row.id,
+      username: row.username,
+      bio: row.bio,
+      avatar_url: row.avatar_url,
+      created_at: row.created_at,
+      public_profile: row.public_profile,
+    },
+    stats: summary.data,
+    decks: decks.data ?? [],
+  };
+}

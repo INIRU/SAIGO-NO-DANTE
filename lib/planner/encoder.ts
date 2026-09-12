@@ -10,6 +10,9 @@ interface PlanData {
   sd?: SkillDistribution[] // S1/S2/S3 counts aligned with identity_ids
   e: string[]             // ego_ids
   f: (string | number | null)[] // floor theme_ids
+  fc?: number[][]
+  fg?: string[][]
+  fm?: string[]
   fd?: string[]           // per-floor difficulty short codes
   g: string[]             // gift inventory game_ids
   t?: string              // title
@@ -22,7 +25,10 @@ const SHORT_DIFF: Record<string, Difficulty> = { n: 'normal', h: 'hard', o: 'ove
 export async function encodePlan(state: PlannerState): Promise<string> {
   const pako = (await import('pako')).default
   const data: PlanData = {
-    v: 2,
+    v: 3,
+    fc: state.floorPlan.map(f => f.constraints ?? []),
+    fg: state.floorPlan.map(f => f.gift_ids),
+    fm: state.floorPlan.map(f => f.memo),
     d: DIFF_SHORT[state.difficulty],
     mk: state.mainKeywords,
     mkm: state.mainKeywordsManual,
@@ -50,6 +56,9 @@ export async function decodePlan(encoded: string): Promise<{
   skillDistributions: SkillDistribution[]
   egoIds: string[]
   floorThemeIds: (string | null)[]
+  floorConstraints: number[][]
+  floorGifts: string[][]
+  floorMemos: string[]
   floorDifficulties: Difficulty[]
   giftIds: string[]
   mainKeywords: string[]
@@ -84,6 +93,9 @@ export async function decodePlan(encoded: string): Promise<{
     egoIds: data.e ?? [],
     floorThemeIds,
     floorDifficulties,
+    floorConstraints: floorThemeIds.map((_, i) => Array.isArray(data.fc?.[i]) ? data.fc[i].filter(Number.isInteger) : []),
+    floorGifts: floorThemeIds.map((_, i) => Array.isArray(data.fg?.[i]) ? data.fg[i].filter(x => typeof x === "string") : []),
+    floorMemos: floorThemeIds.map((_, i) => typeof data.fm?.[i] === "string" ? data.fm[i] : ""),
     giftIds: data.g ?? [],
     mainKeywords: Array.isArray(data.mk) ? data.mk.filter((item): item is string => typeof item === 'string') : [],
     mainKeywordsManual: typeof data.mkm === 'boolean' ? data.mkm : Array.isArray(data.mk) && data.mk.length > 0,

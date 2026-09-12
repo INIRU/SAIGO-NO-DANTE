@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  getLunacyProductIconUrl,
   getSinnerLogoUrl,
   getSinnerProfileUrl,
   getIdentityProfileUrl,
@@ -45,6 +46,15 @@ describe('getSinnerProfileUrl', () => {
 })
 
 describe('getIdentityImageUrl', () => {
+  it('레거시 10414 폴더명도 검증된 원본의 같은 URL을 사용해야 한다', () => {
+    for (const suffix of ['normal', 'normal_info', 'gacksung', 'gacksung_info']) {
+      const filename = `10414_${suffix}`
+      const legacy = getIdentityImageUrl('ryoshu', 'Lobotomy E.G.O Faint Aroma Solitude', filename)
+      const source = getIdentityImageUrl('ryoshu', 'Lobotomy E.G.O Faint Aroma & Solitude', filename)
+      expect(legacy).toBe(source)
+      expect(legacy).toContain('Faint%20Aroma%20%26%20Solitude')
+    }
+  })
   it('폴더명을 URL 인코딩해야 한다', () => {
     const url = getIdentityImageUrl('ryoshu', 'R Corp 4th Pack', 'test')
     expect(url).toContain('R%20Corp%204th%20Pack')
@@ -147,4 +157,19 @@ describe('computeSkillImageIndices', () => {
   it('빈 배열이면 빈 객체를 반환해야 한다', () => {
     expect(computeSkillImageIndices([])).toEqual({})
   })
+})
+
+it('uses distinct recovered artwork for monthly memberships and the Lunacy Hoard', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { createHash } = await import('node:crypto')
+  const hashes = new Set()
+  for (const id of ['6', '21', '22']) {
+    const url = getLunacyProductIconUrl(id)
+    expect(url).toContain(`/resources/lunacy-${id}.webp?v=`)
+    const bytes = readFileSync('public' + url.split('?')[0])
+    const hash = createHash('sha256').update(bytes).digest('hex')
+    expect(url).toContain(hash.slice(0, 12))
+    hashes.add(hash)
+  }
+  expect(hashes.size).toBe(3)
 })

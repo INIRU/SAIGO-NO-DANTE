@@ -1,31 +1,21 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
-import { cacheLife, cacheTag } from 'next/cache'
-import { getSinners } from '@/lib/db/queries'
 import { getMetaData } from '@/lib/db/meta'
-import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MetaClient from './MetaClient'
+import styles from '@/styles/components/MetaAnalysis.module.css'
 
 export const metadata: Metadata = {
-  title: '메타 분석 | SAIGO NO DANTE',
-  description: '덱 데이터 기반 인격·키워드·시너지·EGO 채용률 통계',
-}
-
-async function fetchMetaSinners() {
-  'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.meta, CACHE_TAGS.gameData)
-  return getSinners()
+  title: '인격 메타 분석 | SAIGO NO DANTE',
+  description: '덱 게시판과 거울 던전 플래너의 공개 편성 기반 인격별 편성 순서·덱 용도·EGO 사용률 분석',
 }
 
 export default async function MetaPage() {
-  const [sinners, initialData] = await Promise.all([
-    fetchMetaSinners(),
-    getMetaData().catch(() => null),
-  ])
+  const t = await getTranslations('meta')
+  const initialData = await getMetaData().catch(() => null)
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-3 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className={styles.page}>
       {/* Background atmospheric glow */}
       <div style={{
         position: 'fixed',
@@ -40,26 +30,21 @@ export default async function MetaPage() {
       }} />
 
       {/* Server-rendered header — always in HTML for LCP */}
-      <div className="mb-6 md:mb-8">
+      <div className={styles.heading}>
         <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-          USAGE ANALYTICS
+          IDENTITY ANALYSIS
         </p>
-        <h1 className="font-serif text-3xl md:text-5xl font-bold mb-1" style={{ color: 'var(--gold)' }}>
-          메타 분석
+        <h1 >
+          {t('title')}
         </h1>
-        <p className="text-xs md:text-sm" style={{ color: '#666688' }}>
-          전체{' '}
-          <span className="font-mono" style={{ color: 'var(--gold)' }}>
-            {initialData?.totalDecks ?? 0}
-          </span>
-          개 덱 기반 통계
+        <p className="text-xs md:text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          {t('description')}
         </p>
-        <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
       </div>
 
-      {/* MetaClient uses GSAP and Motion for React; Suspense prevents CSR bailout. */}
+      {/* Query-state controls require a Suspense boundary. */}
       <Suspense fallback={null}>
-        <MetaClient sinners={sinners} initialData={initialData} />
+        <MetaClient initialData={initialData} />
       </Suspense>
     </div>
   )

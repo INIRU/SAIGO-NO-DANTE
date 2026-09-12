@@ -1,7 +1,10 @@
 'use client'
 
+import { getFormationBannerUrl } from '@/lib/utils/images'
+
 import { useMemo, type CSSProperties } from 'react'
 import Image from 'next/image'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { RefreshCcw, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import BaseModal from '@/components/ui/BaseModal'
@@ -239,7 +242,7 @@ export function PlannerIdentityBoard({
                   </div>
                   <div className="absolute right-0 top-0 w-[36%] opacity-15">
                     <Image
-                      src={`${STORAGE_BASE}/sinners/${sinner.id}/number.webp`}
+                      src={getGameUiAsset(`sinners/${sinner.id}`)}
                       alt=""
                       width={389}
                       height={1023}
@@ -253,14 +256,12 @@ export function PlannerIdentityBoard({
                 </>
               )}
 
-              {identity && isFormed && (() => {
-                const n = (slotOrder ?? 0) + 1
-                const isFormation = n <= 7
+              {identity && slotOrder != null && (() => {
+                const n = slotOrder >= 99 ? null : slotOrder + 1
+                const isFormation = n != null && n <= 7
                 return (
                   <div className="planner-deck-identity-card__formation pointer-events-none">
-                    <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.75rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                      {isFormation ? t('formed') : t('bench')}
-                    </span>
+                    <Image src={getFormationBannerUrl(isFormation ? 'selected' : 'backup')} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
                     <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                       {n}
                     </span>
@@ -365,6 +366,7 @@ export function PlannerIdentityBoard({
           display: flex;
           align-items: center;
           justify-content: center;
+          padding-bottom: 30%;
           background: rgba(13,11,8,0.5);
         }
         .planner-deck-identity-card__overlay {

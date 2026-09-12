@@ -1,7 +1,9 @@
 'use client'
 
+
+import { getDetailStatIconUrl } from '@/lib/utils/images'
 import Image from 'next/image'
-import { Identity, STORAGE_BASE } from '@/lib/data/sinners'
+import { Identity } from '@/lib/data/sinners'
 import { useTranslations } from 'next-intl'
 
 interface IdentityStatsCardProps {
@@ -15,9 +17,9 @@ export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsC
   const defCorrStr = defCorr === 0 ? '' : defCorr > 0 ? `(+${defCorr})` : `(${defCorr})`
 
   const stats = [
-    { label: 'HP', value: String(identity.hp), iconUrl: `${STORAGE_BASE}/icons/stats/health.webp` },
-    { label: t('identity.stats.speed'), value: `${identity.speed_min}-${identity.speed_max}`, iconUrl: `${STORAGE_BASE}/icons/stats/speed.webp` },
-    { label: t('identity.stats.defLevel'), value: `${identity.def_level}${defCorrStr}`, iconUrl: `${STORAGE_BASE}/icons/stats/defense.webp` },
+    { label: 'HP', value: String(identity.hp), iconUrl: getDetailStatIconUrl('health') },
+    { label: t('identity.stats.speed'), value: `${identity.speed_min}-${identity.speed_max}`, iconUrl: getDetailStatIconUrl('speed') },
+    { label: t('identity.stats.defLevel'), value: `${identity.def_level}${defCorrStr}`, iconUrl: getDetailStatIconUrl('defense') },
   ]
 
   const breakSection = identity.break_section

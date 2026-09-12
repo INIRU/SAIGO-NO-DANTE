@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import { parseNoteImage } from '@/lib/notes/images'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
-import { PlannerPassiveNoteRow } from '@/components/planner/PlannerPassivePanel'
+import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import GiftCard from '@/components/ui/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/sinners/KeywordTooltip'
@@ -265,7 +266,7 @@ function SkillFramePlaceholder({
 function PassiveBlockPlaceholder({ entry }: { entry: NotePassiveEntry }) {
   return (
     <div style={{ margin: '0.75rem 0' }}>
-      <PlannerPassiveNoteRow
+      <PassiveNoteRow
         passive={{
           identity_id: entry.sinnerName,
           name: entry.name,
@@ -851,6 +852,12 @@ export function NoteRenderer({
   let i = 0
   while (i < lines.length) {
     const line = lines[i]
+    const image = parseNoteImage(line)
+    if (image) {
+      blocks.push(<figure key={`image-${i}`} className="my-4"><Image src={image.src} alt={image.alt} width={1920} height={1920} unoptimized className="h-auto max-h-[70dvh] w-auto max-w-full rounded-sm object-contain" /></figure>)
+      i += 1
+      continue
+    }
     if (!line.trim()) {
       blocks.push(<div key={`blank-${i}`} style={{ height: '0.5rem' }} />)
       i += 1
@@ -964,7 +971,7 @@ export function NoteRenderer({
     let j = i + 1
     while (j < lines.length) {
       const next = lines[j]
-      if (!next.trim()) break
+      if (!next.trim() || parseNoteImage(next)) break
       if (
         next.match(/^(#{1,2})\s+(.+)$/) ||
         next.match(/^>\s?(.*)$/) ||
