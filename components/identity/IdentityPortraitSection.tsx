@@ -272,16 +272,16 @@ export default function IdentityPortraitSection({
 
         {/* 인격 대사 */}
         {identity.quote && (
-          <div
-            className="text-xs italic px-3 py-2.5 rounded leading-relaxed"
+          <blockquote
+            className="px-3 py-3 rounded text-[1rem] font-medium leading-[1.75] break-words"
             style={{
               background: `${sinColor}08`,
               borderLeft: `2px solid ${sinColor}60`,
-              color: '#9e9e9e',
+              color: 'var(--text-secondary)',
             }}
           >
             &ldquo;{identity.quote}&rdquo;
-          </div>
+          </blockquote>
         )}
       </div>
     </>

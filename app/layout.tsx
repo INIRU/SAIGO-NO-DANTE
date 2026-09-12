@@ -109,8 +109,9 @@ const scDream = localFont({
 })
 
 const pretendard = localFont({
-  src: '../public/fonts/Pretendard-Regular.woff2',
-  weight: '400',
+  src: '../public/fonts/PretendardVariable.woff2',
+  weight: '45 920',
+  style: 'normal',
   variable: '--font-pretendard',
   display: 'swap',
   preload: true,

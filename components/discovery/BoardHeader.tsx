@@ -17,7 +17,7 @@ export default function BoardHeader({ kind, lang, title, subtitle, eyebrow, acti
           <ArrowLeft size={19} className="transition-transform duration-200 group-hover:-translate-x-1 motion-reduce:transform-none" />
           {back}
         </Link>
-        <Link href={kind === 'deck' ? '/decks/new' : '/planner'} className="flex min-h-11 shrink-0 items-center gap-2 rounded px-4 text-sm font-semibold text-[var(--bg-deep)] bg-[var(--gold)] transition-colors hover:brightness-110">
+        <Link href={kind === 'deck' ? '/decks/new' : '/planner'} className="flex min-h-11 shrink-0 items-center gap-2 rounded px-4 text-[1rem] font-semibold text-[var(--bg-deep)] bg-[var(--gold)] transition-colors hover:brightness-110">
           <Plus size={15} />{action}
         </Link>
       </div>
