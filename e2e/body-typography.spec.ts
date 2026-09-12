@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test'
+
+test.use({ channel: 'chrome' })
+
+for (const width of [1440, 390]) test(`body font weights and readable labels at ${width}px`, async ({ page }) => {
+  test.setTimeout(90000)
+  await page.setViewportSize({ width, height: 1000 })
+  await page.goto('/ko/planner/community', { waitUntil: 'domcontentloaded' })
+  const action = page.getByRole('link', { name: '새 플랜 만들기', exact: true })
+  await expect(action).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+  const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize))
+  await expect(action).toHaveCSS('font-size', `${rem}px`)
+  await expect(action).toHaveCSS('font-weight', '600')
+  // Check the rendered Korean glyphs, not merely the declared CSS family.
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('DOM.enable')
+  await cdp.send('CSS.enable')
+  const { root } = await cdp.send('DOM.getDocument')
+  const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '.board-header a[href="/ko/planner"]' })
+  const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+  expect(fonts.some(font => font.isCustomFont && font.familyName === 'Pretendard Variable' && font.glyphCount > 0)).toBe(true)
+  expect(await page.evaluate(() => [...document.fonts].some(font => font.family.includes('pretendard') && font.weight === '45 920' && font.status === 'loaded'))).toBe(true)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
+  await page.screenshot({ path: `/tmp/font-board-${width}.png` })
+
+  await page.goto('/ko/sinners/yi-sang', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /LCB 수감자/ }).click()
+  await page.waitForURL('**/identities/**', { waitUntil: 'domcontentloaded' })
+  const quote = page.getByRole('blockquote')
+  await expect(quote).toContainText('이상이라고 하오')
+  await expect(quote).toHaveCSS('font-size', `${rem}px`)
+  await expect(quote).toHaveCSS('font-weight', '500')
+  await expect(quote).toHaveCSS('font-style', 'normal')
+  await quote.scrollIntoViewIfNeeded()
+  await page.evaluate(() => document.fonts.ready)
+  await page.screenshot({ path: `/tmp/font-quote-${width}.png` })
+})
