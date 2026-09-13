@@ -47,6 +47,8 @@ BEGIN
   ASSERT NOT EXISTS(SELECT 1 FROM limbus.discovery_recent_edits('planner') WHERE entity_id=p::text);
   INSERT INTO limbus.audit_logs(actor_id,action,target_type,target_id) VALUES(a,'deck_update','deck',d::text),(a,'deck_update','deck',d::text),(a,'planner_update','planner',p::text);
   ASSERT (SELECT count(*)=1 FROM limbus.discovery_recent_edits('deck') WHERE entity_id=d::text);
+  ASSERT NOT EXISTS(SELECT 1 FROM limbus.discovery_recent_edits('planner') WHERE entity_id=p::text);
+  UPDATE limbus.md_plans SET title='Actually edited fixture' WHERE id=p;
   ASSERT (SELECT count(*)=1 FROM limbus.discovery_recent_edits('planner') WHERE entity_id=p::text);
   ASSERT NOT has_function_privilege('anon','limbus.discovery_recent_edits(text)','execute');
 END $$;
