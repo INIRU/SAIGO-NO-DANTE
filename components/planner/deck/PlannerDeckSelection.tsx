@@ -2,7 +2,7 @@
 
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
-import { getFormationBannerUrl } from '@/lib/utils/images'
+import { getFormationOverlay } from '@/components/decks/FormationBoard'
 
 import { useMemo, type CSSProperties } from 'react'
 import Image from 'next/image'
@@ -194,7 +194,7 @@ export function PlannerIdentityBoard({
         const identityName = boardSlot?.identityName ?? (identity ? localizeIdentityName(identity, locale) : '')
         const sinnerName = getLocalizedSinnerName(sinner)
         const rarityColor = identity ? (RARITY_COLORS[identity.rarity] ?? RARITY_COLORS[1]) : null
-        const isFormed = slotOrder != null && slotOrder < 99
+        const isFormed = slotOrder != null && slotOrder >= 0 && slotOrder < 99
 
         return (
           <motion.div
@@ -262,13 +262,14 @@ export function PlannerIdentityBoard({
 
               {identity && isFormed && (() => {
                 const n = slotOrder! + 1
-                const isFormation = n <= 6
+                const overlay = getFormationOverlay(slotOrder)!
+                const isFormation = overlay.kind === 'selected'
                 return (
                   <div className="planner-deck-identity-card__formation pointer-events-none">
                     {formationStyle === 'banner' ? (
-                      <Image src={getFormationBannerUrl(isFormation ? 'selected' : 'backup')} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
+                      <Image src={overlay.bannerUrl} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
                     ) : (
-                      <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: '#e8b030', textShadow: '0 0.125rem 0.5rem #000' }}>{t('formed')}</span>
+                      <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: '0 0.125rem 0.5rem #000' }}>{isFormation ? t('formed') : t('bench')}</span>
                     )}
                     <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                       {n}

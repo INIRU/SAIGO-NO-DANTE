@@ -33,7 +33,7 @@ type FormationBoardProps = {
   className?: string
 }
 
-const FRONTLINE_SLOT_COUNT = 6
+const FRONTLINE_SLOT_COUNT = 7
 const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
 const BACKUP_BANNER_URL = getFormationBannerUrl('backup')
 
