@@ -524,7 +524,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [voteCount, setVoteCount] = useState(0)
   const [voting, setVoting] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [selectedSinner, setSelectedSinner] = useState<string | null>(null)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
   const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
 
@@ -773,25 +772,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     }
     return grouped
   }, [deck?.deck_egos])
-  const egoSinnerIds = useMemo(() => Object.keys(egoGrouped), [egoGrouped])
-
-  // 수감자별 그룹핑
-  const slotsBySinner = useMemo(() => filledSlots.reduce<Record<string, IdentitySlot[]>>((acc, slot) => {
-    const sid = slot.identities!.sinner_id
-    ;(acc[sid] ??= []).push(slot)
-    return acc
-  }, {}), [filledSlots])
-  const sinnerIds = useMemo(() => [
-    ...Object.keys(slotsBySinner),
-    ...egoSinnerIds.filter(sid => !slotsBySinner[sid]),
-  ].sort((a, b) => {
-    const ai = SINNER_ORDER.indexOf(a as typeof SINNER_ORDER[number])
-    const bi = SINNER_ORDER.indexOf(b as typeof SINNER_ORDER[number])
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-  }), [egoSinnerIds, slotsBySinner])
-
-  const activeSinner = selectedSinner ?? sinnerIds[0] ?? null
-
   const date = deck ? deck.created_at.slice(0, 10).replace(/-/g, '.') : ''
   const noteLookups = useMemo(
     () => buildNoteLookups(sorted, deck?.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`)),
@@ -1038,18 +1018,15 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                     slots={boardSlots.map((slot, index): FormationBoardSlot => {
                       const id_ = slot?.identities ?? null
                       const identityName = id_ ? localizeIdentityName(id_, locale) : ''
-                      const isActive = !!id_ && activeSinner === id_.sinner_id
 
                       return {
                         key: `${id_?.id ?? 'empty'}-${index}`,
                         identity: id_ ? adaptBoardIdentity(id_, locale) : null,
                         slotOrder: slot?.slot_order ?? null,
                         gacksung: slot?.gacksung ?? false,
-                        selected: isActive,
                         ariaLabel: id_ ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
                         onClick: id_ && slot
                           ? () => {
-                              setSelectedSinner(id_.sinner_id)
                               setIdentityPreview({ slot })
                             }
                           : undefined,
