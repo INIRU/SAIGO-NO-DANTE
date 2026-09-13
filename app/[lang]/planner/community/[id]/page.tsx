@@ -1,3 +1,4 @@
+import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: { images: [{ url: absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`), width: 1200, height: 630, alt: plan.title }] },
     twitter: { card: 'summary_large_image', images: [absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`)] },
     description: plan.description
-      ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: plan.description })
+      ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: notePlainText(plan.description).slice(0,160) })
       : tDetail('metaDescription', { difficulty: diff }),
   }
 }

@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import NoteBlockViewer from '@/components/notes/NoteBlockViewer'
+import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
@@ -655,6 +657,9 @@ export function NoteRenderer({
   const formatSkillDesc = useFormatSkillDesc()
   const locale = useLocale()
   if (!text.trim()) return null
+  const doc = parseBlockDocument(text)
+  if (doc) return <NoteBlockViewer doc={doc} renderText={value => <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline />} />
+  if (text.startsWith(NOTE_PREFIX)) return null
 
   const renderMarkdownInline = (value: string, keyPrefix: string): React.ReactNode[] => {
     const nodes: React.ReactNode[] = []

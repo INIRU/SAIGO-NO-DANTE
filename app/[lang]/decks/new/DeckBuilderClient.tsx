@@ -1,5 +1,7 @@
 'use client'
 
+import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
+
 import { showError } from '@/lib/toast'
 
 import { useState, useMemo, useEffect } from 'react'
@@ -336,6 +338,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
 
   const handleSave = async () => {
+    if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     if (!title.trim() || identityCount < 12 || !contentType) return
     setSaving(true)
     const identitySlots = sinners
@@ -371,6 +374,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
 
   const handleSaveDraft = () => {
+    if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     const draft = {
       title,
       contentType,

@@ -38,7 +38,7 @@ import {
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
 import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
-import { DeckSidebarPanel, DeckMobileActionBar } from '@/components/deck-detail/DeckDetailHeader'
+import { DeckSidebarPanel } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -102,7 +102,7 @@ type DeckDetail = {
   is_owner?: boolean
   is_admin?: boolean
   user_id: string
-  profiles: { username: string } | null
+  profiles: { username: string; avatar_url?: string | null } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
   all_sinner_egos?: SinnerEgo[]
@@ -470,7 +470,7 @@ function buildNoteLookups(
 // ── 스켈레톤 ──────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="min-h-[100dvh]" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh] pt-16" style={{ background: '#0d0b08' }}>
       <div style={{ height: '360px', background: 'linear-gradient(to bottom, #080604, #0d0b08)' }} />
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6 flex gap-5">
         <div className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
@@ -913,31 +913,30 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }
 
   return (
-    <div className="min-h-[100dvh]" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh] pt-16" style={{ background: '#0d0b08' }}>
 
       {/* ── 플래너 스타일 헤더 ── */}
       <motion.div
-        className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-4"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        className="deck-detail-heading max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-5"
+        style={{ borderBottom: '1px solid #3a2a1566' }}
         variants={shouldReduceMotion ? undefined : workbenchReveal}
         initial={shouldReduceMotion ? false : 'initial'}
         animate="animate"
       >
         {/* 라인 1: 뒤로가기 + 제목 */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col items-start gap-4 mb-4">
           <Link
             href="/decks"
             locale={locale}
             className="inline-flex items-center gap-1 transition-opacity hover:opacity-70 flex-shrink-0"
-            style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+            style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}
           >
             <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
             {t('backToList')}
           </Link>
-          <span style={{ color: 'var(--border)', fontSize: 'var(--text-xs)' }}>/</span>
           <h1
-            className="font-serif font-light leading-tight truncate"
-            style={{ color: 'var(--text-primary)', fontSize: 'clamp(1.1rem, 2.8vw, 1.5rem)' }}
+            className="font-bold leading-tight break-words"
+            style={{ color: 'var(--text-primary)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontFamily: 'var(--font-heading)' }}
           >
             {deck.title}
           </h1>
@@ -945,7 +944,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         {/* 라인 2: 메타 + 액션 버튼 */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* 왼쪽: 작성자 · 날짜 · 조회수 */}
-          <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          <div className="flex items-center gap-2" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            {deck.profiles?.avatar_url && <img src={deck.profiles.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover"/>}
             {deck.profiles?.username && (
               <Link href={`/users/${deck.user_id}`} className="text-[var(--text-secondary)] hover:text-[var(--gold)] hover:underline">{deck.profiles.username}</Link>
             )}
@@ -961,7 +961,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             </span>
           </div>
           {/* 오른쪽: 액션 버튼 */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="deck-detail-actions flex items-center gap-2 flex-wrap">
+            {(deck.is_owner || deck.is_admin) && <Link href={`/decks/${id}/edit`} className="deck-detail-edit">{t('editDeck')}</Link>}
             <CompactButton
               icon={voted ? Heart : Heart}
               onClick={handleVote}
@@ -992,7 +993,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             <CompactButton
               icon={GitFork}
               onClick={handleFork}
-              variant="muted"
+              variant="gold"
               title={t('fork')}
             >
               {t('fork')}
@@ -1019,22 +1020,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         animate="animate"
       >
 
-        {/* 모바일 액션바 */}
-        <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
-          <DeckMobileActionBar {...headerProps} />
-        </motion.div>
-
-        <div className="flex gap-5 items-start">
-
-          {/* 데스크탑 사이드바 */}
-          <motion.aside
-            className="hidden lg:block"
-            style={{ width: '15.75rem', flexShrink: 0 }}
-            variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-          >
-            <DeckSidebarPanel {...headerProps} />
-          </motion.aside>
-
+        <div>
           {/* 수감자 탭 + 인격 상세 */}
           <motion.main className="flex-1 min-w-0" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
             {filledSlots.length === 0 ? (
@@ -1078,6 +1064,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 </motion.section>
 
 
+                <SectionBlock title={locale === 'ko' ? '편성 분석 · 패시브' : locale === 'ja' ? '編成分析・パッシブ' : 'Formation analysis · Passives'} defaultOpen={false}>
+                  <DeckSidebarPanel {...headerProps} analysisOnly />
+                  <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
+                </SectionBlock>
+
                 {/* 덱 노트 */}
                 {deck.description?.trim() && (
                   <>
@@ -1085,9 +1076,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                       .deck-detail-note-section{
                         position:relative;
                         overflow:hidden;
-                        border:1px solid rgba(200,144,10,.24);
+                        border:0;
                         border-radius:.5rem;
-                        background:#14100c;
+                        background:transparent;
                       }
                       .deck-detail-note-section::before{
                         content:"";
@@ -1233,7 +1224,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                       }
                     `}</style>
                     <motion.section
-                      className="deck-detail-note-section mb-5"
+                      className="deck-detail-note-section mb-5 mt-8"
                       aria-labelledby="deck-detail-note-title"
                       variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                     >
@@ -1332,12 +1323,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   </>
                 )}
 
-                {/* 패시브 패널 */}
-                <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
-                  <SectionBlock title={t('passives')} defaultOpen={true}>
-                    <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
-                  </SectionBlock>
-                </motion.div>
 
                 <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                   <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />

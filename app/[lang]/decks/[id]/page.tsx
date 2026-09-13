@@ -1,3 +1,4 @@
+import { notePlainText } from '@/lib/notes/blocks'
 import * as Sentry from '@sentry/nextjs'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
@@ -7,9 +8,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
-import DeckHero from '@/components/deck-detail/DeckHero'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
-import type { HeroSlot } from '@/components/deck-detail/DeckHero'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
@@ -19,7 +18,6 @@ const MAX_CANDIDATE_DECKS = 96
 const MAX_EXACT_OVERLAP_CANDIDATES = 128
 const OTHER_OPINIONS_LIMIT = 3
 const SIMILAR_DECKS_LIMIT = 6
-const EMPTY_HERO_SLOTS: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
 
 function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
@@ -529,7 +527,7 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
 
   const title = data.title
   const description = data.description
-    ? data.description.slice(0, 160)
+    ? notePlainText(data.description).slice(0, 160)
     : `${data.title} — 림버스 컴퍼니 덱 빌드`
   const canonical = absoluteUrl(`/${lang}/decks/${id}`)
   const ogImage = absoluteUrl(`/${lang}/decks/${id}/opengraph-image`)
@@ -562,7 +560,6 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
   let initialDeck = null
   let initialComments: Comment[] = []
   let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
-  let heroSlots: (HeroSlot | null)[] = Array.from({ length: 12 }, () => null)
 
   try {
     const supabase = createDeckReadClient()
@@ -637,24 +634,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         return a.slot_order - b.slot_order
       })
 
-      // Build hero slots for server-side render
-      heroSlots = Array.from({ length: 12 }, (_, i) => {
-        const slot = sortedIdentities[i]
-        if (!slot) return null
-        const id_ = slot.identities
-        return {
-          slot_order: slot.slot_order,
-          gacksung: slot.gacksung ?? null,
-          identities: id_
-            ? {
-                sinner_id: id_.sinner_id,
-                folder_name: id_.folder_name ?? null,
-                game_id: id_.game_id ?? null,
-                rarity: id_.rarity,
-              }
-            : null,
-        } satisfies HeroSlot
-      })
+
 
       initialDeck = {
         ...data,
@@ -705,7 +685,6 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
     initialDeck,
     initialComments,
     initialRecommendations,
-    heroSlots,
   }
 }
 
@@ -719,7 +698,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function DeckDetailFallback() {
   return (
     <>
-      <DeckHero slots={EMPTY_HERO_SLOTS} />
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
           <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '20rem', marginBottom: '1rem' }} />
@@ -738,12 +716,10 @@ async function DeckDetailRuntime({ params }: Props) {
     initialDeck,
     initialComments,
     initialRecommendations,
-    heroSlots,
   } = await getCachedDeckDetailPayload(lang, id)
 
   return (
     <>
-      {initialDeck ? <DeckHero slots={heroSlots} /> : null}
       <Suspense fallback={
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>

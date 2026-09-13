@@ -1,5 +1,7 @@
 'use client'
 
+import { notePlainText } from '@/lib/notes/blocks'
+
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
@@ -106,7 +108,7 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
     const grade = typeof ego.grade === 'string' ? ego.grade.trim().toUpperCase() : ''
     return grade !== '' && grade !== 'ZAYIN'
   })
-  const hasDescription = (deck.description?.trim().length ?? 0) >= 20
+  const hasDescription = notePlainText(deck.description ?? '').length >= 20
   const infoScore = Number(hasFormationOrder) + Number(hasNonDefaultEgo) + Number(hasDescription)
   const persistedMainKeywords = (deck.main_keywords ?? [])
     .map(normalizeDeckMainKeyword)

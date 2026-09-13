@@ -1,0 +1,179 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { Node, Extension, type Editor, type JSONContent } from '@tiptap/core'
+import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { useLocale } from 'next-intl'
+import useSWR from 'swr'
+import { toast } from 'sonner'
+import { Plus, ChevronDown, X, Search, GripVertical } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
+import Dropdown from '@/components/ui/Dropdown'
+import { BLOCK_LABELS, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
+import { assetName, type NoteAssetData } from '@/lib/notes/assets'
+import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
+import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
+
+const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
+function AssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {
+  const lang=useLocale(), [query,setQuery]=useState(''), [debounced,setDebounced]=useState(''), [offset,setOffset]=useState(0), [grade,setGrade]=useState('')
+  useEffect(()=>{const timer=setTimeout(()=>{setDebounced(query);setOffset(0)},180);return()=>clearTimeout(timer)},[query])
+  const {data,error,isLoading,mutate}=useSWR(`/api/notes/assets?kind=${kind}&q=${encodeURIComponent(debounced)}&offset=${offset}&grade=${grade}`,fetchNoteAssets,{revalidateOnFocus:false})
+  return <BaseModal open onClose={onClose} title={`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`} maxWidth="48rem" zIndex={10000}>
+    <div className={`note-picker note-picker--${kind}`}>
+      <header className="note-picker-header"><h2>{blockLabel(kind,lang)} {tr(lang,'선택','選択','selection')}</h2><button type="button" onClick={onClose} aria-label={tr(lang,'닫기','閉じる','Close')}><X size={20}/></button></header>
+      <div className="note-picker-controls">
+      <label className="note-picker-search"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr(lang,'이름으로 검색','名前で検索','Search by name')} aria-label={tr(lang,'에셋 검색','アセット検索','Search assets')}/></label>
+      {kind==='gift' && <Dropdown ariaLabel={tr(lang,'기프트 등급','ギフトランク','Gift tier')} value={grade} onChange={value=>{setGrade(value);setOffset(0)}} defaultValue="" className="note-tier-dropdown" options={[{value:'',label:tr(lang,'모든 등급','すべてのランク','All tiers')},...['I','II','III','IV','V'].map((label,i)=>({value:String(i+1),label}))]} buttonStyle={{height:'100%',minHeight:'2.75rem',fontSize:'.875rem'}}/>}
+      </div>
+      <div className="note-picker-results" key={`${debounced}-${offset}-${grade}`}>
+      {isLoading && <p role="status">{tr(lang,'불러오는 중…','読み込み中…','Loading…')}</p>}
+      {error && <button type="button" onClick={()=>{void mutate()}}>{tr(lang,'불러오지 못했습니다. 다시 시도','読み込み失敗・再試行','Could not load. Retry')}</button>}
+      {!isLoading && !error && data?.length===0 && <p>{tr(lang,'검색 결과가 없습니다','結果がありません','No results')}</p>}
+      <div className={`note-picker-grid ${kind==='skill'?'note-picker-grid--skills':''}`}>
+        {data?.map(a=><button type="button" key={a.id} className="note-picker-item" onClick={()=>onSelect(a)} aria-label={assetName(a,lang)}><div className="note-picker-artwork"><NoteAssetArtwork asset={a} compact/></div><span>{assetName(a,lang)}</span>{a.sinnerName && <small>{a.sinnerName}</small>}</button>)}
+      </div>
+      </div>
+      <div className="note-picker-pages"><button type="button" disabled={!offset} onClick={()=>setOffset(Math.max(0,offset-24))}>{tr(lang,'이전','前へ','Previous')}</button><span>{Math.floor(offset/24)+1}</span><button type="button" disabled={!data || data.length<24} onClick={()=>setOffset(offset+24)}>{tr(lang,'다음','次へ','Next')}</button></div>
+    </div>
+  </BaseModal>
+}
+function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps) {
+  const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as AssetKind
+  const title=`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`
+  return <NodeViewWrapper className={`note-asset-node note-asset-node--${kind}`} data-selected={selected || undefined} contentEditable={false}>
+    <div className="note-block-actions"><span data-drag-handle aria-hidden="true"><GripVertical size={14}/></span><button type="button" onClick={deleteNode} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button></div>
+    {node.attrs.id ? <><NoteAssetView kind={kind} id={node.attrs.id}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className={`note-empty-slot note-empty-slot--${kind}`} onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
+    {picking && <AssetPicker kind={kind} onClose={()=>setPicking(false)} onSelect={a=>{updateAttributes({id:a.id});setPicking(false)}}/>}
+  </NodeViewWrapper>
+}
+function KeywordNodeView({node,updateAttributes}:NodeViewProps) {
+  const [picking,setPicking]=useState(false), lang=useLocale()
+  return <NodeViewWrapper as="span" className="note-keyword-node" contentEditable={false}>
+    {node.attrs.id ? <NoteKeywordLabel id={node.attrs.id}/> : <button type="button" aria-label={`${blockLabel('keyword',lang)} ${tr(lang,'선택','選択','selection')}`} className="note-keyword-insert" onClick={()=>setPicking(true)}><Plus size={14}/>{blockLabel('keyword',lang)}</button>}
+    {picking && <AssetPicker kind="keyword" onClose={()=>setPicking(false)} onSelect={asset=>{updateAttributes({id:asset.id});setPicking(false)}}/>}
+  </NodeViewWrapper>
+}
+export const NoteKeyword = Node.create({name:'noteKeyword',group:'inline',inline:true,atom:true,
+  addAttributes(){return {id:{default:''}}},
+  parseHTML(){return [{tag:'span[data-note-keyword]',getAttrs:el=>({id:(el.getAttribute('data-note-keyword') ?? '').slice(0,150)})}]},
+  renderHTML({node}){return ['span',{'data-note-keyword':node.attrs.id},node.attrs.id]},
+  renderText({node}){return node.attrs.id},
+  addNodeView(){return ReactNodeViewRenderer(KeywordNodeView)},
+})
+function AccordionNodeView({deleteNode}:NodeViewProps) {
+  const lang=useLocale(),[closed,setClosed]=useState(false)
+  return <NodeViewWrapper className="note-accordion note-accordion-editor" data-collapsed={closed || undefined}>
+    <button type="button" className="note-accordion-toggle" contentEditable={false} aria-expanded={!closed} aria-label={tr(lang,'아코디언 접기 또는 펼치기','アコーディオン開閉','Toggle accordion')} onClick={()=>setClosed(!closed)}><ChevronDown size={18}/></button>
+    <button type="button" className="note-accordion-delete" contentEditable={false} aria-label={tr(lang,'아코디언 삭제','アコーディオン削除','Delete accordion')} onClick={deleteNode}><X size={14}/></button>
+    <NodeViewContent className="note-accordion-content"/>
+  </NodeViewWrapper>
+}
+function VideoNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
+  const lang=useLocale(),[url,setUrl]=useState(''),[error,setError]=useState(false)
+  return <NodeViewWrapper className="note-video-editor" contentEditable={false}>
+    <button type="button" className="note-video-delete" onClick={deleteNode} aria-label={tr(lang,'영상 삭제','動画削除','Delete video')}><X size={16}/></button>
+    {node.attrs.videoId ? <NoteVideo id={node.attrs.videoId}/> : <form noValidate className="note-video-input" onSubmit={e=>{e.preventDefault();const id=youtubeId(url);setError(!id);if(id)updateAttributes({videoId:id})}}><strong>YouTube</strong><input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" aria-label={tr(lang,'유튜브 링크','YouTubeリンク','YouTube URL')}/><button type="submit">{tr(lang,'영상 넣기','動画を挿入','Insert video')}</button>{error && <span role="alert">{tr(lang,'올바른 유튜브 영상 링크를 입력하세요','有効なYouTube動画URLを入力してください','Enter a valid YouTube video URL')}</span>}</form>}
+  </NodeViewWrapper>
+}
+export function insertNoteBlock(editor:Editor,kind:BlockKind,range?:{from:number;to:number}) {
+  const chain=editor.chain().focus()
+  if(range)chain.deleteRange(range)
+  chain.insertContent(kind==='keyword' ? [newBlock(kind),{type:'text',text:' '}] : [newBlock(kind),{type:'paragraph'}]).run()
+}
+export const NoteAsset = Node.create({name:'noteAsset',group:'block',atom:true,draggable:true,
+  addAttributes(){return {kind:{default:'gift'},id:{default:''}}},
+  parseHTML(){return [{tag:'div[data-note-asset]',getAttrs:el=>{const kind=el.getAttribute('data-note-asset'),id=el.getAttribute('data-asset-id') ?? '';return isAssetKind(kind)&&id.length<=150?{kind,id}:false}}]}, renderHTML({node}){return ['div',{'data-note-asset':node.attrs.kind,'data-asset-id':node.attrs.id}]},
+  addNodeView(){return ReactNodeViewRenderer(AssetNodeView)},
+})
+export const NoteAccordion = Node.create({name:'noteAccordion',group:'block',content:'noteTitle noteBody',defining:true,isolating:true,
+  parseHTML(){return [{tag:'section[data-note-accordion]'}]},renderHTML(){return ['section',{'data-note-accordion':''},0]},addNodeView(){return ReactNodeViewRenderer(AccordionNodeView)},
+})
+export const NoteTitle = Node.create({name:'noteTitle',content:'inline*',defining:true,
+  parseHTML(){return [{tag:'div[data-note-title]'}]},renderHTML(){return ['div',{'data-note-title':''},0]},
+  addKeyboardShortcuts(){return {Enter:()=>{const {$from}=this.editor.state.selection;if($from.parent.type.name!=='noteTitle')return false;return this.editor.commands.setTextSelection($from.after()+2)}}},
+})
+export const NoteBody = Node.create({name:'noteBody',content:'block+',defining:true,
+  parseHTML(){return [{tag:'div[data-note-body]'}]},renderHTML(){return ['div',{'data-note-body':''},0]},
+})
+export const NoteVideoNode = Node.create({name:'noteVideo',group:'block',atom:true,draggable:true,
+  addAttributes(){return {videoId:{default:''}}},parseHTML(){return [{tag:'div[data-note-video]',getAttrs:el=>{const videoId=el.getAttribute('data-note-video') ?? '';return /^[\w-]{11}$/.test(videoId)?{videoId}:false}}]},renderHTML({node}){return ['div',{'data-note-video':node.attrs.videoId}]},addNodeView(){return ReactNodeViewRenderer(VideoNodeView)},
+})
+export const NoteUpload = Node.create({name:'noteUpload',group:'block',atom:true,
+  addAttributes(){return {id:{default:''}}},renderHTML(){return ['div',{'class':'note-upload','role':'status'},'↑ …']},
+})
+export async function uploadNoteFiles(editor:Editor,files:File[],lang:string,position?:number) {
+  for (const file of files) {
+    if (editor.isDestroyed) return
+    if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size>8*1024*1024) {
+      toast.error(tr(lang,'PNG·JPEG·WebP, 8MB 이하 이미지를 선택해주세요.','PNG・JPEG・WebP、8MB以下を選択してください。','Choose a PNG, JPEG or WebP under 8MB.'))
+      continue
+    }
+    const id=crypto.randomUUID()
+    const findPlaceholder=()=>{
+      let pos:number|undefined
+      if (!editor.isDestroyed) editor.state.doc.descendants((n,p)=>{if(n.type.name==='noteUpload' && n.attrs.id===id)pos=p})
+      return pos
+    }
+    pendingNoteUploads.add(id)
+    try {
+      // Insert beside the selection; an upload failure must never erase selected content.
+      editor.commands.insertContentAt(position ?? editor.state.selection.to,[{type:'noteUpload',attrs:{id}},{type:'paragraph'}])
+      const body=new FormData();body.append('file',file)
+      const response=await fetch('/api/notes/images',{method:'POST',body})
+      if (!response.ok) throw Error(response.status===401 ? tr(lang,'로그인 후 이미지를 첨부할 수 있습니다.','画像の添付にはログインが必要です。','Sign in to attach images.') : tr(lang,'이미지를 업로드하지 못했습니다. 다시 시도해주세요.','アップロードに失敗しました。','Upload failed. Please retry.'))
+      const {url}=await response.json()
+      if (!isNoteImageUrl(url)) throw Error('Invalid image URL')
+      const pos=findPlaceholder()
+      if (pos!=null) editor.commands.insertContentAt({from:pos,to:pos+1},{type:'image',attrs:{src:url,alt:file.name.replace(/\.[^.]+$/,'')}})
+    } catch(e) {
+      toast.error(e instanceof Error?e.message:'Upload failed')
+      const pos=findPlaceholder()
+      if (pos!=null) editor.commands.deleteRange({from:pos,to:pos+1})
+    } finally {
+      pendingNoteUploads.delete(id)
+    }
+    position=undefined
+  }
+}
+export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOptions(){return {lang:'ko'}},
+  addProseMirrorPlugins(){const editor=this.editor,lang=this.options.lang;return [new Plugin({key:new PluginKey('note-input'),props:{
+    handleDrop(view,event,_slice,moved){const files=Array.from(event.dataTransfer?.files ?? []);if(moved || !files.length)return false;event.preventDefault();const pos=view.posAtCoords({left:event.clientX,top:event.clientY})?.pos;void uploadNoteFiles(editor,files,lang,pos);return true},
+    handlePaste(_view,event){const files=Array.from(event.clipboardData?.files ?? []);if(files.length){event.preventDefault();void uploadNoteFiles(editor,files,lang);return true}
+      const id=youtubeId(event.clipboardData?.getData('text/plain').trim() ?? '');if(!id)return false
+      event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
+  }})]},
+})
+export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload]
+export function notePlaceholder(lang:string,nodeType:string) {
+  return nodeType==='noteTitle'?tr(lang,'아코디언 제목을 입력하세요','アコーディオンの見出し','Accordion title') : tr(lang,'여기에 글을 입력하거나 /로 블록을 추가하세요','文章を入力、または / でブロックを追加','Write here or type / to add a block')
+}
+export function NoteBlockMenu({editor}:{editor:Editor|null}) {
+  const lang=useLocale(),[open,setOpen]=useState(false),[slash,setSlash]=useState<{from:number;to:number;query:string}|null>(null),[index,setIndex]=useState(0)
+  const kinds=(Object.keys(BLOCK_LABELS) as BlockKind[]).filter(k=>!slash || `${blockLabel(k,lang)} ${k} ${BLOCK_LABELS[k][0]} ${k==='ego'?'에고':''}`.toLowerCase().includes(slash.query.toLowerCase()))
+  useEffect(()=>{
+    if(!editor)return
+    const update=()=>{const s=editor.state.selection,before=s.$from.parent.textBetween(0,s.$from.parentOffset,'\n');const match=before.match(/(?:^|\s)\/([^\s/]*)$/);setSlash(s.empty&&match?{from:s.from-match[1].length-1,to:s.from,query:match[1]}:null);setIndex(0)}
+    editor.on('update',update);editor.on('selectionUpdate',update)
+    return()=>{editor.off('update',update);editor.off('selectionUpdate',update)}
+  },[editor])
+  useEffect(()=>{
+    if(!editor || !slash || !kinds.length)return
+    const handle=(e:KeyboardEvent)=>{
+      if(e.isComposing||e.keyCode===229||editor.view.composing)return
+      if(!['ArrowDown','ArrowUp','Tab','Enter','Escape'].includes(e.key))return
+      e.preventDefault();e.stopPropagation()
+      if(e.key==='Escape'){setSlash(null);return}
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){setIndex(i=>(i+(e.key==='ArrowDown'?1:-1)+kinds.length)%kinds.length);return}
+      insertNoteBlock(editor,kinds[index] ?? kinds[0],slash);setSlash(null)
+    }
+    const dom=editor.view.dom;dom.addEventListener('keydown',handle,true);return()=>dom.removeEventListener('keydown',handle,true)
+  },[editor,slash,kinds,index])
+  useEffect(()=>{if(!open)return;const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open])
+  return <div className="note-block-menu">
+    <button type="button" disabled={!editor} aria-expanded={open} onClick={()=>setOpen(!open)} className="note-insert-button"><Plus size={16}/>{tr(lang,'블록 삽입','ブロック挿入','Insert block')}<ChevronDown size={14}/></button>
+    {(open || (slash && kinds.length>0)) && <div className="note-command-menu" role="menu" aria-label={tr(lang,'블록 선택','ブロック選択','Choose block')}>
+      {kinds.map((kind,i)=><button type="button" role="menuitem" key={kind} data-active={i===index||undefined} onMouseDown={e=>e.preventDefault()} onClick={()=>{if(editor)insertNoteBlock(editor,kind,slash ?? undefined);setOpen(false);setSlash(null)}}><span>{blockLabel(kind,lang)}</span><small>/{BLOCK_LABELS[kind][0]}</small>{i===index&&<kbd>Tab</kbd>}</button>)}
+    </div>}
+  </div>
+}

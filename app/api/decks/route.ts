@@ -1,3 +1,5 @@
+
+import { notePlainText } from '@/lib/notes/blocks'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -312,7 +314,7 @@ function buildDeckFilterIndex(deck: DeckListRow): DeckFilterIndex {
     const grade = typeof ego.grade === 'string' ? ego.grade.trim().toUpperCase() : ''
     return grade !== '' && grade !== 'ZAYIN' && grade !== 'BASIC' && grade !== '기본'
   })
-  const hasDescription = (deck.description?.trim().length ?? 0) >= 20
+  const hasDescription = notePlainText(deck.description ?? '').length >= 20
 
   return {
     mainKeywords,
@@ -334,7 +336,7 @@ function deckMatchesSearch(deck: DeckListRow, filters: AdvancedDeckFilters) {
   if (filters.searchTermsLower.length === 0) return true
   const searchText = [
     deck.title,
-    deck.description ?? '',
+    notePlainText(deck.description ?? ''),
     getProfileUsername(deck),
     ...(deck.tags ?? []),
   ].join('\n').toLowerCase()
