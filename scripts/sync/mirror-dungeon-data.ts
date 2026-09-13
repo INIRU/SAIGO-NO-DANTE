@@ -814,7 +814,10 @@ async function syncGifts(): Promise<void> {
       console.log(GREEN(`  🆕 ${gift.name} (game_id: ${gift.game_id})`))
       toUpsert.push(gift)
     } else {
+      // Missing locale files must not replace an already verified Korean name.
+      if (!/[가-힣]/.test(gift.name) && /[가-힣]/.test(existing.name)) gift.name = existing.name
       const changes: string[] = []
+      if (existing.name !== gift.name) changes.push('name 변경')
       if (existing.keyword !== gift.keyword) changes.push(`keyword: ${existing.keyword} → ${gift.keyword}`)
       if (existing.grade !== gift.grade) changes.push(`grade: ${existing.grade} → ${gift.grade}`)
       if (existing.effect_base !== gift.effect_base) changes.push('effect_base 변경')

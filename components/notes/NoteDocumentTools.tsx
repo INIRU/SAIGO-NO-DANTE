@@ -1,4 +1,5 @@
 "use client";
+import { NoteBlockMenu, uploadNoteFiles } from "./NoteBlocks";
 import { useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { ImagePlus, LayoutTemplate } from "lucide-react";
@@ -12,49 +13,20 @@ export default function NoteDocumentTools({
     label = (ko: string, ja: string, en: string) =>
       locale === "ja" ? ja : locale === "en" ? en : ko;
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   async function upload(file?: File) {
     if (!file || !editor) return;
     setBusy(true);
-    setError("");
     try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch("/api/notes/images", {
-        method: "POST",
-        body,
-      });
-      if (!response.ok)
-        throw Error(
-          response.status === 401
-            ? label(
-                "로그인 후 이미지를 첨부할 수 있습니다.",
-                "画像の添付にはログインが必要です。",
-                "Sign in to attach images.",
-              )
-            : label(
-                "PNG·JPEG·WebP, 8MB 이하 이미지를 선택해주세요.",
-                "PNG・JPEG・WebP、8MB以下を選択してください。",
-                "Choose a PNG, JPEG or WebP under 8MB.",
-              ),
-        );
-      const { url } = await response.json();
-      editor
-        .chain()
-        .focus()
-        .setImage({ src: url, alt: file.name.replace(/\.[^.]+$/, "") })
-        .createParagraphNear()
-        .run();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed");
+      await uploadNoteFiles(editor, [file], locale);
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
   return (
-    <div className="flex flex-wrap items-center gap-1 text-xs">
+    <div className="flex flex-wrap items-center gap-1 text-sm">
+      <NoteBlockMenu editor={editor} />
       <button
         type="button"
         disabled={!editor || busy}
@@ -103,11 +75,7 @@ export default function NoteDocumentTools({
         className="hidden"
         onChange={(e) => upload(e.target.files?.[0])}
       />
-      {error && (
-        <span role="alert" className="w-full text-red-300">
-          {error}
-        </span>
-      )}
+
     </div>
   );
 }

@@ -14,7 +14,7 @@ const contentSecurityPolicyDirectives = [
   "font-src 'self'",
   "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
   "worker-src 'self' blob:",
-  "frame-src https://www.youtube.com",
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
   "media-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

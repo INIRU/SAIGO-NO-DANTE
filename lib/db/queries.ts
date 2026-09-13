@@ -166,7 +166,7 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
   return data ?? []
 }
 
-function withEgoStage<T extends { stage_levels?: { construe_level: number | null }[] }>({ stage_levels, ...row }: T) {
+export function withEgoStage<T extends { stage_levels?: { construe_level: number | null }[] }>({ stage_levels, ...row }: T) {
   const levels = (stage_levels ?? []).map(skill => skill.construe_level ?? 1).filter(level => level >= 1 && level <= 5)
   return { ...row, max_construe_level: Math.max(1, ...levels) }
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { notePlainText } from '@/lib/notes/blocks'
+
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
@@ -202,7 +204,7 @@ function PlanCard({
           {/* 설명 */}
           {plan.description ? (
             <p className="mb-2 line-clamp-2 flex-1" style={{ fontSize: '0.6875rem', color: '#555', lineHeight: 1.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {plan.description}
+              {notePlainText(plan.description)}
             </p>
           ) : <div className="flex-1" />}
 

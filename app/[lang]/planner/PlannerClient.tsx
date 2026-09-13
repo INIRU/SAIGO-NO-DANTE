@@ -1,5 +1,7 @@
 'use client'
 
+import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
+
 import { useMemo, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useRouter } from '@/lib/i18n/navigation'
@@ -95,6 +97,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   }, [])
 
   const handleUpload = async () => {
+    if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     if (uploading) return
     if (!state.title.trim()) { showError(tPlanner('actions.titleRequired')); return }
     setUploading(true)
@@ -137,6 +140,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   }, [])
 
   const handleSaveTempSlot = (slot: PlannerTempSlot) => {
+    if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     const slots = savePlannerTempSlot(slot.slotNumber, state, tTempSaves('untitled'))
     setTempSlots(slots)
     showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))

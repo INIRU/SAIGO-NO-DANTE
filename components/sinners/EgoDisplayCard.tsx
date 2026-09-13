@@ -24,6 +24,7 @@ type EgoDisplayCardProps = {
   className?: string
   lang?: SupportedLang
   selected?: boolean
+  displayOnly?: boolean
 }
 
 const EGO_UI_BASE = '/assets/ego-ui'
@@ -692,6 +693,7 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
 
 export default function EgoDisplayCard({
   className,
+  displayOnly = false,
   ego,
   href,
   lang = 'ko',
@@ -706,6 +708,8 @@ export default function EgoDisplayCard({
   ].filter(Boolean).join(' ')
   const rootStyle = { cursor: 'pointer', borderRadius: '0.875rem' }
   const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} />
+
+  if (displayOnly) return <div className={rootClassName} aria-label={name}>{body}</div>
 
   if (href) {
     return (

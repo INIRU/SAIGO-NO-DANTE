@@ -1,5 +1,7 @@
 'use client'
 
+import { notePlainText } from '@/lib/notes/blocks'
+
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { memo, useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
@@ -218,7 +220,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               }}
             >
               <NoteRenderer
-                text={deck.description}
+                text={notePlainText(deck.description)}
                 skillLookup={EMPTY_NOTE_LOOKUP}
                 passiveLookup={EMPTY_NOTE_LOOKUP}
                 egoLookup={EMPTY_NOTE_LOOKUP}

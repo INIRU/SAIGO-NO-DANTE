@@ -1,4 +1,5 @@
 import type { JSONContent } from "@tiptap/react";
+import { NOTE_PREFIX, parseBlockDocument, normalizeDocument, hasBlocks } from './blocks';
 import { parseNoteImage, isNoteImageUrl } from "./images";
 
 function inlineMarkdownSegmentToContent(text: string): JSONContent[] {
@@ -49,6 +50,8 @@ function inlineMarkdownToContent(text: string): JSONContent[] {
 }
 
 export function markdownToTiptapContent(markdown: string): JSONContent {
+  const structured = parseBlockDocument(markdown);
+  if (structured) return structured;
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const content: JSONContent[] = [];
   let i = 0;
@@ -178,6 +181,7 @@ function inlineContentToMarkdown(node?: JSONContent): string {
 }
 
 export function tiptapContentToMarkdown(doc: JSONContent): string {
+  if (hasBlocks(doc)) return NOTE_PREFIX + JSON.stringify(normalizeDocument(doc));
   return (doc.content ?? [])
     .map((node) => {
       if (node.type === "image")

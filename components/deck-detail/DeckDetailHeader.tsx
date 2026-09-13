@@ -34,6 +34,7 @@ function sinIconUrl(sin: string): string {
 }
 
 export type DeckHeaderProps = {
+  analysisOnly?: boolean
   deckId: string
   title: string
   username: string | null | undefined
@@ -65,6 +66,7 @@ export type DeckHeaderProps = {
 }
 
 export function DeckSidebarPanel({
+  analysisOnly = false,
   deckId,
   isOwner,
   isAdmin,
@@ -95,7 +97,8 @@ export function DeckSidebarPanel({
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
   return (
-    <div className="flex flex-col gap-3" style={{ position: 'sticky', top: 88 }}>
+    <div className={analysisOnly ? "deck-analysis-summary" : "flex flex-col gap-3"} style={analysisOnly ? undefined : { position: 'sticky', top: 88 }}>
+      {!analysisOnly && <>
       {/* 추천 */}
       <div
         className="rounded-lg flex flex-col items-center py-5 gap-2"
@@ -218,6 +221,7 @@ export function DeckSidebarPanel({
         </button>
       </div>
 
+      </>}
       {/* 태그 + 키워드 */}
       {(tags.length > 0 || keywords.length > 0) && (
         <div className="rounded-lg p-3 flex flex-col gap-2" style={{ background: '#120e09', border: '1px solid var(--border)' }}>

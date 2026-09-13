@@ -171,7 +171,7 @@ export default function SkillFrameBlock({
           </div>
 
           {/* Coin power (above frame) */}
-          <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
+          <div className="absolute z-20" data-coin-power style={{ top: '1.5%', left: '50%', transform: 'translateX(-56%) translateY(-12.5%)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: frameRem >= 6 ? '1.25rem' : '1rem', lineHeight: 1 }}>
             <span style={{
               fontFamily: 'var(--font-excelsior), sans-serif',
               fontSize: coinPowerSize,
