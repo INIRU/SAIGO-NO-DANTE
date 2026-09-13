@@ -327,6 +327,30 @@ describe('identity-data sync helpers', () => {
     expect(rows.some(row => row.name === '스킬3')).toBe(false)
   })
 
+  it('includes unlocked tier-three counter variants with their level-specific descriptions', () => {
+    const skill = {
+      id: 1021607, skillTier: 3, isHiddenForUI: false, requireIDList: ['CheckAwakenLevel3'],
+      skillData: [{ gaksungLevel: 3, defType: 'COUNTER', atkType: 'SLASH',
+        defaultValue: 3, coinList: [{ operatorType: 'ADD', scale: 4 }] }],
+    }
+    const locale = { id: skill.id, levelList: [3, 4].map(level => ({
+      level, name: '정오의 해체', desc: `동기화 ${level} 설명`,
+      coinlist: [{ coindescs: [{ desc: '[OnSucceedAttack] 코인 효과' }] }],
+    })) }
+    const rows = buildSkillRows(
+      { id: 10216, characterId: 2, defenseSkillIDList: [skill.id, 1021608, 1021609] },
+      new Map([[skill.id, skill], [1021608, { ...skill, id: 1021608, isHiddenForUI: true }],
+        [1021609, { ...skill, id: 1021609, isHiddenForUI: true }]]),
+      new Map([[skill.id, locale], [1021608, { ...locale, id: 1021608 }]]), null,
+    )
+    expect(rows).toHaveLength(4)
+    for (const row of rows) {
+      expect(row).toMatchObject({ name: '정오의 해체', skill_order: 3, skill_type: 'counter' })
+      expect(['1021607', '1021608']).toContain(row.image_id)
+      expect(row.description).toBe(`동기화 ${row.uptie_level} 설명\n[코인 1] [적중시] 코인 효과`)
+    }
+  })
+
   it('compares generated and DB skill rows with stable ordering and null normalization', () => {
     const baseSkill = {
       identity_id: 'identity-1',
