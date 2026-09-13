@@ -15,7 +15,7 @@ import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl, BLUR_PLACEHOLDER } from '@/lib/utils/images'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
@@ -597,9 +597,9 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                                   {ego.name_kr ?? ego.name}
                                 </p>
                                 <div className="flex items-center gap-1" style={{ marginTop: '0.25rem' }}>
-                                  {ego.sin_affinity && (
-                                    <Image src={`${STORAGE_BASE}/icons/Sins/transparent/${ego.sin_affinity.charAt(0).toUpperCase() + ego.sin_affinity.slice(1)}.webp`}
-                                      alt={ego.sin_affinity} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />
+                                  {normalizeSin(ego.sin_affinity) && (
+                                    <Image src={getSinIconUrl(normalizeSin(ego.sin_affinity)!)}
+                                      alt={ego.sin_affinity ?? ''} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem' }} />
                                   )}
                                   <span style={{ color: gc, fontSize: '0.5rem', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.05em' }}>{grade}</span>
                                 </div>

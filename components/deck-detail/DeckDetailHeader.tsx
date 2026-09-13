@@ -2,11 +2,13 @@
 
 
 import { getDetailStatIconUrl } from '@/lib/utils/images'
+import { getSinIconUrl } from '@/lib/constants/sin'
+import type { SinType } from '@/lib/types'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { Heart, Copy, Check, Pencil, Bookmark, Share2, GitFork } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { STORAGE_BASE, SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
+import { SIN_COLORS, SIN_ORDER } from '@/lib/data/sinners'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
@@ -29,8 +31,7 @@ const sidebarActionTextStyle = {
 const EMPTY_TOTALS: Record<string, number> = {}
 
 function sinIconUrl(sin: string): string {
-  const cap = sin.charAt(0).toUpperCase() + sin.slice(1)
-  return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
+  return getSinIconUrl(sin as SinType)
 }
 
 export type DeckHeaderProps = {

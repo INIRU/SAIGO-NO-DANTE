@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import { STORAGE_BASE, RARITY_ICON_MAP } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import SkillDescription from '@/components/skill/SkillDescription'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
@@ -184,8 +184,7 @@ function sinColor(sin: string): string {
 }
 
 function sinIconUrl(sin: string): string {
-  const cap = sin.charAt(0).toUpperCase() + sin.slice(1)
-  return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
+  return getSinIconUrl(sin as SinType)
 }
 
 function localizedText(

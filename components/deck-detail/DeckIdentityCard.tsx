@@ -14,6 +14,7 @@ import {
   RARITY_ICON_MAP,
   SIN_COLORS,
   SIN_KR_TO_EN,
+  getSinIconUrl,
   type SinType,
 } from '@/lib/data/sinners'
 import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/components/sinners/KeywordTooltip'
@@ -152,8 +153,7 @@ const RES_STYLE: Record<string, { color: string; bg: string; border: string }> =
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 function sinIconUrl(sin: string): string {
-  const cap = sin.charAt(0).toUpperCase() + sin.slice(1)
-  return `${STORAGE_BASE}/icons/Sins/transparent/${cap}.webp`
+  return getSinIconUrl(sin as SinType)
 }
 
 function sinColor(sin: string): string {

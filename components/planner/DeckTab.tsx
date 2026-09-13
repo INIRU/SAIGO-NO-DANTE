@@ -21,8 +21,8 @@ import {
 } from '@/lib/planner/types'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
 import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { RARITY_COLORS, STORAGE_BASE } from '@/lib/constants/game'
-import { SIN_COLORS } from '@/lib/constants/sin'
+import { RARITY_COLORS } from '@/lib/constants/game'
+import { SIN_COLORS, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import KeywordChart from './KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
@@ -822,7 +822,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                     const wasMetDefault = p.active_cond != null && defaultCurrent >= required
                     const distributionWarning = wasMetDefault && !isMet
                     const primarySin = sinTypes[0] ?? null
-                    const sinCap = primarySin ? primarySin.charAt(0).toUpperCase() + primarySin.slice(1) : null
+                    const primarySinType = normalizeSin(primarySin)
                     const pc = primarySin ? (SIN_COLORS[primarySin as keyof typeof SIN_COLORS] ?? '#888') : '#888'
                     const passiveName = localizePassiveName(p, locale)
                     const passiveDescription = localizePassiveDescription(p, locale)
@@ -854,11 +854,12 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                           </span>
                           {skillDots.map((sk, i) => {
                             const dotColor = SIN_COLORS[sk!.sin_affinity as keyof typeof SIN_COLORS] ?? '#555'
-                            const sinCapDot = sk!.sin_affinity.charAt(0).toUpperCase() + sk!.sin_affinity.slice(1)
+                            const dotSin = normalizeSin(sk!.sin_affinity)
+                            if (!dotSin) return null
                             return (
                               <Image
                                 key={i}
-                                src={`${STORAGE_BASE}/icons/Sins/transparent/${sinCapDot}.webp`}
+                                src={getSinIconUrl(dotSin)}
                                 alt={sk!.sin_affinity}
                                 width={10}
                                 height={10}
@@ -900,11 +901,11 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                               !
                             </span>
                           )}
-                          {sinCap && (
+                          {primarySinType && (
                             <div className="flex items-center gap-0.5" style={{ flexShrink: 0 }}>
                               <Image
-                                src={`${STORAGE_BASE}/icons/Sins/transparent/${sinCap}.webp`}
-                                alt={sinCap}
+                                src={getSinIconUrl(primarySinType)}
+                                alt={primarySinType}
                                 width={16}
                                 height={16}
                                 style={{ width: '1rem', height: '1rem' }}
