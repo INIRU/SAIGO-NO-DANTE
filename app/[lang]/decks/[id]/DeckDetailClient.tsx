@@ -1034,6 +1034,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                 >
                   <FormationBoard
+                    className="deck-detail-formation"
                     slots={boardSlots.map((slot, index): FormationBoardSlot => {
                       const id_ = slot?.identities ?? null
                       const identityName = id_ ? localizeIdentityName(id_, locale) : ''
