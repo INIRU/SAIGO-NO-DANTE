@@ -1,3 +1,4 @@
+import NoteEditorGuide from '@/components/notes/NoteEditorGuide'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 
@@ -21,6 +22,7 @@ export default function BoardHeader({ kind, lang, title, subtitle, eyebrow, acti
           <Plus size={15} />{action}
         </Link>
       </div>
+      <NoteEditorGuide/>
     </header>
   )
 }

@@ -1,4 +1,5 @@
 "use client";
+import NoteEditorGuide from "./NoteEditorGuide";
 import { NoteBlockMenu, uploadNoteFiles } from "./NoteBlocks";
 import { useRef, useState } from "react";
 import { useLocale } from "next-intl";
@@ -68,6 +69,7 @@ export default function NoteDocumentTools({
           ? label("첨부 중…", "添付中…", "Uploading…")
           : label("이미지", "画像", "Image")}
       </button>
+      <NoteEditorGuide compact/>
       <input
         ref={fileRef}
         type="file"
