@@ -2295,10 +2295,10 @@ export function buildSkillRows(
       })
     }
 
-    // Defense skills (exclude variants with requireIDList)
+    // Include conditional/hidden variants with localized content, just like attack skills.
     const defSkills = defenseSkillIds
       .map(sid => skillMap.get(sid))
-      .filter((gs): gs is PersonalitySkill => !!gs && !gs.isHiddenForUI && !(gs.requireIDList && gs.requireIDList.length > 0))
+      .filter((gs): gs is PersonalitySkill => !!gs)
 
     for (const gs of defSkills) {
       const r = resolveToLevel(gs, uptie)
@@ -2334,7 +2334,8 @@ export function buildSkillRows(
         flavor_en: nullableLocaleContent(enDefLvl?.flavor),
         flavor_jp: nullableLocaleContent(jpDefLvl?.flavor),
         image_id: String(/^\d+$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
-        skill_order: 4,
+        // Tiered counters (e.g. Noontide Disassembly) retain their source skill slot.
+        skill_order: gs.skillTier && gs.skillTier > 1 ? gs.skillTier : 4,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
         uptie_level: uptie,
