@@ -375,4 +375,4 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 /* Keep the deck's original six-column cards together without changing planner spacing. */
 .deck-detail-formation .formation-board-grid{column-gap:.375rem;row-gap:.625rem}
 @media(min-width:40rem){.deck-detail-formation .formation-board-grid{column-gap:.5rem;row-gap:.75rem}}
-@media(min-width:64rem){.deck-detail-formation .formation-board-grid{grid-template-columns:repeat(6,minmax(0,8.75rem));justify-content:center;column-gap:.75rem;row-gap:.75rem}}
+@media(min-width:64rem){.deck-detail-formation .formation-board-grid{grid-template-columns:repeat(6,minmax(0,8.75rem));justify-content:center;column-gap:1.25rem;row-gap:1.125rem}}
