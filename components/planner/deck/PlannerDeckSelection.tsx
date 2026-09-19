@@ -43,6 +43,7 @@ export type PlannerDeckIdentity = {
 }
 
 export type PlannerDeckEgo = {
+  max_construe_level?: number
   id: string
   sinner_id: string
   name: string

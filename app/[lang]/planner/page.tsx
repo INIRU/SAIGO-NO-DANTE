@@ -1,3 +1,4 @@
+import { withEgoStage } from '@/lib/db/queries'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -44,7 +45,7 @@ async function fetchPlannerStaticData() {
   // 그룹 2: 인격/수감자/패시브/스킬
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: passives, error: passivesError }, { data: skills, error: skillsError }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name').order('rarity', { ascending: false }),
-    supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
+    supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp, order_num').order('order_num'),
     supabase.schema('limbus').from('passives').select('id, name, name_en, name_jp, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level').eq('uptie_level', 4),
     supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').eq('uptie_level', 4),
   ])
@@ -54,10 +55,10 @@ async function fetchPlannerStaticData() {
   if (skillsError) Sentry.captureException(skillsError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch skills' } })
 
   // 그룹 3: EGO
-  const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id')
+  const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id, stage_levels:ego_skills(construe_level)')
   if (egosError) Sentry.captureException(egosError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch egos' } })
 
-  return { themes, gifts, recipes, identities, sinners, passives, skills, egos }
+  return { themes, gifts, recipes, identities, sinners, passives, skills, egos: egos?.map(withEgoStage) }
 }
 
 export default async function PlannerPage({ params }: { params: Promise<{ lang: string }> }) {

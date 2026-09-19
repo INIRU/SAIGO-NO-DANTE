@@ -391,12 +391,15 @@ export interface IdentityData {
 }
 
 export interface SinnerData {
+  name_en?: string | null
+  name_jp?: string | null
   id: string
   name_kr: string
   order_num: number
 }
 
 export interface EgoData {
+  max_construe_level?: number
   id: string
   sinner_id: string
   name: string

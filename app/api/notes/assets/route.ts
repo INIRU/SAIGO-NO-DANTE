@@ -12,25 +12,27 @@ import type { Identity, Skill } from '@/lib/types'
 
 const TABLES = { gift:'ego_gifts', theme:'ego_gift_themes', identity:'identities', ego:'ego', skill:'skills', keyword:'keyword_meta' } as const
 const COLUMNS = {
-  gift:'id,name,name_en,name_jp,grade,keyword,image_url',
+  gift:'id,name,name_en,name_jp,grade,keyword,image_url,effect_base,effect_base_en,effect_base_jp',
   theme:'id,name,name_en,name_jp,image_url',
   identity:'id,name,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords',
   ego:'id,name,name_kr,name_en,name_jp,grade,image_url,sinner_id,sin_affinity,stage_levels:ego_skills(construe_level)',
   skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
   keyword:'name,name_en,name_jp,description,icon_slug',
 } as const
-async function load(kind: AssetKind, query: string, ids: string[], offset = 0, grade = ''): Promise<NoteAssetData[]> {
+async function load(kind: AssetKind, query: string, ids: string[], offset = 0, grade = '', identityIds: string[] | null = null, catalog = false): Promise<NoteAssetData[]> {
   'use cache'
   cacheLife('hours'); cacheTag(CACHE_TAGS.gameData)
   if (kind === 'sin') return SIN_ORDER.filter(id => ids.length ? ids.includes(id) : `${id} ${SIN_LABELS_KR[id]}`.includes(query)).map(id => ({kind,id,name:SIN_LABELS_KR[id],name_en:id,image_url:SIN_ICON_MAP[id]}))
+  if (kind === 'skill' && identityIds?.length === 0) return []
   const db = createAdminClient().schema('limbus')
   let req = db.from(TABLES[kind]).select(COLUMNS[kind])
+  if (kind === 'skill' && identityIds) req = req.in('identity_id', identityIds).eq('uptie_level', 4)
   if (kind === 'gift' && grade) req = req.eq('grade', Number(grade))
   if (ids.length) req = req.in(kind === 'keyword' ? 'name' : 'id', ids)
   else {
     const escaped = query.replace(/[%,().\\]/g,'')
     if (escaped) req = req.or(`${kind === 'identity' || kind === 'ego' ? 'name_kr' : 'name'}.ilike.%${escaped}%,name_en.ilike.%${escaped}%,name_jp.ilike.%${escaped}%`)
-    req = req.order(kind === 'identity' || kind === 'ego' ? 'name_kr' : 'name').range(offset, offset + 23)
+    req = req.order(kind === 'identity' || kind === 'ego' ? 'name_kr' : 'name').range(offset, offset + (catalog ? 999 : identityIds ? 239 : 23))
   }
   const {data,error} = await req
   if (error) throw Error('Assets unavailable')
@@ -51,7 +53,7 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
     return { kind, id:String(kind === 'keyword' ? row.name : row.id), name:String(row.name_kr || row.name || ''),
       name_en:row.name_en as string, name_jp:row.name_jp as string,
       image_url:identity && kind === 'identity' ? getIdentityInfoUrl(identity) : kind === 'keyword' ? resolveKeywordIconUrl(String(row.name), row.icon_slug as string | null) : row.image_url as string,
-      grade:row.grade as string, keyword:row.keyword as string, description:row.description as string,
+      grade:row.grade as string, keyword:row.keyword as string, description:(row.description ?? row.effect_base) as string, description_en:(row.description_en ?? row.effect_base_en) as string, description_jp:(row.description_jp ?? row.effect_base_jp) as string,
       ...(kind === 'ego' ? {ego: {grade:String(row.grade), image_url:row.image_url as string, sin_affinity:row.sin_affinity as string, max_construe_level:withEgoStage({stage_levels:row.stage_levels as {construe_level:number|null}[]}).max_construe_level}, sinnerId:String(row.sinner_id)} : {}),
       ...(identity ? {identity} : {}),
       ...(kind === 'skill' ? {skill:row as unknown as Skill, skills:siblings.filter(s => s.identity_id === row.identity_id), sinnerName:identity?.name_kr} : {}),
@@ -74,6 +76,8 @@ export async function GET(req: NextRequest) {
     if (grade && !/^[1-5]$/.test(grade)) return NextResponse.json({error:'Invalid tier'},{status:400})
     const kind=p.get('kind'), q=p.get('q')?.trim() ?? '', offset=Number(p.get('offset') ?? 0)
     if (!isAssetKind(kind) || q.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 5000) return NextResponse.json({error:'Invalid search'},{status:400})
-    return NextResponse.json(await load(kind,q,[],offset,grade))
+    const identityIds = p.has('identities') ? p.get('identities')!.split(',').filter(Boolean) : null
+    if (identityIds && (identityIds.length > 12 || identityIds.some(id => !/^[0-9a-f-]{36}$/i.test(id)))) return NextResponse.json({error:'Invalid identities'},{status:400})
+    return NextResponse.json(await load(kind,q,[],offset,grade,identityIds,kind === 'gift' && p.get('catalog') === '1'))
   } catch { return NextResponse.json({error:'Assets unavailable'},{status:503}) }
 }

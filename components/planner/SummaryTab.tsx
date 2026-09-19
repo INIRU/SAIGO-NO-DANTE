@@ -344,7 +344,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
           style={{ background: '#0d0b08', border: '1px solid #333', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', fontSize: '0.9375rem', color: '#e8b030', fontWeight: 700, outline: 'none', width: '100%', boxSizing: 'border-box' }}
         />
         <div style={{ marginTop: '0.5rem' }}>
-          <NoteDocumentEditor pool={acPool} value={state.description} onChange={description => dispatch({ type: 'SET_DESCRIPTION', description })} />
+          <NoteDocumentEditor formation={[...state.identitySlots].sort((a,b) => a.slot_order-b.slot_order).map(slot => ({identityId:slot.identity_id,sinnerId:slot.sinner_id,name:(locale === 'en' ? sinners.find(s => s.id === slot.sinner_id)?.name_en : locale === 'ja' ? sinners.find(s => s.id === slot.sinner_id)?.name_jp : sinners.find(s => s.id === slot.sinner_id)?.name_kr) || sinners.find(s => s.id === slot.sinner_id)?.name_kr || slot.sinner_id}))} pool={acPool} value={state.description} onChange={description => dispatch({ type: 'SET_DESCRIPTION', description })} />
           {state.description.trim() && (
             <div style={{
               marginTop: '0.375rem', background: '#0d0b08', border: '1px solid #222',
