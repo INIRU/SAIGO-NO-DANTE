@@ -1,17 +1,14 @@
 'use client'
 
 
-import { getDetailStatIconUrl } from '@/lib/utils/images'
 import Image from 'next/image'
 import SinnerShardIcon from '@/components/ui/SinnerShardIcon'
 import {
   Identity,
-  SIN_COLORS,
   RARITY_ICON_MAP,
 } from '@/lib/data/sinners'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
-import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import { SPECIAL_CHARGE_KEYWORDS } from '@/lib/constants/keywords'
+import { useKeywords } from '@/components/providers/KeywordProvider'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n'
 import { getLocalizedAffiliation, getLocalizedKeywordName } from '@/lib/i18n'
@@ -43,8 +40,7 @@ function getLocalizedGachaName(
   return info.gacha_name ?? null
 }
 
-export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7 }: IdentityInfoCardProps) {
-  const { sinMap: kwSinMap } = useKeywordData()
+export default function IdentityInfoCard({ identity, currentSeason = 7 }: IdentityInfoCardProps) {
   const kwAll = useKeywords()
   const t = useTranslations()
   const locale = useLocale()
@@ -52,133 +48,49 @@ export default function IdentityInfoCard({ identity, sinColor, currentSeason = 7
   const representativeKeywords = identity.skill_keyword_list && identity.skill_keyword_list.length > 0
     ? identity.skill_keyword_list
     : (identity.keywords ?? [])
-  const specialChargeKeywords = representativeKeywords.filter(kw => SPECIAL_CHARGE_KEYWORDS.has(kw))
-  const sinKeywords = [...new Set(representativeKeywords)].filter(kw => !SPECIAL_CHARGE_KEYWORDS.has(kw))
   return (
-    <div className="card p-6">
-      <h2
-        className="font-serif font-light mb-4"
-        style={{ color: 'var(--gold)', fontSize: '1rem' }}
-      >
-        {t('identity.info.title')}
-      </h2>
-
-      <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded"
-        style={{
-          background: 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)',
-          border: '1px solid var(--border)',
-        }}
-      >
-        {/* 등급 */}
-        <div className="flex items-center gap-2">
-          {RARITY_ICON_MAP[identity.rarity] && (
-            <Image
-              src={RARITY_ICON_MAP[identity.rarity]}
-              alt=""
-              width={identity.rarity === 1 ? 16 : identity.rarity === 2 ? 28 : 40}
-              height={16}
-              style={{ width: identity.rarity === 1 ? '1rem' : identity.rarity === 2 ? '1.75rem' : '2.5rem', height: 'auto', filter: 'drop-shadow(0 0 3px rgba(200,144,10,0.4))' }}
-            />
-          )}
-        </div>
-
-        {/* 키워드 (메인 상태이상 + 특수 충전) */}
-        {(sinKeywords.length > 0 || specialChargeKeywords.length > 0) && (
-          <>
-            <div style={{ width: '1px', height: '18px', background: 'var(--border)' }} />
-            <div className="flex items-center gap-2 flex-wrap">
-              {specialChargeKeywords.map(kw => (
-                <KeywordWithTooltip key={kw} keyword={kw}>
-                  <span
-                    className="inline-flex items-center gap-1 text-xs font-semibold"
-                    style={{ color: SIN_COLORS[kwSinMap['충전']] || '#7b68ee' }}
-                  >
-                    {getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}
-                  </span>
-                </KeywordWithTooltip>
-              ))}
-              {sinKeywords.map(kw => {
-                const kwColor = SIN_COLORS[kwSinMap[kw]] || sinColor
-                return (
-                  <KeywordWithTooltip key={kw} keyword={kw}>
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-semibold"
-                      style={{ color: kwColor }}
-                    >
-                      {getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}
-                    </span>
-                  </KeywordWithTooltip>
-                )
-              })}
-            </div>
-          </>
+    <div className="border-b border-[var(--border)] pb-6">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <h2 className="font-serif text-lg text-[var(--text-primary)]">{t('identity.info.title')}</h2>
+        {RARITY_ICON_MAP[identity.rarity] && (
+          <Image src={RARITY_ICON_MAP[identity.rarity]} alt={`${identity.rarity}`} width={40} height={24}
+            className="h-6 w-auto object-contain" />
         )}
       </div>
 
-      {/* 내성 */}
-      {(identity.slash_res || identity.pierce_res || identity.blunt_res) && (() => {
-        const localRes = (res: string | undefined | null) => {
-          if (res === '취약') return t('identity.resistance.weak')
-          if (res === '내성') return t('identity.resistance.resistant')
-          return t('identity.resistance.normal')
-        }
-        return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-          {([
-            { label: t('identity.info.slash'), res: identity.slash_res, icon: 'slash' },
-            { label: t('identity.info.pierce'), res: identity.pierce_res, icon: 'pierce' },
-            { label: t('identity.info.blunt'), res: identity.blunt_res, icon: 'blunt' },
-          ] as const).map(({ label, res, icon }) => {
-            const resColor = res === '취약' ? '#ff6b6b' : res === '내성' ? '#6bbbff' : '#888'
-            return (
-              <div
-                key={label}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded"
-                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
-              >
-                <Image
-                  src={getDetailStatIconUrl(icon)}
-                  alt=""
-                  width={14}
-                  height={14}
-                  style={{ width: '0.875rem', height: '0.875rem' }}
-                />
-                <span style={{ color: resColor, fontSize: '0.6875rem', fontWeight: 600 }}>
-                  {localRes(res)}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-        )
-      })()}
-
-      {/* 소속 */}
-      {associationChips.length > 0 && (
-        <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
-          <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: '6px' }}>{t('identity.info.traits')}</div>
-          <div className="flex flex-wrap gap-1.5">
-            {associationChips.map(association => (
-              <span
-                key={association}
-                className="px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1"
-                style={{
-                  background: `${sinColor}18`,
-                  color: sinColor,
-                  border: `1px solid ${sinColor}40`,
-                }}
-              >
-                {association}
-              </span>
-            ))}
+      <dl className="divide-y divide-white/10">
+        {representativeKeywords.length > 0 && (
+          <div className="py-5">
+            <dt className="mb-3 text-xs font-medium tracking-wide text-[var(--text-secondary)]">{t('identity.info.combatKeywords')}</dt>
+            <dd className="flex flex-wrap gap-2">
+              {[...new Set(representativeKeywords)].map(kw => (
+                <div key={kw} className="rounded-md border border-white/10 bg-white/[0.035] px-3 py-2 text-base transition-colors hover:border-[var(--gold)]/40 hover:bg-white/[0.06] [&_.keyword-token>img]:mr-2 [&_.keyword-token>img]:h-6 [&_.keyword-token>img]:w-6">
+                  <KeywordWithTooltip keyword={kw}>
+                    <span className="font-medium">{getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}</span>
+                  </KeywordWithTooltip>
+                </div>
+              ))}
+            </dd>
           </div>
-        </div>
-      )}
+        )}
+        {associationChips.length > 0 && (
+          <div className="py-5">
+            <dt className="mb-3 text-xs font-medium tracking-wide text-[var(--text-secondary)]">{t('identity.info.traits')}</dt>
+            <dd className="flex flex-wrap gap-x-5 gap-y-3">
+              {associationChips.map(association => (
+                <span key={association} className="inline-flex items-center gap-2 text-sm font-medium text-[#d8cbb5]">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rotate-45 bg-[#967748]" />
+                  {association}
+                </span>
+              ))}
+            </dd>
+          </div>
+        )}
+      </dl>
 
       {/* 출시시기 & 획득 방법 */}
       {(identity.release_date || identity.acquisition_info) && (
-        <div className="mt-5 space-y-2">
+        <div className="border-t border-white/10 pt-5 space-y-3">
           {identity.release_date && (
             <div className="flex items-center gap-2">
               <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.releaseDate')}</span>

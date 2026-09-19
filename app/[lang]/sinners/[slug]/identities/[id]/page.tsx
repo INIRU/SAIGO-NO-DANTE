@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSinnerById, getIdentityById, getSkills, getPassives, getIdentities, getEGOs, getSinners, getEgoGiftsForNotes, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
+import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import dynamic from 'next/dynamic'
@@ -80,14 +78,9 @@ export default async function IdentityPage({
   ])
   if (!sinner || !identity) notFound()
 
-  const [skills, passives, session, allSinners, allIdentities, allEgos, egoGifts, currentSeason, sanityConditions, panicInfo] = await Promise.all([
+  const [skills, passives, currentSeason, sanityConditions, panicInfo] = await Promise.all([
     getSkills(identity.id),
     getPassives(identity.id),
-    getServerSession(authOptions),
-    getSinners(),
-    getIdentities(),
-    getEGOs(),
-    getEgoGiftsForNotes(),
     (async () => {
       const supabase = createAdminClient()
       const { data, error } = await supabase
@@ -99,36 +92,6 @@ export default async function IdentityPage({
     getSanityConditions(identity.id),
     identity.panic_type ? getPanicInfo(identity.panic_type) : Promise.resolve(null),
   ])
-
-  // 운영법 조회 (여러 개)
-  let guides: { id: string; title: string; content: string; author_name: string | null; updated_at: string }[] = []
-  try {
-    const admin = createAdminClient()
-    const { data, error: guidesError } = await admin
-      .schema('limbus')
-      .from('identity_guides')
-      .select('id, title, content, updated_at, author_id')
-      .eq('identity_id', identity.id)
-      .eq('lang', lang)
-      .order('created_at', { ascending: true })
-    if (guidesError) console.error('Failed to fetch identity guides:', guidesError)
-    if (data && data.length > 0) {
-      const authorIds = [...new Set(data.map(g => g.author_id))]
-      const { data: profiles } = await admin
-        .schema('limbus')
-        .from('profiles')
-        .select('id, username')
-        .in('id', authorIds)
-      const profileMap = new Map(profiles?.map(p => [p.id, p.username]) ?? [])
-      guides = data.map(g => ({
-        id: g.id,
-        title: g.title,
-        content: g.content,
-        author_name: profileMap.get(g.author_id) ?? null,
-        updated_at: g.updated_at,
-      }))
-    }
-  } catch { /* guide fetch failed, continue without it */ }
 
   setRequestLocale(lang)
   const t = await getTranslations()
@@ -162,12 +125,6 @@ export default async function IdentityPage({
           passives={passives}
           sanityConditions={sanityConditions}
           panicInfo={panicInfo}
-          guides={guides}
-          allSinners={allSinners}
-          allIdentities={allIdentities}
-          allEgos={allEgos}
-          egoGifts={egoGifts}
-          canEditGuide={session?.user?.isWanjang === true || session?.user?.isAdmin === true}
           currentSeason={currentSeason}
         />
       </Suspense>

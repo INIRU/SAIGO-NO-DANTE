@@ -11,6 +11,7 @@ export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
+import { skillConditionColor } from '@/lib/identity/skill-condition-color'
 import type { SinType } from '@/lib/types'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
@@ -223,6 +224,7 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
   const t = useTranslations()
   const locale = useLocale()
 
+  const formatDescription = useFormatSkillDesc()
   const localName = getLocalizedKeywordName(keyword, info, locale as SupportedLang)
   const localDesc = getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang)
 
@@ -244,14 +246,14 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
       onMouseLeave={onMouseLeave}
       style={{
         position: 'fixed',
-        left: Math.min(rect.left, window.innerWidth - 310),
+        left: Math.max(12, Math.min(rect.left, window.innerWidth - Math.min(384, window.innerWidth - 24) - 12)),
         ...(showAbove
           ? { bottom: window.innerHeight - rect.top + 6 }
           : { top: rect.bottom + 6 }),
-        background: '#1a1510',
-        border: '1px solid #3a3020',
-        minWidth: '200px',
-        maxWidth: '300px',
+        background: 'var(--bg-deep, #100e0b)' ,
+        border: '1px solid #51432d',
+        boxShadow: '0 12px 32px #0009',
+        width: 'min(24rem, calc(100vw - 1.5rem))',
         whiteSpace: 'normal',
         overflow: 'hidden',
       }}
@@ -259,20 +261,20 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
       <div
         ref={contentRef}
         style={{
-          padding: '8px 12px',
+          padding: '1rem',
           maxHeight: maxH,
-          overflowY: overflowing ? 'auto' : 'hidden',
+          overflowY: 'auto',
           overscrollBehavior: 'contain',
         }}
       >
-        <span style={{ color: '#e8dcc8', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px' }}>
+        <span style={{ color: resolveKeywordTextColor(keyword, info), fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid #ffffff14' }}>
           {iconUrl && (
-            <KeywordIcon src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1rem', height: '1rem' }} />
+            <KeywordIcon src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem' }} />
           )}
           {localName}{info.maxStack ? ` (${t('keyword.maxStack')} ${info.maxStack})` : ''}
         </span>
-        <span style={{ color: '#999', fontSize: '0.6875rem', lineHeight: 1.5, display: 'block', whiteSpace: 'pre-line' }}>
-          {localDesc}
+        <span style={{ color: '#d0c7b8', fontSize: '0.875rem', lineHeight: 1.75, display: 'block', whiteSpace: 'pre-line' }}>
+          {formatDescription(localDesc, '#d0c7b8')}
         </span>
       </div>
       {overflowing && (
@@ -512,7 +514,7 @@ function formatSkillDescInner(
             </KeywordWithTooltip>
           )
         }
-        const resolvedBracketColor = resolveKeywordTextColor(p.text)
+        const resolvedBracketColor = skillConditionColor(p.text) ?? resolveKeywordTextColor(p.text)
         return (
           <span key={i} style={{ color: resolvedBracketColor === KEYWORD_DEFAULT_COLOR ? color : resolvedBracketColor, fontWeight: 600 }}>
             {p.text}

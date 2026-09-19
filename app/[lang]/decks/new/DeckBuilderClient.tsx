@@ -491,6 +491,23 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 </p>
               </div>
               <div className="deck-workspace-actions flex flex-wrap items-center gap-2">
+                <div className="deck-workspace-code">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+                    placeholder={builderT('fields.codePlaceholder')}
+                    aria-label={builderT('fields.deckCode')}
+                    aria-invalid={codeError}
+                    className="min-h-10 min-w-0 flex-1 rounded px-3 outline-none sm:min-h-11"
+                    style={{ background: 'var(--bg-elevated)', border: `1px solid ${codeError ? 'var(--error)' : 'var(--border)'}`, color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
+                  />
+                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
+                    {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
+                  </CompactButton>
+                  {codeError && <span role="alert" className="deck-workspace-code-error">{builderT('fields.codeError')}</span>}
+                </div>
                 {hasDraft && (
                   <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
                     {builderT('actions.loadDraft')}
@@ -676,29 +693,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )}
 
         {/* 덱 노트 */}
-        {tab !== 'note' && (
-              <div className="min-w-0">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.deckCode')}</span>
-                  {codeError && <span style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{builderT('fields.codeError')}</span>}
-                </div>
-                <div className="flex min-w-0 gap-2">
-                  <input
-                    type="text"
-                    value={codeInput}
-                    onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-                    placeholder={builderT('fields.codePlaceholder')}
-                    className="min-h-10 min-w-0 flex-1 rounded px-3 outline-none sm:min-h-11"
-                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
-                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
-                  />
-                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
-                    {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
-                  </CompactButton>
-                </div>
-              </div>
-
-        )}
         {tab === 'note' && (
           <motion.div
             key="note"

@@ -3,6 +3,7 @@
 import { unbreakableCoinIndices, COIN_IMAGES } from '@/lib/identity/skill-description'
 
 import Image from 'next/image'
+import { groupIdentitySkills } from '@/lib/identity/skill-model'
 import {
   Identity,
   Skill,
@@ -14,7 +15,7 @@ import {
 import SkillDescription from '@/components/skill/SkillDescription'
 import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import SkillFrame from '@/components/identity/SkillFrame'
-import { getSkillFrameBadgeUrl, getDetailStatIconUrl } from '@/lib/utils/images'
+import { getDetailStatIconUrl } from '@/lib/utils/images'
 import type { SkillDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -55,6 +56,7 @@ function localSkillFlavor(skill: Skill, locale: string): string | null | undefin
 }
 
 interface IdentitySkillsTabProps {
+  level: number
   identity: Identity
   filteredSkills: Skill[]
   skillNameColors: Record<string, string>
@@ -79,6 +81,7 @@ function DiffBadge({ to }: { from: number; to: number }) {
 }
 
 export default function IdentitySkillsTab({
+  level,
   identity,
   filteredSkills,
   skillNameColors,
@@ -109,7 +112,7 @@ export default function IdentitySkillsTab({
   }
 
   return (
-    <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+    <div className="card p-4 sm:p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
           {t('identity.skills.title')}
@@ -136,15 +139,17 @@ export default function IdentitySkillsTab({
         )}
       </div>
 
-      <div className="space-y-4">
-        {filteredSkills.map(skill => {
+      <div className="space-y-5">
+        {groupIdentitySkills(filteredSkills).map(group => (
+          <div key={group[0].id} className="rounded border border-[var(--border)] bg-[var(--bg-deep)] px-4 sm:px-6">
+          {group.map(skill => {
           const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#cccccc'
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
           const skillIconUrl = getSkillIconUrl(identity, imgIdx, skill)
           const v = variantMap[skill.id]
           const baseOrder = v?.baseOrder ?? (skill.skill_order >= 5 ? 3 : skill.skill_order)
           const diff = skillDiffs?.get(skill.id)
-          const offCorr = skill.offense_level != null ? skill.offense_level - 60 : null
+          const offCorr = skill.offense_level != null ? skill.offense_level - level : null
           const offCorrStr = offCorr === null ? '' : offCorr === 0 ? '' : offCorr > 0 ? `(+${offCorr})` : `(${offCorr})`
           const isAttackSkill = baseOrder !== 4
           const isDefense = baseOrder === 4
@@ -162,13 +167,12 @@ export default function IdentitySkillsTab({
           return (
             <div
               key={skill.id}
-              className="p-4 rounded"
-              style={{ background: `${skillSinColor}08`, border: `1px solid ${skillSinColor}30` }}
+              className="grid min-w-0 gap-5 py-5 sm:py-6 [&+div]:border-t [&+div]:border-white/10"
             >
               {/* 스킬 프레임 + 정보 영역 */}
-              <div className="flex items-start gap-1 mb-2">
+              <div className="flex items-center gap-1 sm:gap-2 mb-2">
                 {/* 프레임 + 오버레이 */}
-                <div className="relative shrink-0 ml-1 sm:ml-4 w-[5rem] h-[5rem] sm:w-[6.5rem] sm:h-[6.5rem]">
+                <div className="relative shrink-0 ml-1 sm:ml-4 w-[6.5rem] h-[6.5rem] sm:w-[8rem] sm:h-[8rem]">
                   {/* 죄악 색 삼각형 */}
                   <div className="absolute flex items-center justify-center pointer-events-none" style={{
                     top: '1.5%', left: '50%', transform: 'translateX(-56%)',
@@ -181,6 +185,7 @@ export default function IdentitySkillsTab({
                     }} />
                   </div>
                   <SkillFrame
+                    attackType={atkTypeKey}
                     skillIconUrl={skillIconUrl}
                     sin={skill.sin_affinity || 'neutral'}
                     skillSlot={isDefense ? 4 : baseOrder <= 3 ? baseOrder : 1}
@@ -188,16 +193,6 @@ export default function IdentitySkillsTab({
                     label={skillLabel}
                     size="100%"
                   />
-                  {/* 공격 타입 (하단 중앙) */}
-                  {atkTypeKey && (
-                    <div className="absolute z-20 pointer-events-none"
-                      style={{ bottom: 0, left: '50%', marginLeft: '-0.875rem', transform: 'translateY(-30%)', width: '1.75rem', height: '1.75rem' }}>
-                      <Image src={getSkillFrameBadgeUrl(skill.sin_affinity || 'neutral')}
-                        alt="" width={20} height={20} className="absolute inset-0" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                      <Image src={`${STORAGE_BASE}/icons/stats/${atkTypeKey}.webp`}
-                        alt="" width={16} height={16} className="absolute inset-0 m-auto z-10" style={{ width: '0.875rem', height: '0.875rem' }} />
-                    </div>
-                  )}
                   {/* 기본 위력 (좌측) */}
                   <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
                     <span style={{ fontFamily: "var(--font-excelsior), sans-serif", fontSize: 'clamp(1.375rem, 4vw, 2.125rem)', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
@@ -244,7 +239,7 @@ export default function IdentitySkillsTab({
                     })}
                   </div>
                   {/* 스킬명 배너 (사선 꼬리, pretext 기반 동적 너비) */}
-                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} />
+                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} fontSize="clamp(1rem, 2vw, 1.375rem)" />
                   {/* 공격 레벨 + 가중치 */}
                   <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
                     {skill.offense_level != null && (
@@ -273,9 +268,10 @@ export default function IdentitySkillsTab({
 
               {/* 스킬 설명 */}
               {(skillDescription || skillFlavor) && (
+                <div className="min-w-0 max-w-[75ch] [&>div]:text-[.875rem]! [&>div]:text-[#c9c3b8]!">
                 <SkillDescription
                   description={skillDescription}
-                  accentColor={skillSinColor}
+                  accentColor="#c2b79f"
                   variant="detail"
                   skillNameColors={skillNameColors}
                   allowedKeywords={allowedKeywords}
@@ -286,10 +282,13 @@ export default function IdentitySkillsTab({
                     : diff.level4Desc
                   ) : undefined}
                 />
+                </div>
               )}
             </div>
           )
         })}
+          </div>
+        ))}
       </div>
 
       {/* 4동기화 전용 스킬 (dimmed + lock) */}
@@ -321,7 +320,7 @@ export default function IdentitySkillsTab({
                 {(skillDescription || skillFlavor) && (
                   <SkillDescription
                     description={skillDescription}
-                    accentColor={skillSinColor}
+                    accentColor="#c2b79f"
                     variant="detail"
                     skillNameColors={skillNameColors}
                     allowedKeywords={allowedKeywords}

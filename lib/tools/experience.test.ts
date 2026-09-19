@@ -2,13 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { experienceNeeded, LUXCAVATIONS, optimizeTickets, planLuxcavation, ticketExperience, type Tickets } from './experience'
 describe('experience calculator', () => {
   it('matches level milestones and partial progress', () => {
-    for (const [level, exp] of [[10,396],[20,6481],[30,36404],[35,61123],[40,91700],[45,129019],[50,166084],[55,206864],[60,251629]]) expect(experienceNeeded(1, level)).toBe(exp)
+    for (const [level, exp] of [[10,396],[20,6481],[30,36404],[35,61123],[40,91700],[45,129019],[50,166084],[55,206864],[60,251629],[61,261421],[62,271213],[63,281005],[64,290797],[65,300589]]) expect(experienceNeeded(1, level)).toBe(exp)
     expect(experienceNeeded(55, 60, 100)).toBe(44665)
     expect(experienceNeeded(60, 60)).toBe(0)
     expect(experienceNeeded(20, 20, 100)).toBe(0)
   })
+  it('calculates the original 61–65 costs, progress and maximum ticket plan', () => {
+    expect(experienceNeeded(60, 65)).toBe(48960)
+    expect(experienceNeeded(64, 65, 9791)).toBe(1)
+    expect(experienceNeeded(65, 65)).toBe(0)
+    expect(() => experienceNeeded(64, 65, 9792)).toThrow()
+    expect(() => optimizeTickets(300590, [0, 0, 0, 0])).toThrow()
+    expect(planLuxcavation(300589, [0, 0, 0, 0], 9, false).runs).toBe(12)
+    expect(planLuxcavation(300589, [0, 0, 0, 0], 9, true).runs).toBe(8)
+  })
   it('rejects invalid levels, partial EXP and inventory', () => {
-    for (const args of [[0,60,0],[60,60,1],[30,20,0],[1,2,10],[1,61,0],[1.5,60,0]]) expect(() => experienceNeeded(...args as [number,number,number])).toThrow()
+    for (const args of [[0,60,0],[65,65,1],[30,20,0],[1,2,10],[1,66,0],[1.5,60,0]]) expect(() => experienceNeeded(...args as [number,number,number])).toThrow()
     expect(() => optimizeTickets(20, [-1,0,0,0])).toThrow()
     expect(() => planLuxcavation(20, [0,0,0,0], 10, false)).toThrow()
   })

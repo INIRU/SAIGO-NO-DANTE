@@ -10,7 +10,7 @@ async function load(kind: "deck" | "planner", days: number) {
   const db = createAdminClient().schema("limbus");
   const columns: string =
     kind === "deck"
-      ? "id,user_id,profiles!decks_user_id_fkey(username,avatar_url),title,description,tags,main_keywords,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))"
+      ? "id,user_id,profiles!decks_user_id_fkey(username,avatar_url),title,description,tags,main_keywords,content_type,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))"
       : "id,user_id,profiles:user_id(username,avatar_url),title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,updated_at,vote_count,view_count,comment_count";
   const table = kind === "deck" ? "decks" : "md_plans";
   const [counts, recent, edits] = await Promise.all([

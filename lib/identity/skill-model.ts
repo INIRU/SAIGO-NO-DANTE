@@ -32,3 +32,14 @@ export function buildSkillVariantMap(skills: Pick<Skill, 'id' | 'skill_order'>[]
   }
   return variants
 }
+
+export function groupIdentitySkills(skills: Skill[]): Skill[][] {
+  const groups = new Map<number, Skill[]>()
+  for (const skill of skills) {
+    const order = baseSkillOrder(skill.skill_order)
+    const group = groups.get(order) ?? []
+    group.push(skill)
+    groups.set(order, group)
+  }
+  return [...groups.values()]
+}

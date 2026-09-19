@@ -1227,8 +1227,20 @@ async function syncRecipes(): Promise<void> {
 
   if (fetchErr) throw new Error(`ego_gift_recipes fetch 실패: ${fetchErr.message}`)
 
+  // Resolve earlier EN/JP fallback names before matching recipes, so newly
+  // available Korean names update the same row rather than creating duplicates.
+  const { data: giftNames, error: giftNamesError } = await supabase.schema('limbus')
+    .from('ego_gifts').select('name,name_en,name_jp')
+  if (giftNamesError) throw new Error(`gift name lookup failed: ${giftNamesError.message}`)
+  const canonicalNames = new Map<string, string>()
+  for (const gift of giftNames ?? []) {
+    for (const name of [gift.name, gift.name_en, gift.name_jp]) {
+      if (name) canonicalNames.set(name, gift.name)
+    }
+  }
+  const canonical = (name: string) => canonicalNames.get(name) ?? name
   const recipeKey = (resultName: string, ingredients: string[] | null | undefined): string =>
-    `${resultName}:${JSON.stringify([...(ingredients ?? [])].sort())}`
+    `${canonical(resultName)}:${JSON.stringify([...(ingredients ?? [])].map(canonical).sort())}`
 
   const existingByKey = new Map<string, typeof existingRecipes[0]>()
   for (const r of existingRecipes ?? []) {
@@ -1248,6 +1260,8 @@ async function syncRecipes(): Promise<void> {
       toInsert.push(recipe)
     } else {
       const changes: string[] = []
+      if (existing.result_name !== recipe.result_name) changes.push('result_name 변경')
+      if (JSON.stringify(existing.ingredients) !== JSON.stringify(recipe.ingredients)) changes.push('ingredients 변경')
       if (existing.keyword !== recipe.keyword) changes.push(`keyword: ${existing.keyword} → ${recipe.keyword}`)
       if ((existing.final_result ?? null) !== recipe.final_result) changes.push(`final_result: ${existing.final_result} → ${recipe.final_result}`)
       if (changes.length > 0) {
@@ -1271,7 +1285,7 @@ async function syncRecipes(): Promise<void> {
     }
     for (const recipe of toUpdate) {
       const { error } = await supabase.schema('limbus').from('ego_gift_recipes')
-        .update({ ingredients: recipe.ingredients, keyword: recipe.keyword, final_result: recipe.final_result })
+        .update({ result_name: recipe.result_name, ingredients: recipe.ingredients, keyword: recipe.keyword, final_result: recipe.final_result })
         .eq('id', recipe.id!)
       if (error) console.error(`  ❌ ${recipe.result_name} 업데이트 실패: ${error.message}`)
       else if (VERBOSE) console.log(`  ✅ ${recipe.result_name} 업데이트`)

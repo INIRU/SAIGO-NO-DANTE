@@ -9,7 +9,7 @@ import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import FloatingFontControl from '@/components/ui/FloatingFontControl'
+import PageNavigation from '@/components/ui/PageNavigation'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import SetHtmlLang from '@/components/i18n/SetHtmlLang'
@@ -74,7 +74,7 @@ export default async function LangLayout({
       <Suspense fallback={null}><VisitTracker /></Suspense>
       <main id="main-content">{children}</main>
       <Footer />
-      <FloatingFontControl />
+      <PageNavigation />
     </NextIntlClientProvider>
   )
 }

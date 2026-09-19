@@ -42,9 +42,6 @@ export const translations = {
   'planner.hard': { ko: '하드', en: 'Hard', ja: 'ハード' },
   'planner.tags': { ko: '태그', en: 'Tags', ja: 'タグ' },
 
-  // Guide (운영법)
-  'guide.title': { ko: '운영법', en: 'Guides', ja: 'ガイド' },
-  'guide.write': { ko: '운영법 작성', en: 'Write Guide', ja: 'ガイドを書く' },
 
   // AI Summary
 
@@ -201,15 +198,6 @@ export const translations = {
   'identity.sanity.title': { ko: '정신력', en: 'Sanity', ja: '精神力' },
   'identity.sanity.increase': { ko: '정신력 증가', en: 'Sanity Increase', ja: '精神力増加' },
   'identity.sanity.decrease': { ko: '정신력 감소', en: 'Sanity Decrease', ja: '精神力減少' },
-  'identity.review.title': { ko: '리뷰', en: 'Reviews', ja: 'レビュー' },
-  'identity.review.placeholder': { ko: '한줄평을 남겨주세요...', en: 'Leave a one-liner...', ja: '一言レビューを書いてください...' },
-  'identity.review.anonymous': { ko: '익명', en: 'Anonymous', ja: '匿名' },
-  'identity.review.oneLineReviews': { ko: '한줄평', en: 'One-liners', ja: '一言レビュー' },
-  'identity.review.helpful': { ko: '유용해요', en: 'Helpful', ja: '役に立つ' },
-  'identity.review.notHelpful': { ko: '아쉬워요', en: 'Not helpful', ja: '残念' },
-  'identity.guide.title': { ko: '운영법', en: 'Guides', ja: 'ガイド' },
-  'identity.guide.noGuides': { ko: '아직 작성된 가이드가 없습니다.', en: 'No guides available yet.', ja: 'まだガイドがありません。' },
-  'identity.guide.write': { ko: '운영법 작성', en: 'Write Guide', ja: 'ガイド作成' },
   'identity.decks': { ko: '등록된 덱', en: 'Decks', ja: 'デッキ' },
   'identity.tab.skills': { ko: '스킬', en: 'Skills', ja: 'スキル' },
   'identity.tab.passives': { ko: '패시브', en: 'Passives', ja: 'パッシブ' },
@@ -230,7 +218,7 @@ export const translations = {
   'identity.timeAgo.hoursAgo': { ko: '시간 전', en: 'h ago', ja: '時間前' },
   'identity.timeAgo.daysAgo': { ko: '일 전', en: 'd ago', ja: '日前' },
   'identity.notFound': { ko: '인격을 찾을 수 없습니다', en: 'Identity not found', ja: '人格が見つかりません' },
-  'identity.meta.description': { ko: '스탯, 스킬, 패시브, 운영법', en: 'Stats, skills, passives, guides', ja: 'ステータス、スキル、パッシブ、ガイド' },
+  'identity.meta.description': { ko: '스탯, 스킬, 패시브', en: 'Stats, skills, passives', ja: 'ステータス、スキル、パッシブ' },
   'identity.season': { ko: '시즌', en: 'Season', ja: 'シーズン' },
   'identity.panic': { ko: '패닉', en: 'Panic', ja: 'パニック' },
   'identity.skillType.slash': { ko: '참격', en: 'Slash', ja: '斬撃' },
@@ -373,18 +361,6 @@ export const translations = {
   'identity.sanity.decreaseCondition': { ko: '기본 정신력 감소 조건', en: 'Sanity Decrease Conditions', ja: '基本精神力減少条件' },
 
   // Identity Review Section
-  'identity.review.userRating': { ko: '유저 평가', en: 'User Ratings', ja: 'ユーザー評価' },
-  'identity.review.participants': { ko: '명 참여', en: ' participated', ja: '人参加' },
-  'identity.review.recommended': { ko: '추천함', en: 'Recommended', ja: 'おすすめ済み' },
-  'identity.review.notRecommended': { ko: '비추천함', en: 'Not recommended', ja: '非おすすめ済み' },
-  'identity.review.upvote': { ko: '개추', en: 'Upvote', ja: 'おすすめ' },
-  'identity.review.downvote': { ko: '비추', en: 'Downvote', ja: '非おすすめ' },
-  'identity.review.inputPlaceholder': { ko: '한줄평 (선택, 최대 100자)', en: 'One-liner (optional, max 100 chars)', ja: '一言レビュー（任意、最大100文字）' },
-  'identity.review.loginPrompt': { ko: '로그인하면 평가에 참여할 수 있습니다', en: 'Log in to participate in ratings', ja: 'ログインすると評価に参加できます' },
-  'identity.review.empty': { ko: '아직 평가가 없습니다', en: 'No ratings yet', ja: 'まだ評価がありません' },
-  'identity.review.modify': { ko: '변경하기', en: 'Change', ja: '変更する' },
-  'identity.review.cancel': { ko: '취소', en: 'Cancel', ja: 'キャンセル' },
-  'identity.review.delete': { ko: '삭제', en: 'Delete', ja: '削除' },
 
   // Identity Info Card
   'identity.info.slash': { ko: '참격', en: 'Slash', ja: '斬撃' },
@@ -401,23 +377,6 @@ export const translations = {
   'identity.portrait.artTipDesc': { ko: '풀 일러스트를 볼 수 있어요', en: 'to view full illustration', ja: 'フルイラストを見ることができます' },
 
   // Identity Guide Section
-  'identity.guide.newTitlePlaceholder': { ko: '운영법 제목을 입력하세요', en: 'Enter guide title', ja: 'ガイドのタイトルを入力してください' },
-  'identity.guide.editTitlePlaceholder': { ko: '운영법 제목', en: 'Guide title', ja: 'ガイドタイトル' },
-  'identity.guide.newContentPlaceholder': { ko: '이 인격의 운영법을 작성하세요. 키워드/스킬/인격/에고 이름을 입력하면 자동완성됩니다.', en: 'Write a guide for this identity. Type keyword/skill/identity/EGO names for autocomplete.', ja: 'この人格のガイドを作成してください。キーワード/スキル/人格/EGO名を入力すると自動補完されます。' },
-  'identity.guide.editContentPlaceholder': { ko: '운영법 내용을 작성하세요.', en: 'Write guide content.', ja: 'ガイド内容を作成してください。' },
-  'identity.guide.delete': { ko: '삭제', en: 'Delete', ja: '削除' },
-  'identity.guide.confirmDeleteTitle': { ko: '운영법 삭제', en: 'Delete Guide', ja: 'ガイド削除' },
-  'identity.guide.confirmDeleteMsg': { ko: '이 운영법을 삭제하시겠습니까?', en: 'Delete this guide?', ja: 'このガイドを削除しますか？' },
-  'identity.guide.confirmDeleteLabel': { ko: '삭제', en: 'Delete', ja: '削除' },
-  'identity.guide.emptyState': { ko: '아직 운영법이 작성되지 않았습니다.', en: 'No guides have been written yet.', ja: 'まだガイドが作成されていません。' },
-  'identity.guide.discordSupport': { ko: '운영법 작성 지원하기 (Discord)', en: 'Contribute a guide (Discord)', ja: 'ガイド作成を支援する（Discord）' },
-  'identity.guide.edit': { ko: '수정', en: 'Edit', ja: '編集' },
-  'identity.guide.preview': { ko: '미리보기', en: 'Preview', ja: 'プレビュー' },
-  'identity.guide.saving': { ko: '저장 중...', en: 'Saving...', ja: '保存中...' },
-  'identity.guide.save': { ko: '저장', en: 'Save', ja: '保存' },
-  'identity.guide.cancel': { ko: '취소', en: 'Cancel', ja: 'キャンセル' },
-  'identity.guide.addNew': { ko: '추가하기', en: 'Add new', ja: '追加する' },
-  'identity.guide.untitled': { ko: '제목 없음', en: 'Untitled', ja: 'タイトルなし' },
 
   // Login
   'login.title': { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' },

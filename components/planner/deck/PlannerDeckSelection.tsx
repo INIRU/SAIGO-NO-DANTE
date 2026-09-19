@@ -4,12 +4,14 @@ import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 import { getFormationOverlay } from '@/components/decks/FormationBoard'
 
-import { useMemo, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { RefreshCcw, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import BaseModal from '@/components/ui/BaseModal'
+import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
+import { compareReleaseDate } from '@/lib/utils/release-order'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { localizeEgoName, localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -36,6 +38,7 @@ export type PlannerDeckIdentity = {
   name_en?: string | null
   name_jp?: string | null
   rarity: number
+  release_date?: string | null
   keywords?: string[] | null
   skill_keyword_list?: string[] | null
   game_id?: string | null
@@ -198,9 +201,9 @@ export function PlannerIdentityBoard({
         const isFormed = slotOrder != null && slotOrder >= 0 && slotOrder < 99
 
         return (
-          <motion.div
+          <div
             key={sinner.id}
-            className="relative min-w-0"
+            className="planner-deck-identity-slot relative min-w-0"
             style={{ overflow: 'visible' }}
           >
             <div
@@ -279,39 +282,40 @@ export function PlannerIdentityBoard({
                 )
               })()}
 
-              <div className="planner-deck-identity-card__overlay">
-                {identity ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onOpenIdentityModal(sinner.id)}
-                      className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--change"
-                      aria-label={`${t('change')} ${sinnerName}`}
-                    >
-                      {t('change')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onFormationToggle(sinner.id)}
-                      className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--formation"
-                      data-formed={isFormed}
-                      aria-pressed={isFormed}
-                      aria-label={`${isFormed ? t('removeFormation') : t('addFormation')} ${sinnerName}`}
-                    >
-                      {isFormed ? t('removeFormation') : t('addFormation')}
-                    </button>
-                  </>
-                ) : (
+            </div>
+
+            <div className="planner-deck-identity-card__overlay">
+              {identity ? (
+                <>
                   <button
                     type="button"
                     onClick={() => onOpenIdentityModal(sinner.id)}
-                    className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--empty"
-                    aria-label={`${t('form')} ${sinnerName}`}
+                    className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--change"
+                    aria-label={`${t('change')} ${sinnerName}`}
                   >
-                    {t('form')}
+                    {t('change')}
                   </button>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => onFormationToggle(sinner.id)}
+                    className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--formation"
+                    data-formed={isFormed}
+                    aria-pressed={isFormed}
+                    aria-label={`${isFormed ? t('removeFormation') : t('addFormation')} ${sinnerName}`}
+                  >
+                    {isFormed ? t('removeFormation') : t('addFormation')}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onOpenIdentityModal(sinner.id)}
+                  className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--empty"
+                  aria-label={`${t('form')} ${sinnerName}`}
+                >
+                  {t('form')}
+                </button>
+              )}
             </div>
 
             {identity && (
@@ -329,7 +333,7 @@ export function PlannerIdentityBoard({
                 <RefreshCcw aria-hidden="true" strokeWidth={2} />
               </button>
             )}
-          </motion.div>
+          </div>
         )
       })}
 
@@ -392,9 +396,8 @@ export function PlannerIdentityBoard({
           -webkit-backdrop-filter: blur(0.375rem) brightness(0.4);
           transition: opacity 0.18s ease, visibility 0s linear 0.18s;
         }
-        .planner-deck-identity-card:hover .planner-deck-identity-card__overlay,
-        .planner-deck-identity-card:focus .planner-deck-identity-card__overlay,
-        .planner-deck-identity-card:focus-within .planner-deck-identity-card__overlay {
+        .planner-deck-identity-slot:hover .planner-deck-identity-card__overlay,
+        .planner-deck-identity-slot:has(:focus-visible) .planner-deck-identity-card__overlay {
           opacity: 1;
           pointer-events: auto;
           visibility: visible;
@@ -515,31 +518,67 @@ export function PlannerIdentityBoard({
         }
         @media (max-width: 39.9375rem) {
           .planner-deck-identity-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            column-gap: 0.375rem;
-            row-gap: 0.5rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 0.75rem;
+            row-gap: 1rem;
+          }
+          .planner-deck-identity-card {
+            margin-bottom: 2.75rem;
           }
           .planner-deck-identity-card__overlay {
+            inset: 0;
             opacity: 1;
-            pointer-events: auto;
+            pointer-events: none;
             visibility: visible;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
             transition-delay: 0s;
           }
           .planner-deck-identity-card__overlay-button {
-            font-size: 0.875rem;
+            min-height: 2.75rem;
+            font-size: 0.8125rem;
             padding-inline: 0.25rem;
+            pointer-events: auto;
+          }
+          .planner-deck-identity-card__overlay-button--change {
+            position: absolute;
+            inset: 0 0 2.75rem;
+            width: 100%;
+            height: auto;
+            background: transparent;
+            border-bottom: 0;
+            color: transparent;
+            font-size: 0;
+            text-shadow: none;
+          }
+          .planner-deck-identity-card__overlay-button--change:hover,
+          .planner-deck-identity-card__overlay-button--change:focus-visible,
+          .planner-deck-identity-card__overlay-button--empty:hover,
+          .planner-deck-identity-card__overlay-button--empty:focus-visible {
+            background: transparent;
+          }
+          .planner-deck-identity-card__overlay-button--formation {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2.75rem;
           }
           .planner-deck-identity-card__overlay-button--empty {
-            font-size: 0.9375rem;
+            position: absolute;
+            inset: 0 0 2.75rem;
+            width: 100%;
+            height: auto;
+            min-height: 0;
+            background: transparent;
+            color: transparent;
+            font-size: 0;
+            text-shadow: none;
           }
           .planner-deck-identity-card__art-button {
             top: 0.1875rem;
             right: 0.1875rem;
-          }
-        }
-        @media (max-width: 22.4375rem) {
-          .planner-deck-identity-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -581,8 +620,12 @@ export function PlannerIdentitySelectModal({
   const getKeywordLabel = (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale)
   const compactNameStyle = getCompactNameStyle(locale)
 
+  const [query, setQuery] = useState(''), [grade, setGrade] = useState('')
+  useEffect(() => { setQuery(''); setGrade('') }, [open, sinner?.id])
+  const filtered = identities.filter(identity => (!grade || String(identity.rarity) === grade) && [identity.name, identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))).sort(compareReleaseDate)
+
   return (
-    <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="48rem" title={t('modalTitle')}>
+    <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="64rem" title={t('modalTitle')}>
       {sinner && (
         <div className="planner-deck-select-modal">
           <div className="planner-deck-select-modal__header">
@@ -597,6 +640,9 @@ export function PlannerIdentitySelectModal({
             </button>
           </div>
 
+          <div className="character-picker-layout">
+          <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))} count={filtered.length} />
+          <div className="planner-deck-select-modal__results">
           {selectedIdentityId && onDeselect && (
             <div className="px-5 pt-3">
               <button
@@ -611,8 +657,8 @@ export function PlannerIdentitySelectModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3 md:grid-cols-4">
-            {identities.map(identity => {
+          <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3 lg:grid-cols-4">
+            {filtered.map(identity => {
               const isSelected = selectedIdentityId === identity.id
               const rarityColor = RARITY_COLORS[identity.rarity] ?? RARITY_COLORS[1]
               const identityName = localizeIdentityName(identity, locale)
@@ -621,6 +667,7 @@ export function PlannerIdentitySelectModal({
                   key={identity.id}
                   type="button"
                   onClick={() => onSelect(identity)}
+                  aria-pressed={isSelected}
                   className="text-left transition-[filter,box-shadow,border-color] duration-200 hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0c09]"
                   style={{
                     background: isSelected
@@ -633,7 +680,7 @@ export function PlannerIdentitySelectModal({
                     boxShadow: isSelected ? `0 0 0.75rem ${rarityColor.glow}` : 'none',
                   }}
                 >
-                  <div className="relative isolate w-full overflow-hidden" style={{ aspectRatio: '2/3' }}>
+                  <div className="relative isolate w-full overflow-hidden" style={{ aspectRatio: '4/5' }}>
                     {identity.game_id && identity.folder_name && (
                       <Image
                         src={getIdentityInfoImageUrl(identity, false)}
@@ -662,20 +709,27 @@ export function PlannerIdentitySelectModal({
                 </button>
               )
             })}
-            {identities.length === 0 && (
+            {filtered.length === 0 && (
               <p className="col-span-full py-8 text-center" style={{ color: 'var(--text-tertiary)', fontSize: '0.9375rem' }}>{t('noResults')}</p>
             )}
           </div>
+          </div>
+          </div>
           <style jsx>{`
             .planner-deck-select-modal {
-              max-height: 85vh;
-              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              height: 82dvh;
+              max-height: 50rem;
+              overflow: hidden;
               border: 1px solid #333;
               border-radius: 0.5rem;
               background: #1a1510;
               box-shadow: 0 1rem 3rem rgba(0,0,0,0.8);
             }
+            .planner-deck-select-modal__results { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
             .planner-deck-select-modal__header {
+              flex-shrink: 0;
               position: sticky;
               top: 0;
               z-index: 30;
@@ -881,17 +935,13 @@ export function PlannerEgoSelectModal({
   const locale = useLocale() as SupportedLang
   const getLocalizedSinnerName = useSinnerName(locale, getSinnerName)
   const compactNameStyle = getCompactNameStyle(locale)
-  const egosByGrade = useMemo(() => {
-    const map = new Map<string, PlannerDeckEgo[]>()
-    for (const ego of egos) {
-      if (!map.has(ego.grade)) map.set(ego.grade, [])
-      map.get(ego.grade)!.push(ego)
-    }
-    return map
-  }, [egos])
-
+  const [query, setQuery] = useState(''), [gradeFilter, setGradeFilter] = useState('')
+  useEffect(() => { setQuery(''); setGradeFilter('') }, [open, sinner?.id])
+  const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name, ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
+  const egosByGrade = new Map<string, PlannerDeckEgo[]>()
+  for (const ego of filtered) egosByGrade.set(ego.grade, [...(egosByGrade.get(ego.grade) ?? []), ego])
   return (
-    <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="42rem" title={t('modalTitle')}>
+    <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="64rem" title={t('modalTitle')}>
       {sinner && (
         <div className="planner-deck-select-modal">
           <div className="planner-deck-select-modal__header">
@@ -906,8 +956,11 @@ export function PlannerEgoSelectModal({
             </button>
           </div>
 
-          <div className="flex flex-col gap-5 p-5">
-            {PLANNER_EGO_GRADE_ORDER.map(grade => {
+          <div className="character-picker-layout">
+          <CharacterPickerFilters query={query} onQuery={setQuery} grade={gradeFilter} onGrade={setGradeFilter} grades={PLANNER_EGO_GRADE_ORDER.map(value => ({ value, label: value }))} count={filtered.length} />
+          <div className="planner-deck-select-modal__results flex flex-col gap-5 p-5">
+            {!filtered.length && <p className="py-8 text-center" style={{ color: 'var(--text-secondary)' }}>{locale === 'ja' ? '結果がありません' : locale === 'en' ? 'No results' : '검색 결과가 없습니다'}</p>}
+            {PLANNER_EGO_GRADE_ORDER.filter(grade => (egosByGrade.get(grade)?.length ?? 0) > 0).map(grade => {
               const gradeColor = GRADE_COLORS[grade] ?? '#555'
               const gradeEgos = egosByGrade.get(grade) ?? []
               const selectedForGrade = selectedEgosByGrade[grade]
@@ -953,7 +1006,7 @@ export function PlannerEgoSelectModal({
                               sinnerId={ego.sinner_id}
                               lang={locale}
                               selected={isSelected}
-                              className="transition-[filter] duration-200 ease-out brightness-95 hover:brightness-105 hover:saturate-110"
+                              className="character-picker-ego-card"
                             />
                           </div>
                         )
@@ -964,16 +1017,22 @@ export function PlannerEgoSelectModal({
               )
             })}
           </div>
+          </div>
           <style jsx>{`
             .planner-deck-select-modal {
-              max-height: 85vh;
-              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              height: 82dvh;
+              max-height: 50rem;
+              overflow: hidden;
               border: 1px solid #333;
               border-radius: 0.5rem;
               background: #1a1510;
               box-shadow: 0 1rem 3rem rgba(0,0,0,0.8);
             }
+            .planner-deck-select-modal__results { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
             .planner-deck-select-modal__header {
+              flex-shrink: 0;
               position: sticky;
               top: 0;
               z-index: 30;

@@ -8,6 +8,7 @@ import useSWR from 'swr'
 import { toast } from 'sonner'
 import { Plus, ChevronDown, X, Search, GripVertical } from 'lucide-react'
 import NoteAssetPicker from './NoteAssetPicker'
+import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
@@ -21,12 +22,14 @@ function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(ass
   useEffect(()=>{const timer=setTimeout(()=>{setDebounced(query);setOffset(0)},180);return()=>clearTimeout(timer)},[query])
   const {data,error,isLoading,mutate}=useSWR(`/api/notes/assets?kind=${kind}&q=${encodeURIComponent(debounced)}&offset=${offset}&grade=${grade}`,fetchNoteAssets,{revalidateOnFocus:false})
   return <BaseModal open onClose={onClose} title={`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`} maxWidth="48rem" zIndex={10000}>
-    <div className={`note-picker note-picker--${kind}`}>
+    <div className={`note-picker note-picker--${kind} note-catalog-picker`}>
       <header className="note-picker-header"><h2>{blockLabel(kind,lang)} {tr(lang,'선택','選択','selection')}</h2><button type="button" onClick={onClose} aria-label={tr(lang,'닫기','閉じる','Close')}><X size={20}/></button></header>
+      <div className="character-picker-layout">
       <div className="note-picker-controls">
       <label className="note-picker-search"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr(lang,'이름으로 검색','名前で検索','Search by name')} aria-label={tr(lang,'에셋 검색','アセット検索','Search assets')}/></label>
       {kind==='gift' && <Dropdown ariaLabel={tr(lang,'기프트 등급','ギフトランク','Gift tier')} value={grade} onChange={value=>{setGrade(value);setOffset(0)}} defaultValue="" className="note-tier-dropdown" options={[{value:'',label:tr(lang,'모든 등급','すべてのランク','All tiers')},...['I','II','III','IV','V'].map((label,i)=>({value:String(i+1),label}))]} buttonStyle={{height:'100%',minHeight:'2.75rem',fontSize:'.875rem'}}/>}
       </div>
+      <div className="note-legacy-results-shell">
       <div className="note-picker-results" key={`${debounced}-${offset}-${grade}`}>
       {isLoading && <p role="status">{tr(lang,'불러오는 중…','読み込み中…','Loading…')}</p>}
       {error && <button type="button" onClick={()=>{void mutate()}}>{tr(lang,'불러오지 못했습니다. 다시 시도','読み込み失敗・再試行','Could not load. Retry')}</button>}
@@ -36,10 +39,12 @@ function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(ass
       </div>
       </div>
       <div className="note-picker-pages"><button type="button" disabled={!offset} onClick={()=>setOffset(Math.max(0,offset-24))}>{tr(lang,'이전','前へ','Previous')}</button><span>{Math.floor(offset/24)+1}</span><button type="button" disabled={!data || data.length<24} onClick={()=>setOffset(offset+24)}>{tr(lang,'다음','次へ','Next')}</button></div>
+      </div>
+      </div>
     </div>
   </BaseModal>
 }
-function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) { return props.kind==='skill' || props.kind==='gift' ? <NoteAssetPicker {...props} kind={props.kind}/> : <LegacyAssetPicker {...props}/> }
+function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) { return props.kind==='identity' || props.kind==='ego' ? <NoteCharacterPicker {...props} kind={props.kind}/> : props.kind==='skill' || props.kind==='gift' ? <NoteAssetPicker {...props} kind={props.kind}/> : <LegacyAssetPicker {...props}/> }
 function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps) {
   const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as AssetKind
   const title=`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`

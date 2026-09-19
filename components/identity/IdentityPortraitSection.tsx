@@ -2,7 +2,7 @@
 
 import { getSinnerBadgeRingUrl } from '@/lib/utils/images'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { X } from 'lucide-react'
@@ -17,6 +17,7 @@ import {
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n'
+import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
 interface IdentityPortraitSectionProps {
@@ -47,6 +48,18 @@ export default function IdentityPortraitSection({
   const t = useTranslations()
   const locale = useLocale()
   const localizedName = getLocalizedName(identity, locale as SupportedLang)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const [titleWidth, setTitleWidth] = useState(0)
+  const titleSize = useAutoFontSize(localizedName, 2.25, 0.625, titleWidth)
+  useEffect(() => {
+    const title = titleRef.current
+    if (!title) return
+    const measure = () => setTitleWidth(title.clientWidth)
+    const observer = new ResizeObserver(measure)
+    observer.observe(title)
+    measure()
+    return () => observer.disconnect()
+  }, [])
   const infoUrl = getIdentityInfoUrl(identity, gacksung)
   const fallbackInfoUrl = gacksung ? getIdentityInfoUrl(identity, false) : ''
 
@@ -116,7 +129,7 @@ export default function IdentityPortraitSection({
         document.body
       )}
 
-      <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
+      <div className="space-y-4">
         {/* 인격 이름 헤더 */}
         <div className="flex items-center gap-2">
           {/* 등급 프레임 + 수감자 로고 */}
@@ -135,13 +148,14 @@ export default function IdentityPortraitSection({
           </div>
           <div className="flex-1 min-w-0">
             <h1
-              className="font-serif truncate"
-              style={{ color: '#e8dcc8', fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, WebkitTextStroke: '0.5px #e8dcc8' }}
+              ref={titleRef}
+              className="font-serif whitespace-nowrap"
+              style={{ color: '#e8dcc8', fontSize: `${titleSize}rem`, lineHeight: 1.25, fontWeight: 700 }}
             >
               {localizedName}
             </h1>
             <p className="truncate" style={{ color: '#a08a60', fontSize: '0.6875rem' }}>
-              {identity.name}
+              {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, locale as SupportedLang)}
             </p>
           </div>
         </div>
@@ -149,22 +163,24 @@ export default function IdentityPortraitSection({
         {/* 일반/각성 토글 */}
         <div className="flex gap-1.5">
           <button
+            aria-pressed={!gacksung}
             onClick={() => setGacksung(false)}
             className="flex-1 py-1.5 text-xs font-medium rounded transition-all"
             style={{
               background: !gacksung ? sinColor : 'transparent',
-              color: !gacksung ? '#0d0b08' : '#666',
+              color: !gacksung ? '#0d0b08' : '#a39b8d',
               border: `1px solid ${!gacksung ? sinColor : 'var(--border)'}`,
             }}
           >
             {t('identity.portrait.illustration')}
           </button>
           <button
+            aria-pressed={gacksung}
             onClick={() => setGacksung(true)}
             className="flex-1 py-1.5 text-xs font-medium rounded transition-all"
             style={{
               background: gacksung ? '#ff6b6b' : 'transparent',
-              color: gacksung ? '#0d0b08' : '#666',
+              color: gacksung ? '#0d0b08' : '#a39b8d',
               border: `1px solid ${gacksung ? '#ff6b6b' : 'var(--border)'}`,
             }}
           >
@@ -174,8 +190,9 @@ export default function IdentityPortraitSection({
 
         {/* 인격 정보 이미지 (클릭하면 풀 일러스트) */}
         <div style={{ position: 'relative' }}>
-          <div
-            className={`game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
+          <button
+            type="button"
+            className={`w-full game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
             onClick={() => {
               if (infoSrc) {
                 setShowFullArt(true)
@@ -190,13 +207,13 @@ export default function IdentityPortraitSection({
             {infoSrc ? (
               <Image
                 src={infoSrc}
-                alt="인격 정보"
+                alt={localizedName}
                 width={480}
                 height={320}
                 quality={90}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL(infoSrc) ?? BLUR_PLACEHOLDER}
-                className="w-full h-auto max-w-[320px] mx-auto"
+                className="w-full h-auto max-h-[32rem] object-contain mx-auto"
                 preload
                 onError={() => {
                   if (fallbackInfoUrl && infoSrc !== fallbackInfoUrl) {
@@ -210,7 +227,7 @@ export default function IdentityPortraitSection({
               <div
                 className="w-full flex items-center justify-center"
                 style={{
-                  maxWidth: '320px',
+                  maxWidth: '32rem',
                   margin: '0 auto',
                   aspectRatio: '3/2',
                   background: `linear-gradient(160deg, #1e1810, #0d0a06)`,
@@ -221,7 +238,7 @@ export default function IdentityPortraitSection({
                 </span>
               </div>
             )}
-          </div>
+          </button>
 
           {/* 첫 방문 툴팁: 풀 일러스트 안내 */}
           {showArtTip && (
@@ -273,10 +290,8 @@ export default function IdentityPortraitSection({
         {/* 인격 대사 */}
         {identity.quote && (
           <blockquote
-            className="px-3 py-3 rounded text-[1rem] font-medium leading-[1.75] break-words"
+            className="mx-auto max-w-[42ch] border-t border-white/10 px-2 pt-4 text-[.8125rem] italic leading-[1.85] break-words"
             style={{
-              background: `${sinColor}08`,
-              borderLeft: `2px solid ${sinColor}60`,
               color: 'var(--text-secondary)',
             }}
           >

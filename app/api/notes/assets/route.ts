@@ -14,7 +14,7 @@ const TABLES = { gift:'ego_gifts', theme:'ego_gift_themes', identity:'identities
 const COLUMNS = {
   gift:'id,name,name_en,name_jp,grade,keyword,image_url,effect_base,effect_base_en,effect_base_jp',
   theme:'id,name,name_en,name_jp,image_url',
-  identity:'id,name,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords',
+  identity:'id,name,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords,release_date',
   ego:'id,name,name_kr,name_en,name_jp,grade,image_url,sinner_id,sin_affinity,stage_levels:ego_skills(construe_level)',
   skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
   keyword:'name,name_en,name_jp,description,icon_slug',
@@ -78,6 +78,6 @@ export async function GET(req: NextRequest) {
     if (!isAssetKind(kind) || q.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 5000) return NextResponse.json({error:'Invalid search'},{status:400})
     const identityIds = p.has('identities') ? p.get('identities')!.split(',').filter(Boolean) : null
     if (identityIds && (identityIds.length > 12 || identityIds.some(id => !/^[0-9a-f-]{36}$/i.test(id)))) return NextResponse.json({error:'Invalid identities'},{status:400})
-    return NextResponse.json(await load(kind,q,[],offset,grade,identityIds,kind === 'gift' && p.get('catalog') === '1'))
+    return NextResponse.json(await load(kind,q,[],offset,grade,identityIds,['gift', 'identity', 'ego'].includes(kind) && p.get('catalog') === '1'))
   } catch { return NextResponse.json({error:'Assets unavailable'},{status:503}) }
 }

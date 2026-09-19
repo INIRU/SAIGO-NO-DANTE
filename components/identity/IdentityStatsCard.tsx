@@ -1,134 +1,78 @@
 'use client'
 
-
-import { getDetailStatIconUrl } from '@/lib/utils/images'
 import Image from 'next/image'
-import { Identity } from '@/lib/data/sinners'
+import { getDetailStatIconUrl } from '@/lib/utils/images'
+import type { Identity } from '@/lib/data/sinners'
 import { useTranslations } from 'next-intl'
+import { MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
 
-interface IdentityStatsCardProps {
-  identity: Identity
-  sinColor: string
-}
-
-export default function IdentityStatsCard({ identity, sinColor }: IdentityStatsCardProps) {
+export default function IdentityStatsCard({ identity, level, setLevel }: { identity: Identity; level: number; setLevel: (level: number) => void }) {
   const t = useTranslations()
-  const defCorr = identity.def_level - 60
-  const defCorrStr = defCorr === 0 ? '' : defCorr > 0 ? `(+${defCorr})` : `(${defCorr})`
-
-  const stats = [
-    { label: 'HP', value: String(identity.hp), iconUrl: getDetailStatIconUrl('health') },
-    { label: t('identity.stats.speed'), value: `${identity.speed_min}-${identity.speed_max}`, iconUrl: getDetailStatIconUrl('speed') },
-    { label: t('identity.stats.defLevel'), value: `${identity.def_level}${defCorrStr}`, iconUrl: getDetailStatIconUrl('defense') },
-  ]
-
-  const breakSection = identity.break_section
-  const hp = identity.hp
-
+  const correction = identity.def_level - level
+  const thresholds = identity.break_section ?? []
+  const markerColors = ['#e4c777', '#e69b86', '#91beb4']
   return (
-    <div className="card p-6">
-      <h2
-        className="font-serif font-light mb-4"
-        style={{ color: 'var(--gold)', fontSize: '1rem' }}
-      >
-        {t('identity.stats.title')}
-      </h2>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {stats.map(({ label, value, iconUrl }) => (
-          <div
-            key={label}
-            className="text-center py-3 rounded"
-            style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)' }}
-          >
-            <div className="flex justify-center mb-1">
-              <Image src={iconUrl} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem' }} />
-            </div>
-            <div
-              className="font-mono font-bold"
-              style={{ color: sinColor, fontSize: '1.25rem' }}
-            >
-              {value}
-            </div>
-            <div style={{ color: '#999', fontSize: '0.75rem', marginTop: '2px' }}>{label}</div>
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--bg-deep)] p-4 sm:p-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm text-[var(--gold)]">{t('identity.stats.title')}</h2>
+        <label className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
+          <span>Lv. <span className="text-2xl text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-excelsior)' }}>{level}</span></span>
+          <input type="range" min={1} max={MAX_IDENTITY_LEVEL} value={level} onChange={event => setLevel(Number(event.target.value))} aria-label={t('identity.stats.level')} className="w-32 accent-[var(--gold)]" />
+        </label>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="shrink-0">
+          <div className="flex items-center gap-2">
+            <Image src={getDetailStatIconUrl('health')} alt="HP" width={24} height={24} />
+            <span className="text-4xl tabular-nums text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-excelsior)' }}>{identity.hp}</span>
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="mb-7 text-xs text-[var(--text-secondary)]">{t('identity.stats.breakSectionTitle')}</h3>
+          <div className="relative h-3 rounded-sm bg-[#a94c48]" role="img" aria-label={thresholds.map(pct => `${pct}% (${Math.floor(identity.hp * pct / 100)} HP)`).join(', ')}>
+            {thresholds.map((pct, i) => (
+              <div key={i} className="absolute inset-y-0 w-0.5" style={{ left: `${pct}%`, background: markerColors[i % markerColors.length] }}>
+                <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-xs font-semibold tabular-nums" style={{ color: markerColors[i % markerColors.length] }}>{pct}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[.625rem] text-[var(--text-muted)]"><span>0%</span><span>100%</span></div>
+        </div>
+      </div>
+      {thresholds.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--text-secondary)]">
+          {thresholds.map((pct, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: markerColors[i % markerColors.length] }} />
+              {t('identity.stats.breakPhase', { n: i + 1 })} · {pct}% <span className="tabular-nums text-[var(--text-primary)]">({Math.floor(identity.hp * pct / 100)} HP)</span>
+            </span>
+          ))}
+        </div>
+      )}
+      <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
+        {[
+          { icon: 'speed' as const, label: t('identity.stats.speed'), value: `${identity.speed_min}–${identity.speed_max}` },
+          { icon: 'defense' as const, label: t('identity.stats.defLevel'), value: `${identity.def_level}${correction ? ` (${correction > 0 ? '+' : ''}${correction})` : ''}` },
+        ].map(stat => (
+          <div key={stat.icon} className="flex items-center gap-3">
+            <Image src={getDetailStatIconUrl(stat.icon)} alt="" width={24} height={24} />
+            <div><dt className="text-xs text-[var(--text-secondary)]">{stat.label}</dt><dd className="mt-1 text-2xl tabular-nums text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-excelsior)' }}>{stat.value}</dd></div>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
+        {([
+          { icon: 'slash', label: t('identity.info.slash'), resistance: identity.slash_res },
+          { icon: 'pierce', label: t('identity.info.pierce'), resistance: identity.pierce_res },
+          { icon: 'blunt', label: t('identity.info.blunt'), resistance: identity.blunt_res },
+        ] as const).map(({ icon, label, resistance }) => (
+          <div key={icon} className="text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--text-secondary)]"><Image src={getDetailStatIconUrl(icon)} alt="" width={18} height={18} />{label}</div>
+            <div className="mt-2 text-3xl tabular-nums" style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: resistance === '취약' ? '#e69b86' : resistance === '내성' ? '#91beb4' : 'var(--text-primary)' }}>×{resistance === '내성' ? '0.5' : resistance === '취약' ? '2' : '1'}</div>
+            <div className="mt-0.5 text-[.6875rem] text-[var(--text-secondary)]">{t(resistance === '취약' ? 'identity.resistance.weak' : resistance === '내성' ? 'identity.resistance.resistant' : 'identity.resistance.normal')}</div>
           </div>
         ))}
       </div>
-
-      {/* {t('identity.stats.breakSection')} */}
-      {breakSection && breakSection.length > 0 && (
-        <div className="mt-5">
-          <h3 className="font-serif font-light mb-3" style={{ color: 'var(--gold)', fontSize: '0.875rem' }}>
-            {t('identity.stats.breakSection')}
-          </h3>
-          <div className="relative rounded-lg overflow-hidden" style={{ height: '2.5rem', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border)' }}>
-            {/* HP 바 — 왼쪽=100%(빨간, 체력 꽉 참) → 오른쪽=0%(sinColor, 체력 없음) */}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, rgba(200,60,60,0.3), ${sinColor}20)` }} />
-
-            {/* {t('identity.stats.breakSection')} 마커 */}
-            {breakSection.map((pct, i) => (
-              <div key={i}>
-                {/* 구간선 */}
-                <div
-                  className="absolute top-0 bottom-0"
-                  style={{ left: `${100 - pct}%`, width: '0.125rem', background: '#e04040', opacity: 0.8 }}
-                />
-                {/* 구간 라벨 */}
-                <div
-                  className="absolute flex flex-col items-center"
-                  style={{ left: `${100 - pct}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
-                >
-                  <span style={{ color: '#e04040', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-                    {pct}%
-                  </span>
-                </div>
-              </div>
-            ))}
-
-            {/* 100% 시작 (왼쪽) */}
-            <div className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#888', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-              100%
-            </div>
-            {/* 0% 끝 (오른쪽) */}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2" style={{ color: '#555', fontSize: '0.625rem', fontFamily: 'var(--font-mono)' }}>
-              0%
-            </div>
-
-            {/* 흐트러짐 영역 (각 구간 이하) */}
-            {breakSection.map((pct, i) => {
-              const nextPct = breakSection[i + 1] ?? 0
-              return (
-                <div
-                  key={`zone-${i}`}
-                  className="absolute top-0 bottom-0"
-                  style={{
-                    left: `${100 - pct}%`,
-                    width: `${pct - nextPct}%`,
-                    background: `rgba(224,64,64,${0.06 + i * 0.06})`,
-                    borderLeft: '0.125rem solid rgba(224,64,64,0.3)',
-                  }}
-                />
-              )
-            })}
-          </div>
-
-          {/* 구간 설명 */}
-          <div className="flex gap-3 mt-2 justify-center">
-            {breakSection.map((pct, i) => {
-              const hpVal = Math.round(hp * pct / 100)
-              return (
-                <div key={i} className="flex items-center gap-1.5">
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#e04040', opacity: 0.5 + i * 0.2 }} />
-                  <span style={{ color: '#aaa', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                    {t('identity.stats.breakPhase', { n: i + 1 })}{' '}<span style={{ color: '#e04040' }}>{pct}%</span>
-                    <span style={{ color: '#666' }}> ({hpVal})</span>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   )
 }

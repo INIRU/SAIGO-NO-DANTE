@@ -10,6 +10,8 @@ import type { IdentityWithSinner } from '@/lib/types'
 import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
+import { latestYoutubePreview, youtubeVideosFeedUrl, type YoutubeVideo } from '@/lib/utils/youtube'
+export type { YoutubeVideo } from '@/lib/utils/youtube'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -65,39 +67,21 @@ async function getPinnedAnnouncement(lang: SupportedLang): Promise<Announcement 
 // https://www.youtube.com/@ProjectMoonOfficial 채널 ID를 입력하세요
 const PM_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID ?? ''
 
-export type YoutubeVideo = {
-  videoId: string
-  title: string
-  publishedAt: string
-}
-
 async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
   if (!PM_CHANNEL_ID) return null
   try {
-    // channel_id RSS often returns 404; use uploads playlist (UC→UU) instead
-    const playlistId = PM_CHANNEL_ID.replace(/^UC/, 'UU')
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 3000)
     try {
       const res = await fetch(
-        `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`,
+        youtubeVideosFeedUrl(PM_CHANNEL_ID),
         { next: { revalidate: 3600 }, signal: controller.signal }
       )
       clearTimeout(timeout)
       if (!res.ok) return null
       const xml = await res.text()
 
-      // Parse all <entry> blocks and find the latest PV
-      const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(m => m[1])
-      for (const entry of entries) {
-        const videoId     = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1]
-        const title       = entry.match(/<title>([^<]+)<\/title>/)?.[1] ?? ''
-        const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? ''
-        if (videoId && /PV|Teaser|인격 소개|\[0{2,3}\]/i.test(title)) {
-          return { videoId, title, publishedAt }
-        }
-      }
-      return null
+      return latestYoutubePreview(xml)
     } catch {
       clearTimeout(timeout)
       return null
