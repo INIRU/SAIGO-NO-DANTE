@@ -67,10 +67,10 @@
       "file": "wrath-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
-        0,
-        1024,
+        1536,
         512,
-        1536
+        2048,
+        1024
       ],
       "color": "#ff1919"
     },
@@ -133,9 +133,9 @@
       "file": "lust-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
+        0,
+        1024,
         512,
-        1024,
-        1024,
         1536
       ],
       "color": "#ff4200"
@@ -199,9 +199,9 @@
       "file": "sloth-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
+        512,
         1024,
         1024,
-        1536,
         1536
       ],
       "color": "#ffff00"
@@ -265,9 +265,9 @@
       "file": "gluttony-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
-        1536,
         1024,
-        2048,
+        1024,
+        1536,
         1536
       ],
       "color": "#44ff00"
@@ -331,10 +331,10 @@
       "file": "gloom-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
-        0,
         1536,
-        512,
-        2048
+        1024,
+        2048,
+        1536
       ],
       "color": "#00ffff"
     },
@@ -397,9 +397,9 @@
       "file": "pride-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
-        512,
+        0,
         1536,
-        1024,
+        512,
         2048
       ],
       "color": "#0044ff"
@@ -463,9 +463,9 @@
       "file": "envy-3-base.webp",
       "source": "Icon_skillFrame_Invert.png",
       "crop": [
+        512,
+        1536,
         1024,
-        1536,
-        1536,
         2048
       ],
       "color": "#ff00ff"

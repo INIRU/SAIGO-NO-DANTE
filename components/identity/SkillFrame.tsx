@@ -48,12 +48,12 @@ export default function SkillFrame({
       <Image
         src={getSkillFrameInnerUrl(sin, skillSlot, 'base')}
         alt="" width={128} height={128}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
       {/* Skill icon remains centered inside the original atlas cell. */}
       <div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        className="absolute inset-0 z-[1] flex items-center justify-center pointer-events-none"
       >
         <div
           className="relative overflow-hidden"
@@ -98,11 +98,11 @@ export default function SkillFrame({
         alt=""
         width={128}
         height={128}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 z-[2] pointer-events-none"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
       {attackType && (
-        <div className="absolute z-20 pointer-events-none" style={{ left: '50%', top: '73%', width: '23%', height: '23%', transform: 'translateX(-50%)' }}>
+        <div className="absolute z-20 pointer-events-none" style={{ left: '50%', top: '69%', width: '23%', height: '23%', transform: 'translateX(-50%)' }}>
           <Image src={getSkillFrameBadgeUrl(sin)} alt="" width={28} height={28} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
           <Image src={getDetailStatIconUrl(attackType)} alt="" width={16} height={16} className="absolute inset-0 m-auto" style={{ width: '55%', height: '55%', objectFit: 'contain' }} />
         </div>

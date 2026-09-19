@@ -1,6 +1,7 @@
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import skillFrameVersions from '@/lib/generated/skill-frame-versions.json'
+import egoArtwork from '@/lib/generated/ego-artwork.json'
 import type { Identity } from '@/lib/types'
 import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
 
@@ -125,6 +126,13 @@ export function getSkillFrameBadgeUrl(sin: string): string {
 export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {
   const folder = encodeURIComponent(egoFolderName)
   return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/`
+}
+
+/** Verified full-resolution CGs; small profiles remain in cards and skill frames. */
+export function getEgoArtworkUrl(profileUrl: string): string {
+  const id = profileUrl.match(/\/(\d+)_awaken_profile\.webp/)?.[1]
+  const version = id && egoArtwork[id as keyof typeof egoArtwork]
+  return version ? profileUrl.replace(/\d+_awaken_profile\.webp(?:\?.*)?$/, `${id}_cg-${version}.webp`) : profileUrl
 }
 
 /** Four original uptie frames per rarity. Default keeps the existing IV card. */

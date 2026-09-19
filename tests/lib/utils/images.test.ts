@@ -8,9 +8,17 @@ import {
   getSkillIconUrl,
   computeSkillImageIndices,
   getIdentityImageUrl,
+  getEgoArtworkUrl,
 } from '@/lib/utils/images'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import type { Identity } from '@/lib/types'
+
+it('EGO 상세는 업로드가 검증된 CG만 사용하고 미등록 이미지는 보존한다', () => {
+  const profile = `${STORAGE_BASE}/sinners/faust/ego/9%202/20205_awaken_profile.webp`
+  expect(getEgoArtworkUrl(profile)).toMatch(/\/9%202\/20205_cg-[a-f0-9]{12}\.webp$/)
+  expect(getEgoArtworkUrl('https://example.com/29999_awaken_profile.webp')).toBe('https://example.com/29999_awaken_profile.webp')
+  expect(getEgoArtworkUrl('')).toBe('')
+})
 
 const mockIdentity: Identity = {
   id: 'test-id',
