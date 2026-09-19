@@ -41,7 +41,7 @@ export type DeckSummary = {
   title: string
   description: string | null
   tags: string[]
-  content_type?: string
+  content_type?: string | null
   lang?: DeckLanguage
   vote_count: number
   view_count: number

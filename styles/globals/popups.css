@@ -2,7 +2,7 @@
 .popup-surface { font-family: var(--font-body); color: var(--text-primary); }
 .popup-surface > :first-child { background-color: var(--bg-card); border-color: rgba(200,170,110,.18) !important; border-radius: .5rem; box-shadow: 0 1.5rem 4rem #0005 !important; }
 .popup-surface :is(h2,h3):not(.sr-only) { font-family: var(--font-paperlogy), var(--font-body) !important; font-weight: 600 !important; letter-spacing: -.025em; line-height: 1.4; -webkit-text-stroke: 0; text-shadow: none; }
-.popup-surface :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select) { min-height: 2.75rem; font-family: var(--font-body); }
+.popup-surface :where(input:not([type=checkbox]):not([type=radio]):not([type=range]),select) { min-height: 2.75rem; font-family: var(--font-body); }
 .popup-surface :is(button,a,input,select,textarea):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .popup-surface button[aria-label]:has(>svg:only-child) { min-width: 2.75rem; min-height: 2.75rem; display: inline-grid; place-items: center; }
 .popup-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.25rem .5rem; }

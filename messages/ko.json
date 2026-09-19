@@ -70,14 +70,10 @@
     "unaffiliatedDisclaimer": "Project Moon과 제휴하지 않은 팬 사이트입니다.",
     "footerNav": "하단 내비게이션",
     "mainNav": "메인 내비게이션",
-    "fontControl": {
-      "open": "글자 크기 조절 열기",
-      "decrease": "글자 크기 줄이기",
-      "increase": "글자 크기 키우기",
-      "collapse": "접기",
-      "small": "작게",
-      "default": "보통",
-      "large": "크게"
+    "pageNavigation": {
+      "label": "페이지 이동",
+      "top": "맨 위로",
+      "bottom": "본문 맨 아래로"
     }
   },
   "globalSearch": {
@@ -1089,10 +1085,6 @@
       }
     }
   },
-  "guide": {
-    "title": "운영법",
-    "write": "운영법 작성"
-  },
   "sinner": {
     "yi-sang": "이상",
     "faust": "파우스트",
@@ -1224,6 +1216,7 @@
     },
     "info": {
       "title": "기본 정보",
+      "combatKeywords": "전투 키워드",
       "affiliation": "소속",
       "releaseDate": "출시시기",
       "acquisition": "획득 방법",
@@ -1268,7 +1261,8 @@
       "defLevel": "방어 레벨",
       "breakSection": "패닉 구간",
       "breakSectionTitle": "흐트러짐 구간",
-      "breakPhase": "{n}차"
+      "breakPhase": "{n}차",
+      "level": "레벨"
     },
     "skills": {
       "title": "스킬",
@@ -1298,48 +1292,6 @@
       "panicEffect": "패닉 효과",
       "increaseCondition": "기본 정신력 증가 조건",
       "decreaseCondition": "기본 정신력 감소 조건"
-    },
-    "review": {
-      "title": "리뷰",
-      "placeholder": "한줄평을 남겨주세요...",
-      "anonymous": "익명",
-      "oneLineReviews": "한줄평",
-      "helpful": "유용해요",
-      "notHelpful": "아쉬워요",
-      "userRating": "유저 평가",
-      "participants": "명 참여",
-      "recommended": "추천함",
-      "notRecommended": "비추천함",
-      "upvote": "개추",
-      "downvote": "비추",
-      "inputPlaceholder": "한줄평 (선택, 최대 100자)",
-      "loginPrompt": "로그인하면 평가에 참여할 수 있습니다",
-      "empty": "아직 평가가 없습니다",
-      "modify": "변경하기",
-      "cancel": "취소",
-      "delete": "삭제"
-    },
-    "guide": {
-      "title": "운영법",
-      "noGuides": "아직 작성된 가이드가 없습니다.",
-      "write": "운영법 작성",
-      "newTitlePlaceholder": "운영법 제목을 입력하세요",
-      "editTitlePlaceholder": "운영법 제목",
-      "newContentPlaceholder": "이 인격의 운영법을 작성하세요. 키워드/스킬/인격/에고 이름을 입력하면 자동완성됩니다.",
-      "editContentPlaceholder": "운영법 내용을 작성하세요.",
-      "delete": "삭제",
-      "confirmDeleteTitle": "운영법 삭제",
-      "confirmDeleteMsg": "이 운영법을 삭제하시겠습니까?",
-      "confirmDeleteLabel": "삭제",
-      "emptyState": "아직 운영법이 작성되지 않았습니다.",
-      "discordSupport": "운영법 작성 지원하기 (Discord)",
-      "edit": "수정",
-      "preview": "미리보기",
-      "saving": "저장 중...",
-      "save": "저장",
-      "cancel": "취소",
-      "addNew": "추가하기",
-      "untitled": "제목 없음"
     },
     "decks": "등록된 덱",
     "tab": {
@@ -1375,7 +1327,7 @@
     },
     "notFound": "인격을 찾을 수 없습니다",
     "meta": {
-      "description": "스탯, 스킬, 패시브, 운영법"
+      "description": "스탯, 스킬, 패시브"
     },
     "season": "시즌",
     "panic": "패닉",

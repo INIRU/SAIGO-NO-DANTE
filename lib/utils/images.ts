@@ -37,7 +37,9 @@ export function getIdentityImageUrl(sinnerId: string, identityFolderName: string
     ? 'Lobotomy E.G.O Faint Aroma & Solitude'
     : identityFolderName
   const folder = encodeURIComponent(sourceFolder)
-  return `${STORAGE_BASE}/sinners/${sinnerId}/identities/${folder}/${filename}.webp`
+  // Invalidate the former full-illustration fallback after original portraits were restored.
+  const revision = /^(10416|10816)_(normal|gacksung)_info$/.test(filename) ? '?v=20260919-info2' : ''
+  return `${STORAGE_BASE}/sinners/${sinnerId}/identities/${folder}/${filename}.webp${revision}`
 }
 
 // ── Identity 기반 이미지 URL 함수 (DB의 game_id, folder_name 사용) ──────────
@@ -73,7 +75,7 @@ export function getIdentityPortraitUrl(
 
 export function getSkillIconUrl(identity: Pick<Identity, 'sinner_id' | 'game_id'>, imageIndex: number, skill?: { image_id?: string | null }): string {
   if (!identity.game_id) return ''
-  const sprite = skill?.image_id && /^\d+$/.test(skill.image_id)
+  const sprite = skill?.image_id && /^\d+(?:_\d+)?$/.test(skill.image_id)
     ? skill.image_id
     : `${identity.game_id}${String(imageIndex).padStart(2, '0')}`
   // Some transformed skills intentionally borrow another sinner's original sprite.

@@ -13,6 +13,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 WORK_DIR = Path(os.environ.get("THEME_PACK_WORK_DIR", Path(__file__).resolve().parents[3] / "assets" / "theme-pack-build"))
 DATA_DIR = Path(os.environ.get("LIMBUS_DATA_DIR", "/Users/iniru/Documents/Limbus/assets/data/Json (Text)"))
 ASSET_ROOT = Path(os.environ.get("LIMBUS_THEME_ASSET_ROOT", "/Users/iniru/Downloads/Mirror Dungeon"))
+EXTRACTED_ASSET_ROOT = os.environ.get("LIMBUS_EXTRACTED_ASSET_ROOT")
 OUTPUT_DIR = WORK_DIR / "output"
 BASE_OUTPUT_DIR = OUTPUT_DIR / "base"
 LAYER_OUTPUT_DIR = OUTPUT_DIR / "layers"
@@ -66,6 +67,29 @@ def read_json(path: Path) -> dict:
 
 def build_image_index() -> dict[str, Path]:
     index: dict[str, Path] = {}
+    if EXTRACTED_ASSET_ROOT:
+        extracted_root = Path(EXTRACTED_ASSET_ROOT)
+        manifest_path = extracted_root / "Reports" / "manifest.json"
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"No extracted image manifest at {manifest_path}")
+        images_root = (extracted_root / "Images").resolve()
+        for entry in read_json(manifest_path):
+            if entry.get("kind") not in {"테마팩", "테마팩보스"}:
+                continue
+            name = entry.get("name")
+            relative_path = entry.get("path")
+            if not isinstance(name, str) or not isinstance(relative_path, str):
+                raise ValueError(f"Invalid theme image manifest entry: {entry}")
+            path = (images_root / relative_path).resolve()
+            if images_root not in path.parents:
+                raise ValueError(f"Theme image manifest path escapes Images: {relative_path}")
+            if not path.is_file():
+                raise FileNotFoundError(f"Theme image manifest source is missing: {path}")
+            if name in index:
+                raise ValueError(f"Duplicate theme image name in extracted manifest: {name}")
+            index[name] = path
+        return index
+
     for folder_name in FOLDER_ORDER:
         folder = ASSET_ROOT / folder_name
         if not folder.exists():

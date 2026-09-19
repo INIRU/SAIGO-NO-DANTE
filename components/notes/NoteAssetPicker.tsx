@@ -51,7 +51,9 @@ export default function NoteAssetPicker({kind,onSelect,onClose}: {kind:'gift'|'s
   return <BaseModal open onClose={onClose} title={title} maxWidth="78rem" zIndex={10000}>
     <div className={`note-picker note-direct-picker note-direct-picker--${kind}`}>
       <header className="note-picker-header"><h2>{title}</h2><button type="button" onClick={onClose} aria-label={tr('닫기','閉じる','Close')}><X size={22}/></button></header>
-      <p className="note-picker-hint">{tr('카드를 누르면 노트에 바로 추가됩니다.','カードを押すとノートに追加されます。','Click a card to add it to your notes.')}</p><div className="note-picker-controls"><label className="note-picker-search"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr('이름으로 검색','名前で検索','Search by name')} aria-label={tr('이름으로 검색','名前で検索','Search by name')}/></label>
+      <div className="note-direct-layout">
+        <nav className="note-direct-sidebar" aria-label={tr('필터','フィルター','Filters')}>
+<div className="note-picker-controls"><label className="note-picker-search"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr('이름으로 검색','名前で検索','Search by name')} aria-label={tr('이름으로 검색','名前で検索','Search by name')}/></label>
         {kind==='gift' && <Dropdown
           ariaLabel={tr('기프트 등급','ギフトランク','Gift tier')}
           value={grade}
@@ -63,8 +65,6 @@ export default function NoteAssetPicker({kind,onSelect,onClose}: {kind:'gift'|'s
         />}
 
       </div>
-      <div className="note-direct-layout">
-        <nav className="note-direct-sidebar" aria-label={tr('필터','フィルター','Filters')}>
           {kind==='gift' ? <KeywordSidebar activeSlug={keyword} onSelect={setKeyword} giftCounts={counts}/> : <><button type="button" aria-pressed={!sinner} onClick={()=>setSinner('')}>{tr('전체','すべて','All')}</button>{formation.map(m=><button key={m.sinnerId} type="button" aria-pressed={sinner===m.sinnerId} onClick={()=>setSinner(m.sinnerId)}><img src={getSinnerProfileUrl(m.sinnerId)} alt="" width={28} height={28}/>{m.name}</button>)}</>}
         </nav>
         <div className="note-picker-results">

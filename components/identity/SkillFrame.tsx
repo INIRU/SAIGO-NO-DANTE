@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { getSkillFrameInnerUrl } from '@/lib/utils/images'
+import { getSkillFrameInnerUrl, getSkillFrameBadgeUrl, getDetailStatIconUrl } from '@/lib/utils/images'
 
 interface SkillFrameProps {
   skillIconUrl: string
@@ -13,6 +13,7 @@ interface SkillFrameProps {
   sinColor: string
   label: string
   /** rem 단위 전체 크기 (기본 3.5rem) */
+  attackType?: 'slash' | 'pierce' | 'blunt' | null
   size?: string
 }
 
@@ -24,6 +25,7 @@ export default function SkillFrame({
   sinColor,
   label,
   size = '3.5rem',
+  attackType,
 }: SkillFrameProps) {
   const [iconSrc, setIconSrc] = useState(skillIconUrl)
   const [iconFailed, setIconFailed] = useState(false)
@@ -99,6 +101,12 @@ export default function SkillFrame({
         className="absolute inset-0 pointer-events-none"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
+      {attackType && (
+        <div className="absolute z-20 pointer-events-none" style={{ left: '50%', top: '73%', width: '23%', height: '23%', transform: 'translateX(-50%)' }}>
+          <Image src={getSkillFrameBadgeUrl(sin)} alt="" width={28} height={28} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
+          <Image src={getDetailStatIconUrl(attackType)} alt="" width={16} height={16} className="absolute inset-0 m-auto" style={{ width: '55%', height: '55%', objectFit: 'contain' }} />
+        </div>
+      )}
     </div>
   )
 }

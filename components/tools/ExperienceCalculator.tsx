@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { ArrowRight, RotateCcw } from 'lucide-react'
-import { experienceNeeded, LEVEL_COSTS, LUXCAVATIONS, planLuxcavation, TICKET_EXP, TICKET_NAMES, ticketExperience, type Tickets } from '@/lib/tools/experience'
+import { experienceNeeded, LEVEL_COSTS, MAX_EXPERIENCE_LEVEL, LUXCAVATIONS, planLuxcavation, TICKET_EXP, TICKET_NAMES, ticketExperience, type Tickets } from '@/lib/tools/experience'
 import { getResourceIconUrl } from '@/lib/utils/images'
 import Dropdown from '@/components/ui/Dropdown'
 import styles from './ExperienceCalculator.module.css'
@@ -19,7 +19,7 @@ export default function ExperienceCalculator() {
   const locale = useLocale()
   const number = (n: number) => n.toLocaleString(locale)
   const [current, setCurrent] = useState(1)
-  const [target, setTarget] = useState(60)
+  const [target, setTarget] = useState(MAX_EXPERIENCE_LEVEL)
   const [progress, setProgress] = useState(0)
   const [inventory, setInventory] = useState<Tickets>([0,0,0,0])
   const [stage, setStage] = useState(9)
@@ -29,7 +29,7 @@ export default function ExperienceCalculator() {
   const manual = planLuxcavation(required, inventory, stage, false)
   const skipped = planLuxcavation(required, inventory, stage, true)
   const selected = skip ? skipped : manual
-  const maxProgress = current === 60 ? 0 : LEVEL_COSTS[current + 1] - 1
+  const maxProgress = current === MAX_EXPERIENCE_LEVEL ? 0 : LEVEL_COSTS[current + 1] - 1
   return <div className={styles.page}>
     <header className={styles.header}>
       <span className={styles.eyebrow}>{t('tools')} / EXP</span>
@@ -40,11 +40,11 @@ export default function ExperienceCalculator() {
         <section className={styles.panel} aria-labelledby="level-heading">
           <h2 id="level-heading"><span>01</span>{t('levels')}</h2>
           <div className={styles.levels}>
-            <div className={styles.fieldLabel}>{t('current')}<Dropdown ariaLabel={t('current')} className={styles.levelDropdown} buttonStyle={dropdownStyle} value={String(current)} options={Array.from({length:60},(_,i)=>({value:String(i+1),label:`Lv. ${i+1}`}))} onChange={value=>{const n=Number(value);setCurrent(n);setTarget(Math.max(n,target));setProgress(0)}} /></div>
+            <div className={styles.fieldLabel}>{t('current')}<Dropdown ariaLabel={t('current')} className={styles.levelDropdown} buttonStyle={dropdownStyle} value={String(current)} options={Array.from({length:MAX_EXPERIENCE_LEVEL},(_,i)=>({value:String(i+1),label:`Lv. ${i+1}`}))} onChange={value=>{const n=Number(value);setCurrent(n);setTarget(Math.max(n,target));setProgress(0)}} /></div>
             <ArrowRight aria-hidden="true" />
-            <div className={styles.fieldLabel}>{t('target')}<Dropdown ariaLabel={t('target')} className={styles.levelDropdown} buttonStyle={dropdownStyle} value={String(target)} options={Array.from({length:61-current},(_,i)=>({value:String(i+current),label:`Lv. ${i+current}`}))} onChange={value=>setTarget(Number(value))} /></div>
+            <div className={styles.fieldLabel}>{t('target')}<Dropdown ariaLabel={t('target')} className={styles.levelDropdown} buttonStyle={dropdownStyle} value={String(target)} options={Array.from({length:MAX_EXPERIENCE_LEVEL+1-current},(_,i)=>({value:String(i+current),label:`Lv. ${i+current}`}))} onChange={value=>setTarget(Number(value))} /></div>
           </div>
-          <label className={styles.progress}>{t('progress')}<div><input aria-label={t('progress')} type="number" inputMode="numeric" min={0} max={maxProgress} disabled={current===60} value={progress} onChange={e=>setProgress(Math.max(0,Math.min(maxProgress,Math.trunc(Number(e.target.value)||0))))}/><span>/ {number(current===60 ? 0 : LEVEL_COSTS[current+1])}</span></div></label>
+          <label className={styles.progress}>{t('progress')}<div><input aria-label={t('progress')} type="number" inputMode="numeric" min={0} max={maxProgress} disabled={current===MAX_EXPERIENCE_LEVEL} value={progress} onChange={e=>setProgress(Math.max(0,Math.min(maxProgress,Math.trunc(Number(e.target.value)||0))))}/><span>/ {number(current===MAX_EXPERIENCE_LEVEL ? 0 : LEVEL_COSTS[current+1])}</span></div></label>
         </section>
         <section className={styles.panel} aria-labelledby="inventory-heading">
           <div className={styles.sectionHeading}><h2 id="inventory-heading"><span>02</span>{t('inventory')}</h2><button className={styles.reset} type="button" title={t('reset')} aria-label={t('reset')} onClick={()=>setInventory([0,0,0,0])}><RotateCcw size={16}/></button></div>
@@ -85,6 +85,6 @@ export default function ExperienceCalculator() {
         <dl className={styles.totals}><div><dt>{t('spent')}</dt><dd>{number(selected.plan.spent)} EXP</dd></div><div><dt>{t('excess')}</dt><dd data-testid="excess-exp">+{number(selected.plan.excess)} EXP</dd></div><div className={styles.enkephalin}><dt><ResourceImage name="enkephalin"/>{t('enkephalin')}</dt><dd>{number(selected.enkephalin)}</dd></div></dl>
       </div><p className={styles.hint}>{t('excessHelp')}</p>
     </section>
-    <details className={styles.details}><summary>{t('levelTable')}</summary><div className={styles.tableWrap}><table><thead><tr><th>{t('level')}</th><th>{t('cumulative')}</th><th>{t('next')}</th></tr></thead><tbody>{Array.from({length:60},(_,i)=><tr key={i}><td>{i+1}</td><td>{number(experienceNeeded(1,i+1))}</td><td>{i===59 ? t('max') : number(LEVEL_COSTS[i+2])}</td></tr>)}</tbody></table></div></details>
+    <details className={styles.details}><summary>{t('levelTable')}</summary><div className={styles.tableWrap}><table><thead><tr><th>{t('level')}</th><th>{t('cumulative')}</th><th>{t('next')}</th></tr></thead><tbody>{Array.from({length:MAX_EXPERIENCE_LEVEL},(_,i)=><tr key={i}><td>{i+1}</td><td>{number(experienceNeeded(1,i+1))}</td><td>{i===MAX_EXPERIENCE_LEVEL-1 ? t('max') : number(LEVEL_COSTS[i+2])}</td></tr>)}</tbody></table></div></details>
   </div>
 }

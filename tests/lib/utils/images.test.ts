@@ -97,6 +97,9 @@ describe('getIdentityInfoUrl', () => {
 })
 
 describe('getSkillIconUrl', () => {
+  it('preserves numeric uptie sprite suffixes', () => {
+    expect(getSkillIconUrl({sinner_id: 'ishmael', game_id: '10816'}, 5, {image_id: '1081605_4'})).toContain('/ishmael/1081605_4.webp')
+  })
   it('uses original sprite IDs for S1/S3 variants, including borrowed artwork', () => {
     expect(getSkillIconUrl(mockIdentity, 3, {image_id:'1040205'})).toContain('/ryoshu/1040205.webp')
     expect(getSkillIconUrl(mockIdentity, 3, {image_id:'1040206'})).toContain('/ryoshu/1040206.webp')
@@ -179,4 +182,17 @@ it('uses distinct recovered artwork for monthly memberships and the Lunacy Hoard
     hashes.add(hash)
   }
   expect(hashes.size).toBe(3)
+})
+
+
+describe('restored original portraits', () => {
+  it('invalidates only the four replaced info images', () => {
+    for (const id of ['10416', '10816']) {
+      for (const state of ['normal', 'gacksung']) {
+        expect(getIdentityImageUrl('ryoshu', 'folder', `${id}_${state}_info`)).toContain('.webp?v=20260919-info2')
+        expect(getIdentityImageUrl('ryoshu', 'folder', `${id}_${state}`)).not.toContain('?')
+      }
+    }
+    expect(getIdentityImageUrl('ryoshu', 'folder', '10415_normal_info')).not.toContain('?')
+  })
 })

@@ -16,11 +16,11 @@ for (const locale of ['ko','en','ja'] as const) for(const width of [1440,390]) {
     for(let visit=0;visit<2;visit++) {
       await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveCount(1)
       await expect(page.getByRole('heading',{name:l.title,exact:true})).toBeVisible()
-      await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveText('251,629EXP')
-      await expect(page.getByTestId('manual-runs').filter({visible:true})).toContainText('10')
-      await expect(page.getByTestId('skip-runs').filter({visible:true})).toContainText('7')
-      await expect(page.getByTestId('use-ticket-2').filter({visible:true})).toContainText('59')
-      await expect(page.getByTestId('excess-exp').filter({visible:true})).toHaveText('+171 EXP')
+      await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveText('300,589EXP')
+      await expect(page.getByTestId('manual-runs').filter({visible:true})).toContainText('12')
+      await expect(page.getByTestId('skip-runs').filter({visible:true})).toContainText('8')
+      await expect(page.getByTestId('use-ticket-2').filter({visible:true})).toContainText('63')
+      await expect(page.getByTestId('excess-exp').filter({visible:true})).toHaveText('+11 EXP')
       const images=page.locator('main img[src*="resources"]:visible')
       expect(await images.count()).toBeGreaterThan(10)
       for(const img of await images.all()) {
@@ -30,6 +30,15 @@ for (const locale of ['ko','en','ja'] as const) for(const width of [1440,390]) {
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1)
       if(!visit){await page.goto(`/${locale}`);await page.goto(`/${locale}/tools/experience`)}
     }
+    await page.getByRole('button',{name:l.current,exact:true}).click()
+    await page.getByRole('menuitem',{name:'Lv. 65',exact:true}).click()
+    await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveText('0EXP')
+    await expect(page.locator('input[type="number"]').first()).toBeDisabled()
+    await page.getByRole('button',{name:l.current,exact:true}).click()
+    await page.getByRole('menuitem',{name:'Lv. 60',exact:true}).click()
+    await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveText('48,960EXP')
+    await page.getByRole('button',{name:l.target,exact:true}).click()
+    await page.getByRole('menuitem',{name:'Lv. 60',exact:true}).click()
     await page.getByRole('button',{name:l.current,exact:true}).click()
     await page.getByRole('menuitem',{name:'Lv. 55',exact:true}).click()
     await expect(page.getByTestId('required-exp').filter({visible:true})).toHaveText('44,765EXP')

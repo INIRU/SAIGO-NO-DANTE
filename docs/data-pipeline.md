@@ -1,10 +1,48 @@
 # 게임 데이터와 이미지 복구
 
-이번 복구는 사용자가 지정한 [게임 추출 Drive](https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z)를 사용한다. 다음 업데이트부터는 사용자의 게임 추출본으로 전환한다. [Dante’s Planner](https://dante-planner.com)는 화면과 레이어의 시각적 참고다. 인격 테두리 12개만 원본을 찾지 못할 경우 가져와도 된다는 예외가 있었지만, 이번에는 12개 모두 Drive에서 찾았다. 참고 사이트의 이미지나 JSON을 새로 가져오지 않았다.
+초기 복구는 사용자가 지정한 [게임 추출 Drive](https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z)를 사용했다. 이후 업데이트 입력은 사용자의 게임 추출본이다. [Dante’s Planner](https://dante-planner.com)는 화면과 레이어의 시각적 참고다. 인격 테두리 12개도 초기 Drive에서 찾아 사용했다. 참고 사이트의 이미지나 JSON을 새로 가져오지 않는다.
 
 2026-09-12부터 추가 로케일 입력은 사용자의 [최애의 관리자/assets/26.09.12](https://drive.google.com/drive/folders/1f81Nt5q-w_fm7Utf1SXbGsZvHRZ0mKnC)에 있는 `Localize.zip`을 사용한다. 기존 복구 입력은 보존한다.
 
-## 입력과 보존
+## 사용자 전체 추출본 준비
+
+현재 입력은 `~/Downloads/LimbusAssets` 폴더다. 이전에 잘못 압축한 `LimbusAssets_2026-09-19-full.zip`은 입력으로 사용하지 않는다. 새 입력의 `Reports/manifest.json`, `data-manifest.json`, `run.json`을 기준으로 이미지 7,138개와 JSON 8,122개(정적 데이터 1,587 / KR 2,177 / EN 2,171 / JP 2,187)를 검사한다. 추출 보고서의 `latestGameServerVersionVerified=false`이므로 추출 날짜를 최신 게임 서버 버전 검증으로 해석하지 않는다.
+
+```bash
+# 기본 실행: 원본 전체 검증과 <output>.report.json 작성. DB/Storage 접근 없음.
+npx tsx scripts/sync/prepare-extracted-assets.ts \
+  --source "$HOME/Downloads/LimbusAssets" \
+  --output "$HOME/Downloads/LimbusAssets-ready-2026-09-19"
+
+# 같은 명령에 --prepare를 붙이면 검증 후 로컬 입력을 생성한다.
+# 기존 업로드 경로 후보를 비교하려면 --previous-artwork <artwork-upload-results.json> 추가.
+```
+
+`--prepare`는 새 출력 폴더의 `complete-data/`에 `.txt` 입력과 `KR/EN/JP` 하위 디렉터리를 만든다. JSON 본문은 BOM만 제거하고 보존하며 오래된 로케일을 섞지 않는다. 해시·파일 크기·PNG 크기·JSON 파싱·목록 누락·파일명 충돌을 검사하고, 실패하면 데이터 출력을 만들지 않는다. 원본이나 저장소 내부 출력, 이미 채워진 출력 폴더는 거부한다. 재준비에는 새로운 출력 경로를 지정한다.
+
+`image-catalog.json`은 원래 이름·게임 ID·container·pathId·해시·크기·분류를 보존하는 연결 조사 자료다. `dbLinked`는 추출 당시의 메타데이터이며 현재 서비스 DB와의 연결 보장이 아니다. `previousArtworkCandidates`도 기존 업로드 기록에서 파일명이 정확히 같은 경로 후보일 뿐, 이미지 내용 일치나 업로드 승인을 뜻하지 않는다. 스킬 이미지 대상은 수감자 인격·E.G.O가 사용하는 이미지로 제한하며 신규 인격은 정적 데이터로 확인한다. 색상이 다른 중복 원본 `9002401`, `9100401`, `9100402`는 `enemy-skill.json`의 적 스킬이므로 대상에서 제외하고 원본만 보존한다.
+
+이미지는 바로 덮어쓰지 않는다. 새 `_profile`은 256×256 얼굴 이미지이고 현재 카드의 `_info` 세로 이미지와 다르다. 새 묶음에는 `_info`와 UI 아틀라스가 없으므로 기존 자료를 유지하며, 이름만 바꿔 대체하지 않는다. 새 인격 `10416`, `10816`의 원본과 정적 데이터는 있지만 카드용 이미지 연결은 별도 확인이 필요하다. 키워드는 기존 영문 표시명 slug와 새 내부 ID가 달라 원문 `iconId` 관계를 확인해야 한다.
+
+기존 `identity-data.ts` 등의 파서는 준비된 `complete-data`를 입력으로 사용할 수 있다. 그러나 `appearance`는 게임 내부 이름이고 현재 이미지 폴더명과 다를 수 있으므로, 준비 성공만으로 `--fix`를 실행하지 않는다. 이미지 경로·누락·데이터 차이를 검토한 뒤 DB/Storage 적용 범위를 정한다. 이 준비 스크립트는 WebP 변환, 업로드, DB 변경을 수행하지 않는다.
+
+### 테마팩 합성 재사용
+
+사용자가 지정한 iCloud `My Project/무제 폴더/theme-pack-image-work/`는 기존 테마팩 합성 작업 자료다. 저장소의 `scripts/assets/build-theme-packs.py`가 이미 사용하는 비닐·로고·보스·경고·배턴·극한 테두리 합성은 유지한다. `LIMBUS_EXTRACTED_ASSET_ROOT`를 지정하면 새 manifest의 원래 `name`과 `path`로 테마팩/보스 원본을 찾아 합성한다. 이름이 중복되거나 파일이 없으면 중단하며 한국어 폴더명을 추정하지 않는다.
+
+공통 오버레이 원본은 `MainUI_MirrorDungeon4_4.png`, `MainUI_MirrorDungeon6_17.png`, `Baton.png`다. 앞의 두 파일은 iCloud 작업 폴더의 `reference/composition_assets/`에 있고, 세 파일 모두 초기 복구 자료의 `theme-composition/`에 보존돼 있다. 새 묶음의 테마팩 이미지만으로는 공통 오버레이를 대체하지 않는다.
+
+```bash
+LIMBUS_EXTRACTED_ASSET_ROOT="$HOME/Downloads/LimbusAssets" \
+LIMBUS_DATA_DIR="$HOME/Downloads/LimbusAssets-ready-2026-09-19/complete-data" \
+THEME_PACK_WORK_DIR="$HOME/Downloads/LimbusAssets-theme-preview-2026-09-19" \
+LIMBUS_COMPOSITION_ASSET_DIR="<기존 복구 자료>/theme-composition" \
+python3 scripts/assets/build-theme-packs.py
+```
+
+Pillow가 필요하다. 결과는 지정한 작업 폴더의 `output/`과 `diagnostics/`에만 생성하며 업로드하지 않는다. `diagnostics/missing.json`이 비어 있는지 확인하고 실제 합성 결과를 검토한다.
+
+## 초기 복구 입력과 보존
 
 원본과 작업 기록은 저장소 밖 `../assets/recovery-2026-09-10/`에 보존한다. 정상 입력은 **Text / Json**에서 받은 `complete-data/`다. 앞서 조사한 **Json (Text)**의 불완전한 1,856개 파일과 혼동하지 않는다.
 
@@ -269,3 +307,5 @@ Drive의 `iap-lunacy`, `iap-membership`, `iap-package`, `pricetier`, `chance-iap
 `python3 scripts/assets/extract-constraint-ui.py`는 이름과 거미의 거울 원본 `constraint-ui-originals/MainUI_MirrorDungeon7_12.png`의 거미줄 카드·선택 광택·1~5점 장식·누적 점수 판을 추출한다. RGB와 알파를 유지한 무손실 WebP를 겹쳐 쓰며 선택 상태는 글자 없이 광택으로 표시한다. 같은 명령이 층별 규칙과 다국어 제목을 생성한다.
 
 플래너의 획득 안내는 `md_events.gift_ids/theme_ids`와 테마팩 `specific_ego_gift_ids`를 사용한다. 이벤트 링크는 해당 이벤트 모달로 연결된다. 보스 이미지는 원본 `uiConfigs.bossSpriteId`가 연결된 테마팩에서만 표시한다. 확인되지 않은 보스는 추측해 채우지 않는다. 조합 가능 표시는 해당 층까지 계획한 재료와 최종 기프트 목록을 기준으로 하며 실제 플레이 중 재료 소비를 추적하지 않는다.
+
+2026-09-19 새 추출본 `LimbusAssets-2/Reports/manifest.json`에서 신규 인격 `10416`, `10816`의 원본 `_normal_info`/`_gacksung_info` 네 장(537×827)을 확인했다. `scripts/assets/sync-extracted-identities.cjs --ids 10416,10816 --source /Users/iniru/Downloads/LimbusAssets-2 --output /Users/iniru/Downloads/Limbus-info-repair-2026-09-19 --info-only`로 원본 SHA-256을 검증하고 dry-run 후 `--fix`로 WebP 품질 90 변환본만 교체했다. 기존 가로 대체 이미지 네 장은 같은 출력 폴더의 `before/`에 보존했다. 업로드 영수증과 공개 URL 다운로드 해시가 일치하며 전체 일러스트·스킬·DB는 수정하지 않았다. 공통 이미지 URL은 이 네 파일에만 버전 쿼리를 붙여 기존 가로 이미지 캐시를 피한다. 스크립트는 이제 실제 `_info`를 사용하며, 누락된 세로 이미지를 가로 일러스트로 만들어 덮어쓰지 않는다.

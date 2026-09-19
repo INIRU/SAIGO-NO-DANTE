@@ -10,13 +10,14 @@ import IdentityPassivesTab from './IdentityPassivesTab'
 import { workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 type Props = {
+  level: number
   identity: Identity
   sinColor: string
   allowedKeywords: Set<string>
   model: ReturnType<typeof useIdentitySkillModel>
 }
 
-export default function IdentityCombatSection({ identity, sinColor, allowedKeywords, model }: Props) {
+export default function IdentityCombatSection({ identity, sinColor, allowedKeywords, model, level }: Props) {
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const shouldReduceMotion = useReducedMotion()
   const t = useTranslations()
@@ -24,7 +25,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
   return (
     <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
       {/* 탭 바 + 동기화 토글 */}
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         <div
           className="flex flex-1 rounded-t-lg overflow-hidden"
           style={{
@@ -46,7 +47,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
                 className="flex-1 relative px-5 py-2.5 font-semibold rounded-t-md transition-all"
                 style={{
                   background: isActive ? `${sinColor}18` : 'transparent',
-                  color: isActive ? '#e8dcc8' : '#555',
+                  color: isActive ? '#e8dcc8' : '#a39b8d',
                   fontSize: '0.8125rem',
                   borderTop: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
                   borderLeft: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
@@ -59,7 +60,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
                 <span
                   className="font-mono"
                   style={{
-                    color: isActive ? sinColor : '#444',
+                    color: isActive ? sinColor : '#a39b8d',
                     fontSize: '0.75rem',
                     marginLeft: '10px',
                   }}
@@ -90,7 +91,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
                   className="px-3 py-2 text-xs font-semibold transition-all"
                   style={{
                     background: isActive ? `${sinColor}25` : 'transparent',
-                    color: isActive ? sinColor : '#555',
+                    color: isActive ? sinColor : '#a39b8d',
                     borderRight: level === 3 ? `1px solid var(--border)` : 'none',
                   }}
                 >
@@ -112,6 +113,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
             exit={shouldReduceMotion ? undefined : 'exit'}
           >
             <IdentitySkillsTab
+              level={level}
               identity={identity}
               filteredSkills={filteredSkills}
               skillNameColors={skillNameColors}

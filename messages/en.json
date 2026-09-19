@@ -70,14 +70,10 @@
     "unaffiliatedDisclaimer": "This fan site is not affiliated with Project Moon.",
     "footerNav": "Footer navigation",
     "mainNav": "Main navigation",
-    "fontControl": {
-      "open": "Open font size controls",
-      "decrease": "Decrease font size",
-      "increase": "Increase font size",
-      "collapse": "Collapse",
-      "small": "Small",
-      "default": "Default",
-      "large": "Large"
+    "pageNavigation": {
+      "label": "Page navigation",
+      "top": "Back to top",
+      "bottom": "End of content"
     }
   },
   "globalSearch": {
@@ -1089,10 +1085,6 @@
       }
     }
   },
-  "guide": {
-    "title": "Guides",
-    "write": "Write Guide"
-  },
   "sinner": {
     "yi-sang": "Yi Sang",
     "faust": "Faust",
@@ -1224,6 +1216,7 @@
     },
     "info": {
       "title": "Info",
+      "combatKeywords": "Combat keywords",
       "affiliation": "Affiliation",
       "releaseDate": "Release Date",
       "acquisition": "Acquisition",
@@ -1268,7 +1261,8 @@
       "defLevel": "Def Level",
       "breakSection": "Panic Threshold",
       "breakSectionTitle": "Stagger Threshold",
-      "breakPhase": "Phase {n}"
+      "breakPhase": "Phase {n}",
+      "level": "Level"
     },
     "skills": {
       "title": "Skills",
@@ -1298,48 +1292,6 @@
       "panicEffect": "Panic Effect",
       "increaseCondition": "Sanity Increase Conditions",
       "decreaseCondition": "Sanity Decrease Conditions"
-    },
-    "review": {
-      "title": "Reviews",
-      "placeholder": "Leave a one-liner...",
-      "anonymous": "Anonymous",
-      "oneLineReviews": "One-liners",
-      "helpful": "Helpful",
-      "notHelpful": "Not helpful",
-      "userRating": "User Ratings",
-      "participants": " participated",
-      "recommended": "Recommended",
-      "notRecommended": "Not recommended",
-      "upvote": "Upvote",
-      "downvote": "Downvote",
-      "inputPlaceholder": "One-liner (optional, max 100 chars)",
-      "loginPrompt": "Log in to participate in ratings",
-      "empty": "No ratings yet",
-      "modify": "Change",
-      "cancel": "Cancel",
-      "delete": "Delete"
-    },
-    "guide": {
-      "title": "Guides",
-      "noGuides": "No guides available yet.",
-      "write": "Write Guide",
-      "newTitlePlaceholder": "Enter guide title",
-      "editTitlePlaceholder": "Guide title",
-      "newContentPlaceholder": "Write a guide for this identity. Type keyword/skill/identity/EGO names for autocomplete.",
-      "editContentPlaceholder": "Write guide content.",
-      "delete": "Delete",
-      "confirmDeleteTitle": "Delete Guide",
-      "confirmDeleteMsg": "Delete this guide?",
-      "confirmDeleteLabel": "Delete",
-      "emptyState": "No guides have been written yet.",
-      "discordSupport": "Contribute a guide (Discord)",
-      "edit": "Edit",
-      "preview": "Preview",
-      "saving": "Saving...",
-      "save": "Save",
-      "cancel": "Cancel",
-      "addNew": "Add new",
-      "untitled": "Untitled"
     },
     "decks": "Decks",
     "tab": {
@@ -1375,7 +1327,7 @@
     },
     "notFound": "Identity not found",
     "meta": {
-      "description": "Stats, skills, passives, guides"
+      "description": "Stats, skills, passives"
     },
     "season": "Season",
     "panic": "Panic",

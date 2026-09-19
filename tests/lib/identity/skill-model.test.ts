@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Skill } from '@/lib/types'
-import { buildSkillVariantMap, selectIdentitySkills, selectUptieRows } from '@/lib/identity/skill-model'
+import { groupIdentitySkills, buildSkillVariantMap, selectIdentitySkills, selectUptieRows } from '@/lib/identity/skill-model'
 
 const skill = (id: string, order: number, level?: number) => ({ id, skill_order: order, uptie_level: level } as Skill)
 
@@ -36,4 +36,14 @@ describe('identity skill model', () => {
     expect(selectIdentitySkills([], 4)).toEqual([])
     expect(buildSkillVariantMap([])).toEqual({})
   })
+})
+
+it('groups all variants in one block per base skill without dropping defense or mutating input', () => {
+  const rows = [skill('s1a', 1), skill('s1b', 1), skill('s2', 2), skill('s3', 3), skill('extra', 5), skill('defense', 4)]
+  const original = [...rows]
+  expect(groupIdentitySkills(rows).map(group => group.map(row => row.id))).toEqual([
+    ['s1a', 's1b'], ['s2'], ['s3', 'extra'], ['defense'],
+  ])
+  expect(rows).toEqual(original)
+  expect(groupIdentitySkills([])).toEqual([])
 })

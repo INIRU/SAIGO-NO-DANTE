@@ -70,14 +70,10 @@
     "unaffiliatedDisclaimer": "Project Moonとは提携していないファンサイトです。",
     "footerNav": "フッターナビゲーション",
     "mainNav": "メインナビゲーション",
-    "fontControl": {
-      "open": "文字サイズ調整を開く",
-      "decrease": "文字サイズを小さく",
-      "increase": "文字サイズを大きく",
-      "collapse": "折りたたむ",
-      "small": "小",
-      "default": "標準",
-      "large": "大"
+    "pageNavigation": {
+      "label": "ページ移動",
+      "top": "ページの先頭へ",
+      "bottom": "本文の末尾へ"
     }
   },
   "globalSearch": {
@@ -1089,10 +1085,6 @@
       }
     }
   },
-  "guide": {
-    "title": "ガイド",
-    "write": "ガイドを書く"
-  },
   "sinner": {
     "yi-sang": "イサン",
     "faust": "ファウスト",
@@ -1224,6 +1216,7 @@
     },
     "info": {
       "title": "基本情報",
+      "combatKeywords": "戦闘キーワード",
       "affiliation": "所属",
       "releaseDate": "リリース時期",
       "acquisition": "獲得方法",
@@ -1268,7 +1261,8 @@
       "defLevel": "防御レベル",
       "breakSection": "パニック区間",
       "breakSectionTitle": "崩れ区間",
-      "breakPhase": "{n}段階"
+      "breakPhase": "{n}段階",
+      "level": "レベル"
     },
     "skills": {
       "title": "スキル",
@@ -1298,48 +1292,6 @@
       "panicEffect": "パニック効果",
       "increaseCondition": "基本精神力増加条件",
       "decreaseCondition": "基本精神力減少条件"
-    },
-    "review": {
-      "title": "レビュー",
-      "placeholder": "一言レビューを書いてください...",
-      "anonymous": "匿名",
-      "oneLineReviews": "一言レビュー",
-      "helpful": "役に立つ",
-      "notHelpful": "残念",
-      "userRating": "ユーザー評価",
-      "participants": "人参加",
-      "recommended": "おすすめ済み",
-      "notRecommended": "非おすすめ済み",
-      "upvote": "おすすめ",
-      "downvote": "非おすすめ",
-      "inputPlaceholder": "一言レビュー（任意、最大100文字）",
-      "loginPrompt": "ログインすると評価に参加できます",
-      "empty": "まだ評価がありません",
-      "modify": "変更する",
-      "cancel": "キャンセル",
-      "delete": "削除"
-    },
-    "guide": {
-      "title": "ガイド",
-      "noGuides": "まだガイドがありません。",
-      "write": "ガイド作成",
-      "newTitlePlaceholder": "ガイドのタイトルを入力してください",
-      "editTitlePlaceholder": "ガイドタイトル",
-      "newContentPlaceholder": "この人格のガイドを作成してください。キーワード/スキル/人格/EGO名を入力すると自動補完されます。",
-      "editContentPlaceholder": "ガイド内容を作成してください。",
-      "delete": "削除",
-      "confirmDeleteTitle": "ガイド削除",
-      "confirmDeleteMsg": "このガイドを削除しますか？",
-      "confirmDeleteLabel": "削除",
-      "emptyState": "まだガイドが作成されていません。",
-      "discordSupport": "ガイド作成を支援する（Discord）",
-      "edit": "編集",
-      "preview": "プレビュー",
-      "saving": "保存中...",
-      "save": "保存",
-      "cancel": "キャンセル",
-      "addNew": "追加する",
-      "untitled": "タイトルなし"
     },
     "decks": "デッキ",
     "tab": {
@@ -1375,7 +1327,7 @@
     },
     "notFound": "人格が見つかりません",
     "meta": {
-      "description": "ステータス、スキル、パッシブ、ガイド"
+      "description": "ステータス、スキル、パッシブ"
     },
     "season": "シーズン",
     "panic": "パニック",

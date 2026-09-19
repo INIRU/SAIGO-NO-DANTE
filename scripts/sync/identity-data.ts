@@ -702,6 +702,7 @@ interface IdentityAcquisitionSyncOptions {
   rewriteText?: boolean
   enrichGacha?: boolean
   sinnerIds?: string[]
+  gameIds?: string[]
   revalidate?: boolean
 }
 
@@ -1572,6 +1573,7 @@ export async function syncIdentityAcquisition(options: IdentityAcquisitionSyncOp
     .select('id, game_id, sinner_id, name_kr, rarity, acquisition, acquisition_info')
     .order('game_id')
   if (sinnerFilter.size > 0) query = query.in('sinner_id', [...sinnerFilter])
+  if (options.gameIds?.length) query = query.in('game_id', options.gameIds)
 
   const { data, error } = await query
   if (error) throw error
@@ -2287,7 +2289,7 @@ export function buildSkillRows(
         description_jp: jpSkillLvl ? buildDescriptionLang(jpSkillLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         flavor_en: nullableLocaleContent(enSkillLvl?.flavor),
         flavor_jp: nullableLocaleContent(jpSkillLvl?.flavor),
-        image_id: String(/^\d+$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
+        image_id: String(/^\d+(?:_\d+)?$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
         skill_order: skillOrder,
         atk_weight: r.targetNum ?? 1,
         variant_order: ++variantIdx,
@@ -2333,7 +2335,7 @@ export function buildSkillRows(
         description_jp: jpDefLvl ? buildDescriptionLang(jpDefLvl, jpTagMap!, CONDITION_TAG_JP, 'jp') || null : null,
         flavor_en: nullableLocaleContent(enDefLvl?.flavor),
         flavor_jp: nullableLocaleContent(jpDefLvl?.flavor),
-        image_id: String(/^\d+$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
+        image_id: String(/^\d+(?:_\d+)?$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
         // Tiered counters (e.g. Noontide Disassembly) retain their source skill slot.
         skill_order: gs.skillTier && gs.skillTier > 1 ? gs.skillTier : 4,
         atk_weight: r.targetNum ?? 1,
