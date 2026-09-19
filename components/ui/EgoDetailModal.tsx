@@ -196,7 +196,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
   const sinType = normalizeSin(ego.sin_affinity)
   const egoSinColor = sinType ? SIN_COLORS[sinType] : gradeColor
 
-  // 4해석 우선 스킬
+  // 각 스킬의 실제 최대 해석 단계
   const awakening = bestConstrue(skills.filter(s => s.category === 'awakening'))
   const corrosion = bestConstrue(skills.filter(s => s.category === 'corrosion'))
 

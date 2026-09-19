@@ -112,3 +112,9 @@ SEO의 공통 JSON-LD 출력은 next-seo `JsonLdScript`를 사용한다. App Rou
 `npx playwright test e2e/workspace-design.spec.ts --project=chromium`은 PC·모바일에서 공개 범위 스위치, 팔로워 탭 이동, 문의 입력, 개발자 패널 높이·복사, 공지 목록 복귀를 검증한다. 권한은 모의 UI 세션과 별도로 `tests/sql/community-follows.sql`의 롤백 검사와 `node e2e/developer-api.acceptance.cjs`의 격리 계정 HTTP 검사로 확인한다.
 
 메인 첫 화면 아래는 최신 영상·최신 인격·아카이브 바로가기·공식 채널 순서다. 최신 인격 6개는 공통 `IdentityCard`의 compact 표시로 프레임 안 이름을 유지하고 스탯을 숨긴다. PC는 6열, 태블릿은 3열, 모바일은 2열이다. 공식 채널은 본문에서 제공하며 기존 공통 푸터를 유지한다. 지원 브라우저에서는 스크롤 진입 진행률에 따라 섹션 위치·불투명도와 영상 크기가 부드럽게 변한다. 미지원 브라우저에서는 첫 진입 시 280ms 모션으로 대체하고 동작 줄이기 설정에서는 즉시 표시한다.
+
+## 덱·플랜 작성 화면 검증
+
+`/decks/new`와 `/planner`는 로그인 후 접근하며 locale·쿼리를 포함한 복귀 주소를 유지한다. 공개 게시판·상세 조회는 로그인 없이 접근한다. 노트의 스킬 목록은 편성 순서 지정 여부와 관계없이 덱에 선택한 인격만 사용하고 스킬·기프트 카드를 누르면 해당 항목을 삽입하고 모달을 닫는다. 등급 필터는 공통 Dropdown을 사용한다.
+
+로컬 서버를 실행한 뒤 `BASE_URL=http://localhost:3000 node e2e/deck-workspace.acceptance.cjs`로 Chrome 데스크톱·모바일 검증을 실행한다. 로컬 환경의 NextAuth 키로 서명한 테스트 세션과 읽기 전용 게임 조회를 사용하며 게시·DB 변경은 하지 않는다. 화면 캡처는 `/tmp/limbus-workspace-preview`에 저장한다. 외부 경로를 가리키는 node_modules 심볼릭 링크가 Turbopack에서 거부되면 `npm run dev -- --webpack --port 3000`으로 실행한다.

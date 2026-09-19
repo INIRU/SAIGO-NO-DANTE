@@ -23,8 +23,9 @@ import {
 
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
+import Dropdown from '@/components/ui/Dropdown'
 import CompactButton from '@/components/ui/CompactButton'
-import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
+import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
@@ -465,37 +466,31 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     { key: 'identity', label: builderT('tabs.identity'), badge: identityCount || undefined, icon: Users },
     { key: 'ego',      label: builderT('tabs.ego'), badge: egoCount || undefined, icon: Sparkles },
     ...(isGeodun(contentType) ? [{ key: 'skillset', label: builderT('tabs.skillset'), badge: skillsetCustomCount || undefined, icon: SlidersHorizontal }] : []),
+    { key: 'note', label: builderT('tabs.note'), icon: FileText },
     // 편성 순서는 인격 탭의 40%/60% 호버로 통합
-    { key: 'note',     label: builderT('tabs.note'), icon: FileText },
   ]
 
   return (
-    <div className="min-h-[100dvh] pt-16 pb-16 sm:pt-20" style={{ background: 'var(--bg-deep)' }}>
-      <div className="mx-auto max-w-6xl px-3 sm:px-6">
+    <div className="min-h-[100dvh] pt-24 pb-20 sm:pt-28" style={{ background: 'var(--bg-deep)' }}>
+      <div className="deck-workspace mx-auto max-w-6xl px-3 sm:px-6">
         <header
-          className="mb-3 rounded-lg"
+          className="mb-6"
           style={{
-            border: '1px solid rgba(200, 144, 10, 0.16)',
-            background: 'rgba(18,14,9,0.74)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
-          <div className="flex flex-col gap-2 p-2.5 sm:p-3">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="deck-workspace-header py-4">
+            <div className="deck-workspace-heading">
               <div className="min-w-0">
                 <Link href="/decks" locale={locale as SupportedLang} className="mb-0.5 inline-flex min-h-10 items-center gap-1.5 rounded px-1 transition-colors sm:min-h-11" style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
                 <ArrowLeft style={{ width: '1rem', height: '1rem' }} /> {builderT('backToDecks')}
                 </Link>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h1 className="font-serif text-[1.5rem] leading-tight sm:text-[1.875rem]" style={{ color: 'var(--text-primary)' }}>{editMode ? builderT('titleEdit') : builderT('titleNew')}</h1>
-                  <span className="font-mono" style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
-                  {builderT('progress', { count: identityCount, total: sinners.length })}
-                  </span>
-                </div>
+                <h1 className="sr-only">{editMode ? builderT('titleEdit') : builderT('titleNew')}</h1>
                 <p className="sr-only">
                   {builderT('description')}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <div className="deck-workspace-actions flex flex-wrap items-center gap-2">
                 {hasDraft && (
                   <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
                     {builderT('actions.loadDraft')}
@@ -532,7 +527,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               </div>
             </div>
 
-            <div className="grid gap-2 md:grid-cols-[minmax(12rem,0.85fr)_minmax(13rem,0.75fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,0.75fr)_minmax(0,1.25fr)] lg:items-end">
+            <div className="deck-workspace-fields">
               <label className="flex min-w-0 flex-col gap-1.5">
                 <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.title')}</span>
                 <input
@@ -553,64 +548,19 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 />
               </label>
 
-              <div className="min-w-0">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.deckCode')}</span>
-                  {codeError && <span style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{builderT('fields.codeError')}</span>}
-                </div>
-                <div className="flex min-w-0 gap-2">
-                  <input
-                    type="text"
-                    value={codeInput}
-                    onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
-                    placeholder={builderT('fields.codePlaceholder')}
-                    className="min-h-10 min-w-0 flex-1 rounded px-3 outline-none sm:min-h-11"
-                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
-                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
-                  />
-                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
-                    {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
-                  </CompactButton>
-                </div>
-              </div>
 
               <div className="min-w-0">
                 <div className="mb-1.5 flex items-center gap-2">
                   <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.contentType')}</span>
                   {!contentType && <span style={{ color: 'var(--warning)', fontSize: '0.875rem', opacity: 0.85 }}>{builderT('fields.required')}</span>}
                 </div>
-                <div className="flex gap-1.5 overflow-x-auto pb-0.5 md:flex-wrap md:overflow-visible md:pb-0">
-                  {CONTENT_TYPES.map(ct => {
-                    const active = contentType === ct
-                    const colors = CONTENT_TYPE_COLORS[ct]
-                    return (
-                      <motion.button
-                        key={ct}
-                        type="button"
-                        onClick={() => setContentType(active ? '' : ct)}
-                        className="min-h-10 flex-none rounded px-3 transition-colors duration-150 sm:min-h-11"
-                        style={{
-                          background: active ? colors.bg : 'rgba(13,11,8,0.26)',
-                          color: active ? colors.color : 'var(--text-muted)',
-                          border: `1px solid ${active ? colors.border : 'rgba(200,144,10,0.16)'}`,
-                          fontFamily: 'var(--font-heading)',
-                          fontSize: '0.9375rem',
-                          fontWeight: active ? 700 : 500,
-                        }}
-                        whileHover={reduceMotion ? undefined : { y: -1 }}
-                        whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                        transition={{ type: 'spring', stiffness: 430, damping: 32, mass: 0.5 }}
-                      >
-                        {deckT(`contentTypes.${contentTypeMessageKey(ct)}`)}
-                      </motion.button>
-                    )
-                  })}
-                </div>
+                <Dropdown value={contentType} onChange={setContentType} ariaLabel={builderT('fields.contentType')} options={[{value:'',label:builderT('fields.contentType')},...CONTENT_TYPES.map(ct=>({value:ct,label:deckT(`contentTypes.${contentTypeMessageKey(ct)}`)}))]} buttonStyle={{minHeight:'2.75rem',width:'100%',fontSize:'.9375rem'}} />
               </div>
             </div>
           </div>
         </header>
 
+        <div className="deck-workspace-formation">
         {/* 탭 바 — 밑줄 인디케이터 (플래너 패턴) */}
         <UnderlineTabBar
           tabs={tabItems}
@@ -628,11 +578,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            {Object.values(deckSlots).filter(Boolean).length > 0 && (
-              <div className="deck-builder-mobile-stats">
-                <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
-              </div>
-            )}
+
 
             <IdentityTab
               sinners={sinners}
@@ -730,6 +676,29 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )}
 
         {/* 덱 노트 */}
+        {tab !== 'note' && (
+              <div className="min-w-0">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{builderT('fields.deckCode')}</span>
+                  {codeError && <span style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{builderT('fields.codeError')}</span>}
+                </div>
+                <div className="flex min-w-0 gap-2">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+                    placeholder={builderT('fields.codePlaceholder')}
+                    className="min-h-10 min-w-0 flex-1 rounded px-3 outline-none sm:min-h-11"
+                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
+                  />
+                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
+                    {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
+                  </CompactButton>
+                </div>
+              </div>
+
+        )}
         {tab === 'note' && (
           <motion.div
             key="note"
@@ -756,6 +725,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             />
           </motion.div>
         )}
+        </div>
 
         <style jsx global>{`
           @media (max-width: 639px) {

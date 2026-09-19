@@ -41,7 +41,7 @@ export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; co
   if (asset.kind === 'gift') return <GiftArtwork gift={{...asset,keyword:asset.keyword ?? undefined}} displayName={name} sizes="96px" />
   if (asset.kind === 'identity' && asset.identity) return <IdentityCard identity={{...asset.identity,name_kr:name}} board compact disableHoverEffects />
   if (asset.kind === 'ego' && asset.ego && asset.sinnerId) return <EgoDisplayCard ego={asset.ego} sinnerId={asset.sinnerId} name={name} lang={lang === 'en' || lang === 'ja' ? lang : 'ko'} displayOnly/>
-  if (asset.kind === 'skill' && asset.skill) return <IdentitySkillFrameCard skill={asset.skill} skills={asset.skills ?? [asset.skill]} identity={asset.identity} lang={lang} size={compact?'2.5rem':'3.5rem'} />
+  if (asset.kind === 'skill' && asset.skill) return <IdentitySkillFrameCard skill={compact ? {...asset.skill,description:null,description_en:null,description_jp:null} : asset.skill} skills={asset.skills ?? [asset.skill]} identity={asset.identity} lang={lang} size={compact?'2.5rem':'3.5rem'} />
   return <span className={`note-asset-art note-asset-art--${asset.kind}`}>
     {/* Game URLs come only from the public, allowlisted asset endpoint. */}
     {asset.image_url && <img src={asset.image_url} alt={name} loading="lazy" decoding="async" />}

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Node, Extension, type Editor, type JSONContent } from '@tiptap/core'
 import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
@@ -7,6 +7,7 @@ import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
 import { Plus, ChevronDown, X, Search, GripVertical } from 'lucide-react'
+import NoteAssetPicker from './NoteAssetPicker'
 import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
@@ -15,7 +16,7 @@ import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 
 const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
-function AssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {
+function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {
   const lang=useLocale(), [query,setQuery]=useState(''), [debounced,setDebounced]=useState(''), [offset,setOffset]=useState(0), [grade,setGrade]=useState('')
   useEffect(()=>{const timer=setTimeout(()=>{setDebounced(query);setOffset(0)},180);return()=>clearTimeout(timer)},[query])
   const {data,error,isLoading,mutate}=useSWR(`/api/notes/assets?kind=${kind}&q=${encodeURIComponent(debounced)}&offset=${offset}&grade=${grade}`,fetchNoteAssets,{revalidateOnFocus:false})
@@ -38,6 +39,7 @@ function AssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:Not
     </div>
   </BaseModal>
 }
+function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) { return props.kind==='skill' || props.kind==='gift' ? <NoteAssetPicker {...props} kind={props.kind}/> : <LegacyAssetPicker {...props}/> }
 function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps) {
   const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as AssetKind
   const title=`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`
@@ -150,6 +152,14 @@ export function notePlaceholder(lang:string,nodeType:string) {
 }
 export function NoteBlockMenu({editor}:{editor:Editor|null}) {
   const lang=useLocale(),[open,setOpen]=useState(false),[slash,setSlash]=useState<{from:number;to:number;query:string}|null>(null),[index,setIndex]=useState(0)
+  const [picking,setPicking]=useState<'skill'|'gift'|null>(null)
+  const insertion=useRef<{from:number;to:number}|null>(null)
+  function choose(kind:BlockKind,range?:{from:number;to:number}) {
+    if(!editor)return
+    if(kind==='skill'||kind==='gift'){insertion.current=range ?? {from:editor.state.selection.from,to:editor.state.selection.to};setPicking(kind)}
+    else insertNoteBlock(editor,kind,range)
+    setOpen(false);setSlash(null)
+  }
   const kinds=(Object.keys(BLOCK_LABELS) as BlockKind[]).filter(k=>!slash || `${blockLabel(k,lang)} ${k} ${BLOCK_LABELS[k][0]} ${k==='ego'?'에고':''}`.toLowerCase().includes(slash.query.toLowerCase()))
   useEffect(()=>{
     if(!editor)return
@@ -165,15 +175,22 @@ export function NoteBlockMenu({editor}:{editor:Editor|null}) {
       e.preventDefault();e.stopPropagation()
       if(e.key==='Escape'){setSlash(null);return}
       if(e.key==='ArrowDown'||e.key==='ArrowUp'){setIndex(i=>(i+(e.key==='ArrowDown'?1:-1)+kinds.length)%kinds.length);return}
-      insertNoteBlock(editor,kinds[index] ?? kinds[0],slash);setSlash(null)
+      choose(kinds[index] ?? kinds[0],slash)
     }
     const dom=editor.view.dom;dom.addEventListener('keydown',handle,true);return()=>dom.removeEventListener('keydown',handle,true)
   },[editor,slash,kinds,index])
   useEffect(()=>{if(!open)return;const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open])
   return <div className="note-block-menu">
+    {(['skill','gift'] as const).map(kind=><button type="button" key={kind} disabled={!editor} className="note-insert-button" onMouseDown={e=>e.preventDefault()} onClick={()=>choose(kind)}>{blockLabel(kind,lang)} {tr(lang,'추가','追加','Add')}</button>)}
+    {picking && <NoteAssetPicker kind={picking} onClose={()=>setPicking(null)} onSelect={asset=>{
+      if(!editor || !insertion.current)return
+      editor.commands.insertContentAt(insertion.current,[{type:'noteAsset',attrs:{kind:picking,id:asset.id}},{type:'paragraph'}])
+      insertion.current={from:editor.state.selection.to,to:editor.state.selection.to}
+    }}/>}
+
     <button type="button" disabled={!editor} aria-expanded={open} onClick={()=>setOpen(!open)} className="note-insert-button"><Plus size={16}/>{tr(lang,'블록 삽입','ブロック挿入','Insert block')}<ChevronDown size={14}/></button>
     {(open || (slash && kinds.length>0)) && <div className="note-command-menu" role="menu" aria-label={tr(lang,'블록 선택','ブロック選択','Choose block')}>
-      {kinds.map((kind,i)=><button type="button" role="menuitem" key={kind} data-active={i===index||undefined} onMouseDown={e=>e.preventDefault()} onClick={()=>{if(editor)insertNoteBlock(editor,kind,slash ?? undefined);setOpen(false);setSlash(null)}}><span>{blockLabel(kind,lang)}</span><small>/{BLOCK_LABELS[kind][0]}</small>{i===index&&<kbd>Tab</kbd>}</button>)}
+      {kinds.map((kind,i)=><button type="button" role="menuitem" key={kind} data-active={i===index||undefined} onMouseDown={e=>e.preventDefault()} onClick={()=>{choose(kind,slash ?? undefined)}}><span>{blockLabel(kind,lang)}</span><small>/{BLOCK_LABELS[kind][0]}</small>{i===index&&<kbd>Tab</kbd>}</button>)}
     </div>}
   </div>
 }

@@ -18,12 +18,14 @@ import { NoteAssetsProvider } from "./NoteBlockViewer";
 import { pendingNoteUploads } from "@/lib/notes/images";
 import { useKeywords } from '@/components/providers/KeywordProvider';
 import NoteImage from "./NoteImage";
+import { NoteFormationContext } from "./NoteAssetPicker";
 import NoteDocumentTools from "./NoteDocumentTools";
 import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
 } from "@/lib/notes/document";
 export default function NoteDocumentEditor({
+  formation = [],
   value,
   onChange,
   pool = [],
@@ -31,6 +33,7 @@ export default function NoteDocumentEditor({
   onPreviewChange,
   previewContent,
 }: {
+  formation?: import("@/lib/notes/assets").NoteFormationMember[];
   value: string;
   onChange: (value: string) => void;
   pool?: AutocompleteSuggestion[];
@@ -162,7 +165,7 @@ export default function NoteDocumentEditor({
     return ()=>{cancelled=true};
   }, [editor, value]);
   return (
-    <div className="note-editor-shell rounded-md bg-[var(--bg-deep)]">
+    <NoteFormationContext.Provider value={formation}><div className="note-editor-shell rounded-md bg-[var(--bg-deep)]">
       <div
         className="note-editor-toolbar flex flex-wrap items-center gap-1 border-b border-[var(--border)] p-2"
         role="toolbar"
@@ -268,6 +271,6 @@ export default function NoteDocumentEditor({
         onHover={setSelected}
         anchor={anchor}
       />
-    </div>
+    </div></NoteFormationContext.Provider>
   );
 }

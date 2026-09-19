@@ -113,6 +113,20 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Creation routes are private; community and database views remain public.
+  const isCreationPage = routePathname === '/decks/new' || routePathname === '/planner'
+  if (isCreationPage) {
+    const token = await getToken({ req: request })
+    if (!token || token.isSuspended) {
+      const url = request.nextUrl.clone()
+      url.pathname = locale ? `/${locale}/login` : '/login'
+      url.search = ''
+      url.searchParams.set('callbackUrl', pathname + request.nextUrl.search)
+      if (token?.isSuspended) url.searchParams.set('error', 'suspended')
+      return NextResponse.redirect(url)
+    }
+  }
+
   // ── 3. 점검 모드 체크 (페이지 요청만) ──
   if (!MAINTENANCE_SKIP.some(p => hasPathPrefix(routePathname, p)) && pathname !== '/favicon.ico') {
     try {

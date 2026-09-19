@@ -1,10 +1,11 @@
 'use client'
 
+import { safeLoginReturn } from '@/lib/auth-return'
 import { signIn, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ArrowLeft } from 'lucide-react'
-import { Link, useRouter } from '@/lib/i18n/navigation'
+import { Link } from '@/lib/i18n/navigation'
 import { useLocale } from 'next-intl'
 import { getIdentityImageUrl, getSinnerProfileUrl } from '@/lib/utils/images'
 import './login.css'
@@ -19,16 +20,16 @@ const planIllustration = getIdentityImageUrl('don-quixote', 'The Manager of La M
 
 export default function LoginPage() {
   const { status } = useSession()
-  const router = useRouter()
   const locale = useLocale()
   const t = copy[locale as keyof typeof copy] ?? copy.ko
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
-  useEffect(() => { if (status === 'authenticated') router.replace('/') }, [status, router])
+  const returnUrl = () => safeLoginReturn(new URLSearchParams(window.location.search).get('callbackUrl'), locale)
+  useEffect(() => { if (status === 'authenticated') window.location.replace(safeLoginReturn(new URLSearchParams(window.location.search).get('callbackUrl'), locale)) }, [status, locale])
   async function login() {
     if (pending) return
     setPending(true); setFailed(false)
-    try { await signIn('google', { callbackUrl: `/${locale}` }) }
+    try { await signIn('google', { callbackUrl: returnUrl() }) }
     catch { setFailed(true); setPending(false) }
   }
   return (
