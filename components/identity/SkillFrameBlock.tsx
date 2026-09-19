@@ -7,6 +7,7 @@ import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import SkillFrame from './SkillFrame'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { getDetailStatIconUrl } from '@/lib/utils/images'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useTranslations } from 'next-intl'
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
@@ -104,13 +105,13 @@ export default function SkillFrameBlock({
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.25rem', marginBottom: '0.5rem' }}>
         {/* Frame area */}
-        <div className="relative shrink-0 ml-2" style={{ width: size, height: size }}>
+        <div className="relative isolate shrink-0 ml-2" style={{ width: size, height: size }}>
           {/* Sin color triangle */}
           <div className="absolute flex items-center justify-center pointer-events-none" style={{
             top: '1.5%', left: '50%', transform: 'translateX(-56%)',
             width: frameRem >= 6 ? '1.5rem' : '1rem',
             height: frameRem >= 6 ? '1.25rem' : '1rem',
-            zIndex: 0,
+            zIndex: 1,
           }}>
             <div className="absolute" style={{
               width: frameRem >= 6 ? '2rem' : '1.5rem',
@@ -121,7 +122,7 @@ export default function SkillFrameBlock({
           </div>
 
           <SkillFrame
-                    attackType={atkTypeKey}
+            attackType={atkTypeKey}
             skillIconUrl={skillIconUrl}
             sin={sin}
             skillSlot={isDefense ? 4 : skillSlot}
@@ -220,9 +221,10 @@ export default function SkillFrameBlock({
 
           {/* Mental consume (optional) */}
           {mentalConsume != null && mentalConsume !== 0 && (
-            <div className="mt-0.5">
-              <span className="font-mono" style={{ color: '#cc6666', fontSize: '0.625rem' }}>
-                정신력 -{mentalConsume}
+            <div className="mt-2 flex items-center gap-2" aria-label={`${t('identity.sanity.title')} −${mentalConsume}`}>
+              <Image src={getGameUiAsset('sanity/9999')} alt="" width={32} height={32} style={{ width: '1.5rem', height: '1.5rem', objectFit: 'contain', filter: 'sepia(1) saturate(4) hue-rotate(310deg)' }} />
+              <span aria-hidden="true" style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: '#ef7777', fontSize: '1.5rem', lineHeight: 1 }}>
+                − {mentalConsume}
               </span>
             </div>
           )}

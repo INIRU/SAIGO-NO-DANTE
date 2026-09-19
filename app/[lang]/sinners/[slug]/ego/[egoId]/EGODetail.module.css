@@ -1,0 +1,48 @@
+.page { max-width: 100rem; margin: 0 auto; padding: 6rem 2rem 5rem; color: var(--text-primary); }
+.breadcrumb { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 2.5rem; color: var(--text-secondary); font-size: .75rem; }
+.breadcrumb > span:last-child { color: var(--gold); }
+.breadcrumb a:hover, .backLink:hover { color: var(--gold-light); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 3rem; align-items: start; }
+.portrait, .info { min-width: 0; }
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.titleRow > div { min-width: 0; }
+.titleRow h1 { font-family: var(--font-heading); font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 1.2; color: #e8dcc8; overflow-wrap: anywhere; text-wrap: balance; margin-bottom: .5rem; }
+.titleRow a { color: var(--text-secondary); font-size: .8125rem; }
+.titleRow > img { flex-shrink: 0; }
+.artwork { position: relative; aspect-ratio: 1; width: min(100%, 29rem); margin: 1.5rem auto 1rem; border-radius: .5rem; overflow: hidden; background: var(--bg-deep); }
+.artworkImage { object-fit: contain; }
+.artworkFallback { display: grid; height: 100%; place-items: center; font: 4rem var(--font-excelsior); color: var(--gold); }
+.backLink { display: block; width: fit-content; margin: 1rem auto 0; font-size: .75rem; color: var(--text-secondary); }
+.sectionHeading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #39352d; }
+.sectionHeading h2 { font-family: var(--font-heading); font-size: 1.375rem; line-height: 1.3; color: #e8dcc8; }
+.infoRow { padding: 1.25rem 0; border-bottom: 1px solid #ffffff12; }
+.infoRow h3 { font-size: .75rem; color: var(--text-secondary); font-weight: 500; margin-bottom: .875rem; }
+.keywords { display: flex; flex-wrap: wrap; gap: .625rem; }
+.keyword { padding: .5rem .75rem; background: #ffffff04; border: 1px solid #ffffff14; border-radius: .375rem; font-size: .875rem; }
+.costs { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.cost { display: flex; align-items: center; gap: .5rem; }
+.cost span { font-family: var(--font-excelsior); font-size: 2rem; line-height: 1; color: #e8dcc8; }
+.resistances { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .5rem; }
+.resistance { display: flex; align-items: center; flex-direction: column; gap: .625rem; min-width: 0; padding: .5rem 0; text-align: center; font-size: .8125rem; }
+.resistance[data-resistance='내성'], .resistance[data-resistance='견딤'] { color: #91beb4; }
+.resistance[data-resistance='취약'], .resistance[data-resistance='치명'] { color: #e69b86; }
+.combat { margin-top: 3rem; border: 1px solid var(--border); border-radius: .5rem; padding: 1.5rem 2rem; background: var(--bg-deep); }
+.skillSection + .skillSection, .passive { margin-top: 2rem; }
+.stageControl { display: flex; align-items: center; gap: .75rem; font-size: .75rem; color: var(--text-secondary); }
+.skill { padding: 1.5rem 0; }
+.skill + .skill { border-top: 1px solid #39352d; }
+.skill:last-child { padding-bottom: 0; }
+.passiveContent { padding-top: 1.25rem; max-width: 75ch; }
+.passiveContent > h3 { font: 1.125rem var(--font-heading); color: var(--gold-light); margin-bottom: .875rem; white-space: pre-line; }
+.empty { color: var(--text-secondary); padding: 1.5rem 0; font-size: .875rem; }
+.page a:focus-visible, .page button:focus-visible { outline: 2px solid var(--gold); outline-offset: .25rem; }
+@media (max-width: 47.9375rem) {
+  .page { padding: 6rem 1rem 3rem; }
+  .breadcrumb { margin-bottom: 1.75rem; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .artwork { width: min(85%, 22rem); margin-top: 1rem; }
+  .combat { padding: 1.25rem 1rem; margin-top: 2rem; }
+  .resistances { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+  .stageControl { gap: .5rem; }
+  .sectionHeading { gap: .75rem; }
+}

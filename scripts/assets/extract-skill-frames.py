@@ -64,8 +64,9 @@ def extract(source, output):
             cell, box = crop_cell(atlases[name], index % 4, row)
             save(cell, f'{sin}-{slot}.webp', colors[sin], name, box)
             base_name = 'Icon_skillFrame_Invert.png' if slot == 3 else 'Icon_skillFrame_Invert_2.png'
-            base_row = index // 4 + (2 if slot in (2, 3) else 0)
-            base, base_box = crop_cell(atlases[base_name], index % 4, base_row)
+            # S3 silhouettes start at cell 7, unlike ornaments at cell 0.
+            base_index = index + (7 if slot == 3 else 8 if slot == 2 else 0)
+            base, base_box = crop_cell(atlases[base_name], base_index % 4, base_index // 4)
             save(base, f'{sin}-{slot}-base.webp', base_colors[sin], base_name, base_box)
 
     # Undecorated neutral frame; never silently use the wrath ornament for defense.
