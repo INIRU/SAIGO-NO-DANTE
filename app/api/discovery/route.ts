@@ -33,8 +33,9 @@ async function load(kind: "deck" | "planner", days: number) {
     .filter((r) => r.kind === kind)
     .slice(0, 6)
     .map((r) => r.entity_id);
-  const identityIds = metrics
+  const identityRank = metrics
     .filter((r) => r.kind === "identity")
+    .sort((a, b) => b.visitors - a.visitors || a.entity_id.localeCompare(b.entity_id))
     .slice(0, 12)
     .map((r) => r.entity_id);
   const editedIds = (edits.data as { entity_id: string }[]).map(row => row.entity_id);
@@ -42,19 +43,23 @@ async function load(kind: "deck" | "planner", days: number) {
     ids.length
       ? db.from(table).select(columns).in("id", ids)
       : Promise.resolve({ data: [], error: null }),
-    identityIds.length
+    identityRank.length
       ? db
           .from("identities")
           .select(
             "id,sinner_id,name_kr,name_en,name_jp,rarity,folder_name,game_id",
           )
-          .in("id", identityIds)
+          .in("id", identityRank)
       : Promise.resolve({ data: [], error: null }),
     editedIds.length
       ? db.from(table).select(columns).in("id", editedIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (popular.error || identities.error || updated.error) throw Error("Discovery unavailable");
+  const identityOrder = new Map(identityRank.map((id, index) => [id, index]));
+  const orderedIdentities = [...(identities.data ?? [])].sort(
+    (a, b) => (identityOrder.get(a.id) ?? Infinity) - (identityOrder.get(b.id) ?? Infinity),
+  );
   const formatPosts = (rows: unknown[]) => rows.map(raw => {
     const row = raw as Record<string, unknown>;
     if (kind === "planner") return stripPlanForList(row);
@@ -65,7 +70,7 @@ async function load(kind: "deck" | "planner", days: number) {
     recent: formatPosts(recent.data ?? []),
     updated: formatPosts([...((updated.data ?? []) as unknown as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),
     popular: formatPosts(popular.data ?? []),
-    identities: identities.data,
+    identities: orderedIdentities,
     counts: metrics,
   };
 }

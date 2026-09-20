@@ -56,3 +56,8 @@ it('keeps inline keywords within prose and converts earlier keyword cards',()=>{
  expect(notePlainText(saved)).toContain('화상')
  expect(visibleNode(loaded.content![0].content![1])).toBe(true)
 })
+
+it('preserves keyword escapes while editing plain notes',()=>{
+ const source='흑수 \\못 넣을시'
+ expect(tiptapContentToMarkdown(markdownToTiptapContent(source))).toBe(source)
+})

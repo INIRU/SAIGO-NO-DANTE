@@ -61,7 +61,7 @@ async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
 }
 
 function CommunityPageSkeleton() {
-  return <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-16 md:px-6"><div className="mx-auto max-w-7xl"><BoardSkeleton kind="planner" shelf count={3} /></div></div>
+  return <div className="px-4 pb-16 md:px-6"><div className="mx-auto max-w-7xl"><BoardSkeleton kind="planner" shelf count={3} /></div></div>
 }
 
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -70,7 +70,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   const { initialPlans, initialTotal } = await getCachedInitialPlans(lang, CARD_META_CACHE_VERSION)
 
   return (
-    <div className="community-board flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
+    <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} eyebrow={t('eyebrow')} action={t('newPlan')} />
       <Suspense fallback={<CommunityPageSkeleton />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />

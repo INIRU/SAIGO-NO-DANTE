@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
-import { ArrowUpRight, History, Layers3 } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp, History, Layers3 } from "lucide-react";
 import BoardSkeleton from "./BoardSkeleton";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
@@ -32,6 +32,7 @@ export default function DiscoveryShelf({
     label = (k: string, j: string, e: string) =>
       lang === "ko" ? k : lang === "ja" ? j : e;
   const [days, setDays] = useState(7),
+    [expanded, setExpanded] = useState<Set<string>>(() => new Set()),
     [history, setHistory] = useState<{
       items: HistoryItem[];
       queries: string[];
@@ -70,7 +71,7 @@ export default function DiscoveryShelf({
   const base = kind === "deck" ? "/decks" : "/planner/community";
   return (
     <div
-      className="min-h-0 flex-1 overflow-y-auto px-4 pb-16 md:px-6"
+      className="px-4 pb-16 font-[family-name:var(--font-paperlogy)] md:px-6"
       data-discovery-shelf
     >
       <div className="mx-auto max-w-7xl space-y-9">
@@ -97,14 +98,14 @@ export default function DiscoveryShelf({
           </div>
           <button
             onClick={onBrowse}
-            className="ml-auto flex min-h-11 items-center gap-2 px-1 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--gold)]"
+            className="ml-auto flex min-h-12 items-center gap-1.5 px-1 text-[1rem] font-semibold text-[var(--gold-light)] transition-colors hover:text-[var(--text-primary)]"
           >
             {label(
               "전체보기 · 필터",
               "すべて・絞り込み",
               "Browse all · Filters",
             )}
-            <ArrowUpRight size={16} />
+            <ArrowUpRight size={14} />
           </button>
         </div>
         {error && (
@@ -120,7 +121,13 @@ export default function DiscoveryShelf({
             )}
           </button>
         )}
-        {!data && !error && <BoardSkeleton kind={kind} shelf count={3} />}
+        {!data && !error && (
+          <div className="space-y-9">
+            {Array.from({ length: 3 }, (_, index) => (
+              <BoardSkeleton key={index} kind={kind} shelf count={3} />
+            ))}
+          </div>
+        )}
         {data &&
           (
             [
@@ -141,7 +148,7 @@ export default function DiscoveryShelf({
               [
                 "popular",
                 label(
-                  `관리자들이 자주 찾는 ${noun}`,
+                  `관리자분들이 자주 찾는 ${noun}`,
                   `よく読まれている${noun}`,
                   `Frequently visited ${noun}`,
                 ),
@@ -152,22 +159,41 @@ export default function DiscoveryShelf({
             ] as const
           )
             .filter(([, , posts]) => posts.length > 0)
-            .map(([key, title, posts]) => (
-              <section key={key}>
+            .map(([key, title, posts]) => {
+              const isExpanded = expanded.has(key);
+              return <section key={key}>
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)]">
                     {title}
                   </h2>
                   <button
-                    onClick={onBrowse}
-                    className="min-h-10 font-[family-name:var(--font-body)] text-xs text-[var(--text-muted)]"
+                    onClick={() => {
+                      if (posts.length <= 3) return onBrowse();
+                      setExpanded((current) => {
+                        const next = new Set(current);
+                        if (next.has(key)) next.delete(key);
+                        else next.add(key);
+                        return next;
+                      });
+                    }}
+                    aria-expanded={posts.length > 3 ? isExpanded : undefined}
+                    className="flex min-h-12 shrink-0 items-center gap-1 px-1 text-[1rem] font-semibold text-[var(--gold-light)] transition-colors hover:text-[var(--text-primary)]"
                   >
-                    {label("전체보기", "すべて", "View all")} ↗
+                    {posts.length > 3
+                      ? isExpanded
+                        ? label("접기", "閉じる", "Show less")
+                        : label("더보기", "もっと見る", "Show more")
+                      : label("전체보기", "すべて", "View all")}
+                    {posts.length > 3
+                      ? isExpanded
+                        ? <ChevronUp size={14} />
+                        : <ChevronDown size={14} />
+                      : <ArrowUpRight size={14} />}
                   </button>
                 </div>
-                <div className="grid auto-cols-[minmax(16rem,22rem)] grid-flow-col gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
-                  {posts.map((post) => (
-                    <div key={post.id} className="min-w-0 snap-start">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {posts.slice(0, isExpanded ? 6 : 3).map((post) => (
+                    <div key={post.id} className="min-w-0">
                       {kind === "deck" ? (
                         <DeckCard deck={post} />
                       ) : (
@@ -176,8 +202,8 @@ export default function DiscoveryShelf({
                     </div>
                   ))}
                 </div>
-              </section>
-            ))}
+              </section>;
+            })}
         {data &&
           !data.recent.length &&
           !data.updated.length &&
@@ -227,12 +253,12 @@ export default function DiscoveryShelf({
                 "Identities managers frequently view",
               )}
             </h2>
-            <div className="flex gap-6 overflow-x-auto p-4">
-              {data.identities.map((i) => (
+            <div className="grid grid-cols-3 items-start gap-4 py-2 max-[22rem]:grid-cols-2 sm:grid-cols-4 sm:gap-6 sm:px-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
+              {data.identities.map((i, index) => (
                 <Link
                   key={i.id}
                   href={`${base}?browse=all&ids=${i.id}`}
-                  className="w-28 shrink-0"
+                  className={`w-full min-w-0 max-w-24 justify-self-center sm:max-w-28 ${index >= 9 ? "hidden" : index >= 7 ? "hidden xl:block" : index >= 5 ? "hidden lg:block" : index >= 4 ? "hidden md:block" : index >= 3 ? "hidden sm:block" : index === 2 ? "max-[22rem]:hidden" : ""}`}
                 >
                   <IdentityCard identity={i} compact />
                 </Link>
