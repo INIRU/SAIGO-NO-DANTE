@@ -670,7 +670,7 @@ export function NoteRenderer({
       if (m.index > last) {
         nodes.push(
           <span key={`${keyPrefix}-t${last}`}>
-            {formatSkillDesc(value.slice(last, m.index), '#b0a898', undefined, allowedKeywords)}
+            {formatSkillDesc(value.slice(last, m.index), '#b0a898', undefined, allowedKeywords, { escapeKeywords: true })}
           </span>
         )
       }
@@ -684,19 +684,19 @@ export function NoteRenderer({
             rel="noopener noreferrer"
             style={{ color: '#e8b030', textDecoration: 'underline', textUnderlineOffset: '0.1875rem' }}
           >
-            {formatSkillDesc(m[2], '#e8b030', undefined, allowedKeywords)}
+            {formatSkillDesc(m[2], '#e8b030', undefined, allowedKeywords, { escapeKeywords: true })}
           </a>
         )
       } else if (matched.startsWith('**')) {
         nodes.push(
           <strong key={`${keyPrefix}-b${m.index}`} style={{ color: '#d9d0bf', fontWeight: 700 }}>
-            {formatSkillDesc(matched.slice(2, -2), '#d9d0bf', undefined, allowedKeywords)}
+            {formatSkillDesc(matched.slice(2, -2), '#d9d0bf', undefined, allowedKeywords, { escapeKeywords: true })}
           </strong>
         )
       } else if (matched.startsWith('*') || matched.startsWith('_')) {
         nodes.push(
           <em key={`${keyPrefix}-i${m.index}`} style={{ color: '#d2c7b5', fontStyle: 'italic' }}>
-            {formatSkillDesc(matched.slice(1, -1), '#d2c7b5', undefined, allowedKeywords)}
+            {formatSkillDesc(matched.slice(1, -1), '#d2c7b5', undefined, allowedKeywords, { escapeKeywords: true })}
           </em>
         )
       } else {
@@ -722,7 +722,7 @@ export function NoteRenderer({
     if (last < value.length) {
       nodes.push(
         <span key={`${keyPrefix}-tend`}>
-          {formatSkillDesc(value.slice(last), '#b0a898', undefined, allowedKeywords)}
+          {formatSkillDesc(value.slice(last), '#b0a898', undefined, allowedKeywords, { escapeKeywords: true })}
         </span>
       )
     }

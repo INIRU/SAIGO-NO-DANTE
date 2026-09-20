@@ -197,7 +197,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               fontFamily: 'var(--font-paperlogy)',
               fontWeight: 700,
               letterSpacing: '-0.015em',
-              fontSize: 'var(--text-sm)',
+              fontSize: '1rem',
               color: 'var(--text-primary)',
               transition: 'color 0.2s ease',
             }}
@@ -210,8 +210,8 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
             <div
               className="flex-1 mb-2"
               style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--text-tertiary)',
+                fontSize: '0.8125rem',
+                color: 'var(--text-secondary)',
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
@@ -247,7 +247,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     border: `1px solid ${CONTENT_TYPE_COLORS[deck.content_type!].border}`,
                     borderRadius: 'var(--radius-sm)',
                     fontFamily: 'var(--font-heading)',
-                    fontSize: 'var(--text-xs)',
+                    fontSize: '0.75rem',
                     letterSpacing: '0.03em',
                   }}
                 >
@@ -269,7 +269,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                       border: '1px solid rgba(136,88,40,0.3)',
                       borderRadius: 'var(--radius-sm)',
                       fontFamily: 'var(--font-heading)',
-                      fontSize: 'var(--text-xs)',
+                      fontSize: '0.75rem',
                       letterSpacing: '0.03em',
                     }}
                   >
@@ -297,7 +297,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     border: '1px solid rgba(136,88,40,0.2)',
                     borderRadius: 'var(--radius-sm)',
                     fontFamily: 'var(--font-mono)',
-                    fontSize: 'var(--text-xs)',
+                    fontSize: '0.75rem',
                   }}
                 >
                   +{overflowCount}
@@ -318,7 +318,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
                     onTagClick?.(tag)
                   }}
                   style={{
-                    fontSize: 'var(--text-xs)',
+                    fontSize: '0.75rem',
                     padding: '0.125rem 0.5rem',
                     background: 'rgba(200,144,10,0.08)',
                     color: 'var(--gold-dim)',
@@ -337,13 +337,13 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
           {/* 하단 메타 — 왼쪽: user · date / 오른쪽: ♡ N · 👁 N */}
           <div
-            className="flex items-center justify-between"
+            className="flex flex-wrap items-center justify-between gap-2"
             style={{ borderTop: '1px solid rgba(58,42,21,0.5)', paddingTop: '0.625rem' }}
           >
             {/* 왼쪽: 작성자 · 날짜 */}
             <div
-              className="flex items-center"
-              style={{ gap: '0.25rem', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}
+              className="flex min-w-0 items-center"
+              style={{ gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
             >
               {deck.username && (
                 <>
@@ -356,8 +356,8 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
 
             {/* 오른쪽: 투표 · 조회 · 댓글 */}
             <div
-              className="flex items-center"
-              style={{ gap: '0.625rem', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}
+              className="ml-auto flex items-center"
+              style={{ gap: '0.625rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
             >
               <span className="flex items-center" style={{ gap: '0.25rem' }}>
                 <Heart style={{ width: '0.625rem', height: '0.625rem' }} fill="currentColor" stroke="none" />

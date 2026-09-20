@@ -5,7 +5,6 @@ import BoardHeader from '@/components/discovery/BoardHeader'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DecksClient from './DecksClient'
-import DecksScrollLock from './DecksScrollLock'
 import type { DeckSummary } from '@/components/decks/DeckCard'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { normalizeDeckLanguageFilter, type DeckLanguageFilter } from '@/components/decks/decks-types'
@@ -142,8 +141,7 @@ export default async function DecksPage({
   const initialDecks = await getCachedInitialDecks({ initialSort, initialLang })
 
   return (
-    <div className="community-board flex h-[100dvh] flex-col overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
-      <DecksScrollLock />
+    <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} eyebrow={headerCopy.eyebrow} action={headerCopy.newDeck} />
       {/* The route loading boundary already covers the request-bound query state. */}
       <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort={initialSort} initialLanguageFilter={initialLanguageFilter} />

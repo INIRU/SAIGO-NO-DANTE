@@ -1,6 +1,7 @@
 'use client'
 
 import { notePlainText } from '@/lib/notes/blocks'
+import { NoteRenderer } from '@/components/decks/NoteChips'
 
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { memo, useEffect, useMemo, useState } from 'react'
@@ -197,35 +198,35 @@ function PlanCard({
         <div className="flex flex-col flex-1 p-4">
           {/* 제목 */}
           <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
-            style={{ fontSize: '0.9375rem', color: '#e8dcc8' }}>
+            style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
             {plan.title}
           </h3>
 
           {/* 설명 */}
           {plan.description ? (
-            <p className="mb-2 line-clamp-2 flex-1" style={{ fontSize: '0.6875rem', color: '#555', lineHeight: 1.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {notePlainText(plan.description)}
+            <p className="mb-3 line-clamp-2 flex-1" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <NoteRenderer text={notePlainText(plan.description)} inline />
             </p>
           ) : <div className="flex-1" />}
 
           {/* 하단: 작성자 + 통계 */}
-          <div className="flex items-center justify-between pt-2 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="flex items-center gap-1.5">
+          <div className="mt-auto flex flex-wrap items-center gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="flex min-w-0 items-center gap-1.5">
               <div className="relative overflow-hidden rounded-full" style={{ width: '1.125rem', height: '1.125rem', flexShrink: 0, border: '1px solid rgba(200,144,10,0.2)' }}>
                 <Image src={avatarUrl} alt={username} width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
               </div>
-              <span style={{ fontSize: '0.6875rem', color: '#8a7a60' }}>{username}</span>
-              <PlannerRelativeTime localized={localized} date={plan.created_at} style={{ fontSize: '0.5625rem', color: '#333' }} />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{username}</span>
+              <PlannerRelativeTime localized={localized} date={plan.created_at} style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }} />
             </div>
-            <div className="flex items-center gap-2.5">
-              <span className="flex items-center gap-0.5" style={{ fontSize: '0.625rem', color: plan.vote_count > 0 ? '#c8900a' : '#333' }}>
+            <div className="ml-auto flex items-center gap-2.5">
+              <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: plan.vote_count > 0 ? 'var(--gold)' : 'var(--text-muted)' }}>
                 <Heart style={{ width: '0.625rem', height: '0.625rem' }} fill={plan.vote_count > 0 ? 'currentColor' : 'none'} /> {plan.vote_count}
               </span>
-              <span className="flex items-center gap-0.5" style={{ fontSize: '0.625rem', color: '#333' }}>
+              <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 <Eye style={{ width: '0.625rem', height: '0.625rem' }} /> {plan.view_count}
               </span>
               {plan.comment_count > 0 && (
-                <span className="flex items-center gap-0.5" style={{ fontSize: '0.625rem', color: '#555' }}>
+                <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   <MessageCircle style={{ width: '0.625rem', height: '0.625rem' }} /> {plan.comment_count}
                 </span>
               )}

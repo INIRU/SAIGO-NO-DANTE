@@ -162,6 +162,11 @@ export function useKeywords() {
   return useContext(KeywordContext)
 }
 
+type FormatSkillDescOptions = {
+  /** Notes can opt in to a single backslash as a literal-keyword escape. */
+  escapeKeywords?: boolean
+}
+
 /** formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출 */
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
@@ -170,14 +175,14 @@ export function useFormatSkillDesc() {
   const { localKeywords, localToKr } = getLocalizedKeywordIndex(keywords, locale)
 
   return useCallback(
-    (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>) => {
+    (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
       const filtered = allowedKeywords
         ? localKeywords.filter(kw => {
             const krName = localToKr[kw] ?? kw
             return allowedKeywords.has(krName) || allowedKeywords.has(kw)
           })
         : localKeywords
-      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr)
+      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options)
     },
     [keywords, localKeywords, localToKr],
   )
@@ -413,6 +418,7 @@ function formatSkillDescInner(
   keywordInfo: Record<string, KeywordInfo>,
   skillNameColors?: Record<string, string>,
   localToKr?: Record<string, string>,
+  options?: FormatSkillDescOptions,
 ) {
   const parts: {
     text: string
@@ -427,7 +433,32 @@ function formatSkillDescInner(
     ? Object.keys(skillNameColors).sort((a, b) => b.length - a.length)
     : []
 
+  const escapedKeywordAt = (value: string) => {
+    if (!options?.escapeKeywords) return null
+    for (let start = value.indexOf('\\'); start >= 0; start = value.indexOf('\\', start + 1)) {
+      if (start > 0 && value[start - 1] === '\\') continue
+      let slashCount = 1
+      while (value[start + slashCount] === '\\') slashCount += 1
+      if (slashCount % 2 === 0) continue
+      const keywordStart = start + slashCount
+      const keyword = allKeywords.find(kw => {
+        const afterHangul = kw.length <= 2 && isHangul(value[keywordStart + kw.length])
+        return value.startsWith(kw, keywordStart) && !(afterHangul && !isParticleAfter(value.slice(keywordStart), kw.length))
+      })
+      if (keyword) return { start, slashCount, keyword }
+    }
+    return null
+  }
+
   while (remaining.length > 0) {
+    const escapedKeyword = escapedKeywordAt(remaining)
+    if (escapedKeyword?.start === 0) {
+      if (escapedKeyword.slashCount > 1) parts.push({ text: '\\'.repeat(escapedKeyword.slashCount - 1), type: 'normal' })
+      parts.push({ text: escapedKeyword.keyword, type: 'normal' })
+      prevChar = escapedKeyword.keyword[escapedKeyword.keyword.length - 1]
+      remaining = remaining.slice(escapedKeyword.slashCount + escapedKeyword.keyword.length)
+      continue
+    }
     // 1. [대괄호] / 【대괄호】 패턴
     const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
@@ -480,6 +511,7 @@ function formatSkillDescInner(
     if (bracketIdx > 0) nextIdx = Math.min(nextIdx, bracketIdx)
     const fwBracketIdx = remaining.indexOf('【')
     if (fwBracketIdx > 0) nextIdx = Math.min(nextIdx, fwBracketIdx)
+    if (escapedKeyword) nextIdx = Math.min(nextIdx, escapedKeyword.start)
     for (const kw of allKeywords) {
       let searchFrom = 0
       while (searchFrom < remaining.length) {
