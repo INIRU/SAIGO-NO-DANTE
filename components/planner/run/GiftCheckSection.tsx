@@ -104,15 +104,15 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
         <p style={{ color: '#555', fontSize: '0.8125rem' }}>테마팩을 먼저 선택하면 기프트가 표시됩니다</p>
       )}
 
-      {/* 상점 구매 (자동완성 드롭다운) */}
+      {/* 최종 기프트 추가 (자동완성 드롭다운) */}
       <section>
-        <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>상점 구매</h3>
+        <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>최종 기프트 추가</h3>
         <div className="relative" style={{ zIndex: 20 }}>
           <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#555' }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="기프트 이름 검색..."
+            placeholder="최종 기프트 검색..."
             className="w-full rounded-lg"
             style={{ padding: '0.5rem 0.75rem 0.5rem 2.25rem', background: '#1a1510', border: '1px solid #2a2015', color: '#e8e0d0', fontSize: '0.8125rem', outline: 'none', minHeight: '2.75rem' }}
           />
