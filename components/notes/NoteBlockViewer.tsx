@@ -20,6 +20,8 @@ export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   return r.json()
 }
 const AssetContext = createContext<{data: Map<string, NoteAssetData>; loading: boolean; error: boolean; retry: () => void}>({data:new Map(),loading:false,error:false,retry:()=>{}})
+/** Pages that own a gift modal provide this; the key is a gift id (blocks) or name (legacy tokens). */
+export const NoteGiftClickContext = createContext<((key: string) => void) | null>(null)
 export function NoteAssetsProvider({doc, children}:{doc:JSONContent; children:ReactNode}) {
   const refs = assetRefs(doc)
   const {data, error, isLoading, mutate} = useSWR(refs === '[]' ? null : ['note-assets',refs], async ([, value]) => {
@@ -49,9 +51,10 @@ export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; co
   </span>
 }
 export function NoteAssetView({kind,id}:{kind:AssetKind;id:string}) {
-  const lang=useLocale(), {data,loading,error,retry}=useContext(AssetContext)
+  const lang=useLocale(), {data,loading,error,retry}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
   const asset=data.get(`${kind}:${id}`)
   if (!id) return null
+  if (kind === 'gift' && asset && onGiftClick) return <button type="button" className="note-asset-view note-asset-view--gift cursor-pointer" onClick={()=>onGiftClick(id)}><NoteAssetArtwork asset={asset}/><span className="note-asset-caption">{assetName(asset,lang)}</span></button>
   return <div className={`note-asset-view note-asset-view--${kind}`}>
     {asset ? <><NoteAssetArtwork asset={asset}/>{!['identity','ego','skill','sin','keyword'].includes(kind) && <span className="note-asset-caption">{assetName(asset,lang)}</span>}</> : error ? <button type="button" onClick={retry}>{lang==='ko'?'다시 불러오기':lang==='ja'?'再読み込み':'Retry'}</button> : <span className="note-asset-unavailable" aria-busy={loading}>{loading ? '…' : lang==='ko'?'에셋을 찾을 수 없습니다':lang==='ja'?'データがありません':'Asset unavailable'}</span>}
   </div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import NoteBlockViewer from '@/components/notes/NoteBlockViewer'
+import NoteBlockViewer, { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
@@ -291,6 +291,7 @@ function GiftCardPlaceholder({
   entry: NoteEgoGiftEntry
   conditionStatus?: GiftConditionStatus | null
 }) {
+  const onGiftClick = useContext(NoteGiftClickContext)
   return (
     <div
       style={{
@@ -300,7 +301,7 @@ function GiftCardPlaceholder({
         verticalAlign: 'top',
       }}
     >
-      <GiftCard gift={entry} onClick={() => undefined} conditionStatus={conditionStatus} />
+      <GiftCard gift={entry} onClick={() => onGiftClick?.(entry.name)} conditionStatus={conditionStatus} />
     </div>
   )
 }

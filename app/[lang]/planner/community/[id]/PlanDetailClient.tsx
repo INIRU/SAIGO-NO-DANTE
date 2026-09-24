@@ -13,6 +13,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, Heart, Eye, MessageCircle } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
@@ -325,6 +326,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
+  const openNoteGift = (key: string) => {
+    const gift = gifts.find(g => g.id === key || g.name === key)
+    if (gift) setSelectedGift({ gift, enhance: 0 })
+  }
   const shouldReduceMotion = useReducedMotion()
 
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
@@ -496,6 +501,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
 
   return (
+    <NoteGiftClickContext value={openNoteGift}>
     <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <Link
@@ -728,5 +734,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         />
       )}
     </div>
+    </NoteGiftClickContext>
   )
 }
