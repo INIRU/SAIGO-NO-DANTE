@@ -2,10 +2,12 @@
 
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 
-import { memo } from 'react'
+import { memo, type CSSProperties } from 'react'
+import Image from 'next/image'
 import styles from './GiftCard.module.css'
 import { useLocale, useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,73 @@ export function GiftWarningMark({ label, className = 'right-0 -top-0.5 h-3.5 w-3
       <path d="M16 11v8" stroke="#ffaaaa" strokeWidth="3" />
       <circle cx="16" cy="23" r="1.7" fill="#ffaaaa" />
     </svg>
+  )
+}
+
+// Intrinsic sizes of the game's enhancement sprites (MainUI_MirrorDungeon7_2).
+const ENHANCE_SPRITES = {
+  minus: { src: 'gift/enhance-minus', width: 30, height: 18 },
+  plusIdle: { src: 'gift/enhance-plus-idle', width: 31, height: 30 },
+  plusplusIdle: { src: 'gift/enhance-plusplus-idle', width: 61, height: 30 },
+  plus: { src: 'gift/enhance-plus', width: 40, height: 41 },
+  plusplus: { src: 'gift/enhance-plusplus', width: 70, height: 41 },
+} as const
+
+function EnhanceSprite({ sprite, alt = '', className, style }: { sprite: keyof typeof ENHANCE_SPRITES; alt?: string; className?: string; style?: CSSProperties }) {
+  const { src, width, height } = ENHANCE_SPRITES[sprite]
+  return <Image src={getGameUiAsset(src)} alt={alt} width={width} height={height} draggable={false} className={className} style={{ height: '100%', width: 'auto', ...style }} />
+}
+
+/** The +/++ mark in a gift's top-right corner. Level 0 shows a faint + when the gift can still be enhanced. */
+export function GiftEnhanceMark({ level, onClick }: { level: number; onClick?: () => void }) {
+  const t = useTranslations('giftEnhance')
+  const sprite = level >= 2 ? 'plusplus' : level === 1 ? 'plus' : 'plusIdle'
+  return (
+    <span
+      aria-hidden={level === 0 || undefined}
+      onClick={onClick ? e => { e.stopPropagation(); onClick() } : undefined}
+      className="pointer-events-auto absolute z-25 flex justify-end"
+      style={{ top: '1%', right: '2%', height: level > 0 ? '30%' : '22%', maxWidth: '62%', opacity: level > 0 ? 1 : 0.35, cursor: onClick ? 'pointer' : undefined }}
+    >
+      <EnhanceSprite sprite={sprite} alt={level > 0 ? t(level >= 2 ? 'plusplus' : 'plus') : ''} style={{ filter: 'drop-shadow(0 0.0625rem 0.125rem rgba(0,0,0,0.9))' }} />
+    </span>
+  )
+}
+
+/**
+ * Base / + / ++ switch shown under a picked gift. It sits outside GiftCard (a button) so the buttons stay valid,
+ * and stays visible because touch screens have no hover.
+ */
+export function GiftEnhancePicker({ level, max, giftName, onChange }: { level: number; max: 1 | 2; giftName: string; onChange: (level: number) => void }) {
+  const t = useTranslations('giftEnhance')
+  const options = [
+    { value: 0, label: t('base'), idle: 'minus', active: 'minus' },
+    { value: 1, label: t('plus'), idle: 'plusIdle', active: 'plus' },
+    { value: 2, label: t('plusplus'), idle: 'plusplusIdle', active: 'plusplus' },
+  ].slice(0, max + 1) as { value: number; label: string; idle: keyof typeof ENHANCE_SPRITES; active: keyof typeof ENHANCE_SPRITES }[]
+  return (
+    <div role="radiogroup" aria-label={t('group', { gift: giftName })} className="mt-1 flex w-full overflow-hidden rounded-sm border" style={{ borderColor: '#2e2417', background: '#0d0b08' }}>
+      {options.map(option => {
+        const checked = level === option.value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            aria-label={option.label}
+            title={option.label}
+            onClick={() => onChange(option.value)}
+            className="flex h-7 min-w-0 flex-1 items-center justify-center px-0.5 transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none"
+            style={{ background: checked ? 'rgba(200,144,10,0.16)' : undefined, boxShadow: checked ? 'inset 0 -2px 0 #c8900a' : undefined }}
+          >
+            <span className="flex max-w-full justify-center" style={{ height: option.value === 0 ? '0.4375rem' : checked && option.value > 0 ? '0.9375rem' : '0.6875rem', opacity: checked ? 1 : 0.55 }}>
+              <EnhanceSprite sprite={checked ? option.active : option.idle} className="max-w-full object-contain" />
+            </span>
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -98,7 +167,7 @@ const GiftCard = memo(function GiftCard({
         position: 'relative',
       }}
     >
-      <GiftArtwork gift={gift} displayName={displayName} isInsert={isInsert} isSelected={isSelected} className={styles.frame}>
+      <GiftArtwork gift={gift} displayName={displayName} isInsert={isInsert} isSelected={isSelected} enhance={enhance} className={styles.frame}>
         {/* Selected checkmark */}
         {!isInsert && isSelected && (
           <div style={{
@@ -110,44 +179,14 @@ const GiftCard = memo(function GiftCard({
           </div>
         )}
 
-        {/* Enhancement badge */}
+        {/* Enhancement mark: the game's own +/++ sprite in the top-right corner. */}
         {!isInsert && enhance != null && enhance > 0 && (
-          <div
-            onClick={e => { e.stopPropagation(); onEnhance?.() }}
-            style={{
-              position: 'absolute', top: '1%', right: '6%', zIndex: 25, cursor: 'pointer',
-              fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-              fontWeight: 800, fontSize: '1.25rem', lineHeight: 1,
-              color: enhance === 2 ? '#ff8c00' : '#e8b030',
-              textShadow: enhance === 2
-                ? '0 0 0.5rem rgba(255,140,0,0.8), 0 0 1rem rgba(255,100,0,0.5), 0 0.125rem 0.25rem rgba(0,0,0,0.9)'
-                : '0 0 0.375rem rgba(200,144,10,0.6), 0 0.125rem 0.25rem rgba(0,0,0,0.8)',
-            }}
-          >
-            <span style={{
-              display: 'inline-block', padding: '0.0625rem 0.125rem', borderRadius: '0.125rem',
-              background: enhance === 2
-                ? 'radial-gradient(ellipse, rgba(255,140,0,0.35) 0%, transparent 70%)'
-                : 'radial-gradient(ellipse, rgba(232,176,48,0.3) 0%, transparent 70%)',
-              filter: enhance === 2
-                ? 'drop-shadow(0 0 0.375rem rgba(255,100,0,0.8)) drop-shadow(0 0 0.75rem rgba(255,140,0,0.4))'
-                : 'drop-shadow(0 0 0.25rem rgba(232,176,48,0.7)) drop-shadow(0 0 0.5rem rgba(200,144,10,0.3))',
-            }}>
-              {enhance === 2 ? '++' : '+'}
-            </span>
-          </div>
+          <GiftEnhanceMark level={enhance} onClick={onEnhance} />
         )}
 
         {/* Enhancement available indicator */}
         {!isInsert && enhance === 0 && onEnhance && (
-          <div
-            onClick={e => { e.stopPropagation(); onEnhance() }}
-            style={{
-              position: 'absolute', top: '1%', right: '6%', zIndex: 25, cursor: 'pointer',
-              fontSize: '1.25rem', fontWeight: 800, color: '#44403c',
-              fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-            }}
-          >+</div>
+          <GiftEnhanceMark level={0} onClick={onEnhance} />
         )}
 
         {/* Remove button */}

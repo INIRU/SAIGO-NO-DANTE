@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { FlaskConical } from 'lucide-react'
 import GiftGrade from './GiftGrade'
 import ImageWithFallback from './ImageWithFallback'
-import { OCTAGON_CLIP, GIFT_BG_URL, getGiftKeywordSlug, getGiftKeywordIconUrl } from '@/lib/constants/gift'
+import { OCTAGON_CLIP, GIFT_BG_URL, GIFT_BG_ENHANCED_URL, getGiftKeywordSlug, getGiftKeywordIconUrl } from '@/lib/constants/gift'
 
 export interface GiftArtworkGift {
   grade?: string | null
@@ -17,11 +17,13 @@ export interface GiftArtworkGift {
 }
 
 /** Non-interactive artwork shared by gift controls and event-card previews. */
-export default function GiftArtwork({ gift, displayName, isInsert = false, isSelected = false, className = '', sizes = '120px', children }: {
+export default function GiftArtwork({ gift, displayName, isInsert = false, isSelected = false, enhance = 0, className = '', sizes = '120px', children }: {
   gift: GiftArtworkGift
   displayName: string
   isInsert?: boolean
   isSelected?: boolean
+  /** 1 (+) or 2 (++) swaps in the game's enhanced slot. */
+  enhance?: number
   className?: string
   sizes?: string
   children?: ReactNode
@@ -43,19 +45,19 @@ export default function GiftArtwork({ gift, displayName, isInsert = false, isSel
       }}>
         {/* A real, eagerly loaded image lets all consumers verify the shared background. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={GIFT_BG_URL} alt="" aria-hidden="true" data-gift-background loading="eager"
+        <img src={enhance > 0 && !isInsert ? GIFT_BG_ENHANCED_URL : GIFT_BG_URL} alt="" aria-hidden="true" data-gift-background loading="eager"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
-        {/* Grade label */}
+        {/* Grade numeral: cap height 26% of the card like in game; 6%/6% keeps its corner inside the octagon cut. */}
         {!isInsert && (
           <GiftGrade grade={gift.grade} style={{
             position: 'absolute',
-            top: '4%',
-            left: '3%',
+            top: '6%',
+            left: '6%',
             zIndex: 10,
             pointerEvents: 'none',
             fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
             fontWeight: 700,
-            fontSize: 'clamp(1rem, 28cqw, 2.5rem)',
+            fontSize: 'calc(26cqw / 0.85)',
             lineHeight: 1,
             color: isEX ? 'rgb(198, 255, 46)' : 'rgb(251, 183, 46)',
             textShadow: isEX

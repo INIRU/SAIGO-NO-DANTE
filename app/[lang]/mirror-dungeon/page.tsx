@@ -1,3 +1,4 @@
+import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -7,6 +8,7 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from './MirrorDungeonClient'
+import MirrorDungeonSkeleton from '@/components/mirror-dungeon/MirrorDungeonSkeleton'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 
@@ -78,14 +80,14 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
       <JsonLd data={faqJsonLd(MIRROR_FAQ)} />
       {/* MirrorDungeonClient uses nuqs (useSearchParams internally), requiring Suspense
           to prevent CSR bailout from de-opting the entire page to client rendering. */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<MirrorDungeonSkeleton />}>
         <MirrorDungeonClient
           lang={lang as SupportedLang}
-          gifts={gifts ?? []}
+          gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
           recipes={recipes ?? []}
           themes={themes ?? []}
-          events={(events ?? []) as MdEvent[]}
-          choices={(choices ?? []) as MdEventChoice[]}
+          events={(events ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
+          choices={(choices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
         />
       </Suspense>
     </>

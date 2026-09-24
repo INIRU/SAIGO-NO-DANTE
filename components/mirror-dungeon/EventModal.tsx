@@ -22,6 +22,7 @@ import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { Link } from '@/lib/i18n/navigation'
 
 import { groupEventChoices, eventResultCondition } from '@/lib/utils/event-flow'
 interface EventModalProps {
@@ -36,6 +37,8 @@ interface EventModalProps {
   onRecordChoice?: (eventId: number, optionIndex: number) => void
   isChoiceRecorded?: (eventId: number, optionIndex: number) => boolean
   recordLabels?: { record: string; recorded: string }
+  /** Link to the full events page, for modals opened outside it. */
+  pageLink?: { href: string; label: string }
 }
 
 const SIN_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
@@ -227,7 +230,7 @@ function EventChoices({ event, ...props }: FlowProps & { event: MdEvent }) {
   </div>
 }
 
-export default function EventModal({ lang, event, eventById, choicesByEventId, giftByGameId, themes, onClose, onSelectGift, onRecordChoice, isChoiceRecorded, recordLabels }: EventModalProps) {
+export default function EventModal({ lang, event, eventById, choicesByEventId, giftByGameId, themes, onClose, onSelectGift, onRecordChoice, isChoiceRecorded, recordLabels, pageLink }: EventModalProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const eventTitle = getEventTitle(event, lang)
   const eventDesc = getEventDesc(event, lang)
@@ -245,6 +248,7 @@ export default function EventModal({ lang, event, eventById, choicesByEventId, g
             contentRef.current?.scrollIntoView({ block: 'start' })
             contentRef.current?.focus({ preventScroll: true })
           }}>{tEvent('mirrorDungeon.event.choicesLabel', lang)} <ChevronDown size={14} aria-hidden="true" /></button>
+          {pageLink && <Link href={pageLink.href} className={styles.pageLink}>{pageLink.label} <ArrowUpRight size={14} aria-hidden="true" /></Link>}
           <button type="button" onClick={onClose} aria-label={tEvent('mirrorDungeon.theme.close', lang)} className={styles.close}><X size={20} /></button>
         </header>
         <div className={styles.layout}>
