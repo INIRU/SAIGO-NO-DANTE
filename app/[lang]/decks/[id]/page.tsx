@@ -444,7 +444,7 @@ async function fetchDeckRecommendations(
         id, lang, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
-          slot_order, gacksung,
+          slot_order, gacksung, uptie,
           identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp)
         ),
         deck_egos(ego_id)
@@ -574,7 +574,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           id, lang, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, created_at,
           profiles!decks_user_id_fkey(username),
           deck_identities(
-            slot_order, gacksung, s1_count, s2_count, s3_count,
+            slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
             identities(
               id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp, tier, rarity,
               hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
@@ -625,9 +625,8 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
       const sortedIdentities = (data.deck_identities ?? [])
         .map((slot) => ({
           ...slot,
-          // Art follows uptie (III–IV awakened). uptie is not selected until migration
-          // 20260924130000 is applied, so every deck reads as uptie IV for now.
-          gacksung: isAwakenedUptie((slot as { uptie?: number }).uptie),
+          // Art follows uptie (III–IV awakened).
+          gacksung: isAwakenedUptie(slot.uptie),
           identities: Array.isArray(slot.identities)
             ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
             : (slot.identities as unknown as IdentityDetail | null),

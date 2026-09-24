@@ -90,6 +90,8 @@ export type IdentityDetail = {
 export type IdentitySlot = {
   slot_order: number
   gacksung: boolean
+  /** 동기화 1–4 (컬럼이 없던 예전 응답은 비어 있음) */
+  uptie?: number | null
   s1_count?: number
   s2_count?: number
   s3_count?: number
