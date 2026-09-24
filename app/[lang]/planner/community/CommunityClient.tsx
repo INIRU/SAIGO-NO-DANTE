@@ -2,6 +2,7 @@
 
 import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
@@ -1351,6 +1352,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+      <BoardBrowseLock />
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         <aside
           className="hidden h-full w-64 shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
