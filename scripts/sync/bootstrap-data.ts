@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 // Recover base catalog rows that the incremental identity sync cannot create.
-import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
@@ -13,6 +13,11 @@ const root = resolve(process.env.LIMBUS_RECOVERY_ROOT ?? '../assets/recovery-202
 const source = process.env.LIMBUS_DATA_DIR
 if (!source) throw new Error('LIMBUS_DATA_DIR is required; no old export fallback is allowed')
 const fix = process.argv.includes('--fix')
+const option = (name: string) => { const at = process.argv.indexOf(name); return at === -1 ? null : process.argv[at + 1] ?? null }
+// --ego-ids adds new EGO rows to an existing DB without rewriting sinners or other EGO.
+const onlyEgoIds = option('--ego-ids')?.split(',') ?? null
+const outputDir = resolve(option('--output') ?? root)
+if (onlyEgoIds && outputDir === root) throw new Error('--ego-ids requires --output outside the recovery root')
 const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!, { db: { schema: 'limbus' } })
 const sinCodes = ['CRIMSON', 'SCARLET', 'AMBER', 'SHAMROCK', 'AZURE', 'INDIGO', 'VIOLET']
 const sinNames = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
@@ -47,8 +52,10 @@ async function all(table: string): Promise<Row[]> {
   }
 }
 async function main() {
+  // Prepared extracts keep locales in KR/EN/JP; the original recovery input kept them at the root.
+  const localeDir = (lang: string) => existsSync(join(source!, lang)) ? join(source!, lang) : source!
   const characters = load(/^character\.txt$/)
-  const names = Object.fromEntries(['KR', 'EN', 'JP'].map(lang => [lang, load(new RegExp(`^${lang}_Characters\\.txt$`))]))
+  const names = Object.fromEntries(['KR', 'EN', 'JP'].map(lang => [lang, load(new RegExp(`^${lang}_Characters\\.txt$`), localeDir(lang))]))
   const sinners = [...characters.values()].map(character => {
     const slug = SINNER_SLUGS[character.id - 1]
     if (!slug || !names.KR.get(character.id)?.name || !names.EN.get(character.id)?.name || !names.JP.get(character.id)?.name) throw new Error(`Missing sinner locale: ${character.id}`)
@@ -58,7 +65,7 @@ async function main() {
   const definitions = load(/^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i)
   const skillDefinitions = load(/^ego-skill-.*\.txt$/i)
   const passiveDefinitions = load(/^passive-.*\.txt$/i)
-  const egoNames = Object.fromEntries(['KR', 'EN', 'JP'].map(lang => [lang, load(new RegExp(`^${lang}_Egos(?:[-_].*)?\\.txt$`, 'i'))]))
+  const egoNames = Object.fromEntries(['KR', 'EN', 'JP'].map(lang => [lang, load(new RegExp(`^${lang}_Egos(?:[-_].*)?\\.txt$`, 'i'), localeDir(lang))]))
   const context = loadEgoSyncContext()
   const keywordSources = loadSourceEgoKeywords()
   const art: Row[] = JSON.parse(readFileSync(join(root, 'drive-complete-art.json'), 'utf8')).files
@@ -73,10 +80,12 @@ async function main() {
   const egos: Row[] = [], skills: Row[] = [], skipped: Row[] = []
   for (const definition of definitions.values()) {
     const gameId = String(definition.id), sinner = SINNER_SLUGS[definition.characterId - 1]
+    if (onlyEgoIds && !onlyEgoIds.includes(gameId)) continue
     // Empty/cut EGO placeholders have no awakening skill. Never fabricate them.
     if (definition.hidden || !definition.awakeningSkillId) { skipped.push({ gameId, reason: definition.hidden ? 'hidden story-only EGO' : 'no awakening skill' }); continue }
     const kr = egoNames.KR.get(definition.id), en = egoNames.EN.get(definition.id), jp = egoNames.JP.get(definition.id)
-    const folder = folderById.get(gameId)
+    // Drive art predates new EGO; their folders follow the existing English-name convention.
+    const folder = folderById.get(gameId) ?? (onlyEgoIds ? en?.name : undefined)
     if (!sinner || !kr?.name || !en?.name || !jp?.name || !folder) throw new Error(`Missing EGO source/name/art mapping: ${gameId}`)
     const id = existingByGameId.get(gameId)?.id ?? uuid(`ego:${gameId}`)
     const asset = `${STORAGE_BASE}/sinners/${sinner}/ego/${encodeURIComponent(folder)}/${gameId}`
@@ -125,17 +134,20 @@ async function main() {
       }
     }
   }
+  if (onlyEgoIds && egos.length !== onlyEgoIds.length) throw new Error(`Requested EGO not found: ${onlyEgoIds.filter(id => !egos.some(row => row.game_id === id)).join(',')}`)
   const report = { source: resolve(source!), sinners, egos, skills, skipped }
-  writeFileSync(join(root, 'bootstrap-plan.json'), JSON.stringify(report, null, 2))
+  mkdirSync(outputDir, { recursive: true })
+  writeFileSync(join(outputDir, 'bootstrap-plan.json'), JSON.stringify(report, null, 2))
   console.log(JSON.stringify({ sinners: sinners.length, egos: egos.length, skills: skills.length, fifthStageSkills: skills.filter(row => row.construe_level === 5).length, skipped, fix }))
   if (!fix) return
-  const backup = join(root, 'before-bootstrap'); mkdirSync(backup, { recursive: true })
-  for (const table of ['sinners', 'ego', 'ego_skills']) {
+  const tables = onlyEgoIds ? ['ego', 'ego_skills'] as const : ['sinners', 'ego', 'ego_skills'] as const
+  const backup = join(outputDir, 'before-bootstrap'); mkdirSync(backup, { recursive: true })
+  for (const table of tables) {
     const file = join(backup, `${table}.json`)
     // Never overwrite the original recovery point on retry.
     try { writeFileSync(file, JSON.stringify(await all(table), null, 2), { flag: 'wx' }) } catch (error: any) { if (error.code !== 'EEXIST') throw error }
   }
-  for (const [table, rows] of [['sinners', sinners], ['ego', egos], ['ego_skills', skills]] as const) {
+  for (const [table, rows] of ([['sinners', sinners], ['ego', egos], ['ego_skills', skills]] as const).filter(([table]) => (tables as readonly string[]).includes(table))) {
     for (let offset = 0; offset < rows.length; offset += 100) {
       const { error } = await client.from(table).upsert(rows.slice(offset, offset + 100), { onConflict: 'id' })
       if (error) throw error
