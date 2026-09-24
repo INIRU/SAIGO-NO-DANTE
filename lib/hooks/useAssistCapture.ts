@@ -8,7 +8,10 @@ import { acquiredGiftFromPopup, acquisitionFloor, type PopupLabelRead } from '@/
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
-import { dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDialogClosed, fusionMaterials,
+import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
+import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
+import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
+  fusionConfirmation, fusionDialogClosed, fusionMaterials,
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
@@ -126,8 +129,13 @@ const sameWheel = (first: Uint8Array, second: Uint8Array) => {
 /** How long a result on the fusion screen waits for its dialog's evidence (1.5 s while one is read, 1 s otherwise). */
 const FUSION_HOLD_MS = 1500
 const SCREEN_HOLD_MS = 1000
-/** A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). */
-export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number }
+/**
+ * A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). `capturedAt` is when
+ * its frame was captured, `episode` the popup's number in order of appearance on screen.
+ */
+export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number; episode?: number }
+/** A shop sale confirmed by the cost afterwards; capturedAt is when its confirmation dialog was on screen. */
+export interface GiftSale { giftId: string; token: string; capturedAt: number }
 /** Exploration banner seen twice with the same floor and pack; only a candidate until the run state validates it. */
 export interface FloorThemeObservation extends ExplorationObservation { token: string }
 interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
@@ -139,6 +147,8 @@ interface PopupPending {
   readyAt: number
   retry: boolean
   priority: number
+  /** Its popup was already confirmed from another frame; it no longer holds back later popups. */
+  settled?: boolean
   ocr?: { header: string; labels: PopupLabelRead[]; body: string }
   icon?: VisualMatch[]
 }
@@ -160,7 +170,7 @@ function validMatches(value: unknown): value is VisualMatch[] {
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced' }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -169,6 +179,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   floor?: number | null
   /** Recognition mode; changing it while capturing rebuilds only the OCR workers. */
   mode?: RecognitionMode
+  /** Screens to read; a switched-off kind does no reading work at all. Read live, no rebuild. */
+  detection?: DetectionSettings
 } = {}) {
   const [supported, setSupported] = useState(false)
   const [status, setStatus] = useState<CaptureStatus>('idle')
@@ -186,14 +198,20 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [ocrEngine, setOcrEngine] = useState<OcrEngineStatus | null>(null)
   // OCR workers actually running now (a failed second worker drops this to 1).
   const [ocrWorkers, setOcrWorkers] = useState(0)
-  const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence | null>(null)
+  // One entry per confirmation dialog (latest last): back-to-back fusions published in one tick each reach the run.
+  const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
+  // Confirmed shop sales (capture time of the dialog), latest last.
+  const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  const saleState = useRef(EMPTY_SALE_STATE)
+  const sellWindowAt = useRef(0)
   // Fusion confirmation seen by OCR: slot icons are read from new captures for a few seconds.
   const fusionWanted = useRef<{ count: number; capacity: number; at: number; anchors?: FusionAnchors } | null>(null)
   // The confirmation dialog on screen now or last: its slot reads, when it was last seen and whether it was published.
   // `wheel`: the selection-screen crops taken just before it, owned by the dialog until read.
   // `dialogless`: built from the wheel alone for a result on the fusion screen whose dialog no screen read caught;
   // `undecided`: its shop capacity is not known yet (no dialog seen this session), decided once both layouts are read.
-  const fusionDialog = useRef<{ token: string; count: number; capacity: number; lastSeenAt: number; closedAt?: number; reads: FusionRead[];
+  // `firstAt`: capture time of its first frame (the dialog read, or the earliest wheel state of a dialog-less result).
+  const fusionDialog = useRef<{ token: string; count: number; capacity: number; firstAt: number; lastSeenAt: number; closedAt?: number; reads: FusionRead[];
     wheel: WheelFrame[]; published: boolean; dialogless?: boolean; undecided?: boolean; seen?: SeenDialog } | null>(null)
   const fusionRequest = useRef<{ requestId: number; at: number; count: number; token: string; view: FusionRead['view'] } | null>(null)
   // The selection wheel stays up while materials are picked but may be complete for only ~0.3 s before the dialog opens:
@@ -209,6 +227,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const wheelReference = useRef<Float32Array | null>(null)
   // When a confirmation dialog was last on screen: wheel crops from before it belong to that earlier fusion.
   const lastDialogAt = useRef(0)
+  // Capture time of the latest screen read showing the selection screen or an acquisition popup without the dialog.
+  const dialogBreakAt = useRef(0)
   // Dialogs seen recently and the acquisition each was the result of; a result no seen dialog explains (its dialog was up
   // ~0.3 s, between screen reads) is kept until the next screen read decides it.
   const seenDialogs = useRef<SeenDialog[]>([])
@@ -224,6 +244,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const heldTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const profileRef = useRef(RECOGNITION_PROFILES[mode])
   profileRef.current = RECOGNITION_PROFILES[mode]
+  const detectionRef = useRef(detection)
+  detectionRef.current = detection
   const rebuildOcr = useRef<(() => void) | null>(null)
   // Exploration floor read in two separate captures, even when its pack name could not be read.
   const [observedFloor, setObservedFloor] = useState<number | null>(null)
@@ -256,7 +278,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const popupReader = useRef<ReadableStreamDefaultReader<VideoFrame> | null>(null)
   const inFlight = useRef(false)
   const ocrRequestId = useRef(0)
-  const ocrCapture = useRef<{ at: number; floor: number | null; width?: number } | null>(null)
+  const ocrCapture = useRef<{ at: number; floor: number | null; width?: number; height?: number } | null>(null)
   const visualCapture = useRef<{ at: number; floor: number | null } | null>(null)
   const popupQueue = useRef<PopupFrame[]>([])
   const popupVisionQueue = useRef<PopupFrame[]>([])
@@ -264,8 +286,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // Reads of earlier frames from the same popup; frames differ in which evidence OCR and the icon matcher recover.
   const popupEvidence = useRef(new Map<number, { floor: number; headers: string[]; labels: PopupLabelRead[];
     icons: string[]; effects: string[] }>())
-  // Per gift: when its acquisition popup was last confirmed and that acquisition's number in this capture session.
-  const acquisitionSeen = useRef(new Map<string, { at: number; seq: number }>())
+  // Per gift: capture time and popup episode of its latest confirmed acquisition and that acquisition's number in this
+  // capture session; and the capture times of recent acquisitions of any gift.
+  const acquisitionSeen = useRef(new Map<string, { at: number; seq: number; episode: number }>())
+  const acquisitionCaptures = useRef<{ giftId: string; at: number }[]>([])
   const lastPopup = useRef<(PopupObservation & { episode: number; floor: number; firstAt: number; attempts: number;
     capturedQuality: number; capturedAt: number }) | null>(null)
   const popupReadyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -300,6 +324,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     wheelAnchors.current = null
     wheelReference.current = null
     lastDialogAt.current = 0
+    dialogBreakAt.current = 0
     dialoglessResults.current = []
     seenDialogs.current = []
     screenReads.current = []
@@ -324,6 +349,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     popupPending.current.clear()
     popupEvidence.current.clear()
     acquisitionSeen.current.clear()
+    acquisitionCaptures.current = []
     lastPopup.current = null
     nextEpisode.current = 0
     ocrReady.current = false
@@ -369,7 +395,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setInference(null)
     setOcrEngine(null)
     setOcrWorkers(0)
-    setFusionEvidence(null)
+    setFusionEvidence([])
+    setGiftSales([])
+    saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
     setThemeSelectionFloor(null)
@@ -418,7 +446,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setInference(null)
     setOcrEngine(null)
     setOcrWorkers(0)
-    setFusionEvidence(null)
+    setFusionEvidence([])
+    setGiftSales([])
+    saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
     setThemeSelectionFloor(null)
@@ -472,7 +502,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setInference(null)
         setOcrEngine(null)
         setOcrWorkers(0)
-        setFusionEvidence(null)
+        setFusionEvidence([])
+        setGiftSales([])
+        saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
         setScene(null)
         setThemeSelectionFloor(null)
@@ -481,17 +513,26 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       const publishAcquisition = (evidence: PopupAcquisition) => setPopupAcquisitions(items =>
         items.some(item => item.token === evidence.token) ? items : [...items.slice(-15), evidence])
+      const publishFusion = (evidence: FusionEvidence) => setFusionEvidence(items =>
+        [...items.filter(item => item.token !== evidence.token).slice(-7), evidence])
+      /** Later sightings of a published dialog (last seen, closed) update its entry. */
+      const updateFusion = (token: string, change: Partial<FusionEvidence>) => setFusionEvidence(items =>
+        items.some(item => item.token === token) ? items.map(item => item.token === token ? { ...item, ...change } : item) : items)
       /**
        * On a fusion screen the result popup can be confirmed before the confirmation dialog's materials are; the gift is
        * held briefly so it reaches the run together with that evidence. Never dropped: released on evidence, on the
-       * dialog read ending, or after the wait.
+       * dialog read ending, or after the wait. Released in capture order: a gift waits (briefly) while a popup captured
+       * before it is still being read.
        */
       const releaseHeld = () => {
         if (heldTimer.current) clearTimeout(heldTimer.current)
         heldTimer.current = null
-        const items = heldAcquisitions.current
-        heldAcquisitions.current = []
-        if (run === generation.current) for (const item of items) publishAcquisition(item)
+        const unsettled = [...popupPending.current.values()].filter(pending => !pending.settled).map(pending => pending.episode)
+        const { release, keep } = acquisitionsToRelease(heldAcquisitions.current, unsettled, Date.now())
+        heldAcquisitions.current = keep
+        if (run !== generation.current) return
+        for (const item of release) publishAcquisition(item)
+        if (keep.length) heldTimer.current = setTimeout(() => { if (fusionWanted.current) scheduleRelease(); else releaseHeld() }, 200)
       }
       /**
        * Wheel states already read ahead (for this capacity) join the dialog's reads at once; the rest stay queued. If that
@@ -533,7 +574,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog && !dialog.published && run === generation.current) {
           dialog.published = true
           const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
-          if (materials.length) setFusionEvidence({ materials, observedAt: dialog.reads[0].observedAt, lastSeenAt: dialog.lastSeenAt,
+          // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
+          if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
         }
         fusionWanted.current = null
@@ -563,12 +605,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             dialoglessResults.current = [...dialoglessResults.current.slice(-3), { capturedAt: evidence.capturedAt }]
           }
         }
+        heldAcquisitions.current.push(evidence)
         if (latestLabel.current === 'fusion' || fusionWanted.current) {
-          heldAcquisitions.current.push(evidence)
           scheduleRelease()
           return
         }
-        publishAcquisition(evidence)
+        releaseHeld()
       }
       const finishPopup = (requestId: number) => {
         const pending = popupPending.current.get(requestId)
@@ -605,14 +647,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           })
         }
         if (lastPopup.current?.episode === pending.episode) lastPopup.current.attempts = Number.MAX_SAFE_INTEGER
+        for (const other of popupPending.current.values()) if (other.episode === pending.episode) other.settled = true
         const observedAt = Date.now()
-        // One token per acquisition: the same gift confirmed again within seconds is the same popup (an undone gift is
-        // not re-added from that screen); later it is a new acquisition, e.g. a fusion result that was a material before.
+        // One token per acquisition, decided in capture time: every frame of one popup, or the same gift captured again
+        // within seconds with no fusion dialog or other popup between, is the same popup (an undone gift is not re-added
+        // from that screen); otherwise it is a new acquisition, e.g. a material a blessing returns fusion after fusion.
         const seen = acquisitionSeen.current.get(giftId)
-        const seq = seen && observedAt - seen.at < 5000 ? seen.seq : (seen?.seq ?? 0) + 1
-        acquisitionSeen.current.set(giftId, { at: observedAt, seq })
+        const boundaries = [...seenDialogs.current.map(dialog => dialog.firstAt),
+          ...acquisitionCaptures.current.filter(item => item.giftId !== giftId).map(item => item.at)]
+        const seq = acquisitionSeq(seen, pending.episode, pending.capturedAt, boundaries)
+        acquisitionSeen.current.set(giftId, { at: pending.capturedAt, seq, episode: pending.episode })
+        acquisitionCaptures.current = [...acquisitionCaptures.current.slice(-15), { giftId, at: pending.capturedAt }]
         const evidence = { giftId, token: `${run}:${giftId}:${seq}`, observedAt, capturedAt: pending.capturedAt,
-          floor: acquisitionFloor(merged.floor, lastFloorRead.current?.floor ?? null) }
+          episode: pending.episode, floor: acquisitionFloor(merged.floor, lastFloorRead.current?.floor ?? null) }
         emitAcquisition(evidence)
       }
       const dropPopup = (requestId: number) => {
@@ -716,7 +763,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const sourceWidth = source instanceof HTMLVideoElement ? source.videoWidth : source.displayWidth
         const sourceHeight = source instanceof HTMLVideoElement ? source.videoHeight : source.displayHeight
         const floorAtCapture = currentFloor.current
-        if (sampling || !ocrReady.current || !source || !sampleContext ||
+        if (sampling || !detectionRef.current.gifts || !ocrReady.current || !source || !sampleContext ||
           (source instanceof HTMLVideoElement && source.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) ||
           sourceWidth <= 0 || sourceHeight <= 0 || floorAtCapture === null) return
         sampling = true
@@ -864,7 +911,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrStatus('error')
           setOcrEngine(null)
           setOcrWorkers(0)
-          setFusionEvidence(null)
+          setFusionEvidence([])
+          setGiftSales([])
+          saleState.current = EMPTY_SALE_STATE
         }
         flushOcrPopup = () => {
           const lane = pool.popup
@@ -881,7 +930,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const profile = profileRef.current
           // A fusion confirmation dialog is often up for about a second: read the fusion screen more often.
           // The fusion screen is sometimes classified as the shop: a selection screen read recently counts too.
-          const fusionScreen = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < 3000)
+          // The sell window counts too: its confirmation dialog is up for only 0.5-0.7 s.
+          const fusionScreen = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < 3000) ||
+            now - sellWindowAt.current < 3000
+          const want = detectionRef.current
+          if (!want.events && !want.themes && !(want.gifts && fusionScreen)) return
           const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event)
             : now - eventHintAt < 5000 ? profile.recognizeMs.event : profile.recognizeMs.idle
           // With one shared worker, queued popups go first, but only for one extra interval.
@@ -894,17 +947,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
           try {
+            // Capture time is taken before the copy, so every read of this frame is dated by when it was on screen.
+            const at = Date.now()
             const frame = await createImageBitmap(video.current)
             if (!alive(lane)) { frame.close(); return }
-            const at = Date.now()
-            ocrCapture.current = { at, floor: currentFloor.current, width: frame.width }
+            ocrCapture.current = { at, floor: currentFloor.current, width: frame.width, height: frame.height }
             // The fusion screen belongs to the shop and may be classified either way; one copy at a time, closed on the next.
             if (latestLabel.current === 'fusion' || latestLabel.current === 'shop' || latestLabel.current === null) {
               const copy = await createImageBitmap(frame)
               fusionFrame.current?.frame.close()
               fusionFrame.current = { frame: copy, at }
             }
-            lane.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide }, [frame])
+            lane.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide,
+              grid: profile.fullFrameGrid, tileScale: profile.fullFrameTileScale }, [frame])
           } catch {
             ocrFail(lane)
           }
@@ -919,7 +974,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const delay = now - explorationHintAt < 3000 ? Math.min(base, profile.exploreMs.recent) : base
           const shared = pool.popup === pool.screen
           // With one shared worker, popups go first, but a steady stream of detections must not starve the banner.
-          if (!alive(lane) || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
+          if (!alive(lane) || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
             (shared && popupQueue.current.length && delay >= profile.exploreMs.idle && now - exploredAt < delay * 2) ||
             !video.current || video.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
           exploredAt = now
@@ -974,9 +1029,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
-              setOcrCandidates({ ...matches, observedAt: capture.at, expiresAt: capture.at + 6000, floor: capture.floor })
+              const want = detectionRef.current
+              setOcrCandidates({ ...matches, ...(want.gifts ? {} : { gifts: [] }),
+                ...(want.events ? {} : { events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }),
+                observedAt: capture.at, expiresAt: capture.at + 6000, floor: capture.floor })
               const headerFloor = themeSelectionHeaderFloor(result.text)
-              if (headerFloor !== null) setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at })
+              if (headerFloor !== null && want.themes) setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at })
+              if (want.gifts) readSale(result.text, result.words, capture)
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = /기프트합성/.test(result.text.normalize('NFKC').replace(/\s+/g, ''))
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
@@ -1003,7 +1062,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 const capacity = known ?? 3
                 wheelFrames.current = wheelFrames.current.filter(item => !wheel.includes(item))
                 for (const item of fusionDialog.current?.wheel.splice(0) ?? []) item.frame.close()
-                fusionDialog.current = { token: `${run}:fusion:${pending.capturedAt}`, count: capacity, capacity,
+                fusionDialog.current = { token: `${run}:fusion:${pending.capturedAt}`, count: capacity, capacity, firstAt: Math.min(...wheel.map(item => item.at)),
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
                   reads: [], wheel, published: false, dialogless: true, undecided: known === null }
                 takeWheelReads(fusionDialog.current)
@@ -1023,19 +1082,24 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 const shown = wheelFrames.current.find(item => item.at <= capture.at + 100 && capture.at <= item.lastAt + 200)
                 if (shown?.band) wheelReference.current = shown.band
               }
+              // The selection screen or an acquisition popup without the dialog: a dialog read after it is a new fusion.
+              if (!confirmation && (isFusionSelectionScreen(result.text) || /획득했습니다/.test(result.text.normalize('NFKC').replace(/\s+/g, '')))) {
+                dialogBreakAt.current = Math.max(dialogBreakAt.current, capture.at)
+              }
               if (confirmation) {
                 // The shop capacity (3 normal, 5 special) picks the dialog's slot layout.
                 const { count, capacity } = confirmation
                 const found = fusionAnchors(result.words)
                 const anchors = found ? { header: box(found.header), question: box(found.question) } : undefined
-                // The same dialog while it keeps being seen; a result popup always separates two fusions by seconds.
+                // The same dialog while it keeps being seen; rapid fusions reopen one with the same N/M within a second, so
+                // a result or a screen without it captured in between starts a new one.
                 const dialog = fusionDialog.current
-                if (dialog && dialog.closedAt === undefined && dialog.count === count && dialog.capacity === capacity &&
-                  capture.at - dialog.lastSeenAt < 2000) {
+                if (dialog && !dialog.dialogless && continuesFusionDialog({ ...dialog, resultAt: dialog.seen?.resultAt }, count, capacity, capture.at,
+                  dialogBreakAt.current)) {
                   dialog.lastSeenAt = Math.max(dialog.lastSeenAt, capture.at)
                   if (dialog.seen) dialog.seen.lastSeenAt = dialog.lastSeenAt
                   const lastSeenAt = dialog.lastSeenAt
-                  if (dialog.published) setFusionEvidence(evidence => evidence?.token === dialog.token ? { ...evidence, lastSeenAt } : evidence)
+                  if (dialog.published) updateFusion(dialog.token, { lastSeenAt })
                 } else {
                   // A new dialog takes the wheel crops captured before it and after the previous dialog, newest first.
                   const after = lastDialogAt.current + WHEEL_AFTER_DIALOG_MS
@@ -1051,7 +1115,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   for (const item of fusionDialog.current?.wheel.splice(0) ?? []) item.frame.close()
                   const seen: SeenDialog = { firstAt: capture.at, lastSeenAt: capture.at }
                   seenDialogs.current = [...seenDialogs.current.filter(item => capture.at - item.lastSeenAt < 60_000).slice(-7), seen]
-                  fusionDialog.current = { token: `${run}:fusion:${capture.at}`, count, capacity, lastSeenAt: capture.at, reads: [], wheel,
+                  fusionDialog.current = { token: `${run}:fusion:${capture.at}`, count, capacity, firstAt: capture.at, lastSeenAt: capture.at, reads: [], wheel,
                     published: false, seen }
                   takeWheelReads(fusionDialog.current)
                 }
@@ -1072,7 +1136,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   const closedAt = capture.at
                   dialog.closedAt = closedAt
                   if (dialog.seen) dialog.seen.closedAt = closedAt
-                  if (dialog.published) setFusionEvidence(evidence => evidence?.token === dialog.token ? { ...evidence, closedAt } : evidence)
+                  if (dialog.published) updateFusion(dialog.token, { closedAt })
                 }
               }
             }
@@ -1184,10 +1248,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               anchors: retained.anchors }, [retained.frame])
             return true
           }
+          const at = Date.now()
           const frame = await createImageBitmap(video.current)
           if (run !== generation.current || !worker.current) { frame.close(); return true }
           const requestId = ++ocrRequestId.current
-          fusionRequest.current = { requestId, at: Date.now(), count: wanted.count, token: fusionDialog.current?.token ?? '', view: 'dialog' }
+          fusionRequest.current = { requestId, at, count: wanted.count, token: fusionDialog.current?.token ?? '', view: 'dialog' }
           worker.current.postMessage({ type: 'fusion-slots', requestId, frame, count: wanted.count, capacity: wanted.capacity, anchors: wanted.anchors }, [frame])
         } catch { inFlight.current = false }
         return true
@@ -1261,8 +1326,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           flushVisionPopup()
           if (inFlight.current) return
         }
-        if (fusionWanted.current && await readFusionSlots()) return
-        if (Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 && await preReadWheel()) return
+        const gifts = detectionRef.current.gifts
+        if (gifts && fusionWanted.current && await readFusionSlots()) return
+        if (gifts && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 && await preReadWheel()) return
         // Popup icons go first, but scene inference still runs at least every 3s.
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
           (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !video.current ||
@@ -1340,7 +1406,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const capture = visualCapture.current
           visualCapture.current = null
           if (capture && capture.floor === currentFloor.current && Date.now() < capture.at + 3000) {
-            setVisualCandidates({ gifts: result.gifts, events: result.events, observedAt: capture.at,
+            const want = detectionRef.current
+            setVisualCandidates({ gifts: want.gifts ? result.gifts : [], events: want.events ? result.events : [], observedAt: capture.at,
               expiresAt: capture.at + 3000, floor: capture.floor })
             if (result.confidence >= 0.5) {
               const candidate = sceneCandidate.current
@@ -1351,11 +1418,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
             // Fusion screens are read too: their confirmation dialog names how many materials are about to be consumed.
-            if (result.events.length || ((result.label === 'event' || result.label === 'theme_select' || result.label === 'fusion') &&
-              result.confidence >= 0.5)) {
+            const sure = result.confidence >= 0.5
+            if ((want.events && (result.events.length || (sure && result.label === 'event'))) ||
+              (sure && ((want.themes && result.label === 'theme_select') || (want.gifts && (result.label === 'fusion' || result.label === 'sell'))))) {
               eventHintAt = Date.now()
               promptEventOcr()
-            } else if (result.label === 'exploration' && result.confidence >= 0.5) {
+            } else if (want.themes && result.label === 'exploration' && sure) {
               explorationHintAt = Date.now()
               promptExplore()
             }
@@ -1406,7 +1474,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setInference(null)
       setOcrEngine(null)
       setOcrWorkers(0)
-      setFusionEvidence(null)
+      setFusionEvidence([])
+      setGiftSales([])
+      saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
       setScene(null)
       setThemeSelectionFloor(null)
@@ -1415,9 +1485,21 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     }
   }, [cleanup, stop, language])
 
+  /** Shop sales from one full-frame read; the decision is readSaleStep (lib/vision/sell-evidence.ts). */
+  function readSale(text: string, words: OcrWord[], capture: { at: number; width?: number; height?: number }) {
+    const scale = capture.width ? Math.min(1, 1920 / capture.width) : 1
+    const cost = capture.width && capture.height ? sellCost(words, Math.round(capture.width * scale), Math.round(capture.height * scale)) : []
+    if (isSellWindow(text)) sellWindowAt.current = capture.at
+    const step = readSaleStep(saleState.current, { at: capture.at, text, cost,
+      giftId: name => ocrReferences.current ? sellGiftId(name, ocrReferences.current.gifts) : null })
+    saleState.current = step.state
+    if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
+      ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
+  }
+
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, start, stop }
+    ocrWorkers, fusionEvidence, giftSales, start, stop }
 }
 
 /**

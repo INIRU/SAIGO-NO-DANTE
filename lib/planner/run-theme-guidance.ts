@@ -184,3 +184,39 @@ export function pendingThemeSelectionFloor(pending: number | null, { state, runn
   const floors = candidates.filter((floor): floor is number => floor !== null)
   return floors.length ? Math.max(...floors) : null
 }
+
+/** Screens a run shows before its first pack selection: setup, the start gift choice and gift popups, loading. */
+/**
+ * Screens that only come after the first pack selection. The start screens themselves get mixed labels (the start gift
+ * grid reads as reward_choice, observation as start_gift, confirmation dialogs as sell, popups as gift_acquired or
+ * shop), so the start is ended by what follows it rather than by a list of start labels.
+ */
+export const AFTER_START_SCENES: ReadonlySet<string> = new Set(['theme_select', 'exploration', 'battle', 'event', 'run_end'])
+/** A single confident classifier frame of the selection screen ends the start without waiting for the stable scene. */
+export const THEME_SELECT_PREDICTION = 0.8
+
+/**
+ * Whether the run's first floor has left its start (start and observation gifts). Latches once a pack selection screen
+ * is seen (confident frame, stable scene or its floor header), a later screen is seen, the floor has a pack or the run
+ * moved on; resets only outside a playing run. Later floors are always ended, so their pack guidance is unchanged.
+ */
+export function runStartEnded(ended: boolean, { state, scene, header, selectionFloor, prediction = null }: {
+  state: RunState
+  scene: { label: string } | null
+  header: { floor: number } | null
+  selectionFloor: number | null
+  prediction?: { label: string; confidence: number } | null
+}): boolean {
+  if (state.phase !== 'playing') return false
+  const first = state.floorLogs[state.startFloor - 1]
+  return ended || state.currentFloor !== state.startFloor || !!first?.themeId || !!first?.completedAt ||
+    selectionFloor !== null || header !== null || (scene !== null && AFTER_START_SCENES.has(scene.label)) ||
+    (prediction?.label === 'theme_select' && prediction.confidence >= THEME_SELECT_PREDICTION)
+}
+
+/** The plan's start and observation gifts (planner `start_` / `observe_` entries), in plan order. */
+export function planStartGiftIds(state: RunState): { start: number[]; observe: number[] } {
+  const ids = (prefix: string) => [...new Set((state.sourcePlanSnapshot?.giftInventory ?? [])
+    .filter(id => id.startsWith(prefix)).map(id => parseInt(id.slice(prefix.length), 10)).filter(Number.isInteger))]
+  return { start: ids('start_'), observe: ids('observe_') }
+}
