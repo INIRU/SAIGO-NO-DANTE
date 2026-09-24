@@ -352,3 +352,15 @@ Drive의 `iap-lunacy`, `iap-membership`, `iap-package`, `pricetier`, `chance-iap
 E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새 추출본의 `_cg` 원본(1024×1024, 한 장은 1023×1024)을 사용한다. 2026-09-19 manifest SHA-256 대조 후 111장을 WebP 품질 95로 변환해 기존 EGO 폴더의 `{gameId}_cg-{hash12}.webp`에 추가 업로드하고 공개 다운로드 해시를 검증했다. 기존 프로필과 DB는 보존하며 `lib/generated/ego-artwork.json`에 검증된 ID와 해시만 기록한다. 원본·변환본·계획·영수증은 `/Users/iniru/Downloads/Limbus-ego-artwork-2026-09-19/`에 보관한다. 매핑이 없는 이미지 한 건은 기존 URL을 유지한다.
 
 스킬 S3 단색 배경의 `Icon_skillFrame_Invert.png` 좌표는 장식과 다르다. 0부터 세는 셀 7 `(3,1)`에서 시작해 분노→색욕→나태→탐식→우울→오만→질투 순으로 이어진다. S1/S2는 `Invert_2`의 셀 0/8에서 시작한다. `extract-skill-frames.py`로 52개 무손실 WebP와 버전 해시를 재생성하며 `python3 scripts/assets/test_skill_frames.py`가 S3 죄악 매핑을 검증한다. 참고 원본: https://drive.google.com/drive/folders/1gVBj0xtrWDByf7P1-sgalIJnCL5aiKMr .
+
+## 2026-09-24 추출본 반영
+
+입력은 `~/Downloads/LimbusAssets 2`(실행 `2026-09-24T03-41-12-211Z`)이고 준비 출력은 `~/Downloads/LimbusAssets-sync-2026-09-24/`, 백업·계획·영수증은 `~/Downloads/Limbus-sync-2026-09-24/`에 있다. macOS 압축 해제는 한글 경로를 NFD로 저장하므로 준비 스크립트는 manifest와 디스크 경로를 모두 NFC로 비교한다(CJK 호환 한자 포함).
+
+- 신규 인격 10917(오트쿠튀르:: 수선실 로쟈)은 `identity-data.ts --fix --no-acquisition`으로 추가했다. 획득처는 `syncIdentityAcquisition({ gameIds: ['10917'] })`로 이 인격만 적용했고, 일러스트와 스킬 아이콘은 `sync-extracted-identities.cjs --ids 10917`로 올렸다.
+- 신규 E.G.O 20610(거절선포)과 20910(거울촉각)은 `bootstrap-data.ts --ego-ids 20610,20910 --output <작업 폴더>`로 추가했다. 이 옵션은 수감자와 다른 E.G.O를 다시 쓰지 않는다. 폴더명은 기존 규칙인 영어 이름을 따른다. 출시일은 원본 `updatedDate`(2026-08-24, 2026-08-20)를 그대로 쓴다.
+- 동기화 4단계 스킬 아이콘(`1010104_4` 등)은 #247 이후 `image_id`로 쓰이지만 업로드되지 않았다. `sync-extracted-identities.cjs --skill-variants`로 139개 인격의 152장을 올린 뒤 스킬을 재구축했다.
+- 스킬 재구축은 이제 같은 `skill_order/uptie_level/variant_order/name`의 기존 행 ID를 유지한다. 노트 스킬 블럭이 `skills.id`를 참조하기 때문이다. 이 규칙이 생기기 전에 바뀐 1,016개 ID는 원래 값으로 되돌렸다(`skill-id-restore-map.json`).
+- `keyword_meta`는 `--rebuild-keyword-meta`로 10개를 추가했다. 새 키워드 아이콘은 태그 이름 대신 버프 데이터의 `iconId`로 원본을 찾는다(예: `NoirScissorAlly` → `ScissorsMark`). 기존 키워드 15개의 수정 이미지는 화살표가 겹친 변형이라 확인 전까지 기존 아이콘을 유지한다.
+- 거울 던전 기프트·테마팩·레시피는 변경이 없었고, 수감자와 무관한 적 스킬 이미지는 대상에서 제외했다.
+
