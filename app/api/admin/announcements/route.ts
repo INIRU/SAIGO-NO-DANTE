@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { announcementSchema, announcementText } from '@/lib/announcements'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { postAnnouncementToDiscord } from '@/lib/discord/announcement'
 export async function GET() {
   const auth = await requireAdmin()
   if (auth.error) return auth.response
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       { error: parsed.error.issues[0].message },
       { status: 400 },
     )
-  const body = parsed.data
+  const { discord_everyone, ...body } = parsed.data
   const { data, error } = await createAdminClient()
     .schema('limbus')
     .from('announcements')
@@ -49,5 +50,7 @@ export async function POST(request: Request) {
       { status: 500 },
     )
   revalidateTag(CACHE_TAGS.announcements, { expire: 0 })
-  return NextResponse.json(data, { status: 201 })
+  const discord = data.published ? await postAnnouncementToDiscord(data, discord_everyone) : 'skipped'
+  return NextResponse.json({ ...data, discord }, { status: 201 })
 }
+
