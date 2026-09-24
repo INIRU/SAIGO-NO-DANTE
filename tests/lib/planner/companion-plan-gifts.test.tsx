@@ -88,3 +88,12 @@ it('switches the gift list to the plan tier IV+ gifts while the fusion screen is
   // Without a plan the fusion screen keeps the floor list.
   expect(grid(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'fusion'))).toEqual([10, 20, 30])
 })
+it('treats ingredients of an owned recipe result as owned in the floor list without touching the inventory', () => {
+  const state = runReducer({ ...started(), giftInventory: ['40'] }, { type: 'SET_FLOOR_THEME', themeId: 'A' })
+  const recipes = [{ id: 'r', result_name: 'gift-40', keyword: '', ingredients: ['gift-10', 'gift-20'], final_result: 'gift-40' }]
+  const html = renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages} timeZone="Asia/Seoul">
+    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: 'shop', since: 1 }} recipes={recipes} />
+  </NextIntlClientProvider>)
+  expect([...html.matchAll(/data-gift-id="(\d+)"/g)].map(match => Number(match[1]))).toEqual([30])
+  expect(state.giftInventory).toEqual(['40'])
+})
