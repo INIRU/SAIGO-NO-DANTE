@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripPlanForList } from "@/lib/planner/stripPlanForList";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
+import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts } from "@/lib/discovery/recommend";
 async function load(kind: "deck" | "planner", days: number) {
   "use cache";
   cacheLife("minutes");
   cacheTag(kind === "deck" ? CACHE_TAGS.decksList : CACHE_TAGS.plansList, CACHE_TAGS.gameData);
   const db = createAdminClient().schema("limbus");
-  const columns: string =
-    kind === "deck"
-      ? "id,user_id,profiles!decks_user_id_fkey(username,avatar_url),title,description,tags,main_keywords,content_type,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))"
-      : "id,user_id,profiles:user_id(username,avatar_url),title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,updated_at,vote_count,view_count,comment_count";
-  const table = kind === "deck" ? "decks" : "md_plans";
+  const columns = DISCOVERY_COLUMNS[kind], table = DISCOVERY_TABLE[kind];
   const [counts, recent, edits] = await Promise.all([
     db.rpc("discovery_counts", { days }),
     db
@@ -60,12 +56,7 @@ async function load(kind: "deck" | "planner", days: number) {
   const orderedIdentities = [...(identities.data ?? [])].sort(
     (a, b) => (identityOrder.get(a.id) ?? Infinity) - (identityOrder.get(b.id) ?? Infinity),
   );
-  const formatPosts = (rows: unknown[]) => rows.map(raw => {
-    const row = raw as Record<string, unknown>;
-    if (kind === "planner") return stripPlanForList(row);
-    const profile = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) as { username?: string | null } | null;
-    return { ...row, username: profile?.username ?? undefined };
-  });
+  const formatPosts = (rows: unknown[]) => formatDiscoveryPosts(kind, rows);
   return {
     recent: formatPosts(recent.data ?? []),
     updated: formatPosts([...((updated.data ?? []) as unknown as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),

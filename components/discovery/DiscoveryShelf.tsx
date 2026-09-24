@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ArrowUpRight, ChevronDown, ChevronUp, History, Layers3 } from "lucide-react";
 import BoardSkeleton from "./BoardSkeleton";
+import ForYou from "./ForYou";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
 import IdentityCard from "@/components/sinners/IdentityCard";
@@ -108,6 +109,7 @@ export default function DiscoveryShelf({
             <ArrowUpRight size={14} />
           </button>
         </div>
+        <ForYou kind={kind} data={data} base={base} personal={history.enabled} />
         {error && (
           <button
             onClick={() => mutate()}
