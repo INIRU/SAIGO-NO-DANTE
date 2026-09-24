@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -173,7 +173,7 @@ function validMatches(value: unknown): value is VisualMatch[] {
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced', detection = DEFAULT_DETECTION }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -184,6 +184,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   mode?: RecognitionMode
   /** Screens to read; a switched-off kind does no reading work at all. Read live, no rebuild. */
   detection?: DetectionSettings
+  /**
+   * Second opinion for a result popup whose own evidence abstains: all its candidate gift ids and whether the fusion
+   * screen is up; returns the gift or null. Used for fixed-recipe results that look like their ingredients.
+   */
+  resolvePopup?: (candidates: string[], inFusion: boolean) => string | null
 } = {}) {
   const [supported, setSupported] = useState(false)
   const [status, setStatus] = useState<CaptureStatus>('idle')
@@ -260,6 +265,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [themeSelectionFloor, setThemeSelectionFloor] = useState<{ floor: number; observedAt: number } | null>(null)
   const sceneCandidate = useRef<{ label: string; at: number; count: number } | null>(null)
   const references = useRef({ giftReferences, eventReferences })
+  const resolvePopupRef = useRef(resolvePopup)
+  resolvePopupRef.current = resolvePopup
   references.current = { giftReferences, eventReferences }
   const ocrReferences = useRef(ocrCatalog)
   ocrReferences.current = ocrCatalog
@@ -638,9 +645,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         // Frames of one popup must agree: two different icons, names, or effect owners abstain.
         const icons = [...new Set(merged.icons)]
-        const giftId = icons.length > 1 ? null : acquiredGiftFromPopup({ header: merged.headers.join('\n'),
-          labels: merged.labels, iconGiftId: icons[0] ?? null, effectGiftIds: [...new Set(merged.effects)],
-          gifts: catalog.gifts })
+        const effects = [...new Set(merged.effects)]
+        const giftId = (icons.length > 1 ? null : acquiredGiftFromPopup({ header: merged.headers.join('\n'),
+          labels: merged.labels, iconGiftId: icons[0] ?? null, effectGiftIds: effects, gifts: catalog.gifts })) ??
+          resolvePopupRef.current?.(popupCandidateIds({ header: merged.headers.join('\n'), labels: merged.labels, iconGiftIds: icons,
+            effectGiftIds: effects, gifts: catalog.gifts }), latestLabel.current === 'fusion' ||
+            (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000)) ?? null
         if (!giftId) return
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {

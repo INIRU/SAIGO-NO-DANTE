@@ -12,7 +12,7 @@ import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationA
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, SkillSummary, RecipeData } from '@/lib/planner/types'
-import { recipeOwnedGiftIds } from '@/lib/planner/fusion'
+import { recipeIngredientsInInventory, recipeOwnedGiftIds } from '@/lib/planner/fusion'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -329,6 +329,13 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       // the result is already listed (an earlier fusion's materials were not all seen). Further popups of an applied
       // fusion (a material returned with its result) are plain acquisitions and never claim an older fusion.
       const fusion = fusionForResult(recentFusions.current, evidence.capturedAt)
+      // A fixed-recipe result is only made by fusing its ingredients: they leave with it even when no dialog was read.
+      const recipe = recipeIngredientsInInventory(id, current.current.giftInventory, recipes, giftMap)
+      if (recipe && !current.current.giftInventory.includes(evidence.giftId)) {
+        const token = fusion && !consumedFusionTokens.current.has(fusion.token) ? fusion.token : `recipe:${evidence.token}`
+        if (fusion) consumedFusionTokens.current.add(fusion.token)
+        if (fuse(id, recipe, token)) continue
+      }
       if (fusion && !consumedFusionTokens.current.has(fusion.token)) {
         consumedFusionTokens.current.add(fusion.token)
         const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)

@@ -277,6 +277,53 @@ export function recipeOwnedGiftIds(inventory: readonly string[], recipes: readon
   return owned
 }
 
+const giftIdsByName = (giftMap: Map<number, GiftData>) => new Map([...giftMap.values()].map(gift => [gift.name, gift.game_id]))
+
+/**
+ * Inventory keys a fixed-recipe result consumes: the first recipe variant whose ingredients are all held, or null when the
+ * gift has no fixed recipe or none is complete. Recipe results are obtainable only by fusing their ingredients.
+ */
+export function recipeIngredientsInInventory(resultId: number, inventory: readonly string[], recipes: readonly RecipeData[],
+  giftMap: Map<number, GiftData>): string[] | null {
+  const name = giftMap.get(resultId)?.name
+  if (!name) return null
+  const idByName = giftIdsByName(giftMap)
+  for (const recipe of recipes) {
+    if ((recipe.final_result ?? recipe.result_name) !== name) continue
+    const remaining = [...inventory]
+    const keys: string[] = []
+    for (const ingredient of recipe.ingredients) {
+      const index = remaining.findIndex(key => parseInt(key, 10) === idByName.get(ingredient))
+      if (index < 0) break
+      keys.push(...remaining.splice(index, 1))
+    }
+    if (keys.length === recipe.ingredients.length) return keys
+  }
+  return null
+}
+
+/**
+ * A result popup whose own evidence (name, icon, effect text) disagrees or is too weak: the one candidate that is a
+ * fixed-recipe result craftable from the inventory. Such results often share art with their ingredients or siblings
+ * (회중시계 types, 탁마), so on the fusion screen a candidate that is an already held ingredient points to the only
+ * craftable recipe using it. Anything else stays unresolved.
+ */
+export function resolveRecipeResult(candidates: readonly string[], inventory: readonly string[], recipes: readonly RecipeData[],
+  giftMap: Map<number, GiftData>, inFusion: boolean): string | null {
+  const held = new Set(inventory.map(key => parseInt(key, 10)))
+  const craftable = (id: number | undefined): id is number => id !== undefined && !held.has(id) &&
+    recipeIngredientsInInventory(id, inventory, recipes, giftMap) !== null
+  const direct = [...new Set(candidates.map(Number))].filter(craftable)
+  if (direct.length) return direct.length === 1 ? String(direct[0]) : null
+  if (!inFusion) return null
+  const idByName = giftIdsByName(giftMap)
+  const results = new Set(recipes.filter(recipe => recipe.ingredients.some(name => {
+    const id = idByName.get(name)
+    return id !== undefined && held.has(id) && candidates.includes(String(id))
+  })).map(recipe => idByName.get(recipe.final_result ?? recipe.result_name)).filter(craftable))
+  return results.size === 1 ? String([...results][0]) : null
+}
+
 type ThemeGiftLists = { specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }
 
 /** Gifts only this pack gives: its exclusive pool and its clear rewards. */

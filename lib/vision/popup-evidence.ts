@@ -70,6 +70,30 @@ export function acquiredGiftFromPopup({ header, labels, iconGiftId, effectGiftId
 }
 
 /**
+ * Every gift a popup's evidence points at, however weak or conflicting (short or near name reads, icons, effect owners),
+ * for resolving it with other knowledge. Empty without the popup header.
+ */
+export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, gifts }: {
+  header: string
+  labels: PopupLabelRead[]
+  iconGiftIds: string[]
+  effectGiftIds: string[]
+  gifts: OcrReference[]
+}): string[] {
+  if (!popupHeaderEvidence(header)) return []
+  const ids = new Set<string>()
+  for (const read of labels) {
+    const name = normalized(read.text)
+    if (!name) continue
+    for (const gift of gifts) if (gift.texts.some(text => normalized(text) === name)) ids.add(gift.id)
+    const near = nearestGiftName(read.text, gifts)
+    if (near) ids.add(near)
+  }
+  for (const id of [...iconGiftIds, ...effectGiftIds]) if (gifts.some(gift => gift.id === id)) ids.add(id)
+  return [...ids]
+}
+
+/**
  * Floor log for a confirmed acquisition: the floor the run recorded when the popup was captured, unless the latest
  * exploration banner showed a different floor; then the gift goes to the inventory only rather than a guessed floor.
  */
