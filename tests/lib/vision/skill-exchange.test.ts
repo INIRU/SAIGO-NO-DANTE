@@ -25,6 +25,10 @@ it('reads the sinner and current skill counts from the replacement window', () =
   expect(readSkillExchange('스킬을 교체할 수감자를 선택해주세요\n인격 스킬 관측\n뫼르소 스킬 교체\n오티스 스킬 교체\n도착증')).toBeNull()
   expect(readSkillExchange('스킬보유현황\n로쟈 스킬 교체\n그레고르 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3x1')).toBeNull()
   expect(readSkillExchange('스킬 보유현황\n키워드\n로쟈 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3X1')).toEqual({ sinner: 9, current: [3, 2, 1] })
+  // One misread letter, as OCR read a bold "로쟈" title: accepted only when a single sinner is that close.
+  expect(readSkillExchange('스킬 보유현황\n로샤 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3X1')).toEqual({ sinner: 9, current: [3, 2, 1] })
+  expect(readSkillExchange('스킬 보유현황\n료쟈 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3X1')).toBeNull()
+  expect(readSkillExchange('스킬 보유현황\n히스클리포 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3X1')).toEqual({ sinner: 7, current: [3, 2, 1] })
 })
 
 it('plans the fewest replacements from the current counts to the plan', () => {
