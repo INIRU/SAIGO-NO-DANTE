@@ -1,0 +1,214 @@
+'use client'
+
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import Image from 'next/image'
+import { useLocale, useTranslations } from 'next-intl'
+import { SIN_COLORS, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { computeKeywordDistribution } from '@/lib/planner/fusion'
+import KeywordChart, { type KeywordChartContributor } from '@/components/planner/KeywordChart'
+import SkillDescription from '@/components/skill/SkillDescription'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
+import type { SupportedLang } from '@/lib/i18n/types'
+
+/** Name/description already localized by the caller. */
+export type DeckInsightPassive = {
+  id?: string | number
+  name: string
+  description: string | null
+  passive_type: string
+  sin_affinity: string | null
+  sin_count: number | null
+  active_cond: string | null
+}
+
+/** One placed identity, in sinner order. */
+export type DeckInsightIdentity = {
+  id: string
+  name: string
+  sinnerName: string
+  /** Square info image ('' when unknown). */
+  imageUrl: string
+  keywords: string[]
+  passives: DeckInsightPassive[]
+}
+
+type Props = {
+  identities: DeckInsightIdentity[]
+  /** Sin resources the deck produces with the current skill distribution (keys: English sins). */
+  sinCounts: Record<string, number>
+  /** Same with the base 3-2-1 distribution; flags passives the custom distribution breaks. */
+  baseSinCounts?: Record<string, number>
+  /** Extra block under the keyword chart (attack types / sin resources). */
+  summary?: ReactNode
+}
+
+const sumSins = (sins: string[], counts: Record<string, number>) => sins.reduce((sum, sin) => sum + (counts[normalizeSin(sin) ?? sin] ?? 0), 0)
+
+/** Planner deck analysis: keyword distribution with 1:1 profiles, and battle/support passives whose column matches the keyword column height. */
+export default function DeckInsights({ identities, sinCounts, baseSinCounts, summary }: Props) {
+  const tDeck = useTranslations('planner.deckTab')
+  const locale = useLocale() as SupportedLang
+  const { keywords: keywordInfo } = useKeywordData()
+  const [passiveType, setPassiveType] = useState<'battle' | 'support'>('battle')
+
+  const getKeywordLabel = useCallback(
+    (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
+    [keywordInfo, locale],
+  )
+  const distribution = useMemo(() => computeKeywordDistribution(identities.map(identity => identity.keywords)), [identities])
+  const contributors = useMemo(() => {
+    const map: Record<string, KeywordChartContributor[]> = {}
+    for (const identity of identities) {
+      if (!identity.imageUrl) continue
+      const contributor = { id: identity.id, name: identity.name, imageUrl: identity.imageUrl }
+      for (const keyword of new Set(identity.keywords.map(normalizeThemeKeyword))) {
+        if (keyword) (map[keyword] ??= []).push(contributor)
+      }
+    }
+    return map
+  }, [identities])
+
+  const groups = identities.flatMap(identity => {
+    const list = identity.passives.filter(passive => passive.passive_type === passiveType)
+    return list.length ? [{ identity, list }] : []
+  })
+
+  return (
+    <div className="deck-insights">
+      <div className="deck-insights__main">
+        <section aria-labelledby="deck-keyword-distribution">
+          <h3 id="deck-keyword-distribution" className="deck-insights__title">{tDeck('stats.keywordDistribution')}</h3>
+          {distribution.length > 0
+            ? <KeywordChart distribution={distribution} getKeywordLabel={getKeywordLabel} contributorsByKeyword={contributors} />
+            : <p className="deck-insights__empty">{tDeck('stats.keywordEmpty')}</p>}
+        </section>
+        {summary}
+      </div>
+      <section aria-labelledby="deck-passives" className="deck-insights__passives">
+        <div className="deck-insights__head">
+          <h3 id="deck-passives" className="deck-insights__title">{tDeck('stats.passives')}</h3>
+          <div className="deck-passive-tabs" role="group" aria-label={tDeck('stats.passives')}>
+            {(['battle', 'support'] as const).map(type => (
+              <button key={type} type="button" aria-pressed={passiveType === type} onClick={() => setPassiveType(type)}>
+                {type === 'battle' ? tDeck('stats.battle') : tDeck('stats.support')}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="deck-insights__scroll">
+          {groups.length === 0 ? (
+            <p className="deck-insights__empty">
+              {identities.length === 0 ? tDeck('stats.passiveSelectIdentity') : tDeck('stats.passiveEmpty')}
+            </p>
+          ) : (
+            <ul className="deck-passives">
+              {groups.map(({ identity, list }) => (
+                <li key={identity.id} className="deck-passives__group">
+                  <div className="deck-passives__head">
+                    <span className="deck-passives__thumb">{identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2rem" />}</span>
+                    <p className="deck-passives__who">
+                      <span className="deck-passives__identity">{identity.name}</span>
+                      <span className="deck-passives__sinner">{identity.sinnerName}</span>
+                    </p>
+                  </div>
+                  <div className="deck-passives__body">
+                    {list.map((passive, index) => {
+                      const sins = passive.sin_affinity ? passive.sin_affinity.split(',').map(sin => sin.trim()) : []
+                      const current = sumSins(sins, sinCounts)
+                      const required = passive.sin_count ?? 1
+                      const isMet = current >= required
+                      const isResonance = passive.active_cond === 'resonance'
+                      // 기본 배분(3-2-1)에서는 충족하지만 현재 배분으로는 미충족이면 경고
+                      const distributionWarning = !!baseSinCounts && passive.active_cond != null && sumSins(sins, baseSinCounts) >= required && !isMet
+                      const primarySin = normalizeSin(sins[0] ?? null)
+                      const accent = primarySin ? SIN_COLORS[primarySin] : '#888'
+                      const condition = isResonance ? tDeck('stats.resonance') : tDeck('stats.stock')
+                      return (
+                        <div key={passive.id ?? index} className="deck-passive" data-unmet={!!passive.active_cond && !isMet}>
+                          <div className="deck-passive__line">
+                            <span className="deck-passive__name">{passive.name}</span>
+                            {sins.length > 0 && (
+                              <span className="deck-passive__cost" data-met={passive.active_cond ? isMet : undefined} title={passive.active_cond ? condition : undefined}>
+                                {passive.active_cond && <span className="deck-passive__cond">{condition}</span>}
+                                {sins.map(sin => {
+                                  const normalized = normalizeSin(sin)
+                                  return normalized ? <Image key={sin} src={getSinIconUrl(normalized)} alt={sin} width={18} height={18} /> : null
+                                })}
+                                <span className="deck-passive__count">{passive.active_cond ? current + '/' + required : '×' + required}</span>
+                              </span>
+                            )}
+                            {distributionWarning && <span className="deck-passive__warn" title={tDeck('stats.passiveWarning')}>!</span>}
+                          </div>
+                          {passive.description && (
+                            <div className="deck-passive__desc">
+                              <SkillDescription description={passive.description} accentColor={accent} variant="detail" showCoinBadges={false} />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+      <style jsx global>{`
+        .deck-insights { display: grid; gap: 2rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #2e2417; }
+        @media (min-width: 64rem) { .deck-insights { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 3rem; } }
+        .deck-insights__main { display: flex; min-width: 0; flex-direction: column; gap: 2rem; }
+        .deck-insights__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+        .deck-insights__title { margin-bottom: 0.75rem; color: #e8dcc8; font-family: var(--font-heading), var(--font-sans); font-size: 1.0625rem; }
+        .deck-insights__head .deck-insights__title { margin-bottom: 0; }
+        .deck-insights__empty { color: #9c8b73; font-size: 0.875rem; }
+        /* Passives follow the keyword column's height and scroll inside it (contain: size keeps the list from growing the row). */
+        .deck-insights__passives { display: flex; min-width: 0; flex-direction: column; }
+        .deck-insights__scroll { max-height: 24rem; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.75rem; scrollbar-width: thin; scrollbar-color: #3a2c18 transparent; }
+        .deck-insights__scroll::-webkit-scrollbar { width: 4px; }
+        .deck-insights__scroll::-webkit-scrollbar-track { background: transparent; }
+        .deck-insights__scroll::-webkit-scrollbar-thumb { background: #3a2c18; border-radius: 4px; }
+        .deck-insights__scroll:hover::-webkit-scrollbar-thumb { background: #6b5024; }
+        @media (min-width: 64rem) {
+          .deck-insights__passives { min-height: 16rem; }
+          .deck-insights__scroll { flex: 1 1 0; min-height: 0; max-height: none; contain: size; }
+        }
+        .deck-passive-tabs { display: inline-flex; padding: 0.1875rem; border: 1px solid #2e2417; border-radius: 0.375rem; background: #120e08; }
+        .deck-passive-tabs button { min-height: 2rem; padding: 0 0.875rem; border-radius: 0.25rem; color: #9c8b73; cursor: pointer; font-size: 0.8125rem; transition: color 0.15s ease, background-color 0.15s ease; }
+        .deck-passive-tabs button:hover { color: #e8dcc8; }
+        .deck-passive-tabs button[aria-pressed='true'] { background: #2a2014; color: #e8dcc8; font-weight: 600; }
+        .deck-passive-tabs button:focus-visible { outline: 2px solid #e8b030; outline-offset: 1px; }
+        @media (pointer: coarse) { .deck-passive-tabs button { min-height: 2.5rem; } }
+        @media (prefers-reduced-motion: reduce) { .deck-passive-tabs button { transition: none; } }
+        .deck-passives { display: flex; flex-direction: column; list-style: none; }
+        .deck-passives__group { display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem 0; border-top: 1px solid #221a10; }
+        .deck-passives__group:first-child { border-top: 0; padding-top: 0; }
+        .deck-passives__head { display: flex; min-width: 0; align-items: center; gap: 0.625rem; }
+        .deck-passives__thumb { position: relative; flex: 0 0 auto; width: 2rem; aspect-ratio: 1; overflow: hidden; border: 1px solid #2e2417; border-radius: 0.25rem; background: #120e08; }
+        .deck-passives__thumb img { object-fit: cover; object-position: 50% 8%; }
+        .deck-passives__who { display: flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; line-height: 1.35; }
+        .deck-passives__identity { color: #e8dcc8; font-size: 0.875rem; font-weight: 600; }
+        .deck-passives__sinner { color: #9c8b73; font-size: 0.8125rem; }
+        .deck-passives__body { display: flex; min-width: 0; flex-direction: column; gap: 0.75rem; }
+        @media (min-width: 40rem) { .deck-passives__body { padding-left: 2.625rem; } }
+        .deck-passive__line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.5rem; margin-bottom: 0.25rem; }
+        .deck-passive__name { color: #e8dcc8; font-size: 0.9375rem; font-weight: 600; }
+        .deck-passive[data-unmet='true'] .deck-passive__name { color: #9c8b73; }
+        .deck-passive__cost {
+          display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.5rem; padding: 0 0.5rem 0 0.3125rem;
+          border: 1px solid #3a2c18; border-radius: 0.25rem; background: #120e08; color: #e8dcc8; font-size: 0.8125rem;
+        }
+        .deck-passive__cost img { width: 1.125rem; height: 1.125rem; }
+        .deck-passive__cost[data-met='false'] { border-color: rgba(155,44,35,0.7); background: rgba(155,44,35,0.12); }
+        .deck-passive__cost[data-met='false'] img { opacity: 0.55; filter: grayscale(0.6); }
+        .deck-passive__cond { margin-right: 0.125rem; color: #9c8b73; font-size: 0.75rem; }
+        .deck-passive__count { font-variant-numeric: tabular-nums; }
+        .deck-passive__cost[data-met='false'] .deck-passive__count { color: #e07060; }
+        .deck-passive__desc > div { color: #c9b99c !important; font-size: 0.875rem !important; line-height: 1.65 !important; }
+        .deck-passive__warn { display: inline-flex; width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; border-radius: 999px; background: #9b2c23; color: #e8dcc8; font-size: 0.75rem; font-weight: 700; }
+      `}</style>
+    </div>
+  )
+}

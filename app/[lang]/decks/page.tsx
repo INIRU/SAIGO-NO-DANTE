@@ -133,7 +133,6 @@ export default async function DecksPage({
   const initialLanguageFilter = normalizeDeckLangQuery(lang)
   const t = await getTranslations({ locale: routeLang, namespace: 'decks.header' })
   const headerCopy = {
-    eyebrow: t('eyebrow'),
     title: t('title'),
     subtitle: t('subtitle'),
     newDeck: t('newDeck'),
@@ -142,7 +141,7 @@ export default async function DecksPage({
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} eyebrow={headerCopy.eyebrow} action={headerCopy.newDeck} />
+      <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} action={headerCopy.newDeck} />
       {/* The route loading boundary already covers the request-bound query state. */}
       <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort={initialSort} initialLanguageFilter={initialLanguageFilter} />
     </div>

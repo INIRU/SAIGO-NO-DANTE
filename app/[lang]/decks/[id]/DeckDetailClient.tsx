@@ -1,18 +1,19 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
-import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
+import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check, Pencil } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
-import { STORAGE_BASE } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
-import { getIdentityPortraitUrl, getIdentityInfoUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
+import { DEFAULT_AVATAR_URL, STORAGE_BASE } from '@/lib/constants/game'
+import { SIN_COLORS, SIN_KR_TO_EN, normalizeSin } from '@/lib/constants/sin'
+import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
 import {
   computeAllGiftAffiliationCounts,
@@ -23,8 +24,15 @@ import {
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
-import CompactButton from '@/components/ui/CompactButton'
-import SectionBlock from '@/components/ui/SectionBlock'
+import KeywordIcon from '@/components/ui/KeywordIcon'
+import RelativeTime from '@/components/ui/RelativeTime'
+import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
+import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
+import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
+import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
+import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
+import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
 import {
   localizeEgoName,
   localizeIdentityName,
@@ -37,13 +45,12 @@ import {
   type IdentitySlot,
 } from '@/components/deck-detail/DeckIdentityCard'
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
-import DeckPassivePanel from '@/components/deck-detail/DeckPassivePanel'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
-import { DeckSidebarPanel } from '@/components/deck-detail/DeckDetailHeader'
 import DeckComments from '@/components/deck-detail/DeckComments'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import { workbenchReveal } from '@/lib/animations'
+import styles from './DeckDetail.module.css'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
@@ -114,147 +121,14 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const BOARD_SLOT_COUNT = 12
-const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
+// deck_identities.uptie is not read yet (see page.tsx), only gacksung (= uptie III–IV). Non-awakened slots show uptie II.
+const slotUptie = (slot: IdentitySlot | null) => slot?.gacksung === false ? 2 : 4
 const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-type AttackType = 'slash' | 'pierce' | 'blunt'
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 function sinColor(sin: string, isKr = false): string {
   const en = isKr ? (SIN_KR_TO_EN[sin] ?? sin) : sin
   return SIN_COLORS[en as keyof typeof SIN_COLORS] ?? '#888888'
-}
-
-function createSinTotals(): Record<string, number> {
-  return Object.fromEntries(SIN_ORDER.map((sin) => [sin, 0])) as Record<string, number>
-}
-
-function normalizeAttackType(value: string | null | undefined): AttackType | null {
-  if (!value) return null
-  const normalized = value.trim().toLowerCase()
-  const mapped: Record<string, AttackType> = {
-    slash: 'slash',
-    pierce: 'pierce',
-    penetrate: 'pierce',
-    blunt: 'blunt',
-    hit: 'blunt',
-    '참격': 'slash',
-    '관통': 'pierce',
-    '타격': 'blunt',
-  }
-  return mapped[normalized] ?? null
-}
-
-function getSkillAttackType(skill: Pick<IdentityDetail['skills'][number], 'atk_type' | 'skill_type'>): AttackType | null {
-  return normalizeAttackType(skill.atk_type ?? skill.skill_type)
-}
-
-function getBaseProductionSkills(skills: IdentityDetail['skills']): IdentityDetail['skills'] {
-  const bestByOrder = new Map<number, IdentityDetail['skills'][number]>()
-
-  for (const skill of skills) {
-    if (!BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order]) continue
-    if (!normalizeSin(skill.sin_affinity)) continue
-
-    const existing = bestByOrder.get(skill.skill_order)
-    const variantOrder = skill.variant_order ?? 0
-    const existingVariantOrder = existing?.variant_order ?? 0
-    const isEarlierBaseVariant = !existing || variantOrder < existingVariantOrder
-    const isSameVariantHigherUptie =
-      existing &&
-      variantOrder === existingVariantOrder &&
-      (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)
-
-    if (isEarlierBaseVariant || isSameVariantHigherUptie) {
-      bestByOrder.set(skill.skill_order, skill)
-    }
-  }
-
-  return [...bestByOrder.values()].sort((a, b) => a.skill_order - b.skill_order)
-}
-
-function buildSinProductionTotals(slots: IdentitySlot[]): Record<string, number> {
-  const totals = createSinTotals()
-
-  for (const slot of slots) {
-    if (!slot.identities) continue
-    for (const skill of getBaseProductionSkills(slot.identities.skills)) {
-      const sin = normalizeSin(skill.sin_affinity)
-      if (!sin) continue
-      totals[sin] += BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order] ?? 0
-    }
-  }
-
-  return totals
-}
-
-function buildEgoCostTotals(deckEgos: EgoSlot[] | undefined): Record<string, number> {
-  const totals = createSinTotals()
-
-  for (const row of deckEgos ?? []) {
-    const costs = row.ego?.cost
-    if (!Array.isArray(costs)) continue
-
-    SIN_ORDER.forEach((sin, index) => {
-      const cost = costs[index] ?? 0
-      if (cost > 0) totals[sin] += cost
-    })
-  }
-
-  return totals
-}
-
-function getCountedIdentityAttackSkills(skills: IdentityDetail['skills']): IdentityDetail['skills'] {
-  const bestBySkillKey = new Map<string, IdentityDetail['skills'][number]>()
-
-  for (const skill of skills) {
-    const variantOrder = skill.variant_order ?? 0
-    const key = `${skill.skill_order}:${variantOrder}`
-    const existing = bestBySkillKey.get(key)
-    if (!existing || (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)) {
-      bestBySkillKey.set(key, skill)
-    }
-  }
-
-  return [...bestBySkillKey.values()]
-}
-
-function addEgoAttackTypeTotals(totals: Record<AttackType, number>, egoSkills: EgoAttackSkill[] | null | undefined): void {
-  const uniqueSkills = new Map<string, EgoAttackSkill>()
-
-  for (let index = 0; index < (egoSkills?.length ?? 0); index++) {
-    const skill = egoSkills?.[index]
-    if (!skill) continue
-    const attackType = normalizeAttackType(skill.skill_type)
-    if (!attackType) continue
-    const key = `${skill.category ?? 'awakening'}:${skill.skill_order ?? index}:${attackType}`
-    const existing = uniqueSkills.get(key)
-    if (!existing || (skill.construe_level ?? 0) > (existing.construe_level ?? 0)) {
-      uniqueSkills.set(key, skill)
-    }
-  }
-
-  for (const skill of uniqueSkills.values()) {
-    const attackType = normalizeAttackType(skill.skill_type)
-    if (attackType) totals[attackType]++
-  }
-}
-
-function buildAttackTypeTotals(slots: IdentitySlot[], deckEgos: EgoSlot[] | undefined): Record<AttackType, number> {
-  const totals: Record<AttackType, number> = { slash: 0, pierce: 0, blunt: 0 }
-
-  for (const slot of slots) {
-    if (!slot.identities) continue
-    for (const skill of getCountedIdentityAttackSkills(slot.identities.skills)) {
-      const attackType = getSkillAttackType(skill)
-      if (attackType) totals[attackType]++
-    }
-  }
-
-  for (const row of deckEgos ?? []) {
-    addEgoAttackTypeTotals(totals, row.ego?.ego_skills)
-  }
-
-  return totals
 }
 
 function buildBoardSlots(slots: IdentitySlot[]): (IdentitySlot | null)[] {
@@ -466,26 +340,6 @@ function buildNoteLookups(
     }
   }
   return { skillLookup, passiveLookup, egoLookup, identityLookup }
-}
-
-// ── 스켈레톤 ──────────────────────────────────────────────────────────────
-function Skeleton() {
-  return (
-    <div className="min-h-[100dvh] pt-16" style={{ background: '#0d0b08' }}>
-      <div style={{ height: '360px', background: 'linear-gradient(to bottom, #080604, #0d0b08)' }} />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6 flex gap-5">
-        <div className="hidden lg:block" style={{ width: '15.75rem', flexShrink: 0 }}>
-          <div className="rounded-lg h-36 mb-3" style={{ background: '#120e09' }} />
-          <div className="rounded-lg h-48" style={{ background: '#120e09', opacity: 0.6 }} />
-        </div>
-        <div className="flex-1 flex flex-col gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="rounded-lg" style={{ height: 128, background: '#120e09', opacity: 0.2 + i * 0.15 }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ── 메인 ──────────────────────────────────────────────────────────────────
@@ -755,11 +609,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     return !(s1 === 3 && s2 === 2 && s3 === 1)
   }), [formedSlots])
 
-  // 죄악 자원 & 공격 유형
-  const sinAffinityTotals = useMemo(() => buildSinProductionTotals(formedSlots), [formedSlots])
-  const egoCostTotals = useMemo(() => buildEgoCostTotals(deck?.deck_egos), [deck?.deck_egos])
-  const atkTypeTotals = useMemo(() => buildAttackTypeTotals(formedSlots, deck?.deck_egos), [formedSlots, deck?.deck_egos])
-
   // EGO 그룹핑
   const egoGrouped = useMemo(() => {
     const grouped: Record<string, EgoEntry[]> = {}
@@ -838,7 +687,105 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     }
   }, [deck, loading])
 
-  if (loading) return <Skeleton />
+  const decksT = useTranslations('decks')
+  const commentsT = useTranslations('decks.comments')
+  const { getIconUrl, keywords: keywordMessages } = useKeywordData()
+
+  // Planner deck panels: keyword distribution, passives, attack types and sin resources (each slot at its own uptie).
+  const insightSlots = useMemo(() => {
+    const order = SINNER_ORDER as readonly string[]
+    const bySinner = [...filledSlots].sort((a, b) => order.indexOf(a.identities!.sinner_id) - order.indexOf(b.identities!.sinner_id))
+    const upties = new Map(bySinner.map(slot => [slot.identities!.id, slotUptie(slot)]))
+    return bySinner.map(slot => {
+      const identity = slot.identities!
+      return {
+        slot,
+        identity,
+        skills: rowsAtUptie((identity.skills ?? []).map(skill => ({ ...skill, identity_id: identity.id })), upties),
+        passives: rowsAtUptie((identity.passives ?? []).map(passive => ({ ...passive, identity_id: identity.id })), upties),
+      }
+    })
+  }, [filledSlots])
+  const insightIdentities = useMemo<DeckInsightIdentity[]>(() => insightSlots.map(({ identity, passives }) => ({
+    id: identity.id,
+    name: localizeIdentityName(identity, locale),
+    sinnerName: rootT(`sinner.${identity.sinner_id}`),
+    imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : '',
+    keywords: identity.skill_keyword_list ?? identity.keywords ?? [],
+    passives: [...passives].sort((a, b) => a.passive_order - b.passive_order).map(passive => ({
+      ...passive,
+      name: localizePassiveName(passive, locale),
+      description: localizePassiveDescription(passive, locale) ?? passive.description,
+    })),
+  })), [insightSlots, locale, rootT])
+  const deckAnalysis = useMemo(() => {
+    const egos = (deck?.deck_egos ?? []).flatMap(row => row.ego ? [row.ego] : [])
+    const sinCounts = computeSinProduction(insightSlots.map(({ slot, skills }) => ({ skills, distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const })))
+    return {
+      sinCounts,
+      baseSinCounts: computeSinProduction(insightSlots.map(({ skills }) => ({ skills }))),
+      summary: (
+        <DeckResourceSummary
+          {...computeAttackTypeCounts(insightSlots.map(({ skills }) => skills), egos.map(ego => ego.ego_skills))}
+          production={sinCounts}
+          egoCost={computeEgoCostTotals(egos.map(ego => ego.cost))}
+        />
+      ),
+    }
+  }, [deck?.deck_egos, insightSlots])
+
+  const hasRecommendations = [...(initialRecommendations?.otherOpinions ?? []), ...(initialRecommendations?.similarDecks ?? [])].some(rec => rec.id !== id)
+  const hasNote = Boolean(deck?.description?.trim()) || customSkillSlots.length > 0
+  const sections: { id: string; label: string }[] = [
+    { id: 'deck-formation', label: t('sectionFormation') },
+    ...(hasNote ? [{ id: 'deck-note', label: t('deckNote') }] : []),
+    ...(hasRecommendations ? [{ id: 'deck-similar', label: t('sectionRelated') }] : []),
+    { id: 'deck-comments', label: commentsT('title') },
+  ]
+  const sectionKey = sections.map(section => section.id).join()
+  const [activeSection, setActiveSection] = useState('deck-formation')
+  // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
+  useEffect(() => {
+    const ids = sectionKey.split(',')
+    let frame = 0
+    const update = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const line = window.innerHeight * 0.3
+        let current = ids[0]
+        for (const sectionId of ids) {
+          const top = document.getElementById(sectionId)?.getBoundingClientRect().top
+          if (top != null && top <= line) current = sectionId
+        }
+        setActiveSection(current)
+      })
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [sectionKey, loading])
+
+  // 모바일의 가로 목차에서 현재 항목이 보이도록 목차만 가로로 스크롤한다
+  const sectionNavRef = useRef<HTMLOListElement>(null)
+  useEffect(() => {
+    const list = sectionNavRef.current
+    const link = list?.querySelector<HTMLElement>('[aria-current]')
+    if (!list || !link) return
+    const left = link.offsetLeft - list.offsetLeft
+    if (left < list.scrollLeft || left + link.offsetWidth > list.scrollLeft + list.clientWidth) {
+      list.scrollTo({ left: Math.max(0, left - 16) })
+    }
+  }, [activeSection])
+
+  // 해시를 남기지 않고 이동해 BackLink의 뒤로 가기 기록을 그대로 둔다
+  const goToSection = (sectionId: string) => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+    setActiveSection(sectionId)
+  }
+
+  if (loading) return <DeckDetailSkeleton />
 
   if (!deck) {
     return (
@@ -861,462 +808,244 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     )
   }
 
-  // 공통 props for header components
-  const headerProps = {
-    deckId: id,
-    title: deck.title,
-    username: deck.profiles?.username,
-    date,
-    viewCount: deck.view_count,
-    tags: deck.tags,
-    keywords,
-    isOwner: deck.is_owner,
-    isAdmin: deck.is_admin,
-    deckCode: deck.deck_code,
-    voted,
-    voteCount,
-    voting,
-    authStatus,
-    bookmarked,
-    bookmarking,
-    shared,
-    shareGenerating,
-    copied,
-    sinAffinityTotals,
-    egoCostTotals,
-    atkTypeTotals,
-    filledSlotsCount: filledSlots.length,
-    onVote: handleVote,
-    onBookmark: handleBookmark,
-    onShare: handleShare,
-    onCopyCode: handleCopyCode,
-    onFork: handleFork,
-  }
+  const contentLabel = deck.content_type && deck.content_type !== '없음'
+    ? decksT(`contentTypes.${contentTypeMessageKey(deck.content_type)}`)
+    : null
+  const canEdit = deck.is_owner || deck.is_admin
 
   return (
-    <div className="min-h-[100dvh] pt-16" style={{ background: '#0d0b08' }}>
+    <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
+        <BackLink
+          href="/decks"
+          locale={locale}
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {t('backToList')}
+        </BackLink>
 
-      {/* ── 플래너 스타일 헤더 ── */}
-      <motion.div
-        className="deck-detail-heading max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-5"
-        style={{ borderBottom: '1px solid #3a2a1566' }}
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-      >
-        {/* 라인 1: 뒤로가기 + 제목 */}
-        <div className="flex flex-col items-start gap-4 mb-4">
-          <BackLink
-            href="/decks"
-            locale={locale}
-            className="inline-flex items-center gap-1 transition-opacity hover:opacity-70 flex-shrink-0"
-            style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}
-          >
-            <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
-            {t('backToList')}
-          </BackLink>
-          <h1
-            className="font-bold leading-tight break-words"
-            style={{ color: 'var(--text-primary)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontFamily: 'var(--font-heading)' }}
-          >
-            {deck.title}
-          </h1>
-        </div>
-        {/* 라인 2: 메타 + 액션 버튼 */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          {/* 왼쪽: 작성자 · 날짜 · 조회수 */}
-          <div className="flex items-center gap-2" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            {deck.profiles?.avatar_url && <img src={deck.profiles.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover"/>}
-            {deck.profiles?.username && (
-              <Link href={`/users/${deck.user_id}`} className="text-[var(--text-secondary)] hover:text-[var(--gold)] hover:underline">{deck.profiles.username}</Link>
+        <motion.header
+          className={styles.hero}
+          variants={shouldReduceMotion ? undefined : workbenchReveal}
+          initial={shouldReduceMotion ? false : 'initial'}
+          animate={shouldReduceMotion ? undefined : 'animate'}
+        >
+          <div className={styles.identity}>
+            {keywords.length > 0 && (
+              <ul className={styles.keywords}>
+                {keywords.map(keyword => {
+                  const iconUrl = getIconUrl(keyword)
+                  return (
+                    <li key={keyword}>
+                      {iconUrl && <KeywordIcon src={iconUrl} alt="" width={28} height={28} className="h-7 w-7 object-contain" />}
+                      {localizeDeckKeyword(keyword, keywordMessages[keyword], locale)}
+                    </li>
+                  )
+                })}
+              </ul>
             )}
-            {deck.profiles?.username && <span style={{ fontFamily: 'sans-serif' }}>·</span>}
-            <span suppressHydrationWarning>{date}</span>
-            <span style={{ fontFamily: 'sans-serif' }}>·</span>
-            <span className="flex items-center gap-1">
-              <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
-                <ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" strokeWidth="1.4"/>
-                <circle cx="8" cy="8" r="2" fill="currentColor"/>
-              </svg>
-              {deck.view_count}
-            </span>
+            <h1 className={styles.title}>{deck.title}</h1>
           </div>
-          {/* 오른쪽: 액션 버튼 */}
-          <div className="deck-detail-actions flex items-center gap-2 flex-wrap">
-            {(deck.is_owner || deck.is_admin) && <Link href={`/decks/${id}/edit`} className="deck-detail-edit">{t('editDeck')}</Link>}
-            <CompactButton
-              icon={voted ? Heart : Heart}
+
+          <div className={styles.author}>
+            <Image src={deck.profiles?.avatar_url || DEFAULT_AVATAR_URL} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full bg-[#17120c] object-cover ring-1 ring-[#6b4c12]" />
+            <div className="min-w-0">
+              {deck.profiles?.username ? (
+                <Link href={`/users/${deck.user_id}`} className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]">{deck.profiles.username}</Link>
+              ) : (
+                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{commentsT('anonymous')}</p>
+              )}
+              <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
+            </div>
+          </div>
+
+          <dl className={styles.facts}>
+            {contentLabel && (
+              <div className={styles.fact}>
+                <dt>{t('factContent')}</dt>
+                <dd data-text>{contentLabel}</dd>
+              </div>
+            )}
+            <div className={styles.fact}>
+              <dt>{t('factFormed')}</dt>
+              <dd>{formedSlots.length}<span className="text-[#7f7364]">/{BOARD_SLOT_COUNT}</span></dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>E.G.O</dt>
+              <dd>{deck.deck_egos?.filter(row => row.ego).length ?? 0}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>{t('vote')}</dt>
+              <dd>{voteCount}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>{t('factViews')}</dt>
+              <dd>{deck.view_count}</dd>
+            </div>
+          </dl>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
               onClick={handleVote}
               disabled={authStatus !== 'authenticated' || voting}
-              variant={voted ? 'gold' : 'muted'}
-              title={t('vote')}
+              aria-pressed={voted}
+              title={authStatus !== 'authenticated' ? t('loginToVote') : voted ? t('undoVote') : t('vote')}
             >
-              {voteCount}
-            </CompactButton>
-            <CompactButton
-              icon={bookmarked ? Bookmark : Bookmark}
+              <Heart className="h-4 w-4" fill={voted ? 'currentColor' : 'none'} aria-hidden="true" />
+              {t('vote')} {voteCount}
+            </button>
+            <button
+              type="button"
               onClick={handleBookmark}
               disabled={authStatus !== 'authenticated' || bookmarking}
-              variant={bookmarked ? 'gold' : 'muted'}
-              title={t('bookmark')}
+              aria-pressed={bookmarked}
+              title={authStatus !== 'authenticated' ? t('loginToBookmark') : bookmarked ? t('undoBookmark') : t('bookmark')}
             >
+              <Bookmark className="h-4 w-4" fill={bookmarked ? 'currentColor' : 'none'} aria-hidden="true" />
               {bookmarked ? t('saved') : t('save')}
-            </CompactButton>
-            <CompactButton
-              icon={shared ? Check : Share2}
-              onClick={handleShare}
-              disabled={shareGenerating}
-              variant={shared ? 'success' : 'muted'}
-              title={t('share')}
-            >
+            </button>
+            <button type="button" onClick={handleShare} disabled={shareGenerating} data-done={shared || undefined}>
+              {shared ? <Check className="h-4 w-4" aria-hidden="true" /> : <Share2 className="h-4 w-4" aria-hidden="true" />}
               {shared ? t('copied') : t('share')}
-            </CompactButton>
-            <CompactButton
-              icon={GitFork}
-              onClick={handleFork}
-              variant="gold"
-              title={t('fork')}
-            >
-              {t('fork')}
-            </CompactButton>
+            </button>
             {deck.deck_code && (
-              <CompactButton
-                icon={copied ? Check : Copy}
-                onClick={handleCopyCode}
-                variant={copied ? 'success' : 'muted'}
-                title={t('copyDeckCode')}
-              >
-                {copied ? t('copied') : t('code')}
-              </CompactButton>
+              <button type="button" onClick={handleCopyCode} data-done={copied || undefined}>
+                {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                {copied ? t('copied') : t('copyDeckCode')}
+              </button>
             )}
+            {canEdit && (
+              <Link href={`/decks/${id}/edit`} className={styles.edit}>
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                {t('editDeck')}
+              </Link>
+            )}
+            <button type="button" onClick={handleFork} data-primary>
+              <GitFork className="h-4 w-4" aria-hidden="true" />
+              {t('forkDeck')}
+            </button>
           </div>
-        </div>
-      </motion.div>
+        </motion.header>
 
-      {/* ── 콘텐츠 ── */}
-      <motion.div
-        className="max-w-7xl mx-auto px-4 md:px-6 pb-24 pt-6"
-        variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.08)}
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-      >
+        <nav aria-label={t('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
+          <ol ref={sectionNavRef}>
+            {sections.map(section => (
+              <li key={section.id} className="shrink-0">
+                <a
+                  href={`#${section.id}`}
+                  aria-current={activeSection === section.id ? 'location' : undefined}
+                  onClick={event => { event.preventDefault(); goToSection(section.id) }}
+                >
+                  {section.label}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
 
-        <div>
-          {/* 수감자 탭 + 인격 상세 */}
-          <motion.main className="flex-1 min-w-0" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+        <main className="min-w-0 overflow-x-clip">
+          <section id="deck-formation" aria-labelledby="deck-formation-title" className={styles.section}>
+            <SectionHead id="deck-formation-title" title={t('sectionFormation')} meta={filledSlots.length > 0 ? t('boardHintShort') : undefined} />
             {filledSlots.length === 0 ? (
-              <p className="text-sm italic" style={{ color: '#2a2a3a', fontFamily: 'var(--font-body)' }}>{t('identityEmpty')}</p>
+              <p className={styles.empty}>{t('identityEmpty')}</p>
             ) : (
               <>
-                {/* Dante Planner 스타일 12슬롯 편성 보드 */}
-                <motion.section
-                  className="mb-5"
-                  aria-label={t('boardLabel')}
-                  variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                >
-                  <FormationBoard
-                    className="deck-detail-formation"
-                    slots={boardSlots.map((slot, index): FormationBoardSlot => {
-                      const id_ = slot?.identities ?? null
-                      const identityName = id_ ? localizeIdentityName(id_, locale) : ''
+                <FormationBoard
+                  slots={boardSlots.map((slot, index): FormationBoardSlot => {
+                    const identity = slot?.identities ?? null
+                    const identityName = identity ? localizeIdentityName(identity, locale) : ''
+                    return {
+                      key: `${identity?.id ?? 'empty'}-${index}`,
+                      identity: identity ? adaptBoardIdentity(identity, locale) : null,
+                      sinnerId: SINNER_ORDER[index],
+                      slotOrder: slot?.slot_order ?? null,
+                      uptie: slotUptie(slot),
+                      ariaLabel: identity ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
+                      onClick: identity && slot ? () => setIdentityPreview({ slot }) : undefined,
+                    }
+                  })}
+                />
 
-                      return {
-                        key: `${id_?.id ?? 'empty'}-${index}`,
-                        identity: id_ ? adaptBoardIdentity(id_, locale) : null,
-                        slotOrder: slot?.slot_order ?? null,
-                        gacksung: slot?.gacksung ?? false,
-                        ariaLabel: id_ ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
-                        onClick: id_ && slot
-                          ? () => {
-                              setIdentityPreview({ slot })
-                            }
-                          : undefined,
-                      }
-                    })}
-                  />
-                  <p
-                    className="mt-3"
-                    style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', lineHeight: 1.55 }}
-                  >
-                    {t('boardHint')}
-                  </p>
-                </motion.section>
-
-
-                <SectionBlock title={locale === 'ko' ? '편성 분석 · 패시브' : locale === 'ja' ? '編成分析・パッシブ' : 'Formation analysis · Passives'} defaultOpen={false}>
-                  <DeckSidebarPanel {...headerProps} analysisOnly />
-                  <DeckPassivePanel slots={localizedFilledSlots} deckSinCounts={sinAffinityTotals} />
-                </SectionBlock>
-
-                {/* 덱 노트 */}
-                {deck.description?.trim() && (
-                  <>
-                    <style>{`
-                      .deck-detail-note-section{
-                        position:relative;
-                        overflow:hidden;
-                        border:0;
-                        border-radius:.5rem;
-                        background:transparent;
-                      }
-                      .deck-detail-note-section::before{
-                        content:"";
-                        position:absolute;
-                        left:0;
-                        top:0;
-                        bottom:0;
-                        width:.1875rem;
-                        background:#c8900a;
-                        opacity:.62;
-                      }
-                      .deck-detail-note-header{
-                        display:flex;
-                        align-items:center;
-                        justify-content:space-between;
-                        gap:.75rem;
-                        padding:1rem 1rem .75rem 1.125rem;
-                        border-bottom:1px solid rgba(200,144,10,.2);
-                      }
-                      .deck-detail-note-title{
-                        margin:0;
-                        color:#e4d3b0;
-                        font-family:var(--font-serif);
-                        font-size:1.125rem;
-                        font-weight:700;
-                        line-height:1.35;
-                        text-wrap:balance;
-                      }
-                      .deck-detail-note-body{
-                        padding:1rem 1.125rem 1.125rem;
-                      }
-                      .deck-detail-skill-mix{
-                        margin-top:1rem;
-                        border-top:1px solid rgba(200,144,10,.18);
-                        padding-top:.875rem;
-                      }
-                      .deck-detail-skill-mix-label{
-                        display:block;
-                        margin-bottom:.625rem;
-                        color:#c8900a;
-                        font-family:var(--font-mono);
-                        font-size:.875rem;
-                        font-weight:700;
-                        line-height:1.45;
-                      }
-                      .deck-detail-skill-mix-grid{
-                        display:grid;
-                        grid-template-columns:repeat(2,minmax(0,1fr));
-                        gap:.7rem;
-                      }
-                      @media (min-width:40rem){
-                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-                      }
-                      @media (min-width:52rem){
-                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-                      }
-                      @media (min-width:64rem){
-                        .deck-detail-skill-mix-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:.75rem}
-                      }
-                      .deck-detail-skill-mix-card{
-                        position:relative;
-                        overflow:hidden;
-                        border:1px solid rgba(200,144,10,.15);
-                        border-radius:.5rem;
-                        background:#100d0a;
-                        transform:translate3d(0,0,0);
-                        transition:transform 180ms cubic-bezier(.22,1,.36,1),filter 180ms cubic-bezier(.22,1,.36,1),border-color 180ms cubic-bezier(.22,1,.36,1);
-                      }
-                      .deck-detail-skill-mix-card:hover{
-                        transform:translate3d(0,-.125rem,0);
-                        filter:brightness(1.06);
-                        border-color:rgba(200,144,10,.32);
-                      }
-                      .deck-detail-skill-mix-art{
-                        position:relative;
-                        aspect-ratio:2/3;
-                        width:100%;
-                        overflow:hidden;
-                        background:#080604;
-                        border-bottom:1px solid rgba(200,144,10,.13);
-                      }
-                      .deck-detail-skill-mix-art::after{
-                        content:"";
-                        position:absolute;
-                        inset:0;
-                        background:linear-gradient(to bottom, rgba(13,11,8,0) 58%, rgba(13,11,8,.88) 100%);
-                        pointer-events:none;
-                      }
-                      .deck-detail-skill-mix-info{
-                        padding:.5rem .5rem .55rem;
-                      }
-                      .deck-detail-skill-mix-name{
-                        display:block;
-                        min-width:0;
-                        color:#b8a890;
-                        font-family:var(--font-body);
-                        font-size:.875rem;
-                        font-weight:600;
-                        line-height:1.35;
-                        margin-bottom:.45rem;
-                      }
-                      .deck-detail-skill-counts{
-                        display:grid;
-                        grid-template-columns:repeat(3,minmax(0,1fr));
-                        gap:.35rem;
-                      }
-                      .deck-detail-skill-count{
-                        display:grid;
-                        min-width:0;
-                        grid-template-columns:1fr;
-                        justify-items:center;
-                        gap:.2rem;
-                        border:1px solid var(--skill-color-soft, rgba(200,144,10,.22));
-                        border-radius:.375rem;
-                        background:color-mix(in srgb, var(--skill-color, #c8900a) 12%, transparent);
-                        padding:.35rem .2rem .3rem;
-                      }
-                      .deck-detail-skill-count-label{
-                        color:#d7c6a5;
-                        font-family:var(--font-mono);
-                        font-size:.875rem;
-                        font-weight:700;
-                        line-height:1;
-                        font-variant-numeric:tabular-nums;
-                      }
-                      .deck-detail-skill-count-value{
-                        color:var(--skill-color, #c8900a);
-                        font-family:var(--font-mono);
-                        font-size:.9375rem;
-                        font-weight:800;
-                        line-height:1;
-                        font-variant-numeric:tabular-nums;
-                      }
-                      @media (max-width:40rem){
-                        .deck-detail-note-header{padding:.875rem .875rem .625rem 1rem}
-                        .deck-detail-note-body{padding:.875rem 1rem 1rem}
-                        .deck-detail-skill-mix-grid{gap:.625rem}
-                        .deck-detail-skill-mix-info{padding:.45rem}
-                      }
-                      @media (prefers-reduced-motion:reduce){
-                        .deck-detail-skill-mix-card{transition:filter 120ms ease}
-                        .deck-detail-skill-mix-card:hover{transform:none}
-                      }
-                    `}</style>
-                    <motion.section
-                      className="deck-detail-note-section mb-5 mt-8"
-                      aria-labelledby="deck-detail-note-title"
-                      variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                    >
-                      <div className="deck-detail-note-header">
-                        <h2 id="deck-detail-note-title" className="deck-detail-note-title">{t('deckNote')}</h2>
-                      </div>
-                      <div className="deck-detail-note-body">
-                        <NoteRenderer
-                          text={deck.description}
-                          {...noteLookups}
-                          egoGiftLookup={egoGiftLookup}
-                          egoGiftConditionLookup={egoGiftConditionLookup}
-                          textScale="comfortable"
-                        />
-                        {customSkillSlots.length > 0 && (
-                          <div className="deck-detail-skill-mix">
-                            <span className="deck-detail-skill-mix-label">{t('skillDistribution')}</span>
-                            <motion.div
-                              className="deck-detail-skill-mix-grid"
-                              variants={shouldReduceMotion ? undefined : staggerContainer(0.035)}
-                            >
-                              {customSkillSlots.map((slot, i) => {
-                                const id_ = slot.identities!
-                                const identityName = localizeIdentityName(id_, locale)
-                                const dist = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                                const rawSk2 = id_.skills ?? []
-                                const skBest2 = new Map<string, typeof rawSk2[0]>()
-                                for (const s of rawSk2) {
-                                  if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
-                                  const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-                                  const ex = skBest2.get(key)
-                                  if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest2.set(key, s)
-                                }
-                                const sortedSk = [...skBest2.values()].sort((a, b) => a.skill_order - b.skill_order)
-                                const skillImageIndices = computeSkillImageIndices(sortedSk)
-                                const adaptedIdentity = adaptBoardIdentity(id_, locale)
-                                const identityImageUrl = getIdentityInfoUrl(adaptedIdentity)
-                                return (
-                                  <motion.div
-                                    key={`${id_.id}-${i}`}
-                                    className="deck-detail-skill-mix-card"
-                                    variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                                  >
-                                    <div className="deck-detail-skill-mix-art">
-                                      {identityImageUrl && (
-                                        <Image
-                                          src={identityImageUrl}
-                                          alt={identityName}
-                                          fill
-                                          sizes="(max-width: 40rem) 42vw, (max-width: 64rem) 18vw, 7rem"
-                                          style={{ objectFit: 'cover', objectPosition: 'top center' }}
-                                        />
-                                      )}
-                                    </div>
-                                    <div className="deck-detail-skill-mix-info">
-                                      <span className="deck-detail-skill-mix-name truncate">{identityName}</span>
-                                      <div className="deck-detail-skill-counts">
-                                        {[0, 1, 2].map(idx => {
-                                          const skill = sortedSk.find(s => s.skill_order === idx + 1)
-                                          const sc = skill ? sinColor(skill.sin_affinity) : '#888'
-                                          const iconUrl = skill ? getSkillIconUrl(adaptedIdentity, skillImageIndices[skill.id] ?? idx + 1, skill) : ''
-                                          return (
-                                            <div
-                                              key={idx}
-                                              className="deck-detail-skill-count"
-                                              style={{
-                                                '--skill-color': dist[idx] > 0 ? sc : '#5a4a35',
-                                                '--skill-color-soft': `${sc}3a`,
-                                              } as CSSProperties}
-                                              aria-label={`S${idx + 1} x${dist[idx]}`}
-                                            >
-                                              {iconUrl && (
-                                                <Image
-                                                  src={iconUrl}
-                                                  alt=""
-                                                  width={24}
-                                                  height={24}
-                                                  style={{ borderRadius: '0.25rem', border: `1px solid ${sc}55` }}
-                                                />
-                                              )}
-                                              <span className="deck-detail-skill-count-label">S{idx + 1}</span>
-                                              <span className="deck-detail-skill-count-value">x{dist[idx]}</span>
-                                            </div>
-                                          )
-                                        })}
-                                      </div>
-                                    </div>
-                                  </motion.div>
-                                )
-                              })}
-                            </motion.div>
-                          </div>
-                        )}
-                      </div>
-                    </motion.section>
-                  </>
-                )}
-
-
-                <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
-                  <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
-                </motion.div>
-
+                <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} />
               </>
             )}
-          </motion.main>
+          </section>
 
-        </div>
+          {(deck.description?.trim() || customSkillSlots.length > 0) && (
+            <section id="deck-note" aria-labelledby="deck-note-title" className={styles.section}>
+              <SectionHead id="deck-note-title" title={t('deckNote')} />
+              {deck.description?.trim() && (
+                <div className={styles.note}>
+                  <NoteRenderer
+                    text={deck.description}
+                    {...noteLookups}
+                    egoGiftLookup={egoGiftLookup}
+                    egoGiftConditionLookup={egoGiftConditionLookup}
+                    textScale="comfortable"
+                  />
+                </div>
+              )}
+              {customSkillSlots.length > 0 && (
+                <div className={styles.block}>
+                  <h3 className={styles.subhead}>{t('skillDistribution')}</h3>
+                  <div className="skill-exchange-list">
+                    {customSkillSlots.map((slot, i) => {
+                      const identity = slot.identities!
+                      const adapted = adaptBoardIdentity(identity, locale)
+                      const dist: [number, number, number] = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
+                      const best = new Map<string, typeof identity.skills[number]>()
+                      for (const s of identity.skills ?? []) {
+                        if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
+                        const key = `${s.skill_order}:${(s as { variant_order?: number | null }).variant_order ?? 0}`
+                        const existing = best.get(key)
+                        if (!existing || (s.uptie_level ?? 3) > (existing.uptie_level ?? 3)) best.set(key, s)
+                      }
+                      const sortedSkills = [...best.values()].sort((a, b) => a.skill_order - b.skill_order)
+                      const imageIndices = computeSkillImageIndices(sortedSkills)
+                      const skillAt = (idx: number) => {
+                        const skill = sortedSkills.find(s => s.skill_order === idx + 1)
+                        return skill ? {
+                          name: localizeSkillName(skill, locale),
+                          iconSrc: getSkillIconUrl(adapted, imageIndices[skill.id] ?? idx + 1, skill),
+                          sinColor: sinColor(skill.sin_affinity),
+                        } : null
+                      }
+                      return (
+                        <SkillExchangePanel
+                          key={`${identity.id}-${i}`}
+                          identity={{
+                            imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : null,
+                            name: adapted.name,
+                            sinnerName: rootT(`sinner.${identity.sinner_id}`),
+                          }}
+                          onIdentityClick={() => setIdentityPreview({ slot })}
+                          distribution={dist}
+                          skills={[skillAt(0), skillAt(1), skillAt(2)]}
+                          readOnly
+                          showTotal={false}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
-        <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
-          <DeckComments deckId={id} initialComments={initialComments ?? []} />
-        </motion.div>
-      </motion.div>
+          {hasRecommendations && (
+            <section id="deck-similar" aria-labelledby="deck-similar-title" className={styles.section}>
+              <SectionHead id="deck-similar-title" title={t('sectionRelated')} />
+              <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
+            </section>
+          )}
+
+          <section id="deck-comments" aria-labelledby="deck-comments-title" className={styles.section}>
+            <DeckComments deckId={id} initialComments={initialComments ?? []} headingId="deck-comments-title" />
+          </section>
+        </main>
+      </div>
 
       {identityModalId && (
         <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
@@ -1334,6 +1063,15 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
+    </div>
+  )
+}
+
+function SectionHead({ id, title, meta }: { id: string; title: string; meta?: string }) {
+  return (
+    <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
+      <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[#e8dcc8] sm:text-[1.5rem]">{title}</h2>
+      {meta && <p className="text-[0.875rem] text-[#9c8b73]">{meta}</p>}
     </div>
   )
 }

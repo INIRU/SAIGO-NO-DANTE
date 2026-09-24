@@ -9,6 +9,7 @@ import {
   EGO,
   Skill,
   getSinnerLogoUrl,
+  getIdentityInfoUrl,
   getSinnerProfileUrl,
   getSkillIconUrl,
   SIN_COLORS,
@@ -89,24 +90,24 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
 const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
-  sinners, identities, deckSlots, gacksungSlots, onGacksungToggle,
-  formationOrder, onFormationToggle, onIdentitySelect, onIdentityDeselect,
+  sinners, identities, deckSlots, upties,
+  formationOrder, onFormationToggle, onFormationReset, onIdentitySelect,
   mainKeywordCounts, selectedMainKeywords, maxMainKeywords, mainKeywordLabel, onMainKeywordToggle,
 }: {
   sinners: Sinner[]
   identities: Identity[]
   deckSlots: Record<string, Identity | undefined>
-  gacksungSlots: Record<string, boolean>
+  /** sinnerId → uptie 1–4 (missing = 4) */
+  upties: Record<string, number>
   mainKeywordCounts: Record<string, number>
   selectedMainKeywords: string[]
   maxMainKeywords: number
   mainKeywordLabel: string
-  onGacksungToggle: (sinnerId: string) => void
   formationOrder: string[]
   onFormationToggle: (sinnerId: string) => void
+  onFormationReset: () => void
   onMainKeywordToggle: (keyword: string) => void
-  onIdentitySelect: (identity: Identity) => void
-  onIdentityDeselect: (sinnerId: string) => void
+  onIdentitySelect: (identity: Identity, uptie: number) => void
 }) {
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
   const locale = useLocale() as SupportedLang
@@ -121,14 +122,13 @@ export function IdentityTab({
   const openIdentityModal = (sinnerId: string) => setModalSinnerId(sinnerId)
   const boardSlots = sinners.reduce<Record<string, PlannerIdentityBoardSlot>>((acc, sinner) => {
     const identity = deckSlots[sinner.id] ?? null
-    const isGacksung = gacksungSlots[sinner.id] ?? false
     const formIdx = formationOrder.indexOf(sinner.id)
     const isFormed = formIdx >= 0
     acc[sinner.id] = {
       sinnerId: sinner.id,
       identity,
       slotOrder: identity && isFormed ? formIdx : null,
-      gacksung: isGacksung,
+      uptie: upties[sinner.id],
       identityName: identity ? localizeIdentityName(identity, locale) : undefined,
     }
     return acc
@@ -137,12 +137,11 @@ export function IdentityTab({
   return (
     <>
     <PlannerIdentityBoard
-      formationStyle="label"
       sinners={sinners}
       slots={boardSlots}
       onOpenIdentityModal={openIdentityModal}
       onFormationToggle={onFormationToggle}
-      onGacksungToggle={onGacksungToggle}
+      onResetOrder={onFormationReset}
       getSinnerName={sinner => getDeckBuilderSinnerName(sinner as Sinner, locale)}
     />
 
@@ -189,80 +188,22 @@ export function IdentityTab({
     </div>
 
     <style jsx global>{`
-      .deck-builder-pinned-keywords {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.375rem;
-        margin-top: 0.75rem;
-      }
+      .deck-builder-pinned-keywords { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; margin: 0.625rem 0 0; }
       .deck-builder-pinned-keyword {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.375rem;
-        min-height: 2.75rem;
-        padding: 0.375rem 0.625rem;
-        border: 1px solid rgba(200, 144, 10, 0.16);
-        border-radius: 0.375rem;
-        background: rgba(18, 14, 9, 0.74);
-        color: rgba(232, 220, 200, 0.84);
-        font-size: 0.9375rem;
-        line-height: 1;
-        font-family: var(--font-sans);
-        cursor: pointer;
-        transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+        display: inline-flex; flex: 0 0 auto; max-width: 100%; min-height: 2.25rem; align-items: center; gap: 0.3125rem;
+        padding: 0 0.625rem; border: 1px solid transparent; border-radius: 999px; background: rgba(232, 220, 200, 0.04);
+        color: #9c8b73; cursor: pointer; font-family: var(--font-body), var(--font-sans); font-size: 0.8125rem; line-height: 1;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
       }
-      .deck-builder-pinned-keyword:hover:not(:disabled),
-      .deck-builder-pinned-keyword:focus-visible {
-        border-color: rgba(232, 176, 48, 0.42);
-        background: rgba(200, 144, 10, 0.12);
-        color: #f0d48a;
-      }
-      .deck-builder-pinned-keyword:focus-visible {
-        outline: 1px solid rgba(232, 176, 48, 0.6);
-        outline-offset: 2px;
-      }
-      .deck-builder-pinned-keyword[data-selected="true"] {
-        border-color: rgba(232, 176, 48, 0.58);
-        background: rgba(200, 144, 10, 0.18);
-        color: #f0d48a;
-        box-shadow: inset 0 0 0 1px rgba(232, 176, 48, 0.12);
-      }
-      .deck-builder-pinned-keyword:disabled {
-        cursor: not-allowed;
-        opacity: 0.42;
-      }
-      .deck-builder-pinned-keyword__count {
-        display: inline-flex;
-        min-width: 1.25rem;
-        height: 1.25rem;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(200, 144, 10, 0.18);
-        border-radius: 999px;
-        background: rgba(13, 11, 8, 0.52);
-        color: inherit;
-        font-family: var(--font-mono);
-        font-size: 0.875rem;
-        line-height: 1;
-      }
-      .deck-builder-pinned-keyword__icon {
-        width: 1rem;
-        height: 1rem;
-        object-fit: contain;
-      }
-      @media (max-width: 639px) {
-        .deck-builder-pinned-keywords {
-          margin-top: 0.625rem;
-          gap: 0.3125rem;
-        }
-        .deck-builder-pinned-keyword {
-          min-height: 2.75rem;
-          padding: 0.3125rem 0.5rem;
-          font-size: 0.9375rem;
-        }
-      }
+      .deck-builder-pinned-keyword:hover:not(:disabled) { background: rgba(232, 220, 200, 0.08); color: #e8dcc8; }
+      .deck-builder-pinned-keyword:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+      .deck-builder-pinned-keyword[data-selected="true"] { border-color: rgba(200, 144, 10, 0.45); background: rgba(200, 144, 10, 0.14); color: #e8b030; }
+      .deck-builder-pinned-keyword:disabled { cursor: not-allowed; opacity: 0.38; }
+      .deck-builder-pinned-keyword__icon { flex: 0 0 auto; width: 0.875rem; height: 0.875rem; object-fit: contain; }
+      .deck-builder-pinned-keyword__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .deck-builder-pinned-keyword__count { color: inherit; font-size: 0.75rem; font-variant-numeric: tabular-nums; opacity: 0.7; }
+      @media (pointer: coarse) { .deck-builder-pinned-keyword { min-height: 2.75rem; } }
+      @media (prefers-reduced-motion: reduce) { .deck-builder-pinned-keyword { transition: none; } }
     `}</style>
 
     {/* ── 인격 선택 모달 (플래너 패턴) ── */}
@@ -271,15 +212,12 @@ export function IdentityTab({
       sinner={modalSinner}
       identities={modalIdentities}
       selectedIdentityId={modalSinnerId ? deckSlots[modalSinnerId]?.id ?? null : null}
+      selectedUptie={modalSinnerId ? upties[modalSinnerId] ?? 4 : 4}
       onClose={() => setModalSinnerId(null)}
-      onSelect={identity => {
-        onIdentitySelect(identity as Identity)
+      onSelect={(identity, uptie) => {
+        onIdentitySelect(identity as Identity, uptie)
         setModalSinnerId(null)
       }}
-      onDeselect={modalSinnerId && deckSlots[modalSinnerId] ? () => {
-        onIdentityDeselect(modalSinnerId)
-        setModalSinnerId(null)
-      } : undefined}
       getSinnerName={sinner => getDeckBuilderSinnerName(sinner as Sinner, locale)}
     />
     </>
@@ -425,21 +363,12 @@ export function SkillsetTab({
   skillDistribution: Record<string, [number, number, number]>
   onDistributionChange: (sinnerId: string, dist: [number, number, number]) => void
 }) {
+  const locale = useLocale() as SupportedLang
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-8">
+    <div className="skill-exchange-list">
       {sinners.map(sinner => {
         const identity = deckSlots[sinner.id]
-        if (!identity) {
-          return (
-            <div key={sinner.id}>
-              <SinnerGhostCard sinner={sinner}>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ height: '1.5rem', width: 'auto', opacity: 0.35 }} />
-                </div>
-              </SinnerGhostCard>
-            </div>
-          )
-        }
+        if (!identity) return null
 
         const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
         const total = dist[0] + dist[1] + dist[2]
@@ -457,9 +386,13 @@ export function SkillsetTab({
         }
 
         return (
-          <div key={sinner.id}>
-            <IdentityCard identity={identity} compact />
             <SkillExchangePanel
+              key={sinner.id}
+              identity={{
+                imageUrl: getIdentityInfoUrl(identity),
+                name: localizeIdentityName(identity, locale),
+                sinnerName: getDeckBuilderSinnerName(sinner, locale),
+              }}
               distribution={dist}
               skills={[
                 skills[0] ? {
@@ -481,7 +414,6 @@ export function SkillsetTab({
               onAdjust={handleChange}
               onPresetSelect={preset => onDistributionChange(sinner.id, preset)}
             />
-          </div>
         )
       })}
     </div>

@@ -2,8 +2,8 @@
 
 import { notePlainText } from '@/lib/notes/blocks'
 
-import { getIdentityPortraitUrl } from '@/lib/utils/images'
-import { memo, useMemo, useState } from 'react'
+import FormationThumbnail from '@/components/ui/FormationThumbnail'
+import { memo, useMemo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
@@ -58,49 +58,6 @@ interface DeckCardProps {
   onTagClick?: (tag: string) => void
 }
 
-function identityPortraitUrl(id: IdentityPreview, gacksung?: boolean): string {
-  const { identities: id_ } = id
-  if (!id_?.game_id || !id_?.folder_name) return ''
-  return getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, !!(gacksung ?? id.gacksung))
-}
-
-function PortraitSlot({ slot }: { slot: IdentityPreview }) {
-  const [fallback, setFallback] = useState(false)
-  const [failed, setFailed] = useState(false)
-  const url = identityPortraitUrl(slot, fallback ? false : undefined)
-  if (!url || failed) {
-    const initial = (slot.identities?.sinner_id || '?')[0].toUpperCase()
-    return (
-      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #1e1810, #0d0a06)' }}>
-        <span style={{ fontSize: '1.25rem', color: '#c8900a80', fontFamily: 'var(--font-heading)' }}>{initial}</span>
-      </div>
-    )
-  }
-
-  return (
-    <>
-      <Image
-        src={url}
-        alt=""
-        fill
-        sizes="(max-width: 640px) 17vw, (max-width: 1024px) 8vw, 6vw"
-        quality={60}
-        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-        onError={() => {
-          if (slot.gacksung && !fallback) setFallback(true)
-          else setFailed(true)
-        }}
-      />
-      {slot.gacksung && (
-        <div
-          className="absolute top-0.5 right-0.5 z-[1]"
-          style={{ width: '0.3125rem', height: '0.3125rem', borderRadius: '50%', background: 'var(--gold)' }}
-        />
-      )}
-    </>
-  )
-}
-
 function DeckCard({ deck, onTagClick }: DeckCardProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks')
@@ -119,8 +76,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
     return a.slot_order - b.slot_order
   }), [deck.deck_identities])
 
-  // 12칸 고정 (빈 슬롯 포함)
-  const slots = useMemo(() => Array.from({ length: 12 }, (_, i) => sorted[i] ?? null), [sorted])
+  const thumbnailSlots = useMemo(() => sorted.map(slot => ({ ...slot.identities, slot_order: slot.slot_order, gacksung: slot.gacksung })), [sorted])
 
   const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
@@ -139,55 +95,10 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
   const overflowCount = topKeywords.length - visibleKeywords.length
 
   return (
-    <div
-      className="group relative flex flex-col h-full overflow-hidden"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget
-        el.style.borderColor = 'var(--border-hover)'
-        el.style.boxShadow = 'var(--shadow-glow-hover)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget
-        el.style.borderColor = 'var(--border)'
-        el.style.boxShadow = 'none'
-      }}
-    >
-      {/* 상단 골드 라인 — 호버 시 펼쳐짐 */}
-      <div
-        className="h-px w-0 group-hover:w-full"
-        style={{
-          background: 'linear-gradient(to right, var(--gold-dim), transparent)',
-          transition: 'width 0.3s ease',
-        }}
-      />
-
+    <div className="board-card group relative flex flex-col h-full overflow-hidden">
       <div className="relative flex flex-col flex-1">
         <Link href={`/decks/${deck.id}`} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
-        {/* 인격 포트레이트 그리드 (2×6) */}
-        <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
-          {slots.map((slot, i) => (
-            <div
-              key={i}
-              className="relative overflow-hidden"
-              style={{ aspectRatio: '3/4', background: '#0a0806' }}
-            >
-              {slot ? (
-                <PortraitSlot slot={slot} />
-              ) : (
-                <div
-                  className="w-full h-full"
-                  style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+        <FormationThumbnail slots={thumbnailSlots} />
 
         <div className="flex flex-col flex-1" style={{ padding: '0.875rem' }}>
           {/* 제목 */}

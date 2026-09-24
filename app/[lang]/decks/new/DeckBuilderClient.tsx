@@ -30,9 +30,13 @@ import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import CompactButton from '@/components/ui/CompactButton'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
+import { LCB_IDS } from '@/lib/constants/game'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
-import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
+import { getIdentityImageUrl } from '@/lib/utils/images'
+import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
+import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
+import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
 import { contentTypeMessageKey } from '@/components/decks/decks-types'
 import {
   localizeIdentityName,
@@ -41,6 +45,7 @@ import {
 } from '@/components/deck-detail/DeckIdentityCard'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EgoGiftNote } from '@/lib/types'
+import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
@@ -60,6 +65,7 @@ interface EditMode {
   mainKeywords?: string[]
   identitySlotIds: Record<string, string>
   gacksungSlots: Record<string, boolean>
+  upties?: Record<string, number>
   skillDistribution?: Record<string, [number, number, number]>
   formationOrder: string[]
   egoSlotIds: Record<string, Record<string, string>>
@@ -69,7 +75,6 @@ type ForkMode = Omit<EditMode, 'deckId'> & { forkedFrom: string }
 
 // CONTENT_TYPES, ContentType, CONTENT_TYPE_COLORS → deck-tokens.ts에서 import
 
-const isGeodun = (ct: string) => ct.startsWith('거던')
 
 interface Props {
   sinners: Sinner[]
@@ -123,6 +128,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const tTempSaves = useTranslations('planner.tempSaves')
   const router = useRouter()
   const initData = editMode ?? forkMode
+  const lcbIdentity = (sinnerId: string) => identities.find(identity => identity.sinner_id === sinnerId && identity.game_id === LCB_IDS[sinnerId])
+  // 12명 모두 항상 인격을 가진다: 비어 있는 수감자는 LCB 인격으로 채운다 (바꿀 수는 있어도 비울 수는 없다)
+  const withLcb = (slots: Record<string, Identity | undefined>) => Object.fromEntries(sinners.map(sinner => [sinner.id, slots[sinner.id] ?? lcbIdentity(sinner.id)]))
   const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
   const tab = (tabParam as Tab) || 'identity'
   const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
@@ -131,9 +139,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       for (const [sinnerId, identityId] of Object.entries(initData.identitySlotIds)) {
         slots[sinnerId] = identities.find(i => i.id === identityId)
       }
-      return slots
+      return withLcb(slots)
     }
-    return {}
+    return withLcb({})
   })
   // egoSlots: sinnerId → { grade → EGO } (등급별 1개), 기본값 = ZAYIN EGO
   const [egoSlots, setEgoSlots] = useState<Record<string, Record<string, EGO>>>(() => {
@@ -169,6 +177,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   // toast는 Sonner가 글로벌로 처리 (showError from lib/toast)
   const [descPreview, setDescPreview] = useState(false)
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
+  const [upties, setUpties] = useState<Record<string, number>>(initData?.upties ?? {})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(initData?.skillDistribution ?? {})
   const [codeInput, setCodeInput] = useState('')
   const [codeCopied, setCodeCopied] = useState(false)
@@ -182,14 +191,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     setDraftSlots(loadDeckDraftSlots())
   }, [])
 
-  // 거던 아닐 때 스킬 편성 탭이면 인격 탭으로 이동
-  useEffect(() => {
-    if (!isGeodun(contentType) && tab === 'skillset') setTab('identity')
-  }, [contentType, tab])
+  // Skills/passives follow each slot's uptie (nearest level the data has).
+  const identityUpties = useMemo(() => new Map(sinners.flatMap(s => deckSlots[s.id] ? [[deckSlots[s.id]!.id, upties[s.id]] as const] : [])), [deckSlots, sinners, upties])
 
   const skillsByIdentityId = useMemo(() => {
     const raw: Record<string, Skill[]> = {}
-    for (const s of skills) {
+    for (const s of rowsAtUptie(skills, identityUpties)) {
       ;(raw[s.identity_id] ??= []).push(s)
     }
     // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
@@ -204,11 +211,11 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       map[id] = [...best.values()].sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
     }
     return map
-  }, [skills])
+  }, [identityUpties, skills])
 
   const passivesByIdentityId = useMemo(() => {
     const raw: Record<string, Passive[]> = {}
-    for (const p of passives) {
+    for (const p of rowsAtUptie(passives, identityUpties)) {
       ;(raw[p.identity_id] ??= []).push(p)
     }
     // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
@@ -223,55 +230,39 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       map[id] = [...best.values()].sort((a, b) => a.passive_order - b.passive_order)
     }
     return map
-  }, [passives])
+  }, [identityUpties, passives])
 
-  const deckStatsData = useMemo(() => {
-    const selectedIdentities = sinners
-      .map(sinner => deckSlots[sinner.id])
-      .filter((identity): identity is Identity => Boolean(identity))
-    const selectedIdentityIds = new Set(selectedIdentities.map(identity => identity.id))
+  // Planner deck panels: keyword distribution, passives, attack types and sin resources.
+  const deckInsights = useMemo(() => {
+    const placed = sinners.flatMap(sinner => deckSlots[sinner.id] ? [{ sinner, identity: deckSlots[sinner.id]! }] : [])
     const selectedEgos = Object.values(egoSlots).flatMap(gradeMap => Object.values(gradeMap))
-
+    const skillsOf = (identity: Identity) => skillsByIdentityId[identity.id] ?? []
+    const sinCounts = computeSinProduction(placed.map(({ sinner, identity }) => ({ skills: skillsOf(identity), distribution: skillDistribution[sinner.id] })))
+    const identities: DeckInsightIdentity[] = placed.map(({ sinner, identity }) => ({
+      id: identity.id,
+      name: localizeIdentityName(identity, locale),
+      sinnerName: sinnerT(sinner.id as Parameters<typeof sinnerT>[0]),
+      imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : '',
+      keywords: identity.skill_keyword_list ?? identity.keywords ?? [],
+      passives: (passivesByIdentityId[identity.id] ?? []).map(passive => ({
+        ...passive,
+        name: localizePassiveName(passive, locale),
+        description: localizePassiveDescription(passive, locale) ?? null,
+      })),
+    }))
     return {
-      identitySlots: selectedIdentities.map(identity => ({
-        identity_id: identity.id,
-        sinner_id: identity.sinner_id,
-        name_kr: localizeIdentityName(identity, locale),
-      })),
-      skills: selectedIdentities.flatMap(identity =>
-        (skillsByIdentityId[identity.id] ?? []).map(skill => ({
-          identity_id: skill.identity_id,
-          sin_affinity: skill.sin_affinity,
-          skill_type: skill.skill_type,
-          skill_order: skill.skill_order,
-          atk_type: (skill as Skill & { atk_type?: string | null }).atk_type,
-          uptie_level: skill.uptie_level,
-          variant_order: skill.variant_order,
-        }))
+      identities,
+      sinCounts,
+      baseSinCounts: computeSinProduction(placed.map(({ identity }) => ({ skills: skillsOf(identity) }))),
+      summary: (
+        <DeckResourceSummary
+          {...computeAttackTypeCounts(placed.map(({ identity }) => skillsOf(identity)), selectedEgos.map(ego => ego.ego_skills))}
+          production={sinCounts}
+          egoCost={computeEgoCostTotals(selectedEgos.map(ego => ego.cost))}
+        />
       ),
-      passives: Array.from(selectedIdentityIds).flatMap(identityId =>
-        (passivesByIdentityId[identityId] ?? []).map(passive => ({
-          identity_id: passive.identity_id,
-          name: localizePassiveName(passive, locale),
-          passive_type: passive.passive_type,
-          sin_affinity: passive.sin_affinity,
-          sin_count: passive.sin_count,
-          active_cond: passive.active_cond,
-          description: localizePassiveDescription(passive, locale),
-          passive_order: passive.passive_order,
-        }))
-      ),
-      sinners: sinners.map(sinner => ({
-        id: sinner.id,
-        name_kr: sinnerT(sinner.id as Parameters<typeof sinnerT>[0]),
-      })),
-      egoCosts: selectedEgos.map(ego => ({ cost: ego.cost })),
-      egoSinAffinities: selectedEgos
-        .map(ego => ego.sin_affinity)
-        .filter((sin): sin is NonNullable<EGO['sin_affinity']> => Boolean(sin)),
-      egoAttackSkills: selectedEgos.map(ego => ego.ego_skills ?? []),
     }
-  }, [deckSlots, egoSlots, locale, passivesByIdentityId, sinners, sinnerT, skillsByIdentityId])
+  }, [deckSlots, egoSlots, locale, passivesByIdentityId, sinners, sinnerT, skillDistribution, skillsByIdentityId])
 
   const deckKeywordSlots = useMemo<DeckKeywordSlot[]>(() => (
     sinners
@@ -330,10 +321,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }).length
   }, [skillDistribution, deckSlots])
 
-  const handleGacksungToggle = (sinnerId: string) => {
-    setGacksungSlots(prev => ({ ...prev, [sinnerId]: !(prev[sinnerId] ?? false) }))
-  }
-
   const handleFormationToggle = (sinnerId: string) => {
     setFormationOrder(prev => {
       if (prev.includes(sinnerId)) return prev.filter(id => id !== sinnerId)
@@ -353,6 +340,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         return {
           identity_id: deckSlots[s.id]!.id,
           gacksung: gacksungSlots[s.id] ?? false,
+          uptie: upties[s.id] ?? 4,
           slot_order: formationOrder.indexOf(s.id) >= 0 ? formationOrder.indexOf(s.id) : 99,
           s1_count: dist[0],
           s2_count: dist[1],
@@ -398,7 +386,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       mainKeywordsManual,
       savedAt: Date.now(),
     }
-    Object.assign(draft, { gacksungSlots, skillDistribution })
+    Object.assign(draft, { gacksungSlots, skillDistribution, upties })
     const slots = saveTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, draft, title.trim() || tTempSaves('untitledDeck'), isDeckDraft)
     if (!slots) { showError(tTempSaves('saveFailed')); return }
     setDraftSlots(slots)
@@ -424,7 +412,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         for (const [sinnerId, identityId] of Object.entries(draft.deckSlotIds)) {
           slots[sinnerId] = identities.find(i => i.id === identityId)
         }
-        setDeckSlots(slots)
+        setDeckSlots(withLcb(slots))
       }
       if (draft.egoSlotIds) {
         const slots: Record<string, Record<string, EGO>> = {}
@@ -438,6 +426,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         setEgoSlots(slots)
       }
       if (draft.gacksungSlots) setGacksungSlots(draft.gacksungSlots)
+      setUpties(draft.upties ?? {})
       if (draft.skillDistribution) setSkillDistribution(draft.skillDistribution as typeof skillDistribution)
       showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
     } catch { /* ignore */ }
@@ -454,7 +443,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const result = await decodeDeckCode(codeInput.trim(), sinners, identities, egos)
     setCodeApplying(false)
     if (!result) { setCodeError(true); return }
-    setDeckSlots(result.deckSlots)
+    setDeckSlots(withLcb(result.deckSlots))
+    setUpties({})
     setEgoSlots(result.egoSlots)
     setFormationOrder(result.formationOrder)
     setCodeInput('')
@@ -471,7 +461,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const tabItems: TabItem[] = [
     { key: 'identity', label: builderT('tabs.identity'), badge: identityCount || undefined, icon: Users },
     { key: 'ego',      label: builderT('tabs.ego'), badge: egoCount || undefined, icon: Sparkles },
-    ...(isGeodun(contentType) ? [{ key: 'skillset', label: builderT('tabs.skillset'), badge: skillsetCustomCount || undefined, icon: SlidersHorizontal }] : []),
+    { key: 'skillset', label: builderT('tabs.skillset'), badge: skillsetCustomCount || undefined, icon: SlidersHorizontal },
     { key: 'note', label: builderT('tabs.note'), icon: FileText },
     // 편성 순서는 인격 탭의 40%/60% 호버로 통합
   ]
@@ -595,32 +585,22 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               sinners={sinners}
               identities={identities}
               deckSlots={deckSlots}
-              gacksungSlots={gacksungSlots}
+              upties={upties}
               mainKeywordCounts={deckKeywordCounts}
               selectedMainKeywords={effectiveMainKeywords}
               maxMainKeywords={MAX_DECK_MAIN_KEYWORDS}
               mainKeywordLabel={deckT('filters.alwaysKeywords')}
-              onGacksungToggle={handleGacksungToggle}
               formationOrder={formationOrder}
               onFormationToggle={handleFormationToggle}
+              onFormationReset={() => setFormationOrder([])}
               onMainKeywordToggle={handleMainKeywordToggle}
-              onIdentitySelect={identity => {
+              onIdentitySelect={(identity, uptie) => {
                 if (!identity) return
                 setDeckSlots(prev => ({ ...prev, [identity.sinner_id]: identity }))
-              }}
-              onIdentityDeselect={sinnerId => {
-                setDeckSlots(prev => { const n = { ...prev }; delete n[sinnerId]; return n })
-                setFormationOrder(prev => prev.filter(id => id !== sinnerId))
+                setUpties(prev => ({ ...prev, [identity.sinner_id]: uptie }))
               }}
             />
 
-            <div className="deck-builder-support-stack">
-              {Object.values(deckSlots).filter(Boolean).length > 0 && (
-                <div className="deck-builder-desktop-stats">
-                  <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
-                </div>
-              )}
-            </div>
           </motion.section>
         )}
         {tab === 'ego' && (
@@ -672,18 +652,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         )}
         {/* 편성 순서 탭 → 인격 탭 40%/60% 호버로 통합 */}
 
-        {/* ── 통계 + 패시브 미리보기 ── */}
-        {tab !== 'note' && tab !== 'identity' && (
-          <motion.div
-            className="deck-builder-support-stack"
-            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {Object.values(deckSlots).filter(Boolean).length > 0 && (
-              <DeckStatsPanel {...deckStatsData} calculationMode="deckDetail" />
-            )}
-          </motion.div>
+        {/* ── 키워드 분포 + 패시브 + 공격 유형/죄악 자원 (플래너와 같은 패널) ── */}
+        {tab !== 'note' && deckInsights.identities.length > 0 && (
+          <DeckInsights
+            identities={deckInsights.identities}
+            sinCounts={deckInsights.sinCounts}
+            baseSinCounts={deckInsights.baseSinCounts}
+            summary={deckInsights.summary}
+          />
         )}
 
         {/* 덱 노트 */}
@@ -722,32 +698,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               border: 1px solid rgba(200, 144, 10, 0.12);
               border-radius: 0.5rem;
               background: rgba(18, 14, 9, 0.42);
-            }
-            .deck-builder-identity-section .deck-stats-panel {
-              margin-top: 0.75rem;
-              gap: 0.625rem;
-            }
-            .deck-builder-desktop-stats {
-              display: none;
-            }
-            .deck-builder-mobile-stats {
-              display: block;
-              margin-bottom: 0.625rem;
-            }
-            .deck-builder-mobile-stats .deck-stats-panel {
-              margin-top: 0;
-            }
-            .deck-builder-support-stack {
-              display: grid;
-              gap: 0.625rem;
-            }
-          }
-          @media (min-width: 640px) {
-            .deck-builder-mobile-stats {
-              display: none;
-            }
-            .deck-builder-desktop-stats {
-              display: block;
             }
           }
         `}</style>
