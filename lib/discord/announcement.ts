@@ -89,10 +89,9 @@ export function announcementDiscordMessages(input: { title: string; doc?: RichNo
   return messages
 }
 
-/** Posts the messages in order. Returns false when the webhook is not configured or any post fails. */
-export async function sendAnnouncementToDiscord(messages: DiscordMessage[]): Promise<boolean> {
-  const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL
-  if (!webhook || messages.length === 0) return false
+/** Posts the messages in order. Returns false when any post fails. */
+export async function sendAnnouncementToDiscord(webhook: string, messages: DiscordMessage[]): Promise<boolean> {
+  if (messages.length === 0) return false
   for (const message of messages) {
     const response = await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(message) }).catch(() => null)
     if (!response?.ok) return false
@@ -103,6 +102,8 @@ export async function sendAnnouncementToDiscord(messages: DiscordMessage[]): Pro
 /** Korean announcements go to the Discord server when they become published. */
 export async function postAnnouncementToDiscord(row: { title: string; content: string; content_doc?: RichNode | null; lang: string }, everyone: boolean) {
   if (row.lang !== 'ko') return 'skipped' as const
+  const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL
+  if (!webhook) return 'unconfigured' as const
   const messages = announcementDiscordMessages({ title: row.title, doc: row.content_doc, content: row.content, url: new URL('/ko/announcements', SITE_URL).toString(), everyone })
-  return (await sendAnnouncementToDiscord(messages)) ? 'sent' as const : 'failed' as const
+  return (await sendAnnouncementToDiscord(webhook, messages)) ? 'sent' as const : 'failed' as const
 }

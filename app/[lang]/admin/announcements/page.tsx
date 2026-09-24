@@ -122,6 +122,7 @@ export default function AdminAnnouncements() {
       )
       if (row.discord === 'sent') showSuccess(ko ? '디스코드에도 보냈습니다.' : ja ? 'Discordにも送信しました。' : 'Posted to Discord.')
       else if (row.discord === 'failed') showError(ko ? '디스코드 전송에 실패했습니다. 웹후크 설정을 확인해 주세요.' : ja ? 'Discordへの送信に失敗しました。' : 'Could not post to Discord.')
+      else if (row.discord === 'unconfigured') showError(ko ? '서버에 디스코드 웹후크(DISCORD_ANNOUNCEMENT_WEBHOOK_URL)가 설정되지 않아 보내지 못했습니다.' : ja ? 'サーバーにDiscord Webhookが設定されていません。' : 'The server has no Discord webhook configured.')
       await load()
     } catch (e) {
       showError(e instanceof Error && e.message ? e.message : failure)
