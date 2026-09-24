@@ -7,10 +7,10 @@ const { createClient } = require('@supabase/supabase-js')
 require('dotenv').config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
 const option = name => args[args.indexOf(name) + 1]
-function selectEntries(manifest, id, infoOnly) {
+function selectEntries(manifest, id, infoOnly, variantsOnly = false) {
   return manifest.filter(entry => entry.kind === '인격'
-    ? new RegExp(`^${id}_(normal|gacksung)${infoOnly ? '_info' : '(_info)?'}$`).test(entry.name)
-    : !infoOnly && entry.kind === '스킬' && entry.name.startsWith(id) && /^\d+(?:_\d+)?$/.test(entry.name))
+    ? !variantsOnly && new RegExp(`^${id}_(normal|gacksung)${infoOnly ? '_info' : '(_info)?'}$`).test(entry.name)
+    : !infoOnly && entry.kind === '스킬' && entry.name.startsWith(id) && (variantsOnly ? /^\d+_\d+$/ : /^\d+(?:_\d+)?$/).test(entry.name))
 }
 async function main() {
   const ids = args.includes('--ids') ? option('--ids').split(',') : []
@@ -23,10 +23,12 @@ async function main() {
   if (error) throw error
   if (identities.length !== ids.length) throw Error('Some identities are missing in DB')
   const manifest = JSON.parse(fs.readFileSync(path.join(source, 'Reports/manifest.json')))
+  // --skill-variants: only uptie icons such as 1010104_4; existing illustrations stay untouched.
+  const variantsOnly = args.includes('--skill-variants')
   const plan = []
   for (const identity of identities) {
     const id = identity.game_id
-    for (const entry of selectEntries(manifest, id, args.includes('--info-only'))) {
+    for (const entry of selectEntries(manifest, id, args.includes('--info-only'), variantsOnly)) {
       let key
       if (entry.kind === '스킬' && /^\d+(?:_\d+)?$/.test(entry.name)) key = `icons/skills/${identity.sinner_id}/${entry.name}.webp`
       else if (entry.kind === '인격' && new RegExp(`^${id}_(normal|gacksung)(_info)?$`).test(entry.name)) key = `sinners/${identity.sinner_id}/identities/${identity.folder_name}/${entry.name}.webp`
@@ -40,7 +42,7 @@ async function main() {
       plan.push({ key, source: entry.path, sourceHash: hash, bytes: webp })
 
     }
-    for (const state of ['normal', 'gacksung']) if (!plan.some(row => row.key.endsWith(`/${id}_${state}${args.includes('--info-only') ? '_info' : ''}.webp`))) throw Error(`Missing illustration: ${id} ${state}`)
+    if (!variantsOnly) for (const state of ['normal', 'gacksung']) if (!plan.some(row => row.key.endsWith(`/${id}_${state}${args.includes('--info-only') ? '_info' : ''}.webp`))) throw Error(`Missing illustration: ${id} ${state}`)
   }
   if (new Set(plan.map(row => row.key)).size !== plan.length) throw Error('Ambiguous source image names')
   fs.mkdirSync(output, { recursive: true })
