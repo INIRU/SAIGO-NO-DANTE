@@ -5,7 +5,7 @@ import { Link } from '@/lib/i18n/navigation'
 import { ArrowUpRight, ChevronDown, Megaphone } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
-import { type RichNode } from '@/lib/announcements'
+import type { RichNode } from '@/lib/announcements'
 import './announcement-banner.css'
 
 export type AnnouncementData = {

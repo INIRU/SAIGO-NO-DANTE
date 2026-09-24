@@ -4,12 +4,13 @@ import { useRef, useState, useCallback, useMemo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { ArrowUpRight } from 'lucide-react'
 
 import { useTranslations, useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import type { SupportedLang } from '@/lib/i18n/types'
-import GlitchText from '@/components/ui/GlitchText'
+import HeroWordmark from '@/components/home/HeroWordmark'
+import DanteLogo from '@/components/brand/DanteLogo'
+import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
 import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
 import ScrollAnimations from '@/components/home/ScrollAnimations'
 import {
@@ -24,106 +25,25 @@ const HeroGlitchSlider = dynamic(
   { ssr: false }
 )
 
-// ── SVG icons ─────────────────────────────────────────────────────────────
-
-
-type HeroActionGlyphKind = 'prisoner-list' | 'deck-board' | 'mirror-dungeon-planner'
-
-function HeroActionGlyph({
-  kind,
-  size = '1rem',
-  style,
-}: {
-  kind: HeroActionGlyphKind
-  size?: string
-  style?: React.CSSProperties
-}) {
-  const common = {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    style,
-    'aria-hidden': true,
-  }
-
-  if (kind === 'prisoner-list') {
-    return (
-      <svg {...common}>
-        <rect x="5" y="3" width="14" height="18" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-        <path d="M9 10.2c0-1.8 1.2-3.2 3-3.2s3 1.4 3 3.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M8.2 15.3c1-1.4 2.2-2.1 3.8-2.1s2.8.7 3.8 2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M8 18h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M17 4.5h2.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    )
-  }
-
-  if (kind === 'deck-board') {
-    return (
-      <svg {...common}>
-        <rect x="6" y="5" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(-8 6 5)" />
-        <rect x="9" y="4" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(8 9 4)" />
-        <path d="M8 15l4-4 4 3 3-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="8" cy="15" r="1.2" fill="currentColor" />
-        <circle cx="12" cy="11" r="1.2" fill="currentColor" />
-        <circle cx="16" cy="14" r="1.2" fill="currentColor" />
-      </svg>
-    )
-  }
-
-  return (
-    <svg {...common}>
-      <path d="M12 2.8l7 4v10.4l-7 4-7-4V6.8l7-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M12 7v4.5m0 0l-4 3.5m4-3.5l4 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="12" cy="7" r="1.5" fill="currentColor" />
-      <circle cx="8" cy="15" r="1.5" fill="currentColor" />
-      <circle cx="16" cy="15" r="1.5" fill="currentColor" />
-      <path d="M7.5 7.5l3.2 2.3M16.5 7.5l-3.2 2.3" stroke="currentColor" strokeWidth="1.2" opacity="0.7" />
-    </svg>
-  )
-}
-
-function PrimaryActionIcon({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="h-[1.875rem] w-[1.875rem] shrink-0 rounded-[0.1875rem] bg-[rgba(13,11,8,0.22)] text-[var(--bg-deep)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-[0.125rem] group-hover:-translate-y-[0.0625rem] group-active:translate-x-0 group-active:translate-y-0"
-      style={{ display: 'grid', placeItems: 'center' }}
-      aria-hidden="true"
-    >
-      {children}
-    </span>
-  )
-}
+const ACTION_BASE =
+  'flex min-h-[3rem] min-w-0 items-center gap-2.5 rounded-md px-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]'
 
 function CommandUtilityLink({
   href,
   children,
   icon,
-  className = '',
 }: {
   href: string
   children: React.ReactNode
   icon: React.ReactNode
-  className?: string
 }) {
   return (
     <Link
       href={href}
-      className={`group flex min-h-[2.5rem] min-w-0 items-center justify-between gap-2 border border-[rgba(200,144,10,0.28)] bg-[rgba(26,21,16,0.56)] px-3 py-2 text-[0.75rem] font-medium text-[rgba(232,196,120,0.74)] shadow-[inset_0_0.0625rem_0_rgba(232,176,48,0.08)] transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:border-[rgba(232,176,48,0.5)] hover:bg-[rgba(36,29,21,0.8)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0 md:min-h-[3rem] md:gap-3 md:px-4 md:py-3 md:text-[0.8125rem] ${className}`}
+      className={`group ${ACTION_BASE} border border-[rgba(200,144,10,0.32)] bg-[rgba(23,18,12,0.72)] text-[0.875rem] font-medium text-[var(--text-primary)] hover:border-[rgba(232,176,48,0.6)] hover:bg-[rgba(36,29,21,0.9)]`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="text-[rgba(232,176,48,0.55)] transition-colors duration-300 group-hover:text-[var(--gold-light)]" aria-hidden="true">
-          {icon}
-        </span>
-        <span className="truncate">{children}</span>
-      </span>
-      <ArrowUpRight
-        size="0.875rem"
-        strokeWidth={1.7}
-        className="shrink-0 opacity-45 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-[0.125rem] group-hover:-translate-y-[0.125rem] group-hover:opacity-80"
-        aria-hidden="true"
-      />
+      <span className="shrink-0 text-[var(--gold)] transition-colors duration-200 group-hover:text-[var(--gold-light)]">{icon}</span>
+      <span className="truncate">{children}</span>
     </Link>
   )
 }
@@ -221,17 +141,13 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         .home-command-actions {
           animation: homeHeroRiseReveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
         }
-        .home-scroll-prompt {
-          animation: homeHeroRiseReveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.26s both;
-        }
         @media (prefers-reduced-motion: reduce) {
           .home-command-surface,
           .home-logo-mark,
           .home-brand-title,
           .home-subtitle,
           .home-meta-strip,
-          .home-command-actions,
-          .home-scroll-prompt {
+          .home-command-actions {
             animation: none !important;
             opacity: 1 !important;
             transform: none !important;
@@ -306,104 +222,54 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         )}
 
         {/* 텍스트 콘텐츠 */}
-        <div
-          className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30dvh] sm:px-6 md:max-w-[38rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7dvh,6rem)] md:pt-[clamp(5rem,10dvh,6rem)] lg:max-w-[42rem] lg:px-24"
-        >
-          <div className="home-command-surface max-w-full bg-[linear-gradient(90deg,rgba(13,11,8,0.64),rgba(13,11,8,0.22)_78%,transparent)] pl-3 opacity-0 sm:pl-4 md:bg-[linear-gradient(90deg,rgba(13,11,8,0.9),rgba(13,11,8,0.48)_78%,transparent)] md:pl-6">
-            <div className="mb-3 flex items-center gap-3 md:mb-5 md:gap-4">
-              <Image
-                src="/images/logo-hero.webp"
-                alt=""
-                width={66}
-                height={82}
-                unoptimized
-                loading="eager"
-                className="home-logo-mark h-auto w-[1.5rem] opacity-0 sm:w-[2rem] md:w-[4.125rem]"
-                style={{ flexShrink: 0 }}
-              />
-              <GlitchText
-                text="SAIGO NO DANTE"
-                tag="h1"
-                className="home-brand-title text-pretty font-display text-[1.5625rem] leading-[0.94] tracking-wider opacity-0 sm:text-[2rem] md:text-[3.875rem]"
-                style={{ color: 'var(--gold)' } as React.CSSProperties}
-              />
+        <div className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30dvh] sm:px-6 md:max-w-[40rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7dvh,6rem)] md:pt-[clamp(5rem,10dvh,6rem)] lg:max-w-[46rem] lg:px-24">
+          <div className="home-command-surface max-w-[32rem] opacity-0">
+            <div className="flex items-center gap-3 md:gap-5">
+              <DanteLogo size="2.75rem" className="home-logo-mark shrink-0 text-[var(--gold-light)] opacity-0 md:h-[4.5rem] md:w-[4.5rem]" />
+              <HeroWordmark className="home-brand-title text-[length:clamp(2.75rem,11vw,3.5rem)] opacity-0 md:text-[4.75rem]" />
             </div>
 
-          <p
-            className="home-subtitle mb-3 max-w-[29rem] text-[0.8125rem] tracking-wider md:mb-6 md:text-lg"
-            style={{ color: 'rgba(232,196,120,0.5)', opacity: 0, fontWeight: 300 }}
-            suppressHydrationWarning
-          >
-            <span style={{ fontFamily: "'Song Myung', Georgia, serif", fontStyle: 'italic' }}>
-              Limbus Company
-            </span>{' '}
-            <span style={{ fontFamily: 'var(--font-body)' }}>{t('home.fanArchive')}</span>
-          </p>
+            <p className="home-subtitle mt-3 text-[0.9375rem] leading-snug text-[var(--text-secondary)] opacity-0 md:mt-4 md:text-[1.0625rem]">
+              Limbus Company {t('home.fanArchive')}
+            </p>
 
-          {/* 현재 슬라이드 인격 정보 */}
-          {selectedIdentity && (
-            <div className="home-meta-strip mb-4 max-w-[34rem] opacity-0 md:mb-8" suppressHydrationWarning>
-              <div className="relative min-w-0">
-                <div className="mb-2 flex min-w-0 items-center gap-2.5">
+            {/* 현재 슬라이드 인격 정보 */}
+            {selectedIdentity && (
+              <div className="home-meta-strip mt-6 min-w-0 border-l-2 border-[rgba(200,144,10,0.55)] pl-3.5 opacity-0 md:mt-9 md:pl-4" suppressHydrationWarning>
+                <div className="flex items-center gap-2 text-[0.75rem] leading-none text-[var(--text-muted)]">
                   <RarityIcon rarity={selectedIdentity.rarity} />
-                  <span className="font-mono text-[0.625rem] leading-none text-[rgba(232,176,48,0.55)]">
+                  <span className="tabular-nums">
                     {selectedIdentity.acquisition_info?.release_season ? `S${selectedIdentity.acquisition_info.release_season}` : selectedIdentity.release_date}
                   </span>
                 </div>
-                <div
-                  className="truncate font-serif text-[0.9375rem] font-bold leading-tight text-[var(--gold-light)] md:text-[1.0625rem]"
+                <p
+                  className="mt-2 truncate font-heading text-[1.125rem] leading-tight text-[var(--gold-light)] md:text-[1.3125rem]"
                   title={getName(selectedIdentity.name_kr, selectedIdentity.name_en, selectedIdentity.name_jp)}
                 >
                   {getName(selectedIdentity.name_kr, selectedIdentity.name_en, selectedIdentity.name_jp)}
-                </div>
-                <div className="mt-1 flex min-w-0 items-center gap-2 text-[0.6875rem] leading-none text-[var(--text-muted)]">
-                  <span className="truncate font-title">
-                    {getName(selectedIdentity.sinner?.name_kr, selectedIdentity.sinner?.name_en, selectedIdentity.sinner?.name_jp)}
-                  </span>
-                </div>
+                </p>
+                <p className="mt-1 truncate text-[0.8125rem] text-[var(--text-secondary)]">
+                  {getName(selectedIdentity.sinner?.name_kr, selectedIdentity.sinner?.name_en, selectedIdentity.sinner?.name_jp)}
+                </p>
               </div>
+            )}
+
+            <div className="home-command-actions mt-6 grid grid-cols-2 gap-2 opacity-0 md:mt-8 md:gap-2.5" suppressHydrationWarning>
+              <Link
+                href="/sinners"
+                className={`col-span-2 ${ACTION_BASE} bg-[var(--gold)] text-[0.9375rem] font-semibold text-[var(--bg-deep)] hover:bg-[var(--gold-light)] md:min-h-[3.25rem]`}
+              >
+                <SinnerRosterIcon size="1.25rem" className="shrink-0" />
+                <span className="truncate">{t('home.cta.sinners')}</span>
+              </Link>
+              <CommandUtilityLink href="/decks" icon={<DeckBoardIcon size="1.25rem" />}>
+                {t('home.cta.decks')}
+              </CommandUtilityLink>
+              <CommandUtilityLink href="/planner/community" icon={<MirrorDungeonIcon size="1.25rem" />}>
+                {t('home.cta.planner')}
+              </CommandUtilityLink>
             </div>
-          )}
-
-          <div className="home-command-actions grid max-w-[37rem] grid-cols-2 gap-1.5 opacity-0 md:grid-cols-[1fr_1.08fr] md:gap-3" suppressHydrationWarning>
-            <Link
-              href="/sinners"
-              className="group col-span-2 flex min-h-[2.875rem] items-center justify-between gap-4 bg-[var(--gold)] px-4 py-2.5 text-[0.875rem] font-semibold text-[var(--bg-deep)] shadow-[0_0.75rem_2rem_rgba(0,0,0,0.22),inset_0_0.0625rem_0_rgba(255,244,190,0.32)] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.0625rem] hover:bg-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.65)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)] active:translate-y-0 md:min-h-[3.5rem] md:py-3 md:text-[0.9375rem]"
-            >
-              <span className="truncate">{t('home.cta.sinners')}</span>
-              <PrimaryActionIcon>
-                <HeroActionGlyph kind="prisoner-list" size="1rem" />
-              </PrimaryActionIcon>
-            </Link>
-            <CommandUtilityLink href="/decks" icon={<HeroActionGlyph kind="deck-board" size="0.9375rem" />}>
-              {t('home.cta.decks')}
-            </CommandUtilityLink>
-            <CommandUtilityLink href="/planner/community" icon={<HeroActionGlyph kind="mirror-dungeon-planner" size="0.9375rem" />}>
-              {t('home.cta.planner')}
-            </CommandUtilityLink>
           </div>
-          </div>
-        </div>
-
-        {/* 스크롤 유도 */}
-        <div
-          className="home-scroll-prompt absolute bottom-10 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 opacity-0 md:flex"
-          style={{ color: 'rgba(200,164,90,0.28)' }}
-        >
-          <span
-            className="text-xs tracking-widest font-mono"
-            style={{ letterSpacing: '0.3em', fontSize: '0.5625rem' }}
-          >
-            SCROLL
-          </span>
-          <div
-            style={{
-              width: '0.0625rem',
-              height: '1.5rem',
-              background: 'linear-gradient(to bottom, rgba(200,144,10,0.4), transparent)',
-              animation: 'scrollPulse 2s ease-in-out infinite',
-            }}
-          />
         </div>
       </section>
 
