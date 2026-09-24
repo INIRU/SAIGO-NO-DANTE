@@ -4,7 +4,6 @@ import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import { X } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -18,6 +17,8 @@ interface ThemePackModalShellProps {
   meta?: ReactNode
   maxWidth?: string
   closeLabel: string
+  /** Pack poster shown beside the title; replaces the faded banner image. */
+  poster?: ReactNode
 }
 
 export function ThemePackModalShell({
@@ -30,25 +31,20 @@ export function ThemePackModalShell({
   meta,
   maxWidth = '52rem',
   closeLabel,
+  poster,
 }: ThemePackModalShellProps) {
-  const reduceMotion = useReducedMotion()
-
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth={maxWidth} padding="1rem" title={title}>
-      <motion.div
-        className="relative w-full overflow-hidden"
+    <BaseModal open={true} onClose={onClose} maxWidth={maxWidth} padding="1rem" title={title} sheet>
+      <div
+        className="relative w-full overflow-hidden rounded-t-xl sm:rounded-xl"
         style={{
-          maxHeight: '85vh',
-          borderRadius: '0.75rem',
-          background: '#131110',
-          border: '1px solid rgba(200,144,10,0.12)',
-          boxShadow: '0 0 3rem rgba(200,144,10,0.08), 0 1.5rem 4rem rgba(0,0,0,0.6)',
+          maxHeight: '88dvh',
+          background: '#17120c',
+          border: '1px solid #2e2417',
+          boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
-        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: reduceMotion ? 0.01 : 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div style={{ maxHeight: '85vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div style={{ maxHeight: '88dvh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
           <button
             type="button"
             onClick={onClose}
@@ -67,6 +63,18 @@ export function ThemePackModalShell({
             <X size={18} aria-hidden="true" />
           </button>
 
+          {poster ? (
+            <div className="flex items-end gap-4 px-5 pb-4 pr-14 pt-5 sm:gap-6">
+              <div className="w-[5.5rem] shrink-0 sm:w-[8.5rem]">{poster}</div>
+              <div className="min-w-0 flex-1 pb-1">
+                {eyebrow && <div className="mb-2">{eyebrow}</div>}
+                <h3 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.375rem, 4vw, 1.875rem)', lineHeight: 1.25, color: '#e8dcc8' }}>
+                  {title}
+                </h3>
+                {meta && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{meta}</div>}
+              </div>
+            </div>
+          ) : (
           <div className="relative overflow-hidden" style={{ minHeight: imageUrl ? '11rem' : '7.5rem' }}>
             {imageUrl ? (
               <>
@@ -109,10 +117,11 @@ export function ThemePackModalShell({
               {meta && <div className="mt-1.5 flex flex-wrap items-center gap-2">{meta}</div>}
             </div>
           </div>
+          )}
 
           <div className="px-5 pb-5">{children}</div>
         </div>
-      </motion.div>
+      </div>
     </BaseModal>
   )
 }
@@ -148,11 +157,11 @@ export function ThemePackModalPill({ children, tone = 'neutral' }: ThemePackModa
 
   return (
     <span
-      className="inline-flex items-center rounded-full font-mono font-semibold"
+      className="inline-flex items-center rounded-sm"
       style={{
-        minHeight: '2rem',
-        padding: '0.125rem 0.625rem',
-        fontSize: '0.875rem',
+        minHeight: '1.75rem',
+        padding: '0.125rem 0.5rem',
+        fontSize: '0.8125rem',
         ...styles,
       }}
     >
@@ -276,7 +285,6 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   lang,
   meta,
 }: ThemePackPickerModalProps<TTheme>) {
-  const reduceMotion = useReducedMotion()
 
   return (
     <ThemePackModalShell
@@ -297,22 +305,16 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
               gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr))',
             }}
           >
-            {themes.map((theme, index) => (
-              <motion.div
+            {themes.map(theme => (
+              <ThemePackCard
                 key={String(theme.id)}
-                initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.985 }}
-                animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.18, delay: Math.min(index, 12) * 0.015, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <ThemePackCard
-                  theme={theme}
-                  onClick={() => onSelectTheme(theme)}
-                  isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-                  showGiftCount
-                  imageSurface="bare"
-                  lang={lang}
-                />
-              </motion.div>
+                theme={theme}
+                onClick={() => onSelectTheme(theme)}
+                isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
+                showGiftCount
+                imageSurface="bare"
+                lang={lang}
+              />
             ))}
           </div>
         )}

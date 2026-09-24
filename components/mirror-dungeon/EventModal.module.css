@@ -78,6 +78,13 @@
 .giftReward > p { white-space: normal !important; overflow: visible !important; margin-top: 0 !important; font-size: .625rem !important; color: var(--text-primary) !important; }
 .giftReward:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
 .jumpToChoices { display: none; }
+.pageLink { display: flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .5rem; color: var(--gold-light); font-size: .75rem; letter-spacing: 0; white-space: nowrap; }
+.pageLink:hover { text-decoration: underline; text-underline-offset: .25rem; }
+.pageLink:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
+@media (max-width: 47.99rem) {
+  .toolbar:has(.pageLink) { gap: .25rem; letter-spacing: 0; white-space: nowrap; }
+  .toolbar:has(.pageLink) .jumpToChoices { white-space: nowrap; }
+}
 @media (max-width: 47.99rem) {
   .toolbar .recordId { display: none; }
   .jumpToChoices { display: flex; align-items: center; gap: .375rem; margin-left: auto; padding: .5rem; color: var(--gold-light); font-size: .75rem; cursor: pointer; }

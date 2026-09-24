@@ -2,8 +2,8 @@
 
 import { getRootEvents } from '@/lib/utils/event-catalog'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { motion } from 'motion/react'
+import { memo, useState, useMemo, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { fadeInUp } from '@/lib/animations'
@@ -15,12 +15,16 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/sinners/KeywordTooltip'
 import type { EgoGift, Recipe, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
-import GiftTab from '@/components/mirror-dungeon/GiftTab'
-import ThemeTab from '@/components/mirror-dungeon/ThemeTab'
+import GiftTabView from '@/components/mirror-dungeon/GiftTab'
+import ThemeTabView from '@/components/mirror-dungeon/ThemeTab'
 import EventTab from '@/components/mirror-dungeon/EventTab'
+import PageHeader from '@/components/ui/PageHeader'
 const ThemeModal = dynamic(() => import('@/components/mirror-dungeon/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'), { ssr: false })
 const EventModal = dynamic(() => import('@/components/mirror-dungeon/EventModal'), { ssr: false })
+// Opening a modal changes page state; memo keeps the 448-gift and 117-pack grids from re-rendering underneath it.
+const GiftTab = memo(GiftTabView)
+const ThemeTab = memo(ThemeTabView)
 
 export default function MirrorDungeonClient({
   lang,
@@ -38,6 +42,7 @@ export default function MirrorDungeonClient({
   choices?: MdEventChoice[]
 }) {
   useRoutePrefetch([`/${lang}/keywords`])
+  const tp = useTranslations('mirrorDungeonPage')
   const t = (key: string) => {
     const entry = translations[key as keyof typeof translations]
     if (!entry) return key
@@ -110,6 +115,13 @@ export default function MirrorDungeonClient({
 
   const setSearch = useCallback((v: string) => setSearchParam(v || null), [setSearchParam])
   const [inputValue, setInputValue] = useState(search)
+  // Load the modal chunks while idle so the first click opens without a network round trip.
+  useEffect(() => {
+    const load = () => { void import('@/components/mirror-dungeon/ThemeModal'); void import('@/components/mirror-dungeon/GiftModal') }
+    if (typeof requestIdleCallback === 'undefined') { const id = setTimeout(load, 1500); return () => clearTimeout(id) }
+    const id = requestIdleCallback(load, { timeout: 3000 })
+    return () => cancelIdleCallback(id)
+  }, [])
   useEffect(() => {
     const t = setTimeout(() => setSearch(inputValue), 300)
     return () => clearTimeout(t)
@@ -288,153 +300,52 @@ export default function MirrorDungeonClient({
     setSelected(gift)
   }, [])
 
+  const tabs = (['gifts', 'themes', 'events'] as const).map(tab => ({
+    key: tab,
+    label: tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events'),
+    count: tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : eventCount,
+  }))
+
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto" style={{ position: 'relative' }}>
-      {/* Background atmospheric glow */}
-      <div style={{
-        position: 'fixed',
-        top: '-10rem',
-        right: '-5rem',
-        width: '35rem',
-        height: '35rem',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(200,144,10,0.04) 0%, rgba(200,144,10,0.015) 40%, transparent 70%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }} />
-
+    <div className="min-h-screen pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
       {/* 헤더 + 탭 */}
-      <div className="mb-10">
-        <div className="flex items-end justify-between mb-4 md:mb-6" style={{ position: 'relative', zIndex: 1 }}>
-          <div>
-            <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
-              style={{
-                width: '4rem',
-                height: '0.0625rem',
-                background: 'linear-gradient(90deg, rgba(200,144,10,0.6), transparent)',
-                marginBottom: '1rem',
-                transformOrigin: 'left',
-              }}
-            />
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
-              style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.15em', marginBottom: '0.375rem' }}
-            >
-              E.G.O GIFT ARCHIVE
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.33, 1, 0.68, 1] }}
-              className="font-serif text-3xl md:text-4xl font-bold"
-              style={{ color: 'var(--gold)', textShadow: '0 0 3rem rgba(200,144,10,0.15)' }}
-            >
-              {lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'}
-            </motion.h1>
-            <p className="mt-2" style={{ color: '#666688', fontSize: '0.8125rem' }}>
-              {lang === 'ko' ? 'E.G.O 기프트 도감 · 테마팩 · 조합 레시피' : lang === 'ja' ? 'E.G.Oギフト図鑑 · テーマパック · 合成レシピ' : 'E.G.O Gift Archive · Theme Packs · Recipes'}
-            </p>
-          </div>
+      <div className="mb-2">
+        <PageHeader title={lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'} description={tp('intro')} />
 
-          {/* 데스크톱 탭 */}
-          {themes.length > 0 && (
-            <div
-              className="hidden md:flex"
-              style={{
-                background: 'rgba(10,8,5,0.7)',
-                border: '1px solid var(--border)',
-                borderRadius: '0.5rem',
-                padding: '0.1875rem',
-                gap: '0.125rem',
-              }}
-            >
-              {(['gifts', 'themes', 'events'] as const).map(tab => {
-                const isActive = activeTab === tab
-                const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
-                const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : eventCount
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className="flex items-center gap-1.5 px-4 py-2 transition-all duration-200"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: '0.8125rem',
-                      fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#0d0b08' : '#666660',
-                      background: isActive ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)' : 'transparent',
-                      borderRadius: '0.375rem',
-                      boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
-                      cursor: 'pointer',
-                      minWidth: '6rem',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {label}
-                    <span style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700, opacity: isActive ? 0.7 : 0.5 }}>
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* 모바일 탭 */}
         {themes.length > 0 && (
-          <div
-            className="flex md:hidden mb-4"
-            style={{
-              background: 'rgba(10,8,5,0.7)',
-              border: '1px solid var(--border)',
-              borderRadius: '0.5rem',
-              padding: '0.1875rem',
-              gap: '0.125rem',
-            }}
-          >
-            {(['gifts', 'themes', 'events'] as const).map(tab => {
-              const isActive = activeTab === tab
-              const label = tab === 'gifts' ? t('mirrorDungeon.tab.gifts') : tab === 'themes' ? t('mirrorDungeon.tab.themes') : t('mirrorDungeon.tab.events')
-              const count = tab === 'gifts' ? gifts.length : tab === 'themes' ? themes.length : eventCount
+          <div role="tablist" aria-label={tp('tabsLabel')} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ borderBottom: '1px solid #2e2417' }}>
+            {tabs.map(tab => {
+              const isActive = activeTab === tab.key
               return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className="flex flex-1 items-center gap-1.5 px-3 py-2 transition-all duration-200"
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex min-h-[3rem] flex-1 shrink-0 items-baseline justify-center gap-1.5 px-3 pt-2 transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)] sm:flex-none sm:justify-start sm:px-5"
                   style={{
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '0.8125rem',
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? '#0d0b08' : '#666660',
-                    background: isActive ? 'linear-gradient(135deg, var(--gold) 0%, #e8b030 100%)' : 'transparent',
-                    borderRadius: '0.375rem',
-                    boxShadow: isActive ? '0 0.125rem 0.5rem rgba(200,144,10,0.3)' : 'none',
+                    fontSize: '1.0625rem',
+                    color: isActive ? 'var(--text-primary)' : '#9c8b73',
+                    borderBottom: `3px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
+                    marginBottom: '-1px',
                     cursor: 'pointer',
-                    justifyContent: 'center',
                   }}
                 >
-                  {label}
-                  <span style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', fontWeight: 700, opacity: isActive ? 0.7 : 0.5 }}>
-                    {count}
+                  {tab.label}
+                  <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1, color: isActive ? 'var(--gold-light)' : '#6a6058' }}>
+                    {tab.count}
                   </span>
                 </button>
               )
             })}
           </div>
         )}
-
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent 60%)' }} />
       </div>
 
       {/* 기프트 탭 */}
       {activeTab === 'gifts' && (
-        <ScrollReveal variant={fadeInUp} as="div">
           <GiftTab
             gifts={gifts}
             themes={themes}
@@ -463,12 +374,10 @@ export default function MirrorDungeonClient({
             giftImageMap={giftImageMap}
             onSelectGift={setSelected}
           />
-        </ScrollReveal>
       )}
 
       {/* 테마팩 탭 */}
       {activeTab === 'themes' && themes.length > 0 && (
-        <ScrollReveal variant={fadeInUp} as="div">
           <ThemeTab
             lang={lang}
             themes={themes}
@@ -480,7 +389,6 @@ export default function MirrorDungeonClient({
             setThemeDiffFilter={setThemeDiffFilter}
             onThemeClick={setExpandedThemeId}
           />
-        </ScrollReveal>
       )}
 
       {/* 이벤트 탭 */}
@@ -540,6 +448,8 @@ export default function MirrorDungeonClient({
             getGiftKeywordIcon={getGiftKeywordIcon}
             themes={themes}
             onThemeClick={setExpandedThemeId}
+            gifts={gifts}
+            onSelectGift={setSelected}
           />
         )
       })()}
