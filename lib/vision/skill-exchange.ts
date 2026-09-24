@@ -24,8 +24,13 @@ export function readSkillExchange(text: string): SkillExchangeRead | null {
   const current = counts.length === 3 && counts.every(Number.isInteger) && counts[0] + counts[1] + counts[2] === 6
     ? counts as SkillCounts : null
   if (!current && !lines.some(line => line.includes('스킬보유현황'))) return null
-  const sinners = new Set(lines.flatMap(line => SINNER_NAMES.filter(({ names }) =>
-    names.some(name => line.startsWith(name) && /^(스킬|skill|スキル)/.test(line.slice(name.length)))).map(item => item.sinner)))
+  const titled = (match: (name: string, read: string) => boolean) => new Set(lines.flatMap(line => {
+    const read = /^(.+?)(스킬|skill|スキル)/.exec(line)?.[1]
+    return read ? SINNER_NAMES.filter(({ names }) => names.some(name => match(name, read))).map(item => item.sinner) : []
+  }))
+  const exact = titled((name, read) => name === read)
+  // A name misread by one letter ("로쟈" as "로샤") still counts when only one sinner is that close.
+  const sinners = exact.size ? exact : titled((name, read) => name.length === read.length && [...name].filter((char, i) => char !== read[i]).length === 1)
   return sinners.size === 1 ? { sinner: [...sinners][0], current } : null
 }
 
