@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowLeft, RotateCcw, MonitorUp } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
-import { buildGiftMap } from '@/lib/planner/fusion'
+import { buildGiftMap, resolveRecipeResult } from '@/lib/planner/fusion'
 import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlannerState, saveDraftToLocal } from '@/lib/planner/encoder'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
@@ -74,7 +74,11 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     setDetection(next)
     try { window.localStorage.setItem(DETECTION_STORAGE_KEY, JSON.stringify(next)) } catch { /* applies to this session */ }
   }
-  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection,
+  const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  // A result popup the recognizer cannot settle may still be the only fixed-recipe result the current inventory can make.
+  const resolvePopup = useCallback((candidates: string[], inFusion: boolean) =>
+    resolveRecipeResult(candidates, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup,
     language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
@@ -90,7 +94,6 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     ...(ocrCandidates?.events.map(item => Number(item.id)) ?? []),
     ...(ocrCandidates?.choices.map(item => Number(item.eventId)) ?? []),
   ].filter(Number.isInteger))]
-  const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   const giftConditionState = useMemo(() => ({
     ...state,
     identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),
