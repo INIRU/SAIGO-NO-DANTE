@@ -124,6 +124,8 @@ export const announcementSchema = z
     lang: z.enum(['ko', 'en', 'ja']).default('ko'),
     pinned: z.boolean().default(false),
     published: z.boolean().default(false),
+    // 저장하지 않는 전송 옵션: 게시되는 순간 디스코드 알림에 @everyone을 붙인다
+    discord_everyone: z.boolean().default(false),
   })
   .refine(
     (v) =>

@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import SupportDesk from '@/components/support/SupportDesk'
+import SupportSkeleton from '@/components/support/SupportSkeleton'
 type Props = { searchParams: Promise<{ topic?: string }> }
 async function SupportContent({ searchParams }: Props) {
   const { topic } = await searchParams
@@ -8,10 +9,8 @@ async function SupportContent({ searchParams }: Props) {
 }
 export default function SupportPage({ searchParams }: Props) {
   return (
-    <div className="mx-auto max-w-6xl px-5 pb-16 pt-28">
-      <Suspense fallback={<p>…</p>}>
-        <SupportContent searchParams={searchParams} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<SupportSkeleton />}>
+      <SupportContent searchParams={searchParams} />
+    </Suspense>
   )
 }

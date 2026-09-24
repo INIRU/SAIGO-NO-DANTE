@@ -41,7 +41,7 @@ function Avatar({ user, size = 36 }: { user: User; size?: number }) {
   return <ImageWithFallback src={user.avatar_url || DEFAULT_AVATAR_URL} width={size} height={size} alt="" className="admin-users-avatar" />
 }
 function Status({ restricted, c }: { restricted: boolean; c: Copy }) {
-  return <span className="admin-users-status" data-restricted={restricted}><span aria-hidden="true" />{restricted ? c.suspended : c.active}</span>
+  return <span className="admin-chip" data-tone={restricted ? 'danger' : 'ok'}>{restricted ? c.suspended : c.active}</span>
 }
 export default function AdminUsers() {
   const locale = useLocale()
@@ -59,8 +59,9 @@ export default function AdminUsers() {
   const currentId = data?.users.some(u => u.id === selectedId) ? selectedId : data?.users[0]?.id
   const date = (value: string | null) => value ? new Date(value).toLocaleDateString(locale) : c.unknown
   function reset() { setPage(1); setSelectedId(null); setMobileDetail(false) }
-  return <section className="admin-users">
-    <header className="admin-users-heading"><h1>{c.title}</h1><p>{c.intro}</p></header>
+  return <section className="admin-page admin-users">
+    <header className="admin-topbar"><div><h1>{c.title}</h1><p>{c.intro}</p></div></header>
+    <div className="admin-body admin-users-body">
     <div className="admin-users-toolbar">
       <label className="admin-users-search"><Search size={18} aria-hidden="true" /><input aria-label={c.search} placeholder={c.search} value={search} maxLength={100} onChange={e => { setSearch(e.target.value); reset() }} /></label>
       <div className="admin-users-filters" aria-label={c.status}>{(['all', 'active', 'suspended'] as const).map(s => <button key={s} type="button" aria-pressed={status === s} onClick={() => { setStatus(s); reset() }}>{c[s]}</button>)}</div>
@@ -68,7 +69,7 @@ export default function AdminUsers() {
     </div>
     <div className="admin-users-grid" data-detail={mobileDetail}>
       <div className="admin-users-list" ref={listRef} tabIndex={-1}>
-        {error ? <div className="admin-users-message" role="alert"><p>{c.error}</p><button onClick={() => mutate()}>{c.retry}</button></div> : isLoading ? <p className="admin-users-message" role="status">{c.loading}</p> : !data?.users.length ? <div className="admin-users-message"><Users aria-hidden="true" /><p>{c.empty}</p></div> : <>
+        {error ? <div className="admin-users-message" role="alert"><p>{c.error}</p><button className="admin-button" onClick={() => mutate()}>{c.retry}</button></div> : isLoading ? <p className="admin-users-message" role="status">{c.loading}</p> : !data?.users.length ? <div className="admin-users-message"><Users aria-hidden="true" /><p>{c.empty}</p></div> : <>
           <table><thead><tr><th>{c.user}</th><th className="admin-users-joined">{c.joined}</th><th>{c.seen}</th><th>{c.status}</th></tr></thead>
             <tbody>{data.users.map(user => <tr key={user.id} data-selected={currentId === user.id}><td><button className="admin-users-person" aria-pressed={currentId === user.id} onClick={() => { setSelectedId(user.id); setMobileDetail(true); requestAnimationFrame(() => detailRef.current?.focus()) }}><Avatar user={user} /><span>{user.username || c.member}</span></button></td><td className="admin-users-joined">{date(user.created_at)}</td><td>{date(user.last_seen_at)}</td><td><Status restricted={user.restricted} c={c} /></td></tr>)}</tbody>
           </table>
@@ -79,6 +80,7 @@ export default function AdminUsers() {
         <button className="admin-users-back" onClick={() => { setMobileDetail(false); requestAnimationFrame(() => listRef.current?.focus()) }}><ArrowLeft size={16} />{c.back}</button>
         {currentId && !error ? <UserDetail key={currentId} id={currentId} c={c} date={date} onUpdated={async () => { await mutate() }} /> : <p className="admin-users-message">{c.pick}</p>}
       </aside>
+    </div>
     </div>
   </section>
 }
@@ -104,7 +106,7 @@ function UserDetail({ id, c, date, onUpdated }: { id: string; c: Copy; date: (v:
     } catch (e) { const message = e instanceof Error ? e.message : c.failed; setActionError(message); showError(message) }
     finally { submitting.current = false; setBusy(false) }
   }
-  if (error) return <div className="admin-users-message" role="alert"><p>{c.error}</p><button onClick={() => mutate()}>{c.retry}</button></div>
+  if (error) return <div className="admin-users-message" role="alert"><p>{c.error}</p><button className="admin-button" onClick={() => mutate()}>{c.retry}</button></div>
   if (!user) return <p className="admin-users-message" role="status">{c.loading}</p>
   const daysLabel = confirm?.durationDays === 7 ? c.days7 : confirm?.durationDays === 30 ? c.days30 : c.forever
   const openConfirmation = () => setConfirm({ suspended: !user.restricted, expectedSuspendedAt: user.suspended_at, ...(!user.restricted ? { reason: reason.trim(), durationDays } : {}) })
@@ -115,17 +117,17 @@ function UserDetail({ id, c, date, onUpdated }: { id: string; c: Copy; date: (v:
     <div className="admin-users-counts"><div><span>{c.decks}</span><strong>{user.deckCount}<small>{c.count}</small></strong></div><div><span>{c.plans}</span><strong>{user.planCount}<small>{c.count}</small></strong></div></div>
     <details className="admin-users-posts"><summary>{c.recent}</summary>{!user.decks.length && !user.plans.length ? <p>{c.noPosts}</p> : <ul>{user.decks.map(p => <li key={p.id}><span>{c.decks}</span><Link href={`/decks/${p.id}`}>{p.title}<ArrowUpRight size={12} /></Link></li>)}{user.plans.map(p => <li key={p.id}><span>{c.plans}</span><Link href={`/planner/community/${p.id}`}>{p.title}<ArrowUpRight size={12} /></Link></li>)}</ul>}</details>
     <section className="admin-users-moderation"><h3>{c.moderation}</h3>
-      {user.protected ? <p className="admin-users-muted">{c.protect}</p> : user.restricted ? <><p className="admin-users-reason">{user.suspension_reason}</p><p className="admin-users-muted">{c.until} · {user.suspended_until ? date(user.suspended_until) : c.forever}</p><button className="admin-users-primary" disabled={busy} onClick={openConfirmation}>{c.release}</button></> : <form onSubmit={e => { e.preventDefault(); openConfirmation() }}>
+      {user.protected ? <p className="admin-users-muted">{c.protect}</p> : user.restricted ? <><p className="admin-users-reason">{user.suspension_reason}</p><dl className="admin-users-dates"><div><dt>{c.until}</dt><dd>{user.suspended_until ? date(user.suspended_until) : c.forever}</dd></div></dl><button className="admin-button primary" disabled={busy} onClick={openConfirmation}>{c.release}</button></> : <form onSubmit={e => { e.preventDefault(); openConfirmation() }}>
         <label htmlFor="admin-suspension-reason">{c.reason}</label><textarea id="admin-suspension-reason" placeholder={c.placeholder} value={reason} onChange={e => setReason(e.target.value)} required maxLength={1000} rows={3} />
         <fieldset><legend>{c.period}</legend>{([7, 30, null] as const).map(d => <label key={String(d)}><input type="radio" name="duration" checked={durationDays === d} onChange={() => setDays(d)} /><span>{d === 7 ? c.days7 : d === 30 ? c.days30 : c.forever}</span></label>)}</fieldset>
-        <button type="submit" className="admin-users-danger" disabled={!reason.trim() || busy}>{c.suspend}</button>
+        <button type="submit" className="admin-button danger" disabled={!reason.trim() || busy}>{c.suspend}</button>
       </form>}
       {actionError && <p role="alert" className="admin-users-action-error">{actionError}</p>}
     </section>
     <details className="admin-users-history"><summary>{c.history}</summary>{user.history.length ? <ul>{user.history.map(h => <li key={h.id}><span>{h.action === 'suspend' ? c.suspend : h.action === 'unsuspend' ? c.release : c.expired}</span><time>{date(h.created_at)}</time>{h.details?.reason && <p>{h.details.reason}</p>}</li>)}</ul> : <p>{c.noHistory}</p>}</details>
     <BaseModal open={confirm !== null} onClose={() => { if (!busy) setConfirm(null) }} title={c.confirm} maxWidth="28rem" className="admin-users-confirm">
-      <h2>{c.confirm}</h2><p><strong>{user.username || c.member}</strong> · {confirm?.suspended ? `${c.suspend} · ${daysLabel}` : c.release}</p>{confirm?.suspended && <p className="admin-users-reason">{confirm.reason}</p>}
-      <div className="admin-users-confirm-actions"><button disabled={busy} onClick={() => setConfirm(null)}>{c.cancel}</button><button className={confirm?.suspended ? 'admin-users-danger' : 'admin-users-primary'} disabled={busy} onClick={save}>{busy ? c.saving : confirm?.suspended ? c.suspend : c.release}</button></div>
+      <h2>{c.confirm}</h2><dl className="admin-users-dates"><div><dt>{c.user}</dt><dd>{user.username || c.member}</dd></div><div><dt>{c.status}</dt><dd>{confirm?.suspended ? c.suspend : c.release}</dd></div>{confirm?.suspended && <div><dt>{c.period}</dt><dd>{daysLabel}</dd></div>}</dl>{confirm?.suspended && <p className="admin-users-reason">{confirm.reason}</p>}
+      <div className="admin-users-confirm-actions"><button className="admin-button" disabled={busy} onClick={() => setConfirm(null)}>{c.cancel}</button><button className={confirm?.suspended ? 'admin-button danger-solid' : 'admin-button primary'} disabled={busy} onClick={save}>{busy ? c.saving : confirm?.suspended ? c.suspend : c.release}</button></div>
     </BaseModal>
   </>
 }

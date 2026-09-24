@@ -8,7 +8,7 @@ import {
   announcementText,
   safeAnnouncementLink,
 } from '@/lib/announcements'
-import { inquirySchema, inquiryReplySchema } from '@/lib/support'
+import { inquirySchema, supportMessageSchema } from '@/lib/support'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 
 describe('announcement content boundary', () => {
@@ -78,12 +78,8 @@ describe('inquiry validation', () => {
       }),
     ).toEqual({ title: '테스트', content: '본문', category: 'bug' })
   })
-  it('requires a real reply before marking answered', () => {
-    expect(
-      inquiryReplySchema.safeParse({ reply: ' ', status: 'answered' }).success,
-    ).toBe(false)
-    expect(
-      inquiryReplySchema.safeParse({ reply: '', status: 'closed' }).success,
-    ).toBe(true)
+  it('rejects blank thread messages', () => {
+    expect(supportMessageSchema.safeParse({ body: ' ' }).success).toBe(false)
+    expect(supportMessageSchema.safeParse({ body: 'Fixed' }).success).toBe(true)
   })
 })

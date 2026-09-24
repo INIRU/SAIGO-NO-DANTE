@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireActiveUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { inquirySchema } from '@/lib/support'
+import { INQUIRY_FIELDS, inquirySchema } from '@/lib/support'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 export async function GET() {
   const auth = await requireActiveUser()
@@ -10,27 +10,18 @@ export async function GET() {
   const db = createAdminClient()
   const userId = await findOrCreateSupabaseUser(db, auth.session.user!.email!)
   if (!userId)
-    return NextResponse.json(
-      { error: '계정을 확인하지 못했습니다.' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: '계정을 확인하지 못했습니다.' }, { status: 500 })
+  // whole threads feed the list preview; fine for short support threads, page it if threads grow long.
   const { data, error } = await db
     .schema('limbus')
     .from('inquiries')
-    .select(
-      'id,title,content,category,status,reply,created_at,updated_at,replied_at,contribution_accepted',
-    )
+    .select(INQUIRY_FIELDS)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(100)
   return error
-    ? NextResponse.json(
-        { error: '문의를 불러오지 못했습니다.' },
-        { status: 500 },
-      )
-    : NextResponse.json(data, {
-        headers: { 'Cache-Control': 'private, no-store' },
-      })
+    ? NextResponse.json({ error: '문의를 불러오지 못했습니다.' }, { status: 500 })
+    : NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 export async function POST(request: Request) {
   const auth = await requireActiveUser()
@@ -43,27 +34,26 @@ export async function POST(request: Request) {
   if (!limit.allowed) return rateLimitResponse(limit)
   const parsed = inquirySchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success)
-    return NextResponse.json(
-      { error: '제목과 문의 내용을 확인해주세요.' },
-      { status: 400 },
-    )
+    return NextResponse.json({ error: '제목과 문의 내용을 확인해주세요.' }, { status: 400 })
   const db = createAdminClient()
   const userId = await findOrCreateSupabaseUser(db, auth.session.user!.email!)
   if (!userId)
-    return NextResponse.json(
-      { error: '계정을 확인하지 못했습니다.' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: '계정을 확인하지 못했습니다.' }, { status: 500 })
+  const now = new Date().toISOString()
   const { data, error } = await db
     .schema('limbus')
     .from('inquiries')
-    .insert({ ...parsed.data, user_id: userId })
+    .insert({ ...parsed.data, user_id: userId, last_message_at: now })
     .select('id')
     .single()
-  return error
-    ? NextResponse.json(
-        { error: '문의를 저장하지 못했습니다.' },
-        { status: 500 },
-      )
-    : NextResponse.json(data, { status: 201 })
+  if (error) return NextResponse.json({ error: '문의를 저장하지 못했습니다.' }, { status: 500 })
+  const first = await db
+    .schema('limbus')
+    .from('support_messages')
+    .insert({ inquiry_id: data.id, author_role: 'user', author_id: userId, body: parsed.data.content, created_at: now })
+  if (first.error) {
+    await db.schema('limbus').from('inquiries').delete().eq('id', data.id)
+    return NextResponse.json({ error: '문의를 저장하지 못했습니다.' }, { status: 500 })
+  }
+  return NextResponse.json(data, { status: 201 })
 }

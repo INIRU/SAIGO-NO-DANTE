@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { announcementSchema, announcementText } from '@/lib/announcements'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { postAnnouncementToDiscord } from '@/lib/discord/announcement'
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -22,9 +23,10 @@ export async function PATCH(
       { error: parsed.error.issues[0].message },
       { status: 400 },
     )
-  const body = parsed.data
-  const { data, error } = await createAdminClient()
-    .schema('limbus')
+  const { discord_everyone, ...body } = parsed.data
+  const db = createAdminClient().schema('limbus')
+  const { data: before } = await db.from('announcements').select('published').eq('id', id).maybeSingle()
+  const { data, error } = await db
     .from('announcements')
     .update({
       ...body,
@@ -42,9 +44,10 @@ export async function PATCH(
       { status: 500 },
     )
   revalidateTag(CACHE_TAGS.announcements, { expire: 0 })
-  return data
-    ? NextResponse.json(data)
-    : NextResponse.json({ error: '공지가 없습니다.' }, { status: 404 })
+  if (!data) return NextResponse.json({ error: '공지가 없습니다.' }, { status: 404 })
+  // 임시 저장 → 게시로 바뀔 때만 한 번 보낸다(게시된 공지를 고쳐 저장해도 다시 보내지 않음)
+  const discord = data.published && !before?.published ? await postAnnouncementToDiscord(data, discord_everyone) : 'skipped'
+  return NextResponse.json({ ...data, discord })
 }
 export async function DELETE(
   _request: Request,

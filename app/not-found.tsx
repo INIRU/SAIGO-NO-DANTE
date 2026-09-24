@@ -1,15 +1,15 @@
+import { NextIntlClientProvider } from 'next-intl'
+import { getMessages } from 'next-intl/server'
 import PageError from '@/components/ui/PageError'
+import { routing } from '@/lib/i18n/routing'
 
-export default function NotFound() {
+/** Fallback for URLs outside /{lang}/ (the proxy normally redirects those); localized 404s use app/[lang]/not-found.tsx. */
+export default async function NotFound() {
+  const locale = routing.defaultLocale
+  const { errorPage } = await getMessages({ locale })
   return (
-    <PageError
-      statusCode="404"
-      eyebrow="bus stop missing"
-      quote="승객이 길을 잃었어."
-      subQuote="여긴 아무것도 없어. 카론도 잘 모르는 곳이야."
-      homeHref="/"
-      homeLabel="컴퍼니로 돌아가기"
-      variant="warning"
-    />
+    <NextIntlClientProvider locale={locale} messages={{ errorPage }}>
+      <PageError code="404" />
+    </NextIntlClientProvider>
   )
 }
