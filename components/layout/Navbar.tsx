@@ -1,26 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, ChevronDown, Search, MessageCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
-import { motion, useReducedMotion } from 'motion/react'
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'))
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import DanteLogo from '@/components/brand/DanteLogo'
 import { useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
+import { useSupportUnread } from '@/hooks/useSupportUnread'
 
-type NavGroupDef = {
-  dropdown?: boolean
-  labelKey: string
-  items: { href: string; labelKey: string }[]
-}
-
-const NAV_GROUPS: NavGroupDef[] = [
+const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: string }[] }[] = [
   {
     labelKey: 'nav.db.title',
     items: [
@@ -39,7 +34,6 @@ const NAV_GROUPS: NavGroupDef[] = [
   },
   {
     labelKey: 'nav.tools.title',
-    dropdown: true,
     items: [{ href: '/tools/experience', labelKey: 'nav.tools.experience' }, { href: '/tools/lunacy', labelKey: 'nav.tools.lunacy' }],
   },
   {
@@ -52,6 +46,15 @@ const NAV_GROUPS: NavGroupDef[] = [
   },
 ]
 
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)]'
+// 데스크탑 상단 항목 공통: 같은 높이(h-9), hover는 사이트 금색
+const navBase = `flex h-9 items-center gap-1.5 rounded-md px-3 whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] ${focusRing}`
+// 메뉴 그룹: 제목 서체(Kotra), 오른쪽 도구(문의·언어·로그인): 본문 서체
+const groupItem = `${navBase} [font-family:var(--font-heading)] text-[0.9375rem] tracking-[0.01em]`
+const navItem = `${navBase} text-[0.875rem] font-medium`
+const menuRow = `block rounded-[0.3125rem] px-3 py-2 text-[0.875rem] font-medium whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] ${focusRing}`
+// 메뉴는 트리거 바로 아래에 붙고 제자리에서 살짝 내려오기만 한다 (가로 이동 없음)
+const panel = 'nav-pop rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-lg)]'
 
 interface NavbarProps {
   mainNavLabel: string
@@ -62,10 +65,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const [openMobileGroups, setOpenMobileGroups] = useState<string[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [isMac, setIsMac] = useState(false)
-  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     setIsMac(/Mac|iPhone/.test(navigator.userAgent))
@@ -94,6 +95,17 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // 고정 목차·필터가 같은 타이밍에 따라오도록 숨김 상태를 <html>에 알린다 (--nav-offset, globals.css)
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-nav-hidden', hidden && !mobileMenuOpen)
+  }, [hidden, mobileMenuOpen])
+
+  // 페이지를 옮기면 스크롤로 숨겨 둔 상태를 풀어 준다
+  useEffect(() => {
+    setHidden(false)
+    lastScrollY.current = window.scrollY
+  }, [pathname])
+
   // 데스크탑 유저 메뉴 외부 클릭 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -119,13 +131,16 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   useEffect(() => {
     setMobileMenuOpen(false)
     setSearchOpen(false)
+    setOpenGroup(null)
   }, [pathname])
 
-  // Cmd+K / Ctrl+K 검색 단축키
+  // Cmd+K / Ctrl+K 검색 단축키, Esc로 메뉴 닫기
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mobileMenuOpen) {
-        setMobileMenuOpen(false)
+      if (e.key === 'Escape') {
+        setOpenGroup(null)
+        setMenuOpen(false)
+        if (mobileMenuOpen) setMobileMenuOpen(false)
         return
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -142,7 +157,6 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   // next-intl Link handles locale prefix automatically
   const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
     label: t(g.labelKey as TranslationKey),
-    dropdown: g.dropdown,
     items: g.items.map(item => ({
       href: item.href,
       label: t(item.labelKey as TranslationKey),
@@ -150,6 +164,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   })), [t])
 
   const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean; isWanjang?: boolean; isSuspended?: boolean } | undefined
+  const supportUnread = useSupportUnread(!!user?.email && !user.isSuspended)
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
   const userEmail = user?.email
 
@@ -173,140 +188,49 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
 
   const avatarUrl = profileAvatar || DEFAULT_AVATAR_URL
   const displayName = user?.name ?? user?.email ?? ''
-  const accountInitial = (displayName || user?.email || t('mypage.title' as TranslationKey)).trim()[0]?.toUpperCase() ?? 'M'
 
   // Strip lang prefix from pathname so active-state checks work regardless of prefix
   const strippedPathname = pathname.replace(/^\/(ko|en|ja)(?=\/|$)/, '') || '/'
 
   const isActiveHref = (href: string) => strippedPathname === href || strippedPathname?.startsWith(href + '/')
 
-  useEffect(() => {
-    if (!mobileMenuOpen) return
-
-    const activeGroup = navGroups.find(group => group.items.some(item => isActiveHref(item.href)))
-    if (!activeGroup || activeGroup.items.length === 1) return
-    setOpenMobileGroups(prev => prev.includes(activeGroup.label) ? prev : [...prev, activeGroup.label])
-  }, [mobileMenuOpen, navGroups, strippedPathname])
-
   const openMobileSearch = () => {
     setMobileMenuOpen(false)
     setSearchOpen(true)
   }
 
-  const toggleMobileGroup = (label: string) => {
-    setOpenMobileGroups(prev => (
-      prev.includes(label)
-        ? prev.filter(item => item !== label)
-        : [...prev, label]
-    ))
-  }
-
-  const mobileDrawerMaxHeight = 'min(28rem, calc(100dvh - 5rem))'
-  const mobileNavListMaxHeight = 'min(24.375rem, calc(100dvh - 8.625rem))'
-  const mobileRowBaseStyle: CSSProperties = {
-    position: 'relative',
-    width: '100%',
-    minHeight: '2.75rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.625rem',
-    padding: '0 1rem',
-    fontFamily: 'var(--font-heading)',
-    fontSize: '0.9375rem',
-    fontWeight: 400,
-    lineHeight: 1.3,
-    color: 'var(--text-secondary)',
-    borderBottom: '0',
-    background: 'transparent',
-    cursor: 'pointer',
-  }
-
-  const mobileLinkRowStyle = (href: string, nested = false): CSSProperties => ({
-    ...mobileRowBaseStyle,
-    paddingLeft: nested ? '2rem' : '1rem',
-    color: isActiveHref(href) ? 'var(--gold)' : 'var(--text-secondary)',
-    background: isActiveHref(href) ? 'rgba(200,144,10,0.055)' : 'transparent',
-  })
-
-  const mobileUtilityActionStyle: CSSProperties = {
-    minHeight: '2.75rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    padding: '0 0.75rem',
-    color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-heading)',
-    fontSize: '0.9375rem',
-    fontWeight: 400,
-    background: 'transparent',
-    border: '0',
-    borderRadius: '0.375rem',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  }
-
-  const mobileUtilityChipStyle: CSSProperties = {
-    ...mobileUtilityActionStyle,
-    minHeight: '2.75rem',
-    padding: '0 0.625rem',
-    border: '0.0625rem solid rgba(200,144,10,0.12)',
-    background: 'rgba(200,144,10,0.035)',
-  }
+  const avatar = (size: string) => (
+    <span className="relative block shrink-0 overflow-hidden rounded-full border border-[var(--gold-dim)] bg-[var(--bg-card)]" style={{ width: size, height: size }}>
+      <Image src={avatarUrl} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} />
+    </span>
+  )
 
   return (
     <>
       <nav
         aria-label={mainNavLabel}
-        className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300"
-        style={{
-          transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)',
-          background: 'linear-gradient(to bottom, rgba(10,8,5,0.98), rgba(10,8,5,0.85))',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(58,42,21,0.7)',
-        }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg-deep)] transition-transform duration-300 motion-reduce:transition-none"
+        style={{ transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)' }}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-[64px] flex items-center justify-between">
-          {/* 로고 — 모바일 축소 */}
+        <div className="max-w-7xl mx-auto h-16 px-4 md:px-6 flex items-center gap-6 xl:gap-10">
           <Link
             href="/"
-            className="flex items-center gap-0 tracking-wider transition-colors hover:text-yellow-300 text-[1.0625rem] md:text-[1.25rem]"
-            style={{ color: 'var(--gold)', fontFamily: 'var(--font-kotra-bold), var(--font-heading)' }}
+            className={`flex shrink-0 items-center gap-2 rounded-md text-[1.0625rem] md:text-[1.1875rem] text-[var(--gold)] transition-colors hover:text-[var(--gold-light)] ${focusRing}`}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
-            <Image src="/images/logo.webp" alt="" width={42} height={42} unoptimized className="w-[34px] md:w-[42px] h-auto -ml-2" />
+            <DanteLogo size="2.25rem" className="-ml-1 md:h-10 md:w-10" />
             {t('site.name' as TranslationKey)}
           </Link>
 
-          {/* 데스크탑 네비게이션 — 드롭다운 그룹 */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-5">
+          {/* 데스크탑 메뉴 그룹 */}
+          <ul className="hidden lg:flex h-full items-stretch gap-1">
             {navGroups.map(group => {
-              const isActive = group.items.some(i => strippedPathname === i.href || strippedPathname?.startsWith(i.href + '/'))
-              const isSingleItem = group.items.length === 1 && !group.dropdown
-
-              // 아이템 1개 → 바로 이동
-              if (isSingleItem) {
-                return (
-                  <Link
-                    key={group.label}
-                    href={`${group.items[0].href}`}
-                    className="font-compact-serif-label flex items-center transition-colors duration-200 hover:text-yellow-300"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: '0.9375rem',
-                      fontWeight: 400,
-                      color: isActive ? 'var(--gold)' : '#a08a60',
-                      padding: '0.25rem 0',
-                    }}
-                  >
-                    {group.label}
-                  </Link>
-                )
-              }
-
+              const isActive = group.items.some(i => isActiveHref(i.href))
+              const open = openGroup === group.label
               return (
-                <div
+                <li
                   key={group.label}
-                  style={{ position: 'relative' }}
+                  className="relative flex items-center"
                   onMouseEnter={() => {
                     if (groupTimerRef.current) clearTimeout(groupTimerRef.current)
                     setOpenGroup(group.label)
@@ -316,78 +240,29 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   }}
                 >
                   <button
-                    onClick={() => setOpenGroup(group.label)}
-                    aria-expanded={openGroup === group.label}
+                    type="button"
+                    onClick={() => setOpenGroup(open ? null : group.label)}
+                    aria-expanded={open}
                     aria-haspopup="true"
-                    className="font-compact-serif-label flex items-center gap-1 transition-colors duration-200 hover:text-yellow-300"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: '0.9375rem',
-                      fontWeight: 400,
-                      color: isActive ? 'var(--gold)' : '#a08a60',
-                      cursor: 'pointer',
-                      background: 'none',
-                      border: 'none',
-                      padding: '0.25rem 0',
-                    }}
+                    className={`${groupItem} cursor-pointer ${isActive ? 'text-[var(--gold)]' : open ? 'bg-[rgba(200,144,10,0.08)] text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`}
                   >
                     {group.label}
-                    <ChevronDown size={12} style={{
-                      opacity: 0.5,
-                      transform: openGroup === group.label ? 'rotate(180deg)' : 'rotate(0)',
-                      transition: 'transform 0.2s',
-                    }} />
+                    <ChevronDown size={14} aria-hidden="true" className={`opacity-60 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
                   </button>
+                  {isActive && <span aria-hidden="true" className="pointer-events-none absolute inset-x-3 bottom-0 z-0 h-0.5 rounded-full bg-[var(--gold)]" />}
 
-                  {openGroup === group.label && (
-                    <div role="menu" aria-label={`${group.label} 메뉴`} className="animate-dropdown-in" style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 12px)',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      background: 'linear-gradient(to bottom, var(--bg-card), #15120d)',
-                      border: '1px solid rgba(200,144,10,0.12)',
-                      borderRadius: 'var(--radius-md)',
-                      minWidth: '130px',
-                      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 1px rgba(200,144,10,0.15)',
-                      overflow: 'hidden',
-                      padding: '0.25rem 0',
-                    }}>
-                      {/* 상단 골드 라인 */}
-                      <div style={{
-                        position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
-                        background: 'linear-gradient(to right, transparent, rgba(200,144,10,0.3), transparent)',
-                      }} />
+                  {open && (
+                    <div className="absolute left-0 top-full z-20 pt-1.5">
+                    <div role="menu" aria-label={group.label} className={`min-w-[10rem] ${panel}`}>
                       {group.items.map(item => {
-                        const active = strippedPathname === item.href || strippedPathname?.startsWith(item.href + '/')
+                        const active = isActiveHref(item.href)
                         return (
                           <Link
                             key={item.href}
-                            href={`${item.href}`}
+                            href={item.href}
                             role="menuitem"
-                            className="font-compact-serif-label block transition-all duration-150"
-                            style={{
-                              padding: '0.625rem 1.25rem',
-                              fontFamily: 'var(--font-heading)',
-                              fontSize: '0.9375rem',
-                              fontWeight: 400,
-                              color: active ? 'var(--gold)' : 'var(--text-tertiary)',
-                              whiteSpace: 'nowrap',
-                              background: active ? 'rgba(200,144,10,0.06)' : 'transparent',
-                              borderLeft: active ? '2px solid var(--gold)' : '2px solid transparent',
-                            }}
-                            onMouseEnter={e => {
-                              if (!active) {
-                                e.currentTarget.style.color = '#c8a050'
-                                e.currentTarget.style.background = 'rgba(200,144,10,0.04)'
-                              }
-                            }}
-                            onMouseLeave={e => {
-                              if (!active) {
-                                e.currentTarget.style.color = 'var(--text-tertiary)'
-                                e.currentTarget.style.background = 'transparent'
-                              }
-                            }}
+                            aria-current={active ? 'page' : undefined}
+                            className={`${menuRow} ${active ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}
                             onClick={() => setOpenGroup(null)}
                           >
                             {item.label}
@@ -395,133 +270,65 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                         )
                       })}
                     </div>
+                    </div>
                   )}
-                </div>
+                </li>
               )
             })}
+          </ul>
 
-            <Link href="/support" data-testid="nav-support" aria-current={isActiveHref('/support') ? 'page' : undefined} className="flex min-h-11 items-center gap-1.5 whitespace-nowrap border-l border-[var(--border)] pl-3 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--gold-light)]">
-              <MessageCircle size={16} aria-hidden="true" />{t('nav.support' as TranslationKey)}
+          <div className="ml-auto hidden lg:flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="검색 열기 (Ctrl+K)"
+              title="검색 (Ctrl+K)"
+              className={`mr-1.5 flex h-9 w-40 xl:w-52 cursor-pointer items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-panel)] pl-3 pr-2 text-[0.875rem] font-medium text-[var(--text-tertiary)] transition-colors duration-150 hover:border-[var(--border-hover)] hover:text-[var(--text-secondary)] ${searchOpen ? 'border-[var(--border-hover)]' : ''} ${focusRing}`}
+            >
+              <Search size={15} aria-hidden="true" className="text-[var(--gold)]" />
+              <span className="flex-1 text-left">{t('common.search' as TranslationKey)}</span>
+              <kbd aria-hidden="true" className="rounded px-1 text-[0.75rem] font-medium [font-family:var(--font-body)] text-[var(--text-tertiary)]">
+                {isMac ? '⌘K' : 'Ctrl K'}
+              </kbd>
+            </button>
+
+            <Link href="/support" data-testid="nav-support" aria-current={isActiveHref('/support') ? 'page' : undefined} className={`${navItem} ${isActiveHref('/support') ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
+              <MessageCircle size={16} aria-hidden="true" />
+              {supportUnread && <span className="-ml-2.5 -mt-3.5 h-2 w-2 shrink-0 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" role="img" aria-label={t('supportDesk.unread' as TranslationKey)} />}
+              <span className="hidden xl:inline">{t('nav.support' as TranslationKey)}</span>
             </Link>
             <LanguageSwitcher />
 
-            {/* 검색 버튼 */}
-            <motion.button
-              onClick={() => setSearchOpen(true)}
-              data-open={searchOpen}
-              aria-label="검색 열기 (Ctrl+K)"
-              className="nav-search-trigger flex min-h-9 items-center gap-1.5 rounded-md px-2.5 py-1 transition-[background-color,border-color,color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0b08]"
-              whileHover={reduceMotion ? undefined : { y: -1 }}
-              whileTap={reduceMotion ? undefined : { y: 0, scale: 0.985 }}
-              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                cursor: 'pointer',
-                color: 'var(--text-tertiary)',
-                border: `1px solid ${searchOpen ? 'rgba(232,176,48,0.32)' : 'rgba(200,144,10,0.16)'}`,
-                background: searchOpen ? 'rgba(200,144,10,0.1)' : 'rgba(18,14,9,0.62)',
-              }}
-              title="검색 (Ctrl+K)"
-            >
-              <Search size={14} style={{ opacity: 0.72 }} aria-hidden="true" />
-              <span className="font-compact-serif-label" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1 }}>{t('common.search' as TranslationKey)}</span>
-              <div className="hidden items-center gap-0.5 sm:flex" style={{ marginLeft: '0.125rem' }} aria-hidden="true">
-                <kbd style={{
-                  padding: '0.0625rem 0.25rem',
-                  fontSize: '0.6875rem',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  color: '#6a5838',
-                  background: 'rgba(200,144,10,0.06)',
-                  border: '1px solid rgba(200,144,10,0.14)',
-                  borderRadius: 4,
-                  boxShadow: 'none',
-                  lineHeight: '1.2',
-                  fontWeight: 500,
-                }}>
-                  {isMac ? '⌘' : 'Ctrl'}
-                </kbd>
-                <kbd style={{
-                  padding: '0.0625rem 0.25rem',
-                  fontSize: '0.6875rem',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  color: '#6a5838',
-                  background: 'rgba(200,144,10,0.06)',
-                  border: '1px solid rgba(200,144,10,0.14)',
-                  borderRadius: 4,
-                  boxShadow: 'none',
-                  lineHeight: '1.2',
-                  fontWeight: 500,
-                }}>
-                  K
-                </kbd>
-              </div>
-            </motion.button>
-
-            {/* 데스크탑 로그인 / 유저 메뉴 */}
             {user ? (
-              <div ref={menuRef} style={{ position: 'relative' }}>
+              <div ref={menuRef} className="relative ml-1.5 border-l border-[var(--border)] pl-3">
                 <button
+                  type="button"
                   onClick={() => setMenuOpen(v => !v)}
                   aria-label="사용자 메뉴 열기"
-                  className="flex items-center gap-2 transition-opacity hover:opacity-80"
-                  style={{ cursor: 'pointer' }}
+                  aria-expanded={menuOpen}
+                  className={`flex cursor-pointer items-center rounded-full transition-opacity hover:opacity-85 ${focusRing}`}
                 >
-                  {avatarUrl ? (
-                    <div style={{ width: '1.875rem', height: '1.875rem', borderRadius: '50%', overflow: 'hidden', position: 'relative', border: '1.5px solid var(--gold-dim)' }}>
-                      <Image src={avatarUrl} alt="" fill sizes="30px" style={{ objectFit: 'cover' }} />
-                    </div>
-                  ) : (
-                    <div style={{
-                      width: '1.875rem', height: '1.875rem', borderRadius: '50%',
-                      background: 'rgba(200,144,10,0.15)',
-                      border: '1.5px solid var(--gold-dim)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--gold)', fontSize: '0.75rem', fontWeight: 'bold',
-                    }}>
-                      {displayName[0]?.toUpperCase()}
-                    </div>
-                  )}
+                  {avatar('2.25rem')}
                 </button>
 
                 {menuOpen && (
-                  <div style={{
-                    position: 'absolute', right: 0, top: 'calc(100% + 10px)',
-                    background: '#1a1510', border: '1px solid var(--border)',
-                    borderRadius: '6px', minWidth: '160px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid var(--border)' }}>
-                      <p style={{ color: '#c8a450', fontSize: '0.8125rem', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {displayName}
-                      </p>
-                      {user.email && (
-                        <p style={{ color: '#999', fontSize: '0.6875rem', marginTop: '0.125rem', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {user.email}
-                        </p>
-                      )}
+                  <div className={`absolute right-0 top-[calc(100%+0.625rem)] z-20 w-52 ${panel}`}>
+                    <div className="px-3 pt-2 pb-2.5 mb-1 border-b border-[var(--border)]">
+                      <p className="truncate text-[0.875rem] font-medium text-[var(--text-primary)]">{displayName}</p>
+                      {user.email && <p className="truncate text-[0.75rem] text-[var(--text-muted)] mt-0.5">{user.email}</p>}
                     </div>
-                    <Link
-                      href="/mypage"
-                      onClick={() => setMenuOpen(false)}
-                      className="block w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem' }}
-                    >
+                    <Link href="/mypage" onClick={() => setMenuOpen(false)} className={`${menuRow} text-[var(--text-secondary)]`}>
                       {t('mypage.title' as TranslationKey)}
                     </Link>
                     {user.isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setMenuOpen(false)}
-                        className="block w-full text-left transition-colors hover:bg-white/5"
-                        style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem' }}
-                      >
+                      <Link href="/admin" onClick={() => setMenuOpen(false)} className={`${menuRow} text-[var(--text-secondary)]`}>
                         관리
                       </Link>
                     )}
                     <button
+                      type="button"
                       onClick={() => { signOut({ callbackUrl: '/' }); setMenuOpen(false) }}
-                      className="w-full text-left transition-colors hover:bg-white/5"
-                      style={{ padding: '0.625rem 0.875rem', color: '#666677', fontSize: '0.8125rem', cursor: 'pointer', borderTop: '1px solid var(--border)' }}
+                      className={`${menuRow} w-full cursor-pointer text-left text-[var(--text-tertiary)]`}
                     >
                       {t('common.logout' as TranslationKey)}
                     </button>
@@ -529,347 +336,113 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                 )}
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 hover:opacity-80"
-                style={{
-                  fontSize: '0.8125rem', color: '#888899',
-                  border: '1px solid #555570', borderRadius: '4px',
-                }}
-              >
-                <svg width="13" height="13" viewBox="0 0 18 18" fill="none">
-                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
-                  <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.548 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
-                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                </svg>
+              <Link href="/login" className={`${navItem} ml-1.5 border border-[var(--border)] text-[var(--text-secondary)]`}>
                 {t('common.login' as TranslationKey)}
               </Link>
             )}
           </div>
 
-          {/* 모바일 햄버거 버튼 */}
-          <button
-            className="lg:hidden flex items-center justify-center"
-            onClick={() => setMobileMenuOpen(v => !v)}
-            style={{ color: 'var(--gold)', cursor: 'pointer', padding: '0.25rem' }}
-            aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-navigation-menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          {/* 모바일: 검색 + 메뉴 */}
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <button
+              type="button"
+              onClick={openMobileSearch}
+              aria-label={`${t('common.search' as TranslationKey)} 열기`}
+              className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-[var(--text-secondary)] ${focusRing}`}
+            >
+              <Search size={20} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-[var(--gold-light)] ${focusRing}`}
+              onClick={() => setMobileMenuOpen(v => !v)}
+              aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+              {supportUnread && !mobileMenuOpen && <span aria-hidden="true" className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" />}
+            </button>
+          </div>
         </div>
       </nav>
 
       {mobileMenuOpen && (
         <div
           id="mobile-navigation-menu"
-          className="fixed left-0 right-0 z-40 lg:hidden"
           role="navigation"
           aria-label={mainNavLabel}
-          style={{
-            top: '4rem',
-            maxHeight: mobileDrawerMaxHeight,
-            overflow: 'visible',
-            background: '#0d0b08',
-            backdropFilter: 'none',
-            boxShadow: '0 0.75rem 1.5rem rgba(0,0,0,0.46)',
-            transform: 'translateY(-0.25rem)',
-            animation: 'mobile-drawer-enter 120ms ease-out forwards',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className="mobile-nav-sheet fixed inset-x-0 bottom-0 top-16 z-40 flex flex-col overflow-y-auto overscroll-contain bg-[var(--bg-deep)] lg:hidden"
         >
-          <style>{`
-            @keyframes mobile-drawer-enter {
-              from { opacity: 0; transform: translateY(-0.25rem); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-            @media (prefers-reduced-motion: reduce) {
-              #mobile-navigation-menu { animation: none !important; transform: none !important; }
-            }
-            #mobile-navigation-menu [data-mobile-language-switcher] {
-              opacity: 1 !important;
-            }
-            #mobile-navigation-menu [data-mobile-language-switcher] button[aria-haspopup="listbox"] {
-              background: #14100c !important;
-              border-color: rgba(200,144,10,0.28) !important;
-            }
-            #mobile-navigation-menu [data-mobile-language-switcher] [role="listbox"] {
-              background-color: #14100c !important;
-              background-image: linear-gradient(180deg, #16110d 0%, #0d0b08 100%) !important;
-              box-shadow: 0 0.875rem 2rem rgba(0,0,0,0.68), 0 0 0 0.0625rem rgba(200,144,10,0.1) !important;
-            }
-          `}</style>
-          <div
-            style={{
-              maxHeight: mobileDrawerMaxHeight,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'visible',
-            }}
-          >
-            <div
-              style={{
-                minHeight: 0,
-                flex: '1 1 auto',
-                maxHeight: mobileNavListMaxHeight,
-                overflowY: 'auto',
-                overscrollBehavior: 'contain',
-                padding: '0.25rem 0',
-              }}
-            >
-              {navGroups.map(group => {
-                const groupActive = group.items.some(item => isActiveHref(item.href))
-                const isSingleItem = group.items.length === 1 && !group.dropdown
-                const expanded = openMobileGroups.includes(group.label)
-
-                if (isSingleItem) {
-                  const item = group.items[0]
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-4 pt-5 pb-6">
+            {navGroups.map(group => (
+              <section key={group.label} aria-label={group.label}>
+                <h2 className="mb-1 px-3 text-[0.875rem] text-[var(--gold)]" style={{ fontFamily: 'var(--font-heading)' }}>{group.label}</h2>
+                {group.items.map(item => {
                   const active = isActiveHref(item.href)
-
                   return (
                     <Link
-                      key={group.label}
+                      key={item.href}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="transition-colors duration-150"
-                      style={mobileLinkRowStyle(item.href)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`relative flex min-h-11 items-center rounded-md px-3 text-[0.9375rem] font-medium ${focusRing} ${active ? 'bg-[rgba(200,144,10,0.08)] text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`}
                     >
-                      {active && (
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: '0.625rem',
-                            bottom: '0.625rem',
-                            width: '0.125rem',
-                            background: 'var(--gold)',
-                          }}
-                        />
-                      )}
-                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {group.label}
-                      </span>
+                      {active && <span aria-hidden="true" className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-[var(--gold)]" />}
+                      {item.label}
                     </Link>
                   )
-                }
-
-                return (
-                  <div key={group.label}>
-                    <button
-                      type="button"
-                      onClick={() => toggleMobileGroup(group.label)}
-                      aria-expanded={expanded}
-                      className="transition-colors duration-150"
-                      style={{
-                        ...mobileRowBaseStyle,
-                        color: groupActive ? 'var(--gold)' : 'var(--text-secondary)',
-                        background: groupActive ? 'rgba(200,144,10,0.045)' : 'transparent',
-                      }}
-                    >
-                      {groupActive && (
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: '0.625rem',
-                            bottom: '0.625rem',
-                            width: '0.125rem',
-                            background: 'var(--gold)',
-                          }}
-                        />
-                      )}
-                      <span style={{ minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
-                        {group.label}
-                      </span>
-                      <ChevronDown
-                        size={14}
-                        aria-hidden="true"
-                        style={{
-                          flexShrink: 0,
-                          color: groupActive ? 'var(--gold)' : 'var(--text-tertiary)',
-                          opacity: 0.72,
-                          transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-                          transition: 'transform 120ms ease-out',
-                        }}
-                      />
-                    </button>
-                    {expanded && (
-                      <div
-                        style={{
-                          padding: '0.125rem 0 0.25rem',
-                          background: 'rgba(255,255,255,0.012)',
-                        }}
-                      >
-                        {group.items.map(item => {
-                          const active = isActiveHref(item.href)
-
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className="transition-colors duration-150"
-                              style={mobileLinkRowStyle(item.href, true)}
-                            >
-                              {active && (
-                                <span
-                                  aria-hidden="true"
-                                  style={{
-                                    position: 'absolute',
-                                    left: '1rem',
-                                    top: '0.75rem',
-                                    bottom: '0.75rem',
-                                    width: '0.0625rem',
-                                    background: 'var(--gold)',
-                                  }}
-                                />
-                              )}
-                              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {item.label}
-                              </span>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-              <Link href="/support" data-testid="nav-support-mobile" onClick={() => setMobileMenuOpen(false)} style={{...mobileLinkRowStyle('/support'),borderTop:'1px solid var(--border)',marginTop:'.5rem'}}>
-                <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
-              </Link>
-            </div>
-
-            <div
-              className="flex items-center gap-1"
-              style={{
-                minHeight: '3rem',
-                padding: '0.375rem 0.75rem 0.5rem',
-                borderTop: '0.0625rem solid rgba(200,144,10,0.12)',
-                background: '#0f0c09',
-                boxShadow: 'inset 0 0.0625rem 0 rgba(255,255,255,0.018)',
-                color: 'var(--text-tertiary)',
-                position: 'relative',
-                zIndex: 70,
-                overflow: 'visible',
-              }}
-            >
-              <button
-                type="button"
-                onClick={openMobileSearch}
-                style={mobileUtilityActionStyle}
-                aria-label={`${t('common.search' as TranslationKey)} 열기`}
-              >
-                <Search className="h-4 w-4" style={{ color: 'var(--gold-dim)' }} aria-hidden="true" />
-                <span className="max-[360px]:hidden">{t('common.search' as TranslationKey)}</span>
-              </button>
-
-              <div data-mobile-language-switcher className="flex min-w-0 flex-1 justify-center" style={{ opacity: 1, position: 'relative', zIndex: 80, overflow: 'visible' }}>
-                <LanguageSwitcher />
-              </div>
-
-              {user ? (
-                <div className="flex min-w-0 shrink-0 items-center gap-1">
-                  <Link
-                    href="/mypage"
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-label={t('mypage.title' as TranslationKey)}
-                    style={{
-                      ...mobileUtilityChipStyle,
-                      justifyContent: 'flex-start',
-                      maxWidth: '7.75rem',
-                    }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: '1.375rem',
-                        height: '1.375rem',
-                        flexShrink: 0,
-                        borderRadius: '999rem',
-                        overflow: 'hidden',
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--gold)',
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        background: 'rgba(200,144,10,0.12)',
-                        border: '0.0625rem solid rgba(200,144,10,0.22)',
-                      }}
-                    >
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt="" fill sizes="1.375rem" style={{ objectFit: 'cover' }} />
-                      ) : (
-                        accountInitial
-                      )}
-                    </span>
-                    <span className="max-[360px]:hidden" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t('mypage.title' as TranslationKey)}
-                    </span>
-                  </Link>
-                  {user.isAdmin && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      aria-label="관리자"
-                      style={{
-                        ...mobileUtilityChipStyle,
-                        minWidth: '2.25rem',
-                        padding: '0 0.5rem',
-                        color: 'var(--text-tertiary)',
-                        background: 'transparent',
-                      }}
-                    >
-                      관리
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  style={mobileUtilityChipStyle}
-                >
-                  {t('common.login' as TranslationKey)}
-                </Link>
-              )}
-            </div>
+                })}
+              </section>
+            ))}
           </div>
+
+          <div className="mt-auto flex items-center gap-2 border-t border-[var(--border)] px-4 py-3">
+            <Link
+              href="/support"
+              data-testid="nav-support-mobile"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-current={isActiveHref('/support') ? 'page' : undefined}
+              className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing}`}
+            >
+              <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
+              {supportUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" role="img" aria-label={t('supportDesk.unread' as TranslationKey)} />}
+            </Link>
+            <div className="ml-auto">
+              <LanguageSwitcher up />
+            </div>
+            {user ? (
+              <Link
+                href="/mypage"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label={t('mypage.title' as TranslationKey)}
+                className={`flex min-h-11 items-center rounded-md px-1.5 ${focusRing}`}
+              >
+                {avatar('2rem')}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex min-h-11 items-center rounded-md border border-[var(--border)] px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing}`}
+              >
+                {t('common.login' as TranslationKey)}
+              </Link>
+            )}
+          </div>
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`mx-4 mb-3 flex min-h-11 items-center rounded-md px-3 text-[0.875rem] text-[var(--text-tertiary)] ${focusRing}`}
+            >
+              관리
+            </Link>
+          )}
         </div>
       )}
 
-      <style jsx global>{`
-        .nav-search-trigger {
-          position: relative;
-          overflow: visible;
-          box-shadow: none;
-        }
-        .nav-search-trigger::before {
-          content: '';
-          position: absolute;
-          inset: -0.25rem -0.125rem;
-        }
-        .nav-search-trigger:hover,
-        .nav-search-trigger:focus-visible,
-        .nav-search-trigger[data-open="true"] {
-          background: rgba(200,144,10,0.1) !important;
-          border-color: rgba(232,176,48,0.32) !important;
-          color: var(--text-secondary) !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .nav-search-trigger {
-            transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-          }
-
-        }
-      `}</style>
+      <style>{'@keyframes nav-pop{from{opacity:0;transform:translateY(-0.25rem)}}.nav-pop{animation:nav-pop 140ms ease-out}@media (prefers-reduced-motion:reduce){.nav-pop{animation:none}}'}</style>
 
       {/* 전역 검색 모달 */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />

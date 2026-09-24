@@ -1,31 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback, type AnimationEvent, type CSSProperties } from 'react'
 import Image from 'next/image'
 
-import heroStyles from '@/styles/components/HeroGlitch.module.css'
+import styles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityProfileUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useLocale } from 'next-intl'
 
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
+type Layer = { key: number; slide: HeroSlide; dur: number }
 type ProbeImage = HTMLImageElement & { fetchPriority?: 'high' | 'low' | 'auto' }
-type GsapModule = typeof import('gsap')
 
 interface HeroGlitchSliderProps {
   identities: IdentityWithSinner[]
   onSlideChange: (identity: IdentityWithSinner) => void
-}
-
-let gsapModulePromise: Promise<GsapModule> | null = null
-
-function loadGsap() {
-  gsapModulePromise ??= import('gsap')
-  return gsapModulePromise
-}
-
-function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
 function requestIdle(callback: () => void) {
@@ -33,34 +22,22 @@ function requestIdle(callback: () => void) {
     const id = window.requestIdleCallback(callback, { timeout: 4000 })
     return () => window.cancelIdleCallback(id)
   }
-
   const id = globalThis.setTimeout(callback, 1200)
   return () => globalThis.clearTimeout(id)
 }
 
+// 슬라이드마다 CSS 켄번즈(1→1.06)가 타이머를 겸한다: 애니메이션이 끝나면 다음 장으로 넘어가고,
+// 화면 밖·숨은 탭에서는 animation-play-state로 줌과 타이머가 함께 멈춘다.
 export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlitchSliderProps) {
   const locale = useLocale()
-
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
     if (locale === 'en') return en ?? kr ?? ''
     if (locale === 'ja') return jp ?? kr ?? ''
     return kr ?? ''
   }
 
+  const rootRef = useRef<HTMLDivElement>(null)
   const [validGacksung, setValidGacksung] = useState<Set<string>>(new Set())
-  const [currentIdx, setCurrentIdx]       = useState(0)
-  const [pendingIdx, setPendingIdx]       = useState<number | null>(null)
-  const layerARef        = useRef<HTMLDivElement>(null)
-  const pendingLayerRef  = useRef<HTMLDivElement>(null)
-  const glitchSliceRef   = useRef<HTMLDivElement>(null)
-  const chromaRRef       = useRef<HTMLDivElement>(null)
-  const chromaBRef       = useRef<HTMLDivElement>(null)
-  const scanlineRef      = useRef<HTMLDivElement>(null)
-  const sliderRef        = useRef<HTMLDivElement>(null)
-  const isTransitionRef  = useRef(false)
-  const advanceRef       = useRef<() => void>(() => {})
-  const kenBurnsCtxRef   = useRef<ReturnType<typeof import('gsap')['gsap']['context']> | null>(null)
-  const glitchTlRef      = useRef<ReturnType<typeof import('gsap')['gsap']['timeline']> | null>(null)
 
   // 각성 이미지 존재 여부 확인 (404 → 스킵). Idle 이후 한 장씩 확인해 홈 초기 네트워크를 막지 않는다.
   useEffect(() => {
@@ -73,7 +50,6 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
 
     const probeNext = (index: number) => {
       if (cancelled || index >= candidates.length) return
-
       cleanupIdle = requestIdle(() => {
         if (cancelled) return
         const candidate = candidates[index]
@@ -90,7 +66,6 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     }
 
     probeNext(0)
-
     return () => {
       cancelled = true
       cleanupIdle?.()
@@ -101,14 +76,6 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       }
     }
   }, [identities])
-
-  // 첫 상호작용에서 GSAP chunk를 기다리지 않도록 idle 시점에 미리 데운다.
-  useEffect(() => {
-    if (prefersReducedMotion()) return
-    return requestIdle(() => {
-      void loadGsap()
-    })
-  }, [])
 
   const slides = useMemo<HeroSlide[]>(() => {
     const result: HeroSlide[] = []
@@ -123,312 +90,117 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
     return result
   }, [identities, validGacksung])
 
-  // 부모에 현재 슬라이드 알림
-  useEffect(() => {
-    const s = slides[currentIdx]
-    if (s) onSlideChange(s.identity)
-  }, [currentIdx, slides, onSlideChange])
+  // 일반 → 같은 인격의 각성으로 이어질 때는 짧게 보여 준다.
+  const durFor = useCallback(
+    (s: HeroSlide) => (!s.gacksung && validGacksung.has(s.identity.id) ? 2500 : 5000),
+    [validGacksung],
+  )
 
-  // 켄번즈 효과 — 슬라이드마다 천천히 줌인
-  useEffect(() => {
-    const el = layerARef.current
-    if (!el) return
-    let cancelled = false
-    kenBurnsCtxRef.current?.revert()
-    kenBurnsCtxRef.current = null
+  // [이전, 현재] 레이어. 이전 장은 켄번즈 끝 상태로 멈춘 채 새 장 아래에 남아 크로스페이드 바닥이 된다.
+  const [stack, setStack] = useState<Layer[]>(() => (slides[0] ? [{ key: 0, slide: slides[0], dur: 5000 }] : []))
+  const current = stack.at(-1)
+  const prev = stack.length > 1 ? stack[0] : null
+  const curIdx = current ? Math.max(0, slides.findIndex(s => s.url === current.slide.url)) : 0
+  const upcoming = slides.length > 1 ? slides[(curIdx + 1) % slides.length] : null
 
-    if (prefersReducedMotion()) {
-      el.style.transform = ''
-      el.style.transformOrigin = ''
-      return
-    }
-
-    ;(async () => {
-      const { gsap } = await loadGsap()
-      if (cancelled) return
-
-      gsap.killTweensOf(el)
-      kenBurnsCtxRef.current = gsap.context(() => {
-        gsap.fromTo(
-          el,
-          { scale: 1, x: '0%', y: '0%' },
-          { scale: 1.06, x: '-1%', y: '-0.8%', duration: 8, ease: 'none', transformOrigin: 'right center' },
-        )
-      }, el)
-    })()
-
-    return () => {
-      cancelled = true
-      kenBurnsCtxRef.current?.revert()
-      kenBurnsCtxRef.current = null
-    }
-  }, [currentIdx])
-
-  useEffect(() => {
-    return () => {
-      kenBurnsCtxRef.current?.revert()
-      glitchTlRef.current?.kill()
-    }
-  }, [])
-
-  // 글리치 전환
-  const glitchTo = useCallback(async (nextIdx: number) => {
-    if (nextIdx === currentIdx || nextIdx < 0 || nextIdx >= slides.length || isTransitionRef.current || slides.length < 2) return
-    isTransitionRef.current = true
-    setPendingIdx(nextIdx)
-
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-
-    const a = layerARef.current
-    const nextLayer = pendingLayerRef.current
-    const glitchSlice = glitchSliceRef.current
-    const rCh = chromaRRef.current
-    const bCh = chromaBRef.current
-    const scanline = scanlineRef.current
-    if (!a) { isTransitionRef.current = false; return }
-
-    if (prefersReducedMotion()) {
-      setCurrentIdx(nextIdx)
-      setPendingIdx(null)
-      isTransitionRef.current = false
-      return
-    }
-
-    const { gsap } = await loadGsap()
-    const frozenTransform = window.getComputedStyle(a).transform
-    const frozenTransformOrigin = window.getComputedStyle(a).transformOrigin
-    gsap.killTweensOf(a)
-    if (frozenTransform && frozenTransform !== 'none') {
-      gsap.set(a, { transform: frozenTransform, transformOrigin: frozenTransformOrigin })
-    }
-    kenBurnsCtxRef.current = null
-    glitchTlRef.current?.kill()
-
-    const resetGlitchLayers = () => {
-      const glitchTargets = [a, nextLayer, glitchSlice, rCh, bCh, scanline].filter((el): el is HTMLDivElement => Boolean(el))
-      gsap.set(glitchTargets, {
-        clearProps: 'clipPath,x,y,scale,filter,transform,willChange,opacity,visibility',
-      })
-    }
-
-    glitchTlRef.current = gsap.timeline({
-      defaults: { ease: 'steps(1)', duration: 0.026 },
-      onComplete: () => {
-        setCurrentIdx(nextIdx)
-        requestAnimationFrame(() => {
-          setPendingIdx(null)
-          resetGlitchLayers()
-          isTransitionRef.current = false
-          glitchTlRef.current = null
-        })
-      },
-      onInterrupt: () => {
-        resetGlitchLayers()
-        isTransitionRef.current = false
-        glitchTlRef.current = null
-      },
+  const goTo = useCallback((slide: HeroSlide) => {
+    setStack(s => {
+      const cur = s.at(-1)
+      if (!cur || cur.slide.url === slide.url) return s
+      return [cur, { key: cur.key + 1, slide, dur: durFor(slide) }]
     })
+  }, [durFor])
 
-    if (nextLayer) {
-      glitchTlRef.current
-        .set(nextLayer, {
-          autoAlpha: 0,
-          scale: 1.018,
-          filter: 'brightness(0.62) saturate(0.86)',
-          willChange: 'opacity, transform, filter',
-        }, 0)
-        .to(nextLayer, {
-          autoAlpha: 1,
-          scale: 1,
-          filter: 'brightness(1) saturate(1)',
-          duration: 0.064,
-          ease: 'power3.out',
-        }, 0.246)
-    }
-
-    if (glitchSlice) {
-      glitchTlRef.current
-        .set(glitchSlice, {
-          autoAlpha: 0,
-          x: 0,
-          y: 0,
-          scale: 1,
-          clipPath: 'inset(0 0 100% 0)',
-          filter: 'brightness(1) contrast(1) saturate(1)',
-          willChange: 'opacity, transform, clip-path, filter',
-        }, 0)
-        .to(glitchSlice, {
-          autoAlpha: 0.92,
-          x: '-0.64rem',
-          y: '-0.03rem',
-          clipPath: 'inset(8% 0 77% 0)',
-          filter: 'brightness(1.74) contrast(1.24) saturate(0.92)',
-        }, 0)
-        .to(glitchSlice, {
-          autoAlpha: 0.78,
-          x: '0.52rem',
-          y: '0.04rem',
-          clipPath: 'inset(39% 0 43% 0)',
-          filter: 'brightness(0.84) contrast(1.42) saturate(1.18)',
-        }, 0.034)
-        .to(glitchSlice, {
-          autoAlpha: 0.86,
-          x: '-0.38rem',
-          y: 0,
-          clipPath: 'inset(3% 0 88% 0)',
-          filter: 'brightness(2.1) contrast(1.18) saturate(0.82)',
-        }, 0.072)
-        .to(glitchSlice, {
-          autoAlpha: 0.72,
-          x: '0.42rem',
-          y: '-0.02rem',
-          clipPath: 'inset(61% 0 21% 0)',
-          filter: 'brightness(1.08) contrast(1.52) saturate(1.1)',
-        }, 0.108)
-        .to(glitchSlice, {
-          autoAlpha: 0.88,
-          x: '-0.72rem',
-          y: '0.03rem',
-          clipPath: 'inset(23% 0 62% 0)',
-          filter: 'brightness(1.56) contrast(1.32) saturate(0.9)',
-        }, 0.148)
-        .to(glitchSlice, {
-          autoAlpha: 0.62,
-          x: '0.28rem',
-          y: 0,
-          clipPath: 'inset(72% 0 9% 0)',
-          filter: 'brightness(0.96) contrast(1.62) saturate(1.16)',
-        }, 0.188)
-        .to(glitchSlice, {
-          autoAlpha: 0.46,
-          x: '-0.18rem',
-          clipPath: 'inset(17% 0 73% 0)',
-          filter: 'brightness(1.86) contrast(1.2) saturate(0.92)',
-        }, 0.224)
-        .to(glitchSlice, {
-          autoAlpha: 0,
-          x: 0,
-          y: 0,
-          clipPath: 'inset(0 0 100% 0)',
-          filter: 'brightness(1) contrast(1) saturate(1)',
-          duration: 0.054,
-          ease: 'power1.in',
-        }, 0.254)
-    }
-
-    if (rCh && bCh) {
-      glitchTlRef.current
-        .set([rCh, bCh], { opacity: 0.62, clipPath: 'inset(0 0 0 0)', willChange: 'opacity, transform, clip-path' }, 0)
-        .to(rCh, { x: '-0.3rem', y: '-0.03rem' }, 0)
-        .to(bCh, { x: '0.34rem', y: '0.03rem' }, 0)
-        .to(rCh, { x: '0.26rem', y: 0, clipPath: 'inset(43% 0 34% 0)' }, 0.052)
-        .to(bCh, { x: '-0.28rem', y: 0, clipPath: 'inset(9% 0 78% 0)' }, 0.052)
-        .to(rCh, { x: '-0.16rem', clipPath: 'inset(70% 0 10% 0)' }, 0.112)
-        .to(bCh, { x: '0.2rem', clipPath: 'inset(24% 0 58% 0)' }, 0.112)
-        .to([rCh, bCh], { opacity: 0.28, x: 0, y: 0, duration: 0.05 }, 0.188)
-        .to(rCh, { opacity: 0.22, x: '-0.12rem', clipPath: 'inset(31% 0 47% 0)', duration: 0.026 }, 0.232)
-        .to(bCh, { opacity: 0.22, x: '0.14rem', clipPath: 'inset(52% 0 27% 0)', duration: 0.026 }, 0.232)
-        .to([rCh, bCh], { opacity: 0, x: 0, duration: 0.066 }, 0.268)
-    }
-
-    if (scanline) {
-      glitchTlRef.current
-        .set(scanline, { opacity: 0, x: '-0.75rem', willChange: 'opacity, transform' }, 0)
-        .to(scanline, { opacity: 0.42, x: '0.22rem', duration: 0.046, ease: 'power1.out' }, 0.034)
-        .to(scanline, { opacity: 0.18, x: '0.68rem', duration: 0.05, ease: 'power1.inOut' }, 0.104)
-        .to(scanline, { opacity: 0.08, x: '1rem', duration: 0.052, ease: 'power1.in' }, 0.172)
-        .to(scanline, { opacity: 0.26, x: '-0.18rem', duration: 0.026, ease: 'power1.out' }, 0.224)
-        .to(scanline, { opacity: 0, x: '0.72rem', duration: 0.052, ease: 'power1.in' }, 0.256)
-    }
-
-    glitchTlRef.current
-      .set(a, { autoAlpha: 1, filter: 'none', willChange: 'opacity, filter' }, 0)
-      .to(a, { filter: 'brightness(1.18) contrast(1.06)' }, 0.034)
-      .to(a, { filter: 'brightness(0.96) contrast(1.18) saturate(0.96)' }, 0.116)
-      .to(a, { filter: 'brightness(1.08) contrast(1.1)' }, 0.188)
-      .to(a, { autoAlpha: 0, filter: 'brightness(0.84) contrast(1.2)', duration: 0.052, ease: 'power2.in' }, 0.246)
-  }, [currentIdx, slides.length])
-
-  // advance ref 최신화
+  const currentIdentity = current?.slide.identity
   useEffect(() => {
-    advanceRef.current = () => glitchTo((currentIdx + 1) % slides.length)
-  }, [currentIdx, slides.length, glitchTo])
+    if (currentIdentity) onSlideChange(currentIdentity)
+  }, [currentIdentity, onSlideChange])
 
-  // 자동 슬라이드
   useEffect(() => {
-    if (slides.length < 2) return
-    const nextIdx = (currentIdx + 1) % slides.length
-    const isSameIdentity = slides[currentIdx]?.identity.id === slides[nextIdx]?.identity.id
-    const delay = isSameIdentity ? 2500 : 5000
-    const id = setTimeout(() => advanceRef.current(), delay)
-    return () => clearTimeout(id)
-  }, [currentIdx, slides])
-
-  const current = slides[currentIdx]
-  const pending = pendingIdx !== null ? slides[pendingIdx] : null
-  const chromaImageStyle = useMemo(() => ({
-    '--hero-glitch-image': `url("${current?.url.replace(/"/g, '\\"') ?? ''}")`,
-  }) as CSSProperties, [current?.url])
+    const el = rootRef.current
+    if (!el) return
+    let onScreen = true
+    const sync = () => el.toggleAttribute('data-paused', document.hidden || !onScreen)
+    const io = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; sync() })
+    io.observe(el)
+    document.addEventListener('visibilitychange', sync)
+    return () => { io.disconnect(); document.removeEventListener('visibilitychange', sync) }
+  }, [])
 
   if (!current) return null
 
+  const onZoomEnd = (e: AnimationEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && upcoming) goTo(upcoming)
+  }
+
+  const art = (s: HeroSlide, alt = '', first = false) => (
+    <Image
+      src={s.url}
+      alt={alt}
+      fill
+      {...(first ? { preload: true } : { loading: 'eager' as const, fetchPriority: 'low' as const })}
+      placeholder="blur"
+      blurDataURL={getBlurDataURL(s.url) ?? BLUR_PLACEHOLDER}
+      className="object-cover object-center"
+      sizes="100vw"
+      quality={90}
+    />
+  )
+
+  const layers: (Layer & { state: 'prev' | 'current' | 'next' })[] = [
+    ...(prev ? [{ ...prev, state: 'prev' as const }] : []),
+    { ...current, state: 'current' as const },
+    ...(upcoming ? [{ key: current.key + 1, slide: upcoming, dur: 0, state: 'next' as const }] : []),
+  ]
+
   return (
-    <div
-      ref={sliderRef}
-      data-hero-slider
-      className="absolute inset-0 w-full overflow-hidden"
-      style={{ zIndex: 1 }}
-    >
-      <div className={heroStyles.artwork} data-hero-artwork>
-      {/* Layer B: 다음 이미지 (아래) */}
-      {pending && (
-        <div ref={pendingLayerRef} className={heroStyles.pendingLayer}>
-          <Image
-            src={pending.url}
-            alt=""
-            fill
-            placeholder="blur"
-            blurDataURL={getBlurDataURL(pending.url) ?? BLUR_PLACEHOLDER}
-            className="object-cover object-center"
-            sizes="100vw"
-            quality={90}
-          />
-        </div>
-      )}
-      {/* Layer A: 현재 이미지 (글리치 시 위에서 사라짐) */}
-      <div ref={layerARef} className="absolute inset-0" style={{ zIndex: 10 }}>
-        <Image
-          src={current.url}
-          alt={getName(current.identity.name_kr, current.identity.name_en, current.identity.name_jp)}
-          fill
-          preload
-          placeholder="blur"
-          blurDataURL={getBlurDataURL(current.url) ?? BLUR_PLACEHOLDER}
-          className="object-cover object-center"
-          sizes="100vw"
-          quality={90}
-        />
+    <div ref={rootRef} data-hero-slider className={`absolute inset-0 w-full overflow-hidden ${styles.root}`} style={{ zIndex: 1 }}>
+      <div className={styles.artwork} data-hero-artwork>
+        {layers.map(l => {
+          const isCurrent = l.state === 'current'
+          const entering = isCurrent && l.key > 0
+          return (
+            <div
+              key={l.key}
+              className={styles.layer}
+              data-state={l.state}
+              data-enter={entering || undefined}
+              aria-hidden={isCurrent ? undefined : true}
+              style={{ '--hero-dur': `${l.dur}ms` } as CSSProperties}
+            >
+              <div className={styles.fade}>
+                <div className={styles.zoom} onAnimationEnd={isCurrent ? onZoomEnd : undefined}>
+                  {art(l.slide, isCurrent ? getName(l.slide.identity.name_kr, l.slide.identity.name_en, l.slide.identity.name_jp) : '', l.key === 0)}
+                </div>
+              </div>
+              {entering && (
+                <div className={styles.glitch} aria-hidden="true">
+                  <div className={`${styles.split} ${styles.splitR}`}>{art(l.slide)}</div>
+                  <div className={`${styles.split} ${styles.splitB}`}>{art(l.slide)}</div>
+                  <div className={`${styles.slice} ${styles.sliceA}`}>{art(l.slide)}</div>
+                  <div className={`${styles.slice} ${styles.sliceB}`}>{art(l.slide)}</div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
-      {/* Current 이미지 기반 글리치 오버레이: 모든 레이어는 원화 비율과 우측 정렬을 공유한다. */}
-      <div ref={glitchSliceRef} className={heroStyles.glitchSlice} style={chromaImageStyle} />
-      {/* RGB Chromatic Aberration 오버레이 */}
-      <div ref={chromaRRef} className={heroStyles.chromaR} style={chromaImageStyle} />
-      <div ref={chromaBRef} className={heroStyles.chromaB} style={chromaImageStyle} />
-      <div ref={scanlineRef} className={heroStyles.scanline} />
-      </div>
-      {/* 슬라이드 인디케이터 */}
       {slides.length > 1 && (
         <div className="absolute bottom-5 right-5 flex gap-2" style={{ zIndex: 20 }}>
-          {slides.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => glitchTo(i)}
-              aria-label={`${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''} 슬라이드 보기`}
-              aria-current={i === currentIdx ? 'true' : undefined}
-              className={`${heroStyles.indicator} ${i === currentIdx ? heroStyles.indicatorActive : ''}`}
-              title={`${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''}`}
-            />
-          ))}
+          {slides.map(s => {
+            const label = `${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''}`
+            const active = s.url === current.slide.url
+            return (
+              <button
+                key={s.url}
+                onClick={() => goTo(s)}
+                aria-label={`${label} 슬라이드 보기`}
+                aria-current={active ? 'true' : undefined}
+                className={`${styles.indicator} ${active ? styles.indicatorActive : ''}`}
+                title={label}
+              />
+            )
+          })}
         </div>
       )}
     </div>

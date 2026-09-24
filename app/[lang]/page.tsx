@@ -5,6 +5,7 @@ import { getLatestIdentities } from '@/lib/db/queries'
 import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
 import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
+import { SkeletonLine, SkeletonPage, SkeletonPoster } from '@/components/ui/Skeleton'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import type { IdentityWithSinner } from '@/lib/types'
 import { getLocale, setRequestLocale } from 'next-intl/server'
@@ -99,16 +100,13 @@ async function BelowFoldContent({ latestIdentities }: { latestIdentities: Identi
 
 function BelowFoldSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16">
-      <div className="animate-pulse space-y-4">
-        <div className="h-6 w-48 rounded" style={{ background: 'rgba(200,144,10,0.1)' }} />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[3/4] rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }} />
-          ))}
-        </div>
+    <SkeletonPage className="mx-auto max-w-7xl space-y-16 px-5 py-16 md:px-10">
+      <div><SkeletonLine w="6rem" h="1.5rem" className="mb-6" /><SkeletonPoster ratio="16 / 6" line className="max-md:[aspect-ratio:16/10]" /></div>
+      <div>
+        <SkeletonLine w="6rem" h="1.5rem" className="mb-6" />
+        <div className="grid grid-cols-3 gap-4 md:grid-cols-6">{Array.from({ length: 6 }, (_, i) => <SkeletonPoster key={i} ratio="290 / 428" line />)}</div>
       </div>
-    </div>
+    </SkeletonPage>
   )
 }
 

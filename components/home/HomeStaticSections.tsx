@@ -8,6 +8,7 @@ import {
 import type { IdentityWithSinner } from '@/lib/types'
 import type { YoutubeVideo } from '@/app/[lang]/page'
 import ScrollAnimations from './ScrollAnimations'
+import LiteYoutube from '@/components/ui/LiteYoutube'
 import styles from './HomeStaticSections.module.css'
 import { LatestIdentityCard } from './LatestIdentityCard'
 import { getTranslations } from 'next-intl/server'
@@ -96,14 +97,7 @@ export default async function HomeStaticSections({ latestIdentities, latestVideo
           </div>
           <div className={styles.videoPanel}>
             <div className={styles.videoFrame}>
-              <iframe
-                src={`https://www.youtube.com/embed/${latestVideo.videoId}?rel=0`}
-                title={latestVideo.title}
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-              />
+              <LiteYoutube id={latestVideo.videoId} title={latestVideo.title} label={t('home.watchVideo')} />
             </div>
             <div className={styles.videoInfo}>
               <span className={styles.eyebrow}>PROJECT MOON</span>

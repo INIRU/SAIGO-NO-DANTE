@@ -19,6 +19,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/icons/icon-192x192.webp', sizes: '192x192', type: 'image/webp', purpose: 'any' },
       { src: '/icons/icon-384x384.webp', sizes: '384x384', type: 'image/webp' },
       { src: '/icons/icon-512x512.webp', sizes: '512x512', type: 'image/webp', purpose: 'any' },
+      { src: '/icons/icon-maskable-192x192.webp', sizes: '192x192', type: 'image/webp', purpose: 'maskable' },
+      { src: '/icons/icon-maskable-512x512.webp', sizes: '512x512', type: 'image/webp', purpose: 'maskable' },
     ],
   }
 }

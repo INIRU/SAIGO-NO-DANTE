@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
+import DanteLogo from '@/components/brand/DanteLogo'
 
 const NAV_LINKS = [
   { href: '/sinners', labelKey: 'sinners' },
@@ -25,8 +25,7 @@ export default async function Footer() {
 
         {/* 로고 + 사이트명 */}
         <div className="footer-brand flex flex-col items-center gap-2">
-          <Image src="/images/logo.webp" alt="" width={22} height={32} unoptimized
-            style={{ width: '1.375rem', height: 'auto', opacity: 0.85, filter: 'drop-shadow(0 0 6px rgba(200,144,10,0.4))' }} />
+          <DanteLogo size="2rem" style={{ color: 'var(--gold-light)' }} />
           <p className="font-serif tracking-widest" style={{ color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>
             {tSite('name')}
           </p>
