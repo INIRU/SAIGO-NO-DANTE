@@ -44,7 +44,8 @@ export default function BaseModal({
   padding = '1rem',
   sheet = false,
 }: BaseModalProps) {
-  const scrollYRef = useRef(0)
+  // null until the modal has been open, so a modal that mounts closed never touches the scroll position
+  const scrollYRef = useRef<number | null>(null)
   const reduceMotion = useReducedMotion()
   const panelVariants = reduceMotion ? reducedModalPanelVariants : modalPanelVariants
 
@@ -52,11 +53,13 @@ export default function BaseModal({
     if (open) {
       // Save scroll position before Radix locks the body
       scrollYRef.current = window.scrollY
-    } else {
+    } else if (scrollYRef.current !== null) {
       // Restore scroll position after Radix unlocks the body
       // Use requestAnimationFrame to ensure Radix has already removed its styles
+      const top = scrollYRef.current
+      scrollYRef.current = null
       const id = requestAnimationFrame(() => {
-        window.scrollTo(0, scrollYRef.current)
+        window.scrollTo(0, top)
       })
       return () => cancelAnimationFrame(id)
     }
