@@ -19,11 +19,13 @@ describe('experience calculator', () => {
   it('rejects invalid levels, partial EXP and inventory', () => {
     for (const args of [[0,60,0],[65,65,1],[30,20,0],[1,2,10],[1,66,0],[1.5,60,0]]) expect(() => experienceNeeded(...args as [number,number,number])).toThrow()
     expect(() => optimizeTickets(20, [-1,0,0,0])).toThrow()
-    expect(() => planLuxcavation(20, [0,0,0,0], 10, false)).toThrow()
+    expect(() => planLuxcavation(20, [0,0,0,0], 11, false)).toThrow()
   })
   it('matches all nine fixed reward totals and rounds skips per ticket', () => {
-    expect(LUXCAVATIONS.map(x => ticketExperience(x.tickets))).toEqual([1700,3600,4800,10000,12200,14400,16800,20800,25200])
-    expect(LUXCAVATIONS.map(x => planLuxcavation(10,[0,0,0,0],x.stage,true).experience)).toEqual([2650,6000,7200,15000,18400,21600,25200,31200,37800])
+    expect(LUXCAVATIONS.map(x => ticketExperience(x.tickets))).toEqual([1700,3600,4800,10000,12200,14400,16800,20800,25200,30400])
+    expect(LUXCAVATIONS.map(x => planLuxcavation(10,[0,0,0,0],x.stage,true).experience)).toEqual([2650,6000,7200,15000,18400,21600,25200,31200,37800,45600])
+    expect(planLuxcavation(300589, [0, 0, 0, 0], 10, false).runs).toBe(10)
+    expect(planLuxcavation(300589, [0, 0, 0, 0], 10, true).runs).toBe(7)
   })
   it('plans 1–60 with exact rewards and preserves unused tickets', () => {
     const normal = planLuxcavation(251629,[0,0,0,0],9,false)

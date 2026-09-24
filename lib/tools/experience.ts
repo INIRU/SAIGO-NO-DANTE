@@ -1,6 +1,7 @@
 /** Level costs: LimbusAssets-2/Data/static-data/common-data/common-data-a1c10.json
  * personalityLevelTable.expTable, extracted 2026-09-19 (61–65: 9792 each).
- * Reward bundles and ticket values: preserved Drive exp-dungeon-*.json / item-200-ticket.json.
+ * Reward bundles and ticket values: exp-dungeon-*.json (groupid = stage; stage 10 from
+ * exp-dungeon-07-a1c10p1, extracted 2026-09-24) / item-200-ticket.json.
  * Skips round each ticket quantity up after the 1.5 multiplier, not the total EXP.
  */
 export const TICKET_EXP = [50, 200, 1000, 3000] as const
@@ -15,7 +16,7 @@ export const MAX_EXPERIENCE_LEVEL = LEVEL_COSTS.length - 1
 const MAX_EXPERIENCE = LEVEL_COSTS.reduce<number>((sum, cost) => sum + cost, 0)
 export const LUXCAVATIONS: { stage: number; modules: number; tickets: Tickets }[] = [
   [6, 7, 0, 0], [0, 3, 3, 0], [0, 4, 4, 0], [0, 0, 4, 2], [0, 1, 6, 2],
-  [0, 2, 2, 4], [0, 4, 4, 4], [0, 4, 2, 6], [0, 6, 6, 6],
+  [0, 2, 2, 4], [0, 4, 4, 4], [0, 4, 2, 6], [0, 6, 6, 6], [0, 2, 6, 8],
 ].map((tickets, i) => ({ stage: i + 1, modules: i < 3 ? 2 : 3, tickets: tickets as Tickets }))
 export const ENKEPHALIN_PER_MODULE = 20
 export function ticketExperience(tickets: Tickets): number {
@@ -57,7 +58,7 @@ export function optimizeTickets(required: number, inventory: Tickets) {
     excess: Math.max(0, spent - required), missing: Math.max(0, required - spent) }
 }
 export function planLuxcavation(required: number, inventory: Tickets, stage: number, skip: boolean) {
-  integerInRange(stage, 1, 9)
+  integerInRange(stage, 1, LUXCAVATIONS.length)
   const owned = optimizeTickets(required, inventory)
   const dungeon = LUXCAVATIONS[stage - 1]
   const reward = dungeon.tickets.map(n => skip ? Math.ceil(n * 1.5) : n) as Tickets

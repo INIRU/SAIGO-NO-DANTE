@@ -22,7 +22,7 @@ export default function ExperienceCalculator() {
   const [target, setTarget] = useState(MAX_EXPERIENCE_LEVEL)
   const [progress, setProgress] = useState(0)
   const [inventory, setInventory] = useState<Tickets>([0,0,0,0])
-  const [stage, setStage] = useState(9)
+  const [stage, setStage] = useState(LUXCAVATIONS.length)
   const [skip, setSkip] = useState(false)
   const required = experienceNeeded(current, target, progress)
   const owned = ticketExperience(inventory)
