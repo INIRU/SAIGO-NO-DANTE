@@ -66,6 +66,13 @@ export function getFinalGiftVariantIds(gameId: number): string[] {
   return [`final_${gameId}`, `final_${gameId}_plus`, `final_${gameId}_plusplus`]
 }
 
+/** 달의 기억 is fused from any of its fragments, which the run keeps: its ingredients never leave the final set. */
+export const KEPT_INGREDIENTS_RESULT = '달의 기억'
+
+/**
+ * Gifts consumed by fusing the selected fixed-recipe results: every ingredient of every recipe variant, through nested
+ * recipes. 달의 기억's ingredients are kept.
+ */
 export function deriveBlockedFinalFusionMaterialIds({
   selectedFinalGiftIds,
   recipes,
@@ -77,50 +84,29 @@ export function deriveBlockedFinalFusionMaterialIds({
   giftMap: Map<number, GiftData>
   gifts?: GiftData[]
 }): Set<number> {
-  const giftByName = new Map<string, GiftData>()
-  const recipeByResultName = new Map<string, RecipeData>()
-  const selectedResultNames = new Set<string>()
-  const blockedIds = new Set<number>()
-
-  for (const gift of gifts ?? giftMap.values()) {
-    if (gift.name) giftByName.set(gift.name, gift)
-  }
-
+  const idByName = new Map([...(gifts ?? giftMap.values())].map(gift => [gift.name, gift.game_id]))
+  const recipesByResult = new Map<string, RecipeData[]>()
   for (const recipe of recipes) {
-    recipeByResultName.set(recipe.result_name, recipe)
+    const result = recipe.final_result ?? recipe.result_name
+    if (result !== KEPT_INGREDIENTS_RESULT) recipesByResult.set(result, [...(recipesByResult.get(result) ?? []), recipe])
   }
-
-  for (const giftId of selectedFinalGiftIds) {
-    const gift = giftMap.get(giftId)
-    if (gift && recipeByResultName.has(gift.name)) {
-      selectedResultNames.add(gift.name)
-    }
-  }
-
-  const visitRecipeMaterials = (resultName: string, rootResultName: string, visitedResultNames: Set<string>) => {
-    if (visitedResultNames.has(resultName)) return
-    visitedResultNames.add(resultName)
-
-    const recipe = recipeByResultName.get(resultName)
-    if (!recipe) return
-
-    for (const ingredientName of recipe.ingredients) {
-      const ingredientGift = giftByName.get(ingredientName)
-      if (ingredientGift && ingredientName !== rootResultName) {
-        blockedIds.add(ingredientGift.game_id)
-      }
-
-      if (recipeByResultName.has(ingredientName)) {
-        visitRecipeMaterials(ingredientName, rootResultName, visitedResultNames)
+  const blocked = new Set<number>()
+  const visit = (name: string, root: string, seen: Set<string>) => {
+    if (seen.has(name)) return
+    seen.add(name)
+    for (const recipe of recipesByResult.get(name) ?? []) {
+      for (const ingredient of recipe.ingredients) {
+        const id = idByName.get(ingredient)
+        if (id !== undefined && ingredient !== root) blocked.add(id)
+        visit(ingredient, root, seen)
       }
     }
   }
-
-  for (const resultName of selectedResultNames) {
-    visitRecipeMaterials(resultName, resultName, new Set())
+  for (const id of selectedFinalGiftIds) {
+    const name = giftMap.get(id)?.name
+    if (name) visit(name, name, new Set())
   }
-
-  return blockedIds
+  return blocked
 }
 
 /**

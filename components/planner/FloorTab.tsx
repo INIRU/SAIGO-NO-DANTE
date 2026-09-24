@@ -5,22 +5,23 @@ import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
 import FloorConstraints from './FloorConstraints'
 import FloorGuidance from './FloorGuidance'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
-import { Package, Plus, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useReducedMotion } from 'motion/react'
+import { ChevronUp, Package, Plus, Search, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/ui/GiftCard'
+import GiftCatalog, { GiftGradeChip, GiftKeywordTab, giftKeywordIcon, giftKeywordLabel, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+import type { EgoGift } from '@/components/mirror-dungeon/types'
+import FinalGiftTile from './FinalGiftTile'
+import FinalGiftPresets from './FinalGiftPresets'
+import ThemePackCard from '@/components/ui/ThemePackCard'
 import {
   ThemePackModalPill,
   ThemePackPickerModal,
 } from '@/components/ui/ThemePackModal'
-import {
-  getThemePackCompositeImageUrl,
-  getThemePackVisualConfig,
-} from '@/lib/data/theme-pack-visuals'
-import { GRADE_COLORS, GRADE_ROMAN, SLUG_TO_KEYWORD, getKeywordSlug } from '@/components/planner/gift-plan/constants'
-import type { PlannerState, PlannerAction, ThemeData, GiftData, FloorDifficulty, RecipeData } from '@/lib/planner/types'
+import { GRADE_ROMAN, SLUG_TO_KEYWORD, getKeywordSlug } from '@/components/planner/gift-plan/constants'
+import type { PlannerState, PlannerAction, ThemeData, GiftData, FloorDifficulty, FloorEntry, RecipeData } from '@/lib/planner/types'
 import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
 import {
   deriveBlockedFinalFusionMaterialIds,
@@ -28,7 +29,10 @@ import {
   getAvailableThemes,
   getFinalGiftVariantIds,
   parseFinalGiftIds,
+  themeExclusiveGiftIds,
+  withThemeRewards,
 } from '@/lib/planner/fusion'
+import { deriveFinalGifts, finalEnhanceEdit, type FinalGift } from '@/lib/planner/final-gifts'
 import { isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
@@ -39,18 +43,21 @@ import {
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { staggerContainer, workbenchStaggerItem } from '@/lib/animations'
 
-const FLOOR_SEGMENTS = [
-  { id: 'early', start: 1, end: 5, tone: '#c8900a' },
-  { id: 'loop', start: 6, end: 10, tone: '#9070b0' },
-  { id: 'extreme', start: 11, end: 15, tone: '#d04a3a' },
+// The descent rail: its colour marks which stretch of the dungeon a floor belongs to.
+const LADDER_SEGMENTS = [
+  { id: 'early', start: 1, end: 5, rail: '#c8900a', label: '#c8900a' },
+  { id: 'loop', start: 6, end: 10, rail: '#e8b030', label: '#e8b030' },
+  { id: 'extreme', start: 11, end: Infinity, rail: '#9b2c23', label: '#d0675c' },
 ] as const
 
-const FINAL_GIFT_GRADE_ORDER = ['EX', '5', '4', '3', '2', '1']
+// 미러 던전 기프트 목록과 같은 순서: 공통 → 키워드 → 참격/관통/타격, 등급은 Ⅰ → EX
+const FINAL_KEYWORD_ORDER = ['general', 'burn', 'bleed', 'tremor', 'rupture', 'sinking', 'breath', 'charge', 'slash', 'pierce', 'blunt']
+const FINAL_GIFT_GRADE_ORDER = ['1', '2', '3', '4', '5', 'EX']
+// Below this many final gifts the keyword/grade filters are noise.
+const FINAL_FILTER_MIN = 8
 
 function buildGiftSearchText(gift: GiftData) {
   return [
@@ -63,14 +70,10 @@ function buildGiftSearchText(gift: GiftData) {
 }
 
 function getDifficultyTone(difficulty: FloorDifficulty) {
-  if (difficulty === 'extreme') return '#d04a3a'
-  if (difficulty === 'overlap') return '#9070b0'
-  if (difficulty === 'hard') return '#e89030'
-  return '#9ca3af'
-}
-
-function getFloorSegment(floor: number) {
-  return FLOOR_SEGMENTS.find(segment => floor >= segment.start && floor <= segment.end) ?? FLOOR_SEGMENTS[0]
+  if (difficulty === 'extreme') return '#d0675c'
+  if (difficulty === 'overlap') return '#e8b030'
+  if (difficulty === 'hard') return '#c8900a'
+  return '#9c8b73'
 }
 
 function getThemeGiftCount(theme: ThemeData | null) {
@@ -78,17 +81,14 @@ function getThemeGiftCount(theme: ThemeData | null) {
   return (theme.ego_gift_ids ?? []).length + (theme.specific_ego_gift_ids ?? []).length
 }
 
-function getThemeImageSrc(theme: ThemeData) {
-  const numericId = parseInt(String(theme.id), 10)
-  return getThemePackVisualConfig(numericId)
-    ? getThemePackCompositeImageUrl(numericId)
-    : theme.image_url
-}
-
-function getFloorLabel(floor: number, locale: SupportedLang) {
-  if (locale === 'ko') return `${floor}층`
-  if (locale === 'ja') return `${floor}階`
-  return `${floor}F`
+function getMemoPreview(memo: string) {
+  return memo
+    .replace(/\[(?:s|p|e|k|i|g):([^\]]+)\]/g, '$1')
+    .replace(/\{\{([^}|]+)(?:\|[^}]*)?\}\}/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[#*_`>~-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function normalizeFloorDifficulty(entryDifficulty: unknown, floor: number): FloorDifficulty {
@@ -134,11 +134,11 @@ function FloorMemo({
         onCompositionStart={ac.onCompositionStart}
         onCompositionEnd={ac.onCompositionEnd}
         placeholder={t('memoPlaceholder')}
-        rows={5}
-        className="w-full resize-y rounded-md border bg-[#0d0b08] px-3 py-2 text-base leading-relaxed text-neutral-200 outline-none transition-colors focus:border-[var(--gold)]"
+        rows={3}
+        // field-sizing grows the box with its text; browsers without it keep rows + manual resize.
+        className="max-h-[24rem] min-h-[5rem] w-full resize-y rounded-md border bg-[#0d0b08] px-3 py-2 text-[0.9375rem] leading-relaxed text-neutral-200 outline-none transition-colors [field-sizing:content] focus:border-[var(--gold)]"
         style={{
-          borderColor: '#333',
-          minHeight: '8rem',
+          borderColor: '#2e2417',
           fontFamily: 'inherit',
         }}
       />
@@ -151,11 +151,11 @@ function FloorMemo({
       {value.trim() && (
         <div
           className="mt-2 rounded-md border bg-[#0d0b08] px-3 py-2"
-          style={{ borderColor: '#222' }}
+          style={{ borderColor: '#2e2417' }}
         >
           <div
-            className="mb-1 font-mono text-sm uppercase"
-            style={{ color: '#6b7280', letterSpacing: '0.05em' }}
+            className="mb-1 text-sm"
+            style={{ color: '#9c8b73' }}
           >
             {t('memoPreview')}
           </div>
@@ -179,26 +179,25 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.floorTab')
   const shouldReduceMotion = useReducedMotion()
-  const [activeFloor, setActiveFloor] = useState(() => state.floorPlan[0]?.floor ?? 1)
+  const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
   const [giftPickerQuery, setGiftPickerQuery] = useState('')
-  const [finalGiftQuery, setFinalGiftQuery] = useState('')
   const [finalGiftKeyword, setFinalGiftKeyword] = useState<string | null>(null)
   const [finalGiftGrade, setFinalGiftGrade] = useState<string | null>(null)
-  const [allGiftQuery, setAllGiftQuery] = useState('')
   const [dismissedFusionIds, setDismissedFusionIds] = useState<Set<string>>(() => new Set())
+  const [fusionCollapsed, setFusionCollapsed] = useState(false)
 
   const themeMap = useMemo(() => new Map(themes.map(theme => [String(theme.id), theme])), [themes])
-  const activeEntry = state.floorPlan.find(entry => entry.floor === activeFloor) ?? state.floorPlan[0]
+  const activeEntry = activeFloor === null ? undefined : state.floorPlan.find(entry => entry.floor === activeFloor)
   const activeDifficulty = activeEntry
     ? normalizeFloorDifficulty(activeEntry.difficulty, activeEntry.floor)
     : 'hard'
   const selectedTheme = activeEntry?.theme_id ? themeMap.get(activeEntry.theme_id) ?? null : null
 
   useEffect(() => {
-    if (!state.floorPlan.some(entry => entry.floor === activeFloor)) {
-      setActiveFloor(state.floorPlan[0]?.floor ?? 1)
+    if (activeFloor !== null && !state.floorPlan.some(entry => entry.floor === activeFloor)) {
+      setActiveFloor(null)
     }
   }, [activeFloor, state.floorPlan])
 
@@ -288,42 +287,34 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     return map
   }, [gifts, locale])
 
-  const finalGiftIds = useMemo(() => {
-    return parseFinalGiftIds(state.giftInventory)
-  }, [state.giftInventory])
-
-  const blockedFinalMaterialIds = useMemo(() => {
-    return deriveBlockedFinalFusionMaterialIds({
-      selectedFinalGiftIds: finalGiftIds,
-      recipes,
-      giftMap,
-      gifts,
-    })
-  }, [finalGiftIds, giftMap, gifts, recipes])
+  // Stored picks (final_<id>[_plus|_plusplus]) versus the derived final set, which also holds start/observed gifts
+  // and drops whatever a fusion result in it consumed.
+  const storedFinalIds = useMemo(() => parseFinalGiftIds(state.giftInventory), [state.giftInventory])
+  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = useMemo(
+    () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
+    [giftMap, recipes, state.giftInventory],
+  )
+  const finalEntryById = useMemo(() => new Map(finalEntries.map(entry => [entry.id, entry])), [finalEntries])
+  const finalGiftIds = useMemo(() => new Set(finalEntryById.keys()), [finalEntryById])
 
   useEffect(() => {
     if (blockedFinalMaterialIds.size === 0) return
 
     for (const blockedId of blockedFinalMaterialIds) {
-      if (!finalGiftIds.has(blockedId)) continue
+      if (!storedFinalIds.has(blockedId)) continue
       for (const giftId of getFinalGiftVariantIds(blockedId)) {
         dispatch({ type: 'REMOVE_GIFT', giftId })
       }
     }
-  }, [blockedFinalMaterialIds, dispatch, finalGiftIds])
-
-  const activeFloorGifts = (activeEntry?.gift_ids ?? [])
-    .map(id => giftMap.get(parseInt(id, 10)))
-    .filter(Boolean)
-    .map(gift => localizedGift(gift as GiftData))
+  }, [blockedFinalMaterialIds, dispatch, storedFinalIds])
 
   const finalFloorGifts = useMemo(() => {
-    return Array.from(finalGiftIds)
-      .filter(id => !blockedFinalMaterialIds.has(id))
-      .map(id => giftMap.get(id))
+    return finalEntries
+      .map(entry => giftMap.get(entry.id))
       .filter(Boolean)
       .map(gift => localizedGift(gift as GiftData))
-  }, [blockedFinalMaterialIds, finalGiftIds, giftMap, localizedGift])
+  }, [finalEntries, giftMap, localizedGift])
+  const showFinalFilters = finalFloorGifts.length >= FINAL_FILTER_MIN
 
   const finalGiftKeywordCounts = useMemo(() => {
     const counts = new Map<string | null, number>()
@@ -349,28 +340,36 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     return Array.from(finalGiftKeywordCounts.entries())
       .filter(([slug, count]) => slug !== null && count > 0)
       .map(([slug, count]) => ({ slug: slug as string, count }))
-      .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug))
+      .sort((a, b) => FINAL_KEYWORD_ORDER.indexOf(a.slug) - FINAL_KEYWORD_ORDER.indexOf(b.slug))
   }, [finalGiftKeywordCounts])
 
   const filteredFinalGifts = useMemo(() => {
-    const query = finalGiftQuery.trim().toLocaleLowerCase()
+    const keyword = showFinalFilters ? finalGiftKeyword : null
+    const gradeFilter = showFinalFilters ? finalGiftGrade : null
     return finalFloorGifts.filter(gift => {
       const slug = getKeywordSlug(gift.keyword)
       const grade = gift.grade ?? '1'
-      if (finalGiftKeyword && slug !== finalGiftKeyword) return false
-      if (finalGiftGrade && grade !== finalGiftGrade) return false
-      return !query || buildGiftSearchText(gift).includes(query)
+      if (keyword && slug !== keyword) return false
+      if (gradeFilter && grade !== gradeFilter) return false
+      return true
     })
-  }, [finalFloorGifts, finalGiftGrade, finalGiftKeyword, finalGiftQuery])
+  }, [finalFloorGifts, finalGiftGrade, finalGiftKeyword, showFinalFilters])
 
-  const filteredAllGifts = useMemo(() => {
-    const query = allGiftQuery.trim().toLocaleLowerCase()
-    const source = gifts
-      .filter(gift => !blockedFinalMaterialIds.has(gift.game_id))
-      .map(localizedGift)
-    if (!query) return source
-    return source.filter(gift => buildGiftSearchText(gift).includes(query))
-  }, [allGiftQuery, blockedFinalMaterialIds, gifts, localizedGift])
+  const catalogFilters = useGiftCatalogFilters()
+  const catalogGifts = useMemo(() => gifts.map(toCatalogGift), [gifts])
+  const catalogSelectedIds = useMemo(() => new Set([...finalEntryById.keys()].map(String)), [finalEntryById])
+  // Which picked result each blocked ingredient belongs to, for the disabled card's tooltip.
+  const blockedBy = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const entry of finalEntries) {
+      const result = giftMap.get(entry.id)
+      if (!result) continue
+      for (const id of deriveBlockedFinalFusionMaterialIds({ selectedFinalGiftIds: [entry.id], recipes, giftMap })) {
+        if (!map.has(id)) map.set(id, localizedGift(result).name)
+      }
+    }
+    return map
+  }, [finalEntries, giftMap, localizedGift, recipes])
 
   const craftableFusions = useMemo(() => {
     const inventory = Array.from(finalGiftIds).map(String)
@@ -412,13 +411,51 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   }, [dispatch])
 
   const toggleFinalGift = useCallback((giftGameId: number) => {
-    if (finalGiftIds.has(giftGameId)) {
+    const entry = finalEntryById.get(giftGameId)
+    if (entry) {
+      // Start and observed gifts are set in the gift plan, not here.
+      if (entry.source !== 'final') return
       removeFinalGift(giftGameId)
       return
     }
     if (blockedFinalMaterialIds.has(giftGameId)) return
     dispatch({ type: 'ADD_GIFT', giftId: `final_${giftGameId}` })
-  }, [blockedFinalMaterialIds, dispatch, finalGiftIds, removeFinalGift])
+  }, [blockedFinalMaterialIds, dispatch, finalEntryById, removeFinalGift])
+
+  const onCatalogGiftClick = useCallback((gift: EgoGift) => toggleFinalGift(Number(gift.id)), [toggleFinalGift])
+  // 칸 속성은 (막힘 이유, 출처)가 같으면 같은 객체를 돌려준다: 448칸의 번역 호출과 비교를 누를 때마다 반복하지 않게
+  const cardPropsCache = useMemo(() => new Map<string, GiftCatalogCardProps>(), [locale, t])
+  const catalogCardProps = useCallback((gift: EgoGift): GiftCatalogCardProps => {
+    const id = Number(gift.id)
+    const blocked = blockedFinalMaterialIds.has(id)
+    const source = finalEntryById.get(id)?.source
+    const key = `${id}|${blocked ? blockedBy.get(id) ?? '' : '-'}|${source ?? ''}`
+    const cached = cardPropsCache.get(key)
+    if (cached) return cached
+    const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+    let props: GiftCatalogCardProps
+    if (blocked) {
+      const label = t('finalBlockedByRecipe', { gift: name, result: blockedBy.get(id) ?? '' })
+      props = { disabled: true, title: label, ariaLabel: label }
+    } else {
+      const label = source === 'start' || source === 'observe'
+        ? `${name}. ${t(source === 'start' ? 'finalAutoStart' : 'finalAutoObserve')}`
+        : source ? t('removeAlreadyAddedGift', { gift: name }) : t('addFinalGift', { gift: name })
+      props = { title: label, ariaLabel: label }
+    }
+    cardPropsCache.set(key, props)
+    return props
+  }, [blockedBy, blockedFinalMaterialIds, cardPropsCache, finalEntryById, locale, t])
+
+  // Keeps a pick's place in the inventory and swaps only its level suffix. 인벤토리는 ref로 읽어 함수가 바뀌지 않게 한다(타일 memo 유지).
+  const inventoryRef = useRef(state.giftInventory)
+  useLayoutEffect(() => { inventoryRef.current = state.giftInventory })
+  const setFinalEnhance = useCallback((entry: FinalGift, level: number) => {
+    const { oldId, newId } = finalEnhanceEdit(inventoryRef.current, entry, level)
+    if (oldId && newId) dispatch({ type: 'REPLACE_GIFT', oldId, newId })
+    else if (newId) dispatch({ type: 'ADD_GIFT', giftId: newId })
+    else if (oldId) dispatch({ type: 'REMOVE_GIFT', giftId: oldId })
+  }, [dispatch])
 
   const selectTheme = useCallback((themeId: string | null) => {
     if (!activeEntry) return
@@ -473,14 +510,64 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
       .map(gift => localizedGift(gift as GiftData))
   }
 
-  if (!activeEntry) {
-    return null
+  const shouldReduceScroll = shouldReduceMotion
+  const rowRefs = useRef(new Map<number, HTMLLIElement>())
+  // Viewport top of the row being opened, so collapsing a row above it doesn't yank it upward.
+  const openAnchor = useRef<{ floor: number, top: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const anchor = openAnchor.current
+    openAnchor.current = null
+    const row = anchor && anchor.floor === activeFloor ? rowRefs.current.get(anchor.floor) : null
+    if (!anchor || !row) return
+    const shift = row.getBoundingClientRect().top - anchor.top
+    if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: 'instant' })
+  }, [activeFloor])
+
+  useEffect(() => {
+    if (activeFloor === null) return
+    // Collapsing the previous row can move the opened one out of view; measure once layout has settled.
+    const frame = requestAnimationFrame(() => {
+      const row = rowRefs.current.get(activeFloor)
+      if (!row) return
+      const { top } = row.getBoundingClientRect()
+      if (top < 0 || top > window.innerHeight * 0.6) {
+        row.scrollIntoView({ block: 'start', behavior: shouldReduceScroll ? 'auto' : 'smooth' })
+      }
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeFloor, shouldReduceScroll])
+
+  function openFloor(floor: number) {
+    if (floor === activeFloor) return
+    const row = rowRefs.current.get(floor)
+    if (row) openAnchor.current = { floor, top: row.getBoundingClientRect().top }
+    setActiveFloor(floor)
+    setThemeModalOpen(false)
+    setGiftPickerOpen(false)
+    setGiftPickerQuery('')
   }
 
-  const activeSegment = getFloorSegment(activeEntry.floor)
-  const activeThemeName = selectedTheme
-    ? getLocalizedName({ name_kr: selectedTheme.name, name_en: selectedTheme.name_en, name_jp: selectedTheme.name_jp }, locale)
-    : null
+  function toggleFloor(floor: number) {
+    if (floor !== activeFloor) {
+      openFloor(floor)
+      return
+    }
+    setActiveFloor(null)
+    setThemeModalOpen(false)
+    setGiftPickerOpen(false)
+    setGiftPickerQuery('')
+  }
+
+  function getFloorGifts(entry: FloorEntry, theme: ThemeData | null) {
+    return withThemeRewards(entry.gift_ids, theme)
+      .map(id => giftMap.get(parseInt(id, 10)))
+      .filter((gift): gift is GiftData => Boolean(gift))
+      .map(localizedGift)
+  }
+
+  const themeName = (theme: ThemeData) => getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
+  const activeThemeName = selectedTheme ? themeName(selectedTheme) : null
   const availableGifts = selectedTheme
     ? getThemeAvailableGifts(selectedTheme).filter(gift => !blockedFinalMaterialIds.has(gift.game_id))
     : []
@@ -489,733 +576,586 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     if (!query) return true
     return buildGiftSearchText(gift).includes(query)
   })
+  const exclusiveLabel = t('ladder.packExclusive')
+  const configuredCount = state.floorPlan.filter(isConfiguredFloor).length
+  const segments = LADDER_SEGMENTS
+    .map(segment => ({ ...segment, entries: state.floorPlan.filter(entry => entry.floor >= segment.start && entry.floor <= segment.end) }))
+    .filter(segment => segment.entries.length > 0)
 
-  return (
-    <div className="flex flex-col gap-4">
-      <section
-        className="rounded-lg border p-4 md:p-5"
-        style={{ background: '#1a1510', borderColor: '#2a2218' }}
-        aria-label={t('floorBoard')}
+  // A hairline rail; the open floor's stretch lights up so the eye finds it.
+  const railClass = 'pointer-events-none absolute inset-y-0 left-[0.875rem] w-[0.125rem] sm:left-[1.375rem]'
+  const railStyle = (tone: string, lit = false) => ({ background: tone, opacity: lit ? 0.9 : 0.35 })
+  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]'
+
+  function renderEditor(entry: FloorEntry, floorGifts: GiftData[]) {
+    const plannedIds = new Set(entry.gift_ids)
+    return (
+      <div
+        id={`floor-editor-${entry.floor}`}
+        className="rounded-sm border p-3 sm:p-4"
+        style={{ background: '#17120c', borderColor: '#2e2417' }}
       >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="font-serif text-lg font-semibold" style={{ color: '#e8d8c0', WebkitTextStroke: 0 }}>
-              {t('floorBoard')}
-            </h3>
-            <p className="mt-1 text-sm" style={{ color: '#7a7168' }}>
-              {t('floorBoardHint')}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {FLOOR_SEGMENTS.map(segment => (
-              <span
-                key={segment.id}
-                className="inline-flex min-h-[2.25rem] items-center rounded-full border px-2.5 py-1 font-mono text-sm"
-                style={{
-                  borderColor: `${segment.tone}55`,
-                  color: segment.tone,
-                  background: `${segment.tone}12`,
-                }}
-              >
-                {t(`segment.${segment.id}`, {
-                  start: getFloorLabel(segment.start, locale),
-                  end: getFloorLabel(segment.end, locale),
-                })}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <motion.div
-          className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
-          variants={shouldReduceMotion ? undefined : staggerContainer(0.035)}
-          initial={shouldReduceMotion ? false : 'initial'}
-          animate={shouldReduceMotion ? undefined : 'animate'}
-        >
-          {state.floorPlan.map((entry, index) => {
-            const floorDifficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
-            const floorTheme = entry.theme_id ? themeMap.get(entry.theme_id) ?? null : null
-            const floorThemeName = floorTheme
-              ? getLocalizedName({ name_kr: floorTheme.name, name_en: floorTheme.name_en, name_jp: floorTheme.name_jp }, locale)
-              : null
-            const isActive = entry.floor === activeEntry.floor
-            const isPlanned = isConfiguredFloor(entry)
-            const segment = getFloorSegment(entry.floor)
-            const difficultyTone = getDifficultyTone(floorDifficulty)
-            const floorThemeImageSrc = floorTheme ? getThemeImageSrc(floorTheme) : null
-
-            return (
-              <motion.button
-                key={entry.floor}
-                type="button"
-                variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                custom={index}
-                onClick={() => {
-                  setActiveFloor(entry.floor)
-                  setThemeModalOpen(false)
-                  setGiftPickerOpen(false)
-                  setGiftPickerQuery('')
-                }}
-                aria-label={t('chooseFloorAria', { floor: entry.floor })}
-                aria-pressed={isActive}
-                className="group relative flex min-h-[7.25rem] min-w-0 flex-col overflow-hidden rounded-md border p-2.5 text-left transition-transform active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                style={{
-                  background: floorThemeImageSrc
-                    ? '#100c08'
-                    : isActive
-                      ? 'rgba(200,144,10,0.14)'
-                      : isPlanned
-                        ? 'rgba(255,255,255,0.045)'
-                        : 'rgba(13,11,8,0.72)',
-                  borderColor: isActive ? '#c8900a' : isPlanned ? `${segment.tone}66` : '#2d261d',
-                  boxShadow: isActive
-                    ? 'inset 0 0 0 1px rgba(232,176,48,0.2)'
-                    : floorThemeImageSrc
-                      ? 'inset 0 0 0 1px rgba(232,216,192,0.04)'
-                      : 'none',
-                }}
-              >
-                {floorThemeImageSrc && (
-                  <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-                    <ImageWithFallback
-                      src={floorThemeImageSrc}
-                      alt=""
-                      fill
-                      fallbackType="theme"
-                      sizes="(max-width: 640px) 25vw, (max-width: 1536px) 20vw, 7rem"
-                      className="object-cover opacity-80 saturate-[0.86]"
-                    />
-                    <span className="absolute inset-0 bg-[#080604]/45" />
-                    <span className="absolute inset-x-0 bottom-0 h-[56%] bg-[#080604]/58" />
-                    <span className="absolute inset-x-0 top-0 h-[46%] bg-[#080604]/36" />
-                    {isActive && <span className="absolute inset-0 bg-[#c8900a]/12" />}
-                  </span>
-                )}
-                <span className="relative flex items-center justify-between gap-2">
-                  <span
-                    className="font-mono text-base font-bold"
-                    style={{
-                      color: isActive ? '#e8b030' : '#e8d8c0',
-                      textShadow: floorThemeImageSrc ? '0 1px 2px rgba(0,0,0,0.9)' : 'none',
-                    }}
-                  >
-                    {getFloorLabel(entry.floor, locale)}
-                  </span>
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{
-                      background: isPlanned ? '#c8900a' : '#4b3f30',
-                      boxShadow: floorThemeImageSrc && isPlanned ? '0 0 0 2px rgba(8,6,4,0.55)' : 'none',
-                    }}
-                    aria-hidden="true"
-                  />
-                </span>
-                <span
-                  className="relative mt-1 block w-fit max-w-full truncate rounded-sm px-1.5 py-0.5 font-mono text-sm"
-                  style={{
-                    color: difficultyTone,
-                    background: floorThemeImageSrc ? 'rgba(8,6,4,0.58)' : 'transparent',
-                  }}
-                >
-                  {t(`difficulty.${floorDifficulty}`)}
-                </span>
-                <span
-                  className="relative mt-1 block truncate text-sm font-medium leading-snug"
-                  style={{
-                    color: floorThemeName ? '#f0dfbd' : '#6f675e',
-                    textShadow: floorThemeImageSrc ? '0 1px 2px rgba(0,0,0,0.92)' : 'none',
-                  }}
-                >
-                  {floorThemeName ?? t('empty')}
-                </span>
-                {entry.gift_ids.length > 0 && (
-                  <span
-                    className="relative mt-auto block w-fit rounded-sm px-1.5 py-0.5 font-mono text-sm"
-                    style={{
-                      color: '#9ed0de',
-                      background: floorThemeImageSrc ? 'rgba(8,6,4,0.58)' : 'transparent',
-                    }}
-                  >
-                    {t('shortGiftCount', { count: entry.gift_ids.length })}
-                  </span>
-                )}
-              </motion.button>
-            )
-          })}
-        </motion.div>
-      </section>
-
-      <FloorConstraints floor={activeEntry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: activeEntry.floor, ids })} />
-      <FloorGuidance entry={activeEntry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
-      <section
-        className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]"
-        aria-label={t('activeFloor', { floor: activeEntry.floor })}
-      >
-        <div className="rounded-lg border p-4" style={{ background: '#1a1510', borderColor: '#2a2218' }}>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="font-mono text-sm uppercase" style={{ color: activeSegment.tone, letterSpacing: '0.08em' }}>
-                {t(`segment.${activeSegment.id}`, {
-                  start: getFloorLabel(activeSegment.start, locale),
-                  end: getFloorLabel(activeSegment.end, locale),
-                })}
-              </div>
-              <h3 className="mt-1 font-serif text-[1.5rem] font-semibold leading-tight" style={{ color: '#e8d8c0', WebkitTextStroke: 0 }}>
-                {t('activeFloor', { floor: activeEntry.floor })}
-              </h3>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {activeEntry.floor <= 5 ? (
-                <div
-                  className="flex rounded-md border p-1"
-                  style={{ background: '#0d0b08', borderColor: '#30271d' }}
-                  aria-label={t('difficultySelectorLabel', { floor: activeEntry.floor })}
-                >
-                  {(['normal', 'hard'] as const).map(difficulty => {
-                    const selected = activeDifficulty === difficulty
-                    return (
-                      <button
-                        key={difficulty}
-                        type="button"
-                        onClick={() => setDifficulty(difficulty)}
-                        className="min-h-[2.75rem] rounded px-3 font-mono text-[0.9375rem] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                        style={{
-                          background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
-                          color: selected ? '#e8b030' : '#8b8177',
-                        }}
-                      >
-                        {t(`difficulty.${difficulty}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : (
-                <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : 'purple'}>
-                  {t('fixedDifficulty')}: {t(`difficulty.${activeDifficulty}`)}
-                </ThemePackModalPill>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
-            <div className="min-w-0">
-              {selectedTheme ? (
-                <div className="overflow-hidden rounded-md border" style={{ borderColor: 'rgba(200,144,10,0.24)', background: '#0d0b08' }}>
-                  <div className="relative aspect-[416/684] w-full bg-[#151210]">
-                    {selectedTheme.image_url ? (
-                      <ImageWithFallback
-                        src={selectedTheme.image_url}
-                        alt={activeThemeName ?? selectedTheme.name}
-                        fill
-                        fallbackType="theme"
-                        sizes="(max-width: 768px) 45vw, 12rem"
-                        className="object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center" style={{ color: '#6f675e' }}>
-                        <Package size={32} aria-hidden="true" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setThemeModalOpen(true)}
-                  disabled={pickerThemes.length === 0}
-                  className="flex aspect-[416/684] w-full flex-col items-center justify-center rounded-md border border-dashed p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ borderColor: '#40362c', background: '#0d0b08', color: '#7b7066' }}
-                >
-                  <Package size={28} aria-hidden="true" />
-                  <span className="mt-3 text-base">{pickerThemes.length > 0 ? t('selectTheme') : t('emptyThemes')}</span>
-                </button>
-              )}
-            </div>
-
-            <div className="min-w-0">
-              <div className="mb-3">
-                <div className="font-mono text-sm uppercase" style={{ color: '#7a7168', letterSpacing: '0.08em' }}>
-                  {t('themeSection')}
-                </div>
-                <h4 className="mt-1 text-xl font-semibold" style={{ color: activeThemeName ? '#e8b030' : '#8a8076' }}>
-                  {activeThemeName ?? (pickerThemes.length > 0 ? t('noThemeWithCount', { count: pickerThemes.length }) : t('noFloorThemes'))}
-                </h4>
-                {selectedTheme && (
-                  <p className="mt-1 text-sm" style={{ color: '#8b8177' }}>
-                    {t('themeGiftCount', { count: getThemeGiftCount(selectedTheme) })}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setThemeModalOpen(true)}
-                  disabled={pickerThemes.length === 0}
-                  className="min-h-[2.75rem] rounded-md border px-4 text-[0.9375rem] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ borderColor: 'rgba(200,144,10,0.32)', background: 'rgba(200,144,10,0.12)', color: '#e8b030' }}
-                >
-                  {selectedTheme ? t('changeTheme') : t('selectThemeWithCount', { count: pickerThemes.length })}
-                </button>
-                {selectedTheme && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          {entry.floor <= 5 ? (
+            <div
+              role="group"
+              className="flex rounded-md border p-1"
+              style={{ background: '#0d0b08', borderColor: '#2e2417' }}
+              aria-label={t('difficultySelectorLabel', { floor: entry.floor })}
+            >
+              {(['normal', 'hard'] as const).map(difficulty => {
+                const selected = activeDifficulty === difficulty
+                return (
                   <button
+                    key={difficulty}
                     type="button"
-                    onClick={() => selectTheme(null)}
-                    className="min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                    style={{ borderColor: '#333', background: 'rgba(255,255,255,0.03)', color: '#9ca3af' }}
+                    onClick={() => setDifficulty(difficulty)}
+                    aria-pressed={selected}
+                    className={`min-h-[2.75rem] rounded px-4 text-[0.9375rem] font-semibold transition-colors ${focusRing}`}
+                    style={{
+                      background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
+                      color: selected ? '#e8b030' : '#9c8b73',
+                    }}
                   >
-                    {t('clearTheme')}
+                    {t(`difficulty.${difficulty}`)}
                   </button>
-                )}
-              </div>
+                )
+              })}
             </div>
-          </div>
+          ) : (
+            <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : 'gold'}>
+              {t('fixedDifficulty')}: {t(`difficulty.${activeDifficulty}`)}
+            </ThemePackModalPill>
+          )}
+          <button
+            type="button"
+            onClick={() => toggleFloor(entry.floor)}
+            className={`inline-flex min-h-[2.75rem] items-center gap-1.5 rounded-md px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
+            style={{ color: '#9c8b73' }}
+          >
+            <ChevronUp size={16} aria-hidden="true" />
+            {t('ladder.collapseShort')}
+          </button>
         </div>
 
-        <div className="rounded-lg border p-4" style={{ background: '#1a1510', borderColor: '#2a2218' }}>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div>
-              <div className="font-mono text-sm uppercase" style={{ color: '#7a7168', letterSpacing: '0.08em' }}>
-                {t('acquiredGifts')}
-              </div>
-              <h4 className="mt-1 text-lg font-semibold" style={{ color: '#e8d8c0' }}>
-                {t('acquiredGiftCount', { count: activeEntry.gift_ids.length })}
-              </h4>
-            </div>
-            {selectedTheme && (
+        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-4 sm:grid-cols-[9rem_minmax(0,1fr)]">
+          <div className="min-w-0">
+            {selectedTheme ? (
+              <ThemePackCard
+                theme={selectedTheme}
+                lang={locale}
+                sizes="(max-width: 640px) 104px, 144px"
+                ariaLabel={t('ladder.changeThemeAria', { floor: entry.floor, theme: activeThemeName ?? selectedTheme.name })}
+                onClick={() => setThemeModalOpen(true)}
+              />
+            ) : (
               <button
                 type="button"
-                onClick={() => setGiftPickerOpen(open => !open)}
-                className="inline-flex min-h-[2.75rem] items-center gap-2 rounded-md border px-3 text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                style={{ borderColor: '#333', background: 'rgba(255,255,255,0.04)', color: '#d8c8a8' }}
+                onClick={() => setThemeModalOpen(true)}
+                disabled={pickerThemes.length === 0}
+                className={`flex aspect-[416/684] w-full flex-col items-center justify-center rounded-sm border border-dashed p-2 text-center transition-colors hover:border-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                style={{ borderColor: '#4a3b28', background: '#0d0b08', color: '#9c8b73' }}
               >
-                <Plus size={16} aria-hidden="true" />
-                {t('addGift')}
+                <Package size={26} aria-hidden="true" />
+                <span className="mt-2 text-sm">{pickerThemes.length > 0 ? t('selectTheme') : t('emptyThemes')}</span>
               </button>
             )}
           </div>
 
+          <div className="flex min-w-0 flex-col gap-3">
+            <div>
+              <h4
+                className="text-[1.125rem] leading-snug"
+                style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? '#e8b030' : '#9c8b73' }}
+              >
+                {activeThemeName ?? (pickerThemes.length > 0 ? t('noThemeWithCount', { count: pickerThemes.length }) : t('noFloorThemes'))}
+              </h4>
+              {selectedTheme && (
+                <p className="mt-1 text-sm" style={{ color: '#9c8b73' }}>
+                  {t('themeGiftCount', { count: getThemeGiftCount(selectedTheme) })}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setThemeModalOpen(true)}
+                disabled={pickerThemes.length === 0}
+                className={`min-h-[2.75rem] rounded-md border px-4 text-[0.9375rem] font-semibold transition-colors hover:bg-[rgba(200,144,10,0.2)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                style={{ borderColor: 'rgba(200,144,10,0.4)', background: 'rgba(200,144,10,0.12)', color: '#e8b030' }}
+              >
+                {selectedTheme ? t('changeTheme') : t('selectThemeWithCount', { count: pickerThemes.length })}
+              </button>
+              {selectedTheme && (
+                <button
+                  type="button"
+                  onClick={() => selectTheme(null)}
+                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
+                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
+                >
+                  {t('clearTheme')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+            {t('acquiredGiftCount', { count: entry.gift_ids.length })}
+          </h5>
           {selectedTheme ? (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {activeFloorGifts.map(gift => (
+            <div className="flex flex-wrap items-start gap-2">
+              {floorGifts.map(gift => {
+                const warning = themeExclusiveGiftIds(selectedTheme).includes(gift.game_id) ? exclusiveLabel : undefined
+                if (!plannedIds.has(String(gift.game_id))) {
+                  return (
+                    <div key={gift.game_id} className="w-[4rem]">
+                      <GiftCard
+                        gift={gift}
+                        size="4rem"
+                        showName={false}
+                        warning={warning}
+                        onClick={() => undefined}
+                        title={t('ladder.rewardTitle', { gift: gift.name })}
+                        ariaLabel={t('ladder.rewardTitle', { gift: gift.name })}
+                      />
+                      <span className="mt-1 block text-center text-[0.75rem]" style={{ color: '#9c8b73' }}>{t('ladder.reward')}</span>
+                    </div>
+                  )
+                }
+                return (
                   <GiftCard
                     key={gift.game_id}
                     gift={gift}
-                    size="4.75rem"
-                    isSelected
-                    onClick={() => toggleGiftId(String(gift.game_id), activeEntry.gift_ids)}
-                    onRemove={() => toggleGiftId(String(gift.game_id), activeEntry.gift_ids)}
+                    size="4rem"
+                    showName={false}
+                    warning={warning}
+                    onClick={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
+                    onRemove={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
                   />
-                ))}
-                <GiftCard
-                  gift={{ name: t('addGift') }}
-                  variant="insert"
-                  size="4.75rem"
-                  showName
-                  onClick={() => setGiftPickerOpen(open => !open)}
-                />
-              </div>
-            </>
+                )
+              })}
+              <GiftCard
+                gift={{ name: t('addGift') }}
+                variant="insert"
+                size="4rem"
+                showName
+                ariaLabel={t('giftPickerTitle')}
+                onClick={() => setGiftPickerOpen(open => !open)}
+              />
+            </div>
           ) : (
-            <div className="rounded-md border border-dashed px-4 py-8 text-center text-base" style={{ borderColor: '#333', color: '#6f675e' }}>
+            <p className="rounded-sm border border-dashed px-4 py-5 text-center text-[0.9375rem]" style={{ borderColor: '#2e2417', color: '#9c8b73' }}>
               {t('selectThemeFirst')}
+            </p>
+          )}
+
+          {giftPickerOpen && selectedTheme && (
+            <div
+              role="region"
+              aria-label={t('giftPickerTitle')}
+              className="mt-3 rounded-sm border p-3"
+              style={{ background: '#0d0b08', borderColor: '#2e2417' }}
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm leading-snug" style={{ color: '#9c8b73' }}>
+                  {t('giftPickerHint', { theme: activeThemeName ?? selectedTheme.name })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setGiftPickerOpen(false)}
+                  aria-label={t('close')}
+                  className={`inline-flex min-h-[2.75rem] min-w-[2.75rem] shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/10 ${focusRing}`}
+                  style={{ color: '#9c8b73' }}
+                >
+                  <X size={18} aria-hidden="true" />
+                </button>
+              </div>
+              <label className="mb-3 block">
+                <span className="sr-only">{t('giftPickerSearchPlaceholder')}</span>
+                <span className="relative block">
+                  <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#6f675e' }} />
+                  <input
+                    type="search"
+                    value={giftPickerQuery}
+                    onChange={event => setGiftPickerQuery(event.target.value)}
+                    placeholder={t('giftPickerSearchPlaceholder')}
+                    className="min-h-[2.75rem] w-full rounded-md border bg-[#0d0b08] py-1.5 pl-8 pr-3 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
+                    style={{ borderColor: '#2e2417' }}
+                  />
+                </span>
+              </label>
+              <div className="max-h-[22rem] overflow-y-auto overscroll-contain pr-0.5">
+                {availableGifts.length === 0 ? (
+                  <p className="py-6 text-center text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('noThemeGifts')}</p>
+                ) : filteredAvailableGifts.length === 0 ? (
+                  <p className="py-6 text-center text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('giftPickerEmpty')}</p>
+                ) : (
+                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] justify-items-center gap-x-1.5 gap-y-2 sm:grid-cols-[repeat(auto-fill,minmax(4rem,1fr))]">
+                    {filteredAvailableGifts.map(gift => {
+                      const isAdded = entry.gift_ids.includes(String(gift.game_id))
+                      const isInFinal = finalGiftIds.has(gift.game_id)
+                      return (
+                        <li key={gift.game_id} className="w-full min-w-0 max-w-[4.25rem]">
+                          <GiftCard
+                            gift={gift}
+                            size="100%"
+                            showName={false}
+                            isSelected={isAdded}
+                            onClick={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
+                            title={!isInFinal && !isAdded ? `${gift.name}\n${t('addToFinal')}` : undefined}
+                          />
+                          <span aria-hidden="true" className="mt-0.5 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: isAdded ? '#e8b030' : '#9c8b73' }}>{gift.name}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
         </div>
-      </section>
 
-      <section className="rounded-lg border p-4" style={{ background: '#1a1510', borderColor: '#2a2218' }}>
-        <div className="mb-2 font-mono text-sm uppercase" style={{ color: '#7a7168', letterSpacing: '0.08em' }}>
-          {t('memo')}
+        <FloorConstraints floor={entry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: entry.floor, ids })} />
+        <FloorGuidance entry={entry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
+
+        <div className="mt-5">
+          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+            {t('memo')}
+          </h5>
+          <FloorMemo
+            value={entry.memo}
+            onChange={memo => dispatch({ type: 'SET_FLOOR_MEMO', floor: entry.floor, memo })}
+            pool={acPool}
+            allowedKeywords={allowedKeywords}
+            egoGiftLookup={egoGiftLookup}
+          />
         </div>
-        <FloorMemo
-          value={activeEntry.memo}
-          onChange={memo => dispatch({ type: 'SET_FLOOR_MEMO', floor: activeEntry.floor, memo })}
-          pool={acPool}
-          allowedKeywords={allowedKeywords}
-          egoGiftLookup={egoGiftLookup}
-        />
-      </section>
+      </div>
+    )
+  }
 
-      <section className="planner-floor-final-section rounded-lg border p-3 md:p-4" style={{ background: '#17120d', borderColor: '#2a2218' }}>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-mono text-sm uppercase" style={{ color: '#7a7168', letterSpacing: '0.08em' }}>
-              {t('finalGifts')}
+  function renderSummary(entry: FloorEntry, theme: ThemeData | null, floorGifts: GiftData[]) {
+    const difficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
+    const memoPreview = getMemoPreview(entry.memo)
+    return (
+      // The floor number is the keyboard control; clicking anywhere on the row is a pointer shortcut.
+      <div
+        className="-m-1 flex cursor-pointer gap-3 rounded-sm p-1 transition-colors hover:bg-[rgba(200,144,10,0.05)] sm:gap-4"
+        onClick={() => openFloor(entry.floor)}
+      >
+        <div className="w-[3.5rem] shrink-0 sm:w-[4rem]">
+          {theme ? (
+            <ThemePackCard
+              theme={theme}
+              lang={locale}
+              sizes="(max-width: 640px) 56px, 64px"
+              ariaLabel={t('ladder.expand', { floor: entry.floor })}
+              onClick={() => openFloor(entry.floor)}
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="flex h-[3rem] items-center justify-center rounded-sm border border-dashed"
+              style={{ borderColor: '#3a2f22', color: '#5c4f3e' }}
+            >
+              <Plus size={18} />
+            </span>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <span className="text-sm font-semibold" style={{ color: getDifficultyTone(difficulty) }}>
+              {t(`difficulty.${difficulty}`)}
+            </span>
+            <span
+              className={`min-w-0 leading-snug ${theme ? 'text-[1rem]' : 'text-[0.9375rem]'}`}
+              style={{ fontFamily: theme ? 'var(--font-heading)' : undefined, color: theme ? '#e8dcc8' : '#6a6058' }}
+            >
+              {theme ? themeName(theme) : t('ladder.emptyHint')}
+            </span>
+          </p>
+          {floorGifts.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {floorGifts.map(gift => (
+                <GiftCard
+                  key={gift.game_id}
+                  gift={gift}
+                  size="clamp(2.75rem, 2.4rem + 0.6vw, 3.25rem)"
+                  showName={false}
+                  warning={themeExclusiveGiftIds(theme).includes(gift.game_id) ? exclusiveLabel : undefined}
+                  title={entry.gift_ids.includes(String(gift.game_id)) ? gift.name : t('ladder.rewardTitle', { gift: gift.name })}
+                  onClick={() => openFloor(entry.floor)}
+                />
+              ))}
             </div>
-            <h4 className="mt-1 text-lg font-semibold leading-tight" style={{ color: '#e8d8c0' }}>
-              {t('finalGiftCount', { count: finalFloorGifts.length })}
-            </h4>
-          </div>
+          )}
+          {memoPreview && (
+            <p className="line-clamp-2 max-w-[48rem] text-sm leading-relaxed" style={{ color: '#9c8b73' }}>
+              {memoPreview}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-10" data-floor-plan>
+      <section aria-label={t('ladder.title')}>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('ladder.hint')}</p>
+          <p className="text-[0.9375rem] tabular-nums" style={{ color: '#9c8b73' }}>
+            {t('configuredFloorCount', { configured: configuredCount, total: state.floorPlan.length })}
+          </p>
         </div>
 
-        <div className="planner-floor-final-workbench grid items-stretch gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.85fr)]">
-          <div
-            className="planner-floor-final-selected flex min-w-0 flex-col rounded-md border p-3"
-            style={{
-              background: '#120f0b',
-              borderColor: '#2a2218',
-              height: 'min(40rem, calc(100svh - 8rem))',
-              minHeight: '22rem',
-            }}
-          >
-            <div className="mb-3 flex shrink-0 flex-col gap-2">
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <div className="truncate font-mono text-[0.9375rem] uppercase" style={{ color: '#c8900a', letterSpacing: '0.08em' }}>
-                  {t('finalSelectedPanel')}
-                </div>
-                <div className="shrink-0 rounded-md border px-2 py-1 font-mono text-sm tabular-nums" style={{ color: '#a99d90', borderColor: '#2a2218', background: '#17120d' }}>
-                  {filteredFinalGifts.length}/{finalFloorGifts.length}
-                </div>
-              </div>
-              <label className="min-w-0">
-                <span className="sr-only">{t('finalGiftSearchPlaceholder')}</span>
-                <div className="relative">
-                  <Search
-                    size={16}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2"
-                    style={{ color: '#6f675e' }}
-                  />
-                  <input
-                    type="search"
-                    value={finalGiftQuery}
-                    onChange={event => setFinalGiftQuery(event.target.value)}
-                    placeholder={t('finalGiftSearchPlaceholder')}
-                    className="w-full rounded-md border bg-[#0d0b08] py-1.5 pl-8 pr-3 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-                    style={{ borderColor: '#30271d', minHeight: '2.75rem' }}
-                  />
-                </div>
-              </label>
+        {segments.map(segment => (
+          <div key={segment.id}>
+            <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] sm:grid-cols-[6rem_minmax(0,1fr)]">
+              <span className="relative" aria-hidden="true">
+                <span className={railClass} style={railStyle(segment.rail)} />
+              </span>
+              <h3
+                className="border-b pb-2 pt-5 text-[0.9375rem]"
+                style={{ fontFamily: 'var(--font-heading)', color: segment.label, borderColor: '#2e2417' }}
+              >
+                {t(`ladder.segment.${segment.id}`, { start: segment.entries[0].floor, end: segment.entries[segment.entries.length - 1].floor })}
+              </h3>
             </div>
-
-            <div className="planner-floor-final-filterbar mb-3 flex shrink-0 flex-col gap-1.5 border-y py-2" style={{ borderColor: '#241d15' }}>
-              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5">
-                <span className="mr-1 shrink-0 font-mono text-[0.875rem] uppercase" style={{ color: '#6f675e', letterSpacing: '0.06em' }}>
-                  {t('finalKeywordFilter')}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFinalGiftKeyword(null)}
-                  aria-pressed={finalGiftKeyword === null}
-                  className="min-h-[2.75rem] shrink-0 rounded-md border px-2.5 text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                  style={{
-                    borderColor: finalGiftKeyword === null ? '#c8900a' : '#2a2218',
-                    background: finalGiftKeyword === null ? 'rgba(200,144,10,0.12)' : 'transparent',
-                    color: finalGiftKeyword === null ? '#e8b030' : '#a99d90',
-                  }}
-                >
-                  {t('filterAll')} {finalGiftKeywordCounts.get(null) ?? 0}
-                </button>
-                {finalKeywordOptions.map(({ slug, count }) => {
-                  const keyword = SLUG_TO_KEYWORD[slug] ?? slug
-                  const selected = finalGiftKeyword === slug
-                  return (
-                    <button
-                      key={slug}
-                      type="button"
-                      onClick={() => setFinalGiftKeyword(selected ? null : slug)}
-                      aria-pressed={selected}
-                      className="min-h-[2.75rem] shrink-0 rounded-md border px-2.5 text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                      style={{
-                        borderColor: selected ? '#c8900a' : '#2a2218',
-                        background: selected ? 'rgba(200,144,10,0.12)' : 'transparent',
-                        color: selected ? '#e8b030' : '#a99d90',
-                      }}
-                    >
-                      {localizeDeckKeyword(keyword, kwContext.keywords[keyword], locale)} {count}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5">
-                <span className="mr-1 shrink-0 font-mono text-[0.875rem] uppercase" style={{ color: '#6f675e', letterSpacing: '0.06em' }}>
-                  {t('finalGradeFilter')}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFinalGiftGrade(null)}
-                  aria-pressed={finalGiftGrade === null}
-                  className="min-h-[2.75rem] shrink-0 rounded-md border px-2.5 font-mono text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                  style={{
-                    borderColor: finalGiftGrade === null ? '#c8900a' : '#2a2218',
-                    background: finalGiftGrade === null ? 'rgba(200,144,10,0.12)' : 'transparent',
-                    color: finalGiftGrade === null ? '#e8b030' : '#a99d90',
-                  }}
-                >
-                  {t('filterAll')} {finalGiftGradeCounts.get(null) ?? 0}
-                </button>
-                {FINAL_GIFT_GRADE_ORDER.map(grade => {
-                  const count = finalGiftGradeCounts.get(grade) ?? 0
-                  if (count === 0) return null
-                  const selected = finalGiftGrade === grade
-                  const color = GRADE_COLORS[grade] ?? '#888'
-                  return (
-                    <button
-                      key={grade}
-                      type="button"
-                      onClick={() => setFinalGiftGrade(selected ? null : grade)}
-                      aria-pressed={selected}
-                      className="min-h-[2.75rem] shrink-0 rounded-md border px-2.5 font-mono text-[0.9375rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-                      style={{
-                        borderColor: selected ? color : '#2a2218',
-                        background: selected ? `${color}18` : 'transparent',
-                        color: selected ? color : '#a99d90',
-                      }}
-                    >
-                      {GRADE_ROMAN[grade] ?? grade} {count}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {finalFloorGifts.length === 0 ? (
-              <div className="rounded-md border px-3 py-4 text-center text-base" style={{ color: '#7a7168', background: 'rgba(13,11,8,0.34)', borderColor: '#241d15' }}>
-                {t('finalGiftEmpty')}
-              </div>
-            ) : filteredFinalGifts.length === 0 ? (
-              <div className="rounded-md border px-3 py-4 text-center text-base" style={{ color: '#7a7168', background: 'rgba(13,11,8,0.34)', borderColor: '#241d15' }}>
-                {t('finalGiftNoResults')}
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" style={{ scrollbarGutter: 'stable' }}>
-                <div className="planner-floor-final-selected-grid grid grid-cols-[repeat(auto-fill,minmax(4.85rem,1fr))] gap-2">
-                  {filteredFinalGifts.map(gift => (
-                    <GiftCard
-                      key={gift.game_id}
-                      gift={gift}
-                      size="100%"
-                      showName
-                      onClick={() => removeFinalGift(gift.game_id)}
-                      ariaLabel={t('removeFinalGift', { gift: gift.name })}
-                      title={t('removeFinalGift', { gift: gift.name })}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <aside
-            className="planner-floor-final-catalog flex min-w-0 flex-col rounded-md border p-3"
-            style={{
-              background: '#0d0b08',
-              borderColor: '#241d15',
-              height: 'min(40rem, calc(100svh - 8rem))',
-              minHeight: '22rem',
-            }}
-          >
-            <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate font-mono text-[0.9375rem] uppercase" style={{ color: '#e8b030', letterSpacing: '0.08em' }}>
-                  {t('allGiftCatalog')}
-                </div>
-              </div>
-            </div>
-
-            <label className="mb-3 block shrink-0">
-              <span className="sr-only">{t('allGiftSearchPlaceholder')}</span>
-              <div className="relative">
-                <Search
-                  size={16}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2"
-                  style={{ color: '#6f675e' }}
-                />
-                <input
-                  type="search"
-                  value={allGiftQuery}
-                  onChange={event => setAllGiftQuery(event.target.value)}
-                  placeholder={t('allGiftSearchPlaceholder')}
-                  className="w-full rounded-md border bg-[#0d0b08] py-1.5 pl-8 pr-3 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-                  style={{ borderColor: '#30271d', minHeight: '2.75rem' }}
-                />
-              </div>
-            </label>
-
-            {filteredAllGifts.length === 0 ? (
-              <div className="flex min-h-0 flex-1 items-center justify-center px-2 py-4 text-center text-base" style={{ color: '#7a7168' }}>
-                {t('allGiftNoResults')}
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" style={{ scrollbarGutter: 'stable' }}>
-                <div className="planner-floor-final-catalog-grid grid grid-cols-[repeat(auto-fill,minmax(4.65rem,1fr))] gap-2 md:grid-cols-2 xl:grid-cols-[repeat(auto-fill,minmax(4.65rem,1fr))]">
-                  {filteredAllGifts.map(gift => {
-                    const alreadyAdded = finalGiftIds.has(gift.game_id)
-                    return (
-                      <div
-                        key={gift.game_id}
-                        className="min-w-0 rounded-md p-0.5 transition-colors"
+            <ol>
+              {segment.entries.map(entry => {
+                const isOpen = entry.floor === activeFloor
+                const theme = entry.theme_id ? themeMap.get(entry.theme_id) ?? null : null
+                const planned = isConfiguredFloor(entry)
+                const floorGifts = getFloorGifts(entry, theme)
+                return (
+                  <li
+                    key={entry.floor}
+                    ref={element => {
+                      if (element) rowRefs.current.set(entry.floor, element)
+                      else rowRefs.current.delete(entry.floor)
+                    }}
+                    data-floor-row={entry.floor}
+                    className="grid grid-cols-[3.75rem_minmax(0,1fr)] sm:grid-cols-[6rem_minmax(0,1fr)]"
+                    style={{ scrollMarginTop: '5rem' }}
+                  >
+                    <div className="relative">
+                      <span className={railClass} style={railStyle(segment.rail, isOpen)} aria-hidden="true" />
+                      <button
+                        type="button"
+                        data-floor-toggle
+                        onClick={() => toggleFloor(entry.floor)}
+                        aria-expanded={isOpen}
+                        aria-controls={isOpen ? `floor-editor-${entry.floor}` : undefined}
+                        aria-label={t(isOpen ? 'ladder.collapse' : 'ladder.expand', { floor: entry.floor })}
+                        className={`relative ml-[1.375rem] mt-2 flex min-h-[2.75rem] min-w-[2.75rem] items-start rounded-sm leading-none tabular-nums sm:ml-[2.125rem] ${focusRing}`}
                         style={{
-                          background: alreadyAdded ? 'rgba(200,144,10,0.08)' : 'transparent',
-                          boxShadow: alreadyAdded ? 'inset 0 0 0 1px rgba(200,144,10,0.28)' : 'none',
+                          fontFamily: 'var(--font-title)',
+                          fontSize: 'clamp(2.125rem, 1.6rem + 1.6vw, 3.25rem)',
+                          color: isOpen ? '#e8b030' : planned ? '#e8dcc8' : '#5c4f3e',
                         }}
                       >
-                        <GiftCard
-                          gift={gift}
-                          size="100%"
-                          showName
-                          onClick={() => toggleFinalGift(gift.game_id)}
-                          ariaLabel={alreadyAdded ? t('removeAlreadyAddedGift', { gift: gift.name }) : t('addFinalGift', { gift: gift.name })}
-                          title={alreadyAdded ? t('removeAlreadyAddedGift', { gift: gift.name }) : t('addFinalGift', { gift: gift.name })}
-                        />
-                      </div>
-                    )
-                  })}
+                        {entry.floor}
+                      </button>
+                    </div>
+                    <div className="min-w-0 border-b py-3" style={{ borderColor: '#2e2417' }}>
+                      {isOpen ? renderEditor(entry, floorGifts) : renderSummary(entry, theme, floorGifts)}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        ))}
+      </section>
+
+      <section aria-labelledby="final-gifts-title" className="relative border-t pt-5 lg:-ml-[var(--planner-rail-w,0rem)]" style={{ borderColor: '#2e2417' }}>
+        {/* 이 영역은 처음부터 목차 레일 자리까지 넓다. 여기에 오면 레일 대신 위쪽 가로 막대가 겹쳐 나타난다(PlannerClient가 관찰) */}
+        <div data-final-gifts-start aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-px" />
+        <div className="mb-1 flex items-baseline gap-2">
+          <h3 id="final-gifts-title" className="text-[1.25rem] leading-tight" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+            {t('finalGifts')}
+          </h3>
+          <span className="tabular-nums leading-none" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', color: '#c8900a' }}>
+            <span aria-hidden="true">{finalFloorGifts.length}</span>
+            <span className="sr-only">{t('finalGiftCount', { count: finalFloorGifts.length })}</span>
+          </span>
+          <FinalGiftPresets inventory={state.giftInventory} dispatch={dispatch} giftMap={giftMap} />
+        </div>
+
+        {showFinalFilters && (
+          <div className="mb-3 sm:flex sm:items-center sm:border-b sm:border-[#2e2417]">
+            {/* 미러 던전 기프트 목록의 도구줄과 같은 부품: 키워드 밑줄 탭 + 등급 칩, 수는 작고 흐리게 */}
+            <div role="group" aria-label={t('keywordDistribution')} className="flex min-w-0 overflow-x-auto border-b border-[#2e2417] [scrollbar-width:none] sm:flex-1 sm:border-b-0 [&::-webkit-scrollbar]:hidden">
+              {[{ slug: null as string | null, count: finalGiftKeywordCounts.get(null) ?? 0 }, ...finalKeywordOptions].map(({ slug, count }) => {
+                const key = !slug ? '전체' : slug === 'general' ? '공통' : SLUG_TO_KEYWORD[slug] ?? slug
+                return (
+                  <GiftKeywordTab
+                    key={slug ?? 'all'}
+                    label={giftKeywordLabel(key, locale)}
+                    iconUrl={slug ? giftKeywordIcon(key) : null}
+                    color={slug ? GIFT_KEYWORD_COLORS[key] ?? '#9c8b73' : undefined}
+                    active={(finalGiftKeyword ?? null) === slug}
+                    count={count}
+                    onClick={() => setFinalGiftKeyword(finalGiftKeyword === slug || !slug ? null : slug)}
+                  />
+                )
+              })}
+            </div>
+            <div role="group" aria-label={t('finalGradeFilter')} className="mt-2 flex items-center gap-0.5 sm:ml-3 sm:mt-0 sm:shrink-0">
+              {FINAL_GIFT_GRADE_ORDER.map(grade => {
+                const count = finalGiftGradeCounts.get(grade) ?? 0
+                if (count === 0) return null
+                return (
+                  <GiftGradeChip
+                    key={grade}
+                    grade={grade}
+                    ariaLabel={`${t('finalGradeFilter')} ${GRADE_ROMAN[grade] ?? grade}`}
+                    active={finalGiftGrade === grade}
+                    count={count}
+                    onClick={() => setFinalGiftGrade(finalGiftGrade === grade ? null : grade)}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {finalFloorGifts.length === 0 ? (
+          <p className="border-y border-dashed py-5 text-center text-[0.9375rem]" style={{ borderColor: '#2e2417', color: '#9c8b73' }}>
+            {t('finalGiftEmpty')}
+          </p>
+        ) : filteredFinalGifts.length === 0 ? (
+          <p className="px-4 py-5 text-center text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('finalGiftNoResults')}</p>
+        ) : (
+          <ul aria-label={t('finalSelectedPanel')} className="grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] justify-items-center gap-x-2.5 gap-y-3 pt-1 sm:grid-cols-[repeat(auto-fill,minmax(4.75rem,1fr))] sm:gap-x-3">
+            {filteredFinalGifts.map(gift => {
+              const entry = finalEntryById.get(gift.game_id)
+              if (!entry) return null
+              return (
+                <FinalGiftTile
+                  key={gift.game_id}
+                  gift={gift}
+                  entry={entry}
+                  onEnhance={setFinalEnhance}
+                  onRemove={removeFinalGift}
+                />
+              )
+            })}
+          </ul>
+        )}
+
+        <div className="mt-5">
+          <h4 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>{t('allGiftCatalog')}</h4>
+          {/* 페이지 흐름 안에 둔다(스크롤은 창 하나). 도구줄은 사이트 메뉴와 플래너 가로 목차 아래에 붙고, 결과 칸은 필터를 바꿔도 페이지가 줄지 않게 한 화면 높이를 확보한다. */}
+          <div
+            className="border-t px-0.5 pb-3"
+            style={{
+              borderColor: '#2e2417',
+              '--gift-catalog-bg': '#0d0b08',
+              '--gift-catalog-sticky-top': 'calc(var(--nav-offset, 4rem) + var(--planner-bar-h, 0rem))',
+              '--gift-catalog-min-h': 'calc(100dvh - var(--gift-catalog-sticky-top) - 6rem)',
+            } as React.CSSProperties}
+          >
+            <GiftCatalog
+              compact
+              gifts={catalogGifts}
+              getGiftKeywordIcon={giftKeywordIcon}
+              filters={catalogFilters}
+              selectedIds={catalogSelectedIds}
+              onGiftClick={onCatalogGiftClick}
+              cardProps={catalogCardProps}
+            />
+          </div>
+        </div>
+      </section>
+
+      {suggestedFusion?.result && (() => {
+        const result = localizedGift(suggestedFusion.result)
+        const materials = suggestedFusion.materials.map(localizedGift)
+        const applyLabel = t('fusionAlertApply', { gift: result.name })
+        const iconButton = 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded text-[#9c8b73] transition-colors hover:text-[#e8dcc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]'
+        return (
+          // 페이지 이동 버튼(PageNavigation, 오른쪽 아래 2.75rem 폭) 바로 왼쪽에 붙는다: 오른쪽 여백 = 그 버튼 여백 + 폭 + 테두리 + 간격
+          <aside
+            aria-live="polite"
+            aria-labelledby="fusion-alert-title"
+            className={`fixed bottom-[max(0.875rem,env(safe-area-inset-bottom))] right-[calc(max(0.875rem,env(safe-area-inset-right))_+_3.375rem)] z-20 rounded-lg border ${fusionCollapsed ? '' : 'left-3 sm:left-auto sm:w-[20rem]'}`}
+            style={{ background: '#17120c', borderColor: 'rgba(200,144,10,0.4)', boxShadow: '0 0.25rem 1rem #0009' }}
+          >
+            {fusionCollapsed ? (
+              <div className="flex items-center pl-1.5">
+                <span inert className="w-8" title={result.name}><GiftCard gift={result} size="100%" showName={false} onClick={applySuggestedFusion} /></span>
+                <button
+                  type="button"
+                  data-fusion-toggle
+                  aria-expanded={false}
+                  title={t('fusionAlertExpand')}
+                  onClick={() => setFusionCollapsed(false)}
+                  className="flex h-11 items-center gap-2 rounded-r-lg pl-2 pr-2.5 text-[0.875rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]"
+                  style={{ color: '#e8b030', fontFamily: 'var(--font-heading)' }}
+                >
+                  <span id="fusion-alert-title">{t('fusionAlertTitle')}</span>
+                  {craftableFusions.length > 1 && <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', color: '#c8900a' }}>{craftableFusions.length}</span>}
+                  <ChevronUp size={16} aria-hidden="true" className="text-[#9c8b73]" />
+                </button>
+              </div>
+            ) : (
+              <div className="pb-3 pl-3.5">
+                <div className="flex items-center gap-2">
+                  <h3 id="fusion-alert-title" className="min-w-0 flex-1 text-[0.9375rem]" style={{ color: '#e8b030', fontFamily: 'var(--font-heading)' }}>
+                    {t('fusionAlertTitle')}
+                    {craftableFusions.length > 1 && <span className="ml-1.5 tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', color: '#c8900a' }}>{craftableFusions.length}</span>}
+                  </h3>
+                  <div className="flex">
+                    <button type="button" data-fusion-toggle aria-expanded aria-label={t('fusionAlertCollapse')} title={t('fusionAlertCollapse')} onClick={() => setFusionCollapsed(true)} className={iconButton}>
+                      <ChevronUp size={16} aria-hidden="true" className="rotate-180" />
+                    </button>
+                    <button type="button" onClick={dismissSuggestedFusion} aria-label={t('fusionAlertDismiss')} title={t('fusionAlertDismiss')} className={iconButton}>
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 재료 아이콘 + … = 결과. 아이콘은 보기 전용이고 반영은 아래 버튼 하나로 한다 */}
+                <div className="flex items-center gap-2 pr-3.5">
+                  <p className="sr-only">{t('fusionAlertMaterials')}: {materials.map(gift => gift.name).join(', ')}</p>
+                  <ul inert className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1.5">
+                    {materials.map((gift, index) => (
+                      <li key={gift.game_id} className="flex items-center gap-1" title={gift.name}>
+                        {index > 0 && <span aria-hidden="true" className="text-[0.8125rem] text-[#6b5d4b]">+</span>}
+                        <span className="w-11"><GiftCard gift={gift} size="100%" showName={false} onClick={applySuggestedFusion} /></span>
+                      </li>
+                    ))}
+                  </ul>
+                  <span aria-hidden="true" className="shrink-0 text-[1rem] text-[#9c8b73]">=</span>
+                  <span inert className="w-14 shrink-0" title={result.name}><GiftCard gift={result} size="100%" showName={false} onClick={applySuggestedFusion} /></span>
+                </div>
+
+                <div className="mt-2.5 flex items-end gap-3 pr-3.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[0.9375rem] text-[#e8dcc8]" style={{ fontFamily: 'var(--font-heading)' }} title={result.name}>{result.name}</p>
+                    <p className="mt-0.5 break-keep text-[0.75rem] leading-snug text-[#9c8b73]">{t('fusionAlertHint')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={applySuggestedFusion}
+                    aria-label={applyLabel}
+                    className="h-9 shrink-0 rounded px-3.5 text-[0.875rem] font-bold transition-colors hover:bg-[#e8b030] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17120c]"
+                    style={{ background: '#c8900a', color: '#0d0b08' }}
+                  >
+                    {t('fusionAlertApplyShort')}
+                  </button>
                 </div>
               </div>
             )}
           </aside>
-        </div>
-      </section>
+        )
+      })()}
 
-      {suggestedFusion?.result && (
-        <aside
-          aria-live="polite"
-          className="fixed inset-x-3 bottom-3 z-20 rounded-lg border p-3 md:inset-x-auto md:right-4 md:w-[23rem]"
-          style={{
-            background: '#151210',
-            borderColor: 'rgba(232,176,48,0.28)',
-            boxShadow: '0 1.25rem 3rem rgba(0,0,0,0.68), inset 0 1px 0 rgba(232,216,192,0.05)',
-          }}
-        >
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="font-mono text-sm uppercase" style={{ color: '#e8b030', letterSpacing: '0.08em' }}>
-                {t('fusionAlertTitle')}
-              </div>
-              <p className="mt-1 text-sm leading-snug" style={{ color: '#b9aa98' }}>
-                {t('fusionAlertHint')}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={dismissSuggestedFusion}
-              aria-label={t('fusionAlertDismiss')}
-              className="inline-flex min-h-[max(2.75rem,44px)] min-w-[max(2.75rem,44px)] items-center justify-center rounded-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-              style={{ color: '#aaa' }}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-              {suggestedFusion.materials.map(material => {
-                const gift = localizedGift(material)
-                return (
-                  <span
-                    key={material.game_id}
-                    className="max-w-full truncate rounded-md border px-2 py-1 text-sm"
-                    style={{ borderColor: '#35291a', background: '#0d0b08', color: '#d8c5aa' }}
-                    title={gift.name}
-                  >
-                    {gift.name}
-                  </span>
-                )
-              })}
-            </div>
-            <div className="w-[5.25rem] shrink-0">
-              <GiftCard
-                gift={localizedGift(suggestedFusion.result)}
-                size="100%"
-                onClick={applySuggestedFusion}
-                ariaLabel={t('fusionAlertApply', { gift: localizedGift(suggestedFusion.result).name })}
-                title={t('fusionAlertApply', { gift: localizedGift(suggestedFusion.result).name })}
-              />
-            </div>
-          </div>
-        </aside>
-      )}
-
-      {giftPickerOpen && selectedTheme && (
-        <div
-          role="dialog"
-          aria-modal="false"
-          aria-label={t('giftPickerTitle')}
-          className="popup-drawer fixed inset-x-3 bottom-3 z-30 mx-auto flex flex-col overflow-hidden rounded-lg border p-2.5 md:bottom-4 md:max-w-2xl md:p-3"
-          style={{
-            background: '#151210',
-            borderColor: 'rgba(200,144,10,0.28)',
-            boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.72), 0 0 0 1px rgba(232,176,48,0.06)',
-            maxHeight: 'min(30rem, calc(100svh - 1.5rem))',
-          }}
-        >
-          <div className="mb-2 flex shrink-0 items-start justify-between gap-2.5">
-            <div className="min-w-0">
-              <div className="font-mono text-[0.8125rem] uppercase leading-tight" style={{ color: '#7a7168', letterSpacing: '0.08em' }}>
-                {t('giftPickerTitle')}
-              </div>
-              <p className="mt-0.5 text-sm leading-snug" style={{ color: '#9a9086' }}>
-                {t('giftPickerHint', { theme: activeThemeName ?? selectedTheme.name })}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setGiftPickerOpen(false)}
-              aria-label={t('close')}
-              className="inline-flex min-h-[max(2.75rem,44px)] min-w-[max(2.75rem,44px)] items-center justify-center rounded-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-              style={{ color: '#aaa' }}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-          </div>
-
-          <label className="mb-2 block shrink-0">
-            <span className="sr-only">{t('giftPickerSearchPlaceholder')}</span>
-            <div className="relative">
-              <Search
-                size={16}
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2"
-                style={{ color: '#6f675e' }}
-              />
-              <input
-                type="search"
-                value={giftPickerQuery}
-                onChange={event => setGiftPickerQuery(event.target.value)}
-                placeholder={t('giftPickerSearchPlaceholder')}
-                className="w-full rounded-md border bg-[#0d0b08] py-1.5 pl-8 pr-3 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-                style={{ borderColor: '#30271d', minHeight: 'max(2.75rem, 44px)' }}
-              />
-            </div>
-          </label>
-
-          <div className="min-h-0 overflow-y-auto overscroll-contain pr-0.5">
-            {availableGifts.length === 0 ? (
-              <div className="rounded-md border border-dashed py-8 text-center text-base" style={{ borderColor: '#333', color: '#6b7280' }}>
-                {t('noThemeGifts')}
-              </div>
-            ) : filteredAvailableGifts.length === 0 ? (
-              <div className="rounded-md border border-dashed py-8 text-center text-base" style={{ borderColor: '#333', color: '#6b7280' }}>
-                {t('giftPickerEmpty')}
-              </div>
-            ) : (
-              <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-6 md:grid-cols-7">
-                {filteredAvailableGifts.map(gift => {
-                  const isAdded = activeEntry.gift_ids.includes(String(gift.game_id))
-                  const isInFinal = finalGiftIds.has(gift.game_id)
-                  return (
-                    <div key={gift.game_id} className="min-w-0">
-                      <GiftCard
-                        gift={gift}
-                        size="100%"
-                        isSelected={isAdded}
-                        onClick={() => toggleGiftId(String(gift.game_id), activeEntry.gift_ids)}
-                        title={!isInFinal && !isAdded ? t('addToFinal') : undefined}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {themeModalOpen && (
+      {themeModalOpen && activeEntry && (
         <ThemePackPickerModal
           title={t('themeModalTitle', {
             floor: activeEntry.floor,
@@ -1238,50 +1178,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           }
         />
       )}
-      <style jsx global>{`
-        @media (max-width: 1023px) {
-          .planner-floor-final-workbench {
-            grid-template-columns: minmax(0, 1fr) !important;
-          }
-
-          .planner-floor-final-selected,
-          .planner-floor-final-catalog {
-            height: auto !important;
-            min-height: 0 !important;
-          }
-
-          .planner-floor-final-selected {
-            max-height: min(28rem, 56svh);
-          }
-
-          .planner-floor-final-catalog {
-            max-height: min(30rem, 58svh);
-          }
-        }
-
-        @media (max-width: 767px) {
-          .planner-floor-final-section {
-            padding: 0.75rem !important;
-          }
-
-          .planner-floor-final-filterbar {
-            gap: 0.5rem !important;
-          }
-
-          .planner-floor-final-selected-grid,
-          .planner-floor-final-catalog-grid {
-            grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr)) !important;
-            gap: 0.5rem !important;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .planner-floor-final-selected-grid,
-          .planner-floor-final-catalog-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          }
-        }
-      `}</style>
     </div>
   )
 }

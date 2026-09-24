@@ -16,7 +16,6 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
 import FormationCountFilter from '@/components/decks/FormationCountFilter'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
@@ -369,6 +368,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
     identitiesRequestRef.current = (async () => {
       try {
+        const { createClient: createBrowserClient } = await import('@/lib/supabase/client')
         const supabase = createBrowserClient()
         const buildQuery = (select: string) => supabase
           .schema('limbus')

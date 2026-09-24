@@ -1,11 +1,15 @@
+import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { withEgoStage } from '@/lib/db/queries'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
+import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
+import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -46,8 +50,9 @@ async function fetchPlannerStaticData() {
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: passives, error: passivesError }, { data: skills, error: skillsError }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, release_date').order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp, order_num').order('order_num'),
-    supabase.schema('limbus').from('passives').select('id, name, name_en, name_jp, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level').eq('uptie_level', 4),
-    supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').eq('uptie_level', 4),
+    // Every uptie level (the deck picks each slot's level); more rows than one page.
+    readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, name_en, name_jp, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, uptie_level').order('id').range(from, to)),
+    readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
   ])
   if (identitiesError) Sentry.captureException(identitiesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch identities' } })
   if (sinnersError) Sentry.captureException(sinnersError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch sinners' } })
@@ -64,23 +69,21 @@ async function fetchPlannerStaticData() {
 export default async function PlannerPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
-  const { themes, gifts, recipes, identities, sinners, passives, skills, egos } = await fetchPlannerStaticData()
+  const data = await fetchPlannerStaticData()
+  const { themes, recipes, identities, sinners, skills, egos } = data
+  // 현재 언어가 아닌 긴 설명은 보내지 않는다(없으면 화면이 한국어로 되돌아간다). 초기 전송량의 절반 가까이가 여기서 줄어든다.
+  const gifts = data.gifts?.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
+  const passives = data.passives?.map(passive => withoutOtherLocales(passive, lang, ['description']))
 
   return (
     <>
       {/* Server-rendered page header — paints in initial HTML before JS loads */}
-      <div className="pt-20 sm:pt-24 pb-4 px-3 md:px-6 max-w-[90rem] mx-auto">
-        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-          MIRROR DUNGEON PLANNER
-        </p>
-        <h1 className="font-serif text-2xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
-          {t('title')}
-        </h1>
-        <div style={{ width: '6rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '0.75rem' }} />
+      <div className="pt-[5.5rem] px-3 md:px-6 max-w-[90rem] mx-auto">
+        <PageHeader title={t('title')} />
       </div>
       {/* PlannerClient uses nuqs (useSearchParams internally), requiring Suspense
           to prevent CSR bailout from de-opting the entire page to client rendering. */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<PlannerSkeleton />}>
         <PlannerClient
           themes={themes ?? []}
           gifts={gifts ?? []}

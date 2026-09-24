@@ -1,4 +1,4 @@
-import BoardSkeleton from '@/components/discovery/BoardSkeleton'
+import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -60,10 +60,6 @@ async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
   return { initialPlans, initialTotal }
 }
 
-function CommunityPageSkeleton() {
-  return <div className="px-4 pb-16 md:px-6"><div className="mx-auto max-w-7xl"><BoardSkeleton kind="planner" shelf count={3} /></div></div>
-}
-
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.header' })
@@ -72,8 +68,8 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} eyebrow={t('eyebrow')} action={t('newPlan')} assist={tActions('triggerMode')} />
-      <Suspense fallback={<CommunityPageSkeleton />}>
+      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
+      <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
       </Suspense>
     </div>

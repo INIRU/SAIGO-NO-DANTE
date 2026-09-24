@@ -14,10 +14,10 @@ import type { PlannerState, PlannerAction, GiftData, RecipeData } from '@/lib/pl
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
 import {
-  deriveBlockedFinalFusionMaterialIds,
   getFinalGiftVariantIds,
   parseFinalGiftIds,
 } from '@/lib/planner/fusion'
+import { deriveFinalGifts, finalEnhanceEdit } from '@/lib/planner/final-gifts'
 import {
   GRADE_ROMAN,
   GRADE_COLORS,
@@ -28,10 +28,9 @@ import {
   getKeywordSlug,
 } from './gift-plan/constants'
 import type { GiftSubTab } from './gift-plan/constants'
-import GiftCard from '@/components/ui/GiftCard'
+import GiftCard, { GiftEnhancePicker } from '@/components/ui/GiftCard'
 import GiftGridPanel from './gift-plan/GiftGridPanel'
 import SelectedPanel from './gift-plan/SelectedPanel'
-import QuickAddSection from './gift-plan/QuickAddSection'
 
 interface Props {
   state: PlannerState
@@ -74,15 +73,20 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
     })
   }
 
-  // Parse selected IDs by prefix
+  // Parse selected IDs by prefix. 관찰 목록은 observe_ 항목이 바뀔 때만 새로 만든다(최종 기프트를 눌러도 관찰 격자를 다시 그리지 않게)
+  const observeKey = state.giftInventory.filter(id => id.startsWith('observe_')).join()
   const observeIds = useMemo(
-    () => new Set(
-      state.giftInventory
-        .filter(id => id.startsWith('observe_'))
-        .map(id => parseInt(id.replace('observe_', '')))
-    ),
-    [state.giftInventory]
+    () => new Set(observeKey ? observeKey.split(',').map(id => parseInt(id.replace('observe_', ''))) : []),
+    [observeKey]
   )
+  const toggleObserve = useCallback((gift: GiftData) => {
+    const key = `observe_${gift.game_id}`
+    if (observeIds.has(gift.game_id)) {
+      dispatch({ type: 'REMOVE_GIFT', giftId: key })
+    } else if (observeIds.size < MAX_OBSERVED_GIFTS) {
+      dispatch({ type: 'ADD_GIFT', giftId: key })
+    }
+  }, [dispatch, observeIds])
   const startIds = useMemo(
     () => new Set(
       state.giftInventory
@@ -91,42 +95,14 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
     ),
     [state.giftInventory]
   )
-  // finalIds: game_id Set + 강화 상태 Map
-  const finalIds = useMemo(() => {
-    return parseFinalGiftIds(state.giftInventory)
-  }, [state.giftInventory])
-
-  // 강화 상태: game_id → 0(기본) | 1(+) | 2(++)
-  const finalEnhance = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const id of state.giftInventory) {
-      if (!id.startsWith('final_')) continue
-      if (id.endsWith('_plusplus')) {
-        const gid = parseInt(id.replace('final_', '').replace('_plusplus', ''))
-        if (!isNaN(gid)) map.set(gid, 2)
-      } else if (id.endsWith('_plus')) {
-        const gid = parseInt(id.replace('final_', '').replace('_plus', ''))
-        if (!isNaN(gid)) map.set(gid, 1)
-      } else {
-        const gid = parseInt(id.replace('final_', ''))
-        if (!isNaN(gid) && !map.has(gid)) map.set(gid, 0)
-      }
-    }
-    return map
-  }, [state.giftInventory])
-
-  const blockedFinalMaterialIds = useMemo(() => {
-    return deriveBlockedFinalFusionMaterialIds({
-      selectedFinalGiftIds: finalIds,
-      recipes,
-      giftMap,
-      gifts,
-    })
-  }, [finalIds, giftMap, gifts, recipes])
-
-  const finalVisibleIds = useMemo(() => {
-    return new Set(Array.from(finalIds).filter(id => !blockedFinalMaterialIds.has(id)))
-  }, [blockedFinalMaterialIds, finalIds])
+  // Stored picks versus the derived final set: picks plus start/observed gifts, minus what a fusion result consumed.
+  const storedFinalIds = useMemo(() => parseFinalGiftIds(state.giftInventory), [state.giftInventory])
+  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = useMemo(
+    () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
+    [giftMap, recipes, state.giftInventory],
+  )
+  const finalIds = useMemo(() => new Set(finalEntries.map(entry => entry.id)), [finalEntries])
+  const finalVisibleIds = finalIds
 
   const removeFinalGiftVariants = useCallback((giftGameId: number) => {
     for (const giftId of getFinalGiftVariantIds(giftGameId)) {
@@ -144,12 +120,12 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
     if (blockedFinalMaterialIds.size === 0) return
 
     for (const blockedId of blockedFinalMaterialIds) {
-      if (!finalIds.has(blockedId)) continue
+      if (!storedFinalIds.has(blockedId)) continue
       for (const giftId of getFinalGiftVariantIds(blockedId)) {
         dispatch({ type: 'REMOVE_GIFT', giftId })
       }
     }
-  }, [blockedFinalMaterialIds, dispatch, finalIds])
+  }, [blockedFinalMaterialIds, dispatch, storedFinalIds])
 
   function getGiftsByIds(ids: Set<number>): GiftData[] {
     return Array.from(ids)
@@ -298,14 +274,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
               selectedIds={observeIds}
               maxSelect={3}
               gradeOrder={GRADE_ORDER}
-              onToggle={gift => {
-                const key = `observe_${gift.game_id}`
-                if (observeIds.has(gift.game_id)) {
-                  dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                } else if (observeIds.size < MAX_OBSERVED_GIFTS) {
-                  dispatch({ type: 'ADD_GIFT', giftId: key })
-                }
-              }}
+              onToggle={toggleObserve}
             />
             <SelectedPanel
               title={t('observe.selectedTitle')}
@@ -579,7 +548,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                 {finalVisibleIds.size > 0 && (
                   <button
                     onClick={() => {
-                      Array.from(finalIds).forEach(id => {
+                      Array.from(storedFinalIds).forEach(id => {
                         removeFinalGiftVariants(id)
                       })
                     }}
@@ -631,55 +600,41 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                   gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
                   gap: '0.5rem',
                 }}>
-                  {getGiftsByIds(finalVisibleIds).map(gift => {
-                    const enh = finalEnhance.get(gift.game_id) ?? 0
+                  {finalEntries.map(entry => {
+                    const gift = giftMap.get(entry.id)
+                    if (!gift) return null
+                    const enh = entry.level
                     const canEnh = !!(gift.effect_plus)
+                    const setEnh = (level: number) => {
+                      const { oldId, newId } = finalEnhanceEdit(state.giftInventory, entry, level)
+                      if (oldId && newId) dispatch({ type: 'REPLACE_GIFT', oldId, newId })
+                      else if (newId) dispatch({ type: 'ADD_GIFT', giftId: newId })
+                      else if (oldId) dispatch({ type: 'REMOVE_GIFT', giftId: oldId })
+                    }
                     const cycleEnh = () => {
                       if (!canEnh) return
-                      const oldKey = enh === 2 ? `final_${gift.game_id}_plusplus` : enh === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
-                      const next = (enh + 1) % (gift.effect_plusplus ? 3 : 2)
-                      const newKey = next === 2 ? `final_${gift.game_id}_plusplus` : next === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
-                      dispatch({ type: 'REPLACE_GIFT', oldId: oldKey, newId: newKey })
+                      setEnh((enh + 1) % (gift.effect_plusplus ? 3 : 2))
                     }
-                    const removeGift = () => {
-                      const key = enh === 2 ? `final_${gift.game_id}_plusplus` : enh === 1 ? `final_${gift.game_id}_plus` : `final_${gift.game_id}`
-                      dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                    }
+                    // Start and observed gifts are removed from their own tabs.
+                    const removeGift = entry.source === 'final' ? () => removeFinalGiftVariants(gift.game_id) : undefined
                     return (
-                      <GiftCard
-                        key={gift.id}
-                        gift={gift}
-                        isSelected={false}
-                        onClick={canEnh ? cycleEnh : () => {}}
-                        enhance={canEnh ? enh : undefined}
-                        onEnhance={canEnh ? cycleEnh : undefined}
-                        onRemove={removeGift}
-                        conditionStatus={getConditionStatus(gift)}
-                      />
+                      <div key={gift.id} className="min-w-0">
+                        <GiftCard
+                          gift={gift}
+                          isSelected={false}
+                          onClick={canEnh ? cycleEnh : () => {}}
+                          enhance={canEnh ? enh : undefined}
+                          onEnhance={canEnh ? cycleEnh : undefined}
+                          onRemove={removeGift}
+                          conditionStatus={getConditionStatus(gift)}
+                        />
+                        {canEnh && <GiftEnhancePicker level={enh} max={gift.effect_plusplus ? 2 : 1} giftName={gift.name} onChange={setEnh} />}
+                      </div>
                     )
                   })}
                 </div>
               )}
 
-              {/* Quick add pills from observe/start */}
-              {(observeIds.size > 0 || startIds.size > 0) && (
-                <div className="planner-gift-quick-adds" style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
-                  <QuickAddSection
-                    label={t('final.addFromObserve')}
-                    gifts={getGiftsByIds(observeIds)}
-                    finalIds={finalIds}
-                    blockedIds={blockedFinalMaterialIds}
-                    onAdd={addFinalGift}
-                  />
-                  <QuickAddSection
-                    label={t('final.addFromStart')}
-                    gifts={getGiftsByIds(startIds)}
-                    finalIds={finalIds}
-                    blockedIds={blockedFinalMaterialIds}
-                    onAdd={addFinalGift}
-                  />
-                </div>
-              )}
             </div>
 
             {/* ── Bottom section: full gift list ──────────────────────── */}

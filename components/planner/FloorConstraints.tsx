@@ -26,9 +26,8 @@ export default function FloorConstraints({
     .filter((e) => e.floor < floor)
     .flatMap((e) => e.constraints ?? []);
   const selected = entries.find((e) => e.floor === floor)?.constraints ?? [];
-  const rows = constraintsForFloor(floor, owned).filter(
-    (c) => onChange || selected.includes(c.id),
-  );
+  // 읽기 전용(플랜 상세)에서도 그 층에서 고를 수 있는 제약을 전부 보여 주고, 선택한 것만 오버레이를 씌운다
+  const rows = constraintsForFloor(floor, owned);
   const points = [...owned, ...selected].reduce(
     (n, id) =>
       n + (constraintSource.constraints.find((c) => c.id === id)?.score ?? 0),
@@ -61,7 +60,26 @@ export default function FloorConstraints({
           </strong>
         </div>
       </div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,10.75rem),1fr))] gap-x-1 gap-y-3 pb-2 pt-2">
+      {/* 모바일(읽기 전용): 카드 대신 점수·이름 칩으로 간결하게. 선택한 제약은 강조와 체크 표시 */}
+      {!onChange && (
+        <ul className="flex flex-wrap gap-1.5 pb-2 pt-1 sm:hidden">
+          {rows.map((c) => {
+            const active = selected.includes(c.id);
+            return (
+              <li
+                key={c.id}
+                title={c.descriptions[lang].replace(/\n{2,}/g, "\n")}
+                className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-[0.8125rem] ${active ? "border-[#8f7fd6] bg-[rgba(143,127,214,0.16)] text-[#e2dafb]" : "border-[#2e2417] text-[#8a7d69]"}`}
+              >
+                <span className="font-[family-name:var(--font-bebas-kai)] text-[1rem] leading-none tabular-nums">{c.score}</span>
+                <span className={active ? "font-semibold" : ""}>{c.names[lang]}</span>
+                {active && <span aria-label={label("선택됨", "選択済み", "Selected")} className="text-[#c3b3ff]">✓</span>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div className={`${onChange ? "grid" : "hidden sm:grid"} grid-cols-[repeat(auto-fit,minmax(min(100%,10.75rem),1fr))] gap-x-1 gap-y-3 pb-2 pt-2`}>
         {rows.map((c) => {
           const active = selected.includes(c.id);
           const content = (

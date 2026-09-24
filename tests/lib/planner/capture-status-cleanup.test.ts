@@ -27,5 +27,5 @@ it('shows a short capture state and the single privacy sentence, in three langua
     expect(run.captureFramesLabel).toBeUndefined()
     expect(run.captureFrameAlt).toBeUndefined()
   }
-  expect(ko.planner.run.captureFramesPrivacy).toBe('화면 프레임은 이 브라우저에서만 분석하며 저장하거나 서버로 보내지 않습니다.')
+  expect(ko.planner.run.captureFramesPrivacy).toBe('화면은 이 브라우저에서만 분석해요. 저장하거나 전송하지 않아요.')
 })

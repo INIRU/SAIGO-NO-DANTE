@@ -41,6 +41,8 @@ export interface IdentitySlot {
   game_id: string | null
   folder_name: string | null
   slot_order: number
+  /** Uptie 1–4; missing means 4. */
+  uptie?: number
 }
 
 export interface EgoSlot {
@@ -310,10 +312,10 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         identitySlots: Array.isArray(action.state.identitySlots)
           ? action.state.identitySlots.map(slot => normalizeIdentitySlotSkillCounts(slot))
           : state.identitySlots,
-        floorPlan: normalizeFloorPlanEntries(
-          action.state.floorPlan,
-          action.state.difficulty ?? state.difficulty,
-        ),
+        // 편성만 담은 부분 로드(DeckTab의 기본 에고 보충·인격 제거)가 층 계획을 지우지 않게 한다
+        floorPlan: action.state.floorPlan === undefined && action.state.difficulty === undefined
+          ? state.floorPlan
+          : normalizeFloorPlanEntries(action.state.floorPlan ?? state.floorPlan, action.state.difficulty ?? state.difficulty),
       }
     case 'RESET':
       return createInitialState(state.difficulty)

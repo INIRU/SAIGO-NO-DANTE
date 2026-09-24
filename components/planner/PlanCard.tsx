@@ -3,8 +3,8 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 
-import { getIdentityPortraitUrl } from '@/lib/utils/images'
-import { memo, useEffect, useMemo, useState } from 'react'
+import FormationThumbnail from '@/components/ui/FormationThumbnail'
+import { memo, useEffect, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
@@ -126,19 +126,6 @@ function PlannerRelativeTime({
 }
 
 
-function PortraitSlot({ slot }: { slot: PlanSummary['deck'] extends (infer T)[] | null ? T : never }) {
-  const [failed, setFailed] = useState(false)
-  if (!slot?.game_id || !slot?.folder_name || !slot?.sinner_id || failed) {
-    return <div className="w-full h-full" style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
-  }
-  const url = getIdentityPortraitUrl(slot.sinner_id, slot.folder_name, slot.game_id, false)
-  return (
-    <Image src={url} alt="" fill sizes="(max-width: 768px) 17vw, 8vw" quality={60}
-      style={{ objectFit: 'cover', objectPosition: 'center top' }}
-      onError={() => setFailed(true)} />
-  )
-}
-
 function PlanCard({
   plan,
   localized = false,
@@ -157,17 +144,6 @@ function PlanCard({
   const username = plan.profiles?.username ?? (localized ? t('anonymous') : '익명')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
-  const slots = useMemo(() => {
-    const deckArr = Array.isArray(plan.deck) ? plan.deck : []
-    const sorted = [...deckArr].sort((a, b) => {
-      const ao = a.slot_order ?? 99, bo = b.slot_order ?? 99
-      if (ao === 99 && bo !== 99) return 1
-      if (bo === 99 && ao !== 99) return -1
-      return ao - bo
-    })
-    return Array.from({ length: 12 }, (_, i) => sorted[i] ?? null)
-  }, [plan.deck])
-
   // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
   const topKeywords = normalizePlannerListKeywords((plan.selected_keywords && plan.selected_keywords.length > 0)
     ? plan.selected_keywords
@@ -178,26 +154,14 @@ function PlanCard({
 
   return (
     <article
-      className="group relative flex flex-col h-full overflow-hidden"
-      style={{ background: '#1a1510', border: '1px solid #222', borderRadius: '0.375rem' }}
+      className="board-card group relative flex flex-col h-full overflow-hidden"
     >
-      <div className="h-px w-0 transition-[width] duration-300 group-hover:w-full" style={{ background: `linear-gradient(to right, ${diffStyle.color}, transparent)` }} />
-
       <Link href={`/planner/community/${plan.id}`} className="flex flex-col flex-1">
-        {/* 인격 포트레이트 6x2 그리드 */}
-        <div className="grid grid-cols-6" style={{ borderBottom: '1px solid rgba(58,42,21,0.4)' }}>
-          {slots.map((slot, i) => (
-            <div key={i} className="relative overflow-hidden" style={{ aspectRatio: '3/4', background: '#0a0806' }}>
-              {slot ? <PortraitSlot slot={slot} /> : (
-                <div className="w-full h-full" style={{ background: 'repeating-linear-gradient(45deg, #0d0b08 0px, #0d0b08 2px, #0a0806 2px, #0a0806 6px)' }} />
-              )}
-            </div>
-          ))}
-        </div>
+        <FormationThumbnail slots={Array.isArray(plan.deck) ? plan.deck : []} />
 
         <div className="flex flex-col flex-1 p-4">
           {/* 제목 */}
-          <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-yellow-300"
+          <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-[#e8b030]"
             style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
             {plan.title}
           </h3>

@@ -39,6 +39,9 @@ type FloorPlanPreviewBoardProps = {
   recipes?: RecipeData[]
   onGiftClick?: (gift: GiftData) => void
   renderMemo?: (memo: string) => React.ReactNode
+  events?: React.ComponentProps<typeof FloorGuidance>['events']
+  onEventClick?: (eventId: number) => void
+  onEventPrefetch?: () => void
 }
 
 const FLOOR_PLAN_SEGMENTS = [
@@ -94,6 +97,9 @@ export default function FloorPlanPreviewBoard({
   recipes = [],
   onGiftClick,
   renderMemo,
+  events,
+  onEventClick,
+  onEventPrefetch,
 }: FloorPlanPreviewBoardProps) {
   const locale = useLocale() as SupportedLang
   const tFloor = useTranslations('planner.floorTab')
@@ -250,7 +256,7 @@ export default function FloorPlanPreviewBoard({
                       </details>
                     ) : null}
                   </div>
-                  <div className="floor-preview-guidance"><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} onGiftClick={onGiftClick} /></div>
+                  <div className="floor-preview-guidance"><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} onGiftClick={onGiftClick} events={events} onEventClick={onEventClick} onEventPrefetch={onEventPrefetch} /></div>
                   {entry.floor >= 11 && <div className="col-span-full"><FloorConstraints floor={entry.floor} entries={floorPlan} /></div>}
                 </motion.div>
               )

@@ -1,10 +1,11 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
+import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, useReducedMotion } from 'motion/react'
@@ -12,16 +13,19 @@ import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Heart, Eye, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Heart, Share2 } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
-import { showError } from '@/lib/toast'
+import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
+const loadEventModal = () => import('@/components/mirror-dungeon/EventModal')
+const EventModal = dynamic(loadEventModal, { ssr: false })
+import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import PlanActions from '@/components/planner/PlanActions'
 import PlanComments from '@/components/planner/PlanComments'
 import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
@@ -41,8 +45,9 @@ import {
   normalizeBlessingMessages,
   ReadOnlyBlessingGrid,
 } from '@/components/planner/BlessingTab'
-import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
+import { observationCost } from '@/lib/planner/observation'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -231,42 +236,51 @@ type Plan = {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SectionTitle({ title, count, caption }: { title: string; count: string; caption?: string }) {
+function SectionHead({ id, title, meta, caption }: { id: string; title: string; meta?: ReactNode; caption?: string }) {
   return (
-    <div className="flex min-w-0 items-end justify-between gap-3 border-b border-[#241c14] pb-2">
+    <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <div className="min-w-0">
-        <h2 className="text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">{title}</h2>
-        {caption && <p className="mt-1 text-[0.875rem] leading-snug text-[#7f7364]">{caption}</p>}
+        <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[#e8dcc8] sm:text-[1.5rem]">{title}</h2>
+        {caption && <p className="mt-1 text-[0.9375rem] leading-snug text-[#9c8b73]">{caption}</p>}
       </div>
-      <span className="shrink-0 font-mono text-[0.875rem] font-semibold tabular-nums text-[#9d8d72]">{count}</span>
+      {meta != null && <div className="shrink-0 text-[0.9375rem] tabular-nums text-[#9c8b73]">{meta}</div>}
+    </div>
+  )
+}
+
+/** Same starlight chip as the planner's blessing and observation costs. */
+function StarlightCost({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(92,73,54,0.86)] bg-[rgba(18,15,12,0.72)] px-2.5 text-[0.875rem] text-[#d8c1a0]">
+      <Image src={getGameUiAsset('start-buffs/starlight')} alt="" width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
+      {label}
+      <span className="font-semibold tabular-nums text-[#e8b030]">{value}</span>
+    </span>
+  )
+}
+
+function SubHead({ title, meta }: { title: string; meta: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h3 className="font-[family-name:var(--font-heading)] text-[1.0625rem] text-[#e8dcc8]">{title}</h3>
+      <span className="flex items-center gap-2 text-[0.875rem] tabular-nums text-[#9c8b73]">{meta}</span>
     </div>
   )
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-md border border-[#241c14] bg-[#120e09] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
+    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[#7f7364]">
       {text}
-    </div>
+    </p>
   )
 }
 
-function DetailSection({
-  children,
-  className = '',
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  const shouldReduceMotion = useReducedMotion()
-
+function Section({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <motion.section
-      className={`min-w-0 rounded-md border border-[#241c14] bg-[#120e09]/92 p-3 sm:p-4 ${className}`}
-      variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-    >
+    <section id={id} aria-labelledby={`${id}-title`} className={styles.section}>
       {children}
-    </motion.section>
+    </section>
   )
 }
 
@@ -277,26 +291,27 @@ function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
   locale: SupportedLang
 }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] justify-items-center gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(5rem,1fr))]">
+    <ul className={styles.giftGrid}>
       {gifts.map(({ gift, enhance }) => {
         const cond = getCondition?.(gift)
         const giftName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
         return (
-          <GiftCard
-            key={`${gift.game_id}_${enhance}`}
-            gift={gift}
-            onClick={() => onGiftClick?.(gift, enhance)}
-            disabled={!onGiftClick}
-            enhance={enhance}
-            conditionStatus={cond}
-            title={giftName}
-            ariaLabel={giftName}
-            size="100%"
-            className="max-w-[5.25rem] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-          />
+          <li key={`${gift.game_id}_${enhance}`} className={styles.giftCell}>
+            <GiftCard
+              gift={gift}
+              onClick={() => onGiftClick?.(gift, enhance)}
+              disabled={!onGiftClick}
+              enhance={enhance}
+              conditionStatus={cond}
+              title={giftName}
+              ariaLabel={giftName}
+              size="100%"
+              className="max-w-[5rem]"
+            />
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }
 
@@ -312,22 +327,28 @@ interface Props {
   skills: SkillSummary[]
   passives: PassiveSummary[]
   egos: EgoData[]
+  /** Events that award this plan's floor gifts, plus their follow-up events (for the in-place event modal). */
+  events: MdEvent[]
+  eventChoices: MdEventChoice[]
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
+  useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
   const tFloor = useTranslations('planner.floorTab')
   const tDetail = useTranslations('planner.detail')
   const tCommunity = useTranslations('planner.communityBoard')
   const tBlessing = useTranslations('planner.blessingTab')
+  const tShare = useTranslations('decks.detail')
   const { data: session } = useSession()
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
   const openNoteGift = (key: string) => {
     const gift = gifts.find(g => g.id === key || g.name === key)
     if (gift) setSelectedGift({ gift, enhance: 0 })
@@ -349,6 +370,16 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   // Maps
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
+  const eventById = useMemo(() => new Map(events.map(event => [event.id, event])), [events])
+  const choicesByEventId = useMemo(() => {
+    const map = new Map<number, MdEventChoice[]>()
+    for (const choice of eventChoices) map.set(choice.event_id, [...(map.get(choice.event_id) ?? []), choice])
+    return map
+  }, [eventChoices])
+  // 상세 페이지의 기프트 행은 ego_gifts 전체 컬럼이라 이벤트 모달의 EgoGift로 그대로 쓸 수 있다
+  const eventGifts = giftMap as unknown as Map<number, EgoGift>
+  const eventThemes = useMemo(() => themes.map(theme => ({ ...theme, id: Number(theme.id) }) as unknown as EgoGiftTheme), [themes])
+  const selectedEvent = selectedEventId == null ? null : eventById.get(selectedEventId) ?? null
 
   // 레시피맵
   const giftByName = useMemo(() => {
@@ -499,232 +530,327 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }
 
   const difficultyLabel = tCommunity(`difficulty.${plan.difficulty}`)
-  const deckCountLabel = tDetail('deckCount', { count: deck.length })
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
+  const configuredFloors = floorPlan.filter(f => f.theme_id).length
+  const floorCountLabel = tFloor('configuredFloorCount', { configured: configuredFloors, total: floorPlan.length })
+  const openGift = (gift: GiftData, enhance: number) => setSelectedGift({ gift, enhance })
+
+  const sections = [
+    ...(plan.description ? [{ id: 'plan-summary', label: tPlanner('tabs.summary') }] : []),
+    { id: 'plan-deck', label: tPlanner('tabs.deck') },
+    { id: 'plan-blessing', label: tPlanner('tabs.blessing') },
+    { id: 'plan-gifts', label: tPlanner('tabs.gift') },
+    { id: 'plan-floor', label: tPlanner('tabs.floor') },
+    { id: 'plan-final', label: tDetail('finalGifts') },
+    { id: 'plan-comments', label: tDetail('commentsLabel'), count: plan.comment_count },
+  ]
+  const sectionKey = sections.map(s => s.id).join()
+  const [activeSection, setActiveSection] = useState(sections[0].id)
+  // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
+  useEffect(() => {
+    const ids = sectionKey.split(',')
+    let frame = 0
+    const update = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const line = window.innerHeight * 0.3
+        let current = ids[0]
+        for (const id of ids) {
+          const top = document.getElementById(id)?.getBoundingClientRect().top
+          if (top != null && top <= line) current = id
+        }
+        setActiveSection(current)
+      })
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [sectionKey])
+
+  // 모바일의 가로 목차에서 현재 항목이 보이도록 목차만 가로로 스크롤한다
+  const sectionNavRef = useRef<HTMLOListElement>(null)
+  useEffect(() => {
+    const list = sectionNavRef.current
+    const link = list?.querySelector<HTMLElement>('[aria-current]')
+    if (!list || !link) return
+    const left = link.offsetLeft - list.offsetLeft
+    if (left < list.scrollLeft || left + link.offsetWidth > list.scrollLeft + list.clientWidth) {
+      list.scrollTo({ left: Math.max(0, left - 16) })
+    }
+  }, [activeSection])
+
+  // 해시를 남기지 않고 이동해 BackLink의 뒤로 가기 기록을 그대로 둔다
+  const goToSection = (id: string) => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+    setActiveSection(id)
+  }
+
+  const handleShare = async () => {
+    const url = window.location.href.split('#')[0]
+    try {
+      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+        await navigator.share({ title: plan.title, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      showSuccess(tShare('shareCopied'))
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError') showError(tDetail('shareFailed'))
+    }
+  }
 
   return (
     <NoteGiftClickContext value={openNoteGift}>
-    <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
+    <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
           href="/planner/community"
-          className="mb-4 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#7f7364] transition-colors hover:text-[#c8900a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {tDetail('backToCommunity')}
         </BackLink>
 
         <motion.header
-          className="mb-8 overflow-hidden rounded-lg border border-[#241c14] bg-[#1a1510]"
+          className={styles.hero}
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
-          <div className={styles.layout}>
-            <div className={styles.identity}>
-              {mainKeywords.length > 0 && (
-                <ul className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {mainKeywords.map(keyword => {
-                    const iconUrl = kwContext.getIconUrl(keyword)
-                    return (
-                      <li key={keyword} className="inline-flex min-h-8 items-center gap-1.5">
-                        {iconUrl && <KeywordIcon src={iconUrl} alt="" width={28} height={28} className="h-7 w-7 object-contain" />}
-                        <span className="font-[family-name:var(--font-heading)] text-[1rem] leading-none text-[#cfc2ad]">
-                          {localizeDeckKeyword(keyword, kwContext.keywords[keyword], locale)}
-                        </span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
+          <div className={styles.identity}>
+            {mainKeywords.length > 0 && (
+              <ul className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                {mainKeywords.map(keyword => {
+                  const iconUrl = kwContext.getIconUrl(keyword)
+                  return (
+                    <li key={keyword} className="inline-flex min-h-8 items-center gap-1.5">
+                      {iconUrl && <KeywordIcon src={iconUrl} alt="" width={28} height={28} className="h-7 w-7 object-contain" />}
+                      <span className="font-[family-name:var(--font-heading)] text-[1rem] leading-none text-[#cfc2ad]">
+                        {localizeDeckKeyword(keyword, kwContext.keywords[keyword], locale)}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <h1 className={styles.title}>{plan.title}</h1>
+          </div>
 
-              <h1 className="max-w-[28ch] break-words font-[family-name:var(--font-paperlogy)] text-[1.875rem] font-semibold leading-[1.2] text-[#e8dcc8] text-pretty sm:text-[2.5rem] lg:text-[2.75rem]">
-                {plan.title}
-              </h1>
-
-              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] font-medium tabular-nums text-[#9d8d72] sm:gap-x-0 sm:[&>span]:border-l sm:[&>span]:border-[#2a2118] sm:[&>span]:px-3 sm:[&>span:first-child]:border-l-0 sm:[&>span:first-child]:pl-0">
-                <span className="font-semibold" style={{ color: diffStyle.color }}>{difficultyLabel}</span>
-                <span>{deckCountLabel}</span>
-                <span>{tDetail('egoCount', { count: egoSlots.length })}</span>
-                {floorPlan.length > 0 && (
-                  <span>{tFloor('configuredFloorCount', { configured: floorPlan.filter(f => f.theme_id).length, total: floorPlan.length })}</span>
-                )}
-              </p>
+          <div className={`${styles.author} flex items-center gap-3`}>
+            <Image src={avatarUrl} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full bg-[#17120c] object-cover ring-1 ring-[#6b4c12]" />
+            <div className="min-w-0">
+              <p className="truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{username}</p>
+              <RelativeTime date={plan.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
+          </div>
 
-            <div className={`flex items-center gap-3 ${styles.author}`}>
-              <Image src={avatarUrl} alt="" width={48} height={48} className="h-12 w-12 shrink-0 rounded-full bg-[#0d0b08] object-cover ring-1 ring-[#8a6010]" />
-              <div className="min-w-0">
-                <p className="truncate text-[1.0625rem] font-semibold leading-snug text-[#e8dcc8]">{username}</p>
-                <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] tabular-nums text-[#9d8d72]">
-                  <RelativeTime date={plan.created_at} />
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{tDetail('viewsLabel')}</span> {plan.view_count}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{tDetail('commentsLabel')}</span> {plan.comment_count}
-                  </span>
-                </div>
+          <dl className={styles.facts}>
+            <div className={styles.fact}>
+              <dt>{tDetail('factDifficulty')}</dt>
+              <dd data-text style={{ color: diffStyle.color }}>{difficultyLabel}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>{tDetail('factIdentities')}</dt>
+              <dd>{deck.length}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>{tPlanner('deckTab.subTabs.ego')}</dt>
+              <dd>{egoSlots.length}</dd>
+            </div>
+            {floorPlan.length > 0 && (
+              <div className={styles.fact}>
+                <dt>{tDetail('factFloors')}</dt>
+                <dd aria-label={floorCountLabel}>{configuredFloors}<span className="text-[#7f7364]">/{floorPlan.length}</span></dd>
               </div>
+            )}
+            <div className={styles.fact}>
+              <dt>{tDetail('viewsLabel')}</dt>
+              <dd>{plan.view_count}</dd>
             </div>
+            <div className={styles.fact}>
+              <dt>{tDetail('commentsLabel')}</dt>
+              <dd>{plan.comment_count}</dd>
+            </div>
+          </dl>
 
-            <div className={styles.dock} aria-hidden="true" />
-
-            <button
-              type="button"
-              onClick={handleVote}
-              disabled={voteLoading}
-              aria-pressed={voted}
-              className={`${styles.vote} inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded border px-4 text-[0.9375rem] font-semibold tabular-nums transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${voted
-                ? 'border-[#c8900a]/50 bg-[#c8900a]/15 text-[#e8b030] hover:border-[#c8900a] active:bg-[#c8900a]/25'
-                : 'border-[#2a2118] bg-[#1a1510] text-[#b9a47f] hover:border-[#8a6010] hover:text-[#e8b030] active:bg-[#2a2118]'}`}
-            >
+          <div className={styles.actions}>
+            <button type="button" onClick={handleVote} disabled={voteLoading} aria-pressed={voted}>
               <Heart className="h-4 w-4" fill={voted ? 'currentColor' : 'none'} aria-hidden="true" />
               {tDetail('voteWithCount', { count: voteCount })}
             </button>
-
-            <div className={styles.actions}>
-              <PlanActions
-                planId={plan.id}
-                planTitle={plan.title}
-                planDescription={plan.description}
-                difficulty={plan.difficulty}
-                deck={deck}
-                egoSlots={egoSlots}
-                floorPlan={floorPlan}
-                giftInventory={giftInventory}
-                mainKeywords={plan.tags ?? []}
-                identities={identities}
-                sinners={sinners}
-                egos={egos}
-                isOwner={!!(session?.user?.email && plan.profiles?.username)}
-                isAdmin={isAdmin}
-              />
-            </div>
+            <button type="button" onClick={handleShare}>
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              {tShare('share')}
+            </button>
+            <PlanActions
+              planId={plan.id}
+              planTitle={plan.title}
+              planDescription={plan.description}
+              difficulty={plan.difficulty}
+              deck={deck}
+              egoSlots={egoSlots}
+              floorPlan={floorPlan}
+              giftInventory={giftInventory}
+              mainKeywords={plan.tags ?? []}
+              identities={identities}
+              sinners={sinners}
+              egos={egos}
+              isOwner={!!(session?.user?.email && plan.profiles?.username)}
+              isAdmin={isAdmin}
+            />
           </div>
         </motion.header>
 
-        <motion.main
-          className="min-w-0 space-y-5 overflow-x-clip"
-          variants={shouldReduceMotion ? undefined : staggerContainer(0.055, 0.04)}
-          initial={shouldReduceMotion ? false : 'initial'}
-          animate={shouldReduceMotion ? undefined : 'animate'}
-        >
-            {plan.description && (
-              <motion.article
-                variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
-                className="rounded-lg bg-[#1a1510] px-5 py-5 sm:px-6 sm:py-6"
+        <nav aria-label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
+          <ol ref={sectionNavRef}>
+            {sections.map(section => (
+              <li key={section.id} className="shrink-0">
+                <a
+                  href={`#${section.id}`}
+                  aria-current={activeSection === section.id ? 'location' : undefined}
+                  onClick={event => { event.preventDefault(); goToSection(section.id) }}
+                >
+                  {section.label}
+                  {section.count != null && <span>{section.count}</span>}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <main className="min-w-0 overflow-x-clip">
+          {plan.description && (
+            <Section id="plan-summary">
+              <SectionHead id="plan-summary-title" title={tPlanner('tabs.summary')} />
+              <div
+                className="planner-detail-note min-w-0 max-w-[52rem] text-[1rem] leading-8 text-[#cfc2ad] [&>div]:!max-w-none"
+                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
               >
-                <div className="min-w-0 w-full">
-                  <h2 className="mb-4 text-[1.125rem] font-semibold leading-snug text-[#e8dcc8]">
-                    {tDetail('descriptionTitle')}
-                  </h2>
-                  <div
-                    className="planner-detail-note min-w-0 text-[1rem] leading-8 text-[#cfc2ad] [&>div]:!max-w-none"
-                    style={{
-                      overflowWrap: 'anywhere',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    <NoteRenderer
-                      text={plan.description}
-                      allowedKeywords={allowedKeywords}
-                      egoGiftLookup={egoGiftLookup}
-                      textScale="comfortable"
-                    />
-                  </div>
-                </div>
-              </motion.article>
-            )}
+                <NoteRenderer
+                  text={plan.description}
+                  allowedKeywords={allowedKeywords}
+                  egoGiftLookup={egoGiftLookup}
+                  textScale="comfortable"
+                />
+              </div>
+            </Section>
+          )}
 
-            <DetailSection>
-              <PlanDeckTabs
-                deck={deck}
-                egoSlots={egoSlots}
-                identities={identities}
-                sinners={sinners}
-                egos={egos}
-                skills={skills}
-                passives={passives}
-                slotGiftMap={slotGiftMap}
-              />
-            </DetailSection>
+          <Section id="plan-deck">
+            <SectionHead id="plan-deck-title" title={tPlanner('tabs.deck')} />
+            <PlanDeckTabs
+              deck={deck}
+              egoSlots={egoSlots}
+              identities={identities}
+              sinners={sinners}
+              egos={egos}
+              skills={skills}
+              passives={passives}
+              slotGiftMap={slotGiftMap}
+            />
+          </Section>
 
-            <DetailSection className="space-y-3 overflow-x-clip">
-              <SectionTitle title={tBlessing('title')} count={selectedBlessings.size > 0 ? String(totalBlessingCost) : tBlessing('none')} />
-              {selectedBlessings.size > 0 && (
-                <div className="flex items-center justify-end gap-1.5 text-[0.875rem] font-semibold text-[#c8900a]">
-                  <Image src={getGameUiAsset('start-buffs/starlight')} alt={tBlessing('starlightAlt')} width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
-                  <span className="font-mono tabular-nums">{totalBlessingCost}</span>
-                </div>
-              )}
+          <Section id="plan-blessing">
+            <SectionHead
+              id="plan-blessing-title"
+              title={tBlessing('title')}
+              meta={selectedBlessings.size > 0 ? <StarlightCost label={tBlessing('usedStarlight')} value={totalBlessingCost} /> : tBlessing('none')}
+            />
+            <div className="overflow-x-clip">
               <ReadOnlyBlessingGrid
                 blessings={localizedBlessings}
                 selectedBlessings={selectedBlessings}
                 emptyText={tBlessing('empty')}
               />
-            </DetailSection>
+            </div>
+          </Section>
 
-            <DetailSection className="space-y-3">
-              <SectionTitle title={tDetail('startGifts')} count={tDetail('itemCount', { count: startGifts.length })} />
-              {startGifts.length > 0 ? (
-                <GiftGrid locale={locale} gifts={startGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-              ) : (
-                <EmptyState text={tDetail('emptyStartGifts')} />
-              )}
-            </DetailSection>
-
-            <DetailSection className="space-y-3">
-              <SectionTitle title={tDetail('observeGifts')} count={tDetail('observeCount', { count: observeGifts.length })} />
-              {observeGifts.length > 0 ? (
-                <GiftGrid locale={locale} gifts={observeGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-              ) : (
-                <EmptyState text={tDetail('emptyObserveGifts')} />
-              )}
-            </DetailSection>
-
-            <DetailSection className="space-y-3 !border-0 !bg-transparent !p-0">
-              <SectionTitle
-                title={tPlanner('tabs.floor')}
-                count={tFloor('configuredFloorCount', { configured: floorPlan.filter(f => f.theme_id).length, total: floorPlan.length })}
-                caption={tDetail('floorPlanCaption')}
-              />
-              <FloorPlanPreviewBoard
-                inventory={giftInventory}
-                recipes={recipes}
-                floorPlan={floorPlan}
-                planDifficulty={plan.difficulty}
-                themeMap={themeMap}
-                giftMap={giftMap}
-                onGiftClick={gift => setSelectedGift({ gift, enhance: 0 })}
-                renderMemo={memo => (
-                  <NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
+          <Section id="plan-gifts">
+            <SectionHead id="plan-gifts-title" title={tPlanner('tabs.gift')} />
+            <div className="grid gap-8 md:grid-cols-2 md:gap-0">
+              <div className="min-w-0 md:pr-8">
+                <SubHead title={tDetail('startGifts')} meta={tDetail('itemCount', { count: startGifts.length })} />
+                {startGifts.length > 0 ? (
+                  <GiftGrid locale={locale} gifts={startGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={openGift} />
+                ) : (
+                  <EmptyState text={tDetail('emptyStartGifts')} />
                 )}
-              />
-            </DetailSection>
+              </div>
+              <div className="min-w-0 md:border-l md:border-[#2e2417] md:pl-8">
+                <SubHead title={tDetail('observeGifts')} meta={<>{tDetail('observeCount', { count: observeGifts.length })}{observeGifts.length > 0 && <StarlightCost label={tDetail('observeCost')} value={observationCost(observeGifts.length)} />}</>} />
+                {observeGifts.length > 0 ? (
+                  <GiftGrid locale={locale} gifts={observeGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={openGift} />
+                ) : (
+                  <EmptyState text={tDetail('emptyObserveGifts')} />
+                )}
+              </div>
+            </div>
+          </Section>
 
-            <DetailSection className="space-y-3">
-              <SectionTitle title={tDetail('finalGifts')} count={tDetail('itemCount', { count: finalGifts.length })} />
-              {deck.length > 0 && finalGifts.length > 0 && (
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.875rem] leading-snug">
-                  <span className="text-[#ef4444]">{tDetail('conditionUnmet')}</span>
-                  <span className="text-[#e8b030]">{tDetail('conditionWarn')}</span>
-                </div>
+          <Section id="plan-floor">
+            <SectionHead
+              id="plan-floor-title"
+              title={tPlanner('tabs.floor')}
+              meta={floorCountLabel}
+              caption={tDetail('floorPlanCaption')}
+            />
+            <FloorPlanPreviewBoard
+              inventory={giftInventory}
+              recipes={recipes}
+              floorPlan={floorPlan}
+              planDifficulty={plan.difficulty}
+              themeMap={themeMap}
+              giftMap={giftMap}
+              onGiftClick={gift => setSelectedGift({ gift, enhance: 0 })}
+              events={events}
+              onEventClick={setSelectedEventId}
+              onEventPrefetch={() => { void loadEventModal() }}
+              renderMemo={memo => (
+                <NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
               )}
-              {finalGifts.length > 0 ? (
-                <GiftGrid locale={locale} gifts={finalGifts} getCondition={getConditionStatus} onGiftClick={(g, e) => setSelectedGift({ gift: g, enhance: e })} />
-              ) : (
-                <EmptyState text={tDetail('emptyFinalGifts')} />
-              )}
-            </DetailSection>
+            />
+          </Section>
 
-            <DetailSection>
-              <PlanComments planId={plan.id} />
-            </DetailSection>
-        </motion.main>
+          <Section id="plan-final">
+            <SectionHead id="plan-final-title" title={tDetail('finalGifts')} meta={tDetail('itemCount', { count: finalGifts.length })} />
+            {deck.length > 0 && finalGifts.length > 0 && (
+              <ul className="mb-4 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.875rem] leading-snug text-[#9c8b73]">
+                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#ef4444]" aria-hidden="true" />{tDetail('conditionUnmet')}</li>
+                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#e8b030]" aria-hidden="true" />{tDetail('conditionWarn')}</li>
+              </ul>
+            )}
+            {finalGifts.length > 0 ? (
+              <GiftGrid locale={locale} gifts={finalGifts} getCondition={getConditionStatus} onGiftClick={openGift} />
+            ) : (
+              <EmptyState text={tDetail('emptyFinalGifts')} />
+            )}
+          </Section>
+
+          <Section id="plan-comments">
+            <PlanComments planId={plan.id} headingId="plan-comments-title" />
+          </Section>
+        </main>
       </div>
 
       {/* 기프트 상세 모달 */}
+      {selectedEvent && (
+        <EventModal
+          lang={locale}
+          event={selectedEvent}
+          eventById={eventById}
+          choicesByEventId={choicesByEventId}
+          giftByGameId={eventGifts}
+          themes={eventThemes}
+          onClose={() => setSelectedEventId(null)}
+          onSelectGift={gift => {
+            const planGift = gift.game_id == null ? undefined : giftMap.get(gift.game_id)
+            if (planGift) setSelectedGift({ gift: planGift, enhance: 0 })
+          }}
+          pageLink={{ href: `/mirror-dungeon?tab=events&event=${selectedEvent.id}`, label: tDetail('viewEventPage') }}
+        />
+      )}
       {selectedGift && (
         <PlannerGiftModal
           gift={selectedGift.gift}

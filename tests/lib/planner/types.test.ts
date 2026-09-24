@@ -54,3 +54,11 @@ describe('decodePlan floor theme normalization', () => {
     expect(decoded.floorThemeIds).toEqual(['1013', null])
   })
 })
+
+describe('plannerReducer partial LOAD_PLAN', () => {
+  it('keeps the floor plan when only formation slots are loaded', () => {
+    const planned = plannerReducer(createInitialState('hard'), { type: 'LOAD_PLAN', state: { floorPlan: [{ floor: 1, difficulty: 'hard', theme_id: '1013', gift_ids: ['9273'], memo: 'm' }] } as never })
+    const next = plannerReducer(planned, { type: 'LOAD_PLAN', state: { egoSlots: [] } })
+    expect(next.floorPlan[0]).toMatchObject({ theme_id: '1013', gift_ids: ['9273'], memo: 'm' })
+  })
+})

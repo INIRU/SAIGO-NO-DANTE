@@ -15,6 +15,7 @@ export interface DeckDraft {
   mainKeywordsManual: boolean
   savedAt: number
   gacksungSlots?: Record<string, boolean>
+  upties?: Record<string, number>
   skillDistribution?: Record<string, [number, number, number]>
 }
 

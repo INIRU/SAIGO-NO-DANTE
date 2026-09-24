@@ -136,7 +136,7 @@ export default function SelectedPanel({
                   }}>
                     {displayName}
                   </span>
-                  <GiftGrade grade={gift.grade} style={{
+                  <GiftGrade plain grade={gift.grade} style={{
                     fontSize: '0.5rem',
                     color: gradeColor,
                     fontWeight: 700,
