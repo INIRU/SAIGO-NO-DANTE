@@ -24,11 +24,11 @@ it('maps every control option to a real processing profile, each mode reading at
     expect(heavy.recognizeMs.event).toBeLessThan(light.recognizeMs.event)
     expect(heavy.popupAttempts).toBeGreaterThanOrEqual(light.popupAttempts)
     expect(heavy.fullFrameDetSide * heavy.fullFrameGrid * heavy.fullFrameTileScale)
-      .toBeGreaterThan(light.fullFrameDetSide * light.fullFrameGrid * light.fullFrameTileScale)
+      .toBeGreaterThanOrEqual(light.fullFrameDetSide * light.fullFrameGrid * light.fullFrameTileScale)
   }
-  // Only quality tiles the frame; the others read it in one pass.
-  expect([fastest, performance, balanced].map(p => p.fullFrameGrid)).toEqual([1, 1, 1])
-  expect(quality.fullFrameGrid).toBe(2)
+  // Every mode reads the frame in one pass; quality reads balanced's pass more often (tiling made each read too slow).
+  expect([fastest, performance, balanced, quality].map(p => p.fullFrameGrid)).toEqual([1, 1, 1, 1])
+  expect(quality.fullFrameDetSide).toBe(balanced.fullFrameDetSide)
 })
 
 it('reads up to maxAttempts separate frames of one popup, each a new comparable capture', () => {

@@ -564,7 +564,7 @@
       "recognitionModeBalanced": "バランス",
       "recognitionModeBalancedHint": "既定。ギフトのポップアップとイベント・階層画面を同時に頻繁に読み取り、ポップアップをもう一度確認します。",
       "recognitionModeQuality": "品質",
-      "recognitionModeQualityHint": "画面を4分割して拡大して読み取り、小さな文字まで捉えます。ゲームの負荷が増える場合があります。",
+      "recognitionModeQualityHint": "バランスより頻繁に画面を読み取り、一瞬だけ表示される確認画面やポップアップも逃しません。ゲームの負荷が増える場合があります。",
       "recognitionModeLiveNote": "画面接続中に変更すると、画面共有はそのままで文字認識だけを準備し直します。",
       "detectionLabel": "検出項目",
       "detectionGifts": "ギフト検出",
