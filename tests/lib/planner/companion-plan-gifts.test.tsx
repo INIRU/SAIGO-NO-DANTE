@@ -28,14 +28,17 @@ function render(state: RunState, skillExchange: { sinner: number; current: [numb
 const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),
   sourcePlanSnapshot: { floorPlan: [{ floor: 1, theme_id: 'A', gift_ids: ['20', '30_plus'] }] } as RunState['sourcePlanSnapshot'] })
 
-it('lists the plan gifts under a recommended pack, dimming owned ones', () => {
+it('shows the plan gifts of a recommended pack in a popup on hover or focus, dimming owned ones', () => {
   const html = render({ ...started(), giftInventory: ['30'] })
   expect(html).toContain('data-theme-choice="A"')
   // The pack card of the Mirror Dungeon page, with its name over the poster and the PiP guidance as its accessible name.
   const choice = html.match(/<li[^>]*data-theme-choice="A".*?<\/button>/)?.[0] ?? ''
   expect(choice).toMatch(/aria-label="pack-A · [^"]*"/)
   expect(choice).toMatch(/>pack-A<\/div>/)
-  const list = html.match(/<ul[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul>/)?.[0] ?? ''
+  const list = html.match(/<div[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul><\/div>/)?.[0] ?? ''
+  // Hidden over the poster until the pack is hovered or focused; the list no longer sits below the poster.
+  expect(list).toMatch(/class="[^"]*absolute[^"]*opacity-0[^"]*group-hover:opacity-100[^"]*group-focus-within:opacity-100/)
+  expect(html).toMatch(/<li[^>]*data-theme-choice="A"[^>]*class="group relative/)
   expect(list).toContain(messages.planner.run.pipThemePlanGifts)
   expect(list).toContain('title="gift-20"')
   expect(list).toContain(`title="gift-30 · ${messages.planner.run.owned}" aria-label="gift-30 · ${messages.planner.run.owned}" data-owned="true"`)
