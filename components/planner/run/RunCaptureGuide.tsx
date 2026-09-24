@@ -19,7 +19,7 @@ export default function RunCaptureGuide() {
   const steps = [t('captureGuideStep1'), t('captureGuideStep2', { start: t('start') }), t('captureGuideStep3', { connect: t('screenPreview') }),
     t('captureGuideStep4')]
   return <section aria-labelledby="run-capture-guide" data-capture-guide
-    className="@container min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-4">
+    className="@container min-w-0">
     <h2 id="run-capture-guide" className="mb-3 font-[family-name:var(--font-heading)] text-lg text-[var(--gold-light)]">{t('captureGuideTitle')}</h2>
     <div className="grid min-w-0 gap-4 @[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] @[64rem]:items-start">
       <ol className="min-w-0 space-y-2">
@@ -29,7 +29,6 @@ export default function RunCaptureGuide() {
             className={`grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 rounded-md px-2 py-2 ${here ? 'border border-[var(--border-gold)] bg-[var(--bg-elevated)]' : 'border border-transparent'}`}>
             <span aria-hidden="true" className={`grid h-8 w-8 place-items-center rounded-full border font-[family-name:var(--font-title)] text-base leading-none ${here ? 'border-[var(--gold-light)] bg-[var(--gold)] text-[var(--bg-deep)]' : 'border-[var(--border-gold)] text-[var(--gold)]'}`}>{index + 1}</span>
             <span className="min-w-0">
-              {here && <span className="mb-0.5 block text-xs font-bold text-[var(--gold-light)]">{t('captureGuideHere')}</span>}
               <span className={`block break-keep text-base leading-7 ${here ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                 {step}{index === 2 && <MonitorUp aria-hidden="true" className="ml-1 inline align-[-0.125rem] text-[var(--gold-light)]" size={16} />}
               </span>
@@ -54,7 +53,6 @@ export default function RunCaptureGuide() {
             })}
           </ul>
         </div>
-        <figcaption className="mt-2 break-keep text-sm leading-6 text-[var(--text-secondary)]">{t('captureGuideCaption')}</figcaption>
       </figure>
     </div>
   </section>

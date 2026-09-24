@@ -452,7 +452,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       aria-describedby={pipSupported ? undefined : pipNoteId} title={pipSupported ? undefined : t('pipModeUnsupported')}
       onClick={() => { if (container) close(); else void open().catch(() => toast.error(t('pipUnavailable'))) }}
       className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:text-[var(--text-muted)] ${container ? 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:brightness-110' : 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]'}`}>
-      <PictureInPicture2 size={16} aria-hidden="true" />{t(container ? 'pipModeClose' : 'pipModeButton')}
+      <PictureInPicture2 size={16} aria-hidden="true" /><span className="max-sm:sr-only">{t(container ? 'pipModeClose' : 'pipModeButton')}</span>
     </button>
     {!pipSupported && <span id={pipNoteId} className="sr-only">{t('pipModeUnsupported')}</span>}
     {container && createPortal(<div className="min-h-full bg-[var(--bg-deep)] p-3 text-[var(--text-primary)]" style={{ scrollbarGutter: 'stable' }}>{content(true)}<CompanionAcquisitionOverlay events={acquisitionEvents} label={t('acquired')} consumedLabel={t('fusionConsumed')} /></div>, container)}

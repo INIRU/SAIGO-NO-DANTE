@@ -50,9 +50,8 @@ export default function ThemeSection({ state, themes, onSelect, onClear, onClose
       </div>
     </div>
     {available.length === 0 ? <p className="py-6 text-sm text-[var(--text-secondary)]">{t('noAvailableThemes')}</p> :
-      <div className="run-theme-picker grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-4 lg:grid-cols-5">
-        <style jsx global>{`.run-theme-picker > button { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; } .run-theme-picker > button:focus-visible { outline: 2px solid var(--gold-light) !important; outline-offset: 2px !important; }`}</style>
-        {available.map(theme => <ThemePackCard key={theme.id} theme={theme} onClick={() => onSelect(theme)} isSelected={String(currentLog?.themeId) === String(theme.id)} imageSurface="bare" selectedFrameOverlay />)}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(6.25rem,1fr))] gap-x-2 gap-y-2.5 sm:grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]">
+        {available.map(theme => <div key={theme.id} className="mx-auto w-full max-w-[8rem]"><ThemePackCard theme={theme} onClick={() => onSelect(theme)} isSelected={String(currentLog?.themeId) === String(theme.id)} imageSurface="bare" sizes="(max-width: 640px) 34vw, 128px" /></div>)}
       </div>}
   </section>
 }

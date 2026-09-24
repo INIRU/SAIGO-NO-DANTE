@@ -1,14 +1,15 @@
 'use client'
 
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
+import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
 import { normalizeRunState, type RunState } from '@/lib/planner/run-types'
 
 import BackLink from '@/components/navigation/BackLink'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { ArrowLeft, RotateCcw, MonitorUp } from 'lucide-react'
+import { ArrowLeft, RotateCcw, MonitorUp, ChevronDown } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { buildGiftMap, settleResultPopup, type RecipePopupEvidence } from '@/lib/planner/fusion'
 import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlannerState, saveDraftToLocal } from '@/lib/planner/encoder'
@@ -156,6 +157,34 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     router.push('/planner')
   }
   const card = 'rounded-lg border border-[var(--border)] bg-[var(--bg-card)]'
+  const captureActive = capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting'
+  // 인식 설정 팝오버는 바깥을 누르거나 Esc로 닫는다
+  const recognitionRef = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    const close = (event: Event) => {
+      const el = recognitionRef.current
+      if (!el?.open) return
+      if (event instanceof KeyboardEvent ? event.key === 'Escape' : !el.contains(event.target as Node)) el.open = false
+    }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', close)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
+  }, [])
+
+  const recognitionControls = <div className="space-y-3" data-recognition-mode-control>
+    <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}
+      note={capture.status === 'running' ? t('recognitionModeLiveNote') : undefined}
+      options={{ fastest: { label: t('recognitionModeFastest'), description: t('recognitionModeFastestHint') },
+        performance: { label: t('recognitionModePerformance'), description: t('recognitionModePerformanceHint') },
+        balanced: { label: t('recognitionModeBalanced'), description: t('recognitionModeBalancedHint') },
+        quality: { label: t('recognitionModeQuality'), description: t('recognitionModeQualityHint') } }} />
+    <DetectionToggles value={detection} onChange={changeDetection} label={t('detectionLabel')}
+      options={{ gifts: { label: t('detectionGifts'), description: t('detectionGiftsHint') },
+        themes: { label: t('detectionThemes'), description: t('detectionThemesHint') },
+        events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
+  </div>
+  const recognitionSummary = { fastest: t('recognitionModeFastest'), performance: t('recognitionModePerformance'),
+    balanced: t('recognitionModeBalanced'), quality: t('recognitionModeQuality') }[recognitionMode]
   const saveRunSlot = (slot: TempSlot<RunState>) => {
     const slots = saveTempSlot(RUN_DRAFTS_KEY, slot.slotNumber, state, runSlotLabel(state), isRunState)
     if (!slots) { toast.error(tTempSaves('saveFailed')); return }
@@ -173,14 +202,18 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     toast.success(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
   }
 
-  return <div data-assist-run className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-primary)]">
-    <div className="mx-auto max-w-[90rem] px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+  // A started run fills exactly one screen without site chrome; only the tab content scrolls.
+  const running = !loadingPlan && state.phase === 'playing'
+  useHtmlFlag('with-assist-run')
+  useHtmlFlag('with-assist-running', running)
+  return <div data-assist-run data-assist-running={running || undefined} className={`bg-[var(--bg-deep)] text-[var(--text-primary)] ${running ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-20 sm:pt-24'}`}>
+      <header className={`flex shrink-0 items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] max-sm:flex-nowrap sm:flex-wrap ${running ? 'mb-3 pb-2' : 'mb-4 pb-3'}`}>
         <div className="flex min-w-0 items-center gap-3">
           <BackLink href="/" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></BackLink>
-          <h1 className="font-[family-name:var(--font-heading)] text-lg leading-tight text-[var(--gold-light)] sm:text-xl">{t('title')}</h1>
+          <h1 className="truncate font-[family-name:var(--font-heading)] text-lg leading-tight text-[var(--gold-light)] sm:text-xl">{t('title')}</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:flex-wrap sm:gap-2">
           <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
         {state.phase === 'playing' && <>
           {/* Owns the PiP window and every capture-driven record (acquisitions, packs, events, Undo); renders only its button here. */}
@@ -198,54 +231,50 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
             />
-          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting') capture.stop(); else void capture.start() }} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border-gold)] px-3 text-xs text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] disabled:border-[var(--border)] disabled:text-[var(--text-muted)] disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
-            <MonitorUp size={16} /> {t(capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting' ? 'stopScreenPreview' : 'screenPreview')}
+          {/* Filled while idle: connecting the screen is the next thing a new run needs. */}
+          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (captureActive) capture.stop(); else void capture.start() }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--text-muted)] ${captureActive ? 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]' : 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)]'}`}>
+            <MonitorUp size={16} aria-hidden="true" /> <span className="max-sm:sr-only">{t(captureActive ? 'stopScreenPreview' : 'screenPreview')}</span>
           </button>
           <button type="button" onClick={() => setConfirmReset(true)} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
-            <RotateCcw size={15} /> {t('reset')}
+            <RotateCcw size={15} aria-hidden="true" /> <span className="max-sm:sr-only">{t('reset')}</span>
           </button>
         </>}
         </div>
       </header>
-      {state.phase === 'playing' && !capture.mobile && <div className="mb-4 max-w-3xl" data-recognition-mode-control>
-        <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}
-          note={capture.status === 'running' ? t('recognitionModeLiveNote') : undefined}
-          options={{ fastest: { label: t('recognitionModeFastest'), description: t('recognitionModeFastestHint') },
-            performance: { label: t('recognitionModePerformance'), description: t('recognitionModePerformanceHint') },
-            balanced: { label: t('recognitionModeBalanced'), description: t('recognitionModeBalancedHint') },
-            quality: { label: t('recognitionModeQuality'), description: t('recognitionModeQualityHint') } }} />
-        <div className="mt-3">
-          <DetectionToggles value={detection} onChange={changeDetection} label={t('detectionLabel')}
-            options={{ gifts: { label: t('detectionGifts'), description: t('detectionGiftsHint') },
-              themes: { label: t('detectionThemes'), description: t('detectionThemesHint') },
-              events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
-        </div>
-      </div>}
-      {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-5 rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-3 text-sm text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
-      {state.phase === 'playing' && !capture.mobile && <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'}
-        className="mb-5 flex min-w-0 items-start gap-2.5">
+      {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-3 shrink-0 rounded-md border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
+      {state.phase === 'playing' && !capture.mobile && <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
+      <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t('captureFramesPrivacy')}
+        className="flex min-w-0 max-w-3xl flex-1 items-center gap-2">
         {/* Static state dot: gold while connected, red on failure, muted otherwise. */}
-        <span aria-hidden="true" className={`mt-[0.4rem] h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
+        <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
           : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
-        <p className="min-w-0 break-keep text-sm leading-6">
+        <p className="min-w-0 break-keep text-[0.8125rem] leading-5">
           <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error)]' : 'text-[var(--gold-light)]'}`}>{t(`capture_${capture.status}`)}</span>
-          <span className="block text-[var(--text-secondary)]">{t('captureFramesPrivacy')}</span>
+          <span className="sr-only"> {t('captureFramesPrivacy')}</span>
         </p>
+      </div>
+      {/* 떠 있는 팝오버: 열어도 아래 화면을 밀지 않는다 */}
+      <details ref={recognitionRef} className="group relative shrink-0">
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-panel)] px-3 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden">
+          <span>{t('setupRecognitionTitle')}</span>
+          <span className="flex items-center gap-2 font-normal text-[var(--gold-light)]">{recognitionSummary}<ChevronDown aria-hidden="true" size={15} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" /></span>
+        </summary>
+        <div className="absolute right-0 top-[calc(100%+0.375rem)] z-40 max-h-[70dvh] w-[min(48rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)]">{recognitionControls}</div>
+      </details>
       </div>}
 
-      {dataError && <p role="alert" className="mb-5 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}
+      {dataError && <p role="alert" className="mb-5 shrink-0 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}
       {loadingPlan ? <div role="status" className={`${card} animate-pulse p-8 text-center text-[var(--text-secondary)]`}>{t('loadingPlan')}</div> : state.phase === 'setup' ?
-        <div className="max-w-3xl">
-          <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} />
-        </div> : state.phase === 'completed' ?
+        <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos}
+          recognition={capture.mobile ? undefined : recognitionControls} recognitionSummary={recognitionSummary} /> : state.phase === 'completed' ?
         <section className={`${card} mx-auto max-w-xl p-8 text-center`}>
           <h2 className="font-[family-name:var(--font-heading)] text-2xl text-[var(--gold-light)]">{t('completed')}</h2>
           <p className="mt-4 text-[var(--text-secondary)]">{t('completedSummary', { floors: state.floorLogs.filter(log => log.completedAt).length, gifts: state.giftInventory.length })}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><button onClick={reset} className="min-h-11 rounded-md border border-[var(--border-gold)] px-5 text-[var(--gold-light)]">{t('newRun')}</button><button onClick={reviewDraft} className="min-h-11 rounded-md bg-[var(--gold)] px-5 font-bold text-[var(--bg-deep)]">{t('reviewDraft')}</button></div>
         </section> : <>
-          <FloorProgress state={state} dispatch={dispatch} />
-          <div className="mt-3">
-            <main className="min-w-0"><FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} /></main>
+          <div className="shrink-0"><FloorProgress state={state} dispatch={dispatch} /></div>
+          <div className="mt-2 min-h-0 min-w-0 flex-1">
+            <FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} />
           </div>
         </>}
     </div>

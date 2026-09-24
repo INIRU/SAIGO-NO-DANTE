@@ -9,6 +9,8 @@ import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from
 import { getGiftsFromThemes } from '@/lib/planner/fusion'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftArtwork from '@/components/ui/GiftArtwork'
+import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters } from '@/components/gifts/GiftCatalog'
+import type { EgoGift } from '@/components/mirror-dungeon/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -26,10 +28,12 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   const locale = useLocale() as SupportedLang
   const giftName = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
   const currentLog = state.floorLogs[state.currentFloor - 1]
-  const [search, setSearch] = useState('')
   const [targetSearch, setTargetSearch] = useState('')
 
   const ownedSet = useMemo(() => new Set(state.giftInventory.map(Number)), [state.giftInventory])
+  const ownedIds = useMemo(() => new Set(state.giftInventory.map(String)), [state.giftInventory])
+  const catalogFilters = useGiftCatalogFilters()
+  const catalogGifts = useMemo(() => gifts.map(toCatalogGift), [gifts])
 
   const conditionCounts = useMemo(
     () => getGiftConditionCountsForSlots(state.identitySlots),
@@ -54,12 +58,6 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
     })
   }, [currentLog?.themeId, themes, giftMap, ownedSet])
 
-  // 검색 결과
-  const searchResults = useMemo(() => {
-    if (!search.trim()) return []
-    return gifts.filter(g => giftName(g).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
-  }, [search, gifts, locale])
-
   // 최종 기프트 (플래너에서 선정한 목표 기프트) — 먹은건 하단
   const targetSet = useMemo(() => new Set((state.targetGifts ?? []).map(Number)), [state.targetGifts])
   const targetGiftList = useMemo(() => {
@@ -70,6 +68,9 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       return aOwned - bOwned
     })
   }, [state.targetGifts, giftMap, ownedSet])
+  const [showAllTargets, setShowAllTargets] = useState(false)
+  const shownTargets = showAllTargets ? targetGiftList : targetGiftList.slice(0, 12)
+  const hiddenTargetCount = targetGiftList.length - shownTargets.length
 
   // 목표 기프트 검색
   const targetSearchResults = useMemo(() => {
@@ -82,11 +83,11 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       <style jsx global>{`.run-gift-grid .gift-card > p { font-size: 0.6875rem !important; line-height: 1.35 !important; }`}</style>
       {/* 테마팩 기프트 — GiftCard 컴포넌트 사용 */}
       {themeGifts.length > 0 && (
-        <section className="min-w-0 lg:flex lg:h-[calc(min(56vh,33rem)+3.5rem)] lg:flex-col">
+        <section className="min-w-0 lg:col-start-1">
           <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>
             {t('themeGiftsCount', { count: themeGifts.length })}
           </h3>
-          <div role="region" aria-label={t('themeGiftsCount', { count: themeGifts.length })} tabIndex={0} className="run-gift-grid flex flex-wrap content-start gap-2 overflow-y-auto pr-1 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] sm:gap-3 lg:min-h-0 lg:flex-1" style={{ position: 'relative', zIndex: 0, maxHeight: 'min(56vh, 33rem)' }}>
+          <div role="region" aria-label={t('themeGiftsCount', { count: themeGifts.length })} className="run-gift-grid flex flex-wrap content-start gap-2 sm:gap-3" style={{ position: 'relative', zIndex: 0 }}>
             {themeGifts.map(gift => {
               const owned = ownedSet.has(gift.game_id)
               return (
@@ -100,9 +101,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
                 />
               )
             })}
-            <p className="w-full py-2 text-center text-xs text-[var(--text-tertiary)]">{t('giftListEnd', { count: themeGifts.length })}</p>
           </div>
-          {themeGifts.length > 0 && <p className="mt-2 text-xs text-[var(--text-tertiary)]">{t('scrollForMoreGifts', { count: themeGifts.length })}</p>}
         </section>
       )}
 
@@ -110,7 +109,8 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       {currentLog?.themeId && themeGifts.length === 0 && <p style={{ color: '#888', fontSize: '0.8125rem' }}>{t('themeGiftsHint')}</p>}
 
       {/* 최종 기프트 (목표 기프트 — 항상 표시) */}
-      <section className="flex h-[min(65vh,26rem)] min-h-0 min-w-0 flex-col border-t border-[var(--border)] pt-3 lg:h-[calc(min(56vh,33rem)+3.5rem)]">
+      {/* 탭 영역 하나만 스크롤한다: 목표 기프트는 오른쪽에 붙어 따라오고, 못 얻은 것부터 12개까지 보여 준다 */}
+      <section className="min-w-0 border-t border-[var(--border)] pt-3 lg:sticky lg:top-0 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:self-start lg:border-t-0 lg:pt-0">
         <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#c8900a' }}>
           {t('targetGifts')}
           {targetGiftList.length > 0 && (
@@ -158,10 +158,11 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
         </div>
 
         {/* 목표 기프트 그리드 */}
-        <div role="region" aria-label={t('targetGifts')} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+        <div role="region" aria-label={t('targetGifts')}>
         {targetGiftList.length > 0 ? (
+          <>
           <div className="run-gift-grid flex flex-wrap content-start gap-2" style={{ position: 'relative', zIndex: 0 }}>
-            {targetGiftList.map(gift => {
+            {shownTargets.map(gift => {
               const owned = ownedSet.has(gift.game_id)
               return (
                 <GiftCard
@@ -176,62 +177,30 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
               )
             })}
           </div>
+          {hiddenTargetCount > 0 && (
+            <button type="button" onClick={() => setShowAllTargets(true)} className="mt-2 min-h-9 w-full rounded-md border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+              {t('showAllTargets', { count: hiddenTargetCount })}
+            </button>
+          )}
+          </>
         ) : (
           <p style={{ color: '#555', fontSize: '0.75rem' }}>{t('noTargetsHint')}</p>
         )}
         </div>
       </section>
 
-      {/* 최종 기프트 추가 (자동완성 드롭다운) */}
-      <section>
-        <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>{t('addFinalGift')}</h3>
-        <div className="relative" style={{ zIndex: 20 }}>
-          <div className="relative">
-            <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#555' }} />
-            <input
-              aria-label={t('finalGiftSearch')}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={t('finalGiftSearch')}
-              className="w-full rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-              style={{ padding: '0.5rem 0.75rem 0.5rem 2.25rem', background: '#1a1510', border: '1px solid #2a2015', color: '#e8e0d0', fontSize: '0.8125rem', outline: 'none', minHeight: '2.75rem' }}
-            />
-          </div>
-          {search.trim() && <p role="status" className="mt-1 text-xs text-[var(--text-tertiary)]">{t('giftSearchCount', { count: searchResults.length })}</p>}
-          {/* 자동완성 드롭다운 */}
-          {searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 z-30 rounded-lg overflow-hidden" style={{ top: '100%', marginTop: '0.25rem', background: '#1a1510', border: '1px solid #2a2015', maxHeight: '16rem', overflowY: 'auto', boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)' }}>
-              {searchResults.map(gift => {
-                const owned = ownedSet.has(gift.game_id)
-                const cond = getConditionStatus(gift)
-                return (
-                  <button
-                    key={gift.id}
-                    onClick={() => { dispatch({ type: 'ACQUIRE_GIFT', giftId: String(gift.game_id) }); setSearch('') }}
-                    disabled={owned}
-                    className="w-full flex items-center gap-2 transition-colors text-left"
-                    style={{
-                      padding: '0.5rem 0.75rem', fontSize: '0.6875rem',
-                      minHeight: '2.75rem',
-                      color: owned ? '#555' : '#ccc',
-                      borderBottom: '1px solid #1a1208',
-                      opacity: owned ? 0.5 : 1,
-                    }}
-                    onMouseEnter={e => { if (!owned) e.currentTarget.style.background = 'rgba(200,144,10,0.1)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <span className="w-8 shrink-0"><GiftArtwork gift={gift} displayName={giftName(gift)} sizes="32px" /></span>
-                    <span className="flex-1 truncate">{giftName(gift)}</span>
-                    {gift.keyword && <span style={{ color: '#555', fontSize: '0.5625rem', flexShrink: 0 }}>{gift.keyword}</span>}
-                    {gift.grade && <span style={{ color: '#c8900a', fontSize: '0.5625rem', fontWeight: 700, flexShrink: 0 }}>{gift.grade === 'EX' ? 'EX' : t('giftGrade', { grade: gift.grade })}</span>}
-                    {cond && <span style={{ color: cond.level === 'unmet' ? '#ef4444' : '#eab308', fontSize: '0.5rem', flexShrink: 0 }}>{cond.level === 'unmet' ? '✕' : '⚠'}</span>}
-                    {owned && <span style={{ color: '#4ade80', fontSize: '0.5625rem', flexShrink: 0 }}>{t('owned')}</span>}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
+      {/* 최종 기프트 추가: 미러 던전 기프트 목록과 같은 카탈로그. 누르면 획득/해제 */}
+      <section className="min-w-0 lg:col-start-1" aria-labelledby="run-add-gift-title" style={{ '--gift-catalog-bg': 'var(--bg-card)' } as React.CSSProperties}>
+        <h3 id="run-add-gift-title" style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.5rem', color: '#999' }}>{t('addFinalGift')}</h3>
+        <GiftCatalog
+          compact
+          gifts={catalogGifts}
+          getGiftKeywordIcon={giftKeywordIcon}
+          filters={catalogFilters}
+          selectedIds={ownedIds}
+          idleHint={t('addGiftIdleHint')}
+          onGiftClick={(gift: EgoGift) => dispatch({ type: ownedIds.has(gift.id) ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: gift.id })}
+        />
       </section>
 
     </div>

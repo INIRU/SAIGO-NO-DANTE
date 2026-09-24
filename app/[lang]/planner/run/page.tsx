@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import RunWrapper from './RunWrapper'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
+import { dropRepeatedTopUptie } from '@/lib/identity/skill-model'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -17,10 +20,11 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-export default async function RunPage() {
+export default async function RunPage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
+  const { lang } = await params
   const supabase = createAdminClient()
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
@@ -33,8 +37,9 @@ export default async function RunPage() {
   const [{ data: identities, error: e4 }, { data: sinners, error: e5 }, { data: skills, error: e6 }, { data: passives, error: e6b }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name').order('rarity', { ascending: false }),
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
-    supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').eq('uptie_level', 4),
-    supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level').eq('uptie_level', 4),
+    // Every uptie level (the deck picks each slot's level); more rows than one page.
+    readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
+    readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level').order('id').range(from, to)),
   ])
   if (e4 || e5 || e6 || e6b) console.error('[RunPage] query group 2:', e4?.message, e5?.message, e6?.message, e6b?.message)
 
@@ -53,15 +58,17 @@ export default async function RunPage() {
   return (
     <RunWrapper
       themes={normalizedThemes}
-      gifts={gifts ?? []}
+      // 이름(화면 인식용)은 모든 언어를 두고, 긴 설명·결과 문장은 현재 언어만 보낸다
+      gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
       recipes={recipes ?? []}
       identities={identities ?? []}
       sinners={sinners ?? []}
-      skills={skills ?? []}
-      passives={passives ?? []}
+      // Rows repeated at the top uptie are dropped; selectUptieRows falls back to the identical level below.
+      skills={dropRepeatedTopUptie(skills ?? [], row => row.identity_id)}
+      passives={dropRepeatedTopUptie(passives ?? [], row => row.identity_id)}
       egos={egos ?? []}
-      events={(mdEvents ?? []) as MdEvent[]}
-      eventChoices={(mdChoices ?? []) as MdEventChoice[]}
+      events={(mdEvents ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
+      eventChoices={(mdChoices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
       dataError={!!(e1 || e2 || e3 || e4 || e5 || e6 || e6b || e7 || e8 || e9)}
     />
   )
