@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
-import { createInitialRunState, normalizeRunState } from '../../../lib/planner/run-types'
+import { createInitialRunState, normalizeRunState, type RunState } from '../../../lib/planner/run-types'
 import type { GiftData, ThemeData } from '../../../lib/planner/types'
 
 const gift = (game_id: number) => ({ game_id, name: String(game_id) }) as GiftData

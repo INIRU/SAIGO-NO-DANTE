@@ -12,7 +12,7 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { Check } from 'lucide-react'
 import { useLocale } from 'next-intl'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 
 interface ThemePackCardTheme {
   id: number | string
@@ -26,7 +26,12 @@ interface ThemePackCardTheme {
 
 interface ThemePackCardProps {
   theme: ThemePackCardTheme
-  onClick: () => void
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
+  /** Replaces the theme name as the accessible name and tooltip. */
+  ariaLabel?: string
+  title?: string
+  /** Image `sizes` hint when the card width is known. */
+  sizes?: string
   isSelected?: boolean
   lang?: SupportedLang
   /** Show gift count below name (default: false) */
@@ -53,6 +58,9 @@ export default function ThemePackCard({
   showGiftCount,
   imageSurface = 'default',
   selectedFrameOverlay = false,
+  ariaLabel,
+  title,
+  sizes = '(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw',
 }: ThemePackCardProps) {
   const locale = useLocale()
   const lang = langProp ?? (locale as SupportedLang)
@@ -124,7 +132,8 @@ export default function ThemePackCard({
     <button
       type="button"
       onClick={onClick}
-      aria-label={displayName}
+      aria-label={ariaLabel ?? displayName}
+      title={title}
       aria-pressed={isSelected}
       className="group relative w-full overflow-hidden text-left transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#131110]"
       style={{
@@ -157,7 +166,7 @@ export default function ThemePackCard({
             alt={displayName}
             fill
             fallbackType="theme"
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+            sizes={sizes}
             className="object-contain"
           />
           {!isBareImageSurface && (
