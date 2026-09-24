@@ -12,6 +12,7 @@ import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
   useNoteAutocomplete,
@@ -163,6 +164,10 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
   const tFloor = useTranslations('planner.floorTab')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
+  const openNoteGift = (key: string) => {
+    const gift = gifts.find(g => g.id === key || g.name === key)
+    if (gift) setSelectedGift({ gift, enhance: 0 })
+  }
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   const shouldReduceMotion = useReducedMotion()
@@ -351,7 +356,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
               borderRadius: '0.375rem', padding: '0.5rem 0.625rem',
             }}>
               <div style={{ fontSize: '0.5625rem', color: '#4b5563', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>미리보기</div>
-              <NoteRenderer text={state.description} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
+              <NoteGiftClickContext value={openNoteGift}><NoteRenderer text={state.description} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} /></NoteGiftClickContext>
             </div>
           )}
         </div>
@@ -628,7 +633,7 @@ export default function SummaryTab({ state, dispatch, themes, gifts, recipes, gi
         giftMap={giftMap}
         onGiftClick={gift => setSelectedGift({ gift, enhance: 0 })}
         renderMemo={memo => (
-          <NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
+          <NoteGiftClickContext value={openNoteGift}><NoteRenderer text={memo} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} /></NoteGiftClickContext>
         )}
       />
 
