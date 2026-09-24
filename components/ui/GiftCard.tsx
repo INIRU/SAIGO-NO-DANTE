@@ -37,6 +37,20 @@ interface GiftCardProps {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+/** Red warning triangle for a gift the plan asks to obtain. The parent must be positioned. */
+export function GiftWarningMark({ label, className = 'right-0 -top-0.5 h-3.5 w-3.5' }: { label: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" role="img" aria-label={label} data-gift-warning
+      className={`pointer-events-none absolute z-30 drop-shadow-[0_0_1px_#b81924] ${className}`}>
+      <title>{label}</title>
+      <path d="M16 3 30 28H2Z" fill="#60151c" stroke="#bd2430" strokeWidth="4" strokeLinejoin="round" />
+      <path d="M16 3 30 28H2Z" fill="none" stroke="#ff8b8b" strokeWidth="2.5" />
+      <path d="M16 11v8" stroke="#ffaaaa" strokeWidth="3" />
+      <circle cx="16" cy="23" r="1.7" fill="#ffaaaa" />
+    </svg>
+  )
+}
+
 const GiftCard = memo(function GiftCard({
   gift,
   onClick,
@@ -189,16 +203,7 @@ const GiftCard = memo(function GiftCard({
         }} />
       </GiftArtwork>
 
-      {warning && (
-        <svg viewBox="0 0 32 32" role="img" aria-label={warning} data-gift-warning
-          className="pointer-events-none absolute right-0 -top-0.5 z-30 h-3.5 w-3.5 drop-shadow-[0_0_1px_#b81924]">
-          <title>{warning}</title>
-          <path d="M16 3 30 28H2Z" fill="#60151c" stroke="#bd2430" strokeWidth="4" strokeLinejoin="round" />
-          <path d="M16 3 30 28H2Z" fill="none" stroke="#ff8b8b" strokeWidth="2.5" />
-          <path d="M16 11v8" stroke="#ffaaaa" strokeWidth="3" />
-          <circle cx="16" cy="23" r="1.7" fill="#ffaaaa" />
-        </svg>
-      )}
+      {warning && <GiftWarningMark label={warning} />}
 
       {/* Name below card */}
       {showName && !isInsert && (

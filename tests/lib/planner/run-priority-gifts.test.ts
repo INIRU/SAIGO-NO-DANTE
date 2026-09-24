@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, nextGiftPromotion, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
+import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, nextGiftPromotion, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
 import { createInitialRunState, normalizeRunState } from '../../../lib/planner/run-types'
 import type { GiftData, ThemeData } from '../../../lib/planner/types'
 
@@ -174,4 +174,17 @@ it('closes the gap when an acquired gift leaves any tier, without reordering the
     state.giftInventory = [...state.giftInventory, owned]
     expect(order()).toEqual(left)
   }
+})
+it('reads the plan gifts for a pack wherever the plan placed it, plus the given floor entry', () => {
+  const state = createInitialRunState()
+  state.sourcePlanSnapshot = { floorPlan: [
+    { floor: 1, theme_id: 'A', gift_ids: ['10_plus', '20'] },
+    { floor: 2, theme_id: 'B', gift_ids: ['30', 'final_40_plusplus', '30', 'bad'] },
+    { floor: 3, gift_ids: ['50'] },
+  ] as NonNullable<typeof state.sourcePlanSnapshot>['floorPlan'] }
+  // A pack picked on another floor than planned keeps its own gifts.
+  expect(planThemeGiftIds(state, 'B')).toEqual([30, 40])
+  expect(planThemeGiftIds(state, 'A', 3)).toEqual([10, 20, 50])
+  expect(planThemeGiftIds(state, 'C')).toEqual([])
+  expect(planThemeGiftIds(createInitialRunState(), 'A', 1)).toEqual([])
 })

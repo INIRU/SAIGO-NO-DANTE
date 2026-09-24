@@ -500,6 +500,8 @@
       "pipThemeGuidance": "Choose this floor’s theme pack",
       "pipThemeGuidanceHelp": "Choose a theme that still allows every remaining planned theme to fit.",
       "pipThemePossible": "Available",
+      "pipThemePlanGifts": "Plan gifts to obtain from this theme pack",
+      "pipPlanGift": "Gift set in the plan",
       "pipThemeUnavailable": "Remaining plan cannot fit",
       "pipThemeFloors": "Available floors: {floors}",
       "pipThemeRemaining": "Remaining plan: {themes}",
