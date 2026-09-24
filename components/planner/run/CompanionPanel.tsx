@@ -25,6 +25,8 @@ import CompanionEventChoices from './CompanionEventChoices'
 import CompanionAcquisitionOverlay, { fusionFeedback, type AcquisitionOverlayEvent } from './CompanionAcquisitionOverlay'
 import CompanionNextFloorButton from './CompanionNextFloorButton'
 import CompanionStartGifts from './CompanionStartGifts'
+import CompanionSkillExchange from './CompanionSkillExchange'
+import type { SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
 
 type HistoryEntry = { before: RunState; after: RunState; beforeKey: string; afterKey: string; pendingFloor: number | null }
@@ -48,6 +50,8 @@ interface Props {
   popupAcquisitions?: PopupAcquisition[]
   /** Confirmed shop sales, latest last. */
   giftSales?: GiftSale[]
+  /** Shop skill replacement window on screen. */
+  skillExchange?: SkillExchangeRead | null
   events?: MdEvent[]
   eventChoices?: MdEventChoice[]
   eventChoiceEvidence?: { eventId: number; observedAt: number; floor: number | null } | null
@@ -64,7 +68,8 @@ interface Props {
 }
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
-  themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [] }: Props) {
+  themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
+  skillExchange = null }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -404,6 +409,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     }
     const plannedGiftIds = new Set(planThemeGiftIds(state, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+      {skillExchange && state.sourcePlanSnapshot && <div className="mb-3"><CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} /></div>}
       <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="space-y-3">
       {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}
       {!theme ? <section aria-label={t('pipThemeGuidance')}>
