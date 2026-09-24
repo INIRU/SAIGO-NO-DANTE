@@ -402,7 +402,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const themeRows = Math.ceil(themeCount / themeColumns) || 1
     // Each recommended pack lists the plan's gifts for it below the poster; the poster shrinks to leave them room.
     const owned = new Set(state.giftInventory.map(giftGameId))
-    const packGifts = new Map(guidance.map(item => [item.theme.id, planThemeGiftIds(state, item.theme.id).flatMap(id => giftMap.get(id) ?? [])]))
+    const packGifts = new Map(guidance.map(item => [item.theme.id, planThemeGiftIds(state, themes, item.theme.id).flatMap(id => giftMap.get(id) ?? [])]))
     const packGiftRows = Math.ceil(Math.max(0, ...[...packGifts.values()].map(list => list.length)) / 3)
     const themeWidth = Math.max(72, Math.min(
       themeCount <= 1 ? 156 : themeCount === 2 ? 136 : 112,
@@ -419,7 +419,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       })}</ul>
     }
     const plannedGiftIds = new Set(fusionView.current ? planGiftIds(state)
-      : planThemeGiftIds(state, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
+      : planThemeGiftIds(state, themes, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
       <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="space-y-3">
       {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}

@@ -1,4 +1,4 @@
-import { getGiftsFromThemes } from './fusion'
+import { getGiftsFromThemes, themeExclusiveGiftIds, withThemeRewards } from './fusion'
 import type { RunState } from './run-types'
 import type { GiftData, ThemeData } from './types'
 
@@ -8,12 +8,13 @@ export function giftGameId(value: string): number | null {
 }
 
 /**
- * Gifts the plan sets for a pack: its floor entry for that pack, plus the given floor's entry, in plan order.
- * The pack match keeps a swapped pack's gifts with it.
+ * Gifts the plan sets for a pack: its floor entry for that pack, plus the given floor's entry, then the pack's clear
+ * rewards, in plan order. The pack match keeps a swapped pack's gifts with it.
  */
-export function planThemeGiftIds(state: RunState, themeId: string, floor?: number): number[] {
+export function planThemeGiftIds(state: RunState, themes: ThemeData[], themeId: string, floor?: number): number[] {
   const entries = (state.sourcePlanSnapshot?.floorPlan ?? []).filter(entry => entry.theme_id === themeId || entry.floor === floor)
-  return [...new Set(entries.flatMap(entry => entry.gift_ids ?? []).map(giftGameId).filter((id): id is number => id !== null))]
+  const keys = withThemeRewards(entries.flatMap(entry => entry.gift_ids ?? []), themes.find(theme => theme.id === themeId))
+  return [...new Set(keys.map(giftGameId).filter((id): id is number => id !== null))]
 }
 
 /** The plan's final targets, every floor's gifts, then its inventory (without start and observation gifts), in plan order. */
@@ -29,9 +30,9 @@ export function planGiftIds(state: RunState): number[] {
  */
 export function getFusionTierGifts(state: RunState, themes: ThemeData[], giftMap: Map<number, GiftData>): GiftData[] {
   const owned = new Set(state.giftInventory.map(giftGameId))
-  const exclusive = new Set(themes.flatMap(theme => theme.specific_ego_gift_ids ?? []))
+  const exclusive = new Set(themes.flatMap(themeExclusiveGiftIds))
   const floorTheme = themes.find(theme => theme.id === state.floorLogs[state.currentFloor - 1]?.themeId)
-  const here = new Set(floorTheme?.specific_ego_gift_ids ?? [])
+  const here = new Set(themeExclusiveGiftIds(floorTheme))
   return planGiftIds(state).flatMap(id => {
     const gift = giftMap.get(id)
     return gift && ['4', '5'].includes(String(gift.grade)) && !owned.has(id) && (!exclusive.has(id) || here.has(id)) ? [gift] : []
@@ -80,7 +81,8 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
   if (!themeId) return []
 
   const themeGifts = getGiftsFromThemes([themeId], themes, giftMap)
-  const exclusiveIds = new Set(themes.find(theme => theme.id === themeId)?.specific_ego_gift_ids ?? [])
+  const theme = themes.find(item => item.id === themeId)
+  const exclusiveIds = new Set(themeExclusiveGiftIds(theme))
   const available = new Set(themeGifts.map(gift => gift.game_id))
   if (!available.size) return []
   const owned = new Set(state.giftInventory.map(giftGameId))
@@ -92,7 +94,8 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
     seen.add(gift.game_id)
     result.push(gift)
   }
-  for (const key of [...(planned?.gift_ids ?? []), ...state.targetGifts]) {
+  // The pack's clear rewards count as planned for the floor that has it.
+  for (const key of [...withThemeRewards(planned?.gift_ids ?? [], theme), ...state.targetGifts]) {
     const id = giftGameId(key)
     if (id !== null && available.has(id)) add(giftMap.get(id))
   }

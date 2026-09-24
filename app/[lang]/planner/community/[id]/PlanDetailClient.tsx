@@ -121,6 +121,7 @@ type ThemeData = {
   dungeon_id: string | null
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
+  fixed_reward_gift_ids?: number[] | null
   image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null

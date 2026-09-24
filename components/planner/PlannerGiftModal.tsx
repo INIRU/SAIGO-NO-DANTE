@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { X } from 'lucide-react'
 import KeywordChip from '@/components/ui/KeywordChip'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
+import { themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { OCTAGON_CLIP, getGiftKeywordColor } from '@/lib/constants/gift'
@@ -38,7 +39,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
 
   // 소속 테마팩
   const giftThemes = themes.filter(t =>
-    (t.ego_gift_ids ?? []).includes(gift.game_id) || (t.specific_ego_gift_ids ?? []).includes(gift.game_id)
+    (t.ego_gift_ids ?? []).includes(gift.game_id) || themeExclusiveGiftIds(t).includes(gift.game_id)
   )
 
   return (
@@ -217,7 +218,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {giftThemes.map(t => {
-                  const isExclusive = (t.specific_ego_gift_ids ?? []).includes(gift.game_id)
+                  const isExclusive = themeExclusiveGiftIds(t).includes(gift.game_id)
                   return (
                     <button
                       key={t.id}

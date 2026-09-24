@@ -142,6 +142,8 @@ SITE_URL=http://127.0.0.1:3000 npx tsx scripts/sync/identity-data.ts --rebuild-k
 
 bootstrap은 빈 DB의 수감자/EGO 기초 행과 해석별 스킬을 복구한다. 원본의 희소 단계 패치를 누적하고 실제 최대 단계까지만 생성한다. 스토리 전용 비공개 EGO 5개는 공개 카탈로그에서 제외한다. 해석 V가 있는 EGO는 7개이며 나머지에 V를 만들어 넣지 않는다.
 
+테마팩의 `fixed_reward_gift_ids`는 `mirror-dungeon-data.ts`가 채운다. 테마팩 `mapGenOption.bossPool` 스테이지(`mirrordungeon-(ab)battle*`)의 `rewardList`에 확정 기프트가 하나 있고, 그 id가 `ego_gifts`에 있으면 저장한다. 2026-09-24 기준으로 익스트림 1511~1520 팩이 보상 기프트를 하나씩 준다(9250~9255, 9827~9830). 플랜 상세, 플래너 요약, Assist는 이 기프트를 해당 팩이 있는 층의 기프트로 자동 포함하고 팩 전용으로 표시한다.
+
 EGO 패시브는 KR_Passive_Ego를 포함한 세 언어에서 읽는다. CheckAwakenLevel2, CheckAwakenLevelBetween_2_4, CheckAwakenLevel5 조건을 ego_passives의 적용 구간으로 저장한다. 상세의 각성 탭에 맞춰 효과가 바뀌고 해석 I에서는 잠긴다. 기존 모달/API를 위한 EGO 테이블의 패시브 필드는 최대 해석 단계 요약으로 유지한다.
 
 정신력 조건은 원본의 동기화 IV 이하 마지막 조건 목록을 사용한다. 단계별 이력 테이블이 아니다. 안정된 조건 키로 기존 행을 재사용하고, 원본에 없는 참조가 있으면 중단한다.

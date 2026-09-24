@@ -183,10 +183,12 @@ it('reads the plan gifts for a pack wherever the plan placed it, plus the given 
     { floor: 3, gift_ids: ['50'] },
   ] as NonNullable<typeof state.sourcePlanSnapshot>['floorPlan'] }
   // A pack picked on another floor than planned keeps its own gifts.
-  expect(planThemeGiftIds(state, 'B')).toEqual([30, 40])
-  expect(planThemeGiftIds(state, 'A', 3)).toEqual([10, 20, 50])
-  expect(planThemeGiftIds(state, 'C')).toEqual([])
-  expect(planThemeGiftIds(createInitialRunState(), 'A', 1)).toEqual([])
+  expect(planThemeGiftIds(state, [], 'B')).toEqual([30, 40])
+  expect(planThemeGiftIds(state, [], 'A', 3)).toEqual([10, 20, 50])
+  expect(planThemeGiftIds(state, [], 'C')).toEqual([])
+  // An extreme pack's clear reward joins its gifts without being listed in the plan.
+  expect(planThemeGiftIds(state, [{ ...theme('B', [], []), fixed_reward_gift_ids: [9250, 30] }], 'B')).toEqual([30, 40, 9250])
+  expect(planThemeGiftIds(createInitialRunState(), [], 'A', 1)).toEqual([])
 })
 
 it('lists the plan unowned tier IV+ gifts for the fusion screen, a pack exclusive only on its own floor', () => {
@@ -202,4 +204,18 @@ it('lists the plan unowned tier IV+ gifts for the fusion screen, a pack exclusiv
   state.floorLogs[state.currentFloor - 1].themeId = 'A'
   expect(getFusionTierGifts(state, packs, map).map(item => item.game_id)).toEqual([4, 6, 7, 2])
   expect(planGiftIds(state)).toEqual([4, 1, 6, 7, 3, 2])
+})
+
+it('puts the floor pack clear reward first among the floor gifts and keeps it off other floors fusion list', () => {
+  const tiered = (game_id: number, grade: string) => ({ game_id, name: String(game_id), grade }) as GiftData
+  const map = new Map([tiered(10, '1'), tiered(9250, '4')].map(item => [item.game_id, item]))
+  const purple = { ...theme('P', [10], []), fixed_reward_gift_ids: [9250] }
+  const state = createInitialRunState()
+  state.floorLogs[0].themeId = 'P'
+  expect(getCurrentFloorPriorityGifts(state, [purple, theme('Q', [10], [])], map).map(item => item.game_id)).toEqual([9250, 10])
+  state.targetGifts = ['9250']
+  state.sourcePlanSnapshot = { floorPlan: [] } as unknown as RunState['sourcePlanSnapshot']
+  expect(getFusionTierGifts(state, [purple], map).map(item => item.game_id)).toEqual([9250])
+  state.floorLogs[0].themeId = 'Q'
+  expect(getFusionTierGifts(state, [purple, theme('Q', [10], [])], map)).toEqual([])
 })

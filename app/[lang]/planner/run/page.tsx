@@ -24,7 +24,7 @@ export default async function RunPage() {
   const supabase = createAdminClient()
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info'),
+    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info'),
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
   ])
