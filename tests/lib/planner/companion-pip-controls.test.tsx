@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import CompanionAcquisitionOverlay, { acquisitionDwellMs, takeNewAcquisitions, type AcquisitionOverlayEvent } from '@/components/planner/run/CompanionAcquisitionOverlay'
+import CompanionAcquisitionOverlay, { ACQUISITION_VISIBLE, AcquisitionStack, takeNewAcquisitions, type AcquisitionOverlayEvent } from '@/components/planner/run/CompanionAcquisitionOverlay'
 import CompanionNextFloorButton, { NEXT_FLOOR_GUARD_MS, shouldAdvanceFloor } from '@/components/planner/run/CompanionNextFloorButton'
 
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
@@ -16,10 +16,16 @@ it('queues each confirmed token once, in order, and silently drops stale ones', 
   expect(seen.has('old')).toBe(true)
 })
 
-it('drains a burst faster without skipping plates', () => {
-  expect(acquisitionDwellMs(0)).toBeGreaterThan(acquisitionDwellMs(1))
-  expect(acquisitionDwellMs(1)).toBeGreaterThan(acquisitionDwellMs(5))
-  expect(acquisitionDwellMs(5)).toBeGreaterThan(0)
+it('stacks a burst at once, newest in front, without dropping or merging any card', () => {
+  const consumed: AcquisitionOverlayEvent = { kind: 'consumed', token: 'fuse', at: 0, materials: [{ gift: { name: 'm1' }, name: 'm1' }, { gift: { name: 'm2' }, name: 'm2' }] }
+  const items = [event('a', 0), consumed, event('b', 0), event('c', 0), event('d', 0)]
+  const html = renderToStaticMarkup(<AcquisitionStack items={items} label="획득" consumedLabel="합성 재료 소모" still={false} />)
+  const depths = [...html.matchAll(/data-(?:acquisition|consumed)-overlay="([^"]+)"[^>]*data-stack-depth="(\d+)"/g)].map(match => [match[1], Number(match[2])])
+  expect(depths).toEqual([['d', 0], ['c', 1], ['b', 2], ['fuse', 3], ['a', 4]])
+  // Cards past the cap collapse behind and are counted on the front card.
+  expect(ACQUISITION_VISIBLE).toBe(3)
+  expect(html).toContain('+2')
+  expect(html.match(/m1 · m2/g)).toHaveLength(1)
 })
 
 it('renders an empty, click-through live region before any acquisition', () => {
