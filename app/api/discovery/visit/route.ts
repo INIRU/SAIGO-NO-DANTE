@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, randomUUID } from "node:crypto";
 import { z } from "zod";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 const schema = z.object({
@@ -41,6 +43,10 @@ export async function POST(request: NextRequest) {
     const hash = createHmac("sha256", secret)
       .update("discovery:" + visitor)
       .digest("hex");
+    // Logged-in visits also feed the personal shelf. Before the user_id migration the lookup fails and the visit stays anonymous.
+    const email = (await getServerSession(authOptions))?.user?.email;
+    const user = email ? await db.rpc("discovery_user_id", { user_email: email }) : null;
+    const userId = user && !user.error ? (user.data as string | null) : null;
     const result = await db
       .from("discovery_visits")
       .upsert(
@@ -49,10 +55,11 @@ export async function POST(request: NextRequest) {
           kind,
           entity_id: id,
           day: new Date().toISOString().slice(0, 10),
+          ...(userId && { user_id: userId }),
         },
         {
           onConflict: "visitor_hash,kind,entity_id,day",
-          ignoreDuplicates: true,
+          ignoreDuplicates: !userId,
         },
       );
     if (result.error) throw result.error;
