@@ -55,7 +55,7 @@ function isSymlink(path: string) {
 
 function safeRelativePath(path: string) {
   if (isAbsolute(path) || path.split(/[\\/]/).includes('..')) throw new Error(`unsafe manifest path: ${path}`)
-  return path.replaceAll('\\', '/')
+  return path.replaceAll('\\', '/').normalize('NFC')
 }
 
 function sha256(buffer: Buffer) {
@@ -75,7 +75,8 @@ function walk(root: string): string[] {
       const info = lstatSync(path)
       if (info.isSymbolicLink()) throw new Error(`symlink is not allowed: ${relative(root, path)}`)
       if (info.isDirectory()) visit(path)
-      else if (info.isFile()) result.push(path)
+      // macOS unzip stores Korean names as NFD while manifests use NFC; APFS opens either form.
+      else if (info.isFile()) result.push(path.normalize('NFC'))
     }
   }
   visit(root)

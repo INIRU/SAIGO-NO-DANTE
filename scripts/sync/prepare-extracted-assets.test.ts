@@ -33,16 +33,16 @@ it('includes only skill icons referenced by the twelve sinners and their EGO', (
   expect(icons.has('9100401')).toBe(false)
 })
 
-async function fixture(dataFiles: Array<{ path: string; body: string }> = [{ path: 'Data/static-data/personality/personality-01.json', body: '{"list":[]}' }]) {
+async function fixture(dataFiles: Array<{ path: string; body: string }> = [{ path: 'Data/static-data/personality/personality-01.json', body: '{"list":[]}' }], imageDir = '수감자') {
   const root = await mkdtemp(join(tmpdir(), 'limbus-extract-'))
   roots.push(root)
   const source = join(root, 'source')
   const output = join(root, 'prepared')
   const repo = join(root, 'repo')
-  for (const dir of ['Reports', 'Images/수감자', 'Data', 'Localize/kr', 'Localize/en', 'Localize/jp']) mkdirSync(join(source, dir), { recursive: true })
+  for (const dir of ['Reports', `Images/${imageDir}`, 'Data', 'Localize/kr', 'Localize/en', 'Localize/jp']) mkdirSync(join(source, dir), { recursive: true })
   mkdirSync(repo)
   const png = await sharp({ create: { width: 2, height: 3, channels: 4, background: '#00000000' } }).png().toBuffer()
-  writeFileSync(join(source, 'Images/수감자/10101_normal.png'), png)
+  writeFileSync(join(source, `Images/${imageDir}/10101_normal.png`), png)
   const files = dataFiles.map(file => {
     const path = join(source, file.path)
     mkdirSync(join(path, '..'), { recursive: true })
@@ -112,4 +112,9 @@ it('rejects manifest path traversal', async () => {
   const unsafeOutput = join(f.repo, 'generated')
   await expect(prepareExtractedAssets({ source: f.source, output: unsafeOutput, repoRoot: f.repo })).rejects.toThrow(/repository/)
   expect(existsSync(`${unsafeOutput}.report.json`)).toBe(false)
+})
+
+it('matches NFC manifest paths against NFD folder names from macOS unzip', async () => {
+  const f = await fixture(undefined, '수감자'.normalize('NFD'))
+  expect(await prepareExtractedAssets({ source: f.source, output: f.output, repoRoot: f.repo })).toMatchObject({ ok: true, errors: [] })
 })
