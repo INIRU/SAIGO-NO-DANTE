@@ -2,9 +2,18 @@ import { getGiftsFromThemes } from './fusion'
 import type { RunState } from './run-types'
 import type { GiftData, ThemeData } from './types'
 
-function giftGameId(value: string): number | null {
+export function giftGameId(value: string): number | null {
   const match = /^(?:final_|observe_|start_)?(\d+)(?:_plusplus|_plus)?$/.exec(value)
   return match ? Number(match[1]) : null
+}
+
+/**
+ * Gifts the plan sets for a pack: its floor entry for that pack, plus the given floor's entry, in plan order.
+ * The pack match keeps a swapped pack's gifts with it.
+ */
+export function planThemeGiftIds(state: RunState, themeId: string, floor?: number): number[] {
+  const entries = (state.sourcePlanSnapshot?.floorPlan ?? []).filter(entry => entry.theme_id === themeId || entry.floor === floor)
+  return [...new Set(entries.flatMap(entry => entry.gift_ids ?? []).map(giftGameId).filter((id): id is number => id !== null))]
 }
 
 /**

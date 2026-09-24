@@ -500,6 +500,8 @@
       "pipThemeGuidance": "現在の階のテーマパックを選択",
       "pipThemeGuidanceHelp": "残りの計画をすべて配置できるテーマを選択してください。",
       "pipThemePossible": "選択可能",
+      "pipThemePlanGifts": "このテーマパックで入手するプランのE.G.Oギフト",
+      "pipPlanGift": "プランに設定したE.G.Oギフト",
       "pipThemeUnavailable": "残りの計画を配置不可",
       "pipThemeFloors": "出現可能階: {floors}",
       "pipThemeRemaining": "残りの計画: {themes}",
