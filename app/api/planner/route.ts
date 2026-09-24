@@ -392,6 +392,12 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const { error: activityError } = await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })
+    if (activityError) {
+      await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
+      return NextResponse.json({ error: '플랜을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
+
     await writeAuditLog({
       actorId: userId,
       action: 'planner_create',

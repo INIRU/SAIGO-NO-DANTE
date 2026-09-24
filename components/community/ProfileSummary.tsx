@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
-import { ArrowUpRight, Copy, Heart, Layers, BookOpenCheck } from "lucide-react";
+import { ArrowUpRight, Copy, Heart, Layers, BookOpenCheck, Map as MapIcon } from "lucide-react";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants/game";
 import { getCommunityCopy } from "@/lib/community/copy";
 import type { CommunityProfile } from "@/lib/community/rules";
@@ -88,6 +88,7 @@ export default function ProfileSummary({
           {(
             [
               { key: "deck", icon: Layers },
+              { key: "plan", icon: MapIcon },
               { key: "like", icon: Heart },
               { key: "contribution", icon: BookOpenCheck },
             ] as const
@@ -114,6 +115,7 @@ export function ActivityRules() {
       <p>{t.rulesIntro}</p>
       <ul>
         <li>{t.deckRule}</li>
+        <li>{t.planRule}</li>
         <li>{t.likeRule}</li>
         <li>{t.contributionRule}</li>
       </ul>

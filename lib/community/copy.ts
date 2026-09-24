@@ -5,6 +5,7 @@ export const communityCopy = {
     manager: "관리자 기록",
     points: "활동 점수",
     deck: "작성한 덱",
+    plan: "작성한 플랜",
     like: "보낸 좋아요",
     contribution: "승인된 기여",
     profile: "프로필 설정",
@@ -16,10 +17,11 @@ export const communityCopy = {
     rulesIntro:
       "덱을 나누고, 좋은 편성을 응원하고, 더 정확한 도감을 만들어주세요.",
     deckRule: "인격이 포함된 덱을 게시하면 20점 · 하루 3회",
-    likeRule: "다른 사람의 덱에 좋아요를 누르면 2점 · 하루 5회",
+    planRule: "인격이 포함된 플랜을 게시하면 20점 · 하루 3회",
+    likeRule: "다른 사람의 덱이나 플랜에 좋아요를 누르면 2점 · 하루 5회",
     contributionRule: "문의로 제안한 DB 수정이 관리자에게 승인되면 50점",
     ruleNote:
-      "하루 기준은 한국 시간입니다. 덱 삭제·좋아요 취소·기여 승인 철회 시 해당 점수가 차감됩니다. 같은 활동을 반복해도 추가 점수를 받지 않습니다.",
+      "하루 기준은 한국 시간입니다. 덱·플랜 삭제, 좋아요 취소, 기여 승인 철회 시 해당 점수가 차감됩니다. 같은 활동을 반복해도 추가 점수를 받지 않습니다.",
     visibility: "프로필 공개",
     visibilityHint:
       "닉네임, 소개, 활동 점수와 작성한 덱을 다른 사람이 볼 수 있습니다. 이메일과 문의 내용은 공개되지 않습니다.",
@@ -61,6 +63,7 @@ export const communityCopy = {
     manager: "Manager record",
     points: "Activity points",
     deck: "Decks posted",
+    plan: "Plans posted",
     like: "Likes given",
     contribution: "Contributions approved",
     profile: "Profile settings",
@@ -72,11 +75,12 @@ export const communityCopy = {
     rulesIntro:
       "Share a deck, support a good team, or help keep the archive accurate.",
     deckRule: "Publish a deck with identities: 20 points · 3 per day",
-    likeRule: "Like another manager’s deck: 2 points · 5 per day",
+    planRule: "Publish a plan with identities: 20 points · 3 per day",
+    likeRule: "Like another manager’s deck or plan: 2 points · 5 per day",
     contributionRule:
       "An administrator approves your data correction: 50 points",
     ruleNote:
-      "Daily limits reset at midnight Korea time. Deleting decks, removing likes or revoking approvals removes their points. Repeating the same activity does not earn extra points.",
+      "Daily limits reset at midnight Korea time. Deleting decks or plans, removing likes or revoking approvals removes their points. Repeating the same activity does not earn extra points.",
     visibility: "Public profile",
     visibilityHint:
       "Others can see your name, bio, activity points and decks. Your email and support messages stay private.",
@@ -119,6 +123,7 @@ export const communityCopy = {
     manager: "管理者の記録",
     points: "活動ポイント",
     deck: "投稿したデッキ",
+    plan: "投稿したプラン",
     like: "送ったいいね",
     contribution: "承認された貢献",
     profile: "プロフィール設定",
@@ -130,11 +135,12 @@ export const communityCopy = {
     rulesIntro:
       "デッキを共有し、良い編成を応援し、図鑑の正確さを高めましょう。",
     deckRule: "人格を含むデッキの投稿で20ポイント · 1日3回",
-    likeRule: "他の管理者のデッキにいいねで2ポイント · 1日5回",
+    planRule: "人格を含むプランの投稿で20ポイント · 1日3回",
+    likeRule: "他の管理者のデッキやプランにいいねで2ポイント · 1日5回",
     contributionRule:
       "お問い合わせで提案したデータ修正が管理者に承認されると50ポイント",
     ruleNote:
-      "1日の区切りは韓国時間です。デッキ削除・いいね取消・承認撤回で該当ポイントが減ります。同じ活動を繰り返しても追加ポイントは付きません。",
+      "1日の区切りは韓国時間です。デッキ・プラン削除、いいね取消、承認撤回で該当ポイントが減ります。同じ活動を繰り返しても追加ポイントは付きません。",
     visibility: "プロフィールを公開",
     visibilityHint:
       "名前、紹介、活動ポイント、投稿デッキを公開します。メールアドレスとお問い合わせ内容は公開されません。",
