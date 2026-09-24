@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const ACTIVITY_RULES = {
   deck: { points: 20, dailyLimit: 3 },
+  plan: { points: 20, dailyLimit: 3 },
   like: { points: 2, dailyLimit: 5 },
   contribution: { points: 50, dailyLimit: null },
 } as const;
