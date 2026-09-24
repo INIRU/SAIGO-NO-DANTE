@@ -24,6 +24,8 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 - 쿼리는 .schema('limbus')를 지정하고 error를 처리한다.
 - Supabase 관리자 클라이언트는 서버 전용이다. 사용자별 쓰기는 세션·권한·입력을 검사한다.
 - skills의 동기화 단계 누락은 기존 계약상 3단계로 취급한다. 4단계 데이터가 없으면 3단계를 사용한다.
+- skills·passives는 동기화 I~IV를 모두 저장한다(2026-09-25, I·II 스킬 1,217행·패시브 394행 추가, III·IV는 원본과 차이 0). 목록·요약처럼 한 단계만 필요한 곳은 `uptie_level`을 걸러 쓰고, 덱·플래너는 슬롯의 동기화 단계에 맞춰 `rowsAtUptie`/`selectUptieRows`로 고른다.
+- `deck_identities.uptie`(1~4, 기본 4)는 슬롯의 동기화 단계다. `gacksung`은 호환용으로 `uptie >= 3`과 같게 저장한다.
 - 기프트 효과는 강화 단계별 필드를 사용한다. 표시 등급/tier는 삭제한 커뮤니티 티어표와 다른 개념이다.
 - EGO 스킬은 `ego_skills` 관계형 테이블 하나에 저장한다. `EGO.ego_skills`/`ego_cor_skills`는 조회 시 만드는 화면용 배열이며 DB의 중복 JSONB 컬럼은 제거했다. 관계 조회 오류를 빈 스킬로 숨기지 않는다.
 
