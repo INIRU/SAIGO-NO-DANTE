@@ -255,6 +255,28 @@ export function getAvailableThemes<T extends { floor_info: Record<string, number
 /**
  * 선택한 테마팩들의 기프트 합산
  */
+/**
+ * Gift ids counted as owned: the inventory plus every ingredient of an owned fixed-recipe result, through nested recipes.
+ * Fusing a recipe removes its ingredients, and getting one again only turns it into an afterimage (잔영), so they are no
+ * longer sought. Mixed fusions such as 달의 기억 (any two and three of two groups) are not recipes here and imply nothing.
+ */
+export function recipeOwnedGiftIds(inventory: readonly string[], recipes: readonly RecipeData[], giftMap: Map<number, GiftData>): Set<number> {
+  const idByName = new Map([...giftMap.values()].map(gift => [gift.name, gift.game_id]))
+  const owned = new Set(inventory.map(id => parseInt(id, 10)).filter(Number.isInteger))
+  const queue = [...owned]
+  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+    const name = giftMap.get(id)?.name
+    for (const recipe of recipes) {
+      if (!name || (recipe.final_result ?? recipe.result_name) !== name) continue
+      for (const ingredient of recipe.ingredients) {
+        const ingredientId = idByName.get(ingredient)
+        if (ingredientId !== undefined && !owned.has(ingredientId)) { owned.add(ingredientId); queue.push(ingredientId) }
+      }
+    }
+  }
+  return owned
+}
+
 type ThemeGiftLists = { specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }
 
 /** Gifts only this pack gives: its exclusive pool and its clear rewards. */

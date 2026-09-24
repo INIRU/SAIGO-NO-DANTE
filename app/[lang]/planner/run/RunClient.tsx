@@ -156,6 +156,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             giftSales={capture.status === 'running' ? capture.giftSales : []}
             skillExchange={capture.status === 'running' ? capture.skillExchange : null}
             skills={skills}
+            recipes={recipes}
             themeSelectionFloor={capture.status === 'running' ? capture.themeSelectionFloor : null}
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}

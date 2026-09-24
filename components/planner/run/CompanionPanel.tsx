@@ -7,11 +7,12 @@ import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { PictureInPicture2, RotateCcw, RotateCw, Settings2 } from 'lucide-react'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
-import { getCurrentFloorPriorityGifts, getFusionTierGifts, giftGameId, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
+import { getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
 import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
-import type { ThemeData, GiftData, SkillSummary } from '@/lib/planner/types'
+import type { ThemeData, GiftData, SkillSummary, RecipeData } from '@/lib/planner/types'
+import { recipeOwnedGiftIds } from '@/lib/planner/fusion'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -52,6 +53,8 @@ interface Props {
   skillExchange?: SkillExchangeRead | null
   /** Identity skills for the skill replacement guide. */
   skills?: SkillSummary[]
+  /** Fixed recipes: an owned result counts its ingredients as owned in the lists. */
+  recipes?: RecipeData[]
   events?: MdEvent[]
   eventChoices?: MdEventChoice[]
   eventChoiceEvidence?: { eventId: number; observedAt: number; floor: number | null } | null
@@ -69,7 +72,7 @@ interface Props {
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
   themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
-  skillExchange = null, skills = [] }: Props) {
+  skillExchange = null, skills = [], recipes = [] }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -134,8 +137,11 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   if (!captureRunning) fusionView.current = false
   else if (scene?.label === 'fusion' && state.sourcePlanSnapshot) fusionView.current = true
   else if (scene && scene.label !== 'gift_acquired') fusionView.current = false
-  const availableGifts = fusionView.current ? getFusionTierGifts(state, themes, giftMap)
-    : getCurrentFloorPriorityGifts(state, themes, giftMap, giftPromotion.current?.ids)
+  // Lists judge ownership with recipe ingredients of owned results; records always use the real inventory.
+  const ownedIds = useMemo(() => recipeOwnedGiftIds(state.giftInventory, recipes, giftMap), [state.giftInventory, recipes, giftMap])
+  const listState = useMemo(() => ({ ...state, giftInventory: [...ownedIds].map(String) }), [state, ownedIds])
+  const availableGifts = fusionView.current ? getFusionTierGifts(listState, themes, giftMap)
+    : getCurrentFloorPriorityGifts(listState, themes, giftMap, giftPromotion.current?.ids)
   const guidance = useMemo(() => getRunThemeGuidance(viewFloor === state.currentFloor ? state : { ...state, currentFloor: viewFloor }, themes),
     [state, themes, viewFloor])
   const canUndo = undoStack.current.length > 0 && undoStack.current[undoStack.current.length - 1].afterKey === stateKey
@@ -394,14 +400,14 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       return <div data-companion-content={inPip ? 'pip' : 'inline'} className="space-y-3">
         <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</div>
         <div className="flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
-        <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={new Set(state.giftInventory.map(id => parseInt(id, 10)))} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
+        <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={ownedIds} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
       </div>
     }
     const themeCount = guidance.length
     const themeColumns = Math.min(themeCount || 1, 3)
     const themeRows = Math.ceil(themeCount / themeColumns) || 1
     // Each recommended pack shows the plan's gifts for it in a popup over the poster on hover or focus.
-    const owned = new Set(state.giftInventory.map(giftGameId))
+    const owned = ownedIds
     const packGifts = new Map(guidance.map(item => [item.theme.id, planThemeGiftIds(state, themes, item.theme.id).flatMap(id => giftMap.get(id) ?? [])]))
     const themeWidth = Math.max(72, Math.min(
       themeCount <= 1 ? 156 : themeCount === 2 ? 136 : 112,
