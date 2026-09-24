@@ -10,6 +10,7 @@ import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
+import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDialogClosed, fusionMaterials,
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
@@ -136,6 +137,8 @@ const SCREEN_HOLD_MS = 1000
 export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number; episode?: number }
 /** A shop sale confirmed by the cost afterwards; capturedAt is when its confirmation dialog was on screen. */
 export interface GiftSale { giftId: string; token: string; capturedAt: number }
+/** Shop skill replacement window on screen: its sinner and current skill counts. */
+export type SkillExchangeView = SkillExchangeRead & { seenAt: number }
 /** Exploration banner seen twice with the same floor and pack; only a candidate until the run state validates it. */
 export interface FloorThemeObservation extends ExplorationObservation { token: string }
 interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
@@ -202,8 +205,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
   // Confirmed shop sales (capture time of the dialog), latest last.
   const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  const [skillExchange, setSkillExchange] = useState<SkillExchangeView | null>(null)
   const saleState = useRef(EMPTY_SALE_STATE)
   const sellWindowAt = useRef(0)
+  const skillWindowAt = useRef(0)
   // Fusion confirmation seen by OCR: slot icons are read from new captures for a few seconds.
   const fusionWanted = useRef<{ count: number; capacity: number; at: number; anchors?: FusionAnchors } | null>(null)
   // The confirmation dialog on screen now or last: its slot reads, when it was last seen and whether it was published.
@@ -396,7 +401,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setGiftSales([])
+    setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
@@ -447,7 +452,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setGiftSales([])
+    setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
@@ -503,7 +508,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrEngine(null)
         setOcrWorkers(0)
         setFusionEvidence([])
-        setGiftSales([])
+        setGiftSales([]); setSkillExchange(null)
         saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
         setScene(null)
@@ -912,7 +917,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrEngine(null)
           setOcrWorkers(0)
           setFusionEvidence([])
-          setGiftSales([])
+          setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
         }
         flushOcrPopup = () => {
@@ -930,9 +935,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const profile = profileRef.current
           // A fusion confirmation dialog is often up for about a second: read the fusion screen more often.
           // The fusion screen is sometimes classified as the shop: a selection screen read recently counts too.
-          // The sell window counts too: its confirmation dialog is up for only 0.5-0.7 s.
+          // The sell window counts too: its confirmation dialog is up for only 0.5-0.7 s. So does the skill replacement window.
           const fusionScreen = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < 3000) ||
-            now - sellWindowAt.current < 3000
+            now - sellWindowAt.current < 3000 || now - skillWindowAt.current < 3000
           const want = detectionRef.current
           if (!want.events && !want.themes && !(want.gifts && fusionScreen)) return
           const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event)
@@ -1036,6 +1041,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               const headerFloor = themeSelectionHeaderFloor(result.text)
               if (headerFloor !== null && want.themes) setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at })
               if (want.gifts) readSale(result.text, result.words, capture)
+              readSkillWindow(result.text, capture.at)
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = /기프트합성/.test(result.text.normalize('NFKC').replace(/\s+/g, ''))
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
@@ -1475,7 +1481,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setOcrEngine(null)
       setOcrWorkers(0)
       setFusionEvidence([])
-      setGiftSales([])
+      setGiftSales([]); setSkillExchange(null)
       saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
       setScene(null)
@@ -1484,6 +1490,17 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setStatus('error')
     }
   }, [cleanup, stop, language])
+
+  /** The skill replacement window stays shown until 1.5 s of reads without it, so one missed read does not flicker. */
+  function readSkillWindow(text: string, at: number) {
+    const read = readSkillExchange(text)
+    if (read) skillWindowAt.current = at
+    setSkillExchange(previous => {
+      if (!read) return previous && at - previous.seenAt > 1500 ? null : previous
+      // A read with misread counts keeps the last counts of the same sinner.
+      return { sinner: read.sinner, current: read.current ?? (previous?.sinner === read.sinner ? previous.current : null), seenAt: at }
+    })
+  }
 
   /** Shop sales from one full-frame read; the decision is readSaleStep (lib/vision/sell-evidence.ts). */
   function readSale(text: string, words: OcrWord[], capture: { at: number; width?: number; height?: number }) {
@@ -1499,7 +1516,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, start, stop }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop }
 }
 
 /**

@@ -19,9 +19,9 @@ const theme = (id: string, gifts: number[]): ThemeData =>
 const gift = (game_id: number) => ({ id: String(game_id), game_id, name: `gift-${game_id}`, keyword: null, grade: null, image_url: null, effect_base: null, effect_plus: null }) as GiftData
 const giftMap = new Map([10, 20, 30].map(id => [id, gift(id)]))
 
-function render(state: RunState) {
+function render(state: RunState, skillExchange: { sinner: number; current: [number, number, number] | null } | null = null) {
   return renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages} timeZone="Asia/Seoul">
-    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: 'exploration', since: 1 }} />
+    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: 'exploration', since: 1 }} skillExchange={skillExchange} />
   </NextIntlClientProvider>)
 }
 const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),
@@ -47,4 +47,20 @@ it('marks the plan gifts among this floor available gifts with the warning trian
   }
   expect(button(10)).not.toContain('data-gift-warning')
   expect(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }))).not.toContain('data-gift-warning')
+})
+
+it('shows the replacements toward the plan for the sinner in the skill window, above the floor gifts', () => {
+  const ishmael = { identity_id: 'i', sinner_id: 'ishmael', name_kr: '', rarity: 3, keywords: [], game_id: '10808', folder_name: null, slot_order: 8, s1_count: 1, s2_count: 0, s3_count: 5 }
+  const planned = runReducer({ ...started(), sourcePlanSnapshot: { ...started().sourcePlanSnapshot, identitySlots: [ishmael] } }, { type: 'SET_FLOOR_THEME', themeId: 'A' })
+  const html = render(planned, { sinner: 8, current: [3, 2, 1] })
+  const card = html.match(/<section[^>]*data-skill-exchange="8".*?<\/section>/)?.[0] ?? ''
+  expect(card).toContain('이스마엘 스킬 교체 추천')
+  expect(card).toContain('현재 3·2·1 → 플랜 1·0·5')
+  expect(card).toContain('data-skill-move="1-3"')
+  expect(card).toContain('SKILL 1 → SKILL 3 × 2')
+  expect(card).toContain('SKILL 2 → SKILL 3 × 2')
+  expect(html.indexOf('data-skill-exchange')).toBeLessThan(html.indexOf('data-gift-grid'))
+  expect(render(planned, { sinner: 1, current: [3, 2, 1] })).toContain(messages.planner.run.skillExchangeNotInPlan)
+  expect(render(planned, { sinner: 8, current: [1, 0, 5] })).toContain(messages.planner.run.skillExchangeDone)
+  expect(render(planned)).not.toContain('data-skill-exchange')
 })

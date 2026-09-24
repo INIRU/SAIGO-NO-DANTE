@@ -154,6 +154,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             captureRunning={capture.status === 'running'} scene={capture.status === 'running' ? capture.scene : null}
             prediction={capture.status === 'running' ? capture.prediction : null}
             giftSales={capture.status === 'running' ? capture.giftSales : []}
+            skillExchange={capture.status === 'running' ? capture.skillExchange : null}
             themeSelectionFloor={capture.status === 'running' ? capture.themeSelectionFloor : null}
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
