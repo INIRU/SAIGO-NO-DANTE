@@ -1,5 +1,7 @@
 'use client'
 
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -553,11 +555,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
 }
 
 // ── EgoGiftChip ─────────────────────────────────────────────────────────
-const EGO_GIFT_KW_COLORS: Record<string, string> = {
-  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
-  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
-  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888',
-}
+const EGO_GIFT_KW_COLORS = GIFT_KEYWORD_COLORS
 
 export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
   const locale = useLocale()

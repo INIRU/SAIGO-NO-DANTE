@@ -28,25 +28,18 @@ function RecommendationLane({ id, title, description, decks, emptyLabel }: Recom
     <section aria-labelledby={`${id}-recommendations-title`} className="min-w-0">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h2
+          <h3
             id={`${id}-recommendations-title`}
-            className="font-serif leading-tight"
-            style={{ color: 'var(--text-primary)', fontSize: '1rem' }}
+            className="font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[#e8dcc8]"
           >
             {title}
-          </h2>
-          <p
-            className="mt-1"
-            style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', lineHeight: 1.55 }}
-          >
+          </h3>
+          <p className="mt-1 text-[0.875rem] leading-snug text-[#9c8b73]">
             {description}
           </p>
         </div>
         {decks.length > 0 && (
-          <span
-            className="font-mono"
-            style={{ color: 'var(--gold-dim)', fontSize: '0.875rem', opacity: 0.7 }}
-          >
+          <span className="text-[0.875rem] tabular-nums text-[#9c8b73]">
             {t('count', { count: decks.length })}
           </span>
         )}
@@ -98,10 +91,7 @@ export default function DeckRecommendations({
   if (!recommendations) return null
 
   return (
-    <div
-      className="mb-5 flex min-w-0 flex-col gap-4"
-      style={{ borderTop: '1px solid rgba(200,144,10,0.14)', paddingTop: '1rem' }}
-    >
+    <div className="flex min-w-0 flex-col gap-8">
       <RecommendationLane
         id="other-opinions"
         title={t('otherOpinions')}

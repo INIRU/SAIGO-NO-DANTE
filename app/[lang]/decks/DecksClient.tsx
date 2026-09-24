@@ -13,7 +13,6 @@ import { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync } from '@/lib/collection'
 import type { CollectionData } from '@/lib/collection'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
@@ -262,6 +261,7 @@ export default function DecksClient({
   useEffect(() => {
     async function loadIdentities() {
       try {
+        const { createClient: createBrowserClient } = await import('@/lib/supabase/client')
         const supabase = createBrowserClient()
         const buildQuery = (select: string) => supabase
             .schema('limbus')

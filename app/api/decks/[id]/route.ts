@@ -9,6 +9,7 @@ import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 import { encodeTeamCode } from '@/lib/decks/team-code'
+import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
 
 type EgoAttackSkill = {
@@ -324,16 +325,17 @@ export async function PATCH(
       return NextResponse.json({ error: delIdentitiesError.message }, { status: 500 })
     }
     if (identitySlots?.length > 0) {
-      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number }) => ({
+      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number; uptie?: number }) => ({
         deck_id: id,
         identity_id: slot.identity_id,
         slot_order: slot.slot_order,
-        gacksung: slot.gacksung ?? false,
+        gacksung: normalizeUptie(slot.uptie) >= 3,
         s1_count: slot.s1_count ?? 3,
         s2_count: slot.s2_count ?? 2,
         s3_count: slot.s3_count ?? 1,
+        uptie: normalizeUptie(slot.uptie),
       }))
-      const { error: insIdentitiesError } = await admin.schema('limbus').from('deck_identities').insert(rows)
+      const { error: insIdentitiesError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
       if (insIdentitiesError) {
         await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
         if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)

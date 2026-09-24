@@ -26,7 +26,8 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
   if (kind === 'skill' && identityIds?.length === 0) return []
   const db = createAdminClient().schema('limbus')
   let req = db.from(TABLES[kind]).select(COLUMNS[kind])
-  if (kind === 'skill' && identityIds) req = req.in('identity_id', identityIds).eq('uptie_level', 4)
+  // 노트 스킬은 동기화 III·IV만 쓴다(I·II 행이 들어와도 검색·형제 라벨이 바뀌지 않게)
+  if (kind === 'skill') req = identityIds ? req.in('identity_id', identityIds).eq('uptie_level', 4) : req.gte('uptie_level', 3)
   if (kind === 'gift' && grade) req = req.eq('grade', Number(grade))
   if (ids.length) req = req.in(kind === 'keyword' ? 'name' : 'id', ids)
   else {
@@ -43,7 +44,7 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
     const identityIds = [...new Set(rows.map(r => String(r.identity_id)))]
     const [parents, allSkills] = await Promise.all([
       db.from('identities').select(COLUMNS.identity).in('id', identityIds),
-      db.from('skills').select(COLUMNS.skill).in('identity_id', identityIds),
+      db.from('skills').select(COLUMNS.skill).in('identity_id', identityIds).gte('uptie_level', 3),
     ])
     if (parents.error || allSkills.error) throw Error('Skill data unavailable')
     identities = parents.data as unknown as Identity[]; siblings = allSkills.data as unknown as Skill[]

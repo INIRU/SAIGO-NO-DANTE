@@ -8,6 +8,8 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
+import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
+import { isAwakenedUptie } from '@/lib/decks/deck-identity-uptie'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
@@ -623,6 +625,9 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
       const sortedIdentities = (data.deck_identities ?? [])
         .map((slot) => ({
           ...slot,
+          // Art follows uptie (III–IV awakened). uptie is not selected until migration
+          // 20260924130000 is applied, so every deck reads as uptie IV for now.
+          gacksung: isAwakenedUptie((slot as { uptie?: number }).uptie),
           identities: Array.isArray(slot.identities)
             ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
             : (slot.identities as unknown as IdentityDetail | null),
@@ -695,19 +700,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return getCachedDeckMetadata(lang, id)
 }
 
-function DeckDetailFallback() {
-  return (
-    <>
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
-          <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '20rem', marginBottom: '1rem' }} />
-          <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '10rem' }} />
-        </div>
-      </div>
-    </>
-  )
-}
-
 async function DeckDetailRuntime({ params }: Props) {
   await connection()
   const { lang: rawLang, id } = await params
@@ -720,14 +712,7 @@ async function DeckDetailRuntime({ params }: Props) {
 
   return (
     <>
-      <Suspense fallback={
-        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-pulse" style={{ width: '100%', maxWidth: '64rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
-            <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '20rem', marginBottom: '1rem' }} />
-            <div style={{ background: '#1a1510', borderRadius: '0.5rem', height: '10rem' }} />
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<DeckDetailSkeleton />}>
         <DeckDetailClient
           id={id}
           initialDeck={initialDeck}
@@ -741,7 +726,7 @@ async function DeckDetailRuntime({ params }: Props) {
 
 export default function DeckDetailPage({ params }: Props) {
   return (
-    <Suspense fallback={<DeckDetailFallback />}>
+    <Suspense fallback={<DeckDetailSkeleton />}>
       <DeckDetailRuntime params={params} />
     </Suspense>
   )

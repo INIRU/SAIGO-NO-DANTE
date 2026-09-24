@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import EditWrapper from './EditWrapper'
+import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
 export default async function EditDeckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,12 +26,12 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
 
   const deckSelectWithMainKeywords = `
     id, user_id, title, description, tags, main_keywords, content_type,
-    deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
+    deck_identities(*),
     deck_egos(ego_id, grade)
   `
   const deckSelectLegacy = `
     id, user_id, title, description, tags, content_type,
-    deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
+    deck_identities(*),
     deck_egos(ego_id, grade)
   `
   const loadDeck = async () => {
@@ -79,6 +80,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
   // editMode 데이터 구성
   const identitySlotIds: Record<string, string> = {}
   const gacksungSlots: Record<string, boolean> = {}
+  const upties: Record<string, number> = {}
   const slotOrders: Record<string, number> = {}
 
   const skillDistribution: Record<string, [number, number, number]> = {}
@@ -88,6 +90,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
     if (!identity) continue
     identitySlotIds[identity.sinner_id] = identity.id
     if (di.gacksung) gacksungSlots[identity.sinner_id] = true
+    upties[identity.sinner_id] = normalizeUptie(di.uptie)
     slotOrders[identity.sinner_id] = di.slot_order
     const s1 = di.s1_count ?? 3
     const s2 = di.s2_count ?? 2
@@ -131,6 +134,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
         content_type: (deck as Record<string, unknown>).content_type as string ?? '없음',
         identitySlotIds,
         gacksungSlots,
+        upties,
         skillDistribution,
         formationOrder,
         egoSlotIds,

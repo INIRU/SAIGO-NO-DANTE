@@ -226,7 +226,7 @@ let TAG_MAP: Record<string, string> = { ...CONDITION_TAG_MAP }
 const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 const EXCLUDED_TAGS = new Set(['Target', 'Result', 'Damage', 'Attack', 'Return', 'Recover', 'Shield'])
 const INLINE_DESCRIPTION_TAGS_TO_DROP = new Set(['TabExplain'])
-const UPTIE_LEVELS = [3, 4] as const
+const UPTIE_LEVELS = [1, 2, 3, 4] as const
 
 // Fields compared for existing identities — only game-sourced stats, tags, and source-backed quote.
 // keywords remains protected below; manual fields such as acquisition/acquisition_info are not touched.
@@ -2184,6 +2184,11 @@ function resolveToLevel(skill: PersonalitySkill, targetLevel: number): SkillData
   return merged as SkillDataLevel
 }
 
+/** Skill 3 and some variants only unlock at a later uptie; they have no data below it. */
+function existsAtLevel(skill: PersonalitySkill, targetLevel: number): boolean {
+  return skill.skillData.some(sd => (sd.gaksungLevel ?? 0) <= targetLevel)
+}
+
 function getBestLevelEntry<T extends { level: number }>(
   levelList: T[] = [],
   targetLevel = Infinity,
@@ -2260,14 +2265,22 @@ export function buildSkillRows(
   const attackSkillIds = (gamePerson.attributeList ?? []).map(a => a.skillId)
   const defenseSkillIds = gamePerson.defenseSkillIDList ?? []
   const rows: SkillRow[] = []
+  // Readers dedupe by (skill_order, variant_order), so a skill keeps its top-uptie variant_order at lower upties.
+  const variantBySkill = new Map<number, number>()
 
-  for (const uptie of UPTIE_LEVELS) {
+  for (const uptie of [...UPTIE_LEVELS].reverse()) {
     let variantIdx = 0
+    const variantFor = (skillId: number) => {
+      const known = variantBySkill.get(skillId)
+      if (known != null) return known
+      variantBySkill.set(skillId, ++variantIdx)
+      return variantIdx
+    }
 
     // Attack skills
     for (const sid of attackSkillIds) {
       const gs = skillMap.get(sid)
-      if (!gs) continue
+      if (!gs || !existsAtLevel(gs, uptie)) continue
       const r = resolveToLevel(gs, uptie)
       const coinList = r.coinList ?? []
       const krItem = krSkillMap.get(sid)
@@ -2304,7 +2317,7 @@ export function buildSkillRows(
         image_id: String(/^\d+(?:_\d+)?$/.test(String(r.iconID ?? r.iconId ?? '')) ? (r.iconID ?? r.iconId) : gs.id),
         skill_order: skillOrder,
         atk_weight: r.targetNum ?? 1,
-        variant_order: ++variantIdx,
+        variant_order: variantFor(sid),
         uptie_level: uptie,
       })
     }
@@ -2315,6 +2328,7 @@ export function buildSkillRows(
       .filter((gs): gs is PersonalitySkill => !!gs)
 
     for (const gs of defSkills) {
+      if (!existsAtLevel(gs, uptie)) continue
       const r = resolveToLevel(gs, uptie)
       const coinList = r.coinList ?? []
       const krItem = krSkillMap.get(gs.id)
@@ -2351,7 +2365,7 @@ export function buildSkillRows(
         // Tiered counters (e.g. Noontide Disassembly) retain their source skill slot.
         skill_order: gs.skillTier && gs.skillTier > 1 ? gs.skillTier : 4,
         atk_weight: r.targetNum ?? 1,
-        variant_order: ++variantIdx,
+        variant_order: variantFor(gs.id),
         uptie_level: uptie,
       })
     }
@@ -2361,7 +2375,7 @@ export function buildSkillRows(
 
 // ── Passive building ──────────────────────────────────────────────────────────
 
-function buildPassiveRows(
+export function buildPassiveRows(
   pm: PassiveMapping,
   identityId: string,
   krPassiveMap: Map<number, KrPassive>,
@@ -3693,6 +3707,23 @@ async function rebuildKeywordMeta(): Promise<void> {
   console.log(GREEN(`\n  keyword_meta 재구축 완료: ${inserted}개 삽입`))
 }
 
+/** Game-data inputs for buildSkillRows/buildPassiveRows, for scripts that write only part of the rows. */
+export function loadSkillPassiveSources() {
+  TAG_MAP = loadKrTagMap()
+  return {
+    gamePersonMap: loadPersonalities(),
+    gameSkillMap: loadPersonalitySkills(),
+    krSkillMap: loadKrSkills(),
+    passiveMappings: loadPassiveMappings(),
+    passiveDetailMap: loadPassiveDetails(),
+    krPassiveMap: loadKrPassives(),
+    enTagMap: loadLangTagMap('en'),
+    jpTagMap: loadLangTagMap('jp'),
+    enLocale: loadLangLocale('en'),
+    jpLocale: loadLangLocale('jp'),
+  }
+}
+
 async function main(): Promise<void> {
   console.log(BOLD('╔══════════════════════════════════════════════════════════╗'))
   console.log(BOLD('║  인격/스킬/패시브 게임 데이터 → DB 동기화                ║'))
@@ -3911,7 +3942,7 @@ async function main(): Promise<void> {
             if (skillRows.length > 0) {
               await supaInsertBatch('skills', skillRows)
               totalSkillsInserted += skillRows.length
-              console.log(GREEN(`    스킬 삽입: ${skillRows.length}개 (uptie 3+4)`))
+              console.log(GREEN(`    스킬 삽입: ${skillRows.length}개 (uptie 1~4)`))
             }
           }
 
@@ -3921,7 +3952,7 @@ async function main(): Promise<void> {
           // Dry-run: skill preview
           if (!NEW_ONLY) {
             const skillRows = buildSkillRows(p, gameSkillMap, krSkillMap, null, enLocale, jpLocale, enTagMap, jpTagMap)
-            console.log(GREEN(`    스킬 예정: ${skillRows.length}개 (uptie 3+4)`))
+            console.log(GREEN(`    스킬 예정: ${skillRows.length}개 (uptie 1~4)`))
             if (VERBOSE) {
               for (const s of skillRows.filter(r => r.uptie_level === 4)) {
                 console.log(GREEN(`      S${s.skill_order} uptie${s.uptie_level} "${s.name}" [${s.skill_type}/${s.sin_affinity}] 위력${s.base_power}+${s.coin_power}×${s.coins}`))

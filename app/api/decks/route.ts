@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 import { requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -554,16 +555,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (identitySlots?.length > 0) {
-      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number }) => ({
+      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number; uptie?: number }) => ({
         deck_id: deck.id,
         identity_id: slot.identity_id,
         slot_order: slot.slot_order,
-        gacksung: slot.gacksung ?? false,
+        gacksung: normalizeUptie(slot.uptie) >= 3,
         s1_count: slot.s1_count ?? 3,
         s2_count: slot.s2_count ?? 2,
         s3_count: slot.s3_count ?? 1,
+        uptie: normalizeUptie(slot.uptie),
       }))
-      const { error: identityInsertError } = await admin.schema('limbus').from('deck_identities').insert(rows)
+      const { error: identityInsertError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
       if (identityInsertError) {
         // Rollback: delete the parent deck
         await admin.schema('limbus').from('decks').delete().eq('id', deck.id)

@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
+import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -42,7 +43,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
       .from('decks')
       .select(`
         id, title, description, tags, content_type,
-        deck_identities(identity_id, slot_order, gacksung, s1_count, s2_count, s3_count),
+        deck_identities(*),
         deck_egos(ego_id, grade)
       `)
       .eq('id', forkId)
@@ -51,6 +52,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
     if (deck) {
       const identitySlotIds: Record<string, string> = {}
       const gacksungSlots: Record<string, boolean> = {}
+      const upties: Record<string, number> = {}
       const slotOrders: Record<string, number> = {}
       const skillDistribution: Record<string, [number, number, number]> = {}
 
@@ -59,6 +61,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
         if (!identity) continue
         identitySlotIds[identity.sinner_id] = identity.id
         if (di.gacksung) gacksungSlots[identity.sinner_id] = true
+        upties[identity.sinner_id] = normalizeUptie(di.uptie)
         slotOrders[identity.sinner_id] = di.slot_order
         const s1 = di.s1_count ?? 3
         const s2 = di.s2_count ?? 2
@@ -97,6 +100,7 @@ export default async function NewDeckPage({ searchParams }: { searchParams: Prom
             content_type: (deck as Record<string, unknown>).content_type as string ?? '없음',
             identitySlotIds,
             gacksungSlots,
+            upties,
             skillDistribution,
             formationOrder,
             egoSlotIds,
