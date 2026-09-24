@@ -1,5 +1,7 @@
 'use client'
 
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+
 import Image from 'next/image'
 import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
 import KeywordIcon from '@/components/ui/KeywordIcon'
@@ -12,12 +14,7 @@ const KEYWORD_SLUG: Record<string, string> = {
   '마비': 'paralysis', '속박': 'bind', '방어 레벨 감소': 'def-level-down',
 }
 
-// 죄악 색상 (키워드 기반 - 대략적)
-const KEYWORD_COLOR: Record<string, string> = {
-  '출혈': '#c83030', '화상': '#d06030', '진동': '#d4b830', '파열': '#88b028',
-  '침잠': '#4898b0', '호흡': '#3870b0', '충전': '#8058a8',
-  '참격': '#c8900a', '관통': '#c8900a', '타격': '#c8900a', '공통': '#888',
-}
+const KEYWORD_COLOR = GIFT_KEYWORD_COLORS
 
 interface Props {
   distribution: { keyword: string; count: number }[]

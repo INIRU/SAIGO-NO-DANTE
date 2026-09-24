@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { memo, useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import type { GiftData } from '@/lib/planner/types'
 import { GRADE_COLORS, GRADE_ROMAN, getKeywordSlug } from './constants'
@@ -8,7 +8,7 @@ import GiftCard from '@/components/ui/GiftCard'
 import KeywordSidebar from './KeywordSidebar'
 
 // ── Gift grid with grade groups ──────────────────────────────────────────────
-export default function GiftGridPanel({
+export default memo(function GiftGridPanel({
   gifts,
   selectedIds,
   onToggle,
@@ -206,4 +206,4 @@ export default function GiftGridPanel({
       </div>
     </div>
   )
-}
+})

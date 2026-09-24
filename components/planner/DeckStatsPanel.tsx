@@ -45,16 +45,6 @@ interface EgoCostEntry {
   cost: number[] | null  // SIN_ORDER 순서 (wrath, lust, sloth, gluttony, gloom, pride, envy)
 }
 
-interface EgoAttackSkillLike {
-  skill_type?: string | null
-  atkType?: string | null
-  attack_type?: string | null
-  category?: string | null
-  construe_level?: number | null
-  construeLevel?: number | null
-  skill_order?: number | null
-}
-
 export interface DeckStatsPanelProps {
   identitySlots: IdentitySlotLike[]
   skills: SkillLike[]
@@ -62,96 +52,9 @@ export interface DeckStatsPanelProps {
   sinners: SinnerLike[]
   egoCosts?: EgoCostEntry[]  // 선택된 EGO들의 코스트 배열
   egoSinAffinities?: string[]  // 선택된 EGO들의 죄악 속성 (sin resource 생성에 포함)
-  egoAttackSkills?: EgoAttackSkillLike[][]
-  calculationMode?: 'planner' | 'deckDetail'
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
-
-const BASE_SKILL_PRODUCTION_WEIGHT: Record<number, number> = { 1: 3, 2: 2, 3: 1 }
-type AttackType = 'slash' | 'pierce' | 'blunt'
-
-function normalizeSinValue(value: string | null | undefined): string | null {
-  if (!value) return null
-  const normalized = SIN_KR_TO_EN[value] ?? value.trim().toLowerCase()
-  return SIN_ORDER.includes(normalized as (typeof SIN_ORDER)[number]) ? normalized : null
-}
-
-function normalizeAttackType(value: string | null | undefined): AttackType | null {
-  if (!value) return null
-  const normalized = value.trim().toLowerCase()
-  const mapped: Record<string, AttackType> = {
-    slash: 'slash',
-    pierce: 'pierce',
-    penetrate: 'pierce',
-    blunt: 'blunt',
-    hit: 'blunt',
-    '참격': 'slash',
-    '관통': 'pierce',
-    '타격': 'blunt',
-  }
-  return mapped[normalized] ?? null
-}
-
-function getBaseProductionSkills(skills: SkillLike[]): SkillLike[] {
-  const bestByIdentityOrder = new Map<string, SkillLike>()
-
-  for (const skill of skills) {
-    if (!BASE_SKILL_PRODUCTION_WEIGHT[skill.skill_order]) continue
-    if (!normalizeSinValue(skill.sin_affinity)) continue
-
-    const key = `${skill.identity_id}:${skill.skill_order}`
-    const existing = bestByIdentityOrder.get(key)
-    const variantOrder = skill.variant_order ?? 0
-    const existingVariantOrder = existing?.variant_order ?? 0
-    const isEarlierBaseVariant = !existing || variantOrder < existingVariantOrder
-    const isSameVariantHigherUptie =
-      existing &&
-      variantOrder === existingVariantOrder &&
-      (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)
-
-    if (isEarlierBaseVariant || isSameVariantHigherUptie) {
-      bestByIdentityOrder.set(key, skill)
-    }
-  }
-
-  return [...bestByIdentityOrder.values()]
-}
-
-function getCountedIdentityAttackSkills(skills: SkillLike[]): SkillLike[] {
-  const bestBySkillKey = new Map<string, SkillLike>()
-
-  for (const skill of skills) {
-    const key = `${skill.identity_id}:${skill.skill_order}:${skill.variant_order ?? 0}`
-    const existing = bestBySkillKey.get(key)
-    if (!existing || (skill.uptie_level ?? 0) > (existing.uptie_level ?? 0)) {
-      bestBySkillKey.set(key, skill)
-    }
-  }
-
-  return [...bestBySkillKey.values()]
-}
-
-function addEgoAttackTypeTotals(totals: Record<AttackType, number>, egoSkills: EgoAttackSkillLike[] | undefined): void {
-  const uniqueSkills = new Map<string, EgoAttackSkillLike>()
-
-  for (let index = 0; index < (egoSkills?.length ?? 0); index++) {
-    const skill = egoSkills?.[index]
-    if (!skill) continue
-    const attackType = normalizeAttackType(skill.skill_type ?? skill.atkType ?? skill.attack_type)
-    if (!attackType) continue
-    const key = `${skill.category ?? 'awakening'}:${skill.skill_order ?? index}:${attackType}`
-    const existing = uniqueSkills.get(key)
-    if (!existing || (skill.construe_level ?? skill.construeLevel ?? 0) > (existing.construe_level ?? existing.construeLevel ?? 0)) {
-      uniqueSkills.set(key, skill)
-    }
-  }
-
-  for (const skill of uniqueSkills.values()) {
-    const attackType = normalizeAttackType(skill.skill_type ?? skill.atkType ?? skill.attack_type)
-    if (attackType) totals[attackType]++
-  }
-}
 
 function DeckStatsPanel({
   identitySlots,
@@ -160,8 +63,6 @@ function DeckStatsPanel({
   sinners,
   egoCosts,
   egoSinAffinities,
-  egoAttackSkills,
-  calculationMode = 'planner',
 }: DeckStatsPanelProps) {
   if (identitySlots.length === 0) return null
 
@@ -171,19 +72,9 @@ function DeckStatsPanel({
   // ── 공격 유형 집계 ──
   const atkCount: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
   const defCount: Record<string, number> = { evade: 0, defense: 0, counter: 0 }
-  if (calculationMode === 'deckDetail') {
-    for (const sk of getCountedIdentityAttackSkills(selectedSkills)) {
-      const attackType = normalizeAttackType(sk.atk_type ?? sk.skill_type)
-      if (attackType) atkCount[attackType]++
-    }
-    for (const egoSkills of egoAttackSkills ?? []) {
-      addEgoAttackTypeTotals(atkCount as Record<AttackType, number>, egoSkills)
-    }
-  } else {
-    for (const sk of selectedSkills) {
-      if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
-      if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
-    }
+  for (const sk of selectedSkills) {
+    if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
+    if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
   }
   const atkTotal = Object.values(atkCount).reduce((a, b) => a + b, 0) || 1
 
@@ -193,21 +84,14 @@ function DeckStatsPanel({
 
   // ── 죄악 자원 집계 (모든 스킬 + EGO 스킬 죄악) ──
   const deckSinCounts: Record<string, number> = {}
-  if (calculationMode === 'deckDetail') {
-    for (const sk of getBaseProductionSkills(selectedSkills)) {
-      const en = normalizeSinValue(sk.sin_affinity)
-      if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + (BASE_SKILL_PRODUCTION_WEIGHT[sk.skill_order] ?? 0)
-    }
-  } else {
-    for (const sk of selectedSkills) {
-      const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
+  for (const sk of selectedSkills) {
+    const en = SIN_KR_TO_EN[sk.sin_affinity] ?? sk.sin_affinity
+    if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
+  }
+  if (egoSinAffinities) {
+    for (const sin of egoSinAffinities) {
+      const en = SIN_KR_TO_EN[sin] ?? sin
       if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
-    }
-    if (egoSinAffinities) {
-      for (const sin of egoSinAffinities) {
-        const en = SIN_KR_TO_EN[sin] ?? sin
-        if (en) deckSinCounts[en] = (deckSinCounts[en] ?? 0) + 1
-      }
     }
   }
 
@@ -233,6 +117,15 @@ function DeckStatsPanel({
         .deck-stats-attack-count{font-size:0.875rem}
         .deck-stats-defense-label{font-size:0.875rem}
         .deck-stats-sin-value{font-size:0.875rem}
+        .deck-stats-passives{display:flex;min-width:0;flex-direction:column}
+        .deck-stats-passives__list{max-height:20rem;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3a2c18 transparent}
+        .deck-stats-passives__list::-webkit-scrollbar{width:4px}
+        .deck-stats-passives__list::-webkit-scrollbar-track{background:transparent}
+        .deck-stats-passives__list::-webkit-scrollbar-thumb{background:#3a2c18;border-radius:4px}
+        @media (min-width:48rem){
+          .deck-stats-passives{min-height:16rem}
+          .deck-stats-passives__list{flex:1 1 0;min-height:0;max-height:none;contain:size}
+        }
         @media (max-width:47.9375rem){
           .deck-stats-panel{margin-top:0.75rem}
           .deck-stats-summary-card{width:100%;border-color:rgba(200,144,10,0.12);background:rgba(18,14,9,0.52);padding:0.625rem}
@@ -302,6 +195,8 @@ function DeckStatsPanel({
         passives={passives}
         sinners={sinners}
         deckSinCounts={deckSinCounts}
+        className="deck-stats-passives"
+        listClassName="deck-stats-passives__list"
       />
     </div>
   )

@@ -2,13 +2,15 @@
 
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
-import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
+import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
+import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
+import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
-import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
+import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
 import type {
   EgoEntry,
   IdentitySlot as DeckIdentityPreviewSlot,
@@ -17,14 +19,10 @@ import type {
 } from '@/components/deck-detail/DeckIdentityCard'
 import type { Identity } from '@/lib/types'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { STORAGE_BASE, RARITY_COLORS, GRADE_COLORS } from '@/lib/constants/game'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
-import { computeKeywordDistribution } from '@/lib/planner/fusion'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
-import KeywordChart, { type KeywordChartContributor } from './KeywordChart'
+import { isAwakenedUptie, rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import SkillExchangePanel from './SkillExchangePanel'
 
 const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
@@ -49,6 +47,8 @@ type IdentitySlot = {
   game_id?: string | null
   folder_name?: string | null
   slot_order?: number
+  /** Uptie 1–4; missing = 4. */
+  uptie?: number
 }
 
 type EgoSlot = {
@@ -155,10 +155,7 @@ interface Props {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div style={{
-      background: '#1a1510', border: '1px solid #1a1510', borderRadius: '0.5rem',
-      padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: '#333',
-    }}>{text}</div>
+    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[#7f7364]">{text}</p>
   )
 }
 
@@ -254,7 +251,7 @@ function adaptPreviewSlot(
 
   return {
     slot_order: slot.slot_order ?? 99,
-    gacksung: slot.gacksung ?? false,
+    gacksung: isAwakenedUptie(slot.uptie),
     s1_count: slot.s1_count ?? undefined,
     s2_count: slot.s2_count ?? undefined,
     s3_count: slot.s3_count ?? undefined,
@@ -319,23 +316,22 @@ export default function PlanDeckTabs({
   identities,
   sinners,
   egos,
-  skills,
-  passives,
+  skills: allSkills,
+  passives: allPassives,
   slotGiftMap,
 }: Props) {
   const locale = useLocale()
+  // Skills/passives follow each slot's uptie (nearest level the data has).
+  const slotUpties = useMemo(() => new Map(deck.flatMap(slot => slot.identity_id ? [[slot.identity_id, slot.uptie] as const] : [])), [deck])
+  const skills = useMemo(() => rowsAtUptie(allSkills, slotUpties), [allSkills, slotUpties])
+  const passives = useMemo(() => rowsAtUptie(allPassives, slotUpties), [allPassives, slotUpties])
   const tDeck = useTranslations('planner.deckTab')
-  const { keywords: keywordInfo } = useKeywordData()
+  const tSinner = useTranslations('sinner')
   const [deckSubTab, setDeckSubTab] = useState<'identity' | 'ego' | 'skillset'>('identity')
   const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   const identityMap = useMemo(() => new Map(identities.map(i => [i.id, i])), [identities])
-
-  const getLocalizedKeywordLabel = useCallback(
-    (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
-    [keywordInfo, locale],
-  )
 
   const selectedPreviewSlot = useMemo(() => {
     if (!identityModalId) return null
@@ -365,7 +361,9 @@ export default function PlanDeckTabs({
       return {
         key: `${slot?.identity_id ?? 'empty'}-${sinner.id}-${index}`,
         identity: slot ? adaptPlanBoardIdentity(slot, identity, locale) : null,
+        sinnerId: sinner.id,
         slotOrder: slot?.slot_order ?? null,
+        uptie: slot?.uptie,
         giftBadgeUrls: slot?.slot_order != null && slot.slot_order < 99
           ? (slotGiftMap.get(slot.slot_order + 1) ?? [])
           : [],
@@ -385,195 +383,143 @@ export default function PlanDeckTabs({
     return map
   }, [egoSlots])
 
-  const keywordDist = useMemo(() => {
-    const allKeywords = deck.map(slot => {
-      const sourceIdentity = slot.identity_id ? identityMap.get(slot.identity_id) : undefined
-      return getIdentityKeywordSource(slot, sourceIdentity)
-    })
-    return computeKeywordDistribution(allKeywords)
-  }, [deck, identityMap])
+  // 키워드 분포·패시브·공격 유형·죄악 자원 (플래너 덱 탭과 같은 패널)
+  const insightIdentities = useMemo<DeckInsightIdentity[]>(() => sinners.flatMap(sinner => {
+    const slot = slotBySinner[sinner.id]
+    if (!slot?.identity_id) return []
+    const source = identityMap.get(slot.identity_id)
+    const image = source ?? slot
+    return [{
+      id: slot.identity_id,
+      name: localizeIdentityName(source ?? slot, locale),
+      sinnerName: tSinner(sinner.id as Parameters<typeof tSinner>[0]),
+      imageUrl: image.sinner_id && image.folder_name && image.game_id
+        ? getIdentityImageUrl(image.sinner_id, image.folder_name, `${image.game_id}_normal_info`)
+        : '',
+      keywords: getIdentityKeywordSource(slot, source),
+      passives: passives
+        .filter(passive => passive.identity_id === slot.identity_id)
+        .map(passive => ({ ...passive, name: localizePassiveName(passive, locale), description: localizePassiveDescription(passive, locale) ?? null })),
+    }]
+  }), [identityMap, locale, passives, sinners, slotBySinner, tSinner])
 
-  const keywordContributors = useMemo<Record<string, KeywordChartContributor[]>>(() => {
-    const map: Record<string, KeywordChartContributor[]> = {}
-    for (const slot of deck) {
-      if (!slot.identity_id) continue
-      const sourceIdentity = identityMap.get(slot.identity_id)
-      const keywordsForSlot = getIdentityKeywordSource(slot, sourceIdentity)
-      const imageSource = sourceIdentity ?? slot
-      const imageUrl = imageSource.sinner_id && imageSource.folder_name && imageSource.game_id
-        ? getIdentityImageUrl(imageSource.sinner_id, imageSource.folder_name, `${imageSource.game_id}_normal_info`)
-        : ''
-      if (!imageUrl) continue
-
-      const contributor: KeywordChartContributor = {
-        id: slot.identity_id,
-        name: localizeIdentityName(sourceIdentity ?? slot, locale),
-        imageUrl,
-      }
-
-      for (const keyword of new Set(keywordsForSlot.map(normalizeThemeKeyword))) {
-        if (!keyword) continue
-        if (!map[keyword]) map[keyword] = []
-        map[keyword].push(contributor)
-      }
+  const deckAnalysis = useMemo(() => {
+    const skillsOf = (slot: IdentitySlot) => skills.filter(skill => skill.identity_id === slot.identity_id)
+    const selectedEgoIds = new Set(egoSlots.map(slot => slot.ego_id).filter(Boolean))
+    return {
+      sinCounts: computeSinProduction(deck.map(slot => ({ skills: skillsOf(slot), distribution: getIdentitySkillDistribution(slot) }))),
+      baseSinCounts: computeSinProduction(deck.map(slot => ({ skills: skillsOf(slot) }))),
+      ...computeAttackTypeCounts(deck.map(skillsOf)),
+      egoCost: computeEgoCostTotals(egos.filter(ego => selectedEgoIds.has(ego.id)).map(ego => ego.cost)),
     }
-    return map
-  }, [deck, identityMap, locale])
+  }, [deck, egoSlots, egos, skills])
 
   const tabs = [
-    { key: 'identity' as const, label: `${tDeck('subTabs.identity')} (${deck.length}/12)`, hint: tDeck('identity.openDetailHint') },
-    { key: 'ego' as const, label: `${tDeck('subTabs.ego')} (${egoSlots.length})` },
-    { key: 'skillset' as const, label: tDeck('subTabs.skillset') },
+    { key: 'identity' as const, label: tDeck('subTabs.identity'), count: `${deck.length}/12` },
+    { key: 'ego' as const, label: tDeck('subTabs.ego'), count: String(egoSlots.length) },
+    { key: 'skillset' as const, label: tDeck('subTabs.skillset'), count: null },
   ]
 
   return (
     <>
-      {/* 서브탭 헤더 */}
-      {/* The baseline is an inset line under the tabs, so the active underline covers it without the strip
-          overflowing its own box (which made the horizontally scrollable strip show a vertical scrollbar). */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        boxShadow: 'inset 0 -1px 0 #222', marginBottom: '0.75rem',
-        overflowX: 'auto', WebkitOverflowScrolling: 'touch',
-      }}>
+      {/* 서브탭 헤더 — the baseline is an inset line under the tabs, so the active underline covers it
+          without the strip overflowing its own box (a negative margin made the scrollable strip show a vertical scrollbar). */}
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+      <div role="tablist" aria-label={tDeck('subTabs.label')} className="flex min-w-0 max-w-full overflow-x-auto shadow-[inset_0_-1px_0_#2e2417]">
         {tabs.map(tab => {
           const active = deckSubTab === tab.key
           return (
             <button
               key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
               onClick={() => setDeckSubTab(tab.key)}
-              style={{
-                padding: '0.5rem 0.625rem', fontSize: '0.8125rem',
-                fontWeight: active ? 700 : 400, whiteSpace: 'nowrap',
-                color: active ? '#e8dcc8' : '#555', cursor: 'pointer',
-                background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
-                border: 'none',
-                borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`,
-              }}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 text-[0.9375rem] transition-colors first:pl-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none ${active
+                ? 'border-[#c8900a] font-semibold text-[#e8dcc8]'
+                : 'border-transparent text-[#9c8b73] hover:text-[#e8dcc8]'}`}
             >
               {tab.label}
-              {'hint' in tab && active && (
-                <span style={{ fontSize: '0.5625rem', color: '#5a5065', marginLeft: '0.375rem', fontWeight: 400 }}>
-                  {tab.hint}
-                </span>
-              )}
+              {tab.count && <span className="font-normal tabular-nums text-[#7f7364]">{tab.count}</span>}
             </button>
           )
         })}
+      </div>
+      {deckSubTab === 'identity' && deck.length > 0 && (
+        <p className="pb-2 text-[0.8125rem] text-[#7f7364]">{tDeck('identity.openDetailHint')}</p>
+      )}
       </div>
 
       {/* 인격 그리드 */}
       {deckSubTab === 'identity' && (
         <div className="relative">
-          <FormationBoard slots={boardSlots} className="mt-5" />
+          <FormationBoard slots={boardSlots} className="mt-2" />
         </div>
       )}
 
       {deckSubTab === 'identity' && deck.length > 0 && (
-        <section
-          className="mt-5 border-t border-[#2a1f12] pt-4"
-          aria-labelledby="plan-detail-keyword-distribution"
-        >
-          <h3
-            id="plan-detail-keyword-distribution"
-            className="mb-3 font-serif"
-            style={{ color: '#e8dcc8', fontSize: '1rem', fontWeight: 400, WebkitTextStroke: '0 transparent' }}
-          >
-            {tDeck('stats.keywordDistribution')}
-          </h3>
-          {keywordDist.length > 0 ? (
-            <KeywordChart
-              distribution={keywordDist}
-              getKeywordLabel={getLocalizedKeywordLabel}
-              contributorsByKeyword={keywordContributors}
-            />
-          ) : (
-            <p style={{ color: '#6f6252', fontSize: '0.875rem' }}>{tDeck('stats.keywordEmpty')}</p>
-          )}
-        </section>
+        <DeckInsights
+          identities={insightIdentities}
+          sinCounts={deckAnalysis.sinCounts}
+          baseSinCounts={deckAnalysis.baseSinCounts}
+          summary={<DeckResourceSummary attack={deckAnalysis.attack} defense={deckAnalysis.defense} production={deckAnalysis.sinCounts} egoCost={deckAnalysis.egoCost} />}
+        />
       )}
-
-      {/* 공격 유형 + 죄악 자원 + 패시브 */}
-      {deckSubTab === 'identity' && deck.length > 0 && (() => {
-        const selectedEgoIds = new Set(egoSlots.map(e => e.ego_id).filter(Boolean))
-        const selectedEgoData = egos.filter(e => selectedEgoIds.has(e.id))
-        const selectedEgoCosts = selectedEgoData.map(e => ({ cost: e.cost }))
-        const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
-        return (
-          <DeckStatsPanel
-            identitySlots={deck}
-            skills={skills}
-            passives={passives}
-            sinners={sinners}
-            egoCosts={selectedEgoCosts}
-            egoSinAffinities={selectedEgoSins}
-          />
-        )
-      })()}
 
       {/* EGO 그리드 */}
       {deckSubTab === 'ego' && (
         deck.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-4">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {sinners.map(sinner => {
               const slot = slotBySinner[sinner.id]
               const egoByGrade = egoByGradeMap[sinner.id] ?? {}
               return (
-                <div key={sinner.id} style={{
-                  background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
-                  border: `1px solid ${slot ? '#221a0f' : '#18120a'}`,
-                  borderRadius: '0.25rem', overflow: 'hidden',
-                  opacity: slot ? 1 : 0.5,
-                }}>
-                  <div className="flex items-center gap-1.5" style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #1a1208' }}>
-                    <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14}
-                      style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
-                    <span className="font-serif font-light truncate" style={{ color: slot ? '#8a7a60' : '#3a2a10', fontSize: '0.5625rem' }}>
+                <li key={sinner.id} className={`min-w-0 overflow-hidden rounded border border-[#241c14] bg-[#17120c] ${slot ? '' : 'opacity-50'}`}>
+                  <div className="flex items-center gap-2 border-b border-[#241c14] px-2.5 py-2">
+                    <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
+                    <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${slot ? 'text-[#cfc2ad]' : 'text-[#7f7364]'}`}>
                       {sinner.name_kr}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', padding: '0.125rem' }}>
+                  <div className="flex flex-col gap-0.5 p-1">
                     {GRADE_ORDER.map(grade => {
                       const ego = egoByGrade[grade]
                       const gc = GRADE_COLORS[grade] ?? '#555'
                       const egoFull = ego ? egos.find(e => e.id === ego.ego_id) : null
                       const sinEn = egoFull?.sin_affinity ? (SIN_KR_TO_EN[egoFull.sin_affinity] ?? egoFull.sin_affinity) : null
                       const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
-                      return (
-                        <div
+                      const banner = (
+                        <Image
+                          src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
+                          className={`h-3 w-auto shrink-0 ${ego ? 'opacity-90' : 'opacity-30'}`}
+                        />
+                      )
+                      return ego?.ego_id ? (
+                        <button
                           key={grade}
-                          onClick={() => ego?.ego_id && setEgoModalId(ego.ego_id)}
-                          style={{
-                            background: ego ? `${ec}1a` : 'rgba(10,8,5,0.7)',
-                            border: `1px solid ${ego ? ec + '55' : '#18120a'}`,
-                            borderRadius: '0.125rem', padding: '0.25rem 0.3125rem',
-                            display: 'flex', alignItems: 'center', gap: '0.3125rem',
-                            minHeight: '1.5rem',
-                            cursor: ego?.ego_id ? 'pointer' : 'default',
-                          }}
+                          type="button"
+                          onClick={() => setEgoModalId(ego.ego_id!)}
+                          className="flex min-h-8 items-center gap-2 rounded-sm border px-1.5 py-1 text-left transition-[filter] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e8b030]"
+                          style={{ background: `${ec}1a`, borderColor: `${ec}55` }}
                         >
-                          <Image
-                              src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
-                              style={{ height: '0.6875rem', width: 'auto', opacity: ego ? 0.9 : 0.3, flexShrink: 0 }}
-                            />
-                          {ego ? (
-                            <span style={{ color: gc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, flex: 1, textAlign: 'left' }}>{ego.name_kr}</span>
-                          ) : (
-                            <span style={{ color: '#2a1e10', fontSize: '0.5rem', lineHeight: 1 }}>{slot ? '—' : ''}</span>
-                          )}
+                          {banner}
+                          <span className="min-w-0 flex-1 text-[0.75rem] font-semibold leading-tight" style={{ color: gc }}>{ego.name_kr}</span>
+                        </button>
+                      ) : (
+                        <div key={grade} className="flex min-h-8 items-center gap-2 rounded-sm border border-transparent px-1.5 py-1">
+                          {banner}
+                          {slot && <span className="text-[0.75rem] text-[#4a3f31]" aria-hidden="true">—</span>}
                         </div>
                       )
                     })}
                   </div>
                   {!slot && (
-                    <div style={{ padding: '0.25rem 0.5rem 0.375rem', textAlign: 'center' }}>
-                      <span style={{ fontSize: '0.5rem', color: '#333' }}>인격 미선택</span>
-                    </div>
+                    <p className="px-2 pb-2 text-center text-[0.75rem] text-[#7f7364]">{tDeck('ego.noIdentity')}</p>
                   )}
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
         ) : (
           <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
         )
@@ -582,7 +528,7 @@ export default function PlanDeckTabs({
       {/* 스킬 교환 */}
       {deckSubTab === 'skillset' && (
         deck.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
+          <div className="skill-exchange-list">
             {sinners.map(sinner => {
               const slot = slotBySinner[sinner.id]
               if (!slot) return null
@@ -596,32 +542,14 @@ export default function PlanDeckTabs({
               )
 
               return (
-                <div
-                  key={sinner.id}
-                  onClick={() => slot.identity_id && setIdentityModalId(slot.identity_id)}
-                  style={{ cursor: slot.identity_id ? 'pointer' : 'default' }}
-                >
-                  <div style={{
-                    position: 'relative', width: '100%', aspectRatio: '2/3',
-                    background: 'linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%)',
-                    border: `0.09375rem solid ${(RARITY_COLORS[slot.rarity ?? 1] ?? RARITY_COLORS[1]).border}`,
-                    borderRadius: '0.25rem', overflow: 'hidden',
-                  }}>
-                    {identData && (
-                      <Image
-                        src={getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`)}
-                        alt={slot.name_kr ?? ''} fill className="object-cover object-top" sizes="120px"
-                      />
-                    )}
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, textAlign: 'center',
-                      background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%)',
-                      paddingTop: '1.25rem', paddingBottom: '0.25rem',
-                    }}>
-                      <p className="font-serif" style={{ color: '#e8dcc8', fontSize: '0.6875rem', lineHeight: 1.2 }}>{slot.name_kr}</p>
-                    </div>
-                  </div>
                   <SkillExchangePanel
+                    key={sinner.id}
+                    identity={{
+                      imageUrl: identData ? getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`) : null,
+                      name: localizeIdentityName(identData ?? slot, locale),
+                      sinnerName: tSinner(sinner.id as Parameters<typeof tSinner>[0]),
+                    }}
+                    onIdentityClick={slot.identity_id ? () => setIdentityModalId(slot.identity_id!) : undefined}
                     distribution={dist}
                     skills={[
                       slotBestSkills[0] ? {
@@ -643,7 +571,6 @@ export default function PlanDeckTabs({
                     readOnly
                     showTotal={false}
                   />
-                </div>
               )
             })}
           </div>

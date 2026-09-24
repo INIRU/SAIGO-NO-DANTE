@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { getFormationOverlay } from '@/components/decks/FormationBoard'
+import { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 it('marks slots 1–7 selected, 8–12 backup, and leaves unformed identities unmarked', () => {
   expect(getFormationOverlay(null)).toBeUndefined()
   expect(getFormationOverlay(99)).toBeUndefined()

@@ -1,24 +1,19 @@
 'use client'
 
-import { getEgoGradeBannerUrl } from '@/lib/utils/images'
-
-import { getFormationOverlay } from '@/components/decks/FormationBoard'
-
-import { useEffect, useState, type CSSProperties } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import IdentityFrameCard, { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 import Image from 'next/image'
-import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { RefreshCcw, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
+import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { localizeEgoName, localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { GRADE_COLORS, RARITY_COLORS, STORAGE_BASE } from '@/lib/constants/game'
+import { GRADE_COLORS, LCB_IDS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-import { getIdentityImageUrl, getSinnerLogoUrl } from '@/lib/utils/images'
+import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { useLocale, useTranslations } from 'next-intl'
 
@@ -64,7 +59,10 @@ export type PlannerIdentityBoardSlot = {
   identity: PlannerDeckIdentity | null
   identityName?: string
   slotOrder: number | null
-  gacksung: boolean
+  /** Uptie 1–4; missing = 4. */
+  uptie?: number
+  /** Formation-slot gift icons (Assist mode). */
+  giftBadgeUrls?: string[]
 }
 
 export type PlannerEgoBoardSlot = {
@@ -74,6 +72,8 @@ export type PlannerEgoBoardSlot = {
 }
 
 export const PLANNER_EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
+const UPTIES = [1, 2, 3, 4] as const
+const ROMAN = ['I', 'II', 'III', 'IV']
 
 const COMPACT_KOTRA_STYLE: CSSProperties = {
   fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
@@ -90,66 +90,6 @@ function getCompactNameStyle(locale: SupportedLang): CSSProperties {
   }
 }
 
-function RarityStars({ rarity, size = 'md' }: { rarity: number; size?: 'sm' | 'md' | 'lg' }) {
-  const h = size === 'sm' ? 18 : size === 'lg' ? 32 : 24
-  return (
-    <Image
-      src={`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`}
-      alt={`${rarity}`}
-      width={h * rarity}
-      height={h}
-      style={{ height: `${h / 16}rem`, width: 'auto', objectFit: 'contain' }}
-    />
-  )
-}
-
-function SkillKeywordChips({
-  keywords,
-  getIconUrl,
-  getKeywordLabel,
-}: {
-  keywords: string[] | null | undefined
-  getIconUrl: (keyword: string) => string | null
-  getKeywordLabel: (keyword: string) => string
-}) {
-  const skillKeywords = (keywords ?? []).filter(Boolean)
-  if (skillKeywords.length === 0) return null
-
-  return (
-    <div className="mt-1 flex min-w-0 items-center gap-1 overflow-hidden" aria-label="skill keywords" style={{ minHeight: '1.625rem' }}>
-      {skillKeywords.slice(0, 3).map(keyword => {
-        const iconUrl = getIconUrl(keyword)
-        return (
-          <span
-            key={keyword}
-            className="inline-flex min-w-0 flex-shrink items-center gap-1 rounded-sm"
-            style={{
-              maxWidth: '100%',
-              padding: '0.1875rem 0.3125rem',
-              background: 'rgba(120,76,28,0.14)',
-              border: '1px solid rgba(200,144,10,0.18)',
-              color: '#8d7f69',
-              fontSize: '0.875rem',
-              lineHeight: 1,
-            }}
-          >
-            {iconUrl && (
-              <Image
-                src={iconUrl}
-                alt=""
-                width={14}
-                height={14}
-                style={{ width: '0.875rem', height: '0.875rem', flex: '0 0 auto', opacity: 0.78 }}
-              />
-            )}
-            <span className="truncate">{getKeywordLabel(keyword)}</span>
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
 function useSinnerName(locale: SupportedLang, getSinnerName?: (sinner: PlannerDeckSinner) => string) {
   const tSinner = useTranslations('sinner')
 
@@ -160,595 +100,371 @@ function useSinnerName(locale: SupportedLang, getSinnerName?: (sinner: PlannerDe
   }
 }
 
-function getIdentityInfoImageUrl(identity: PlannerDeckIdentity, gacksung: boolean) {
-  if (!identity.game_id || !identity.folder_name) return ''
-  const prefix = gacksung ? 'gacksung' : 'normal'
-  return getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_${prefix}_info`)
-}
-
+/**
+ * Formation board with a fixed footprint: [bar slot][grid][bar slot].
+ * View: the 12 chosen identities, bar in the bottom slot; clicking a card appends/removes
+ * it from the formation order. Edit: the bar moves to the top slot and a sheet covers the
+ * grid box exactly; clicking a sinner opens the identity picker. Nothing shifts between states.
+ */
 export function PlannerIdentityBoard({
   sinners,
   slots,
   onOpenIdentityModal,
   onFormationToggle,
-  onGacksungToggle,
+  onResetOrder,
+  onLongPress,
   getSinnerName,
-  formationStyle = 'banner',
 }: {
   sinners: PlannerDeckSinner[]
   slots: Record<string, PlannerIdentityBoardSlot | undefined>
   onOpenIdentityModal: (sinnerId: string) => void
   onFormationToggle: (sinnerId: string) => void
-  onGacksungToggle: (sinnerId: string) => void
+  /** Clears every formation number (all back to the bench). */
+  onResetOrder?: () => void
+  /** Hold a view tile (500ms) to open identity details. */
+  onLongPress?: (sinnerId: string) => void
   getSinnerName?: (sinner: PlannerDeckSinner) => string
-  formationStyle?: 'banner' | 'label'
 }) {
   const t = useTranslations('planner.deckTab.identity')
   const locale = useLocale() as SupportedLang
-  const getLocalizedSinnerName = useSinnerName(locale, getSinnerName)
-  const compactNameStyle = getCompactNameStyle(locale)
+  const sinnerNameOf = useSinnerName(locale, getSinnerName)
+  const [editing, setEditing] = useState(false)
+  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
+  // re-renders only the tiles whose number changed.
+  const latest = useRef({ onFormationToggle, onOpenIdentityModal, onLongPress })
+  useLayoutEffect(() => { latest.current = { onFormationToggle, onOpenIdentityModal, onLongPress } })
+  const startPress = useCallback((sinnerId: string) => {
+    if (!latest.current.onLongPress) return
+    press.current.fired = false
+    press.current.timer = setTimeout(() => { press.current.fired = true; latest.current.onLongPress?.(sinnerId) }, 500)
+  }, [])
+  const endPress = useCallback(() => clearTimeout(press.current.timer), [])
+  const activate = useCallback((sinnerId: string, view: boolean) => {
+    if (!view) return latest.current.onOpenIdentityModal(sinnerId)
+    if (press.current.fired) { press.current.fired = false; return }
+    latest.current.onFormationToggle(sinnerId)
+  }, [])
+  const hasOrder = sinners.some(sinner => slots[sinner.id]?.identity && getFormationOverlay(slots[sinner.id]?.slotOrder ?? null))
+
+  const tile = (sinner: PlannerDeckSinner, mode: 'view' | 'edit') => {
+    const slot = slots[sinner.id]
+    const identity = slot?.identity ?? null
+    const sinnerName = sinnerNameOf(sinner)
+    const name = slot?.identityName ?? (identity ? localizeIdentityName(identity, locale) : '')
+    const order = mode === 'view' ? slot?.slotOrder ?? null : null
+    const overlay = getFormationOverlay(order)
+    const view = mode === 'view'
+    return (
+      <BoardTile
+        key={sinner.id}
+        sinnerId={sinner.id}
+        view={view}
+        identity={identity}
+        uptie={slot?.uptie}
+        name={name}
+        sinnerName={sinnerName}
+        order={order}
+        giftBadgeUrls={view ? slot?.giftBadgeUrls : undefined}
+        ariaLabel={view
+          ? sinnerName + ' ' + name + ' ' + (overlay ? t('removeFormation') + ' ' + overlay.order : t('addFormation'))
+          : t('change') + ' ' + sinnerName + ' ' + name}
+        longPress={view && !!onLongPress}
+        onActivate={activate}
+        onPressStart={startPress}
+        onPressEnd={endPress}
+      />
+    )
+  }
 
   return (
-    <div className="planner-deck-identity-grid">
-      {sinners.map(sinner => {
-        const boardSlot = slots[sinner.id]
-        const identity = boardSlot?.identity ?? null
-        const slotOrder = boardSlot?.slotOrder ?? null
-        const isGacksung = boardSlot?.gacksung ?? false
-        const identityName = boardSlot?.identityName ?? (identity ? localizeIdentityName(identity, locale) : '')
-        const sinnerName = getLocalizedSinnerName(sinner)
-        const rarityColor = identity ? (RARITY_COLORS[identity.rarity] ?? RARITY_COLORS[1]) : null
-        const isFormed = slotOrder != null && slotOrder >= 0 && slotOrder < 99
-
-        return (
-          <div
-            key={sinner.id}
-            className="planner-deck-identity-slot relative min-w-0"
-            style={{ overflow: 'visible' }}
-          >
-            <div
-              className="planner-deck-identity-card group relative w-full"
-              data-filled={identity ? 'true' : 'false'}
-              role="group"
-              tabIndex={0}
-              aria-label={identity ? `${identityName} ${t('change')}` : `${sinnerName} ${t('form')}`}
-              style={{
-                border: `0.09375rem ${identity ? 'solid' : 'dashed'} ${identity ? (rarityColor?.border ?? '#2a2015') : '#2a2015'}`,
-                boxShadow: identity ? `0 0 0.5rem ${rarityColor?.glow ?? 'transparent'}` : 'none',
-              }}
-            >
-              {identity ? (
-                <>
-                  {getIdentityInfoImageUrl(identity, isGacksung) && (
-                    <Image
-                      src={getIdentityInfoImageUrl(identity, isGacksung)}
-                      alt={identityName}
-                      fill
-                      className="object-cover object-top"
-                      sizes="180px"
-                    />
-                  )}
-                  <div className="absolute left-0 top-0 z-10 flex items-center gap-0.5 p-1">
-                    <RarityStars rarity={identity.rarity} />
-                  </div>
-                  <div className="planner-deck-identity-card__name">
-                    <p style={{ ...compactNameStyle, color: '#e8dcc8', fontSize: '0.8125rem', lineHeight: 1.2 }}>
-                      {identityName}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="absolute inset-0 z-10 flex items-center justify-center">
-                    <Image
-                      src={getSinnerLogoUrl(sinner.id)}
-                      alt=""
-                      width={32}
-                      height={32}
-                      style={{ width: '2rem', height: '2rem', opacity: 0.35 }}
-                    />
-                  </div>
-                  <div className="absolute right-0 top-0 w-[36%] opacity-15">
-                    <Image
-                      src={getGameUiAsset(`sinners/${sinner.id}`)}
-                      alt=""
-                      width={389}
-                      height={1023}
-                      className="h-auto w-full"
-                      loading="eager"
-                    />
-                  </div>
-                  <div className="planner-deck-identity-card__name">
-                    <p style={{ ...compactNameStyle, color: '#3a2a10', fontSize: '0.875rem' }}>{sinnerName}</p>
-                  </div>
-                </>
-              )}
-
-              {identity && isFormed && (() => {
-                const n = slotOrder! + 1
-                const overlay = getFormationOverlay(slotOrder)!
-                const isFormation = overlay.kind === 'selected'
-                return (
-                  <div className="planner-deck-identity-card__formation pointer-events-none">
-                    {formationStyle === 'banner' ? (
-                      <Image src={overlay.bannerUrl} alt={isFormation ? t('formed') : t('bench')} width={260} height={66} className="absolute left-0 top-[54%] h-auto w-full" />
-                    ) : (
-                      <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: '0 0.125rem 0.5rem #000' }}>{isFormation ? t('formed') : t('bench')}</span>
-                    )}
-                    <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: isFormation ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${isFormation ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
-                      {n}
-                    </span>
-                  </div>
-                )
-              })()}
-
-            </div>
-
-            <div className="planner-deck-identity-card__overlay">
-              {identity ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => onOpenIdentityModal(sinner.id)}
-                    className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--change"
-                    aria-label={`${t('change')} ${sinnerName}`}
-                  >
-                    {t('change')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onFormationToggle(sinner.id)}
-                    className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--formation"
-                    data-formed={isFormed}
-                    aria-pressed={isFormed}
-                    aria-label={`${isFormed ? t('removeFormation') : t('addFormation')} ${sinnerName}`}
-                  >
-                    {isFormed ? t('removeFormation') : t('addFormation')}
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onOpenIdentityModal(sinner.id)}
-                  className="planner-deck-identity-card__overlay-button planner-deck-identity-card__overlay-button--empty"
-                  aria-label={`${t('form')} ${sinnerName}`}
-                >
-                  {t('form')}
-                </button>
-              )}
-            </div>
-
-            {identity && (
-              <button
-                type="button"
-                onClick={event => {
-                  event.stopPropagation()
-                  onGacksungToggle(sinner.id)
-                }}
-                title={isGacksung ? t('toNormalArt') : t('toAwakenedArt')}
-                aria-label={isGacksung ? t('toNormalArt') : t('toAwakenedArt')}
-                className="planner-deck-identity-card__art-button"
-                data-active={isGacksung}
-              >
-                <RefreshCcw aria-hidden="true" strokeWidth={2} />
-              </button>
-            )}
-          </div>
-        )
-      })}
-
-      <style jsx>{`
-        .planner-deck-identity-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          column-gap: 1rem;
-          row-gap: 1.5rem;
+    <section className="fboard" data-editing={editing}>
+      {onResetOrder && (
+        <div className="fboard__tools" inert={editing}>
+          <button type="button" className="fboard__reset" disabled={!hasOrder} onClick={() => { onResetOrder(); showSuccess(t('resetOrderDone')) }}>
+            <RotateCcw aria-hidden="true" />
+            {t('resetOrder')}
+          </button>
+        </div>
+      )}
+      <button type="button" className="fboard__bar" aria-expanded={editing} onClick={() => setEditing(open => !open)}>
+        {editing ? t('editDone') : t('editOpen')}
+        {editing ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
+      </button>
+      <div className="fboard__stage">
+        <ol className="fboard__grid" inert={editing}>{sinners.map(sinner => tile(sinner, 'view'))}</ol>
+        <div className="fboard__sheet" inert={!editing}>
+          <ol className="fboard__grid">{sinners.map(sinner => tile(sinner, 'edit'))}</ol>
+        </div>
+      </div>
+      <p className="fboard__hint" aria-hidden={!editing}>{t('editHint')}</p>
+      <style jsx global>{`
+        .fboard { --bar: 3rem; --gap: 0.5rem; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
+        .fboard__stage { position: relative; overflow: hidden; }
+        .fboard__grid {
+          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.625rem 0.5rem;
+          width: 100%; max-width: 62rem; margin: 0 auto; padding: 0.75rem 0.25rem; list-style: none;
         }
-        .planner-deck-identity-card {
-          aspect-ratio: 2 / 3;
-          background: linear-gradient(160deg, #1e1810 0%, #120e08 60%, #1a1410 100%);
-          border-radius: 0.25rem;
-          overflow: hidden;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        .fboard__grid > li { min-width: 0; }
+        .fboard__sheet {
+          position: absolute; inset: 0; z-index: 10; overflow: hidden;
+          background: #17120c; box-shadow: inset 0 1px #2e2417, inset 0 -1px #2e2417;
+          transform: translateY(100%); visibility: hidden;
+          transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 280ms;
         }
-        .planner-deck-identity-card:focus-within,
-        .planner-deck-identity-card:focus-visible,
-        .planner-deck-identity-card:hover {
-          filter: brightness(1.04);
+        .fboard[data-editing='true'] .fboard__sheet { transform: none; visibility: visible; transition-delay: 0s; }
+        .fboard__bar {
+          position: absolute; left: 0; right: 0; top: calc(100% - var(--bar)); z-index: 11; height: var(--bar);
+          display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+          border: 1px solid #3a2c18; border-radius: 0.25rem; background: #1d160d; color: #e8b030;
+          cursor: pointer; font-family: var(--font-heading), var(--font-sans); font-size: 1rem;
+          transition: top 280ms cubic-bezier(0.22, 1, 0.36, 1), background-color 0.15s ease, border-color 0.15s ease;
         }
-        .planner-deck-identity-card:focus-visible {
-          outline: 0.125rem solid rgba(232,176,48,0.72);
-          outline-offset: 0.125rem;
+        .fboard[data-editing='true'] .fboard__bar { top: 0; }
+        .fboard__hint {
+          position: absolute; left: 0; right: 0; bottom: 0; height: var(--bar); display: flex; align-items: center; justify-content: center;
+          color: #9c8b73; font-size: 0.9375rem; text-align: center; opacity: 0; transition: opacity 180ms ease;
         }
-        .planner-deck-identity-card__name {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          z-index: 10;
-          background: linear-gradient(to top, rgba(13,11,8,0.95) 0%, transparent 100%);
-          padding: 1.5rem 0.25rem 0.375rem;
-          text-align: center;
+        .fboard[data-editing='true'] .fboard__hint { opacity: 1; transition-delay: 150ms; }
+        .fboard__bar svg { width: 1.125rem; height: 1.125rem; }
+        .fboard__tools {
+          position: absolute; left: 0; right: 0; top: 0; max-width: 62rem; height: var(--bar); margin-inline: auto;
+          display: flex; align-items: center; justify-content: flex-end;
+          transition: opacity 180ms ease, visibility 0s linear 0s;
         }
-        .planner-deck-identity-card[data-filled="false"] .planner-deck-identity-card__name {
-          padding-top: 1.25rem;
+        .fboard[data-editing='true'] .fboard__tools { opacity: 0; visibility: hidden; transition-delay: 0s, 180ms; }
+        .fboard__reset {
+          display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.375rem; padding: 0 0.5rem;
+          border-radius: 0.25rem; color: #9c8b73; cursor: pointer; font-size: 0.875rem; transition: color 0.15s ease;
         }
-        .planner-deck-identity-card__formation {
-          position: absolute;
-          inset: 0;
-          z-index: 15;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding-bottom: 30%;
-          background: rgba(13,11,8,0.5);
+        .fboard__reset svg { width: 0.875rem; height: 0.875rem; }
+        .fboard__reset:hover:not(:disabled) { color: #e8b030; }
+        .fboard__reset:disabled { cursor: default; opacity: 0.4; }
+        .fboard__reset:focus-visible { outline: 2px solid #e8b030; outline-offset: 0; }
+        .fboard__bar:hover { border-color: #c8900a; background: #261c0f; }
+        .fboard__bar:focus-visible, .fboard__tile:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+        .fboard__tile {
+          position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer;
+          touch-action: manipulation; -webkit-touch-callout: none; user-select: none; transition: filter 0.15s ease;
         }
-        .planner-deck-identity-card__overlay {
-          position: absolute;
-          inset: 0;
-          z-index: 20;
-          display: flex;
-          flex-direction: column;
-          opacity: 0;
-          pointer-events: none;
-          visibility: hidden;
-          backdrop-filter: blur(0.375rem) brightness(0.4);
-          -webkit-backdrop-filter: blur(0.375rem) brightness(0.4);
-          transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+        .fboard__tile:disabled { cursor: default; }
+        .fboard__tile:not(:disabled):hover { filter: brightness(1.12); }
+        .fboard__empty {
+          display: flex; width: 100%; aspect-ratio: 290 / 428; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+          border: 1px dashed #3a2c18; border-radius: 0.25rem; color: #9c8b73; font-size: 0.8125rem;
         }
-        .planner-deck-identity-slot:hover .planner-deck-identity-card__overlay,
-        .planner-deck-identity-slot:has(:focus-visible) .planner-deck-identity-card__overlay {
-          opacity: 1;
-          pointer-events: auto;
-          visibility: visible;
-          transition-delay: 0s;
-        }
-        .planner-deck-identity-card__overlay-button {
-          display: flex;
-          min-height: 2.75rem;
-          align-items: center;
-          justify-content: center;
-          border: 0;
-          color: #e8b030;
-          cursor: pointer;
-          font-family: var(--font-body), var(--font-sans);
-          font-size: 0.9375rem;
-          font-weight: 700;
-          line-height: 1.1;
-          padding: 0.375rem 0.5rem;
-          text-align: center;
-          text-shadow: 0 0 0.5rem rgba(200,144,10,0.5), 0 0.125rem 0.375rem rgba(0,0,0,0.9);
-          transition: background-color 0.18s ease, color 0.18s ease;
-        }
-        .planner-deck-identity-card__overlay-button:focus-visible,
-        .planner-deck-identity-card__art-button:focus-visible {
-          outline: 2px solid rgba(232,176,48,0.7);
-          outline-offset: -2px;
-        }
-        .planner-deck-identity-card__overlay-button--change {
-          height: 40%;
-          background: rgba(13,11,8,0.6);
-          border-bottom: 1px solid rgba(200,144,10,0.2);
-        }
-        .planner-deck-identity-card__overlay-button--change:hover,
-        .planner-deck-identity-card__overlay-button--change:focus-visible {
-          background: rgba(200,144,10,0.15);
-        }
-        .planner-deck-identity-card__overlay-button--formation {
-          height: 60%;
-          background: rgba(13,11,8,0.5);
-          font-weight: 600;
-        }
-        .planner-deck-identity-card__overlay-button--formation:hover,
-        .planner-deck-identity-card__overlay-button--formation:focus-visible {
-          background: rgba(200,144,10,0.12);
-        }
-        .planner-deck-identity-card__overlay-button--formation[data-formed="true"] {
-          color: #5ab0d0;
-          text-shadow: 0 0 0.5rem rgba(90,176,208,0.48), 0 0.125rem 0.375rem rgba(0,0,0,0.9);
-        }
-        .planner-deck-identity-card__overlay-button--formation[data-formed="true"]:hover,
-        .planner-deck-identity-card__overlay-button--formation[data-formed="true"]:focus-visible {
-          background: rgba(90,176,208,0.12);
-        }
-        .planner-deck-identity-card__overlay-button--empty {
-          height: 100%;
-          background: rgba(13,11,8,0.5);
-          font-size: 1rem;
-        }
-        .planner-deck-identity-card__overlay-button--empty:hover,
-        .planner-deck-identity-card__overlay-button--empty:focus-visible {
-          background: rgba(200,144,10,0.12);
-        }
-        .planner-deck-identity-card__art-button {
-          position: absolute;
-          top: 0.375rem;
-          right: 0.375rem;
-          z-index: 20;
-          display: flex;
-          height: 2.75rem;
-          width: 2.75rem;
-          align-items: center;
-          justify-content: center;
-          border: 0.09375rem solid #2a2015;
-          border-radius: 999px;
-          background: rgba(18,14,9,0.92);
-          color: rgba(232,220,200,0.78);
-          cursor: pointer;
-          line-height: 1;
-          padding: 0;
-          box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.45);
-          transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease;
-        }
-        .planner-deck-identity-card__art-button:hover,
-        .planner-deck-identity-card__art-button:focus-visible {
-          border-color: rgba(232,176,48,0.58);
-          background: rgba(42,32,21,0.95);
-          color: #f0d48a;
-          box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.5), inset 0 0 0 1px rgba(232,176,48,0.1);
-        }
-        .planner-deck-identity-card__art-button:active {
-          transform: scale(0.96);
-        }
-        .planner-deck-identity-card__art-button svg {
-          height: 1rem;
-          width: 1rem;
-          flex: 0 0 auto;
-        }
-        .planner-deck-identity-card__art-button[data-active="true"] {
-          color: #0d0b08;
-          border-color: #c8900a;
-          background: rgba(200,144,10,0.92);
-          box-shadow: 0 0 0.5rem rgba(200,144,10,0.5), 0 0.25rem 0.75rem rgba(0,0,0,0.45);
-        }
-        @media (min-width: 40rem) {
-          .planner-deck-identity-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-        @media (min-width: 48rem) {
-          .planner-deck-identity-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-          }
-        }
-        @media (min-width: 64rem) {
-          .planner-deck-identity-grid {
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-          }
-        }
-        @media (max-width: 39.9375rem) {
-          .planner-deck-identity-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            column-gap: 0.75rem;
-            row-gap: 1rem;
-          }
-          .planner-deck-identity-card {
-            margin-bottom: 2.75rem;
-          }
-          .planner-deck-identity-card__overlay {
-            inset: 0;
-            opacity: 1;
-            pointer-events: none;
-            visibility: visible;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            transition-delay: 0s;
-          }
-          .planner-deck-identity-card__overlay-button {
-            min-height: 2.75rem;
-            font-size: 0.8125rem;
-            padding-inline: 0.25rem;
-            pointer-events: auto;
-          }
-          .planner-deck-identity-card__overlay-button--change {
-            position: absolute;
-            inset: 0 0 2.75rem;
-            width: 100%;
-            height: auto;
-            background: transparent;
-            border-bottom: 0;
-            color: transparent;
-            font-size: 0;
-            text-shadow: none;
-          }
-          .planner-deck-identity-card__overlay-button--change:hover,
-          .planner-deck-identity-card__overlay-button--change:focus-visible,
-          .planner-deck-identity-card__overlay-button--empty:hover,
-          .planner-deck-identity-card__overlay-button--empty:focus-visible {
-            background: transparent;
-          }
-          .planner-deck-identity-card__overlay-button--formation {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2.75rem;
-          }
-          .planner-deck-identity-card__overlay-button--empty {
-            position: absolute;
-            inset: 0 0 2.75rem;
-            width: 100%;
-            height: auto;
-            min-height: 0;
-            background: transparent;
-            color: transparent;
-            font-size: 0;
-            text-shadow: none;
-          }
-          .planner-deck-identity-card__art-button {
-            top: 0.1875rem;
-            right: 0.1875rem;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .planner-deck-identity-card,
-          .planner-deck-identity-card__overlay,
-          .planner-deck-identity-card__overlay-button,
-          .planner-deck-identity-card__art-button {
-            transition: none;
-          }
-        }
+        .fboard__empty img { width: 2rem; height: 2rem; opacity: 0.4; }
+        @media (min-width: 40rem) { .fboard__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem 0.75rem; } }
+        @media (min-width: 64rem) { .fboard__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.875rem 1rem; } }
+        @media (prefers-reduced-motion: reduce) { .fboard__sheet, .fboard__tile, .fboard__bar, .fboard__hint, .fboard__tools, .fboard__reset { transition: none; } }
       `}</style>
-    </div>
+    </section>
   )
 }
+
+type BoardTileProps = {
+  sinnerId: string
+  view: boolean
+  identity: PlannerDeckIdentity | null
+  uptie?: number
+  name: string
+  sinnerName: string
+  order: number | null
+  giftBadgeUrls?: string[]
+  ariaLabel: string
+  longPress: boolean
+  onActivate: (sinnerId: string, view: boolean) => void
+  onPressStart: (sinnerId: string) => void
+  onPressEnd: () => void
+}
+
+const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
+  return (
+    <li>
+      <button
+        type="button"
+        className="fboard__tile"
+        disabled={view && !identity}
+        aria-pressed={view && identity ? !!getFormationOverlay(order) : undefined}
+        aria-label={ariaLabel}
+        onClick={() => onActivate(sinnerId, view)}
+        onPointerDown={view && identity ? () => onPressStart(sinnerId) : undefined}
+        onPointerUp={onPressEnd}
+        onPointerLeave={onPressEnd}
+        onPointerCancel={onPressEnd}
+        onContextMenu={longPress ? event => event.preventDefault() : undefined}
+      >
+        {identity ? (
+          <IdentityFrameCard identity={identity} uptie={uptie} name={name} order={order} giftBadgeUrls={giftBadgeUrls} sizes="(max-width: 40rem) 30vw, 9rem" />
+        ) : (
+          <span className="fboard__empty">
+            <Image src={getSinnerLogoUrl(sinnerId)} alt="" width={32} height={32} />
+            <span>{sinnerName}</span>
+          </span>
+        )}
+      </button>
+    </li>
+  )
+}, (a, b) => (Object.keys(a) as (keyof BoardTileProps)[]).every(key => (
+  key === 'giftBadgeUrls' ? String(a[key]) === String(b[key]) : Object.is(a[key], b[key])
+)))
 
 export function PlannerIdentitySelectModal({
   open,
   sinner,
   identities,
   selectedIdentityId,
+  selectedUptie = 4,
   onClose,
   onSelect,
-  onDeselect,
   getSinnerName,
 }: {
   open: boolean
   sinner: PlannerDeckSinner | null
   identities: PlannerDeckIdentity[]
   selectedIdentityId?: string | null
+  selectedUptie?: number
   onClose: () => void
-  onSelect: (identity: PlannerDeckIdentity) => void
-  onDeselect?: () => void
+  /** Plain click applies uptie 4; the picker passes the chosen uptie. "Back to LCB" passes the LCB identity at IV: a sinner is never left empty. */
+  onSelect: (identity: PlannerDeckIdentity, uptie: number) => void
   getSinnerName?: (sinner: PlannerDeckSinner) => string
 }) {
   const t = useTranslations('planner.deckTab.identity')
   const locale = useLocale() as SupportedLang
-  const { getIconUrl, keywords: keywordInfo } = useKeywordData()
-  const getLocalizedSinnerName = useSinnerName(locale, getSinnerName)
-  const getKeywordLabel = (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale)
+  const sinnerNameOf = useSinnerName(locale, getSinnerName)
   const compactNameStyle = getCompactNameStyle(locale)
-
   const [query, setQuery] = useState(''), [grade, setGrade] = useState('')
-  useEffect(() => { setQuery(''); setGrade('') }, [open, sinner?.id])
-  const filtered = identities.filter(identity => (!grade || String(identity.rarity) === grade) && [identity.name, identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))).sort(compareReleaseDate)
+  const [picker, setPicker] = useState<string | null>(null)
+  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  useEffect(() => { setQuery(''); setGrade(''); setPicker(null) }, [open, sinner?.id])
+  const needle = query.trim().toLocaleLowerCase()
+  const filtered = identities
+    .filter(identity => (!grade || String(identity.rarity) === grade) && [identity.name, identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
+    .sort(compareReleaseDate)
+  const lcb = sinner ? identities.find(identity => identity.game_id === LCB_IDS[sinner.id]) : undefined
+  const canResetToLcb = lcb && (selectedIdentityId !== lcb.id || selectedUptie !== 4)
 
   return (
     <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="64rem" title={t('modalTitle')}>
       {sinner && (
-        <div className="planner-deck-select-modal">
-          <div className="planner-deck-select-modal__header">
-            <div className="flex min-w-0 items-center gap-2">
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7 }} />
-              <span className="min-w-0 truncate" style={{ ...compactNameStyle, color: '#e8dcc8', fontSize: '1rem' }}>
-                {t('modalHeading', { sinner: getLocalizedSinnerName(sinner) })}
-              </span>
+        <div className="idpick">
+          <div className="idpick__header">
+            <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} className="idpick__logo" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate" style={{ ...compactNameStyle, color: '#e8dcc8', fontSize: '1.0625rem' }}>{t('modalHeading', { sinner: sinnerNameOf(sinner) })}</p>
+              <p className="idpick__hint">{t('uptieHint')}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label={t('close')} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded" style={{ color: '#666', cursor: 'pointer' }}>
-              <X style={{ width: '1.25rem', height: '1.25rem' }} aria-hidden="true" />
+            {canResetToLcb && (
+              <button type="button" onClick={() => onSelect(lcb, 4)} className="idpick__clear" aria-label={t('resetLcb')} title={t('resetLcb')}>
+                <RotateCcw aria-hidden="true" />
+                <span className="idpick__clear-long">{t('resetLcb')}</span>
+                <span className="idpick__clear-short" aria-hidden="true">LCB</span>
+              </button>
+            )}
+            <button type="button" onClick={onClose} aria-label={t('close')} className="idpick__close">
+              <X aria-hidden="true" />
             </button>
           </div>
 
           <div className="character-picker-layout">
-          <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))} count={filtered.length} />
-          <div className="planner-deck-select-modal__results">
-          {selectedIdentityId && onDeselect && (
-            <div className="px-5 pt-3">
-              <button
-                type="button"
-                onClick={onDeselect}
-                className="flex min-h-11 w-full items-center gap-1.5 rounded transition-colors hover:bg-[#2a1510]"
-                style={{ color: '#c83030', fontSize: '0.9375rem', border: '1px solid #3a1515', padding: '0.5rem 0.75rem', cursor: 'pointer', background: 'rgba(200,48,48,0.05)' }}
-              >
-                <X style={{ width: '0.875rem', height: '0.875rem' }} aria-hidden="true" />
-                {t('clear')}
-              </button>
+            <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))} count={filtered.length} />
+            <div className="idpick__results">
+              <ul className="idpick__grid">
+                {filtered.map(identity => {
+                  const selected = selectedIdentityId === identity.id
+                  const name = localizeIdentityName(identity, locale)
+                  // Hover only reveals the uptie bar; nothing changes until a numeral (or the card, = IV) is clicked.
+                  const shownUptie = selected ? selectedUptie : 4
+                  return (
+                    <li key={identity.id} className="idpick__card" data-picker={picker === identity.id}>
+                      <button
+                        type="button"
+                        className="idpick__main"
+                        aria-pressed={selected}
+                        aria-label={name + ' ' + t('uptie', { level: ROMAN[3] })}
+                        onClick={() => {
+                          if (press.current.fired) { press.current.fired = false; return }
+                          onSelect(identity, 4)
+                        }}
+                        onPointerDown={event => {
+                          if (event.pointerType === 'mouse') return
+                          press.current.fired = false
+                          press.current.timer = setTimeout(() => { press.current.fired = true; setPicker(identity.id) }, 450)
+                        }}
+                        onPointerUp={() => clearTimeout(press.current.timer)}
+                        onPointerLeave={() => clearTimeout(press.current.timer)}
+                        onPointerCancel={() => clearTimeout(press.current.timer)}
+                        onContextMenu={event => event.preventDefault()}
+                      >
+                        <IdentityFrameCard identity={identity} uptie={shownUptie} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />
+                      </button>
+                      <div className="idpick__upties" role="group" aria-label={name + ' ' + t('uptieGroup')}>
+                        {UPTIES.map(level => (
+                          <button
+                            key={level}
+                            type="button"
+                            aria-pressed={selected && selectedUptie === level}
+                            data-current={shownUptie === level}
+                            aria-label={name + ' ' + t('uptie', { level: ROMAN[level - 1] })}
+                            onClick={() => onSelect(identity, level)}
+                          >
+                            {ROMAN[level - 1]}
+                          </button>
+                        ))}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+              {filtered.length === 0 && <p className="py-8 text-center" style={{ color: '#9c8b73', fontSize: '0.9375rem' }}>{t('noResults')}</p>}
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3 lg:grid-cols-4">
-            {filtered.map(identity => {
-              const isSelected = selectedIdentityId === identity.id
-              const rarityColor = RARITY_COLORS[identity.rarity] ?? RARITY_COLORS[1]
-              const identityName = localizeIdentityName(identity, locale)
-              return (
-                <button
-                  key={identity.id}
-                  type="button"
-                  onClick={() => onSelect(identity)}
-                  aria-pressed={isSelected}
-                  className="text-left transition-[filter,box-shadow,border-color] duration-200 hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0c09]"
-                  style={{
-                    background: isSelected
-                      ? 'linear-gradient(160deg, rgba(200,144,10,0.15) 0%, rgba(200,144,10,0.05) 100%)'
-                      : 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
-                    border: `0.09375rem solid ${isSelected ? '#c8900a' : `${rarityColor.border}40`}`,
-                    borderRadius: '0.375rem',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    boxShadow: isSelected ? `0 0 0.75rem ${rarityColor.glow}` : 'none',
-                  }}
-                >
-                  <div className="relative isolate w-full overflow-hidden" style={{ aspectRatio: '4/5' }}>
-                    {identity.game_id && identity.folder_name && (
-                      <Image
-                        src={getIdentityInfoImageUrl(identity, false)}
-                        alt={identityName}
-                        fill
-                        className="object-cover object-top"
-                        sizes="200px"
-                      />
-                    )}
-                    <div className="absolute left-0 top-0 z-[1] flex items-center p-1">
-                      <RarityStars rarity={identity.rarity} />
-                    </div>
-                    {isSelected && (
-                      <div className="absolute inset-0 z-[2]" style={{ background: 'rgba(200,144,10,0.1)', border: '0.125rem solid #c8900a', borderRadius: '0.25rem' }} />
-                    )}
-                  </div>
-                  <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
-                    <p
-                      className="planner-deck-select-modal__card-name"
-                      style={{ ...compactNameStyle, color: isSelected ? '#e8dcc8' : '#b0a898', fontSize: '0.875rem', lineHeight: 1.3 }}
-                    >
-                      {identityName}
-                    </p>
-                    <SkillKeywordChips keywords={identity.skill_keyword_list} getIconUrl={getIconUrl} getKeywordLabel={getKeywordLabel} />
-                  </div>
-                </button>
-              )
-            })}
-            {filtered.length === 0 && (
-              <p className="col-span-full py-8 text-center" style={{ color: 'var(--text-tertiary)', fontSize: '0.9375rem' }}>{t('noResults')}</p>
-            )}
-          </div>
-          </div>
           </div>
           <style jsx>{`
-            .planner-deck-select-modal {
-              display: flex;
-              flex-direction: column;
-              height: 82dvh;
-              max-height: 50rem;
-              overflow: hidden;
-              border: 1px solid #333;
-              border-radius: 0.5rem;
-              background: #1a1510;
-              box-shadow: 0 1rem 3rem rgba(0,0,0,0.8);
+            .idpick {
+              display: flex; flex-direction: column; height: 86dvh; max-height: 52rem; overflow: hidden;
+              border: 1px solid #2e2417; border-radius: 0.5rem; background: #17120c; box-shadow: 0 1rem 3rem rgba(0,0,0,0.8);
             }
-            .planner-deck-select-modal__results { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
-            .planner-deck-select-modal__header {
-              flex-shrink: 0;
-              position: sticky;
-              top: 0;
-              z-index: 30;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              border-bottom: 1px solid #222;
-              background: #1a1510;
-              padding: 1rem 1.25rem;
+            .idpick__header { display: flex; flex-shrink: 0; align-items: center; gap: 0.75rem; padding: 0.75rem 0.75rem 0.75rem 1.25rem; border-bottom: 1px solid #2e2417; }
+            .idpick__header :global(.idpick__logo) { width: 1.5rem; height: 1.5rem; opacity: 0.75; }
+            .idpick__hint { margin-top: 0.125rem; color: #9c8b73; font-size: 0.8125rem; line-height: 1.4; }
+            .idpick__clear { display: inline-flex; flex-shrink: 0; min-height: 2.75rem; align-items: center; gap: 0.375rem; padding: 0 0.75rem; border: 1px solid #3a2c18; border-radius: 0.25rem; color: #cbb994; font-size: 0.875rem; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; }
+            .idpick__clear :global(svg) { width: 0.875rem; height: 0.875rem; }
+            .idpick__clear-short { display: none; }
+            .idpick__clear:hover { border-color: #8a6010; color: #e8b030; }
+            .idpick__clear:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+            .idpick__close { display: inline-flex; flex-shrink: 0; min-width: 2.75rem; min-height: 2.75rem; align-items: center; justify-content: center; color: #9c8b73; cursor: pointer; }
+            .idpick__close :global(svg) { width: 1.25rem; height: 1.25rem; }
+            .idpick__results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+            .idpick__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.25rem 1rem; padding: 1.25rem; list-style: none; }
+            .idpick__card { position: relative; min-width: 0; }
+            .idpick__main { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; -webkit-touch-callout: none; user-select: none; transition: filter 0.15s ease; }
+            .idpick__main:hover { filter: brightness(1.1); }
+            .idpick__upties {
+              position: absolute; left: 12%; right: 12%; top: 15%; z-index: 6; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.125rem;
+              padding: 0.1875rem; border-radius: 999px; background: rgba(10,8,6,0.88); box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.6);
+              opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
             }
-            .planner-deck-select-modal__card-name {
-              display: -webkit-box;
-              min-height: 2.25em;
-              overflow: hidden;
-              overflow-wrap: anywhere;
-              word-break: keep-all;
-              -webkit-box-orient: vertical;
-              -webkit-line-clamp: 2;
+            .idpick__card:hover .idpick__upties, .idpick__card:focus-within .idpick__upties, .idpick__card[data-picker='true'] .idpick__upties {
+              opacity: 1; pointer-events: auto;
             }
+            .idpick__upties button {
+              min-height: 1.75rem; border: 1px solid transparent; border-radius: 999px; color: #b8a888; cursor: pointer;
+              font-family: var(--font-title), var(--font-sans); font-size: 1.0625rem; line-height: 1;
+            }
+            .idpick__upties button:hover { color: #fff3d6; }
+            .idpick__upties button:focus-visible { outline: 2px solid #e8b030; outline-offset: 1px; }
+            .idpick__upties button[data-current='true'] { border-color: #e8b030; color: #ffd76a; background: rgba(200,144,10,0.14); }
+            .idpick__main:focus-visible { outline: 2px solid #e8b030; outline-offset: 3px; }
+            @media (pointer: coarse) { .idpick__upties button { min-height: 2.75rem; } }
+            @media (max-width: 39.9375rem) {
+              .idpick__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem 0.5rem; padding: 1rem 0.75rem; }
+              .idpick__upties { left: 3%; right: 3%; }
+              .idpick__header { padding-left: 0.875rem; gap: 0.5rem; }
+              .idpick__clear { padding: 0 0.625rem; }
+              .idpick__clear-long { display: none; }
+              .idpick__clear-short { display: inline; }
+            }
+            @media (prefers-reduced-motion: reduce) { .idpick__upties, .idpick__main { transition: none; } }
           `}</style>
         </div>
       )}

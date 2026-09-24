@@ -308,27 +308,18 @@ function BlessingTitle({ title }: BlessingTitleProps) {
       probe.style.fontWeight = '400'
       probe.style.lineHeight = String(TITLE_LINE_HEIGHT)
       probe.style.letterSpacing = TITLE_LETTER_SPACING
+      probe.style.fontSize = `${TITLE_MAX_FONT_PX}px`
       document.body.appendChild(probe)
-
-      let low = TITLE_MIN_FONT_PX
-      let high = TITLE_MAX_FONT_PX
-
-      for (let i = 0; i < 9; i += 1) {
-        const mid = (low + high) / 2
-        probe.style.fontSize = `${mid}px`
-        if (probe.getBoundingClientRect().width <= availableWidth) {
-          low = mid
-        } else {
-          high = mid
-        }
-      }
-
+      // Width scales linearly with font size (letter-spacing is in em), so one layout read fits the
+      // title; the old 9-step search forced 9 full layouts per card and cost ~2s on plan pages.
+      const fullWidth = probe.getBoundingClientRect().width
       document.body.removeChild(probe)
-      const nextSize = Math.max(TITLE_MIN_FONT_PX, Math.min(TITLE_MAX_FONT_PX, low))
+      const fitted = fullWidth > 0 ? Math.floor(TITLE_MAX_FONT_PX * availableWidth / fullWidth * 10) / 10 : TITLE_MAX_FONT_PX
+      const nextSize = Math.max(TITLE_MIN_FONT_PX, Math.min(TITLE_MAX_FONT_PX, fitted))
       setFontSizePx(prev => Math.abs(prev - nextSize) < 0.1 ? prev : nextSize)
     }
 
-    measure()
+    // ResizeObserver reports the initial size after layout, so no synchronous first measure.
     const observer = new ResizeObserver(measure)
     observer.observe(container)
     window.addEventListener('resize', measure)
@@ -729,9 +720,28 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
   }
 
   return (
+    <>
+    {/* 모바일: 고른 가호만 아이콘과 이름의 작은 타일로 간결하게 */}
+    <ul className="grid grid-cols-3 gap-1.5 pt-3 sm:hidden">
+      {displayCards.filter(({ level }) => level > 0).map(({ blessing, level }) => (
+        <li
+          key={blessing.baseId}
+          className="flex aspect-[17/15] flex-col items-center justify-between rounded-md border border-[#7a2a26] px-1.5 pb-1.5 pt-2 text-center"
+          style={{ background: 'linear-gradient(180deg, #3a1210 0%, #5a1b18 100%)' }}
+        >
+          <span className="relative block h-7 w-7">
+            <Image src={getGameUiAsset(`start-buffs/${blessing.baseId}`)} alt="" fill sizes="28px" style={{ objectFit: 'contain' }} />
+          </span>
+          <span aria-hidden="true" className="block h-px w-full bg-[rgba(232,200,180,0.25)]" />
+          <span className="flex min-h-[2.25rem] items-center break-keep text-[0.75rem] font-bold leading-tight text-[#f3e6dc]">
+            {getBlessingDisplayName(blessing, level)}
+          </span>
+        </li>
+      ))}
+    </ul>
     <div
       ref={gridRef}
-      className="planner-blessing-grid relative z-10 grid grid-cols-1 overflow-visible sm:grid-cols-2 lg:grid-cols-5"
+      className="planner-blessing-grid relative z-10 hidden grid-cols-1 overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-5"
       style={{
         gap: cardColumnCount >= 5 ? '8px' : '6px',
         gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px))`,
@@ -749,6 +759,7 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
         />
       ))}
     </div>
+    </>
   )
 }
 
