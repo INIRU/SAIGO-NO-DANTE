@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { showSuccess, showError } from "@/lib/toast";
+import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import MypageTabs, { type MypageTab } from "./components/MypageTabs";
 import ProfileTab from "./components/ProfileTab";
 import DecksTab from "./components/DecksTab";
@@ -51,6 +52,7 @@ export default function MypageClient() {
   const t = getCommunityCopy(useLocale());
   const [followKind, setFollowKind] = useState<"following" | "followers">("following");
   const [activeTab, setActiveTab] = useState<MypageTab>("profile");
+  useHtmlFlag("with-compact-footer");
   useEffect(() => {
     const param = search.get("tab"),
       saved = localStorage.getItem("mypage-tab");

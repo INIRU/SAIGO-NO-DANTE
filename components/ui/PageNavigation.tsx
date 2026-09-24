@@ -19,7 +19,7 @@ export default function PageNavigation() {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
         const end = main.getBoundingClientRect().bottom + window.scrollY - window.innerHeight
-        const up = end > 2 && window.scrollY > 2
+        const up = end > 2 && window.scrollY > Math.min(240, window.innerHeight / 4)
         const down = end > 2 && window.scrollY < end - 2
         setDirections(previous => previous.up === up && previous.down === down ? previous : { up, down })
       })
@@ -32,8 +32,6 @@ export default function PageNavigation() {
     return () => { observer.disconnect(); cancelAnimationFrame(frame); window.removeEventListener('resize', update); window.removeEventListener('scroll', update) }
   }, [pathname])
 
-  if (!directions.up && !directions.down) return null
-
   function move(direction: 'top' | 'bottom') {
     const main = document.getElementById('main-content')
     const top = direction === 'top' ? 0 : Math.max(0, (main?.getBoundingClientRect().bottom ?? 0) + window.scrollY - window.innerHeight)
@@ -41,14 +39,18 @@ export default function PageNavigation() {
   }
 
   return (
-    <nav className={styles.navigation} aria-label={t('label')}>
-      {directions.up && <button type="button" onClick={() => move('top')} aria-label={t('top')} title={t('top')}>
-        <ArrowUp aria-hidden="true" />
-      </button>}
-      {directions.up && directions.down && <span aria-hidden="true" />}
-      {directions.down && <button type="button" onClick={() => move('bottom')} aria-label={t('bottom')} title={t('bottom')}>
-        <ArrowDown aria-hidden="true" />
-      </button>}
+    // 두 버튼을 항상 두고 칸 높이를 전환해 갑자기 튀어나오지 않게 한다
+    <nav className={styles.navigation} aria-label={t('label')} data-open={directions.up || directions.down || undefined}>
+      <div className={styles.slot} data-open={directions.up || undefined} data-divider={(directions.up && directions.down) || undefined}>
+        <div><button type="button" onClick={() => move('top')} aria-label={t('top')} title={t('top')} tabIndex={directions.up ? undefined : -1} aria-hidden={!directions.up || undefined}>
+          <ArrowUp aria-hidden="true" />
+        </button></div>
+      </div>
+      <div className={styles.slot} data-open={directions.down || undefined}>
+        <div><button type="button" onClick={() => move('bottom')} aria-label={t('bottom')} title={t('bottom')} tabIndex={directions.down ? undefined : -1} aria-hidden={!directions.down || undefined}>
+          <ArrowDown aria-hidden="true" />
+        </button></div>
+      </div>
     </nav>
   )
 }

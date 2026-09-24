@@ -1,0 +1,18 @@
+/* One sweep for the whole page: the gradient is fixed to the viewport, so every bone shimmers in step. */
+.bone {
+  background-color: #17120c;
+  background-image: linear-gradient(105deg, transparent 35%, rgba(232, 176, 48, 0.06) 50%, transparent 65%);
+  background-size: 200vw 100%;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  animation: sweep 1.9s ease-in-out infinite;
+}
+.raised { background-color: #211a11; }
+.line { border: 1px solid #2e2417; }
+@keyframes sweep {
+  from { background-position: 100vw 0; }
+  to { background-position: -100vw 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bone { animation: none; background-image: none; }
+}

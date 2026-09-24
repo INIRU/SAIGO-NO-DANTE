@@ -27,6 +27,8 @@ interface BaseModalProps {
   blur?: boolean
   /** Padding around content (default: '1rem') */
   padding?: string
+  /** Below 640px, dock the panel to the bottom edge like a sheet. */
+  sheet?: boolean
 }
 
 export default function BaseModal({
@@ -40,6 +42,7 @@ export default function BaseModal({
   className = '',
   blur = true,
   padding = '1rem',
+  sheet = false,
 }: BaseModalProps) {
   const scrollYRef = useRef(0)
   const reduceMotion = useReducedMotion()
@@ -86,8 +89,8 @@ export default function BaseModal({
               onEscapeKeyDown={() => onClose()}
             >
               <motion.div
-                className="fixed inset-0 flex items-center justify-center"
-                style={{ zIndex: zIndex + 1, padding, pointerEvents: 'none' }}
+                className={sheet ? 'fixed inset-0 flex items-end justify-center sm:items-center sm:p-4' : 'fixed inset-0 flex items-center justify-center'}
+                style={{ zIndex: zIndex + 1, padding: sheet ? undefined : padding, pointerEvents: 'none' }}
                 variants={panelVariants}
                 initial="initial"
                 animate="animate"

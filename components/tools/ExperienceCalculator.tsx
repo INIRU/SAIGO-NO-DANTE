@@ -8,6 +8,7 @@ import { experienceNeeded, LEVEL_COSTS, MAX_EXPERIENCE_LEVEL, LUXCAVATIONS, plan
 import { getResourceIconUrl } from '@/lib/utils/images'
 import Dropdown from '@/components/ui/Dropdown'
 import styles from './ExperienceCalculator.module.css'
+import PageHeader from '@/components/ui/PageHeader'
 const dropdownStyle = {width:'100%',justifyContent:'space-between',padding:'.7rem',background:'var(--bg-deep)',borderColor:'var(--border)',fontFamily:'var(--font-mono)',fontSize:'1rem',color:'var(--text-primary)'}
 
 const ticketIcons = ['ticket-1','ticket-2','ticket-3','ticket-4'] as const
@@ -31,10 +32,7 @@ export default function ExperienceCalculator() {
   const selected = skip ? skipped : manual
   const maxProgress = current === MAX_EXPERIENCE_LEVEL ? 0 : LEVEL_COSTS[current + 1] - 1
   return <div className={styles.page}>
-    <header className={styles.header}>
-      <span className={styles.eyebrow}>{t('tools')} / EXP</span>
-      <h1>{t('title')}</h1><p>{t('subtitle')}</p>
-    </header>
+    <PageHeader title={t('title')} description={t('subtitle')} />
     <div className={styles.workspace}>
       <div className={styles.inputs}>
         <section className={styles.panel} aria-labelledby="level-heading">

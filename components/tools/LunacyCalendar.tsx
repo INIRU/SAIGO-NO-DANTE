@@ -27,6 +27,7 @@ import {
   Toggle,
 } from "./LunacyControls";
 import css from "./LunacyCalendar.module.css";
+import PageHeader from "@/components/ui/PageHeader";
 const storageKey = (month: string) => `limbus-lunacy-plan-v1:${month}`;
 export default function LunacyCalendar() {
   const locale = useLocale();
@@ -149,20 +150,9 @@ export default function LunacyCalendar() {
   };
   return (
     <div className={css.page}>
-      <header className={css.hero}>
-        <div>
-          <p className={css.eyebrow}>TOOLS / LUNACY</p>
-          <h1>{t.title}</h1>
-          <p>{t.intro}</p>
-        </div>
-        <Image
-          src={getResourceIconUrl("lunacy")}
-          alt=""
-          width={112}
-          height={112}
-          priority
-        />
-      </header>
+      <PageHeader title={t.title} description={t.intro} actions={
+        <Image src={getResourceIconUrl("lunacy")} alt="" width={112} height={112} priority className="hidden h-12 w-12 opacity-70 sm:block" />
+      } />
       <LunacySettings
         plan={plan}
         lang={lang}

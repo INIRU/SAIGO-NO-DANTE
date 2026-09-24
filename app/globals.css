@@ -324,7 +324,7 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 .note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
 
 /* The rendered browse panel controls both server-rendered board headers. */
-.community-board .board-header { padding-top: 5.75rem; padding-bottom: 1.25rem; }
+.community-board .board-header { padding-top: 5.5rem; padding-bottom: 1.25rem; }
 .community-board .board-header-back { display: none; }
 .community-board:has([data-board-browse]) { height: 100dvh; min-height: 0; overflow: hidden; }
 html.board-browse, html.board-browse body { overflow: hidden; }
@@ -514,17 +514,15 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 
 /* ── Page-scoped additions: other pages keep the site defaults above. ── */
 /* Plan detail: the page height changes a lot while loading (skeleton, data, images); keep the page scrollbar's space. */
-html:has([data-plan-detail]) { scrollbar-gutter: stable; }
+html[data-with-plan-detail] { scrollbar-gutter: stable; }
 /* Assist run page and its PiP window only. */
-html:has([data-assist-run]), html[data-assist-pip] { scrollbar-gutter: stable; scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
+html:is([data-with-assist-run], [data-assist-pip]) { scrollbar-gutter: stable; scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
 /* Radix keeps the body scroll-locked; the root gutter already reserves its width. */
 @supports (scrollbar-gutter: stable) {
-  html:has([data-assist-run]) body[data-scroll-locked] { margin-right: 0 !important; }
+  html[data-with-assist-run] body[data-scroll-locked] { margin-right: 0 !important; }
 }
-html:has([data-assist-run])::-webkit-scrollbar, html:has([data-assist-run]) ::-webkit-scrollbar,
-html[data-assist-pip]::-webkit-scrollbar, html[data-assist-pip] ::-webkit-scrollbar { width: 8px; height: 8px; }
-html:has([data-assist-run])::-webkit-scrollbar-thumb, html:has([data-assist-run]) ::-webkit-scrollbar-thumb,
-html[data-assist-pip]::-webkit-scrollbar-thumb, html[data-assist-pip] ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
+html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar { width: 8px; height: 8px; }
+html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
 /* Preserve a visible keyboard cue even on borderless search fields. */
 :is([data-assist-run], html[data-assist-pip]) input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]):hover,
 :is([data-assist-run], html[data-assist-pip]) textarea:hover {
@@ -536,3 +534,16 @@ html[data-assist-pip]::-webkit-scrollbar-thumb, html[data-assist-pip] ::-webkit-
   outline-offset: 2px;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
 }
+
+
+/* deck & plan board cards */
+.board-card{background:#17120c;border:1px solid #2e2417;border-radius:0.5rem;transition:border-color .2s ease}
+.board-card:hover{border-color:#6b4c12}
+.board-card:focus-within{border-color:#c8900a}
+.plan-intro .note-document-content{min-height:7rem}
+
+/* Sticky bars sit right under the fixed navbar and move with it (Navbar sets html[data-nav-hidden]). */
+:root{--nav-offset:4rem}
+html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-running]){--nav-offset:0rem}
+.sticky-under-nav{position:sticky;top:var(--nav-offset);transition:top 300ms cubic-bezier(0.4,0,0.2,1)}
+@media (prefers-reduced-motion:reduce){.sticky-under-nav{transition:none}}

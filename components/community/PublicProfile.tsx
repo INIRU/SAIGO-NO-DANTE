@@ -5,6 +5,7 @@ import { Link } from "@/lib/i18n/navigation";
 import { Heart } from "lucide-react";
 import ProfileSummary from "./ProfileSummary";
 import { getCommunityCopy } from "@/lib/community/copy";
+import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import type { CommunityProfile } from "@/lib/community/rules";
 async function fetcher(url: string): Promise<CommunityProfile> {
   const r = await fetch(url);
@@ -14,6 +15,7 @@ async function fetcher(url: string): Promise<CommunityProfile> {
 export default function PublicProfile({ id }: { id: string }) {
   const locale = useLocale(),
     t = getCommunityCopy(locale);
+  useHtmlFlag("with-compact-footer");
   const { data, error, mutate } = useSWR(
     `/api/community/profiles/${id}`,
     fetcher,

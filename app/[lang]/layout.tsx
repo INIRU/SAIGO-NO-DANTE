@@ -14,6 +14,8 @@ import PageNavigation from '@/components/ui/PageNavigation'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import SetHtmlLang from '@/components/i18n/SetHtmlLang'
+import { KeywordProvider } from '@/components/providers/KeywordProvider'
+import { getKeywordData, localizeKeywordCatalog } from '@/lib/keywords/server-data'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 function absoluteUrl(path: string): string {
@@ -62,12 +64,14 @@ export default async function LangLayout({
 
   setRequestLocale(validLang)
 
-  const messages = await getMessages()
+  const [messages, keywordCatalog] = await Promise.all([getMessages(), getKeywordData()])
+  const keywords = localizeKeywordCatalog(keywordCatalog, validLang)
   const t = await getTranslations()
   const mainNavLabel = t('common.mainNav')
 
   return (
     <NextIntlClientProvider locale={validLang} messages={messages} timeZone="Asia/Seoul">
+      <KeywordProvider keywords={keywords}>
       <SetHtmlLang lang={validLang} />
       <SkipNav />
       <AprilFoolsWrapper />
@@ -77,6 +81,7 @@ export default async function LangLayout({
       <main id="main-content">{children}</main>
       <Footer />
       <PageNavigation />
+      </KeywordProvider>
     </NextIntlClientProvider>
   )
 }

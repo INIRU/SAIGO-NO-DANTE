@@ -325,8 +325,6 @@ export const translations = {
   'keyword.noResults.title': { ko: '결과 없음', en: 'No results', ja: '結果なし' },
   'keyword.noResults.subtitle': { ko: '검색어를 변경해 보세요.', en: 'Try different search terms.', ja: '検索語を変更してみてください。' },
   'keyword.loading': { ko: '불러오는 중...', en: 'Loading...', ja: '読み込み中...' },
-  'keyword.error.quote': { ko: '키워드 정보가 말을 안 들어.', en: "The keyword data won't cooperate.", ja: 'キーワード情報が言うことを聞かない。' },
-  'keyword.error.subQuote': { ko: '다시 한번 불러볼게.', en: "Let me try loading it again.", ja: 'もう一度読み込んでみるね。' },
 
   'identity.info.fragmentCost': { ko: '자아 파편', en: 'Ego Shards', ja: '自我破片' },
   'identity.info.permanent': { ko: '상시', en: 'Perm.', ja: '常時' },
@@ -522,10 +520,6 @@ export const translations = {
   'mirrorDungeon.event.noChoices': { ko: '선택지 정보 없음', en: 'No choice data', ja: '選択肢情報なし' },
   'mirrorDungeon.event.success': { ko: '성공', en: 'Success', ja: '成功' },
   'mirrorDungeon.event.failure': { ko: '실패', en: 'Failure', ja: '失敗' },
-
-  // Mirror Dungeon — Error page
-  'mirrorDungeon.error.title': { ko: '오류가 발생했습니다', en: 'An error occurred', ja: 'エラーが発生しました' },
-  'mirrorDungeon.error.retry': { ko: '다시 시도', en: 'Retry', ja: '再試行' },
 
   // Mirror Dungeon — Gift modal
   'mirrorDungeon.gift.effect': { ko: '효과', en: 'Effect', ja: '効果' },

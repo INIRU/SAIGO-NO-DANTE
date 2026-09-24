@@ -20,13 +20,13 @@ export async function renderOgPreview({ lang, eyebrow, title, subtitle, images =
   const width = layout === 'portrait' ? 510 : Math.floor((510 - (cols - 1) * 6) / Math.max(1, cols))
   const height = layout === 'formation' ? 156 : layout === 'collage' ? 202 : 414
   const [logo, ...art] = await Promise.all([
-    sharp(readFileSync(join(process.cwd(), 'public/images/logo.webp'))).resize(36, 48, { fit: 'inside' }).png().toBuffer().then(data => `data:image/png;base64,${data.toString('base64')}`),
+    sharp(readFileSync(join(process.cwd(), 'public/icons/icon.svg'))).resize(44, 44).png().toBuffer().then(data => `data:image/png;base64,${data.toString('base64')}`),
     ...images.slice(0, 12).map(url => fetchImageDataUri(url, { width, height, fit: 'cover', format: 'png', position: 'top' })),
   ])
   return new ImageResponse(
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0d0b08', color: '#eee5d2', padding: '44px 56px', fontFamily: 'Pretendard' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#d3a11c', fontFamily: 'Paperlogy', fontSize: 27 }}>
-        <img src={logo} width={36} height={48} alt="" />
+        <img src={logo} width={44} height={44} alt="" />
         {lang === 'ko' ? '최애의 관리자' : 'SAIGO NO DANTE'}
       </div>
       <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 48 }}>

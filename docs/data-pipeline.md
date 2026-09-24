@@ -98,6 +98,8 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 
 어시스트의 선택 테두리는 Drive 원본 `MainUI_MirrorDungeon4_4.png`(파일 ID `1tu_cNQt61d20xXAWco-sZbEqaFs76h7y`, SHA-256 `8f4d38e68080474f86b9255fa9f8c3e4b373b4bccf3e8e473232fd63b3d1176d`)의 좌상단 기준 영역 `(0, 210, 436, 950)`을 자른 `public/assets/game-ui/themes/selected-frame.webp`다. 크기는 436×740이며 무손실 WebP의 RGBA 픽셀 일치와 중앙 투명도를 확인했다. 선택한 팩에만 원본 테두리를 겹치고 중앙의 선택 문구는 UI에서 현지화한다.
 
+기프트 강화 표시(`-`, `+`, `++`)는 Drive 원본 `MainUI_MirrorDungeon7_2.png`(파일 ID `1gwEx4jyyhyDm8UrllNhuGTLSjus6V4Md`, SHA-256 `3d6f802ccbbeee38a1c5308955a919097012d89b08feab50634850969ffe5547`)에서 자른다. 원본은 `../assets/recovery-2026-09-24/game-ui-sources/`에 두고 `node scripts/assets/extract-gift-enhance-ui.mjs`로 `public/assets/game-ui/gift/enhance-*.webp`와 버전 해시를 갱신한다. 크림색은 강화 단계 선택 버튼, 주황색은 기프트 우상단 표시에 쓴다.
+
 ```bash
 LIMBUS_EXTRACTED_ASSET_ROOT="$HOME/Downloads/LimbusAssets" \
 LIMBUS_DATA_DIR="$HOME/Downloads/LimbusAssets-ready-2026-09-19/complete-data" \
@@ -141,6 +143,8 @@ SITE_URL=http://127.0.0.1:3000 npx tsx scripts/sync/identity-data.ts --rebuild-k
 ```
 
 bootstrap은 빈 DB의 수감자/EGO 기초 행과 해석별 스킬을 복구한다. 원본의 희소 단계 패치를 누적하고 실제 최대 단계까지만 생성한다. 스토리 전용 비공개 EGO 5개는 공개 카탈로그에서 제외한다. 해석 V가 있는 EGO는 7개이며 나머지에 V를 만들어 넣지 않는다.
+
+identity-data는 인격 스킬·패시브를 동기화 I~IV 모두 생성한다. 원본에 해당 단계 이하 데이터가 없는 스킬(대부분 S3, 동기화 III 해금)은 그 단계에서 만들지 않는다. `variant_order`는 최고 단계 값을 모든 단계에서 공유한다. 화면은 `(skill_order, variant_order)`·`(passive_type, passive_order)`별 최고 단계 행으로 중복을 제거하기 때문이다.
 
 테마팩의 `fixed_reward_gift_ids`는 `mirror-dungeon-data.ts`가 채운다. 테마팩 `mapGenOption.bossPool` 스테이지(`mirrordungeon-(ab)battle*`)의 `rewardList`에 확정 기프트가 하나 있고, 그 id가 `ego_gifts`에 있으면 저장한다. 2026-09-24 기준으로 익스트림 1511~1520 팩이 보상 기프트를 하나씩 준다(9250~9255, 9827~9830). 플랜 상세, 플래너 요약, Assist는 이 기프트를 해당 팩이 있는 층의 기프트로 자동 포함하고 팩 전용으로 표시한다.
 

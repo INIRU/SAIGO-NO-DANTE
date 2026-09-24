@@ -9,40 +9,9 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
-import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
-import { cacheLife, cacheTag } from 'next/cache'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { z } from 'zod'
-
-const KeywordRowSchema = z.object({
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  max_stack: z.number().nullable().optional(),
-  icon_slug: z.string().nullable().optional(),
-  sin_affinity: z.string().nullable().optional(),
-  effect_type: z.enum(['positive', 'negative', 'neutral']).nullable().optional(),
-  name_en: z.string().nullable().optional(),
-  name_jp: z.string().nullable().optional(),
-  description_en: z.string().nullable().optional(),
-  description_jp: z.string().nullable().optional(),
-})
-const KeywordRowsSchema = z.array(KeywordRowSchema)
-const KEYWORD_META_BASE_SELECT = 'name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp'
-const KEYWORD_META_EFFECT_SELECT = `${KEYWORD_META_BASE_SELECT}, effect_type`
-
-function isMissingEffectTypeError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const candidate = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown }
-  const text = [candidate.message, candidate.details, candidate.hint]
-    .filter((value): value is string => typeof value === 'string')
-    .join(' ')
-    .toLowerCase()
-  return candidate.code === '42703' || (text.includes('effect_type') && text.includes('column'))
-}
 
 // decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
 const songMyung = Song_Myung({
@@ -202,70 +171,15 @@ export const metadata: Metadata = {
     title: '최애의 관리자',
   },
   icons: {
-    icon: '/icons/icon-192x192.webp',
-    apple: '/icons/icon-192x192.webp',
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
   },
   other: {
     'mobile-web-app-capable': 'yes',
   },
-}
-
-async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
-  'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
-
-  const supabase = createAdminClient()
-  const allData: any[] = []
-
-  const fetchKeywordRows = async (selectColumns: string) => {
-    const rows: any[] = []
-    let from = 0
-    while (true) {
-      const { data, error } = await supabase
-        .schema('limbus')
-        .from('keyword_meta')
-        .select(selectColumns)
-        .range(from, from + 999)
-      if (error) return { rows, error }
-      if (!data || data.length === 0) break
-      rows.push(...data)
-      if (data.length < 1000) break
-      from += 1000
-    }
-    return { rows, error: null }
-  }
-
-  const effectResult = await fetchKeywordRows(KEYWORD_META_EFFECT_SELECT)
-  if (effectResult.error && isMissingEffectTypeError(effectResult.error)) {
-    const baseResult = await fetchKeywordRows(KEYWORD_META_BASE_SELECT)
-    allData.push(...baseResult.rows)
-  } else {
-    allData.push(...effectResult.rows)
-  }
-
-  const keywords: Record<string, KeywordInfo> = {}
-  let parsedRows: z.infer<typeof KeywordRowsSchema>
-  try {
-    parsedRows = KeywordRowsSchema.parse(allData)
-  } catch (parseErr) {
-    console.error('[layout] keyword_meta parse error:', parseErr)
-    parsedRows = []
-  }
-  for (const row of parsedRows) {
-    keywords[row.name] = {
-      desc: row.description ?? '',
-      ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
-      ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
-      ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
-      ...(row.effect_type ? { effectType: row.effect_type } : {}),
-      nameEn: row.name_en ?? null,
-      nameJp: row.name_jp ?? null,
-      descEn: row.description_en ?? null,
-      descJp: row.description_jp ?? null,
-    }
-  }
-  return keywords
 }
 
 export default async function RootLayout({
@@ -273,8 +187,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const keywords = await getKeywordData()
-
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${songMyung.variable} ${blackHanSans.variable} ${excelsiorSans.variable} ${mikodacs.variable} ${bebasKai.variable} ${kotraBold.variable} ${scDream.variable} ${pretendard.variable} ${paperlogy.variable} ${notoSansJP.variable} ${notoSansMono.variable}`}>
       <head>
@@ -288,9 +200,7 @@ export default async function RootLayout({
           <NuqsAdapter>
             <SessionProvider>
               <SWRProvider>
-                <KeywordProvider keywords={keywords}>
-                  <MotionConfig reducedMotion="user">{children}</MotionConfig>
-                </KeywordProvider>
+                <MotionConfig reducedMotion="user">{children}</MotionConfig>
               </SWRProvider>
             </SessionProvider>
           </NuqsAdapter>

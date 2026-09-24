@@ -1,5 +1,7 @@
 'use client'
 
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+
 import { useState, useMemo, useCallback, useRef, type CompositionEvent as ReactCompositionEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -349,11 +351,7 @@ export function buildKeywordPool(kwContext: Record<string, KeywordInfo>): Autoco
 }
 
 // ── EGO 기프트 풀 생성 헬퍼 ──────────────────────────────────────────────
-const EGO_GIFT_KW_COLORS: Record<string, string> = {
-  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
-  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
-  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888',
-}
+const EGO_GIFT_KW_COLORS = GIFT_KEYWORD_COLORS
 
 export function buildEgoGiftPool(
   gifts: { name: string; keyword: string; image_url: string | null }[]
