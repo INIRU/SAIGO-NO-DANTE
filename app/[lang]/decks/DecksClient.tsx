@@ -3,6 +3,7 @@
 import { notePlainText } from '@/lib/notes/blocks'
 
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react'
@@ -801,6 +802,7 @@ export default function DecksClient({
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+      <BoardBrowseLock />
 
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         {/* ── 필터 패널 ── */}

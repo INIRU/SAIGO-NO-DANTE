@@ -327,8 +327,8 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 .community-board .board-header { padding-top: 5.75rem; padding-bottom: 1.25rem; }
 .community-board .board-header-back { display: none; }
 .community-board:has([data-board-browse]) { height: 100dvh; min-height: 0; overflow: hidden; }
-html:has([data-board-browse]), body:has([data-board-browse]) { overflow: hidden; }
-body:has([data-board-browse]) :is(footer, [data-floating-font-control]) { display: none !important; }
+html.board-browse, html.board-browse body { overflow: hidden; }
+html.board-browse body :is(footer, [data-floating-font-control]) { display: none !important; }
 .community-board:has([data-board-browse]) .board-header { padding-top: 5.25rem; padding-bottom: 1.75rem; }
 .community-board:has([data-board-browse]) .board-header-overview { display: none; }
 .community-board:has([data-board-browse]) .board-header-back { display: flex; }
