@@ -125,7 +125,7 @@ it('keeps the next floor pending after its selection screen ends unread, until a
   expect(step(pending, first, { label: 'exploration', since: 200 })).toBe(2)
   expect(step(pending, first, null)).toBe(2)
   expect(step(step(pending, first, { label: 'unknown', since: 250 }), first, { label: 'exploration', since: 260 })).toBe(2)
-  // The planned and alternate packs stay offered for floor 2.
+  // The planned pack stays offered for floor 2.
   expect(getRunThemeGuidance({ ...first, currentFloor: pending! }, themes)[0]?.theme.id).toBe('1102')
   // The selection screen showing again while floor 2 is still open targets floor 2, not 3.
   expect(step(2, first, { label: 'theme_select', since: 300 })).toBe(2)

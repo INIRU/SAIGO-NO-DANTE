@@ -6,13 +6,12 @@ import type { ThemeData } from '../../../lib/planner/types'
 const theme = (id: string, floors: number[], normalFloors: number[] = []): ThemeData => ({ id, name: id, floor_info: { '하드': floors, '노말': normalFloors }, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
 const plan = (ids: string[]) => ids.map((theme_id, index) => ({ floor: index + 1, theme_id })) as NonNullable<ReturnType<typeof createInitialRunState>['sourcePlanSnapshot']>['floorPlan']
 
-it('orders the current planned pack first and allows only a reciprocal direct swap', () => {
+it('offers only the current planned pack, even when other planned packs could be swapped in', () => {
   const state = createInitialRunState('hard')
   state.sourcePlanSnapshot = { floorPlan: plan(['A', 'B', 'C']) }
   const guidance = getRunThemeGuidance(state, [theme('A', [1, 2, 3]), theme('B', [1, 2]), theme('C', [1, 3])])
-  expect(guidance.map(item => item.theme.id)).toEqual(['A', 'B', 'C'])
-  expect(guidance[1].remainingOrder.map(item => [item.floor, item.theme.id])).toEqual([[2, 'A'], [3, 'C']])
-  expect(guidance[2].remainingOrder.map(item => [item.floor, item.theme.id])).toEqual([[2, 'B'], [3, 'A']])
+  expect(guidance.map(item => item.theme.id)).toEqual(['A'])
+  expect(guidance[0].remainingOrder.map(item => [item.floor, item.theme.id])).toEqual([[2, 'B'], [3, 'C']])
 })
 
 it('rejects one-way and three-floor-chain alternatives', () => {
@@ -46,14 +45,13 @@ it('replays two consecutive direct swaps through already observed future slots',
   expect(state.sourcePlanSnapshot.floorPlan?.map(entry => entry.theme_id)).toEqual(['A', 'B', 'C'])
 })
 
-it('uses actual floor difficulty for both sides of the exchange', () => {
+it('uses the floor\'s actual difficulty for the planned pack', () => {
   const state = createInitialRunState('hard')
   state.sourcePlanSnapshot = { floorPlan: plan(['A', 'B']) }
-  state.floorLogs[1].difficulty = 'normal'
   const themes = [theme('A', [1, 2], []), theme('B', [1, 2], [2])]
   expect(getRunThemeGuidance(state, themes).map(item => item.theme.id)).toEqual(['A'])
-  state.floorLogs[1].difficulty = 'hard'
-  expect(getRunThemeGuidance(state, themes).map(item => item.theme.id)).toEqual(['A', 'B'])
+  state.floorLogs[0].difficulty = 'normal'
+  expect(getRunThemeGuidance(state, themes)).toEqual([])
 })
 
 it('does not suggest packs from completed, selected, or skipped plan floors', () => {
@@ -61,7 +59,7 @@ it('does not suggest packs from completed, selected, or skipped plan floors', ()
   state.sourcePlanSnapshot = { floorPlan: plan(['A', 'B', 'C']) }
   const themes = [theme('A', [1, 2, 3]), theme('B', [1, 2, 3]), theme('C', [1, 2, 3])]
   state.floorLogs[1].completedAt = '2026-09-23T00:00:00Z'
-  expect(getRunThemeGuidance(state, themes).map(item => item.theme.id)).toEqual(['A', 'C'])
+  expect(getRunThemeGuidance(state, themes).map(item => item.theme.id)).toEqual(['A'])
   state.floorLogs[2].themeId = 'C'
   expect(getRunThemeGuidance(state, themes).map(item => item.theme.id)).toEqual(['A'])
   state.floorLogs[0].themeId = 'A'
