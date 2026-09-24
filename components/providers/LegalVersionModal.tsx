@@ -31,51 +31,42 @@ const LEGAL_MODAL_COPY = {
     toastError: '확인 기록을 저장하지 못했습니다.',
     modalTitle: '법률 문서 업데이트',
     closeLabel: '법률 문서 안내 닫기',
-    eyebrow: '법률 문서',
-    heading: '약관 및 개인정보 처리방침이 갱신되었습니다',
-    description: '계속 이용하기 전에 최신 문서를 확인해 주세요. 비로그인 공개 탐색은 차단하지 않습니다.',
-    currentVersion: '현재 버전',
-    acknowledgedVersion: '확인한 버전',
-    noAcknowledgement: '없음',
-    latest: '최신',
+    heading: '약관과 개인정보 처리방침이 바뀌었어요',
+    description: '바뀐 내용을 확인한 뒤 계속 이용해 주세요.',
     terms: '이용약관',
     privacy: '개인정보 처리방침',
     saving: '저장 중...',
-    confirm: '확인했습니다',
+    confirm: '확인했어요',
+    versionLabel: '버전',
+    open: '열기',
   },
   en: {
     toastSuccess: 'Legal document acknowledgement was saved.',
     toastError: 'We could not save your acknowledgement.',
     modalTitle: 'Legal document update',
     closeLabel: 'Close legal document notice',
-    eyebrow: 'Legal update',
     heading: 'Terms and Privacy Policy have been updated',
-    description: 'Please review the latest documents before continuing. Public browsing while signed out is not blocked.',
-    currentVersion: 'Current version',
-    acknowledgedVersion: 'Acknowledged version',
-    noAcknowledgement: 'None',
-    latest: 'Latest',
+    description: 'Please review what changed before you continue.',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
     saving: 'Saving...',
-    confirm: 'I have reviewed them',
+    confirm: 'I’ve reviewed them',
+    versionLabel: 'Version',
+    open: 'Open',
   },
   ja: {
     toastSuccess: '法的文書の確認を記録しました。',
     toastError: '確認記録を保存できませんでした。',
     modalTitle: '法的文書の更新',
     closeLabel: '法的文書のお知らせを閉じる',
-    eyebrow: '法的文書',
     heading: '利用規約とプライバシーポリシーが更新されました',
-    description: '続行する前に最新の文書を確認してください。ログアウト中の公開閲覧はブロックされません。',
-    currentVersion: '現在のバージョン',
-    acknowledgedVersion: '確認済みバージョン',
-    noAcknowledgement: 'なし',
-    latest: '最新',
+    description: '変更内容を確認してからご利用ください。',
     terms: '利用規約',
     privacy: 'プライバシーポリシー',
     saving: '保存中...',
     confirm: '確認しました',
+    versionLabel: 'バージョン',
+    open: '開く',
   },
 } as const
 
@@ -147,53 +138,33 @@ export default function LegalVersionModal() {
   if (!shouldShow) return null
   if (!mounted) return null
 
+  const documents = [{ href: `${legalPathPrefix}/terms`, label: copy.terms }, { href: `${legalPathPrefix}/privacy`, label: copy.privacy }]
   return (
-    <BaseModal open onClose={() => {}} title={copy.modalTitle} maxWidth="31rem" blur={false}>
-      <section className="rounded-md border" style={{ background: '#1a1510', borderColor: 'rgba(200,144,10,0.24)', boxShadow: '0 1rem 2rem rgba(13,11,8,0.48)' }}>
-        <header className="flex items-start justify-between gap-3 border-b" style={{ borderColor: 'rgba(200,144,10,0.14)', padding: '1rem' }}>
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex shrink-0 items-center justify-center rounded-sm border" style={{ width: '2rem', height: '2rem', borderColor: 'rgba(200,144,10,0.28)', color: 'var(--gold)' }}>
-              <FileText size="1rem" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-mono uppercase" style={{ color: '#8a7a5a', fontSize: '0.6875rem' }}>{copy.eyebrow}</p>
-              <h2 className="mt-1 font-serif" style={{ color: '#d6be7a', fontSize: '1.125rem', fontWeight: 700 }}>{copy.heading}</h2>
-            </div>
-          </div>
-          <button type="button" onClick={() => setHidden(true)} className="rounded-sm border transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]" style={{ borderColor: 'rgba(200,144,10,0.18)', color: '#8a7a5a', padding: '0.375rem' }} aria-label={copy.closeLabel}>
-            <X size="1rem" aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="space-y-4" style={{ padding: '1rem' }}>
-          <p style={{ color: '#9a8a6a', fontSize: '0.8125rem', lineHeight: 1.65 }}>{copy.description}</p>
-          <dl className="grid gap-2 md:grid-cols-2">
-            <div className="rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.12)', padding: '0.75rem' }}>
-              <dt className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>{copy.currentVersion}</dt>
-              <dd className="mt-1 font-mono" style={{ color: '#c8a450', fontSize: '0.8125rem' }}>{currentVersion ?? copy.latest}</dd>
-            </div>
-            <div className="rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.12)', padding: '0.75rem' }}>
-              <dt className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>{copy.acknowledgedVersion}</dt>
-              <dd className="mt-1 font-mono" style={{ color: '#9a8a6a', fontSize: '0.8125rem' }}>{legal?.acknowledgedVersion ?? copy.noAcknowledgement}</dd>
-            </div>
-          </dl>
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-3">
-              <Link href={`${legalPathPrefix}/terms`} className="text-sm text-[var(--gold)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">{copy.terms}</Link>
-              <Link href={`${legalPathPrefix}/privacy`} className="text-sm text-[var(--gold)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">{copy.privacy}</Link>
-            </div>
-            <button
-              type="button"
-              onClick={acknowledge}
-              disabled={submitting}
-              className="rounded-sm border transition-colors hover:bg-[rgba(200,144,10,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ borderColor: 'rgba(200,144,10,0.36)', color: 'var(--gold)', padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}
-            >
-              {submitting ? copy.saving : copy.confirm}
-            </button>
-          </div>
-        </div>
+    <BaseModal open onClose={() => {}} title={copy.modalTitle} maxWidth="26rem" blur={false}>
+      <section className="relative rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
+        <button type="button" onClick={() => setHidden(true)} aria-label={copy.closeLabel}
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md text-[#8a7d69] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+          <X size={16} aria-hidden="true" />
+        </button>
+        <h2 className="pr-8 text-[1.25rem] font-bold leading-snug text-[#f0e6d2]">{copy.heading}</h2>
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>
+        {currentVersion && <p className="mt-1 text-[0.8125rem] text-[#7d7160]">{copy.versionLabel} {currentVersion}</p>}
+        <ul className="mt-5 overflow-hidden rounded-lg border border-[#2e2417]">
+          {documents.map(document => (
+            <li key={document.href} className="border-t border-[#2e2417] first:border-t-0">
+              <Link href={document.href} target="_blank"
+                className="flex min-h-12 items-center gap-3 px-4 text-[0.9375rem] font-semibold text-[#e8dcc8] transition-colors hover:bg-[rgba(200,144,10,0.06)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold)]">
+                <FileText size={16} aria-hidden="true" className="shrink-0 text-[var(--gold)]" />
+                <span className="flex-1">{document.label}</span>
+                <span className="text-[0.8125rem] font-medium text-[#8a7d69]">{copy.open}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <button type="button" onClick={acknowledge} disabled={submitting}
+          className="mt-5 min-h-12 w-full rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[#0d0b08] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60">
+          {submitting ? copy.saving : copy.confirm}
+        </button>
       </section>
     </BaseModal>
   )
