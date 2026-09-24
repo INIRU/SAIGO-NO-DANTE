@@ -8,7 +8,7 @@ vi.mock('@/lib/i18n/navigation', () => ({
 vi.mock('@/components/notes/NoteEditorGuide', () => ({ default: () => null }))
 
 const header = (kind: 'deck' | 'planner', assist?: string) => renderToStaticMarkup(
-  <BoardHeader kind={kind} lang="ko" title="플랜 게시판" subtitle="s" eyebrow="e" action="새 플랜 만들기" assist={assist} />,
+  <BoardHeader kind={kind} lang="ko" title="플랜 게시판" subtitle="s" action="새 플랜 만들기" assist={assist} />,
 )
 
 it('opens Assist Mode setup from the planner board without any plan handoff', () => {

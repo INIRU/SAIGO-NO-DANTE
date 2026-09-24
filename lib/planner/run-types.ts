@@ -145,6 +145,7 @@ function normalizeIdentitySlots(value: unknown): IdentitySlot[] {
       game_id: typeof slot.game_id === 'string' ? slot.game_id : null,
       folder_name: typeof slot.folder_name === 'string' ? slot.folder_name : null,
       slot_order: typeof slot.slot_order === 'number' && Number.isInteger(slot.slot_order) ? slot.slot_order : 99,
+      ...(slot.uptie === 1 || slot.uptie === 2 || slot.uptie === 3 ? { uptie: slot.uptie } : {}),
     }]
   })
 }

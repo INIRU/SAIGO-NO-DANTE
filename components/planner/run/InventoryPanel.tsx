@@ -10,6 +10,8 @@ import { findAvailableFusions, computeKeywordDistribution } from '@/lib/planner/
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, getIdentityGiftConditionKeywords } from '@/lib/planner/gift-condition-status'
 import KeywordChart from '@/components/planner/KeywordChart'
 import GiftArtwork from '@/components/ui/GiftArtwork'
+import GiftCatalog, { giftKeywordIcon, toCatalogGift } from '@/components/gifts/GiftCatalog'
+import type { EgoGift } from '@/components/mirror-dungeon/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
@@ -36,8 +38,9 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
   }
 
   const inventoryGifts = useMemo(() =>
-    state.giftInventory.map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[]
+    [...new Set(state.giftInventory)].map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[]
   , [state.giftInventory, giftMap])
+  const catalogGifts = useMemo(() => inventoryGifts.map(toCatalogGift), [inventoryGifts])
 
   const keywordDist = useMemo(() =>
     computeKeywordDistribution(state.identitySlots.map(getIdentityGiftConditionKeywords))
@@ -65,33 +68,32 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
       {inventoryGifts.length === 0 ? (
         <p style={{ fontSize: '0.6875rem', color: '#555', padding: '0.5rem 0' }}>{t('noHeldGifts')}</p>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.75rem' }}>
-          {inventoryGifts.map((gift, i) => {
-            const cond = getConditionStatus(gift)
-            return (
-              <div key={`${gift.game_id}-${i}`} className="group relative w-12 shrink-0">
-                <button type="button" aria-label={giftName(gift)} title={`${giftName(gift)}${cond ? ` (${t(cond.level === 'unmet' ? 'conditionUnmet' : 'conditionWarn')}: ${cond.text})` : ''}`} onClick={event => { modalTriggerRef.current = event.currentTarget; setModalGift(gift) }} className="block w-full focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
-                  <GiftArtwork gift={gift} displayName={giftName(gift)} sizes="48px">
-                  {cond && (
-                    <div style={{
-                      position: 'absolute', inset: 0, zIndex: 15,
-                      background: cond.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <span style={{ fontSize: '0.4375rem', fontWeight: 700, color: cond.level === 'unmet' ? '#ef4444' : '#e8b030', textShadow: '0 0 0.25rem rgba(0,0,0,0.9)' }}>
-                        {t(cond.level === 'unmet' ? 'unmet' : 'warn')}
-                      </span>
-                    </div>
-                  )}
-                  </GiftArtwork>
+        // 미러 던전 기프트 목록처럼 키워드별로 묶는다. 누르면 상세, 모서리 ×로 뺀다.
+        <div className="mb-3">
+          <GiftCatalog
+            gifts={catalogGifts}
+            getGiftKeywordIcon={giftKeywordIcon}
+            onGiftClick={(gift: EgoGift) => {
+              const data = giftMap.get(Number(gift.id))
+              if (!data) return
+              modalTriggerRef.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null
+              setModalGift(data)
+            }}
+            cardProps={(gift: EgoGift) => {
+              const data = giftMap.get(Number(gift.id))
+              if (!data) return undefined
+              return { conditionStatus: getConditionStatus(data) }
+            }}
+            renderBadge={(gift: EgoGift) => {
+              const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+              return (
+                <button type="button" aria-label={t('removeGift', { name })} onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: gift.id })}
+                  className="absolute -right-1 -top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-red-800 text-white transition-opacity focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] sm:opacity-0 sm:focus-visible:opacity-100 sm:[:hover>&]:opacity-100">
+                  <X size={12} aria-hidden />
                 </button>
-                <button aria-label={t('removeGift', { name: giftName(gift) })} onClick={(e) => { e.stopPropagation(); dispatch({ type: 'REMOVE_GIFT', giftId: String(gift.game_id) }) }}
-                  className="absolute -right-1 -top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-red-800 text-white opacity-100 transition-opacity focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                  <X size={12} />
-                </button>
-              </div>
-            )
-          })}
+              )
+            }}
+          />
         </div>
       )}
 
