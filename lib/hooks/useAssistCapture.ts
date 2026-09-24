@@ -13,7 +13,7 @@ import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detectio
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
-  fusionConfirmation, fusionDialogClosed, fusionMaterials,
+  fusionConfirmation, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
@@ -234,6 +234,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // A wheel state read ahead of any dialog while the scene worker is idle (the complete wheel may be up for ~0.3 s).
   const wheelRequest = useRef<{ requestId: number; state: WheelFrame; capacity: number } | null>(null)
   const wheelAnchors = useRef<{ anchors: WheelAnchors; at: number } | null>(null)
+  // Capture time of the latest OCR read showing the fusion screen's title: the fusion screen in any UI theme.
+  const fusionTitleAt = useRef(0)
   // The result box of a crop taken while OCR read the selection screen: other crops count as the wheel only if their box
   // matches it (a dialog, popup or prompt over the wheel reads as confident nonsense). Browser memory only.
   const wheelReference = useRef<Float32Array | null>(null)
@@ -336,6 +338,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     wheelFrames.current = []
     wheelRequest.current = null
     wheelAnchors.current = null
+    fusionTitleAt.current = 0
     wheelReference.current = null
     lastDialogAt.current = 0
     dialogBreakAt.current = 0
@@ -620,7 +623,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           }
         }
         heldAcquisitions.current.push(evidence)
-        if (latestLabel.current === 'fusion' || fusionWanted.current) {
+        if (onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) || fusionWanted.current) {
           scheduleRelease()
           return
         }
@@ -660,7 +663,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const resolve = resolvePopupRef.current
         const giftId = resolve && popupHeaderEvidence(header)
           ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects, gifts: catalog.gifts }),
-            materials: popupDialogMaterials(pending.capturedAt) }, verdict, latestLabel.current === 'fusion' ||
+            materials: popupDialogMaterials(pending.capturedAt) }, verdict, onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) ||
             (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
           : verdict
         if (!giftId) return
@@ -956,12 +959,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const now = Date.now()
           const profile = profileRef.current
           // A fusion confirmation dialog is often up for about a second: read the fusion screen more often.
-          // The fusion screen is sometimes classified as the shop: a selection screen read recently counts too.
+          // The classifier may miss the fusion screen (read as the shop, or another UI theme): its title read recently counts too.
           // The sell window counts too: its confirmation dialog is up for only 0.5-0.7 s. So does the skill replacement window.
-          const fusionScreen = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < 3000) ||
+          const fusionScreen = onFusionScreen(latestLabel.current, fusionTitleAt.current, now) ||
             now - sellWindowAt.current < 3000 || now - skillWindowAt.current < 3000
           const want = detectionRef.current
-          if (!want.events && !want.themes && !(want.gifts && fusionScreen)) return
+          // Gifts alone still read the screen at the idle rate: only OCR finds the fusion and sell screens when the classifier misses them.
+          if (!want.events && !want.themes && !want.gifts) return
           const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event)
             : now - eventHintAt < 5000 ? profile.recognizeMs.event : profile.recognizeMs.idle
           // With one shared worker, queued popups go first, but only for one extra interval.
@@ -980,7 +984,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (!alive(lane)) { frame.close(); return }
             ocrCapture.current = { at, floor: currentFloor.current, width: frame.width, height: frame.height }
             // The fusion screen belongs to the shop and may be classified either way; one copy at a time, closed on the next.
-            if (latestLabel.current === 'fusion' || latestLabel.current === 'shop' || latestLabel.current === null) {
+            if (latestLabel.current === 'shop' || latestLabel.current === null || onFusionScreen(latestLabel.current, fusionTitleAt.current, at)) {
               const copy = await createImageBitmap(frame)
               fusionFrame.current?.frame.close()
               fusionFrame.current = { frame: copy, at }
@@ -1065,7 +1069,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               if (want.gifts) readSale(result.text, result.words, capture)
               readSkillWindow(result.text, capture.at)
               const confirmation = fusionConfirmation(result.text)
-              const fusionScreen = /기프트합성/.test(result.text.normalize('NFKC').replace(/\s+/g, ''))
+              const fusionScreen = showsFusionTitle(result.text)
+              if (fusionScreen) {
+                fusionTitleAt.current = Math.max(fusionTitleAt.current, capture.at)
+                // The PiP and scene consumers follow the same fusion decision as the reader, whatever the classifier said.
+                setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
+              }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
               // A result with no dialog seen (dialoglessFusionResult): its materials come from the wheel states before it,
               // read like a dialog's, with the capacity of this session's earlier dialog.
@@ -1292,9 +1301,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const pruned = wheelFrames.current.filter(item => now - item.lastAt <= WHEEL_KEEP_MS)
         for (const item of wheelFrames.current) if (!pruned.includes(item)) item.frame.close()
         wheelFrames.current = pruned
-        const onFusion = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < WHEEL_KEEP_MS)
         const source = video.current
-        if (wheelBusy || !onFusion || !source || source.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !source.videoWidth) return
+        if (wheelBusy || !onFusionScreen(latestLabel.current, fusionTitleAt.current, now) || !source ||
+          source.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !source.videoWidth) return
         wheelBusy = true
         try {
           const frameSize = { width: source.videoWidth, height: source.videoHeight }
@@ -1337,8 +1346,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       /** Reads the newest unread wheel state while the fusion screen is up and the worker has nothing else to do. */
       const preReadWheel = async () => {
         const now = Date.now()
-        const onFusion = latestLabel.current === 'fusion' || (wheelAnchors.current !== null && now - wheelAnchors.current.at < WHEEL_KEEP_MS)
-        if (inFlight.current || popupVisionQueue.current.length || !worker.current || !onFusion) return false
+        if (inFlight.current || popupVisionQueue.current.length || !worker.current || !onFusionScreen(latestLabel.current, fusionTitleAt.current, now)) return false
         // The shop capacity of this session when known; otherwise both layouts (the first fusion of a session).
         const capacities = lastCapacity.current && now - lastCapacity.current.at < CAPACITY_KEEP_MS ? [lastCapacity.current.capacity] : [3, 5]
         const after = lastDialogAt.current + WHEEL_AFTER_DIALOG_MS
@@ -1442,7 +1450,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               if (candidate?.label === result.label) candidate.count++
               else sceneCandidate.current = { label: result.label, at: capture.at, count: 1 }
               const held = sceneCandidate.current!
-              if (held.count >= 2) setScene(current => current?.label === held.label ? current : { label: held.label, since: held.at })
+              // A recently read fusion title outranks the classifier (it learned the brown UI only); gift popups still show.
+              const label = held.label !== 'gift_acquired' && onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion' : held.label
+              if (held.count >= 2) setScene(current => current?.label === label ? current : { label, since: held.at })
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
             // Fusion screens are read too: their confirmation dialog names how many materials are about to be consumed.

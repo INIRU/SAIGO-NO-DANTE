@@ -25,6 +25,23 @@ const base = arg('base', 'http://localhost:3300'), lang = arg('lang', 'ko'), mod
 const headed = !flag('headless'), tailSec = Number(arg('tail', 8)), readyTimeout = Number(arg('ready-timeout', 180))
 /** --mask x,y,w,h[;x,y,w,h]: rectangles blacked out in every frame (video pixels). */
 const mask = arg('mask') ? arg('mask').split(';').map(part => part.split(',').map(Number)) : null
+/**
+ * --recolor black: approximate the game's black UI theme (no real footage exists). Warm, low-chroma pixels (the brown
+ * panels, frames and title plates) become grey: dark and mid tones are darkened toward black, light tones (text) keep
+ * their lightness. Strong colors (grade plates, hazard stripes, orange highlights) stay. Gift artwork is not themed in
+ * the game, so the icon squares of the fusion wheel, dialog and result popup (RECOLOR_KEEP, 1920×1080 units) are left
+ * as they are; icons elsewhere (owned list) lose some browns.
+ */
+const recolor = arg('recolor', null)
+/** --scene-miss: every 'fusion' scene prediction reaches the app as 'enhance', as if the classifier failed on an unseen UI theme. */
+const sceneMiss = flag('scene-miss')
+/** --detect gifts[,events,themes]: only these detection kinds are on (default: all). */
+const detect = arg('detect', null)
+const RECOLOR_KEEP = [
+  ...[[544, 308], [337, 515], [751, 515], [554, 316], [357, 388], [746, 388], [357, 543], [746, 543]].map(([x, y]) => [x - 50, y - 50, 100, 100]),
+  ...[373, 697, 1021].map(x => [x - 90, 368, 180, 180]), ...[296, 490, 686, 880, 1074].map(x => [x - 50, 414, 100, 100]),
+  [520, 345, 195, 195],
+]
 const tag = arg('tag', '')
 
 /** Serves one file with HTTP Range support (Chrome seeks inside large MP4s this way). */
@@ -49,7 +66,8 @@ function pageInit(cfg) {
     sessionStorage.setItem('__replaySeeded', '1')
     localStorage.setItem('md-run-draft', JSON.stringify({ state: cfg.runState, version: 0 }))
     localStorage.setItem('limbus-assist-recognition-mode', cfg.mode)
-    localStorage.removeItem('limbus-assist-detection')
+    if (cfg.detect) localStorage.setItem('limbus-assist-detection', JSON.stringify(Object.fromEntries(['gifts', 'themes', 'events'].map(kind => [kind, cfg.detect.split(',').includes(kind)]))))
+    else localStorage.removeItem('limbus-assist-detection')
   }
   const R = window.__replay = { log: [], clock: [], worker: [], video: null, ready: { scene: false, ocr: {} } }
   const vt = () => R.video ? R.video.currentTime : null
@@ -69,6 +87,46 @@ function pageInit(cfg) {
     // Warm-up loops on the seconds before the segment until the harness starts the segment.
     video.addEventListener('timeupdate', () => { if (!R.started && video.currentTime > cfg.start - 0.2) video.currentTime = cfg.warmupStart })
     push('stream', {})
+    if (cfg.recolor === 'black') {
+      // Per-frame shader over the whole frame; mask rectangles are painted black afterwards in the same pass.
+      const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight
+      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
+      const shader = (type, source) => { const s = gl.createShader(type); gl.shaderSource(s, source); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s }
+      const program = gl.createProgram()
+      gl.attachShader(program, shader(gl.VERTEX_SHADER, '#version 300 es\nin vec2 p; out vec2 uv; void main(){ uv = vec2((p.x+1.)/2., (1.-p.y)/2.); gl_Position = vec4(p,0.,1.); }'))
+      gl.attachShader(program, shader(gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float; in vec2 uv; out vec4 o; uniform sampler2D t; uniform vec4 masks[4]; uniform int maskCount; uniform vec2 size; uniform vec4 keep[17];
+void main(){
+  vec3 c = texture(t, uv).rgb;
+  vec2 px = uv * size;
+  for (int i = 0; i < 4; i++) if (i < maskCount && px.x >= masks[i].x && px.y >= masks[i].y && px.x < masks[i].x + masks[i].z && px.y < masks[i].y + masks[i].w) { o = vec4(0.,0.,0.,1.); return; }
+  vec2 unit = px * 1920.0 / size.x;
+  for (int i = 0; i < 17; i++) if (unit.x >= keep[i].x && unit.y >= keep[i].y && unit.x < keep[i].x + keep[i].z && unit.y < keep[i].y + keep[i].w) { o = vec4(c, 1.); return; }
+  float chroma = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+  // Warm hue: red >= green >= blue (browns, tans, beige, dull gold).
+  float warm = step(c.b, c.g) * step(c.g, c.r + 0.02);
+  float chrome = warm * (1.0 - smoothstep(0.25, 0.35, chroma)) * smoothstep(0.015, 0.04, chroma);
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  // Dark/mid tones to near black, light tones (text) keep their lightness.
+  float g = mix(l * 0.35, l, smoothstep(0.45, 0.7, l));
+  o = vec4(mix(c, vec3(g), chrome), 1.0);
+}`))
+      gl.bindAttribLocation(program, 0, 'p'); gl.linkProgram(program); gl.useProgram(program)
+      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture())
+      for (const [key, value] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, key, value)
+      const rects = (cfg.mask ?? []).slice(0, 4)
+      gl.uniform4fv(gl.getUniformLocation(program, 'masks'), new Float32Array([...rects.flat(), ...Array(16 - rects.length * 4).fill(0)]))
+      gl.uniform1i(gl.getUniformLocation(program, 'maskCount'), rects.length)
+      gl.uniform2f(gl.getUniformLocation(program, 'size'), canvas.width, canvas.height)
+      gl.uniform4fv(gl.getUniformLocation(program, 'keep'), new Float32Array(cfg.recolorKeep.flat()))
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      const draw = () => { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); video.requestVideoFrameCallback(draw) }
+      video.requestVideoFrameCallback(draw)
+      R.recolorCanvas = canvas
+      return canvas.captureStream(60)
+    }
     if (!cfg.mask) return video.captureStream()
     // Masked replay: every frame is drawn to a canvas with the given rectangles painted black (e.g. a recorded PiP window).
     const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight
@@ -82,6 +140,14 @@ function pageInit(cfg) {
   window.Worker = function (url, options) {
     const worker = new NativeWorker(url, options)
     const name = String(url).includes('ocr') ? 'ocr' : 'scene'
+    if (cfg.sceneMiss && name === 'scene') {
+      let handler = null
+      Object.defineProperty(worker, 'onmessage', { get: () => handler, set: value => { handler = value } })
+      worker.addEventListener('message', event => {
+        const data = event.data?.type === 'prediction' && event.data.label === 'fusion' ? { ...event.data, label: 'enhance' } : event.data
+        handler?.call(worker, data === event.data ? event : new MessageEvent('message', { data }))
+      })
+    }
     const id = name + ':' + Math.random().toString(36).slice(2, 6)
     const send = worker.postMessage.bind(worker)
     const frames = new Map()
@@ -332,7 +398,8 @@ async function main() {
     const outDir = arg('out', '.'); fs.mkdirSync(outDir, { recursive: true })
     const { server, url } = await serveFile(truth.video)
     const warmupStart = Math.max(0, truth.start - Number(arg('warmup', 4)))
-    const { page, hmr } = await openPage(browser, { runState: runState(truth.seed, truth.floor ?? 1), mode, videoUrl: url, start: truth.start, warmupStart, mask })
+    const { page, hmr } = await openPage(browser, { runState: runState(truth.seed, truth.floor ?? 1), mode, videoUrl: url, start: truth.start, warmupStart, mask,
+      recolor, recolorKeep: RECOLOR_KEEP, sceneMiss, detect })
     const button = page.locator('header button:has(svg.lucide-monitor-up)')
     await button.waitFor({ timeout: 180000 })
     hmr.frozen = true
@@ -363,7 +430,7 @@ async function main() {
     // Capture/observation timestamps to video time.
     for (const row of record.log) for (const key of ['capturedAt', 'observedAt', 'lastSeenAt', 'closedAt']) if (row[key] !== undefined) row[key + 'Vt'] = toVideoTime(record.clock, row[key])
     const evaluation = evaluate(truth, record)
-    const result = { case: truth.id, mode, mask, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
+    const result = { case: truth.id, mode, mask, recolor, sceneMiss, detect, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
       appFiles: appFileHashes(), stopped: record.log.filter(row => row.kind === 'captureState' && row.at >= record.startedAt && row.state !== 'running').map(row => ({ vt: row.vt, state: row.state })),
       ocrEngines: record.ocrEngines, evaluation, events: record.log.filter(row => row.at >= record.startedAt - 500), worker: record.worker.filter(row => row.at >= record.startedAt - 500 && row.type !== 'infer'),
       raw: { initialInventory: record.initialInventory, startedAt: record.startedAt, log: record.log.filter(row => row.kind !== 'toast') } }

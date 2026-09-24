@@ -6,6 +6,23 @@
 
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 
+/**
+ * The fusion screen's "E.G.O 기프트 합성" title, also read under its dialog and result popups. The E.G.O prefix (OCR often
+ * reads O as 0) keeps the shop's two-line "기프트 / 합성" button out.
+ */
+export const showsFusionTitle = (text: string) => /E\.?G\.?[O0]\.?기프트합성/i.test(normalized(text))
+
+/** How long a read of that title keeps the fusion screen on after the capture it came from. */
+export const FUSION_TITLE_KEEP_MS = 4000
+
+/**
+ * Whether the fusion screen is up: the scene classifier says so, or OCR read its title (captured at `titleAt`) moments ago.
+ * The classifier learned the default brown UI and may miss the screen in another UI theme (black); the text is the same.
+ */
+export function onFusionScreen(label: string | null, titleAt: number, now: number): boolean {
+  return label === 'fusion' || now - titleAt < FUSION_TITLE_KEEP_MS
+}
+
 export type FusionCapacity = 3 | 5
 export interface FusionConfirmation { count: number; capacity: FusionCapacity }
 
