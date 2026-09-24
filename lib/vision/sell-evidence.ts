@@ -1,0 +1,122 @@
+/**
+ * Gift sales in the shop's "E.G.O 기프트 판매" window (Korean client). A sale shows no acquisition popup: the only
+ * evidence is the confirmation dialog "[이름]을(를) 코스트 N에 판매하시겠습니까?" (about 0.5-0.7 s) and the cost in the top
+ * right, "current ▸ after sale" while a gift is selected. Cancel and confirm both close the dialog, so a sale counts only
+ * once the cost afterwards starts with the cost before plus the price (video review 2026-09-24, 13 sales).
+ *
+ * Real OCR (scripts/vision/bench_ocr_modes.ts): dialog lines arrive out of order and split ("트 | 150에"), brackets mix
+ * ("[빛나는 잔영]을(를]") or lose the opening "[", and the arrow between the two costs is dropped ("129229"), or read as
+ * "683-783" / "356 506". Everything below is read with that in mind.
+ */
+import type { OcrReference } from './ocr-match'
+
+export interface SellDialog { name: string; price: number }
+export interface PendingSale extends SellDialog { giftId: string; at: number; costBefore: number }
+export const SALE_CONFIRM_MS = 5000
+
+const key = (value: string) => value.normalize('NFKC').replace(/[\s[\]()「」『』【】·.,:;!?'"~\-|]/g, '').toLowerCase()
+const compact = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
+
+/** Gift name and price from a full-frame read that shows the sell confirmation dialog, in any line order. */
+export function sellDialog(text: string): SellDialog | null {
+  const flat = compact(text)
+  if (!flat.includes('판매하시겠')) return null
+  const name = flat.match(/\[?([^[\]()|]{1,40}?)[\])]을[([]를/)?.[1]
+  const price = flat.match(/트(\d{1,4})에/)?.[1]
+  return name && price ? { name, price: Number(price) } : null
+}
+
+/** Whether a read is the sell window (its title), where the top-right cost belongs to selling. */
+export function isSellWindow(text: string): boolean {
+  return compact(text).includes('기프트판매')
+}
+
+/** Digit groups of the top-right cost display, in reading order: ["129229"], ["683", "783"] or ["683"]. */
+export function sellCost(words: { text: string; left: number; top: number; width: number; height: number }[], width: number, height: number): string[] {
+  return words.filter(word => word.left >= width * 0.7 && word.top + word.height <= height * 0.2)
+    .sort((first, second) => first.left - second.left)
+    .flatMap(word => word.text.normalize('NFKC').match(/\d{2,8}/g) ?? [])
+}
+
+/** The cost before selling: the first group, or where a merged "beforeafter" splits into two costs that differ by the price. */
+export function costBeforeSale(cost: readonly string[], price: number): number | null {
+  if (!cost.length) return null
+  if (cost.length > 1) return Number(cost[0])
+  const digits = cost[0]
+  for (let at = 1; at < digits.length; at++)
+    if (Number(digits.slice(at)) - Number(digits.slice(0, at)) === price && digits[at] !== '0') return Number(digits.slice(0, at))
+  return Number(digits)
+}
+
+/** The one gift whose name matches (spacing and brackets ignored), or that uniquely ends with a clipped read of it. */
+export function sellGiftId(name: string, gifts: readonly OcrReference[]): string | null {
+  const wanted = key(name)
+  if (wanted.length < 2) return null
+  const unique = (test: (text: string) => boolean) => {
+    const owners = new Set(gifts.filter(gift => gift.texts.some(text => test(key(text)))).map(gift => gift.id))
+    return owners.size === 1 ? [...owners][0] : null
+  }
+  return unique(text => text === wanted) ?? (wanted.length >= 3 ? unique(text => text.length - wanted.length <= 2 && text.endsWith(wanted)) : null)
+}
+
+/** A read after the dialog decides it: the cost starts with before + price (sold) or with before (cancelled). */
+export function saleOutcome(pending: PendingSale, cost: readonly string[], at: number): 'sold' | 'cancelled' | 'expired' | null {
+  if (at - pending.at > SALE_CONFIRM_MS) return 'expired'
+  const digits = cost.join('')
+  if (!digits) return null
+  if (digits.startsWith(String(pending.costBefore + pending.price))) return 'sold'
+  if (digits.startsWith(String(pending.costBefore))) return 'cancelled'
+  return null
+}
+
+/**
+ * Leaving the sell window right after the last sale: the shop screen shows the same currency, so the sold total there
+ * (and no longer the total before) settles it; anything else leaves the sale open until it expires.
+ */
+export function soldOnShopScreen(pending: PendingSale, text: string): boolean {
+  const numbers = new Set(text.normalize('NFKC').match(/\d{2,5}/g) ?? [])
+  return numbers.has(String(pending.costBefore + pending.price)) && !numbers.has(String(pending.costBefore))
+}
+
+export interface SaleState {
+  pending: PendingSale | null
+  /** The dialog the latest reads showed; a read without it ends it, so the next dialog is a new sale. */
+  dialog: { name: string; price: number; at: number } | null
+  /** The last sell-window cost read outside a dialog, for the cost before the next sale. */
+  lastCost: { cost: string[]; at: number } | null
+}
+export const EMPTY_SALE_STATE: SaleState = { pending: null, dialog: null, lastCost: null }
+
+/**
+ * One full-frame read of the shop. The confirmation dialog opens a pending sale at the cost read before it (unreadable
+ * first frames retry on the next read). Nothing is decided while that dialog is still up, because the cost then still
+ * shows "before ▸ after". A later read settles it: the sell window's cost rose by the price (sold) or not (cancelled),
+ * a following dialog shows the new cost, a dialog read while closing already shows the sold total, or the shop screen
+ * shows it after leaving at once.
+ */
+export function readSaleStep(state: SaleState, read: { at: number; text: string; cost: string[]; giftId: (name: string) => string | null }):
+  { state: SaleState; sold: PendingSale[] } {
+  const { at, text, cost } = read
+  const sold: PendingSale[] = []
+  let { pending, dialog: seen, lastCost } = state
+  const sellWindow = isSellWindow(text)
+  const dialog = sellDialog(text)
+  const sameDialog = !!dialog && !!seen && seen.name === dialog.name && seen.price === dialog.price && at - seen.at < 1500
+  if (pending && at > pending.at && !sameDialog) {
+    const outcome = sellWindow ? saleOutcome(pending, cost, at)
+      : at - pending.at > SALE_CONFIRM_MS ? 'expired' : soldOnShopScreen(pending, text) ? 'sold' : null
+    if (outcome === 'sold') sold.push(pending)
+    if (outcome) pending = null
+  }
+  if (!dialog) return { state: { pending, dialog: null, lastCost: sellWindow && cost.length ? { cost, at } : lastCost }, sold }
+  if (sameDialog) return { state: { pending, dialog: { ...seen!, at }, lastCost }, sold }
+  const giftId = read.giftId(dialog.name)
+  const recent = lastCost && at - lastCost.at < 10_000 ? lastCost.cost : []
+  const before = costBeforeSale(recent, dialog.price) ?? costBeforeSale(cost, dialog.price)
+  if (!giftId || before === null) return { state: { pending: null, dialog: null, lastCost }, sold }
+  const sale = { ...dialog, giftId, at, costBefore: before }
+  const digits = cost.join('')
+  const closing = recent.length > 0 && digits.startsWith(String(before + dialog.price)) && !digits.startsWith(String(before))
+  if (closing) sold.push(sale)
+  return { state: { pending: closing ? null : sale, dialog: { ...dialog, at }, lastCost }, sold }
+}

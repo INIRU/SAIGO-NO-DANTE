@@ -16,6 +16,8 @@ import FloorProgress from '@/components/planner/run/FloorProgress'
 import FloorPanel from '@/components/planner/run/FloorPanel'
 import CompanionPanel from '@/components/planner/run/CompanionPanel'
 import RecognitionModeControl from '@/components/planner/run/RecognitionModeControl'
+import DetectionToggles from '@/components/planner/run/DetectionToggles'
+import { DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
@@ -66,7 +68,13 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     setRecognitionMode(next)
     try { window.localStorage.setItem(RECOGNITION_MODE_STORAGE_KEY, next) } catch { /* the choice still applies to this session */ }
   }
-  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode,
+  const [detection, setDetection] = useState<DetectionSettings>(DEFAULT_DETECTION)
+  useEffect(() => { setDetection(readDetectionSettings(window.localStorage)) }, [])
+  const changeDetection = (next: DetectionSettings) => {
+    setDetection(next)
+    try { window.localStorage.setItem(DETECTION_STORAGE_KEY, JSON.stringify(next)) } catch { /* applies to this session */ }
+  }
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection,
     language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
@@ -144,6 +152,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             observedGiftIds={observedGiftIds} popupAcquisitions={capture.status === 'running' ? capture.popupAcquisitions : []}
             events={events} eventChoices={eventChoices} eventChoiceEvidence={eventChoiceEvidence}
             captureRunning={capture.status === 'running'} scene={capture.status === 'running' ? capture.scene : null}
+            prediction={capture.status === 'running' ? capture.prediction : null}
+            giftSales={capture.status === 'running' ? capture.giftSales : []}
             themeSelectionFloor={capture.status === 'running' ? capture.themeSelectionFloor : null}
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
@@ -160,9 +170,16 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       {state.phase === 'playing' && !capture.mobile && <div className="mb-4 max-w-3xl" data-recognition-mode-control>
         <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}
           note={capture.status === 'running' ? t('recognitionModeLiveNote') : undefined}
-          options={{ performance: { label: t('recognitionModePerformance'), description: t('recognitionModePerformanceHint') },
+          options={{ fastest: { label: t('recognitionModeFastest'), description: t('recognitionModeFastestHint') },
+            performance: { label: t('recognitionModePerformance'), description: t('recognitionModePerformanceHint') },
             balanced: { label: t('recognitionModeBalanced'), description: t('recognitionModeBalancedHint') },
             quality: { label: t('recognitionModeQuality'), description: t('recognitionModeQualityHint') } }} />
+        <div className="mt-3">
+          <DetectionToggles value={detection} onChange={changeDetection} label={t('detectionLabel')}
+            options={{ gifts: { label: t('detectionGifts'), description: t('detectionGiftsHint') },
+              themes: { label: t('detectionThemes'), description: t('detectionThemesHint') },
+              events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
+        </div>
       </div>}
       {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-5 rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-3 text-sm text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
       {state.phase === 'playing' && !capture.mobile && <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'}

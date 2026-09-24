@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { PictureInPicture2, RotateCcw, RotateCw, Settings2 } from 'lucide-react'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
 import { getCurrentFloorPriorityGifts, nextGiftPromotion, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
-import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor } from '@/lib/planner/run-theme-guidance'
+import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
@@ -17,12 +17,13 @@ import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import type { FloorThemeObservation, FusionEvidence, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
-import { fusionMaterialsToRemove, fusionResultFollows } from '@/lib/vision/fusion-evidence'
+import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
+import { fusionForResult, fusionMaterialsToRemove, returnedMaterials } from '@/lib/vision/fusion-evidence'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import CompanionEventChoices from './CompanionEventChoices'
 import CompanionAcquisitionOverlay, { fusionFeedback, type AcquisitionOverlayEvent } from './CompanionAcquisitionOverlay'
 import CompanionNextFloorButton from './CompanionNextFloorButton'
+import CompanionStartGifts from './CompanionStartGifts'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
 
 type HistoryEntry = { before: RunState; after: RunState; beforeKey: string; afterKey: string; pendingFloor: number | null }
@@ -44,21 +45,25 @@ interface Props {
   giftMap: Map<number, GiftData>
   observedGiftIds?: number[]
   popupAcquisitions?: PopupAcquisition[]
+  /** Confirmed shop sales, latest last. */
+  giftSales?: GiftSale[]
   events?: MdEvent[]
   eventChoices?: MdEventChoice[]
   eventChoiceEvidence?: { eventId: number; observedAt: number; floor: number | null } | null
   captureRunning?: boolean
   scene?: StableScene | null
+  /** Latest raw classifier frame; only used to leave the run start quickly. */
+  prediction?: { label: string; confidence: number } | null
   themeSelectionFloor?: { floor: number; observedAt: number } | null
   floorThemeObservation?: FloorThemeObservation | null
   /** Exploration floor read in two separate captures while capture runs. */
   observedFloor?: number | null
-  /** Fusion materials identified on the confirmation dialog in two captures. */
-  fusionEvidence?: FusionEvidence | null
+  /** Fusion materials identified on each confirmation dialog, latest last. */
+  fusionEvidence?: FusionEvidence[] | null
 }
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
-  themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null }: Props) {
+  themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [] }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -77,12 +82,15 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   const consumedPopupTokens = useRef(new Set<string>())
   const consumedThemeTokens = useRef(new Set<string>())
   const consumedFusionTokens = useRef(new Set<string>())
-  // Recent fusion dialogs: a result popup belongs to the dialog it directly follows, even if a newer one was read already.
+  // Recent fusion dialogs: a result popup belongs to the latest one confirmed before it in capture time.
   const recentFusions = useRef<FusionEvidence[]>([])
+  // Popups skipped because their gift was still listed; a fusion applied later that removes it makes them real acquisitions.
+  const listedPopups = useRef<PopupAcquisition[]>([])
   // The latest result-like popup, recorded as an automatic acquisition (afterKey) or skipped because the gift was already
   // listed (listedKey), so a fusion confirmed just after it can still be applied.
   const lastResultPopup = useRef<{ giftId: string; capturedAt: number | undefined; afterKey?: string; listedKey?: string } | null>(null)
-  if (fusionEvidence) recentFusions.current = [...recentFusions.current.filter(item => item.token !== fusionEvidence.token), fusionEvidence].slice(-4)
+  for (const evidence of fusionEvidence ?? []) recentFusions.current = [...recentFusions.current.filter(item => item.token !== evidence.token), evidence].slice(-8)
+  const fusionTokens = (fusionEvidence ?? []).map(item => item.token).join('|')
   // Floors whose pack the user cleared (outside this panel's own history) during this run phase.
   const userClearedFloors = useRef(new Set<number>())
   const previousState = useRef(state)
@@ -107,6 +115,10 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   const pendingSince = useRef<{ floor: number | null; at: number | null }>({ floor: null, at: null })
   if (selectionFloor !== null && pendingSince.current.floor !== selectionFloor) pendingSince.current = { floor: selectionFloor, at: Date.now() }
   const viewFloor = selectionFloor ?? state.currentFloor
+  // Run start: until the first pack selection screen is recognized, capture shows the plan's start and observation gifts.
+  const startEnded = useRef(false)
+  startEnded.current = runStartEnded(startEnded.current, { state, scene, header: themeSelectionFloor, selectionFloor, prediction })
+  const startPhase = captureRunning && state.phase === 'playing' && !startEnded.current
   const theme = selectionFloor === null ? themes.find(item => item.id === log?.themeId) : undefined
   // Sightings only promote gifts on confirmed non-combat screens; battle and uncertain scenes keep the order.
   const giftPromotion = useRef<GiftPromotion | null>(null)
@@ -156,6 +168,20 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     setHistoryVersion(value => value + 1)
     return true
   }
+  // A confirmed sale removes one copy of the gift as its own Undo step, announced like consumed materials.
+  const consumedSaleTokens = useRef(new Set<string>())
+  const saleTokens = giftSales.map(sale => sale.token).join('|')
+  useEffect(() => {
+    if (current.current.phase !== 'playing') return
+    for (const sale of giftSales) {
+      if (consumedSaleTokens.current.has(sale.token)) continue
+      consumedSaleTokens.current.add(sale.token)
+      const gift = giftMap.get(Number(sale.giftId))
+      if (!gift || !current.current.giftInventory.includes(sale.giftId)) continue
+      if (record({ type: 'REMOVE_GIFT', giftId: sale.giftId }))
+        announce([{ kind: 'consumed', token: `${sale.token}:sold`, at: Date.now(), materials: [{ gift, name: localized(gift) }], label: t('giftSold') }])
+    }
+  }, [saleTokens])
   /** floor: omitted = current floor (manual picks); from a screen observation, its floor or null for inventory only. */
   function acquire(id: number, event?: MouseEvent<HTMLButtonElement>, automatic = false, floor?: number | null) {
     const nextId = availableGifts[availableGifts.findIndex(gift => gift.game_id === id) + 1]?.game_id
@@ -176,23 +202,35 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const entry = undoStack.current.at(-1)
     lastResultPopup.current = undoStack.current.length > before && entry ? { giftId: String(id), capturedAt, afterKey: entry.afterKey } : null
   }
+  function acquireFromPopup(evidence: PopupAcquisition) {
+    acquireAutomatically(Number(evidence.giftId), evidence.capturedAt, acquisitionAttributionFloor(current.current, { evidenceFloor: evidence.floor,
+      pendingFloor: pendingSince.current.floor, pendingSince: pendingSince.current.at,
+      pendingActive: pendingFloor.current !== null && pendingFloor.current === pendingSince.current.floor, capturedAt: evidence.capturedAt }))
+  }
+  /** A material that came back with the fusion's result (e.g. by a blessing) and was skipped as still listed is acquired again. */
+  function restoreReturned(fusion: FusionEvidence, removed: string[]) {
+    const returned = returnedMaterials(fusion, removed, listedPopups.current)
+    listedPopups.current = listedPopups.current.filter(item => !returned.includes(item))
+    for (const evidence of returned) acquireFromPopup(evidence)
+  }
   /**
    * Fusion evidence that arrives after its result popup was already handled. An acquisition that is still the latest
    * step, with nothing changed since, is replaced by one fusion step from the same starting state (one Undo restores the
    * materials and removes the result); otherwise, while the result is still listed and every material is present, the
-   * materials leave as their own step. Anything else leaves the inventory as it is.
+   * materials leave as their own step. Anything else leaves the inventory as it is. Only the latest fusion confirmed before
+   * that popup (in capture time) can claim it.
    */
   useEffect(() => {
-    const fusion = fusionEvidence
     const last = lastResultPopup.current
-    if (!fusion || consumedFusionTokens.current.has(fusion.token) || !last || !fusionResultFollows(fusion, last.capturedAt)) return
+    const fusion = last && fusionForResult(recentFusions.current, last.capturedAt)
+    if (!fusion || !last || consumedFusionTokens.current.has(fusion.token)) return
     if (last.listedKey !== undefined) {
       if (keyOf(current.current) !== last.listedKey) return
       const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
       if (!materials?.length) return
       consumedFusionTokens.current.add(fusion.token)
       lastResultPopup.current = null
-      fuse(Number(last.giftId), materials, fusion.token)
+      if (fuse(Number(last.giftId), materials, fusion.token)) restoreReturned(fusion, materials)
       return
     }
     const entry = undoStack.current.at(-1)
@@ -202,7 +240,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       if (!materials?.length || !current.current.giftInventory.includes(last.giftId)) return
       consumedFusionTokens.current.add(fusion.token)
       lastResultPopup.current = null
-      fuse(Number(last.giftId), materials, fusion.token)
+      if (fuse(Number(last.giftId), materials, fusion.token)) restoreReturned(fusion, materials)
       return
     }
     const materials = fusionMaterialsToRemove(fusion.materials, entry.before.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
@@ -222,7 +260,8 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     announce(fusionFeedback(fusion.token, Date.now(), entry.after.giftInventory, current.current.giftInventory, last.giftId, describeGift))
     const gift = giftMap.get(Number(last.giftId))
     if (gift) toast.success(t('fusionAutoApplied', { name: localized(gift), count: materials.length }))
-  }, [fusionEvidence?.token])
+    restoreReturned(fusion, materials)
+  }, [fusionTokens])
   const describeGift = (id: string) => { const gift = giftMap.get(Number(id)); return gift ? { gift, name: localized(gift) } : null }
   const announce = (events: AcquisitionOverlayEvent[]) => { if (events.length) setAcquisitionEvents(items => [...items.slice(-31), ...events]) }
   /**
@@ -238,7 +277,9 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     return true
   }
   useEffect(() => {
-    if (state.phase !== 'playing') { consumedThemeTokens.current.clear(); consumedFusionTokens.current.clear(); recentFusions.current = [] }
+    if (state.phase !== 'playing') {
+      consumedThemeTokens.current.clear(); consumedFusionTokens.current.clear(); recentFusions.current = []; listedPopups.current = []
+    }
   }, [state.phase])
   useEffect(() => {
     const before = previousState.current
@@ -267,21 +308,20 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       const id = Number(evidence.giftId)
       if (!Number.isInteger(id) || !giftMap.has(id) || AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(evidence.giftId)) continue
       // The result popup of a confirmed fusion: the identified materials leave the inventory in the same step, even when
-      // the result is already listed (an earlier fusion's materials were not all seen).
-      const fusion = recentFusions.current.filter(item => !consumedFusionTokens.current.has(item.token) && fusionResultFollows(item, evidence.capturedAt))
-        .sort((first, second) => first.observedAt - second.observedAt).at(-1)
-      if (fusion) {
+      // the result is already listed (an earlier fusion's materials were not all seen). Further popups of an applied
+      // fusion (a material returned with its result) are plain acquisitions and never claim an older fusion.
+      const fusion = fusionForResult(recentFusions.current, evidence.capturedAt)
+      if (fusion && !consumedFusionTokens.current.has(fusion.token)) {
         consumedFusionTokens.current.add(fusion.token)
         const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
-        if (materials?.length && fuse(id, materials, fusion.token)) continue
+        if (materials?.length && fuse(id, materials, fusion.token)) { restoreReturned(fusion, materials); continue }
       }
       if (current.current.giftInventory.includes(evidence.giftId)) {
         lastResultPopup.current = { giftId: evidence.giftId, capturedAt: evidence.capturedAt, listedKey: keyOf(current.current) }
+        listedPopups.current = [...listedPopups.current.slice(-7), evidence]
         continue
       }
-      acquireAutomatically(id, evidence.capturedAt, acquisitionAttributionFloor(current.current, { evidenceFloor: evidence.floor,
-        pendingFloor: pendingSince.current.floor, pendingSince: pendingSince.current.at,
-        pendingActive: pendingFloor.current !== null && pendingFloor.current === pendingSince.current.floor, capturedAt: evidence.capturedAt }))
+      acquireFromPopup(evidence)
     }
   }, [popupAcquisitions, state.phase, giftMap])
   function undo() {
@@ -331,6 +371,15 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const columns = Math.max(1, Math.min(count || 1, Math.floor((availableWidth + 6) / 62)))
     const cell = Math.max(52, Math.min(76, Math.floor((availableWidth - (columns - 1) * 6) / columns)))
     const artwork = Math.max(44, Math.min(64, cell - 8))
+    if (startPhase) {
+      const { start, observe } = planStartGiftIds(state)
+      const gifts = (ids: number[]) => ids.flatMap(id => giftMap.get(id) ?? [])
+      return <div data-companion-content={inPip ? 'pip' : 'inline'} className="space-y-3">
+        <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</div>
+        <div className="flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
+        <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={new Set(state.giftInventory.map(id => parseInt(id, 10)))} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
+      </div>
+    }
     const themeCount = guidance.length
     const themeColumns = Math.min(themeCount || 1, 3)
     const themeRows = Math.ceil(themeCount / themeColumns) || 1

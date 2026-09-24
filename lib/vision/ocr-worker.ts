@@ -3,13 +3,13 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
-import { ctcDecode, detSize, detTensor, fillRecLine, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects,
-  type TextRect } from './paddle-text'
+import { ctcDecode, detSize, detTensor, fillRecLine, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT,
+  textRects, tileGrid, type TextRect } from './paddle-text'
 
 type Language = 'ko' | 'en' | 'ja'
 type Request =
   | { type: 'init'; language: Language }
-  | { type: 'recognize'; requestId: number; frame: ImageBitmap; mode?: 'full' | 'line' | 'word'; detSide?: number }
+  | { type: 'recognize'; requestId: number; frame: ImageBitmap; mode?: 'full' | 'line' | 'word'; detSide?: number; grid?: number; tileScale?: number }
   | { type: 'popup'; requestId: number; frame: ImageBitmap; box: { x: number; y: number; width: number; height: number } }
   | { type: 'explore'; requestId: number; frame: ImageBitmap }
   | { type: 'dispose' }
@@ -252,15 +252,22 @@ function pixels(source: CanvasImageSource, x: number, y: number, width: number, 
   return context.getImageData(0, 0, outWidth, outHeight).data
 }
 
-/** Detection then recognition of every text line in a region of `source` (source pixels), capped at `maxLines`. */
-async function paddleLines(source: CanvasImageSource, region: { x: number; y: number; width: number; height: number },
-  detLimit: { side: number; type: 'max' | 'min' }, maxLines: number) {
+/** Text line boxes in a region of `source`, in source pixels, capped at `maxLines`. */
+async function detectRects(source: CanvasImageSource, region: { x: number; y: number; width: number; height: number },
+  detLimit: { side: number; type: 'max' | 'min' }, maxLines: number): Promise<TextRect[]> {
   const engine = paddle
   if (!engine) throw new Error('GPU OCR unavailable')
   const size = detSize(region.width, region.height, detLimit.side, detLimit.type)
   const map = await runModel(engine.det, detTensor(pixels(source, region.x, region.y, region.width, region.height, size.width,
     size.height), size.width, size.height), [1, 3, size.height, size.width])
-  const rects = textRects(map.data, map.dims[3], map.dims[2], region.width, region.height, maxLines)
+  return textRects(map.data, map.dims[3], map.dims[2], region.width, region.height, maxLines)
+    .map(rect => ({ ...rect, x: rect.x + region.x, y: rect.y + region.y }))
+}
+
+/** Recognition of line boxes (source pixels) read from `source` at native resolution. */
+async function recognizeRects(source: CanvasImageSource, rects: TextRect[]) {
+  const engine = paddle
+  if (!engine) throw new Error('GPU OCR unavailable')
   const lines: { text: string; score: number; rect: TextRect }[] = new Array(rects.length)
   // Similar aspect ratios share a batch, as in the official batching, so padding stays small.
   const order = rects.map((_, index) => index).sort((first, second) =>
@@ -272,16 +279,22 @@ async function paddleLines(source: CanvasImageSource, region: { x: number; y: nu
     batch.forEach((index, slot) => {
       const rect = rects[index]
       const lineWidth = recLineWidth(rect, width)
-      fillRecLine(input, slot, width, pixels(source, region.x + rect.x, region.y + rect.y, rect.width, rect.height, lineWidth, REC_HEIGHT), lineWidth)
+      fillRecLine(input, slot, width, pixels(source, rect.x, rect.y, rect.width, rect.height, lineWidth, REC_HEIGHT), lineWidth)
     })
     const logits = await runModel(engine.rec, input, [batch.length, 3, REC_HEIGHT, width])
     const [, steps, classes] = logits.dims
     batch.forEach((index, slot) => {
       const decoded = ctcDecode(logits.data, slot, steps, classes, engine.alphabet)
-      lines[index] = { ...decoded, rect: { ...rects[index], x: rects[index].x + region.x, y: rects[index].y + region.y } }
+      lines[index] = { ...decoded, rect: rects[index] }
     })
   }
   return lines
+}
+
+/** Detection then recognition of every text line in a region of `source` (source pixels), capped at `maxLines`. */
+async function paddleLines(source: CanvasImageSource, region: { x: number; y: number; width: number; height: number },
+  detLimit: { side: number; type: 'max' | 'min' }, maxLines: number) {
+  return recognizeRects(source, await detectRects(source, region, detLimit, maxLines))
 }
 
 const lineWords = (lines: { text: string; score: number; rect: TextRect }[]): OcrWord[] => lines.flatMap(line =>
@@ -338,11 +351,25 @@ async function readExplorationPaddle(frame: ImageBitmap) {
   return { floorText: banner.text.slice(0, 100), themeReads: below.length ? [lineWords(below.slice(0, 1))] : [] }
 }
 
-/** Full-frame reading for event and pack screens: detection at `detSide` (default 960) px on the long side, at most 80 lines. */
-async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960) {
-  const side = Number.isFinite(detSide) ? Math.min(1600, Math.max(640, Math.round(detSide))) : 960
-  const lines = await paddleLines(canvas, { x: 0, y: 0, width: canvas.width, height: canvas.height }, { side, type: 'max' },
-    FULL_FRAME_LINES)
+/**
+ * Full-frame reading for event and pack screens, at most 80 lines. One pass detects the whole frame at `detSide` px on
+ * the long side. With `grid` > 1 the frame is detected as overlapping tiles, each enlarged by `tileScale` over its
+ * native size, and lines cut by tile edges are joined before recognition reads them once from the full-size frame.
+ */
+async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960, grid = 1, tileScale = 1) {
+  const frame = { x: 0, y: 0, width: canvas.width, height: canvas.height }
+  let rects: TextRect[]
+  if (Number.isInteger(grid) && grid > 1 && grid <= 4) {
+    const scale = Number.isFinite(tileScale) ? Math.min(2, Math.max(1, tileScale)) : 1
+    const perTile: TextRect[][] = []
+    for (const tile of tileGrid(canvas.width, canvas.height, grid))
+      perTile.push(await detectRects(canvas, tile, { side: Math.round(Math.min(tile.width, tile.height) * scale), type: 'min' }, FULL_FRAME_LINES))
+    rects = mergeTileRects(perTile).slice(0, FULL_FRAME_LINES)
+  } else {
+    const side = Number.isFinite(detSide) ? Math.min(1600, Math.max(640, Math.round(detSide))) : 960
+    rects = await detectRects(canvas, frame, { side, type: 'max' }, FULL_FRAME_LINES)
+  }
+  const lines = await recognizeRects(canvas, rects)
   return { text: lines.map(line => line.text).join('\n').slice(0, 20000), words: lineWords(lines) }
 }
 
@@ -461,7 +488,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       const result = await viaPaddle(() => readExplorationPaddle(frame)) ?? await readExploration(frame)
       if (!disposed) respond({ type: 'exploreResult', requestId, ...result })
     } else if (!request.mode || request.mode === 'full') {
-      const result = await viaPaddle(() => recognizePaddle(canvas, request.detSide))
+      const result = await viaPaddle(() => recognizePaddle(canvas, request.detSide, request.grid, request.tileScale))
       if (result) {
         if (!disposed) respond({ type: 'result', requestId, ...result })
       } else {

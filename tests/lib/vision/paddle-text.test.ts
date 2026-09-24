@@ -1,5 +1,27 @@
 import { expect, it } from 'vitest'
-import { ctcDecode, detSize, detTensor, fillRecLine, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects } from '../../../lib/vision/paddle-text'
+import { ctcDecode, detSize, detTensor, fillRecLine, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid } from '../../../lib/vision/paddle-text'
+
+it('slices a frame into overlapping tiles that cover every pixel', () => {
+  const tiles = tileGrid(1920, 1080, 2)
+  expect(tiles).toHaveLength(4)
+  expect(tiles[0]).toEqual({ x: 0, y: 0, width: 1104, height: 621 })
+  expect(tiles[3]).toEqual({ x: 816, y: 459, width: 1104, height: 621 })
+  for (const x of [0, 959, 960, 1919]) for (const y of [0, 539, 540, 1079])
+    expect(tiles.some(t => x >= t.x && x < t.x + t.width && y >= t.y && y < t.y + t.height)).toBe(true)
+})
+
+it('joins a line cut by a tile edge and drops overlap duplicates, keeping separate lines apart', () => {
+  const rect = (x: number, y: number, width: number, height = 20, score = 0.9) => ({ x, y, width, height, score })
+  const merged = mergeTileRects([
+    [rect(700, 100, 404), rect(100, 300, 200), rect(400, 300, 200)],
+    [rect(820, 102, 380, 19), rect(900, 300, 100)],
+    [rect(100, 700, 150)],
+    [],
+  ])
+  expect(merged).toEqual([
+    rect(700, 100, 500, 21), rect(100, 300, 200), rect(400, 300, 200), rect(900, 300, 100), rect(100, 700, 150),
+  ])
+})
 
 it('sizes the detector input to multiples of 32 within the side limit', () => {
   expect(detSize(1920, 1080, 960, 'max')).toEqual({ width: 960, height: 544 })

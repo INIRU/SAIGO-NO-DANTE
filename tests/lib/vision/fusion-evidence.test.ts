@@ -141,6 +141,8 @@ describe('selection wheel geometry', () => {
     expect(isFusionSelectionScreen(screen)).toBe(true)
     expect(isFusionSelectionScreen(`${screen} 선택한 E.G.O 기프트를 조합하시겠습니까?`)).toBe(false)
     expect(isFusionSelectionScreen(`${screen} E.G.O 기프트를 획득했습니다.`)).toBe(false)
+    // The companion window shared beside the game: its gift list and acquisition notices keep the wheel readable.
+    expect(isFusionSelectionScreen(`${screen} 이번 층 획득 가능 기프트 ✓ 획득 붉게 물든 목화`)).toBe(true)
     // The starlight prompt over the selection screen.
     expect(isFusionSelectionScreen(`${screen} 별빛을 5 소모하여 합성 확률을 증가시키겠습니까? 취소 확인`)).toBe(false)
     expect(isFusionSelectionScreen('상점 새로고침 키워드')).toBe(false)

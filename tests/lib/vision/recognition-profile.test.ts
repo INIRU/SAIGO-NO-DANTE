@@ -8,20 +8,27 @@ it('defaults to balanced and keeps only a valid stored mode', () => {
   expect(readRecognitionMode(storage(null))).toBe('balanced')
   expect(readRecognitionMode(storage('quality'))).toBe('quality')
   expect(readRecognitionMode(storage('performance'))).toBe('performance')
+  expect(readRecognitionMode(storage('fastest'))).toBe('fastest')
   expect(readRecognitionMode(storage('turbo'))).toBe('balanced')
   expect(readRecognitionMode(null)).toBe('balanced')
   expect(readRecognitionMode({ getItem: () => { throw new Error('blocked') } })).toBe('balanced')
 })
 
-it('maps every control option to a real processing profile: 1 OCR worker, then 2, quality reading more', () => {
+it('maps every control option to a real processing profile, each mode reading at least as much as the lighter one', () => {
   expect(Object.keys(RECOGNITION_PROFILES).sort()).toEqual([...RECOGNITION_MODES].sort())
-  const { performance, balanced, quality } = RECOGNITION_PROFILES
-  expect([performance.ocrWorkers, balanced.ocrWorkers, quality.ocrWorkers]).toEqual([1, 2, 2])
-  expect(performance.sceneIntervalMs).toBeGreaterThan(balanced.sceneIntervalMs)
-  expect(performance.recognizeMs.idle).toBeGreaterThan(balanced.recognizeMs.idle)
-  expect(quality.fullFrameDetSide).toBeGreaterThan(balanced.fullFrameDetSide)
-  expect(quality.popupAttempts).toBe(balanced.popupAttempts + 1)
-  expect(quality.recognizeMs.event).toBeLessThanOrEqual(balanced.recognizeMs.event)
+  const { fastest, performance, balanced, quality } = RECOGNITION_PROFILES
+  expect([fastest, performance, balanced, quality].map(p => p.ocrWorkers)).toEqual([1, 1, 2, 2])
+  for (const [light, heavy] of [[fastest, performance], [performance, balanced], [balanced, quality]]) {
+    expect(heavy.sceneIntervalMs).toBeLessThanOrEqual(light.sceneIntervalMs)
+    expect(heavy.recognizeMs.idle).toBeLessThan(light.recognizeMs.idle)
+    expect(heavy.recognizeMs.event).toBeLessThan(light.recognizeMs.event)
+    expect(heavy.popupAttempts).toBeGreaterThanOrEqual(light.popupAttempts)
+    expect(heavy.fullFrameDetSide * heavy.fullFrameGrid * heavy.fullFrameTileScale)
+      .toBeGreaterThan(light.fullFrameDetSide * light.fullFrameGrid * light.fullFrameTileScale)
+  }
+  // Only quality tiles the frame; the others read it in one pass.
+  expect([fastest, performance, balanced].map(p => p.fullFrameGrid)).toEqual([1, 1, 1])
+  expect(quality.fullFrameGrid).toBe(2)
 })
 
 it('reads up to maxAttempts separate frames of one popup, each a new comparable capture', () => {

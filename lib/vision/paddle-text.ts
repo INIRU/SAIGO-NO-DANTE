@@ -20,6 +20,48 @@ export function detSize(width: number, height: number, limit: number, type: 'max
   return { width: Math.max(Math.round(width * ratio / 32) * 32, 32), height: Math.max(Math.round(height * ratio / 32) * 32, 32) }
 }
 
+/**
+ * Overlapping grid cells over a frame, as in slicing-aided inference (SAHI): each cell is detected at its own zoom so
+ * small UI text keeps more detector pixels than one downscaled full-frame pass. `overlap` is a fraction of a cell.
+ */
+export function tileGrid(width: number, height: number, grid: number, overlap = 0.15) {
+  const cellWidth = width / grid, cellHeight = height / grid
+  const padX = Math.round(cellWidth * overlap), padY = Math.round(cellHeight * overlap)
+  const tiles: { x: number; y: number; width: number; height: number }[] = []
+  for (let row = 0; row < grid; row++) for (let column = 0; column < grid; column++) {
+    const x = Math.max(0, Math.round(column * cellWidth) - padX), y = Math.max(0, Math.round(row * cellHeight) - padY)
+    tiles.push({ x, y, width: Math.min(width, Math.round((column + 1) * cellWidth) + padX) - x,
+      height: Math.min(height, Math.round((row + 1) * cellHeight) + padY) - y })
+  }
+  return tiles
+}
+
+/**
+ * Lines found per tile, in frame pixels, merged across tiles: a box from another tile that overlaps a line horizontally
+ * and shares most of its height is the same line (an overlap duplicate or the other half of a line cut by a tile edge),
+ * so the two become their union. Boxes from the same tile are never merged; the detector already separated them.
+ */
+export function mergeTileRects(tiles: TextRect[][]): TextRect[] {
+  const merged: (TextRect & { tiles: Set<number> })[] = []
+  tiles.forEach((rects, tile) => {
+    for (const rect of rects) {
+      const line = merged.find(other => {
+        if (other.tiles.has(tile) || rect.x >= other.x + other.width || other.x >= rect.x + rect.width) return false
+        const shared = Math.min(other.y + other.height, rect.y + rect.height) - Math.max(other.y, rect.y)
+        return shared >= Math.min(other.height, rect.height) * 0.6
+      })
+      if (!line) { merged.push({ ...rect, tiles: new Set([tile]) }); continue }
+      const right = Math.max(line.x + line.width, rect.x + rect.width), bottom = Math.max(line.y + line.height, rect.y + rect.height)
+      line.x = Math.min(line.x, rect.x); line.y = Math.min(line.y, rect.y)
+      line.width = right - line.x; line.height = bottom - line.y
+      line.score = Math.max(line.score, rect.score)
+      line.tiles.add(tile)
+    }
+  })
+  return merged.map(({ tiles: _tiles, ...rect }) => rect)
+    .sort((first, second) => Math.abs(first.y - second.y) < Math.min(first.height, second.height) / 2 ? first.x - second.x : first.y - second.y)
+}
+
 /** RGBA pixels to the detector's CHW tensor. PaddleX decodes BGR and applies the mean/std list in that channel order. */
 export function detTensor(rgba: Uint8ClampedArray, width: number, height: number): Float32Array {
   const plane = width * height

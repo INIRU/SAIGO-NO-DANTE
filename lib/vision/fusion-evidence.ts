@@ -99,7 +99,9 @@ const WHEEL_BOX = { left: 250, top: 220, right: 840, bottom: 640 }
  */
 export function isFusionSelectionScreen(text: string): boolean {
   const screen = normalized(text)
-  return /기프트합성/.test(screen) && /소원빌기|예상결과/.test(screen) && !/겠습니까|획득/.test(screen)
+  // Only the acquisition popup's own sentence excludes the screen: a shared full screen also shows the companion's
+  // "이번 층 획득 가능 기프트" and "획득 …" notices, which must not hide the wheel (replay 2026-09-24: 1/30 materials).
+  return /기프트합성/.test(screen) && /소원빌기|예상결과/.test(screen) && !/겠습니까|획득했습니다/.test(screen)
 }
 
 export interface WheelAnchors { title: TextBox; wish: TextBox }
@@ -320,6 +322,76 @@ export interface SeenDialog { firstAt: number; lastSeenAt: number; closedAt?: nu
 export function dialogForResult(dialogs: SeenDialog[], capturedAt: number): SeenDialog | null {
   return dialogs.filter(dialog => dialog.resultAt === undefined && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000 &&
     (dialog.closedAt === undefined || capturedAt < dialog.closedAt)).at(-1) ?? null
+}
+
+/**
+ * Whether a confirmation dialog read in a frame captured at `at` is the dialog already being read rather than the next
+ * fusion. Rapid fusions reopen a dialog with the same N/M within a second, so besides the same N/M seen within 2 s nothing
+ * captured in between may show that dialog ended: its result popup (`resultAt`) or a screen read showing the selection
+ * screen or an acquisition popup without the dialog (`breakAt`, the latest such capture).
+ */
+export function continuesFusionDialog(dialog: { count: number; capacity: number; lastSeenAt: number; closedAt?: number; resultAt?: number },
+  count: number, capacity: number, at: number, breakAt: number): boolean {
+  return dialog.closedAt === undefined && dialog.count === count && dialog.capacity === capacity && at - dialog.lastSeenAt < 2000 &&
+    !(dialog.resultAt !== undefined && dialog.resultAt < at) && !(breakAt > dialog.lastSeenAt && breakAt < at)
+}
+
+/**
+ * The fusion an acquisition captured at `capturedAt` belongs to: the latest one confirmed before it in capture time that it
+ * may be the result of. Once that fusion is applied, later popups (e.g. a material a blessing returned) are extra results of
+ * it and never reach back to an older fusion, so the caller checks whether the returned fusion was already applied.
+ */
+export function fusionForResult<T extends FusionDialogEvidence>(fusions: readonly T[], capturedAt: number | undefined): T | null {
+  return fusions.filter(fusion => fusionResultFollows(fusion, capturedAt)).sort((first, second) => first.observedAt - second.observedAt).at(-1) ?? null
+}
+
+/**
+ * Popups skipped because their gift was still listed that a fusion's removal made real acquisitions: a removed material
+ * whose popup follows that fusion came back with the result (a blessing returning a material), once per removed copy.
+ */
+export function returnedMaterials<T extends { giftId: string; capturedAt?: number }>(fusion: FusionDialogEvidence, removed: readonly string[],
+  listed: readonly T[]): T[] {
+  const left = [...removed]
+  return listed.filter(popup => {
+    const index = left.indexOf(popup.giftId)
+    if (index < 0 || !fusionResultFollows(fusion, popup.capturedAt)) return false
+    left.splice(index, 1)
+    return true
+  })
+}
+
+/** How long apart two popups of one gift may be captured and still be the same popup (split into two episodes). */
+export const SAME_ACQUISITION_MS = 5000
+
+/**
+ * The number of an acquisition of a gift confirmed from popup `episode` captured at `capturedAt`, given its latest earlier
+ * one. Frames of one popup keep its number however late they are read; another episode is the same popup only if captured
+ * within SAME_ACQUISITION_MS with nothing between that ends it: a fusion dialog opening or another gift's popup (`boundaries`,
+ * capture times). A material a blessing returns fusion after fusion is a new acquisition each time.
+ */
+export function acquisitionSeq(seen: { at: number; seq: number; episode: number } | undefined, episode: number, capturedAt: number,
+  boundaries: readonly number[]): number {
+  if (!seen) return 1
+  if (seen.episode === episode) return seen.seq
+  const from = Math.min(seen.at, capturedAt), to = Math.max(seen.at, capturedAt)
+  return to - from < SAME_ACQUISITION_MS && !boundaries.some(at => at > from && at < to) ? seen.seq : seen.seq + 1
+}
+
+/** Longest a confirmed acquisition waits for an earlier popup still being read. */
+export const ACQUISITION_ORDER_WAIT_MS = 2500
+
+/**
+ * Confirmed acquisitions to publish now, in capture order (popup episodes are numbered as they appear on screen): OCR and
+ * icon reads finish out of order, so one waits while a popup captured before it (`unsettled` episodes) is still being read,
+ * at most ACQUISITION_ORDER_WAIT_MS after it was confirmed (`observedAt`). A material returned by one fusion then reaches
+ * the run before the next fusion consumes it.
+ */
+export function acquisitionsToRelease<T extends { observedAt: number; episode?: number }>(held: readonly T[], unsettled: readonly number[],
+  now: number): { release: T[]; keep: T[] } {
+  const sorted = [...held].sort((first, second) => (first.episode ?? 0) - (second.episode ?? 0))
+  const blocked = sorted.findIndex(item => item.episode !== undefined && now - item.observedAt < ACQUISITION_ORDER_WAIT_MS &&
+    unsettled.some(episode => episode < item.episode!))
+  return blocked < 0 ? { release: sorted, keep: [] } : { release: sorted.slice(0, blocked), keep: sorted.slice(blocked) }
 }
 
 /**
