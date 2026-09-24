@@ -31,6 +31,10 @@ const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'S
 it('lists the plan gifts under a recommended pack, dimming owned ones', () => {
   const html = render({ ...started(), giftInventory: ['30'] })
   expect(html).toContain('data-theme-choice="A"')
+  // The pack card of the Mirror Dungeon page, with its name over the poster and the PiP guidance as its accessible name.
+  const choice = html.match(/<li[^>]*data-theme-choice="A".*?<\/button>/)?.[0] ?? ''
+  expect(choice).toMatch(/aria-label="pack-A · [^"]*"/)
+  expect(choice).toMatch(/>pack-A<\/div>/)
   const list = html.match(/<ul[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul>/)?.[0] ?? ''
   expect(list).toContain(messages.planner.run.pipThemePlanGifts)
   expect(list).toContain('title="gift-20"')
