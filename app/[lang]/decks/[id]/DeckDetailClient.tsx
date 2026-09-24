@@ -121,8 +121,8 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const BOARD_SLOT_COUNT = 12
-// deck_identities.uptie is not read yet (see page.tsx), only gacksung (= uptie III–IV). Non-awakened slots show uptie II.
-const slotUptie = (slot: IdentitySlot | null) => slot?.gacksung === false ? 2 : 4
+// Saved uptie; rows without one fall back to gacksung (= uptie III–IV), non-awakened reading as uptie II.
+const slotUptie = (slot: IdentitySlot | null) => slot?.uptie ?? (slot?.gacksung === false ? 2 : 4)
 const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────

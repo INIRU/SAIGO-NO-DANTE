@@ -36,7 +36,7 @@ export async function GET(
         id, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
         profiles!decks_user_id_fkey(username),
         deck_identities(
-          slot_order, gacksung, s1_count, s2_count, s3_count,
+          slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
           identities(
             id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
             hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
