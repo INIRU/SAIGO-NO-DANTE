@@ -31,9 +31,10 @@ export const RECOGNITION_PROFILES: Record<RecognitionMode, RecognitionProfile> =
   // The former quality settings: users reported they run smoothly, so they are the default now.
   balanced: { ocrWorkers: 2, sceneIntervalMs: 1000, recognizeMs: { idle: 2000, event: 700 }, exploreMs: { idle: 1500, recent: 500 },
     fullFrameDetSide: 1280, fullFrameGrid: 1, fullFrameTileScale: 1, popupAttempts: 3 },
-  // 2x2 tiles at 1.5x zoom: about 1.5x the detector pixels per text line of a native 1080p pass, for small event text.
-  quality: { ocrWorkers: 2, sceneIntervalMs: 750, recognizeMs: { idle: 1500, event: 600 }, exploreMs: { idle: 1200, recent: 400 },
-    fullFrameDetSide: 1280, fullFrameGrid: 2, fullFrameTileScale: 1.5, popupAttempts: 4 },
+  // More reads of the same single pass. Tiling (2x2 at 1.5x) read a still frame slightly better but took 2.4x as long
+  // per read, so it missed dialogs that stay up for under a second (replay 2026-09-24: 14/17 materials vs 17/17).
+  quality: { ocrWorkers: 2, sceneIntervalMs: 500, recognizeMs: { idle: 1000, event: 400 }, exploreMs: { idle: 800, recent: 300 },
+    fullFrameDetSide: 1280, fullFrameGrid: 1, fullFrameTileScale: 1, popupAttempts: 5 },
 }
 
 export const RECOGNITION_MODE_STORAGE_KEY = 'limbus-assist-recognition-mode'

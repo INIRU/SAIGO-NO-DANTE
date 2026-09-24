@@ -563,7 +563,7 @@
       "recognitionModeBalanced": "Balanced",
       "recognitionModeBalancedHint": "Default. Reads gift popups and event or floor screens side by side, often, and checks popups once more.",
       "recognitionModeQuality": "Quality",
-      "recognitionModeQualityHint": "Splits the screen into 4 enlarged tiles to catch small text. May add load to the game.",
+      "recognitionModeQualityHint": "Reads the screen more often than Balanced so brief dialogs and popups are not missed. May add load to the game.",
       "recognitionModeLiveNote": "Changing it while the screen is connected keeps the screen share and only restarts text recognition.",
       "detectionLabel": "Detect",
       "detectionGifts": "Gifts",
