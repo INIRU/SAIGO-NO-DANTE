@@ -3,6 +3,7 @@
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 import { useMemo, useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
@@ -10,7 +11,7 @@ import BaseModal from '@/components/ui/BaseModal'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 import type { RunState, RunAction } from '@/lib/planner/run-types'
-import type { IdentityData, SinnerData, SkillSummary, EgoData, PassiveData, GiftData } from '@/lib/planner/types'
+import { getIdentitySkillDistribution, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData, type GiftData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl, BLUR_PLACEHOLDER } from '@/lib/utils/images'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
@@ -20,10 +21,10 @@ import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/con
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
-const SUB_TABS: { key: DeckSubTab; label: string; icon: typeof Users }[] = [
-  { key: 'identity', label: '인격', icon: Users },
-  { key: 'ego', label: 'EGO', icon: Sparkles },
-  { key: 'skillset', label: '스킬셋', icon: SlidersHorizontal },
+const SUB_TABS: { key: DeckSubTab; icon: typeof Users }[] = [
+  { key: 'identity', icon: Users },
+  { key: 'ego', icon: Sparkles },
+  { key: 'skillset', icon: SlidersHorizontal },
 ]
 
 interface Props {
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export default function DeckSection({ state, dispatch, identities, sinners, skills, passives, egos, giftMap }: Props) {
+  const t = useTranslations('planner.run')
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [swapSinner, setSwapSinner] = useState<string | null>(null)
   const [egoSinner, setEgoSinner] = useState<string | null>(null)
@@ -70,13 +72,20 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   }
 
   const handleSkillChange = (sinnerId: string, idx: number, delta: number) => {
-    const dist = skillDist[sinnerId] ?? [3, 2, 1]
+    const slot = state.identitySlots.find(item => item.sinner_id === sinnerId)
+    if (!slot) return
+    const dist = skillDist[sinnerId] ?? getIdentitySkillDistribution(slot)
     const next: [number, number, number] = [dist[0], dist[1], dist[2]]
     const total = next[0] + next[1] + next[2]
     const newVal = next[idx] + delta
     if (newVal < 0 || total + delta > 6) return
     next[idx] = newVal
-    setSkillDist(prev => ({ ...prev, [sinnerId]: next }))
+    if (next[0] + next[1] + next[2] === 6) {
+      dispatch({ type: 'SET_SKILL_DISTRIBUTION', sinnerId, distribution: next })
+      setSkillDist(prev => { const updated = { ...prev }; delete updated[sinnerId]; return updated })
+    } else {
+      setSkillDist(prev => ({ ...prev, [sinnerId]: next }))
+    }
   }
 
   const sinnerIdentities = useMemo(() => {
@@ -136,6 +145,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   }, [])
 
   const handleSelect = (ident: IdentityData) => {
+    setSkillDist(prev => { const next = { ...prev }; delete next[ident.sinner_id]; return next })
     dispatch({
       type: 'SWAP_IDENTITY', sinnerId: ident.sinner_id,
       newSlot: {
@@ -179,7 +189,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)} className="flex items-center gap-1 transition-all shrink-0"
               style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400, color: active ? '#e8dcc8' : '#555', borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`, minHeight: '2.75rem' }}>
-              <Icon style={{ width: '0.75rem', height: '0.75rem' }} /> {tab.label}
+              <Icon style={{ width: '0.75rem', height: '0.75rem' }} /> {t(`deckTab_${tab.key}`)}
             </button>
           )
         })}
@@ -236,7 +246,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                         <div className="absolute inset-0 flex flex-col items-center justify-center z-[5] pointer-events-none" style={{ background: 'rgba(13,11,8,0.45)' }}>
                           <div className="flex items-center">
                             <span style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: slot.slot_order < 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 0.75rem ${slot.slot_order < 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)` }}>
-                              {slot.slot_order < 7 ? '편성' : '대기'}
+                              {t(slot.slot_order < 7 ? 'active' : 'bench')}
                             </span>
                             <span style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-body)', lineHeight: 1, color: slot.slot_order < 7 ? '#e8b030' : '#5ab0d0', textShadow: `0 0 1rem ${slot.slot_order < 7 ? 'rgba(200,144,10,0.7)' : 'rgba(90,176,208,0.7)'}, 0 0.125rem 0.5rem rgba(0,0,0,1)`, marginLeft: '0.25rem' }}>
                               {slot.slot_order + 1}
@@ -279,17 +289,17 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                     {slot ? (
                       <>
                         <button type="button" onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors hover:bg-[rgba(200,144,10,0.15)] w-full border-0 bg-transparent" style={{ height: '40%', borderBottom: '1px solid rgba(200,144,10,0.2)', cursor: 'pointer' }}>
-                          <span style={{ color: '#e8b030', fontSize: '0.75rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>변경</span>
+                          <span style={{ color: '#e8b030', fontSize: '0.75rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>{t('change')}</span>
                         </button>
                         <button type="button" onClick={() => handleCardClick(sinner.id, () => handleToggleFormation(sinner.id))} className={`flex items-center justify-center transition-colors w-full border-0 bg-transparent ${slot.slot_order < 99 ? 'hover:bg-[rgba(90,176,208,0.12)]' : 'hover:bg-[rgba(200,144,10,0.12)]'}`} style={{ height: '60%', cursor: 'pointer' }}>
                           <span style={{ color: slot.slot_order < 99 ? '#5ab0d0' : '#e8b030', fontSize: '0.6875rem', fontWeight: 600, textShadow: '0 0.125rem 0.375rem rgba(0,0,0,0.9)' }}>
-                            {slot.slot_order < 99 ? '편성 해제' : '편성하기'}
+                            {t(slot.slot_order < 99 ? 'removeFromFormation' : 'addToFormation')}
                           </span>
                         </button>
                       </>
                     ) : (
                       <button type="button" onClick={() => handleCardClick(sinner.id, () => setSwapSinner(sinner.id))} className="flex items-center justify-center transition-colors hover:bg-[rgba(200,144,10,0.12)] w-full border-0 bg-transparent" style={{ height: '100%', cursor: 'pointer' }}>
-                        <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>편성</span>
+                        <span style={{ color: '#e8b030', fontSize: '0.875rem', fontWeight: 700, textShadow: '0 0 0.5rem rgba(200,144,10,0.5)' }}>{t('addToFormation')}</span>
                       </button>
                     )}
                   </div>
@@ -383,7 +393,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
         <div>
           {state.identitySlots.length === 0 ? (
             <div className="text-center" style={{ padding: '3rem 1rem', color: '#444', fontSize: '0.8125rem' }}>
-              인격을 먼저 선택하세요.
+              {t('chooseIdentityFirst')}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6" style={{ position: 'relative', zIndex: 0 }}>
@@ -391,7 +401,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                 const slot = getSelected(sinner.id)
                 if (!slot) return null
                 const identData = identityById.get(slot.identity_id)
-                const dist = skillDist[sinner.id] ?? [3, 2, 1]
+                const dist = skillDist[sinner.id] ?? getIdentitySkillDistribution(slot)
                 const total = dist[0] + dist[1] + dist[2]
                 const isDefault = dist[0] === 3 && dist[1] === 2 && dist[2] === 1
                 const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } as { game_id: string | null; sinner_id: string } : null
@@ -423,6 +433,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                       border: `1px solid ${isDefault ? '#221a0f' : 'rgba(200,144,10,0.4)'}`,
                       borderRadius: '0.25rem', padding: '0.375rem',
                     }}>
+                      {total < 6 && <p role="status" className="mb-1 text-[0.65rem] text-[var(--gold-light)]">{t('skillPending', { count: 6 - total })}</p>}
                       {[0, 1, 2].map(idx => {
                         return (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0' }}>
@@ -438,7 +449,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                               </span>
                             )}
                             <div style={{ flex: 1 }} />
-                            <button onClick={() => handleSkillChange(sinner.id, idx, -1)} disabled={dist[idx] <= 0}
+                            <button aria-label={t('decreaseSkill', { skill: idx + 1 })} onClick={() => handleSkillChange(sinner.id, idx, -1)} disabled={dist[idx] <= 0}
                               style={{
                                 width: '1.75rem', height: '1.75rem', borderRadius: '0.25rem',
                                 background: dist[idx] <= 0 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
@@ -452,7 +463,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                               fontFamily: 'var(--font-mono)', fontWeight: 700,
                               color: dist[idx] === 0 ? '#3a2a10' : '#c8900a',
                             }}>{dist[idx]}</span>
-                            <button onClick={() => handleSkillChange(sinner.id, idx, 1)} disabled={total >= 6}
+                            <button aria-label={t('increaseSkill', { skill: idx + 1 })} onClick={() => handleSkillChange(sinner.id, idx, 1)} disabled={total >= 6}
                               style={{
                                 width: '1.75rem', height: '1.75rem', borderRadius: '0.25rem',
                                 background: total >= 6 ? 'rgba(10,8,5,0.5)' : 'rgba(200,144,10,0.1)',
@@ -474,23 +485,23 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       )}
 
       {/* ── 인격 선택 모달 ── */}
-      <BaseModal open={!!swapSinner} onClose={() => setSwapSinner(null)} maxWidth="48rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title="인격 교체">
+      <BaseModal open={!!swapSinner} onClose={() => setSwapSinner(null)} maxWidth="48rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title={t('changeIdentity')}>
         {swapSinner && (
           <div className="relative w-full rounded-lg" style={{ background: '#1a1510', border: '1px solid #333', maxHeight: '85vh', overflowY: 'auto' }}>
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '0.75rem 1rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">
                 <Image src={getSinnerLogoUrl(swapSinner)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7, flexShrink: 0 }} />
                 <span className="font-serif truncate" style={{ fontSize: '1rem', color: '#e8dcc8' }}>
-                  {sinners.find(s => s.id === swapSinner)?.name_kr} — 인격 선택
+                  {sinners.find(s => s.id === swapSinner)?.name_kr} — {t('chooseIdentity')}
                 </span>
               </div>
               <button onClick={() => setSwapSinner(null)} className="shrink-0 flex items-center justify-center" style={{ color: '#666', minWidth: '2.75rem', minHeight: '2.75rem' }}><X style={{ width: '1.25rem', height: '1.25rem' }} /></button>
             </div>
             {getSelected(swapSinner) && (
               <div style={{ padding: '0.75rem 1rem 0' }}>
-                <button onClick={() => { dispatch({ type: 'REMOVE_IDENTITY', sinnerId: swapSinner }); setSwapSinner(null) }}
+                <button onClick={() => { setSkillDist(prev => { const next = { ...prev }; delete next[swapSinner]; return next }); dispatch({ type: 'REMOVE_IDENTITY', sinnerId: swapSinner }); setSwapSinner(null) }}
                   className="w-full flex items-center gap-1 rounded" style={{ color: '#c83030', fontSize: '0.8125rem', border: '1px solid #3a1515', padding: '0.5rem 0.75rem', background: 'rgba(200,48,48,0.05)' }}>
-                  <X style={{ width: '0.875rem', height: '0.875rem' }} /> 선택 해제
+                  <X style={{ width: '0.875rem', height: '0.875rem' }} /> {t('clearSelection')}
                 </button>
               </div>
             )}
@@ -524,7 +535,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       </BaseModal>
 
       {/* ── EGO 선택 모달 (DeckTab 패턴: 등급별 섹션 + 이미지) ── */}
-      <BaseModal open={!!egoSinner} onClose={() => setEgoSinner(null)} maxWidth="42rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title="E.G.O 선택">
+      <BaseModal open={!!egoSinner} onClose={() => setEgoSinner(null)} maxWidth="42rem" padding="env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" title={t('chooseEgo')}>
         {egoSinner && (() => {
           const modalSinnerEgo = sinners.find(s => s.id === egoSinner)
           const availableEgos = sinnerEgos.get(egoSinner) ?? []
@@ -538,7 +549,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">
                 {modalSinnerEgo && <Image src={getSinnerLogoUrl(modalSinnerEgo.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7, flexShrink: 0 }} />}
-                <span className="font-serif truncate" style={{ color: '#e8dcc8', fontSize: '1rem' }}>{modalSinnerEgo?.name_kr} — EGO 선택</span>
+                <span className="font-serif truncate" style={{ color: '#e8dcc8', fontSize: '1rem' }}>{modalSinnerEgo?.name_kr} — {t('chooseEgo')}</span>
               </div>
               <button onClick={() => setEgoSinner(null)} className="shrink-0 flex items-center justify-center" style={{ color: '#666', cursor: 'pointer', minWidth: '2.75rem', minHeight: '2.75rem' }}><X style={{ width: '1.25rem', height: '1.25rem' }} /></button>
             </div>
@@ -563,14 +574,14 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                       {selectedForGrade && (
                         <button onClick={() => dispatch({ type: 'REMOVE_EGO', egoId: selectedForGrade.ego_id })}
                           style={{ color: '#c83040', fontSize: '0.625rem', cursor: 'pointer', padding: '0.125rem 0.375rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}>
-                          해제
+                          {t('clearSelection')}
                         </button>
                       )}
                     </div>
 
                     {gradeEgos.length === 0 ? (
                       <div style={{ padding: '0.625rem', background: 'rgba(10,8,5,0.5)', borderRadius: '0.25rem', border: `1px solid ${gc}15`, textAlign: 'center' }}>
-                        <span style={{ color: '#333', fontSize: '0.6875rem' }}>해당 등급 EGO 없음</span>
+                        <span style={{ color: '#333', fontSize: '0.6875rem' }}>{t('noEgoGrade')}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: '0.5rem' }}>

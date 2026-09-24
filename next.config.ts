@@ -8,7 +8,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const contentSecurityPolicyDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"} https://va.vercel-scripts.com`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com",
   "font-src 'self'",

@@ -1,5 +1,6 @@
-import { getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution } from './types'
+import { createInitialState, getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution, type IdentityData, type EgoData } from './types'
 import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
+import type { RunState } from './run-types'
 
 interface PlanData {
   v?: number              // payload version
@@ -101,6 +102,82 @@ export async function decodePlan(encoded: string): Promise<{
     mainKeywordsManual: typeof data.mkm === 'boolean' ? data.mkm : Array.isArray(data.mk) && data.mk.length > 0,
     title: data.t ?? '',
     description: data.desc ?? '',
+  }
+}
+
+export type DecodedPlan = Awaited<ReturnType<typeof decodePlan>>
+
+export function decodedPlanToPlannerState(decoded: DecodedPlan, identities: IdentityData[], egos: EgoData[]): PlannerState {
+  const initial = createInitialState(decoded.difficulty)
+  const identityById = new Map(identities.map(identity => [identity.id, identity]))
+  const egoById = new Map(egos.map(ego => [ego.id, ego]))
+  return {
+    ...initial,
+    title: decoded.title,
+    description: decoded.description,
+    mainKeywords: decoded.mainKeywords,
+    mainKeywordsManual: decoded.mainKeywordsManual,
+    identitySlots: decoded.identityIds.flatMap((id, index) => {
+      const identity = identityById.get(id)
+      if (!identity) return []
+      const [s1_count, s2_count, s3_count] = normalizeSkillDistribution(decoded.skillDistributions[index])
+      return [{
+        identity_id: id, sinner_id: identity.sinner_id, name_kr: identity.name_kr,
+        rarity: identity.rarity, keywords: identity.keywords ?? [], skill_keyword_list: identity.skill_keyword_list,
+        affiliation: identity.affiliation, association_list: identity.association_list,
+        game_id: identity.game_id, folder_name: identity.folder_name, slot_order: index,
+        s1_count, s2_count, s3_count,
+      }]
+    }),
+    egoSlots: decoded.egoIds.flatMap(id => {
+      const ego = egoById.get(id)
+      return ego ? [{ ego_id: id, sinner_id: ego.sinner_id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
+    }),
+    floorPlan: Array.from({ length: Math.max(initial.floorPlan.length, decoded.floorThemeIds.length) }, (_, index) => {
+      const floor = initial.floorPlan[index] ?? {
+        floor: index + 1, difficulty: getLegacyPlanFloorDifficulty(decoded.difficulty, index + 1),
+        theme_id: null, gift_ids: [], memo: '',
+      }
+      return {
+        ...floor,
+        difficulty: decoded.floorDifficulties[index] ?? floor.difficulty,
+        theme_id: decoded.floorThemeIds[index] ?? null,
+        gift_ids: decoded.floorGifts[index] ?? [],
+        memo: decoded.floorMemos[index] ?? '',
+        constraints: decoded.floorConstraints[index] ?? [],
+      }
+    }),
+    giftInventory: decoded.giftIds,
+  }
+}
+
+/** Build a reviewable planner draft from observations; the source plan remains untouched. */
+export function runStateToPlannerState(run: RunState): PlannerState {
+  const initial = createInitialState(run.difficulty)
+  const source = run.sourcePlanSnapshot
+  return {
+    ...initial,
+    title: source?.title ?? '',
+    description: source?.description ?? '',
+    mainKeywords: [...(source?.mainKeywords ?? [])],
+    mainKeywordsManual: source?.mainKeywordsManual ?? false,
+    identitySlots: structuredClone(run.identitySlots),
+    egoSlots: structuredClone(run.egoSlots),
+    giftInventory: [...run.giftInventory],
+    floorPlan: initial.floorPlan.map((entry, index) => {
+      const observed = run.floorLogs[index]
+      const planned = source?.floorPlan?.find(floor => floor.floor === index + 1)
+      const constraints = observed?.themeId && observed.themeId === planned?.theme_id
+        ? [...(planned.constraints ?? [])] : []
+      return {
+        ...entry,
+        difficulty: observed?.difficulty ?? entry.difficulty,
+        theme_id: observed?.themeId ?? null,
+        gift_ids: [...(observed?.acquiredGifts ?? [])],
+        memo: observed?.memo ?? '',
+        constraints,
+      }
+    }),
   }
 }
 
@@ -222,10 +299,11 @@ function persistPlannerTempSlots(slots: PlannerTempSlot[]): void {
   localStorage.setItem(PLANNER_TEMP_DRAFTS_KEY, JSON.stringify(storage))
 }
 
-export function saveDraftToLocal(state: PlannerState): void {
+export function saveDraftToLocal(state: PlannerState): boolean {
   try {
     localStorage.setItem(PLANNER_HANDOFF_KEY, JSON.stringify(snapshotPlannerState(state)))
-  } catch { /* quota exceeded 등 무시 */ }
+    return true
+  } catch { return false }
 }
 
 export function loadDraftFromLocal(): Partial<PlannerState> | null {
@@ -322,6 +400,8 @@ export function savePlanForRun(state: PlannerState): void {
       giftInventory: state.giftInventory,
       mainKeywords: state.mainKeywords ?? [],
       mainKeywordsManual: state.mainKeywordsManual ?? false,
+      title: state.title,
+      description: state.description,
     }))
   } catch { /* */ }
 }
@@ -337,7 +417,7 @@ export function loadPlanForRun(): Partial<PlannerState> | null {
 
 // ── 트리거 모드 런 저장/복원 ──────────────────────────────────────────────────
 
-import type { RunState } from './run-types'
+import { normalizeRunState } from './run-types'
 
 const RUN_DRAFT_KEY = 'md-run-draft'
 const RUN_HISTORY_KEY = 'md-run-history'
@@ -374,7 +454,14 @@ export function loadRunDraft(): RunDraft | null {
   try {
     const raw = localStorage.getItem(RUN_DRAFT_KEY)
     if (!raw) return null
-    return JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || !('state' in parsed)) return null
+    const state = normalizeRunState(parsed.state)
+    return {
+      state,
+      savedAt: 'savedAt' in parsed && typeof parsed.savedAt === 'string' ? parsed.savedAt : '',
+      label: 'label' in parsed && typeof parsed.label === 'string' ? parsed.label : makeRunLabel(state),
+    }
   } catch {
     return null
   }
@@ -384,9 +471,9 @@ export function clearRunDraft(): void {
   try { localStorage.removeItem(RUN_DRAFT_KEY) } catch { /* */ }
 }
 
-export function saveRunToHistory(state: RunState): void {
+export function saveRunToHistory(state: RunState): boolean {
   try {
-    const history: RunDraft[] = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+    const history = loadRunHistory()
     history.unshift({
       state,
       savedAt: new Date().toISOString(),
@@ -394,12 +481,23 @@ export function saveRunToHistory(state: RunState): void {
     })
     if (history.length > MAX_RUN_HISTORY) history.length = MAX_RUN_HISTORY
     localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(history))
-  } catch { /* */ }
+    return true
+  } catch { return false }
 }
 
 export function loadRunHistory(): RunDraft[] {
   try {
-    return JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+    const parsed: unknown = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap(entry => {
+      if (!entry || typeof entry !== 'object' || !('state' in entry)) return []
+      const state = normalizeRunState(entry.state)
+      return [{
+        state,
+        savedAt: 'savedAt' in entry && typeof entry.savedAt === 'string' ? entry.savedAt : '',
+        label: 'label' in entry && typeof entry.label === 'string' ? entry.label : makeRunLabel(state),
+      }]
+    })
   } catch {
     return []
   }

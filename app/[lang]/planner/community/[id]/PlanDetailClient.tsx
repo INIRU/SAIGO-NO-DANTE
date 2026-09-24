@@ -25,6 +25,8 @@ import PlanComments from '@/components/planner/PlanComments'
 import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
 import FloorPlanPreviewBoard from '@/components/planner/FloorPlanPreviewBoard'
 import GiftCard from '@/components/ui/GiftCard'
+import KeywordIcon from '@/components/ui/KeywordIcon'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
@@ -38,6 +40,7 @@ import {
   ReadOnlyBlessingGrid,
 } from '@/components/planner/BlessingTab'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import styles from './PlanDetailHeader.module.css'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -490,9 +493,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const difficultyLabel = tCommunity(`difficulty.${plan.difficulty}`)
   const deckCountLabel = tDetail('deckCount', { count: deck.length })
+  const mainKeywords = (plan.tags ?? []).filter(Boolean)
 
   return (
-    <div className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
+    <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <Link
           href="/planner/community"
@@ -503,68 +507,75 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         </Link>
 
         <motion.header
-          className="mb-8 rounded-lg bg-[#1a1510]"
+          className="mb-8 overflow-hidden rounded-lg border border-[#241c14] bg-[#1a1510]"
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
-          <div className="grid min-w-0 items-center gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="min-w-0">
-              <div className="mb-2.5 flex min-w-0 flex-wrap items-center gap-2">
-                <span
-                  className="inline-flex min-h-9 items-center rounded-sm border px-2.5 text-[0.9375rem] font-semibold"
-                  style={{ background: diffStyle.bg, color: diffStyle.color, borderColor: diffStyle.border }}
-                >
-                  {difficultyLabel}
-                </span>
-                <span className="inline-flex min-h-9 items-center rounded-sm bg-[#ffffff05] px-2.5 text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
-                  {deckCountLabel}
-                </span>
-                <span className="inline-flex min-h-9 items-center rounded-sm bg-[#ffffff05] px-2.5 text-[0.875rem] font-semibold tabular-nums text-[#b9a47f]">
-                  {tDetail('egoCount', { count: egoSlots.length })}
-                </span>
-              </div>
+          <div className={styles.layout}>
+            <div className={styles.identity}>
+              {mainKeywords.length > 0 && (
+                <ul className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {mainKeywords.map(keyword => {
+                    const iconUrl = kwContext.getIconUrl(keyword)
+                    return (
+                      <li key={keyword} className="inline-flex min-h-8 items-center gap-1.5">
+                        {iconUrl && <KeywordIcon src={iconUrl} alt="" width={28} height={28} className="h-7 w-7 object-contain" />}
+                        <span className="font-[family-name:var(--font-heading)] text-[1rem] leading-none text-[#cfc2ad]">
+                          {localizeDeckKeyword(keyword, kwContext.keywords[keyword], locale)}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
 
-              <h1 className="max-w-[34ch] break-words font-[family-name:var(--font-paperlogy)] text-2xl font-semibold leading-snug text-[#e8dcc8] text-pretty sm:text-3xl">
+              <h1 className="max-w-[28ch] break-words font-[family-name:var(--font-paperlogy)] text-[1.875rem] font-semibold leading-[1.2] text-[#e8dcc8] text-pretty sm:text-[2.5rem] lg:text-[2.75rem]">
                 {plan.title}
               </h1>
 
-              <div className="mt-5 flex min-w-0 flex-wrap items-center gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#1a1510]">
-                    <Image src={avatarUrl} alt={username} width={40} height={40} className="h-10 w-10 object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-[1rem] font-semibold text-[#e8dcc8]">{username}</p>
-                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] text-[#7f7364]">
-                      <RelativeTime date={plan.created_at} />
-                      <span className="inline-flex items-center gap-1 font-mono tabular-nums">
-                        <Eye className="h-3.5 w-3.5" aria-hidden="true" /> {plan.view_count}
-                      </span>
-                      <span className="inline-flex items-center gap-1 font-mono tabular-nums">
-                        <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> {plan.comment_count}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] font-medium tabular-nums text-[#9d8d72] sm:gap-x-0 sm:[&>span]:border-l sm:[&>span]:border-[#2a2118] sm:[&>span]:px-3 sm:[&>span:first-child]:border-l-0 sm:[&>span:first-child]:pl-0">
+                <span className="font-semibold" style={{ color: diffStyle.color }}>{difficultyLabel}</span>
+                <span>{deckCountLabel}</span>
+                <span>{tDetail('egoCount', { count: egoSlots.length })}</span>
+                {floorPlan.length > 0 && (
+                  <span>{tFloor('configuredFloorCount', { configured: floorPlan.filter(f => f.theme_id).length, total: floorPlan.length })}</span>
+                )}
+              </p>
+            </div>
 
-                <button
-                  onClick={handleVote}
-                  disabled={voteLoading}
-                  className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-sm border px-4 text-[0.9375rem] font-semibold transition-colors hover:border-[#c8900a] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
-                  style={{
-                    background: voted ? 'rgba(200,144,10,0.16)' : '#1a1510',
-                    borderColor: voted ? 'rgba(200,144,10,0.48)' : '#2a2118',
-                    color: voted ? '#e8b030' : '#b9a47f',
-                  }}
-                >
-                  <Heart className="h-4 w-4" fill={voted ? 'currentColor' : 'none'} aria-hidden="true" />
-                  {tDetail('voteWithCount', { count: voteCount })}
-                </button>
+            <div className={`flex items-center gap-3 ${styles.author}`}>
+              <Image src={avatarUrl} alt="" width={48} height={48} className="h-12 w-12 shrink-0 rounded-full bg-[#0d0b08] object-cover ring-1 ring-[#8a6010]" />
+              <div className="min-w-0">
+                <p className="truncate text-[1.0625rem] font-semibold leading-snug text-[#e8dcc8]">{username}</p>
+                <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] tabular-nums text-[#9d8d72]">
+                  <RelativeTime date={plan.created_at} />
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{tDetail('viewsLabel')}</span> {plan.view_count}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{tDetail('commentsLabel')}</span> {plan.comment_count}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="min-w-0 lg:max-w-[24rem]">
+            <div className={styles.dock} aria-hidden="true" />
+
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={voteLoading}
+              aria-pressed={voted}
+              className={`${styles.vote} inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded border px-4 text-[0.9375rem] font-semibold tabular-nums transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${voted
+                ? 'border-[#c8900a]/50 bg-[#c8900a]/15 text-[#e8b030] hover:border-[#c8900a] active:bg-[#c8900a]/25'
+                : 'border-[#2a2118] bg-[#1a1510] text-[#b9a47f] hover:border-[#8a6010] hover:text-[#e8b030] active:bg-[#2a2118]'}`}
+            >
+              <Heart className="h-4 w-4" fill={voted ? 'currentColor' : 'none'} aria-hidden="true" />
+              {tDetail('voteWithCount', { count: voteCount })}
+            </button>
+
+            <div className={styles.actions}>
               <PlanActions
                 planId={plan.id}
                 planTitle={plan.title}
@@ -586,7 +597,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         </motion.header>
 
         <motion.main
-          className="min-w-0 space-y-5 overflow-x-hidden"
+          className="min-w-0 space-y-5 overflow-x-clip"
           variants={shouldReduceMotion ? undefined : staggerContainer(0.055, 0.04)}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
@@ -631,7 +642,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               />
             </DetailSection>
 
-            <DetailSection className="space-y-3 overflow-x-hidden">
+            <DetailSection className="space-y-3 overflow-x-clip">
               <SectionTitle title={tBlessing('title')} count={selectedBlessings.size > 0 ? String(totalBlessingCost) : tBlessing('none')} />
               {selectedBlessings.size > 0 && (
                 <div className="flex items-center justify-end gap-1.5 text-[0.875rem] font-semibold text-[#c8900a]">

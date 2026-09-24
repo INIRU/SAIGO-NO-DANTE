@@ -1,0 +1,366 @@
+'use client'
+
+import { createPortal } from 'react-dom'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useLocale, useTranslations } from 'next-intl'
+import { toast } from 'sonner'
+import { PictureInPicture2, RotateCcw, RotateCw, Settings2 } from 'lucide-react'
+import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
+import { getCurrentFloorPriorityGifts, nextGiftPromotion, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
+import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor } from '@/lib/planner/run-theme-guidance'
+import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
+import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
+import type { ThemeData, GiftData } from '@/lib/planner/types'
+import GiftArtwork from '@/components/ui/GiftArtwork'
+import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
+import type { FloorThemeObservation, FusionEvidence, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
+import { fusionMaterialsToRemove, fusionResultFollows } from '@/lib/vision/fusion-evidence'
+import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import CompanionEventChoices from './CompanionEventChoices'
+import CompanionAcquisitionOverlay, { fusionFeedback, type AcquisitionOverlayEvent } from './CompanionAcquisitionOverlay'
+import CompanionNextFloorButton from './CompanionNextFloorButton'
+import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
+
+type HistoryEntry = { before: RunState; after: RunState; beforeKey: string; afterKey: string; pendingFloor: number | null }
+const snapshot = (state: RunState): RunState => normalizeRunState(JSON.parse(JSON.stringify(state)))
+const keyOf = (state: RunState) => JSON.stringify(normalizeRunState(state))
+const poster = (theme: ThemeData) => getThemePackVisualConfig(Number(theme.id)) ? getThemePackCompositeImageUrl(Number(theme.id)) : theme.image_url
+
+function SizeInput({ label, value, min, max, onCommit }: { label: string; value: number; min: number; max: number; onCommit: (value: number) => void }) {
+  const [draft, setDraft] = useState(String(value))
+  useEffect(() => setDraft(String(value)), [value])
+  const commit = () => { const parsed = Number(draft); if (Number.isFinite(parsed)) onCommit(Math.min(max, Math.max(min, parsed))); else setDraft(String(value)) }
+  return <label className="text-[var(--text-secondary)]">{label}<input type="number" min={min} max={max} value={draft} onChange={event => setDraft(event.target.value)} onBlur={commit} onKeyDown={event => { if (event.key === 'Enter') { commit(); event.currentTarget.blur() } }} className="mt-1 block w-20 rounded border border-[var(--border)] bg-[var(--bg-panel)] p-1 text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]" /></label>
+}
+
+interface Props {
+  state: RunState
+  dispatch: React.Dispatch<RunAction>
+  themes: ThemeData[]
+  giftMap: Map<number, GiftData>
+  observedGiftIds?: number[]
+  popupAcquisitions?: PopupAcquisition[]
+  events?: MdEvent[]
+  eventChoices?: MdEventChoice[]
+  eventChoiceEvidence?: { eventId: number; observedAt: number; floor: number | null } | null
+  captureRunning?: boolean
+  scene?: StableScene | null
+  themeSelectionFloor?: { floor: number; observedAt: number } | null
+  floorThemeObservation?: FloorThemeObservation | null
+  /** Exploration floor read in two separate captures while capture runs. */
+  observedFloor?: number | null
+  /** Fusion materials identified on the confirmation dialog in two captures. */
+  fusionEvidence?: FusionEvidence | null
+}
+export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
+  events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
+  themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null }: Props) {
+  const t = useTranslations('planner.run')
+  const locale = useLocale() as SupportedLang
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const { container, open, close, size, actualSize, updateSize } = useCompanionWindow()
+  // Document Picture-in-Picture exists only in some desktop browsers; known after mount (the server cannot tell).
+  const [pipSupported, setPipSupported] = useState(true)
+  useEffect(() => { setPipSupported('documentPictureInPicture' in window) }, [])
+  const pipNoteId = useId()
+  // While the window is open the settings show its real content size, not the stored default.
+  const shownSize = container ? actualSize : size
+  const reducedMotion = useReducedMotion()
+  const [historyVersion, setHistoryVersion] = useState(0)
+  const [eventView, setEventView] = useState<{ eventId: number; observedAt: number; floor: number | null } | null>(null)
+  const undoStack = useRef<HistoryEntry[]>([])
+  const redoStack = useRef<HistoryEntry[]>([])
+  const consumedPopupTokens = useRef(new Set<string>())
+  const consumedThemeTokens = useRef(new Set<string>())
+  const consumedFusionTokens = useRef(new Set<string>())
+  // Recent fusion dialogs: a result popup belongs to the dialog it directly follows, even if a newer one was read already.
+  const recentFusions = useRef<FusionEvidence[]>([])
+  // The latest result-like popup, recorded as an automatic acquisition (afterKey) or skipped because the gift was already
+  // listed (listedKey), so a fusion confirmed just after it can still be applied.
+  const lastResultPopup = useRef<{ giftId: string; capturedAt: number | undefined; afterKey?: string; listedKey?: string } | null>(null)
+  if (fusionEvidence) recentFusions.current = [...recentFusions.current.filter(item => item.token !== fusionEvidence.token), fusionEvidence].slice(-4)
+  // Floors whose pack the user cleared (outside this panel's own history) during this run phase.
+  const userClearedFloors = useRef(new Set<number>())
+  const previousState = useRef(state)
+  const [acquisitionEvents, setAcquisitionEvents] = useState<AcquisitionOverlayEvent[]>([])
+  const acquisitionSeq = useRef(0)
+  const expected = useRef<string | null>(null)
+  const current = useRef(state)
+  current.current = state
+  const stateKey = keyOf(state)
+  if (expected.current && expected.current !== stateKey) { undoStack.current = []; redoStack.current = []; expected.current = null }
+  const log = state.floorLogs[state.currentFloor - 1]
+  // On a pack selection screen the floor being chosen is shown with its plan, before any banner confirms entry.
+  // A pack picked on this selection screen settles it; the same screen must not move on to choose a further floor.
+  const [chosenInScene, setChosenInScene] = useState<number | null>(null)
+  // Kept after the selection screen ends, so a pack the game picked but capture missed still targets that floor; a
+  // stably observed later floor sets it too, and late reads of the previous floor never lower it.
+  const pendingFloor = useRef<number | null>(null)
+  pendingFloor.current = pendingThemeSelectionFloor(pendingFloor.current, { state, running: captureRunning, scene,
+    header: themeSelectionFloor, chosenInScene, observedFloor: captureRunning ? observedFloor : null })
+  const selectionFloor = pendingFloor.current
+  // The latest pending floor and since when: popups captured since then belong to it, also once it became current.
+  const pendingSince = useRef<{ floor: number | null; at: number | null }>({ floor: null, at: null })
+  if (selectionFloor !== null && pendingSince.current.floor !== selectionFloor) pendingSince.current = { floor: selectionFloor, at: Date.now() }
+  const viewFloor = selectionFloor ?? state.currentFloor
+  const theme = selectionFloor === null ? themes.find(item => item.id === log?.themeId) : undefined
+  // Sightings only promote gifts on confirmed non-combat screens; battle and uncertain scenes keep the order.
+  const giftPromotion = useRef<GiftPromotion | null>(null)
+  giftPromotion.current = nextGiftPromotion(giftPromotion.current, { state, running: captureRunning, scene, observedGiftIds })
+  const availableGifts = getCurrentFloorPriorityGifts(state, themes, giftMap, giftPromotion.current?.ids)
+  const guidance = useMemo(() => getRunThemeGuidance(viewFloor === state.currentFloor ? state : { ...state, currentFloor: viewFloor }, themes),
+    [state, themes, viewFloor])
+  const canUndo = undoStack.current.length > 0 && undoStack.current[undoStack.current.length - 1].afterKey === stateKey
+  const canRedo = redoStack.current.length > 0 && redoStack.current[redoStack.current.length - 1].beforeKey === stateKey
+
+  useEffect(() => {
+    if (!container) return
+    const body = container.ownerDocument.body
+    body.style.scrollBehavior = 'auto'
+    container.ownerDocument.documentElement.style.scrollBehavior = 'auto'
+    container.ownerDocument.documentElement.style.scrollbarGutter = 'stable'
+    // Assist-only scrollbar and input styles in globals.css apply to this window through this marker.
+    container.ownerDocument.documentElement.setAttribute('data-assist-pip', '')
+  }, [container])
+  useEffect(() => {
+    const apply = () => setEventView(view => nextEventView(view, { running: captureRunning, floor: state.currentFloor,
+      evidence: eventChoiceEvidence, scene, now: Date.now() }))
+    apply()
+    // Another non-event scene held for a while also ends the event; re-check when that delay passes.
+    if (!scene || scene.label === 'event' || EVENT_EXIT_SCENES.has(scene.label)) return
+    const timeout = setTimeout(apply, Math.max(0, scene.since + EVENT_IDLE_EXIT_MS - Date.now()) + 50)
+    return () => clearTimeout(timeout)
+  }, [captureRunning, eventChoiceEvidence?.eventId, eventChoiceEvidence?.observedAt, eventChoiceEvidence?.floor,
+    scene?.label, scene?.since, state.currentFloor])
+
+  /**
+   * Applies an action with an Undo entry and reports whether the run changed. The computed state itself is loaded, so
+   * time-stamped actions (NEXT_FLOOR) store exactly the snapshot kept for Undo/Redo.
+   */
+  function record(action: RunAction): boolean {
+    const before = snapshot(current.current)
+    const beforeKey = keyOf(before)
+    if (expected.current && expected.current !== beforeKey) { undoStack.current = []; redoStack.current = [] }
+    const after = runReducer(before, action)
+    const afterKey = keyOf(after)
+    if (afterKey === beforeKey) return false
+    undoStack.current = [...undoStack.current.slice(-19), { before, after, beforeKey, afterKey, pendingFloor: pendingFloor.current }]
+    redoStack.current = []
+    expected.current = afterKey
+    current.current = after
+    dispatch({ type: 'LOAD_RUN', state: after })
+    setHistoryVersion(value => value + 1)
+    return true
+  }
+  /** floor: omitted = current floor (manual picks); from a screen observation, its floor or null for inventory only. */
+  function acquire(id: number, event?: MouseEvent<HTMLButtonElement>, automatic = false, floor?: number | null) {
+    const nextId = availableGifts[availableGifts.findIndex(gift => gift.game_id === id) + 1]?.game_id
+      ?? availableGifts[availableGifts.findIndex(gift => gift.game_id === id) - 1]?.game_id
+    const surface = event?.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content')
+    const owner = event?.currentTarget.ownerDocument
+    if (current.current.giftInventory.includes(String(id))) return
+    if (!record({ type: 'ACQUIRE_GIFT', giftId: String(id), ...(floor === undefined ? {} : { floor }) })) return
+    // The one place both manual and confirmed automatic acquisitions pass; Undo/Redo and restores never animate.
+    const gift = giftMap.get(id)!
+    setAcquisitionEvents(items => [...items.slice(-31), { token: `${id}-${++acquisitionSeq.current}`, at: Date.now(), gift, name: localized(gift) }])
+    if (owner && surface && nextId) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLButtonElement>(`[data-companion-content="${surface}"] [data-gift-id="${nextId}"]`)?.focus({ preventScroll: true }))
+    toast.success(t(automatic ? 'popupGiftAutoAcquired' : 'pipGiftAcquired', { name: localized(giftMap.get(id)!) }))
+  }
+  function acquireAutomatically(id: number, capturedAt: number | undefined, floor: number | null) {
+    const before = undoStack.current.length
+    acquire(id, undefined, true, floor)
+    const entry = undoStack.current.at(-1)
+    lastResultPopup.current = undoStack.current.length > before && entry ? { giftId: String(id), capturedAt, afterKey: entry.afterKey } : null
+  }
+  /**
+   * Fusion evidence that arrives after its result popup was already handled. An acquisition that is still the latest
+   * step, with nothing changed since, is replaced by one fusion step from the same starting state (one Undo restores the
+   * materials and removes the result); otherwise, while the result is still listed and every material is present, the
+   * materials leave as their own step. Anything else leaves the inventory as it is.
+   */
+  useEffect(() => {
+    const fusion = fusionEvidence
+    const last = lastResultPopup.current
+    if (!fusion || consumedFusionTokens.current.has(fusion.token) || !last || !fusionResultFollows(fusion, last.capturedAt)) return
+    if (last.listedKey !== undefined) {
+      if (keyOf(current.current) !== last.listedKey) return
+      const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
+      if (!materials?.length) return
+      consumedFusionTokens.current.add(fusion.token)
+      lastResultPopup.current = null
+      fuse(Number(last.giftId), materials, fusion.token)
+      return
+    }
+    const entry = undoStack.current.at(-1)
+    if (!entry || entry.afterKey !== last.afterKey || keyOf(current.current) !== entry.afterKey) {
+      // Something was recorded since (e.g. a second popup): the materials still leave, as their own step, if all present.
+      const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
+      if (!materials?.length || !current.current.giftInventory.includes(last.giftId)) return
+      consumedFusionTokens.current.add(fusion.token)
+      lastResultPopup.current = null
+      fuse(Number(last.giftId), materials, fusion.token)
+      return
+    }
+    const materials = fusionMaterialsToRemove(fusion.materials, entry.before.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
+    if (!materials?.length) return
+    consumedFusionTokens.current.add(fusion.token)
+    lastResultPopup.current = null
+    undoStack.current.pop()
+    current.current = entry.before
+    expected.current = entry.beforeKey
+    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: last.giftId })) {
+      undoStack.current.push(entry)
+      current.current = entry.after
+      expected.current = entry.afterKey
+      return
+    }
+    // Against what was shown (the result already announced when its popup was recorded): only the materials leave.
+    announce(fusionFeedback(fusion.token, Date.now(), entry.after.giftInventory, current.current.giftInventory, last.giftId, describeGift))
+    const gift = giftMap.get(Number(last.giftId))
+    if (gift) toast.success(t('fusionAutoApplied', { name: localized(gift), count: materials.length }))
+  }, [fusionEvidence?.token])
+  const describeGift = (id: string) => { const gift = giftMap.get(Number(id)); return gift ? { gift, name: localized(gift) } : null }
+  const announce = (events: AcquisitionOverlayEvent[]) => { if (events.length) setAcquisitionEvents(items => [...items.slice(-31), ...events]) }
+  /**
+   * A recognized fusion: materials removed and the result added as one Undo step, announced from that step's own
+   * inventory change (consumed materials, then the result if it was added). Only recognition reaches here.
+   */
+  function fuse(resultId: number, materials: string[], token: string): boolean {
+    const before = current.current.giftInventory
+    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: String(resultId) })) return false
+    announce(fusionFeedback(token, Date.now(), before, current.current.giftInventory, String(resultId), describeGift))
+    const gift = giftMap.get(resultId)!
+    toast.success(t('fusionAutoApplied', { name: localized(gift), count: materials.length }))
+    return true
+  }
+  useEffect(() => {
+    if (state.phase !== 'playing') { consumedThemeTokens.current.clear(); consumedFusionTokens.current.clear(); recentFusions.current = [] }
+  }, [state.phase])
+  useEffect(() => {
+    const before = previousState.current
+    previousState.current = state
+    if (state.phase !== 'playing') { userClearedFloors.current.clear(); return }
+    // Changes made through this panel (record, Undo, Redo) match the expected key; anything else came from the user.
+    if (expected.current === stateKey) return
+    for (const floor of clearedThemeFloors(before, state)) userClearedFloors.current.add(floor)
+  }, [stateKey])
+  useEffect(() => {
+    if (!floorThemeObservation) return
+    const action = floorThemeObservationAction(current.current, themes, floorThemeObservation, consumedThemeTokens.current, Date.now(),
+      userClearedFloors.current)
+    const observedTheme = action && themes.find(item => String(item.id) === action.themeId)
+    if (!action || !observedTheme) return
+    record(action)
+    toast.success(t('floorThemeObserved', { floor: action.floor, name: localized(observedTheme) }))
+  }, [floorThemeObservation, state.phase, themes])
+  useEffect(() => {
+    // Inventory comes first: a confirmed acquisition is recorded whatever the run's floor state; the evidence only
+    // decides which floor log (or none) it belongs to.
+    if (current.current.phase !== 'playing') return
+    for (const evidence of popupAcquisitions) {
+      if (consumedPopupTokens.current.has(evidence.token) || Date.now() - evidence.observedAt > 8000) continue
+      consumedPopupTokens.current.add(evidence.token)
+      const id = Number(evidence.giftId)
+      if (!Number.isInteger(id) || !giftMap.has(id) || AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(evidence.giftId)) continue
+      // The result popup of a confirmed fusion: the identified materials leave the inventory in the same step, even when
+      // the result is already listed (an earlier fusion's materials were not all seen).
+      const fusion = recentFusions.current.filter(item => !consumedFusionTokens.current.has(item.token) && fusionResultFollows(item, evidence.capturedAt))
+        .sort((first, second) => first.observedAt - second.observedAt).at(-1)
+      if (fusion) {
+        consumedFusionTokens.current.add(fusion.token)
+        const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
+        if (materials?.length && fuse(id, materials, fusion.token)) continue
+      }
+      if (current.current.giftInventory.includes(evidence.giftId)) {
+        lastResultPopup.current = { giftId: evidence.giftId, capturedAt: evidence.capturedAt, listedKey: keyOf(current.current) }
+        continue
+      }
+      acquireAutomatically(id, evidence.capturedAt, acquisitionAttributionFloor(current.current, { evidenceFloor: evidence.floor,
+        pendingFloor: pendingSince.current.floor, pendingSince: pendingSince.current.at,
+        pendingActive: pendingFloor.current !== null && pendingFloor.current === pendingSince.current.floor, capturedAt: evidence.capturedAt }))
+    }
+  }, [popupAcquisitions, state.phase, giftMap])
+  function undo() {
+    const entry = undoStack.current.at(-1)
+    if (!entry || keyOf(current.current) !== entry.afterKey) return
+    setChosenInScene(null)
+    // Back to the floor that was awaiting its pack, e.g. after undoing a pick for it.
+    pendingFloor.current = entry.pendingFloor
+    undoStack.current.pop()
+    redoStack.current.push(entry)
+    current.current = entry.before
+    expected.current = entry.beforeKey
+    dispatch({ type: 'LOAD_RUN', state: entry.before })
+    setHistoryVersion(value => value + 1)
+  }
+  function redo() {
+    const entry = redoStack.current.at(-1)
+    if (!entry || keyOf(current.current) !== entry.beforeKey) return
+    redoStack.current.pop()
+    undoStack.current.push(entry)
+    current.current = entry.after
+    expected.current = entry.afterKey
+    dispatch({ type: 'LOAD_RUN', state: entry.after })
+    setHistoryVersion(value => value + 1)
+  }
+  void historyVersion
+
+  /** A pack picked by the user: for the current floor, or entering the floor being chosen on a selection screen. */
+  function chooseTheme(themeId: string) {
+    const chosen = viewFloor === state.currentFloor ? record({ type: 'SET_FLOOR_THEME', themeId })
+      : record({ type: 'OBSERVE_FLOOR_THEME', floor: viewFloor, themeId, completedAt: new Date().toISOString() })
+    if (chosen && selectionFloor !== null && scene?.label === 'theme_select') setChosenInScene(scene.since)
+    return chosen
+  }
+  // Manual fallback when floor detection misses; PiP only, recorded through the same Undo history.
+  const nextFloor = <CompanionNextFloorButton floor={state.currentFloor} maxFloors={state.maxFloors} label={t('nextFloor')}
+    disabled={state.phase !== 'playing'} onAdvance={() => { record({ type: 'NEXT_FLOOR' }) }} />
+  const content = (inPip: boolean) => {
+    // An event met while a pack is still pending shows its choices; the pending pack returns after it.
+    if ((selectionFloor === null || scene?.label !== 'theme_select') && eventView?.floor === state.currentFloor && captureRunning) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+      {inPip && <div className="mb-2 flex justify-end">{nextFloor}</div>}
+      <CompanionEventChoices eventId={eventView.eventId} events={events} choices={eventChoices} giftMap={giftMap} />
+    </div>
+    const width = actualSize.width
+    const availableWidth = Math.max(240, width - (inPip ? 36 : 24))
+    const count = availableGifts.length
+    const columns = Math.max(1, Math.min(count || 1, Math.floor((availableWidth + 6) / 62)))
+    const cell = Math.max(52, Math.min(76, Math.floor((availableWidth - (columns - 1) * 6) / columns)))
+    const artwork = Math.max(44, Math.min(64, cell - 8))
+    const themeCount = guidance.length
+    const themeColumns = Math.min(themeCount || 1, 3)
+    const themeRows = Math.ceil(themeCount / themeColumns) || 1
+    const themeWidth = Math.max(72, Math.min(
+      themeCount <= 1 ? 156 : themeCount === 2 ? 136 : 112,
+      Math.floor((availableWidth - (themeColumns - 1) * 8) / themeColumns),
+      Math.floor((((inPip ? actualSize.height : 448) - 112 - (themeRows - 1) * 8) / themeRows) * 416 / 684),
+    ))
+    return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+      <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="space-y-3">
+      {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}
+      {!theme ? <section aria-label={t('pipThemeGuidance')}>
+        <div className="mb-2 flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
+        {guidance.length ? <ul className="flex flex-wrap justify-center gap-2">{guidance.map(item => <li key={item.theme.id} className="shrink-0" style={{ width: themeWidth }}>{poster(item.theme) && <button type="button" data-theme-choice={item.theme.id} aria-label={`${localized(item.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: item.availableFloors.join(', ') || '—' })}${item.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: item.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(item.theme)} · ${t('pipThemeFloors', { floors: item.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(item.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(item.theme) })) }} className="relative block w-full focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]" style={{ aspectRatio: '416 / 684' }}><ImageWithFallback src={poster(item.theme)!} alt="" fill fallbackType="theme" sizes={`${themeWidth}px`} className="object-contain" /></button>}</li>)}</ul> : <p role="status" className="grid place-items-center px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]" style={{ minHeight: inPip ? Math.max(160, actualSize.height - 130) : 180 }}>{t('pipChooseThemeBlank')}</p>}</section> : <section>
+        <div className={`flex items-center justify-between gap-1 ${inPip ? 'sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-deep)] py-1' : ''}`}><h3 className="text-xs font-bold text-[var(--gold-light)]">{t('currentThemeGiftsCount', { count })}</h3><div className="flex gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button><button type="button" disabled={!canRedo} onClick={redo} aria-label={t('pipRedo')} title={t('pipRedo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCw size={15} /></button>{inPip && nextFloor}</div></div>
+        {count ? <ul className="mt-2 grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid><AnimatePresence initial={false} mode="popLayout">{availableGifts.map(gift => <motion.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={t('pipAcquireGift', { name: localized(gift) })} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} /></span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span></button></motion.li>)}</AnimatePresence></ul> : <p className="mt-2 text-xs text-[var(--text-tertiary)]">{t('allThemeGiftsOwned')}</p>}
+      </section>}
+      </motion.div>
+      {inPip && <details className="text-xs"><summary aria-label={t('pipSettings')} title={t('pipSettings')} className="ml-auto grid h-9 w-9 cursor-pointer list-none place-items-center text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden"><Settings2 size={16} /><span className="sr-only">{t('pipSettings')}</span></summary><div className="mt-2 flex flex-wrap items-end gap-2"><SizeInput label={t('pipWidth')} value={shownSize.width} min={320} max={900} onCommit={width => updateSize({ width, height: shownSize.height })} /><SizeInput label={t('pipHeight')} value={shownSize.height} min={280} max={900} onCommit={height => updateSize({ width: shownSize.width, height })} /></div></details>}
+    </div>
+  }
+
+  return <>
+    <button type="button" data-pip-mode={container ? 'open' : pipSupported ? 'closed' : 'unsupported'} aria-pressed={!!container} disabled={!pipSupported}
+      aria-describedby={pipSupported ? undefined : pipNoteId} title={pipSupported ? undefined : t('pipModeUnsupported')}
+      onClick={() => { if (container) close(); else void open().catch(() => toast.error(t('pipUnavailable'))) }}
+      className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:text-[var(--text-muted)] ${container ? 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:brightness-110' : 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]'}`}>
+      <PictureInPicture2 size={16} aria-hidden="true" />{t(container ? 'pipModeClose' : 'pipModeButton')}
+    </button>
+    {!pipSupported && <span id={pipNoteId} className="sr-only">{t('pipModeUnsupported')}</span>}
+    {container && createPortal(<div className="min-h-full bg-[var(--bg-deep)] p-3 text-[var(--text-primary)]" style={{ scrollbarGutter: 'stable' }}>{content(true)}<CompanionAcquisitionOverlay events={acquisitionEvents} label={t('acquired')} consumedLabel={t('fusionConsumed')} /></div>, container)}
+  </>
+}

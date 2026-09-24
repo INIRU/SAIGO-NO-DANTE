@@ -47,7 +47,8 @@ export default function PassivePanel({
           )
         })}
       </div>
-      <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
+      {/* Switching battle/support passives changes the content height; the reserved gutter keeps rows from shifting. */}
+      <div style={{ maxHeight: '20rem', overflowY: 'auto', scrollbarGutter: 'stable' }}>
         {model.slots.map(({ slot, sinnerName: sName, ...tabs }, idx) => {
           const slotP = tabs[passiveTab]
           if (slotP.length === 0) return null

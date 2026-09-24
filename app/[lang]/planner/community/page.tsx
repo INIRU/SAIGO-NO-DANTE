@@ -67,11 +67,12 @@ function CommunityPageSkeleton() {
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.header' })
+  const tActions = await getTranslations({ locale: lang, namespace: 'planner.actions' })
   const { initialPlans, initialTotal } = await getCachedInitialPlans(lang, CARD_META_CACHE_VERSION)
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} eyebrow={t('eyebrow')} action={t('newPlan')} />
+      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} eyebrow={t('eyebrow')} action={t('newPlan')} assist={tActions('triggerMode')} />
       <Suspense fallback={<CommunityPageSkeleton />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
       </Suspense>

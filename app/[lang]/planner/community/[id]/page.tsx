@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import PlanDetailClient from './PlanDetailClient'
+import PlanDetailSkeleton from './PlanDetailSkeleton'
 
 interface Props {
   params: Promise<{ lang: string; id: string }>
@@ -106,7 +107,7 @@ export default async function PlanDetailPage({ params }: Props) {
   if (egosError) console.error('Failed to fetch egos:', egosError)
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
         plan={plan as any}
         themes={themes ?? []}
