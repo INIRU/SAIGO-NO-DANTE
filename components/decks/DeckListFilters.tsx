@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { useLocale, useTranslations } from 'next-intl'
-import { ChevronDown, ChevronRight, Info, Link2, Minus, Plus, Search, SlidersHorizontal, User, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Info, Link2, Search, SlidersHorizontal, User, X } from 'lucide-react'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { getSinnerLogoUrl } from '@/lib/data/sinners'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
@@ -19,6 +19,7 @@ import {
   type SearchSuggestion,
 } from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
+import FormationCountFilter from './FormationCountFilter'
 
 // The closed BaseModal is SSR-safe; opting out here aborts the whole list's Suspense boundary.
 const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'), {
@@ -542,23 +543,6 @@ export default function DeckListFilters({
     setKeywordTagInput('')
   }
 
-  const applyFormationCount = (rawValue: string) => {
-    const trimmed = rawValue.trim()
-    if (!trimmed) {
-      onFormationCountChange(null)
-      return
-    }
-
-    const parsed = Number.parseInt(trimmed, 10)
-    if (Number.isNaN(parsed)) return
-    onFormationCountChange(Math.min(12, Math.max(1, parsed)))
-  }
-
-  const stepFormationCount = (delta: number) => {
-    const current = formationCount ?? (delta > 0 ? 0 : 13)
-    onFormationCountChange(Math.min(12, Math.max(1, current + delta)))
-  }
-
   const handleModalToggleIdentity = (identityId: string) => {
     const wasSelected = selectedIdentityIds.has(identityId)
     onToggleSelectedIdentity(identityId)
@@ -679,70 +663,7 @@ export default function DeckListFilters({
           count={formationCount !== null ? 1 : undefined}
           onClick={() => setShowFormationFilter(v => !v)}
         />
-        {showFormationFilter && (
-          <div className="flex flex-col gap-2 pt-1">
-            <div
-              className="flex items-stretch rounded"
-              style={{
-                minHeight: '2.75rem',
-                background: 'rgba(255,255,255,0.035)',
-                border: `1px solid ${formationCount !== null ? 'var(--deck-filter-border-active)' : 'var(--deck-filter-border)'}`,
-                boxShadow: formationCount !== null ? 'inset 0 1px 0 rgba(200,144,10,0.08)' : 'none',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => stepFormationCount(-1)}
-                className="flex w-11 shrink-0 items-center justify-center rounded-l transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-                style={{ color: formationCount !== null ? 'var(--gold)' : '#777', cursor: 'pointer' }}
-                aria-label={t('filters.formationDecrease')}
-              >
-                <Minus size={15} aria-hidden="true" />
-              </button>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={formationCount ?? ''}
-                onChange={e => applyFormationCount(e.target.value)}
-                placeholder="1-12"
-                className="min-w-0 flex-1 border-x text-center outline-none"
-                style={{
-                  background: 'transparent',
-                  borderColor: 'var(--deck-filter-border)',
-                  color: formationCount !== null ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                }}
-                aria-label={t('filters.formationInput')}
-              />
-              <button
-                type="button"
-                onClick={() => stepFormationCount(1)}
-                className="flex w-11 shrink-0 items-center justify-center rounded-r transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-                style={{ color: formationCount !== null ? 'var(--gold)' : '#777', cursor: 'pointer' }}
-                aria-label={t('filters.formationIncrease')}
-              >
-                <Plus size={15} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="flex min-h-[1.75rem] items-center justify-between gap-2">
-              <span style={{ color: 'var(--deck-filter-text-muted)', fontSize: 'var(--deck-filter-label-text)', lineHeight: 1.35 }}>
-                {formationCount ? t('filters.formationExact', { count: formationCount }) : t('filters.formationInput')}
-              </span>
-              {formationCount !== null && (
-                <button
-                  onClick={() => onFormationCountChange(null)}
-                  className="rounded transition-colors hover:bg-white/5"
-                  style={{ minHeight: '1.75rem', padding: '0 0.5rem', color: 'var(--deck-filter-text-soft)', border: '1px solid var(--deck-filter-border)', fontSize: '0.75rem' }}
-                >
-                  {t('filters.clear')}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        {showFormationFilter && <FormationCountFilter value={formationCount} onChange={onFormationCountChange} />}
       </section>
 
 

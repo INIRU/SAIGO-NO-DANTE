@@ -5,7 +5,7 @@ import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useQueryState, parseAsString } from 'nuqs'
+import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -14,6 +14,7 @@ import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
+import FormationCountFilter from '@/components/decks/FormationCountFilter'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
@@ -327,6 +328,9 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const [keywordModeQuery, setKeywordModeQuery] = useQueryState('ktm', parseAsString.withDefault('or'))
   const [identityIdsQuery, setIdentityIdsQuery] = useQueryState('ids', parseAsString.withDefault(''))
   const [identityModeQuery, setIdentityModeQuery] = useQueryState('im', parseAsString.withDefault('or'))
+  const [formationCountQuery, setFormationCountQuery] = useQueryState('fc', parseAsInteger)
+  const formationCount = formationCountQuery !== null && Number.isInteger(formationCountQuery) && formationCountQuery >= 1 && formationCountQuery <= 12
+    ? formationCountQuery : null
   const activeKeywordList = useMemo(() => normalizePlannerListKeywords(parseCsvParam(keywordQuery)), [keywordQuery])
   const activeKeywords = useMemo(() => new Set(activeKeywordList), [activeKeywordList])
   const keywordMode: 'or' | 'and' = keywordModeQuery === 'and' ? 'and' : 'or'
@@ -493,6 +497,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   // 키워드 필터
   const [showKeywordFilter, setShowKeywordFilter] = useState(true)
   const [showIdentityFilter, setShowIdentityFilter] = useState(true)
+  const [showFormationFilter, setShowFormationFilter] = useState(true)
   const [identityModalSinnerId, setIdentityModalSinnerId] = useState<string | null>(null)
 
   // 컬렉션 필터
@@ -523,9 +528,10 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       params.set('identity_ids', selectedIdentityIdList.join(','))
       params.set('identity_mode', identityMode)
     }
+    if (formationCount !== null) params.set('formation_count', String(formationCount))
     params.sort()
     return params.toString()
-  }, [normalizedSort, plannerLanguageParam, difficulty, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode])
+  }, [normalizedSort, plannerLanguageParam, difficulty, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, formationCount])
 
   const buildPlannerSearchParams = useCallback((offset: number) => {
     const params = new URLSearchParams(serverQueryKey)
@@ -904,7 +910,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const languageFilterCount = languageFilter === 'mine' ? 0 : 1
-  const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + languageFilterCount + collectionFilterCount
+  const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + languageFilterCount + collectionFilterCount
   const hasAnyFilter = totalActiveCount > 0
 
   const clearCollectionFilters = () => {
@@ -1084,6 +1090,18 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
             )
           })}
         </div>
+      </section>
+
+
+      <section>
+        <SectionToggle
+          label={rootT('decks.filters.formationCount')}
+          open={showFormationFilter}
+          active={formationCount !== null}
+          count={formationCount !== null ? 1 : undefined}
+          onClick={() => setShowFormationFilter(v => !v)}
+        />
+        {showFormationFilter && <FormationCountFilter value={formationCount} onChange={value => { void setFormationCountQuery(value, QUERY_OPTIONS) }} />}
       </section>
 
 
