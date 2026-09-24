@@ -12,6 +12,7 @@ import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/ui/GiftCard'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Difficulty, FloorDifficulty, GiftData, ThemeData, RecipeData } from '@/lib/planner/types'
+import { themeExclusiveGiftIds, withThemeRewards } from '@/lib/planner/fusion'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import {
@@ -143,7 +144,8 @@ export default function FloorPlanPreviewBoard({
               const themeName = theme
                 ? getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
                 : tFloor('empty')
-              const floorGifts = entry.gift_ids
+              // A pack's clear rewards belong to the floor that has it even when the plan did not list them.
+              const floorGifts = withThemeRewards(entry.gift_ids, theme)
                 .map(id => giftMap.get(parseInt(id, 10)))
                 .filter((gift): gift is GiftData => Boolean(gift))
               const memoPreview = getMemoPreview(entry.memo)
@@ -215,7 +217,7 @@ export default function FloorPlanPreviewBoard({
                               >
                                 <GiftCard
                                   gift={gift}
-                                  warning={theme?.specific_ego_gift_ids?.includes(gift.game_id) ? (locale === 'ko' ? '테마팩 전용 · 이 층에서 획득' : locale === 'ja' ? 'テーマ専用・この階で入手' : 'Pack exclusive · obtain on this floor') : undefined}
+                                  warning={themeExclusiveGiftIds(theme).includes(gift.game_id) ? (locale === 'ko' ? '테마팩 전용 · 이 층에서 획득' : locale === 'ja' ? 'テーマ専用・この階で入手' : 'Pack exclusive · obtain on this floor') : undefined}
                                   onClick={() => onGiftClick?.(gift)}
                                   disabled={!onGiftClick}
                                   title={giftName}

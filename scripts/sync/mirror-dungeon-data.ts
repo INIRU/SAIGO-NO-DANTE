@@ -155,6 +155,7 @@ const ThemeRawSchema = z.object({
   })).optional(),
   difficulty: z.string().optional(),
   mapGenSequence: z.any().optional(),
+  mapGenOption: z.object({ bossPool: z.array(z.number()).optional() }).passthrough().optional(),
 })
 
 const ThemeLocaleSchema = z.object({
@@ -929,6 +930,23 @@ interface ThemeRow {
   difficulty?: string | null
   floor_info?: Record<string, number[] | string> | null
   is_hidden?: boolean
+  /** Gifts a pack always gives when its boss is cleared (extreme packs), from the boss stages' rewards. */
+  fixed_reward_gift_ids: number[]
+}
+
+/** Stage id → its single guaranteed E.G.O gift reward. */
+function loadStageGiftRewards(): Map<number, number> {
+  const rewards = new Map<number, number>()
+  for (const f of globFiles(DATA_DIR, /^mirrordungeon-(ab)?battle.*\.txt$/)) {
+    for (const item of extractList(loadJson(join(DATA_DIR, f)))) {
+      const stage = item as { id?: unknown; rewardList?: { type?: string; rewardId?: unknown; prob?: number }[] }
+      const gifts = (stage.rewardList ?? []).filter(reward => reward.type === 'EGO_GIFT')
+      if (typeof stage.id === 'number' && gifts.length === 1 && gifts[0].prob === 1 && typeof gifts[0].rewardId === 'number') {
+        rewards.set(stage.id, gifts[0].rewardId)
+      }
+    }
+  }
+  return rewards
 }
 
 function loadThemeNameMap(paths: string[]): Map<number, string> {
@@ -1002,6 +1020,11 @@ async function syncThemes(): Promise<void> {
   }
 
   const themes: ThemeRow[] = []
+  // Boss rewards count only when they are real gifts (some stages reward a placeholder id such as 993005).
+  const stageRewards = loadStageGiftRewards()
+  const { data: giftRows, error: giftErr } = await supabase.schema('limbus').from('ego_gifts').select('game_id')
+  if (giftErr) throw new Error(`ego_gifts fetch 실패: ${giftErr.message}`)
+  const giftIds = new Set((giftRows ?? []).map(row => row.game_id as number))
   for (const f of themeFiles) {
     const isHiddenFile = f.includes('hidden')
     const data = loadJson(join(DATA_DIR, f))
@@ -1054,6 +1077,10 @@ async function syncThemes(): Promise<void> {
         difficulty,
         floor_info: Object.keys(floorInfo).length > 0 ? floorInfo : null,
         is_hidden: isHiddenFile,
+        fixed_reward_gift_ids: [...new Set((t.mapGenOption?.bossPool ?? []).flatMap(stage => {
+          const gift = stageRewards.get(stage)
+          return gift !== undefined && giftIds.has(gift) ? [gift] : []
+        }))],
       })
     }
   }
@@ -1063,7 +1090,7 @@ async function syncThemes(): Promise<void> {
   const { data: existingThemes, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gift_themes')
-    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden')
+    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden, fixed_reward_gift_ids')
 
   if (fetchErr) throw new Error(`ego_gift_themes fetch 실패: ${fetchErr.message}`)
 
@@ -1090,6 +1117,9 @@ async function syncThemes(): Promise<void> {
       const existSpec = sortedNumberArrayJson(existing.specific_ego_gift_ids)
       const newSpec = sortedNumberArrayJson(theme.specific_ego_gift_ids)
       if (existSpec !== newSpec) changes.push('specific_ego_gift_ids 변경')
+      if (sortedNumberArrayJson(existing.fixed_reward_gift_ids) !== sortedNumberArrayJson(theme.fixed_reward_gift_ids)) {
+        changes.push(`fixed_reward_gift_ids: ${JSON.stringify(existing.fixed_reward_gift_ids ?? [])} → ${JSON.stringify(theme.fixed_reward_gift_ids)}`)
+      }
       if (existing.difficulty !== theme.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${theme.difficulty}`)
       if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
       if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)

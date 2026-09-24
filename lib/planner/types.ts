@@ -331,6 +331,8 @@ export interface ThemeData {
   dungeon_id: string | null
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
+  /** Gifts the pack always gives when its boss is cleared (extreme packs). */
+  fixed_reward_gift_ids?: number[] | null
   image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null

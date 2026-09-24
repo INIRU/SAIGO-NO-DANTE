@@ -162,6 +162,10 @@ export default function GiftModal({
     ? themes.filter(t => t.specific_ego_gift_ids.includes(gift.game_id!))
     : []
 
+  // Packs that give this gift: their pool, exclusive pool or clear reward.
+  const giftThemes = gift.game_id
+    ? themes.filter(t => [t.ego_gift_ids, t.specific_ego_gift_ids, t.fixed_reward_gift_ids].some(list => list?.includes(gift.game_id!)))
+    : []
   const [themesOpen, setThemesOpen] = useState(false)
 
   return (
@@ -414,7 +418,7 @@ export default function GiftModal({
           )}
 
           {/* 소속 테마팩 */}
-          {themes.length > 0 && (
+          {giftThemes.length > 0 && (
             <div className="pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <button
                 onClick={() => setThemesOpen(prev => !prev)}
@@ -422,7 +426,7 @@ export default function GiftModal({
                 style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginBottom: themesOpen ? '0.375rem' : 0 }}
               >
                 <span className="font-bold" style={{ color: '#666', fontFamily: 'var(--font-heading)', fontSize: '0.625rem' }}>
-                  {t('mirrorDungeon.gift.themes')} ({themes.length})
+                  {t('mirrorDungeon.gift.themes')} ({giftThemes.length})
                 </span>
                 <ChevronDown
                   size={12}
@@ -436,8 +440,8 @@ export default function GiftModal({
               </button>
               {themesOpen && (
                 <div className="flex flex-wrap gap-1.5">
-                  {themes.map(theme => {
-                    const isExclusive = gift.game_id ? theme.specific_ego_gift_ids.includes(gift.game_id) : false
+                  {giftThemes.map(theme => {
+                    const isExclusive = gift.game_id ? [...theme.specific_ego_gift_ids, ...(theme.fixed_reward_gift_ids ?? [])].includes(gift.game_id) : false
                     const diff = theme.difficulty
                     const diffColor = diff === 'extreme' ? '#e04040' : diff === 'hard' ? '#e89030' : diff === 'effective' ? '#6090d0' : '#888'
                     const diffLabel = diff === 'extreme' ? 'EX' : diff === 'hard' ? 'H' : diff === 'effective' ? 'E' : ''

@@ -255,9 +255,22 @@ export function getAvailableThemes<T extends { floor_info: Record<string, number
 /**
  * 선택한 테마팩들의 기프트 합산
  */
+type ThemeGiftLists = { specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }
+
+/** Gifts only this pack gives: its exclusive pool and its clear rewards. */
+export function themeExclusiveGiftIds(theme: ThemeGiftLists | null | undefined): number[] {
+  return [...(theme?.specific_ego_gift_ids ?? []), ...(theme?.fixed_reward_gift_ids ?? [])]
+}
+
+/** A floor's planned gift keys plus its pack's clear rewards, which a plan with that pack always obtains. */
+export function withThemeRewards(giftIds: string[], theme: ThemeGiftLists | null | undefined): string[] {
+  const rewards = (theme?.fixed_reward_gift_ids ?? []).filter(id => !giftIds.some(key => parseInt(key, 10) === id))
+  return [...giftIds, ...rewards.map(String)]
+}
+
 export function getGiftsFromThemes(
   selectedThemeIds: (string | null)[],
-  themes: { id: string; ego_gift_ids: number[] | null; specific_ego_gift_ids: number[] | null }[],
+  themes: { id: string; ego_gift_ids: number[] | null; specific_ego_gift_ids: number[] | null; fixed_reward_gift_ids?: number[] | null }[],
   giftMap: Map<number, GiftData>,
 ): GiftData[] {
   const giftIds = new Set<number>()
@@ -268,7 +281,7 @@ export function getGiftsFromThemes(
     const theme = themeMap.get(tid)
     if (!theme) continue
     for (const gid of theme.ego_gift_ids ?? []) giftIds.add(gid)
-    for (const gid of theme.specific_ego_gift_ids ?? []) giftIds.add(gid)
+    for (const gid of themeExclusiveGiftIds(theme)) giftIds.add(gid)
   }
 
   return Array.from(giftIds).map(id => giftMap.get(id)).filter(Boolean) as GiftData[]
