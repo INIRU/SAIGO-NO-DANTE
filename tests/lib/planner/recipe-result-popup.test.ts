@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { recipeIngredientsInInventory, resolveRecipeResult } from '@/lib/planner/fusion'
+import { recipeFromMaterials, recipeIngredientsInInventory, resolveRecipeResult, settleResultPopup } from '@/lib/planner/fusion'
 import { popupCandidateIds } from '@/lib/vision/popup-evidence'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
@@ -22,27 +22,64 @@ it('finds the held ingredients a fixed-recipe result consumes', () => {
 
 it('settles a conflicting result popup to the only recipe result the inventory can make', () => {
   const inventory = ['9721', '9723', '9701', '9702']
+  const ev = (named: string[], others: string[] = [], materials: string[] = []) => ({ named, others, materials })
   // Name read 타입 L, icon matched its case: only 타입 L is craftable.
-  expect(resolveRecipeResult(['9728', '9721'], inventory, recipes, giftMap, false)).toBe('9728')
+  expect(resolveRecipeResult(ev(['9728'], ['9721']), inventory, recipes, giftMap, false)).toBe('9728')
   // A short 탁마 read plus a look-alike icon.
-  expect(resolveRecipeResult(['9784', '9277'], inventory, recipes, giftMap, false)).toBe('9784')
+  expect(resolveRecipeResult(ev(['9784'], ['9277']), inventory, recipes, giftMap, false)).toBe('9784')
   // Only the ingredient's look-alike icon: on the fusion screen, the only craftable recipe using that held ingredient.
-  expect(resolveRecipeResult(['9721'], inventory, recipes, giftMap, true)).toBe('9728')
-  expect(resolveRecipeResult(['9721'], inventory, recipes, giftMap, false)).toBeNull()
-  // Two craftable results, a result already held, or no recipe candidate stay unresolved.
-  expect(resolveRecipeResult(['9721'], [...inventory, '9724'], recipes, giftMap, true)).toBeNull()
-  expect(resolveRecipeResult(['9728', '9729'], [...inventory, '9724'], recipes, giftMap, false)).toBeNull()
-  expect(resolveRecipeResult(['9728'], [...inventory, '9728'], recipes, giftMap, true)).toBeNull()
-  expect(resolveRecipeResult(['9001', '9277'], inventory, recipes, giftMap, true)).toBeNull()
-  expect(resolveRecipeResult([], inventory, recipes, giftMap, true)).toBeNull()
+  expect(resolveRecipeResult(ev([], ['9721']), inventory, recipes, giftMap, true)).toBe('9728')
+  expect(resolveRecipeResult(ev([], ['9721']), inventory, recipes, giftMap, false)).toBeNull()
+  // A result already held, or no recipe candidate, stay unresolved.
+  expect(resolveRecipeResult(ev(['9728']), [...inventory, '9728'], recipes, giftMap, true)).toBeNull()
+  expect(resolveRecipeResult(ev([], ['9001', '9277']), inventory, recipes, giftMap, true)).toBeNull()
+  expect(resolveRecipeResult(ev([]), inventory, recipes, giftMap, true)).toBeNull()
+})
+
+it('tells look-alike recipe results apart when every case and hand is held', () => {
+  // Both cases and both hands: all four 회중시계 types are craftable.
+  const all = ['9721', '9722', '9723', '9724']
+  const ev = (named: string[], others: string[] = [], materials: string[] = []) => ({ named, others, materials })
+  // The plate names one type exactly; a sibling's look-alike icon does not override it.
+  expect(resolveRecipeResult(ev(['9728'], ['9729']), all, recipes, giftMap, true)).toBe('9728')
+  // No name: the icons alone name two types, and the case alone fits two recipes.
+  expect(resolveRecipeResult(ev([], ['9728', '9729']), all, recipes, giftMap, true)).toBeNull()
+  expect(resolveRecipeResult(ev([], ['9721']), all, recipes, giftMap, true)).toBeNull()
+  // Materials read on the dialog decide: 은빛 케이스 + 녹슨 시계침 is 타입 E; one read material still narrows the icon's pair.
+  expect(resolveRecipeResult(ev([], ['9721'], ['9721', '9724']), all, recipes, giftMap, true)).toBe('9729')
+  expect(resolveRecipeResult(ev([], ['9728', '9729'], ['9724']), all, recipes, giftMap, true)).toBe('9729')
+  // Materials that fit several recipes equally stay unresolved.
+  expect(resolveRecipeResult(ev([], ['9721'], ['9721']), all, recipes, giftMap, true)).toBeNull()
 })
 
 it('collects every gift a result popup points at, weak reads included, only under its header', () => {
   const gifts = names.map(([id, name]) => ({ id: String(id), texts: [name] }))
   const read = (text: string, confidence = 40) => ({ text, words: [{ text, confidence, left: 0, top: 0, width: 1, height: 1 }] })
   const header = 'E.G.O 기프트를 획득했습니다.'
-  expect(popupCandidateIds({ header, labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts }).sort()).toEqual(['9277', '9784'])
-  expect(popupCandidateIds({ header, labels: [read('회중시계:타입L')], iconGiftIds: ['9721', 'unknown'], effectGiftIds: ['9728'], gifts }).sort())
-    .toEqual(['9721', '9728'])
-  expect(popupCandidateIds({ header: '합성', labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts })).toEqual([])
+  expect(popupCandidateIds({ header, labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts })).toEqual({ named: ['9784'], others: ['9277'] })
+  expect(popupCandidateIds({ header, labels: [read('회중시계:타입L')], iconGiftIds: ['9721', 'unknown'], effectGiftIds: ['9728'], gifts }))
+    .toEqual({ named: ['9728'], others: ['9721'] })
+  expect(popupCandidateIds({ header: '합성', labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts })).toEqual({ named: [], others: [] })
+})
+
+it('takes a fusion of exactly one recipe\'s ingredients as that recipe\'s result, its only source', () => {
+  const all = ['9721', '9722', '9723', '9724', '9001']
+  const ev = (named: string[], others: string[] = [], materials: string[] = []) => ({ named, others, materials })
+  expect(recipeFromMaterials(['9724', '9721'], all, recipes, giftMap)).toBe('9729')
+  expect(recipeFromMaterials(['9721', '9724', '9001'], all, recipes, giftMap)).toBeNull()
+  expect(recipeFromMaterials(['9721'], all, recipes, giftMap)).toBeNull()
+  expect(recipeFromMaterials(['9721', '9724'], ['9721'], recipes, giftMap)).toBeNull()
+  // Exact recipe materials win over an unreadable popup or a look-alike sibling icon, not over an exactly read plate.
+  expect(settleResultPopup(ev([], [], ['9721', '9724']), null, all, recipes, giftMap, true)).toBe('9729')
+  expect(settleResultPopup(ev([], ['9728'], ['9721', '9724']), '9728', all, recipes, giftMap, true)).toBe('9729')
+  expect(settleResultPopup(ev(['9728'], [], ['9721', '9724']), '9728', all, recipes, giftMap, true)).toBe('9728')
+  // An ordinary gift's verdict stands.
+  expect(settleResultPopup(ev(['9001']), '9001', all, recipes, giftMap, false)).toBe('9001')
+  // An unnamed recipe result the inventory cannot make: another craftable candidate, or dropped off the fusion screen.
+  const caseOnly = ['9721', '9723']
+  expect(settleResultPopup(ev([], ['9729', '9728']), '9729', caseOnly, recipes, giftMap, true)).toBe('9728')
+  expect(settleResultPopup(ev([], ['9731']), '9731', caseOnly, recipes, giftMap, false)).toBeNull()
+  expect(settleResultPopup(ev([], ['9731']), '9731', caseOnly, recipes, giftMap, true)).toBe('9731')
+  // A named recipe result stands even when its ingredients were never recorded.
+  expect(settleResultPopup(ev(['9731']), '9731', caseOnly, recipes, giftMap, false)).toBe('9731')
 })

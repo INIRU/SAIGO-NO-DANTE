@@ -70,8 +70,8 @@ export function acquiredGiftFromPopup({ header, labels, iconGiftId, effectGiftId
 }
 
 /**
- * Every gift a popup's evidence points at, however weak or conflicting (short or near name reads, icons, effect owners),
- * for resolving it with other knowledge. Empty without the popup header.
+ * Every gift a popup's evidence points at, however weak or conflicting, for resolving it with other knowledge: exact
+ * name reads of any confidence (`named`), and near names, icons and effect owners (`others`). Empty without the header.
  */
 export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, gifts }: {
   header: string
@@ -79,18 +79,18 @@ export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, 
   iconGiftIds: string[]
   effectGiftIds: string[]
   gifts: OcrReference[]
-}): string[] {
-  if (!popupHeaderEvidence(header)) return []
-  const ids = new Set<string>()
+}): { named: string[]; others: string[] } {
+  const named = new Set<string>(), others = new Set<string>()
+  if (!popupHeaderEvidence(header)) return { named: [], others: [] }
   for (const read of labels) {
     const name = normalized(read.text)
     if (!name) continue
-    for (const gift of gifts) if (gift.texts.some(text => normalized(text) === name)) ids.add(gift.id)
+    for (const gift of gifts) if (gift.texts.some(text => normalized(text) === name)) named.add(gift.id)
     const near = nearestGiftName(read.text, gifts)
-    if (near) ids.add(near)
+    if (near) others.add(near)
   }
-  for (const id of [...iconGiftIds, ...effectGiftIds]) if (gifts.some(gift => gift.id === id)) ids.add(id)
-  return [...ids]
+  for (const id of [...iconGiftIds, ...effectGiftIds]) if (gifts.some(gift => gift.id === id)) others.add(id)
+  return { named: [...named], others: [...others].filter(id => !named.has(id)) }
 }
 
 /**

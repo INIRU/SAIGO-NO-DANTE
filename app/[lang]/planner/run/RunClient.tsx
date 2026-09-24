@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowLeft, RotateCcw, MonitorUp } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
-import { buildGiftMap, resolveRecipeResult } from '@/lib/planner/fusion'
+import { buildGiftMap, settleResultPopup, type RecipePopupEvidence } from '@/lib/planner/fusion'
 import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlannerState, saveDraftToLocal } from '@/lib/planner/encoder'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
@@ -75,9 +75,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     try { window.localStorage.setItem(DETECTION_STORAGE_KEY, JSON.stringify(next)) } catch { /* applies to this session */ }
   }
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
-  // A result popup the recognizer cannot settle may still be the only fixed-recipe result the current inventory can make.
-  const resolvePopup = useCallback((candidates: string[], inFusion: boolean) =>
-    resolveRecipeResult(candidates, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
+  // Fixed-recipe fusions: their materials decide the result, and a popup the recognizer cannot settle may still be the
+  // only recipe result the current inventory can make.
+  const resolvePopup = useCallback((evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) =>
+    settleResultPopup(evidence, verdict, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
   const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup,
     language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
