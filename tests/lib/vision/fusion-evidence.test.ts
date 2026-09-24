@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDialogClosed, fusionMaterials, fusionWheelAnchors, fusionWheelCrop, fusionWheelRegions,
-  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, type SeenDialog }
+  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors,
+  FUSION_TITLE_KEEP_MS, onFusionScreen, showsFusionTitle, type SeenDialog }
   from '../../../lib/vision/fusion-evidence'
+
+it('keeps the fusion screen on from its title when the scene classifier misses it (black UI theme)', () => {
+  // OCR reads of a black-theme replay (2026-09-23 577-584 s): selection screen, dialog and result popup over it, then the shop.
+  const selection = 'E.G.0 기프트 합성 3994 조합식 합성 안내 등급순 보유E.G.O 기프트 예상 결과 ? 소원 빌기 5 ×닫기 ~합성'
+  const dialog = 'E.G.O 기프트 합성 선택한 기프트 3/3 예상 + | 선택한 E.G.O 기프트를 조합하시겠습니까? 취소 확인'
+  const popup = 'E.G.O 기프트 합성 ××3994 합성 안내 등급순 E.G.0 기프트를 획득했습니다. [편성 1번,2번 인격 전용효과]'
+  const shop = '상점 키워드 새로고침 329 다음층에서 49% 새로고침 특별한상점등장확률 15 90 구매 완료'
+  // The shop's menu buttons read line by line; without whitespace they join into "기프트합성".
+  const shopButtons = '기프트\n강화\n기프트\n합성\n기프트\n판매\n수감자\n회복\n판성'
+  expect([selection, dialog, popup].every(showsFusionTitle)).toBe(true)
+  expect(showsFusionTitle(shop)).toBe(false)
+  expect(showsFusionTitle(shopButtons)).toBe(false)
+  // Classified as something else, the screen still counts while its title was read moments ago.
+  expect(onFusionScreen('enhance', 10_000, 10_000 + FUSION_TITLE_KEEP_MS - 1)).toBe(true)
+  expect(onFusionScreen('enhance', 10_000, 10_000 + FUSION_TITLE_KEEP_MS)).toBe(false)
+  expect(onFusionScreen(null, 0, 60_000)).toBe(false)
+  expect(onFusionScreen('fusion', 0, 60_000)).toBe(true)
+})
 
 it('reads the material count only from the fusion confirmation dialog', () => {
   expect(fusionConfirmation('E.G.O 기프트 합성\n선택한 기프트 2/5\n예상\n선택한 E.G.O 기프트를 조합하시겠습니까?\n취소\n확인')).toEqual({ count: 2, capacity: 5 })
