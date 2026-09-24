@@ -527,6 +527,7 @@ function sortComparableSkills(rows: SkillComparable[]): SkillComparable[] {
     || comparePrimitive(a.name, b.name)
     || comparePrimitive(a.base_power, b.base_power)
     || comparePrimitive(a.coin_power, b.coin_power)
+    || comparePrimitive(a.variant_order, b.variant_order)
   ))
 }
 
@@ -539,6 +540,17 @@ export function areSkillRowsDifferent(
   const generatedComparable = sortComparableSkills(generatedRows.map(row => comparableSkill(row)))
   const dbComparable = sortComparableSkills(dbRows.map(row => comparableSkill(row)))
   return JSON.stringify(generatedComparable) !== JSON.stringify(dbComparable)
+}
+
+/** Rebuilt skills keep their DB id so saved notes and drafts that reference skill ids stay valid. */
+export function withStableSkillIds<T extends Partial<SkillRow>>(generatedRows: T[], dbRows: Array<Partial<SkillRow> & { id?: string }>): Array<T & { id?: string }> {
+  const key = (row: Partial<SkillRow>) => [row.skill_order, row.uptie_level, row.variant_order, row.name].join('|')
+  const byKey = new Map<string, string[]>()
+  for (const row of dbRows) if (row.id) byKey.set(key(row), [...(byKey.get(key(row)) ?? []), row.id])
+  return generatedRows.map(row => {
+    const ids = byKey.get(key(row))
+    return ids?.length === 1 ? { ...row, id: ids[0] } : row
+  })
 }
 
 interface PassiveRow {
@@ -3057,7 +3069,7 @@ async function syncExistingIdentitySkills(
   }
 
   if (generatedRows.length > 0) {
-    await supaInsertBatch('skills', generatedRows)
+    await supaInsertBatch('skills', withStableSkillIds(generatedRows, dbRows))
   }
 
   console.log(GREEN(`    스킬 재구축: 삭제 ${dbRows.length}개 / 삽입 ${generatedRows.length}개`))
