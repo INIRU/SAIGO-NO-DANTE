@@ -302,26 +302,83 @@ export function recipeIngredientsInInventory(resultId: number, inventory: readon
   return null
 }
 
+/** Evidence of one result popup, split by strength, plus the materials read on the fusion that preceded it. */
+export interface RecipePopupEvidence {
+  /** Gifts whose exact name was read on the popup's plate. */
+  named: readonly string[]
+  /** Everything else it points at: look-alike icons, near names, effect owners. */
+  others: readonly string[]
+  /** Material gift ids read on the confirmation dialog or wheel so far (may be partial or look-alike). */
+  materials?: readonly string[]
+}
+
 /**
- * A result popup whose own evidence (name, icon, effect text) disagrees or is too weak: the one candidate that is a
- * fixed-recipe result craftable from the inventory. Such results often share art with their ingredients or siblings
- * (회중시계 types, 탁마), so on the fusion screen a candidate that is an already held ingredient points to the only
- * craftable recipe using it. Anything else stays unresolved.
+ * A result popup whose own evidence (name, icon, effect text) disagrees or is too weak: a fixed-recipe result is only
+ * obtainable by fusing its ingredients, so it must be craftable from the inventory. Such results share art with their
+ * ingredients and siblings (회중시계 types, 탁마), so the choice narrows step by step until one is left: craftable results
+ * whose exact name was read; any craftable candidate; on the fusion screen, craftable recipes using a held candidate
+ * ingredient; then the recipes containing the most materials read on the fusion. Anything else stays unresolved.
  */
-export function resolveRecipeResult(candidates: readonly string[], inventory: readonly string[], recipes: readonly RecipeData[],
+export function resolveRecipeResult(evidence: RecipePopupEvidence, inventory: readonly string[], recipes: readonly RecipeData[],
   giftMap: Map<number, GiftData>, inFusion: boolean): string | null {
   const held = new Set(inventory.map(key => parseInt(key, 10)))
+  const idByName = giftIdsByName(giftMap)
   const craftable = (id: number | undefined): id is number => id !== undefined && !held.has(id) &&
     recipeIngredientsInInventory(id, inventory, recipes, giftMap) !== null
-  const direct = [...new Set(candidates.map(Number))].filter(craftable)
-  if (direct.length) return direct.length === 1 ? String(direct[0]) : null
-  if (!inFusion) return null
+  const one = (ids: Iterable<number>) => { const unique = [...new Set(ids)]; return unique.length === 1 ? String(unique[0]) : null }
+  const named = evidence.named.map(Number).filter(craftable)
+  if (named.length) return one(named)
+  const candidates = [...evidence.named, ...evidence.others]
+  let pool = [...new Set(candidates.map(Number).filter(craftable))]
+  if (!pool.length && inFusion) {
+    pool = [...new Set(recipes.filter(recipe => recipe.ingredients.some(name => {
+      const id = idByName.get(name)
+      return id !== undefined && held.has(id) && candidates.includes(String(id))
+    })).map(recipe => idByName.get(recipe.final_result ?? recipe.result_name)).filter(craftable))]
+  }
+  if (pool.length <= 1) return one(pool)
+  // Several siblings are craftable: keep those whose recipe holds the most materials read on the fusion.
+  const materials = (evidence.materials ?? []).map(Number)
+  const score = (id: number) => Math.max(0, ...recipes.filter(recipe => idByName.get(recipe.final_result ?? recipe.result_name) === id)
+    .map(recipe => materials.filter(material => recipe.ingredients.some(name => idByName.get(name) === material)).length))
+  const best = Math.max(...pool.map(score))
+  return best > 0 ? one(pool.filter(id => score(id) === best)) : null
+}
+
+/**
+ * The result of a fusion whose materials are exactly one fixed recipe's ingredients: such a fusion always makes that
+ * recipe's result. Null unless exactly one recipe matches and its result can be made from the inventory.
+ */
+export function recipeFromMaterials(materials: readonly string[], inventory: readonly string[], recipes: readonly RecipeData[],
+  giftMap: Map<number, GiftData>): string | null {
+  if (!materials.length) return null
   const idByName = giftIdsByName(giftMap)
-  const results = new Set(recipes.filter(recipe => recipe.ingredients.some(name => {
-    const id = idByName.get(name)
-    return id !== undefined && held.has(id) && candidates.includes(String(id))
-  })).map(recipe => idByName.get(recipe.final_result ?? recipe.result_name)).filter(craftable))
+  const held = new Set(inventory.map(key => parseInt(key, 10)))
+  const read = materials.map(Number).sort((a, b) => a - b).join()
+  const results = new Set(recipes.filter(recipe =>
+    recipe.ingredients.map(name => idByName.get(name) ?? -1).sort((a, b) => a - b).join() === read)
+    .map(recipe => idByName.get(recipe.final_result ?? recipe.result_name))
+    .filter((id): id is number => id !== undefined && !held.has(id) && recipeIngredientsInInventory(id, inventory, recipes, giftMap) !== null))
   return results.size === 1 ? String([...results][0]) : null
+}
+
+/**
+ * Final gift for an acquisition popup with its header read, given the recognizer's own verdict (null when it abstained).
+ * A fixed recipe's ingredients always fuse into its result, and that result has no other source. So: materials that are
+ * exactly a recipe decide it unless the plate named the verdict exactly; a recipe result the popup did not name and the
+ * inventory cannot make (a look-alike icon or effect match) yields to a result that can be made, or is dropped off the
+ * fusion screen; an abstained popup falls back to resolveRecipeResult. Named results stand, as their ingredients may
+ * simply not have been recorded.
+ */
+export function settleResultPopup(evidence: RecipePopupEvidence, verdict: string | null, inventory: readonly string[],
+  recipes: readonly RecipeData[], giftMap: Map<number, GiftData>, inFusion: boolean): string | null {
+  const exact = recipeFromMaterials(evidence.materials ?? [], inventory, recipes, giftMap)
+  if (exact && (verdict === null || !evidence.named.includes(verdict))) return exact
+  if (verdict === null) return resolveRecipeResult(evidence, inventory, recipes, giftMap, inFusion)
+  const id = Number(verdict)
+  const recipeResult = recipes.some(recipe => (recipe.final_result ?? recipe.result_name) === giftMap.get(id)?.name)
+  if (!recipeResult || evidence.named.includes(verdict) || recipeIngredientsInInventory(id, inventory, recipes, giftMap)) return verdict
+  return resolveRecipeResult(evidence, inventory, recipes, giftMap, inFusion) ?? (inFusion ? verdict : null)
 }
 
 type ThemeGiftLists = { specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }

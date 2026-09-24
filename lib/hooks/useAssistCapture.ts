@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -185,10 +186,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   /** Screens to read; a switched-off kind does no reading work at all. Read live, no rebuild. */
   detection?: DetectionSettings
   /**
-   * Second opinion for a result popup whose own evidence abstains: all its candidate gift ids and whether the fusion
-   * screen is up; returns the gift or null. Used for fixed-recipe results that look like their ingredients.
+   * Final say on a popup with its header read: its candidate gift ids and the fusion's materials read so far, the
+   * recognizer's own verdict (null when it abstained) and whether the fusion screen is up; returns the gift or null.
+   * Used for fixed-recipe fusions, whose result follows from their materials.
    */
-  resolvePopup?: (candidates: string[], inFusion: boolean) => string | null
+  resolvePopup?: (evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) => string | null
 } = {}) {
   const [supported, setSupported] = useState(false)
   const [status, setStatus] = useState<CaptureStatus>('idle')
@@ -624,6 +626,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         releaseHeld()
       }
+      // Materials read so far on the confirmation dialog this popup follows, for telling look-alike recipe results apart.
+      const popupDialogMaterials = (capturedAt: number) => {
+        const dialog = fusionDialog.current
+        return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000
+          ? fusionMaterials(dialog.reads, dialog.count, dialog.capacity) : []
+      }
       const finishPopup = (requestId: number) => {
         const pending = popupPending.current.get(requestId)
         if (!pending?.ocr || !pending.icon) return
@@ -646,11 +654,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         // Frames of one popup must agree: two different icons, names, or effect owners abstain.
         const icons = [...new Set(merged.icons)]
         const effects = [...new Set(merged.effects)]
-        const giftId = (icons.length > 1 ? null : acquiredGiftFromPopup({ header: merged.headers.join('\n'),
-          labels: merged.labels, iconGiftId: icons[0] ?? null, effectGiftIds: effects, gifts: catalog.gifts })) ??
-          resolvePopupRef.current?.(popupCandidateIds({ header: merged.headers.join('\n'), labels: merged.labels, iconGiftIds: icons,
-            effectGiftIds: effects, gifts: catalog.gifts }), latestLabel.current === 'fusion' ||
-            (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000)) ?? null
+        const header = merged.headers.join('\n')
+        const verdict = icons.length > 1 ? null : acquiredGiftFromPopup({ header, labels: merged.labels, iconGiftId: icons[0] ?? null,
+          effectGiftIds: effects, gifts: catalog.gifts })
+        const resolve = resolvePopupRef.current
+        const giftId = resolve && popupHeaderEvidence(header)
+          ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects, gifts: catalog.gifts }),
+            materials: popupDialogMaterials(pending.capturedAt) }, verdict, latestLabel.current === 'fusion' ||
+            (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
+          : verdict
         if (!giftId) return
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
